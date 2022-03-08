@@ -33,4 +33,11 @@ describe("init", () => {
       "Tracking key was not provided"
     );
   });
+
+  test("will reject user call without key", async () => {
+    const bucketInstance = bucket();
+    expect(() => bucketInstance.user("foo")).rejects.toThrowError(
+      "Tracking key is not set, please call init() first"
+    );
+  });
 });

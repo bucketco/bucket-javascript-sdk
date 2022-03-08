@@ -1,6 +1,5 @@
-import nock from "nock";
-import { describe, expect, spyOn, test } from "vitest";
-import bucketSingleton from "../src/lib";
+import { describe, expect, test } from "vitest";
+import bucketSingleton from "../src";
 
 describe("singleton", () => {
   test("an instance is exported", () => {
