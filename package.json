@@ -1,7 +1,6 @@
 {
-  "name": "bucket-sdk",
-  "private": true,
-  "version": "0.0.0",
+  "name": "bucket-tracking-sdk",
+  "version": "1.0.0",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
