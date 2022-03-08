@@ -2,95 +2,114 @@ import fetch from "cross-fetch";
 import { TRACKING_HOST } from "./config";
 import { Company, Key, Options, TrackedEvent, User } from "./types";
 
-export default function instance(key: Key, options?: Options) {
+export default function main() {
   let trackingKey: string | null = null;
   let trackingHost: string = TRACKING_HOST;
+  let debug = false;
   let userId: string | null = null;
 
-  // init
-
-  if (!key) {
-    throw new Error("Tracking key was not provided");
-  }
-  trackingKey = key;
-
-  if (options?.host) {
-    trackingHost = options.host;
-  }
-
-  // utils
+  log("Instance created");
 
   function getUrl() {
     return `${trackingHost}/${trackingKey}`;
   }
+  function checkKey() {
+    if (!trackingKey) {
+      err("Tracking key is not set, please call init() first");
+    }
+  }
   function checkUser() {
     if (!userId) {
-      throw new Error("User is not set, please call user() first");
+      err("User is not set, please call user() first");
     }
+  }
+  function log(...args: any[]) {
+    if (debug) {
+      console.log("[BucketTracking]", ...args);
+    }
+  }
+  function err(...args: any[]) {
+    if (debug) {
+      console.error("[BucketTracking]", ...args);
+    }
+    throw new Error(...args);
   }
 
   // methods
 
-  function user(id: User["userId"], attributes: User["attributes"] = {}) {
-    if (!id) {
-      throw new Error("No userId provided");
+  function init(key: Key, options?: Options) {
+    if (!key) {
+      err("Tracking key was not provided");
     }
-    userId = id;
+    trackingKey = key;
+    if (options?.host) trackingHost = options?.host;
+    if (options?.debug) debug = options?.debug;
+    log(`initialied with key "${trackingKey}" and options`, options);
+  }
 
-    return fetch(`${getUrl()}/user`, {
+  async function user(id: User["userId"], attributes?: User["attributes"]) {
+    checkKey();
+    if (!id) err("No userId provided");
+    userId = id;
+    const payload: User = {
+      userId,
+      attributes,
+    };
+    const res = await fetch(`${getUrl()}/user`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        userId,
-        attributes,
-      }),
+      body: JSON.stringify(payload),
     });
+    log(`sent user`, res);
+    return res;
   }
 
-  function company(
+  async function company(
     companyId: Company["companyId"],
-    attributes: Company["attributes"] = {}
+    attributes?: Company["attributes"]
   ) {
+    checkKey();
     checkUser();
-    if (!companyId) {
-      throw new Error("No companyId provided");
-    }
+    if (!companyId) err("No companyId provided");
     const payload: Company = {
       userId: userId!,
       companyId,
       attributes,
     };
-    return fetch(`${getUrl()}/company`, {
+    const res = await fetch(`${getUrl()}/company`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
     });
+    log(`sent company`, res);
+    return res;
   }
 
-  function event(
+  async function event(
     eventName: TrackedEvent["event"],
-    attributes: TrackedEvent["attributes"] = {}
+    attributes?: TrackedEvent["attributes"]
   ) {
+    checkKey();
     checkUser();
-    if (!eventName) {
-      throw new Error("No eventName provided");
-    }
+    if (!eventName) err("No eventName provided");
     const payload: TrackedEvent = {
       userId: userId!,
       event: eventName,
       attributes,
     };
-    return fetch(`${getUrl()}/event`, {
+    const res = await fetch(`${getUrl()}/event`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
     });
+    log(`sent event`, res);
+    return res;
   }
 
   function reset() {
@@ -98,16 +117,16 @@ export default function instance(key: Key, options?: Options) {
   }
 
   return {
+    // lifecycle
+    init,
+    reset,
+    // requests
     user,
     company,
     event,
-    reset,
     // method aliases
     identify: user,
     group: company,
     track: event,
-    // variables
-    trackingKey,
-    trackingHost,
   };
 }

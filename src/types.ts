@@ -2,6 +2,7 @@ export type Key = string;
 
 export type Options = {
   host?: string;
+  debug?: boolean;
 };
 
 export type User = {

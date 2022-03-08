@@ -3,14 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Bucket SDK playground</title>
+    <title>Bucket</title>
   </head>
   <body>
     <div id="app"></div>
-    <script type="module" src="/src/lib.ts"></script>
+    <script src="../dist/bucket-tracking.umd.js"></script>
     <script>
-      var BucketInstance = window.bucket("123");
-      console.log(BucketInstance);
+      window.BucketTracking.init("123", { debug: true });
+      console.log(window.BucketTracking);
     </script>
   </body>
 </html>

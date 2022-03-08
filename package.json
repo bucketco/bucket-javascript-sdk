@@ -12,12 +12,12 @@
   "files": [
     "dist"
   ],
-  "main": "./dist/my-lib.umd.js",
-  "module": "./dist/my-lib.es.js",
+  "main": "./dist/bucket-tracking.umd.js",
+  "module": "./dist/bucket-tracking.es.mjs",
   "exports": {
     ".": {
-      "import": "./dist/my-lib.es.js",
-      "require": "./dist/my-lib.umd.js"
+      "require": "./dist/bucket-tracking.umd.js",
+      "import": "./dist/bucket-tracking.es.mjs"
     }
   },
   "devDependencies": {
