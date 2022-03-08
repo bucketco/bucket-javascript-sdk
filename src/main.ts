@@ -25,12 +25,12 @@ export default function main() {
   }
   function log(...args: any[]) {
     if (debug) {
-      console.log("[BucketTracking]", ...args);
+      console.log("[Bucket]", ...args);
     }
   }
   function err(...args: any[]) {
     if (debug) {
-      console.error("[BucketTracking]", ...args);
+      console.error("[Bucket]", ...args);
     }
     throw new Error(...args);
   }
