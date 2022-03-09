@@ -2,15 +2,17 @@
 
 Isomorphic JS/TS tracking agent for [Bucket.co](https://bucket.co)
 
-## Quick start
+## Install
 
-1. Include script (client-side usage)
+The library can be included directly as an external script or you can import it. UMD and ES modules are supported.
+
+A. Script tag (client-side usage)
 
 ```html
 <script src="https://cdn.bucket.co/tracking-sdk.v1.js"></script>
 ```
 
-2. Import (either in node or browser bundling)
+B. Import module (either in node or browser bundling)
 
 ```js
 import bucket from "@bucketco/tracking-sdk";
@@ -32,6 +34,8 @@ bucket.track("sent_message", { foo: "bar" });
 
 ## Debug
 
+Enabling debugging prints helpful console messages
+
 ```js
 bucket.init("tk123", { debug: true });
 ```
@@ -39,3 +43,9 @@ bucket.init("tk123", { debug: true });
 ## Typescript
 
 Types are bundled together with the library and exposed automatically when importing through a package manager.
+
+# License
+
+MIT License
+
+Copyright (c) 2022 Bucket ApS
