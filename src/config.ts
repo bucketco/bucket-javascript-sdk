@@ -1,1 +1,1 @@
-export const TRACKING_HOST = "http://localhost:3200";
+export const TRACKING_HOST = "https://tracking.bucket.co";

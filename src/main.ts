@@ -89,7 +89,7 @@ export default function main() {
     return res;
   }
 
-  async function event(
+  async function track(
     eventName: TrackedEvent["event"],
     attributes?: TrackedEvent["attributes"]
   ) {
@@ -123,10 +123,6 @@ export default function main() {
     // requests
     user,
     company,
-    event,
-    // method aliases
-    identify: user,
-    group: company,
-    track: event,
+    track,
   };
 }

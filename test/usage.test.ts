@@ -42,7 +42,7 @@ describe("usage", () => {
     await bucketInstance.company("bar", { name: "bar corp" });
     companyMock.done();
 
-    await bucketInstance.event("baz", { baz: true });
+    await bucketInstance.track("baz", { baz: true });
     eventMock.done();
   });
 
@@ -90,14 +90,14 @@ describe("usage", () => {
     await bucketInstance.user("foo", { name: "john doe" });
     userMock.done();
 
-    await bucketInstance.event("baz", { baz: true });
+    await bucketInstance.track("baz", { baz: true });
     eventMock.done();
 
     await bucketInstance.user("foo2", { name: "john doe 2" });
     userMock2.done();
 
     // here we ensure that "userId" is updated to "foo2" in the event request
-    await bucketInstance.event("baz", { baz: true });
+    await bucketInstance.track("baz", { baz: true });
     eventMock2.done();
   });
 
@@ -117,7 +117,7 @@ describe("usage", () => {
     userMock.done();
 
     bucketInstance.reset();
-    expect(() => bucketInstance.event("foo")).rejects.toThrowError(
+    expect(() => bucketInstance.track("foo")).rejects.toThrowError(
       "User is not set, please call user() first"
     );
   });
