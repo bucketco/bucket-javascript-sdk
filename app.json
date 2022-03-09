@@ -1,3 +1,10 @@
 {
-  "buildpacks": [{ "url": "heroku/nodejs" }]
+  "buildpacks": [{ "url": "heroku/nodejs" }],
+  "environments": {
+    "test": {
+      "scripts": {
+        "test": "yarn test:ci"
+      }
+    }
+  }
 }
