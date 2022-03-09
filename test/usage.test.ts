@@ -26,7 +26,7 @@ describe("usage", () => {
       .reply(200);
     const eventMock = nock(`${TRACKING_HOST}/${KEY}`)
       .post(/.*\/event/, {
-        userId: "foo",
+        userId: "fooXXX",
         event: "baz",
         attributes: {
           baz: true,
