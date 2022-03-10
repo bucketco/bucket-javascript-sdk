@@ -1,6 +1,18 @@
 import fetch from "cross-fetch";
 import { TRACKING_HOST } from "./config";
 import { Company, Key, Options, TrackedEvent, User } from "./types";
+import { version } from "../package.json";
+
+function prepareRequest(body: any) {
+  return {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Bucket-Sdk-Version": version,
+    },
+    body,
+  };
+}
 
 export default function main() {
   let trackingKey: string | null = null;
@@ -55,13 +67,10 @@ export default function main() {
       userId,
       attributes,
     };
-    const res = await fetch(`${getUrl()}/user`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+    const res = await fetch(
+      `${getUrl()}/user`,
+      prepareRequest(JSON.stringify(payload))
+    );
     log(`sent user`, res);
     return res;
   }
@@ -78,13 +87,10 @@ export default function main() {
       companyId,
       attributes,
     };
-    const res = await fetch(`${getUrl()}/company`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+    const res = await fetch(
+      `${getUrl()}/company`,
+      prepareRequest(JSON.stringify(payload))
+    );
     log(`sent company`, res);
     return res;
   }
@@ -101,13 +107,10 @@ export default function main() {
       event: eventName,
       attributes,
     };
-    const res = await fetch(`${getUrl()}/event`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+    const res = await fetch(
+      `${getUrl()}/event`,
+      prepareRequest(JSON.stringify(payload))
+    );
     log(`sent event`, res);
     return res;
   }

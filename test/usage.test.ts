@@ -2,6 +2,7 @@ import nock from "nock";
 import { describe, expect, test } from "vitest";
 import { TRACKING_HOST } from "../src/config";
 import bucket from "../src/main";
+import { version } from "../package.json";
 
 const KEY = "123";
 
@@ -99,6 +100,23 @@ describe("usage", () => {
     // here we ensure that "userId" is updated to "foo2" in the event request
     await bucketInstance.track("baz", { baz: true });
     eventMock2.done();
+  });
+
+  test("will send sdk version as header", async () => {
+    const userMock = nock(`${TRACKING_HOST}/${KEY}`, {
+      reqheaders: {
+        "Bucket-Sdk-Version": version,
+      },
+    })
+      .post(/.*\/user/, {
+        userId: "foo",
+      })
+      .reply(200);
+
+    const bucketInstance = bucket();
+    bucketInstance.init(KEY);
+    await bucketInstance.user("foo");
+    userMock.done();
   });
 
   test("can reset user", async () => {
