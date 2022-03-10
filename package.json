@@ -1,5 +1,5 @@
 {
-  "name": "bucket-tracking-sdk",
+  "name": "@bucketco/tracking-sdk",
   "version": "1.0.0",
   "license": "MIT",
   "scripts": {
