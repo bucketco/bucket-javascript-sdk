@@ -4,7 +4,7 @@
     "outDir": "./dist/",
     "lib": ["ESNext", "DOM"],
     "target": "ES6",
-    "module": "ESNext",
+    "module": "commonjs",
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "esModuleInterop": true,

@@ -1,7 +1,8 @@
-const path = require("path");
-const nodeExternals = require("webpack-node-externals");
+import path from "path";
+import { Configuration } from "webpack";
+import nodeExternals from "webpack-node-externals";
 
-module.exports = [
+const config: Configuration[] = [
   // Node CommmonJS
   {
     entry: "./src/index.ts",
@@ -58,3 +59,5 @@ module.exports = [
     },
   },
 ];
+
+export default config;
