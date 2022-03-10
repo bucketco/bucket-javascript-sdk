@@ -6,4 +6,4 @@ if (!instance) {
   instance = main();
 }
 
-export default instance;
+export default instance!;

@@ -4,8 +4,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
+    "build": "tsc && webpack",
     "test": "vitest",
     "test:ci": "vitest --reporter=tap",
     "coverage": "vitest run --coverage"
@@ -13,22 +12,20 @@
   "files": [
     "dist"
   ],
-  "main": "./dist/bucket-tracking.umd.js",
-  "module": "./dist/bucket-tracking.es.mjs",
-  "exports": {
-    ".": {
-      "require": "./dist/bucket-tracking.umd.js",
-      "import": "./dist/bucket-tracking.es.mjs"
-    }
-  },
-  "types": "./dist/src/index.d.ts",
+  "main": "./dist/bucket-tracking-sdk.node.js",
+  "browser": "./dist/bucket-tracking-sdk.browser.js",
+  "types": "./dist/types/src/index.d.ts",
   "devDependencies": {
     "c8": "^7.11.0",
     "nock": "^13.2.4",
-    "typescript": "^4.5.4",
+    "ts-loader": "^9.2.7",
+    "typescript": "^4.6.2",
     "vite": "^2.8.0",
     "vite-plugin-dts": "^0.9.9",
-    "vitest": "^0.5.9"
+    "vitest": "^0.5.9",
+    "webpack": "^5.70.0",
+    "webpack-cli": "^4.9.2",
+    "webpack-node-externals": "^3.0.0"
   },
   "dependencies": {
     "cross-fetch": "^3.1.5"
