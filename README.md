@@ -34,7 +34,7 @@ bucket.company("acme_inc", { name: "Acme Inc", plan: "pro" });
 bucket.track("sent_message", { foo: "bar" });
 ```
 
-**NOTE**: See [server-side usage](#-server-side-without-persisting-user) if you're using the SDK in node.js
+**NOTE**: See [server-side usage](#server-side-without-persisting-users) if you're using the SDK in node.js
 
 ### Init options
 
