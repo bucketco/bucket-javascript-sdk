@@ -1,15 +1,16 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "useDefineForClassFields": true,
-    "module": "ESNext",
-    "lib": ["ESNext", "DOM"],
-    "moduleResolution": "Node",
     "strict": true,
-    "sourceMap": true,
+    "outDir": "./dist/",
+    "lib": ["ESNext", "DOM"],
+    "target": "ES6",
+    "module": "commonjs",
+    "moduleResolution": "node",
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "noEmit": true,
+    "sourceMap": true,
+    "declaration": true,
+    "declarationDir": "./dist/types",
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true

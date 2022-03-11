@@ -1,24 +1,24 @@
 import fetch from "cross-fetch";
 import { TRACKING_HOST } from "./config";
 import { Company, Key, Options, TrackedEvent, User } from "./types";
-import { version } from "../package.json";
+import modulePackage from "../package.json";
 
-function prepareRequest(body: any) {
-  return {
-    method: "POST",
+async function request(url: string, body: any) {
+  return fetch(url, {
+    method: "post",
     headers: {
       "Content-Type": "application/json",
-      "Bucket-Sdk-Version": version,
+      "Bucket-Sdk-Version": modulePackage.version,
     },
-    body,
-  };
+    body: JSON.stringify(body),
+  });
 }
 
 export default function main() {
-  let trackingKey: string | null = null;
+  let trackingKey: string | undefined = undefined;
   let trackingHost: string = TRACKING_HOST;
+  let sessionUserId: string | undefined = undefined;
   let debug = false;
-  let userId: string | null = null;
 
   log("Instance created");
 
@@ -31,8 +31,10 @@ export default function main() {
     }
   }
   function checkUser() {
-    if (!userId) {
-      err("User is not set, please call user() first");
+    if (!sessionUserId) {
+      err(
+        "User is not set, please call user() first or provide userId as argument"
+      );
     }
   }
   function log(...args: any[]) {
@@ -62,61 +64,60 @@ export default function main() {
   async function user(id: User["userId"], attributes?: User["attributes"]) {
     checkKey();
     if (!id) err("No userId provided");
-    userId = id;
+    sessionUserId = id;
     const payload: User = {
-      userId,
+      userId: sessionUserId,
       attributes,
     };
-    const res = await fetch(
-      `${getUrl()}/user`,
-      prepareRequest(JSON.stringify(payload))
-    );
+    const res = await request(`${getUrl()}/user`, payload);
     log(`sent user`, res);
     return res;
   }
 
   async function company(
     companyId: Company["companyId"],
-    attributes?: Company["attributes"]
+    attributes?: Company["attributes"],
+    userId?: Company["userId"]
   ) {
     checkKey();
-    checkUser();
     if (!companyId) err("No companyId provided");
+    if (!userId) {
+      checkUser();
+      userId = sessionUserId!;
+    }
     const payload: Company = {
-      userId: userId!,
+      userId,
       companyId,
       attributes,
     };
-    const res = await fetch(
-      `${getUrl()}/company`,
-      prepareRequest(JSON.stringify(payload))
-    );
+    const res = await request(`${getUrl()}/company`, payload);
     log(`sent company`, res);
     return res;
   }
 
   async function track(
     eventName: TrackedEvent["event"],
-    attributes?: TrackedEvent["attributes"]
+    attributes?: TrackedEvent["attributes"],
+    userId?: Company["userId"]
   ) {
     checkKey();
-    checkUser();
     if (!eventName) err("No eventName provided");
+    if (!userId) {
+      checkUser();
+      userId = sessionUserId!;
+    }
     const payload: TrackedEvent = {
-      userId: userId!,
+      userId,
       event: eventName,
       attributes,
     };
-    const res = await fetch(
-      `${getUrl()}/event`,
-      prepareRequest(JSON.stringify(payload))
-    );
+    const res = await request(`${getUrl()}/event`, payload);
     log(`sent event`, res);
     return res;
   }
 
   function reset() {
-    userId = null;
+    sessionUserId = undefined;
   }
 
   return {
