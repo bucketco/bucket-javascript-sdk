@@ -1,4 +1,5 @@
 import fetch from "cross-fetch";
+import { isForNode } from "is-bundling-for-browser-or-node";
 import { TRACKING_HOST } from "./config";
 import { Company, Key, Options, TrackedEvent, User } from "./types";
 import modulePackage from "../package.json";
@@ -18,6 +19,7 @@ export default function main() {
   let trackingKey: string | undefined = undefined;
   let trackingHost: string = TRACKING_HOST;
   let sessionUserId: string | undefined = undefined;
+  let persistUser: boolean = isForNode ? false : true;
   let debug = false;
 
   log("Instance created");
@@ -30,12 +32,13 @@ export default function main() {
       err("Tracking key is not set, please call init() first");
     }
   }
-  function checkUser() {
+  function getSessionUser() {
     if (!sessionUserId) {
       err(
         "User is not set, please call user() first or provide userId as argument"
       );
     }
+    return sessionUserId;
   }
   function log(...args: any[]) {
     if (debug) {
@@ -57,16 +60,18 @@ export default function main() {
     }
     trackingKey = key;
     if (options?.host) trackingHost = options?.host;
+    if (typeof options?.persistUser !== "undefined")
+      persistUser = options?.persistUser;
     if (options?.debug) debug = options?.debug;
     log(`initialied with key "${trackingKey}" and options`, options);
   }
 
-  async function user(id: User["userId"], attributes?: User["attributes"]) {
+  async function user(userId: User["userId"], attributes?: User["attributes"]) {
     checkKey();
-    if (!id) err("No userId provided");
-    sessionUserId = id;
+    if (!userId) err("No userId provided");
+    if (persistUser) sessionUserId = userId;
     const payload: User = {
-      userId: sessionUserId,
+      userId,
       attributes,
     };
     const res = await request(`${getUrl()}/user`, payload);
@@ -76,20 +81,21 @@ export default function main() {
 
   async function company(
     companyId: Company["companyId"],
-    attributes?: Company["attributes"],
+    attributes?: Company["attributes"] | null,
     userId?: Company["userId"]
   ) {
     checkKey();
     if (!companyId) err("No companyId provided");
-    if (!userId) {
-      checkUser();
-      userId = sessionUserId!;
+    if (persistUser) {
+      userId = getSessionUser();
+    } else if (!userId) {
+      err("No userId provided and persistUser is disabled");
     }
     const payload: Company = {
-      userId,
+      userId: userId!,
       companyId,
-      attributes,
     };
+    if (attributes) payload.attributes = attributes;
     const res = await request(`${getUrl()}/company`, payload);
     log(`sent company`, res);
     return res;
@@ -97,20 +103,21 @@ export default function main() {
 
   async function track(
     eventName: TrackedEvent["event"],
-    attributes?: TrackedEvent["attributes"],
+    attributes?: TrackedEvent["attributes"] | null,
     userId?: Company["userId"]
   ) {
     checkKey();
     if (!eventName) err("No eventName provided");
-    if (!userId) {
-      checkUser();
-      userId = sessionUserId!;
+    if (persistUser) {
+      userId = getSessionUser();
+    } else if (!userId) {
+      err("No userId provided and persistUser is disabled");
     }
     const payload: TrackedEvent = {
-      userId,
+      userId: userId!,
       event: eventName,
-      attributes,
     };
+    if (attributes) payload.attributes = attributes;
     const res = await request(`${getUrl()}/event`, payload);
     log(`sent event`, res);
     return res;
