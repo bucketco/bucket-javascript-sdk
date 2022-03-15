@@ -2,6 +2,7 @@
   "name": "@bucketco/tracking-sdk",
   "version": "1.0.0",
   "license": "MIT",
+  "private": false,
   "scripts": {
     "dev": "vite",
     "build": "tsc && webpack",
@@ -33,6 +34,6 @@
   },
   "dependencies": {
     "cross-fetch": "^3.1.5",
-    "is-bundling-for-browser-or-node": "^1.1.0"
+    "is-bundling-for-browser-or-node": "^1.1.1"
   }
 }
