@@ -9,10 +9,10 @@ The library can be included directly as an external script or you can import it.
 A. Script tag (client-side directly in html)
 
 ```html
-<script src="https://cdn.bucket.co/tracking-sdk.v1.js"></script>
+<script src="https://cdn.jsdelivr.net/@bucketco/tracking-sdk@1"></script>
 ```
 
-B. Import module (either in node or browser bundling)
+B. Import module (in either node or browser bundling)
 
 ```js
 import bucket from "@bucketco/tracking-sdk";
