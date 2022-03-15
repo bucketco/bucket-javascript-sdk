@@ -36,7 +36,7 @@ describe("usage", () => {
       .reply(200);
 
     const bucketInstance = bucket();
-    bucketInstance.init(KEY);
+    bucketInstance.init(KEY, { persistUser: true });
     await bucketInstance.user("foo", { name: "john doe" });
     userMock.done();
 
@@ -87,7 +87,7 @@ describe("usage", () => {
       .reply(200);
 
     const bucketInstance = bucket();
-    bucketInstance.init(KEY);
+    bucketInstance.init(KEY, { persistUser: true });
     await bucketInstance.user("foo", { name: "john doe" });
     userMock.done();
 
@@ -170,7 +170,7 @@ describe("usage", () => {
       .reply(200);
 
     const bucketInstance = bucket();
-    bucketInstance.init(KEY);
+    bucketInstance.init(KEY, { persistUser: true });
     await bucketInstance.user("foo", { name: "john doe" });
     userMock.done();
 

@@ -923,6 +923,11 @@ interpret@^2.2.0:
   resolved "https://registry.yarnpkg.com/interpret/-/interpret-2.2.0.tgz#1a78a0b5965c40a5416d007ad6f50ad27c417df9"
   integrity sha512-Ju0Bz/cEia55xDwUWEa8+olFpCiQoypjnQySseKtmjNrnps3P+xfpUmGr90T7yjlVJmOtybRvPXhKMbHr+fWnw==
 
+is-bundling-for-browser-or-node@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/is-bundling-for-browser-or-node/-/is-bundling-for-browser-or-node-1.1.0.tgz#e4a3e067cf6598c27fb5f4536153c1002e193256"
+  integrity sha512-Pz/7P7r0GradReTGz/6v9SRS/rpDOIHyKCMKaKni8CXNzEqnMaoRcRauJTB7jaj+8lePUhBtUlY2XY4M8gyFIw==
+
 is-core-module@^2.8.1:
   version "2.8.1"
   resolved "https://registry.yarnpkg.com/is-core-module/-/is-core-module-2.8.1.tgz#f59fdfca701d5879d0a6b100a40aa1560ce27211"

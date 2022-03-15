@@ -1,4 +1,5 @@
 import fetch from "cross-fetch";
+import { isForNode } from "is-bundling-for-browser-or-node";
 import { TRACKING_HOST } from "./config";
 import { Company, Key, Options, TrackedEvent, User } from "./types";
 import modulePackage from "../package.json";
@@ -18,7 +19,7 @@ export default function main() {
   let trackingKey: string | undefined = undefined;
   let trackingHost: string = TRACKING_HOST;
   let sessionUserId: string | undefined = undefined;
-  let persistUser: boolean = true;
+  let persistUser: boolean = isForNode ? false : true;
   let debug = false;
 
   log("Instance created");
