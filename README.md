@@ -50,10 +50,27 @@ Supply these to the `init` call (2nd argument)
 }
 ```
 
+### Zero PII
+
+The Bucket SDK doesn't collect any metadata and HTTP IP addresses are _not_ being stored.
+
+For tracking individual users, we recommend using something like database ID as userId, as it's unique and doesn't include any PII (personal identifiable information). If, however, you're using e.g. email address as userId, but prefer not to send any PII to Bucket, you can hash the sensitive data before sending it to Bucket:
+
+```
+import bucket from "@bucketco/tracking-sdk";
+import { sha256 } from 'crypto-hash';
+
+bucket.user(await sha256("john_doe"));
+```
+
 ### Custom attributes
 
 You can pass attributes as a object literal to the `user`, `company` and `track` methods (2nd argument).
 Attributes cannot be nested (multiple levels) and must be either strings, integers or booleans.
+
+Reserved attributes:
+- `name` (display name for user/company)
+
 
 ### Persisting users
 
