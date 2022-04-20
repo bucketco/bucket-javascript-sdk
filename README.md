@@ -68,9 +68,9 @@ bucket.user(await sha256("john_doe"));
 You can pass attributes as a object literal to the `user`, `company` and `track` methods (2nd argument).
 Attributes cannot be nested (multiple levels) and must be either strings, integers or booleans.
 
-Reserved attributes:
-- `name` (display name for user/company)
+Built-in attributes:
 
+- `name` (display name for user/company)
 
 ### Persisting users
 
