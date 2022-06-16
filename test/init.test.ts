@@ -13,7 +13,7 @@ describe("init", () => {
     spyLog.mockImplementationOnce(() => null);
     bucketInstance.init(KEY, { debug: true });
     expect(spyInit).toHaveBeenCalled();
-    expect(spyLog).not.toHaveBeenCalled();
+    expect(spyLog).toHaveBeenCalled();
   });
 
   test("will accept setup with custom host", async () => {
