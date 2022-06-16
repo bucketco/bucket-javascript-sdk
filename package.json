@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc && webpack",
     "test": "vitest",
-    "test:ci": "vitest --reporter=tap",
+    "test:ci": "vitest --reporter=junit",
     "coverage": "vitest run --coverage"
   },
   "files": [
