@@ -1,7 +1,7 @@
 import fetch from "cross-fetch";
 import { isForNode } from "is-bundling-for-browser-or-node";
 import { TRACKING_HOST } from "./config";
-import { Company, Key, Options, TrackedEvent, User } from "./types";
+import { Company, Feedback, Key, Options, TrackedEvent, User } from "./types";
 import modulePackage from "../package.json";
 
 async function request(url: string, body: any) {
@@ -63,7 +63,7 @@ export default function main() {
     if (typeof options?.persistUser !== "undefined")
       persistUser = options?.persistUser;
     if (options?.debug) debug = options?.debug;
-    log(`initialied with key "${trackingKey}" and options`, options);
+    log(`initialized with key "${trackingKey}" and options`, options);
   }
 
   async function user(userId: User["userId"], attributes?: User["attributes"]) {
@@ -112,6 +112,7 @@ export default function main() {
       userId = getSessionUser();
     } else if (!userId) {
       err("No userId provided and persistUser is disabled");
+      return;
     }
     const payload: TrackedEvent = {
       userId: userId!,
@@ -120,6 +121,42 @@ export default function main() {
     if (attributes) payload.attributes = attributes;
     const res = await request(`${getUrl()}/event`, payload);
     log(`sent event`, res);
+    return res;
+  }
+
+  type FeedbackOptions = {
+    featureId: string;
+    sentiment: "like" | "dislike";
+    userId?: string;
+    companyId?: string;
+    comment?: string;
+  };
+  async function feedback({
+    featureId,
+    sentiment,
+    userId,
+    companyId,
+    comment,
+  }: FeedbackOptions) {
+    checkKey();
+    if (!featureId) err("No featureId provided");
+
+    const payloadUserId = userId || getSessionUser();
+    if (!payloadUserId) {
+      err("No userId provided and persistUser is disabled");
+      return;
+    }
+
+    const payload: Feedback = {
+      userId: payloadUserId,
+      featureId,
+      sentiment,
+      companyId,
+      comment,
+    };
+
+    const res = await request(`${getUrl()}/feedback`, payload);
+    log(`sent feedback`, res);
     return res;
   }
 
@@ -135,5 +172,6 @@ export default function main() {
     user,
     company,
     track,
+    feedback,
   };
 }
