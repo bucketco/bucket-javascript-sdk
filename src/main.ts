@@ -45,7 +45,7 @@ export default function main() {
       console.log("[Bucket]", ...args);
     }
   }
-  function err(...args: any[]) {
+  function err(...args: any[]): never {
     if (debug) {
       console.error("[Bucket]", ...args);
     }
@@ -92,7 +92,7 @@ export default function main() {
       err("No userId provided and persistUser is disabled");
     }
     const payload: Company = {
-      userId: userId!,
+      userId,
       companyId,
     };
     if (attributes) payload.attributes = attributes;
@@ -112,10 +112,9 @@ export default function main() {
       userId = getSessionUser();
     } else if (!userId) {
       err("No userId provided and persistUser is disabled");
-      return;
     }
     const payload: TrackedEvent = {
-      userId: userId!,
+      userId,
       event: eventName,
     };
     if (attributes) payload.attributes = attributes;
@@ -124,13 +123,11 @@ export default function main() {
     return res;
   }
 
-  type FeedbackOptions = {
-    featureId: string;
-    sentiment: "like" | "dislike";
-    userId?: string;
-    companyId?: string;
-    comment?: string;
+  // userId is optional. If not provided, it will be taken from session
+  type FeedbackOptions = Omit<Feedback, "userId"> & {
+    userId?: Feedback["userId"];
   };
+
   async function feedback({
     featureId,
     sentiment,
@@ -140,15 +137,16 @@ export default function main() {
   }: FeedbackOptions) {
     checkKey();
     if (!featureId) err("No featureId provided");
+    if (!sentiment) err("No sentiment provided");
 
-    const payloadUserId = userId || getSessionUser();
-    if (!payloadUserId) {
+    if (persistUser) {
+      userId = getSessionUser();
+    } else if (!userId) {
       err("No userId provided and persistUser is disabled");
-      return;
     }
 
     const payload: Feedback = {
-      userId: payloadUserId,
+      userId,
       featureId,
       sentiment,
       companyId,
