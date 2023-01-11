@@ -7,7 +7,7 @@ import { version } from "../package.json";
 const KEY = "123";
 
 describe("usage", () => {
-  test("golden path - register user, company, send event", async () => {
+  test("golden path - register user, company, send event, send feedback", async () => {
     const userMock = nock(`${TRACKING_HOST}/${KEY}`)
       .post(/.*\/user/, {
         userId: "foo",
@@ -34,6 +34,13 @@ describe("usage", () => {
         },
       })
       .reply(200);
+    const feedbackMock = nock(`${TRACKING_HOST}/${KEY}`)
+      .post(/.*\/feedback/, {
+        userId: "foo",
+        featureId: "featureId1",
+        sentiment: "like",
+      })
+      .reply(200);
 
     const bucketInstance = bucket();
     bucketInstance.init(KEY, { persistUser: true });
@@ -45,6 +52,13 @@ describe("usage", () => {
 
     await bucketInstance.track("baz", { baz: true });
     eventMock.done();
+
+    await bucketInstance.feedback({
+      featureId: "featureId1",
+      sentiment: "like",
+      userId: "foo",
+    });
+    feedbackMock.done();
   });
 
   test("re-register user and send event", async () => {

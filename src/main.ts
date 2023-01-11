@@ -1,7 +1,7 @@
 import fetch from "cross-fetch";
 import { isForNode } from "is-bundling-for-browser-or-node";
 import { TRACKING_HOST } from "./config";
-import { Company, Key, Options, TrackedEvent, User } from "./types";
+import { Company, Feedback, Key, Options, TrackedEvent, User } from "./types";
 import modulePackage from "../package.json";
 
 async function request(url: string, body: any) {
@@ -45,7 +45,7 @@ export default function main() {
       console.log("[Bucket]", ...args);
     }
   }
-  function err(...args: any[]) {
+  function err(...args: any[]): never {
     if (debug) {
       console.error("[Bucket]", ...args);
     }
@@ -63,7 +63,7 @@ export default function main() {
     if (typeof options?.persistUser !== "undefined")
       persistUser = options?.persistUser;
     if (options?.debug) debug = options?.debug;
-    log(`initialied with key "${trackingKey}" and options`, options);
+    log(`initialized with key "${trackingKey}" and options`, options);
   }
 
   async function user(userId: User["userId"], attributes?: User["attributes"]) {
@@ -92,7 +92,7 @@ export default function main() {
       err("No userId provided and persistUser is disabled");
     }
     const payload: Company = {
-      userId: userId!,
+      userId,
       companyId,
     };
     if (attributes) payload.attributes = attributes;
@@ -114,12 +114,47 @@ export default function main() {
       err("No userId provided and persistUser is disabled");
     }
     const payload: TrackedEvent = {
-      userId: userId!,
+      userId,
       event: eventName,
     };
     if (attributes) payload.attributes = attributes;
     const res = await request(`${getUrl()}/event`, payload);
     log(`sent event`, res);
+    return res;
+  }
+
+  // userId is optional. If not provided, it will be taken from session
+  type FeedbackOptions = Omit<Feedback, "userId"> & {
+    userId?: Feedback["userId"];
+  };
+
+  async function feedback({
+    featureId,
+    sentiment,
+    userId,
+    companyId,
+    comment,
+  }: FeedbackOptions) {
+    checkKey();
+    if (!featureId) err("No featureId provided");
+    if (!sentiment) err("No sentiment provided");
+
+    if (persistUser) {
+      userId = getSessionUser();
+    } else if (!userId) {
+      err("No userId provided and persistUser is disabled");
+    }
+
+    const payload: Feedback = {
+      userId,
+      featureId,
+      sentiment,
+      companyId,
+      comment,
+    };
+
+    const res = await request(`${getUrl()}/feedback`, payload);
+    log(`sent feedback`, res);
     return res;
   }
 
@@ -135,5 +170,6 @@ export default function main() {
     user,
     company,
     track,
+    feedback,
   };
 }

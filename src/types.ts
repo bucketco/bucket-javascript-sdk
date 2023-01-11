@@ -30,3 +30,11 @@ export type TrackedEvent = {
     [key: string]: any;
   };
 };
+
+export type Feedback = {
+  featureId: string;
+  userId: string;
+  companyId?: string;
+  sentiment: "like" | "dislike";
+  comment?: string;
+};
