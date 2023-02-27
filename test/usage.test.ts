@@ -42,6 +42,14 @@ describe("usage", () => {
       })
       .reply(200);
 
+    const feedbackMockWithEffortScore = nock(`${TRACKING_HOST}/${KEY}`)
+      .post(/.*\/feedback/, {
+        userId: "foo",
+        featureId: "featureId1",
+        effort_score: 5,
+      })
+      .reply(200);
+
     const bucketInstance = bucket();
     bucketInstance.init(KEY, { persistUser: true });
     await bucketInstance.user("foo", { name: "john doe" });
@@ -58,7 +66,13 @@ describe("usage", () => {
       sentiment: "like",
       userId: "foo",
     });
+    await bucketInstance.feedback({
+      featureId: "featureId1",
+      effort_score: 5,
+      userId: "foo",
+    });
     feedbackMock.done();
+    feedbackMockWithEffortScore.done();
   });
 
   test("re-register user and send event", async () => {

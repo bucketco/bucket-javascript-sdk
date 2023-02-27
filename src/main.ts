@@ -138,7 +138,6 @@ export default function main() {
   }: FeedbackOptions) {
     checkKey();
     if (!featureId) err("No featureId provided");
-    if (!sentiment) err("No sentiment provided");
 
     if (persistUser) {
       userId = getSessionUser();
