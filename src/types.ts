@@ -35,6 +35,7 @@ export type Feedback = {
   featureId: string;
   userId: string;
   companyId?: string;
-  sentiment: "like" | "dislike";
+  sentiment?: "like" | "dislike";
+  effort_score?: number;
   comment?: string;
 };

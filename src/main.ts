@@ -131,6 +131,7 @@ export default function main() {
   async function feedback({
     featureId,
     sentiment,
+    effort_score,
     userId,
     companyId,
     comment,
@@ -149,6 +150,7 @@ export default function main() {
       userId,
       featureId,
       sentiment,
+      effort_score,
       companyId,
       comment,
     };
