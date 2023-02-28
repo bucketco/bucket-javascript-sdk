@@ -130,8 +130,7 @@ export default function main() {
 
   async function feedback({
     featureId,
-    sentiment,
-    effort_score,
+    rating,
     userId,
     companyId,
     comment,
@@ -148,8 +147,7 @@ export default function main() {
     const payload: Feedback = {
       userId,
       featureId,
-      sentiment,
-      effort_score,
+      rating,
       companyId,
       comment,
     };
