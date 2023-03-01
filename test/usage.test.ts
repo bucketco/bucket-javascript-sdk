@@ -38,7 +38,7 @@ describe("usage", () => {
       .post(/.*\/feedback/, {
         userId: "foo",
         featureId: "featureId1",
-        rating: 5,
+        score: 5,
       })
       .reply(200);
 
@@ -55,7 +55,7 @@ describe("usage", () => {
 
     await bucketInstance.feedback({
       featureId: "featureId1",
-      rating: 5,
+      score: 5,
       userId: "foo",
     });
     feedbackMock.done();
