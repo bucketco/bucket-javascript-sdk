@@ -123,21 +123,25 @@ export default function main() {
     return res;
   }
 
-  // userId is optional. If not provided, it will be taken from session
-  type FeedbackOptions = Omit<Feedback, "userId"> & {
-    userId?: Feedback["userId"];
+  type FeedbackOptions = {
+    featureId: string;
+    // userId is optional. If not provided, it will be taken from session
+    userId?: string;
+    companyId?: string;
+    score?: number;
+    comment?: string;
   };
 
   async function feedback({
     featureId,
-    sentiment,
+    score,
     userId,
     companyId,
     comment,
   }: FeedbackOptions) {
     checkKey();
     if (!featureId) err("No featureId provided");
-    if (!sentiment) err("No sentiment provided");
+    if (!score && !comment) err("Either 'score' or 'comment' must be provided");
 
     if (persistUser) {
       userId = getSessionUser();
@@ -148,7 +152,7 @@ export default function main() {
     const payload: Feedback = {
       userId,
       featureId,
-      sentiment,
+      score,
       companyId,
       comment,
     };
