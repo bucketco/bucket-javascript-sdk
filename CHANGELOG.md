@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.1](https://github.com/bucketco/bucket-tracking-sdk/compare/v1.1.0...v1.1.1) - 2023-03-03
+
+### Changed
+
+- Change feedback from 'sentiment' to 'score' (closed beta)
+
 ## [1.1.0](https://github.com/bucketco/bucket-tracking-sdk/compare/v1.0.0...v1.1.0) - 2023-01-12
 
 ### Added
