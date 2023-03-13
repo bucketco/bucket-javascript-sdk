@@ -105,3 +105,17 @@ POST https://tracking.bucket.co/trCqx4DGo1lk3Lcct5NHLjWy/event
 | userId     | Required |   String |
 | attributes | Optional |   Object |
 | timestamp  | Optional | ISO 8601 |
+
+## Feedback
+
+You can submit qualitative feedback related to a specific feature in order to pair your quantitative metrics with qualitative insigths. You can collect either a 1-5 satisfaction score or a comment or both.
+
+At least one of the optional fields `score` or `comment` must be submitted
+
+| field      | required |         Type |
+| ---------- | :------: | -----------: |
+| featureId  | Required |       String |
+| userId     | Required |       String |
+| companyId  | Optional |       Object |
+| score      | Optional | Number (1-5) |
+| comment    | Optional |       String |

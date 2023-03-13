@@ -20,6 +20,8 @@ import bucket from "@bucketco/tracking-sdk";
 var bucket = require("@bucketco/tracking-sdk");
 ```
 
+Other languages than Javascript/Typescript are currently not supported by an SDK. You can [use the HTTP API directly](./HTTP-API.md)
+
 ## Usage
 
 ```js
@@ -34,6 +36,15 @@ bucket.company("acme_inc", { name: "Acme Inc", plan: "pro" }, "john_doe");
 
 // track events
 bucket.track("sent_message", { foo: "bar" }, "john_doe");
+
+// collect qualitative feedback
+bucket.feedback({
+  featureId: "my_feature_id",
+  userId: "john_doe",
+  companyId: "Acme Inc", // String (optional)
+  score: 5, // Number: 1-5 (optional)
+  comment: "Absolutely stellar work!" // String (optional)
+})
 ```
 
 **NOTE**: When used in the browser, you can omit the 3rd argument (userId) to the `company` and `track` methods. See [persisting users](#persisting-users) for more details.
@@ -74,12 +85,12 @@ Built-in attributes:
 
 ### Persisting users
 
-**Usage in the browser** (imported or script tag):  
+**Usage in the browser** (imported or script tag):
 Once you call `user`, the userId will be persisted so you don't have to supply userId to each subsequent `company` and `track` calls.
 This is practical for client-side usage where a session always is a single user.
 
-**Usage in node.js**  
-This is disabled by default when imported in node.js to avoid that companies or events are tied to the wrong user by mistake. This is because your server is (usually) not in a single user context.
+**Usage in node.js**
+User persistence is disabled by default when imported in node.js to avoid that companies or events are tied to the wrong user by mistake. This is because your server is (usually) not in a single user context.
 Instead, you should provide the userId to each call, as the 3rd argument to `company` and `track`.
 
 ### Typescript
