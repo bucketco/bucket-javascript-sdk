@@ -41,7 +41,7 @@ bucket.track("sent_message", { foo: "bar" }, "john_doe");
 bucket.feedback({
   featureId: "my_feature_id",
   userId: "john_doe",
-  companyId: "Acme Inc", // String (optional)
+  companyId: "acme_inc", // String (optional)
   score: 5, // Number: 1-5 (optional)
   comment: "Absolutely stellar work!" // String (optional)
 })
