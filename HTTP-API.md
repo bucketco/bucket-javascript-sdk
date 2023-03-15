@@ -116,6 +116,6 @@ At least one of the optional fields `score` or `comment` must be submitted
 | ---------- | :------: | -----------: |
 | featureId  | Required |       String |
 | userId     | Required |       String |
-| companyId  | Optional |       Object |
+| companyId  | Optional |       String |
 | score      | Optional | Number (1-5) |
 | comment    | Optional |       String |
