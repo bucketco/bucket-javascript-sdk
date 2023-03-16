@@ -14,9 +14,11 @@ The API has three methods: `user`, `company` and `events`.
 
 The API only accepts JSON, so the Content-Type header must be set to `application/json`
 
-### Errors
+### Responses
 
-The API will return `200` status code when calls are successful, and `400` if there's any errors, including an invalid request body.
+The API will return `200` status code when calls are successful and `400` if there's any errors, including an invalid request body. The response body  will contain detailed information on the invalid request sent which you can use to debug the request. In case of a 400 response code there's no point in retrying the request.
+
+In rare cases, you may experience a 500 response code. In those cases you can retry the request to ensure that the tracking event was sent. This can technically result in duplicate entries, but is increasingly rare. 
 
 ### Tracking Key
 
