@@ -61,6 +61,38 @@ Supply these to the `init` call (2nd argument)
 }
 ```
 
+### Qualitative feedback
+
+Bucket can collect qualitative feedback from your users in the form of a [Customer Satisfaction Score](https://en.wikipedia.org/wiki/Customer_satisfaction) and a comment.
+
+#### Bucket feedback SDK
+
+Feedback can be submitted to Bucket using the SDK:
+
+```js
+bucket.feedback({
+  featureId: "my_feature_id", // String (required), copy from Feature feedback tab
+  userId: "john_doe", // String, optional if using user persistense
+  companyId: "acme_inc", // String (optional)
+  score: 5, // Number: 1-5 (optional)
+  comment: "Absolutely stellar work!" // String (optional)
+})
+```
+
+#### Bucket feedback API
+
+If you are not using the Bucket SDK, you can still submit feedback using the HTTP API.
+
+See details in [Feedback HTTP API](./HTTP-API.md#feedback)
+
+#### Bucket feedback example UI
+
+In order to collect feedback from a customer, you might want to build your own UI that matches your own style guide.
+
+We have built a few scaffolds you can get started with easily:
+- [Vanilla HTML/JS feedback form](./example/feedback/feedback.html)
+- [React feedback form](./example/feedback/feedback.jsx)
+
 ### Zero PII
 
 The Bucket SDK doesn't collect any metadata and HTTP IP addresses are _not_ being stored.
