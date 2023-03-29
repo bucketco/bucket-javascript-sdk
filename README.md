@@ -20,6 +20,8 @@ import bucket from "@bucketco/tracking-sdk";
 var bucket = require("@bucketco/tracking-sdk");
 ```
 
+Other languages than Javascript/Typescript are currently not supported by an SDK. You can [use the HTTP API directly](./HTTP-API.md)
+
 ## Usage
 
 ```js
@@ -34,6 +36,15 @@ bucket.company("acme_inc", { name: "Acme Inc", plan: "pro" }, "john_doe");
 
 // track events
 bucket.track("sent_message", { foo: "bar" }, "john_doe");
+
+// collect qualitative feedback
+bucket.feedback({
+  featureId: "my_feature_id",
+  userId: "john_doe",
+  companyId: "acme_inc", // String (optional)
+  score: 5, // Number: 1-5 (optional)
+  comment: "Absolutely stellar work!" // String (optional)
+})
 ```
 
 **NOTE**: When used in the browser, you can omit the 3rd argument (userId) to the `company` and `track` methods. See [persisting users](#persisting-users) for more details.
@@ -49,6 +60,38 @@ Supply these to the `init` call (2nd argument)
   host?: "https://tracking.bucket.co", // don't change this
 }
 ```
+
+### Qualitative feedback
+
+Bucket can collect qualitative feedback from your users in the form of a [Customer Satisfaction Score](https://en.wikipedia.org/wiki/Customer_satisfaction) and a comment.
+
+#### Bucket feedback SDK
+
+Feedback can be submitted to Bucket using the SDK:
+
+```js
+bucket.feedback({
+  featureId: "my_feature_id", // String (required), copy from Feature feedback tab
+  userId: "john_doe", // String, optional if using user persistense
+  companyId: "acme_inc", // String (optional)
+  score: 5, // Number: 1-5 (optional)
+  comment: "Absolutely stellar work!" // String (optional)
+})
+```
+
+#### Bucket feedback API
+
+If you are not using the Bucket SDK, you can still submit feedback using the HTTP API.
+
+See details in [Feedback HTTP API](./HTTP-API.md#feedback)
+
+#### Bucket feedback example UI
+
+In order to collect feedback from a customer, you might want to build your own UI that matches your own style guide.
+
+We have built a few scaffolds you can get started with easily:
+- [Vanilla HTML/JS feedback form](./example/feedback/feedback.html)
+- [React feedback form](./example/feedback/feedback.jsx)
 
 ### Zero PII
 
@@ -74,12 +117,12 @@ Built-in attributes:
 
 ### Persisting users
 
-**Usage in the browser** (imported or script tag):  
+**Usage in the browser** (imported or script tag):
 Once you call `user`, the userId will be persisted so you don't have to supply userId to each subsequent `company` and `track` calls.
 This is practical for client-side usage where a session always is a single user.
 
-**Usage in node.js**  
-This is disabled by default when imported in node.js to avoid that companies or events are tied to the wrong user by mistake. This is because your server is (usually) not in a single user context.
+**Usage in node.js**
+User persistence is disabled by default when imported in node.js to avoid that companies or events are tied to the wrong user by mistake. This is because your server is (usually) not in a single user context.
 Instead, you should provide the userId to each call, as the 3rd argument to `company` and `track`.
 
 ### Typescript
