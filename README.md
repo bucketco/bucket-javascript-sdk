@@ -91,7 +91,7 @@ In order to collect feedback from a customer, you might want to build your own U
 
 We have built a few scaffolds you can get started with easily:
 - [Vanilla HTML/JS feedback form](./example/feedback/feedback.html)
-- [React feedback form](./example/feedback/feedback.jsx)
+- [React feedback form](./example/feedback/Feedback.jsx)
 
 ### Zero PII
 
