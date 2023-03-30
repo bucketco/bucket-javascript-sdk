@@ -72,7 +72,7 @@ Feedback can be submitted to Bucket using the SDK:
 ```js
 bucket.feedback({
   featureId: "my_feature_id", // String (required), copy from Feature feedback tab
-  userId: "john_doe", // String, optional if using user persistense
+  userId: "john_doe", // String, optional if using user persistence
   companyId: "acme_inc", // String (optional)
   score: 5, // Number: 1-5 (optional)
   comment: "Absolutely stellar work!" // String (optional)
@@ -133,4 +133,4 @@ Types are bundled together with the library and exposed automatically when impor
 
 MIT License
 
-Copyright (c) 2022 Bucket ApS
+Copyright (c) 2023 Bucket ApS
