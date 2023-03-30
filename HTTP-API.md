@@ -114,6 +114,18 @@ You can submit qualitative feedback related to a specific feature in order to pa
 
 At least one of the optional fields `score` or `comment` must be submitted
 
+```
+POST https://tracking.bucket.co/trCqx4DGo1lk3Lcct5NHLjWy/feedback
+{
+
+  "featureId": "my_feature_id",
+  "userId": 1234567890,
+  "companyId": 101112231415,
+  "score": 4,
+  "comment": "It's pretty nice, but I expect slightly more to be fully satisfied"
+}
+```
+
 | field      | required |         Type |
 | ---------- | :------: | -----------: |
 | featureId  | Required |       String |
