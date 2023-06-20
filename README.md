@@ -35,7 +35,7 @@ bucket.user("john_doe", { name: "John Doe" });
 bucket.company("acme_inc", { name: "Acme Inc", plan: "pro" }, "john_doe");
 
 // track events
-bucket.track("sent_message", { foo: "bar" }, "john_doe");
+bucket.track("sent_message", { foo: "bar" }, "john_doe", "company_id";
 
 // collect qualitative feedback
 bucket.feedback({
