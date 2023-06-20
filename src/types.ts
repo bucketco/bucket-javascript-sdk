@@ -26,6 +26,7 @@ export type Company = {
 export type TrackedEvent = {
   event: string;
   userId: string;
+  companyId?: string;
   attributes?: {
     [key: string]: any;
   };

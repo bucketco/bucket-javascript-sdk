@@ -104,7 +104,8 @@ export default function main() {
   async function track(
     eventName: TrackedEvent["event"],
     attributes?: TrackedEvent["attributes"] | null,
-    userId?: Company["userId"]
+    userId?: Company["userId"],
+    companyId?: Company["companyId"]
   ) {
     checkKey();
     if (!eventName) err("No eventName provided");
@@ -116,6 +117,7 @@ export default function main() {
     const payload: TrackedEvent = {
       userId,
       event: eventName,
+      companyId,
     };
     if (attributes) payload.attributes = attributes;
     const res = await request(`${getUrl()}/event`, payload);
