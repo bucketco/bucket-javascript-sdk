@@ -20,7 +20,7 @@ import bucket from "@bucketco/tracking-sdk";
 var bucket = require("@bucketco/tracking-sdk");
 ```
 
-Other languages than Javascript/Typescript are currently not supported by an SDK. You can [use the HTTP API directly](./HTTP-API.md)
+Other languages than Javascript/Typescript are currently not supported by an SDK. You can [use the HTTP API directly](https://docs.bucket.co/reference/http-tracking-api)
 
 ## Usage
 
@@ -75,21 +75,22 @@ bucket.feedback({
   userId: "john_doe", // String, optional if using user persistence
   companyId: "acme_inc", // String (optional)
   score: 5, // Number: 1-5 (optional)
-  comment: "Absolutely stellar work!" // String (optional)
-})
+  comment: "Absolutely stellar work!", // String (optional)
+});
 ```
 
 #### Bucket feedback API
 
 If you are not using the Bucket SDK, you can still submit feedback using the HTTP API.
 
-See details in [Feedback HTTP API](./HTTP-API.md#feedback)
+See details in [Feedback HTTP API](https://docs.bucket.co/reference/http-tracking-api#feedback)
 
 #### Bucket feedback example UI
 
 In order to collect feedback from a customer, you might want to build your own UI that matches your own style guide.
 
 We have built a few scaffolds you can get started with easily:
+
 - [Vanilla HTML/JS feedback form](./example/feedback/feedback.html)
 - [React feedback form](./example/feedback/Feedback.jsx)
 
