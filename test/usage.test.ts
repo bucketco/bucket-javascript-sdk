@@ -100,6 +100,17 @@ describe("usage", () => {
       })
       .reply(200);
 
+    const eventMock3 = nock(`${TRACKING_HOST}/${KEY}`)
+      .post(/.*\/event/, {
+        userId: "foo2",
+        event: "baz",
+        companyId: "company1",
+        attributes: {
+          baz: true,
+        },
+      })
+      .reply(200);
+
     const bucketInstance = bucket();
     bucketInstance.init(KEY, { persistUser: true });
     await bucketInstance.user("foo", { name: "john doe" });
@@ -114,6 +125,9 @@ describe("usage", () => {
     // here we ensure that "userId" is updated to "foo2" in the event request
     await bucketInstance.track("baz", { baz: true });
     eventMock2.done();
+
+    await bucketInstance.track("baz", { baz: true }, "foo2", "company1");
+    eventMock3.done();
   });
 
   test("disable persist user for server-side usage", async () => {
