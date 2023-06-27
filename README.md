@@ -43,8 +43,8 @@ bucket.feedback({
   userId: "john_doe",
   companyId: "acme_inc", // String (optional)
   score: 5, // Number: 1-5 (optional)
-  comment: "Absolutely stellar work!" // String (optional)
-})
+  comment: "Absolutely stellar work!", // String (optional)
+});
 ```
 
 **NOTE**: When used in the browser, you can omit the 3rd argument (userId) to the `company` and `track` methods. See [persisting users](#persisting-users) for more details.
@@ -115,6 +115,23 @@ Attributes cannot be nested (multiple levels) and must be either strings, intege
 Built-in attributes:
 
 - `name` (display name for user/company)
+
+### Context
+
+You can supply additional `context` to `group`, `user` and `event` calls.
+
+#### context.active
+
+By default, sending `group`, `user` and `event` calls automatically update the given user/company "Last seen" property.
+You can control if "Last seen" should be updated when the events are sent by setting `context.active=false` to avoid updating last seen.
+This is often useful if you have a background job that goes through a set of companies just to update their attributes or similar
+
+```typescript
+// set current company without updating last seen.
+bucket.company("acme_inc", { name: "Acme Inc", plan: "pro" }, "john_doe", {
+  active: false,
+});
+```
 
 ### Persisting users
 
