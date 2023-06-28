@@ -12,6 +12,7 @@ export type User = {
     name?: string;
     [key: string]: any;
   };
+  context?: Context;
 };
 
 export type Company = {
@@ -21,6 +22,7 @@ export type Company = {
     name?: string;
     [key: string]: any;
   };
+  context?: Context;
 };
 
 export type TrackedEvent = {
@@ -30,6 +32,7 @@ export type TrackedEvent = {
   attributes?: {
     [key: string]: any;
   };
+  context?: Context;
 };
 
 export type Feedback = {
@@ -38,4 +41,8 @@ export type Feedback = {
   companyId?: string;
   score?: number;
   comment?: string;
+};
+
+export type Context = {
+  active?: boolean;
 };

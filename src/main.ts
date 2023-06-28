@@ -1,7 +1,15 @@
 import fetch from "cross-fetch";
 import { isForNode } from "is-bundling-for-browser-or-node";
 import { TRACKING_HOST } from "./config";
-import { Company, Feedback, Key, Options, TrackedEvent, User } from "./types";
+import {
+  Company,
+  Context,
+  Feedback,
+  Key,
+  Options,
+  TrackedEvent,
+  User,
+} from "./types";
 import modulePackage from "../package.json";
 
 async function request(url: string, body: any) {
@@ -66,13 +74,18 @@ export default function main() {
     log(`initialized with key "${trackingKey}" and options`, options);
   }
 
-  async function user(userId: User["userId"], attributes?: User["attributes"]) {
+  async function user(
+    userId: User["userId"],
+    attributes?: User["attributes"],
+    context?: Context
+  ) {
     checkKey();
     if (!userId) err("No userId provided");
     if (persistUser) sessionUserId = userId;
     const payload: User = {
       userId,
       attributes,
+      context,
     };
     const res = await request(`${getUrl()}/user`, payload);
     log(`sent user`, res);
@@ -82,7 +95,8 @@ export default function main() {
   async function company(
     companyId: Company["companyId"],
     attributes?: Company["attributes"] | null,
-    userId?: Company["userId"]
+    userId?: Company["userId"],
+    context?: Context
   ) {
     checkKey();
     if (!companyId) err("No companyId provided");
@@ -94,6 +108,7 @@ export default function main() {
     const payload: Company = {
       userId,
       companyId,
+      context,
     };
     if (attributes) payload.attributes = attributes;
     const res = await request(`${getUrl()}/company`, payload);
@@ -105,7 +120,8 @@ export default function main() {
     eventName: TrackedEvent["event"],
     attributes?: TrackedEvent["attributes"] | null,
     userId?: Company["userId"],
-    companyId?: Company["companyId"]
+    companyId?: Company["companyId"],
+    context?: Context
   ) {
     checkKey();
     if (!eventName) err("No eventName provided");
@@ -118,6 +134,7 @@ export default function main() {
       userId,
       event: eventName,
       companyId,
+      context,
     };
     if (attributes) payload.attributes = attributes;
     const res = await request(`${getUrl()}/event`, payload);
