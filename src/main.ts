@@ -22,13 +22,15 @@ import {
   TrackedEvent,
   User,
 } from "./types";
+import { version } from "../package.json";
+import type { FeedbackDialogOptions } from "./feedback/types";
 
 async function request(url: string, body: any) {
   return fetch(url, {
     method: "post",
     headers: {
       "Content-Type": "application/json",
-      "Bucket-Sdk-Version": modulePackage.version,
+      "Bucket-Sdk-Version": version,
     },
     body: JSON.stringify(body),
   });
@@ -320,6 +322,12 @@ export default function main() {
     return res;
   }
 
+  async function collectFeedback(options: FeedbackDialogOptions) {
+    import("./feedback").then((lib) => {
+      lib.collectFeedback(options);
+    });
+  }
+
   function reset() {
     sessionUserId = undefined;
     feedbackPromptingUserId = undefined;
@@ -342,5 +350,6 @@ export default function main() {
     feedback,
     // feedback prompting
     initFeedbackPrompting,
+    collectFeedback,
   };
 }

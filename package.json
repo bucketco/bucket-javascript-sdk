@@ -9,7 +9,8 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc && webpack",
+    "start": "vite",
+    "build": "vite build && tsc --project tsconfig.build.json",
     "test": "vitest -c vite.config.js",
     "test:e2e": "yarn build && vitest run -c vite.e2e.config.js && playwright test",
     "test:ci": "vitest run -c vite.config.js --reporter=junit --outputFile=junit.xml && vitest run -c vite.e2e.config.js && CI=true playwright test",
@@ -23,14 +24,16 @@
   "files": [
     "dist"
   ],
-  "main": "./dist/bucket-tracking-sdk.node.js",
-  "browser": "./dist/bucket-tracking-sdk.browser.js",
+  "main": "./dist/bucket-tracking-sdk.mjs",
+  "browser": "./dist/bucket-tracking-sdk.iife.js",
   "types": "./dist/types/src/index.d.ts",
   "devDependencies": {
+    "@babel/core": "^7.22.9",
     "@eslint/js": "^8.47.0",
     "@playwright/test": "^1.37.1",
+    "@preact/preset-vite": "^2.5.0",
     "@types/js-cookie": "^3.0.3",
-    "@types/node": "^18.16.20",
+    "@types/node": "^20.4.4",
     "@types/webpack": "^5.28.1",
     "@types/webpack-node-externals": "^3.0.0",
     "@typescript-eslint/eslint-plugin": "^6.4.0",
@@ -53,7 +56,7 @@
     "typescript": "^5.1.6",
     "vite": "^4.4.9",
     "vite-plugin-dts": "^3.5.2",
-    "vitest": "^0.30.1",
+    "vitest": "^0.33.0",
     "webpack": "^5.88.2",
     "webpack-cli": "^5.1.4",
     "webpack-node-externals": "^3.0.0",
@@ -63,6 +66,7 @@
     "ably": "^1.2.43",
     "cross-fetch": "^4.0.0",
     "is-bundling-for-browser-or-node": "^1.1.1",
-    "js-cookie": "^3.0.5"
+    "js-cookie": "^3.0.5",
+    "preact": "^10.16.0"
   }
 }

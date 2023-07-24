@@ -1,0 +1,16 @@
+.bucket-component-feedback-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.bucket-component-feedback-form label.comment {
+  display: flex;
+  flex-direction: column;
+
+  gap: 10px;
+}
+
+.bucket-component-feedback-form label.comment > textarea {
+  min-height: 80px;
+}

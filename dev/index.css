@@ -1,0 +1,36 @@
+:root {
+  --bucket-feedback-dialog-bg: #fff;
+  --bucket-feedback-dialog-color: #1e1f24;
+  --bucket-feedback-dialog-radius: 6px;
+  --bucket-feedback-dialog-border-color: #cfd0d8;
+  --bucket-feedback-dialog-font-family: InterVariable, Inter, system-ui, Open Sans, sans-serif;
+  --bucket-feedback-dialog-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --bucket-feedback-dialog-primary-bg: #655bfa;
+  --bucket-feedback-dialog-primary-fg: white;
+  --bucket-feedback-dialog-primary-border: #d8d9df;
+  --bucket-feedback-error-color: #e53e3e;
+}
+
+[data-dark-mode] {
+  --bucket-feedback-dialog-bg: #1e1f24;
+  --bucket-feedback-dialog-color: rgba(255, 255, 255, 0.92);
+  --bucket-feedback-dialog-border-color: #292b32;
+  --bucket-feedback-dialog-primary-bg: #655bfa;
+  --bucket-feedback-dialog-primary-fg: white;
+  --bucket-feedback-dialog-primary-border: #d8d9df;
+  --bucket-feedback-error-color: #e53e3e;
+
+  color: var(--bucket-feedback-dialog-color);
+  background-color: #191a1f;
+}
+
+html,
+body {
+  font-family: var(--bucket-feedback-dialog-font-family);
+}
+
+#app {
+  max-width: 80ch;
+  margin: auto;
+  outline: 1px dotted red;
+}
