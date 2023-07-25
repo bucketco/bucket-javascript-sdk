@@ -1,36 +1,38 @@
 import { h, FunctionComponent } from "preact";
-import styles from "./StarRating.css?inline";
+import { VeryDissatisfied } from "../icons/VeryDissatisfied";
+import { Dissatisfied } from "../icons/Dissatisfied";
+import { Neutral } from "../icons/Neutral";
+import { Satisfied } from "../icons/Satisfied";
+import { VerySatisfied } from "../icons/VerySatisfied";
 
-export const StarRating: FunctionComponent<{ name: string }> = () => {
+const scores = [
+  { color: "#dd6b20", icon: <VeryDissatisfied />, label: "Very dissatisfied" },
+  { color: "#ed8936", icon: <Dissatisfied />, label: "Dissatisfied" },
+  { color: "#787c91", icon: <Neutral />, label: "Neutral" },
+  { color: "#48bb78", icon: <Satisfied />, label: "Satisfied" },
+  { color: "#38a169", icon: <VerySatisfied />, label: "Very satisfied" },
+];
+
+export const StarRating: FunctionComponent<{ name: string }> = ({ name }) => {
   return (
-    <>
-      <style dangerouslySetInnerHTML={{ __html: styles }}></style>
-      <div class="star-rating">
-        <label>
-          <span>1</span>
-          <input type="radio" name="rating" value={1} />
-        </label>
-
-        <label>
-          <span>2</span>
-          <input type="radio" name="rating" value={2} />
-        </label>
-
-        <label>
-          <span>3</span>
-          <input type="radio" name="rating" value={3} />
-        </label>
-
-        <label>
-          <span>4</span>
-          <input type="radio" name="rating" value={4} />
-        </label>
-
-        <label>
-          <span>5</span>
-          <input type="radio" name="rating" value={5} />
-        </label>
-      </div>
-    </>
+    <div class="star-rating">
+      {scores.map(({ color, icon, label }, index) => (
+        <>
+          <input
+            id={`bucket-feedback-score-${index + 1}`}
+            type="radio"
+            name={name}
+            value={index + 1}
+          />
+          <label
+            for={`bucket-feedback-score-${index + 1}`}
+            class="button"
+            style={{ color }}
+          >
+            {icon}
+          </label>
+        </>
+      ))}
+    </div>
   );
 };

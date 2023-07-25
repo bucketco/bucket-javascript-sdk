@@ -1,57 +1,50 @@
 .star-rating {
   display: flex;
-
-  gap: 6px;
 }
 
-.star-rating label {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-
-  width: 28px;
-  height: 28px;
-
-  border: 1px solid black;
-  border-radius: 5px;
-
-  position: relative;
-  transition: transform 100ms, background-color 100ms;
-}
-
-.star-rating label:focus-within {
-  outline: 1px solid blue;
-}
-
-.star-rating label span {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-/*
-  Color in currently selected value container
-  and also all the lower value ones
-*/
-.star-rating label:has(input:checked),
-.star-rating label:has(~ label input:checked) {
-  background-color: yellowgreen;
-}
-
-.star-rating label:has(input:checked) {
-  transform: scale(1.1);
-}
-
-/*
-  Accessible hiding of the radio input
-*/
-.star-rating input[type="radio"] {
-  clip: rect(0 0 0 0);
-  clip-path: inset(50%);
+.star-rating > input {
+  border: 0px;
+  clip: rect(0px, 0px, 0px, 0px);
   height: 1px;
-  overflow: hidden;
-  position: absolute;
-  white-space: nowrap;
   width: 1px;
+  margin: -1px;
+  padding: 0px;
+  overflow: hidden;
+  white-space: nowrap;
+  position: absolute;
+}
+
+.star-rating > .button {
+  border: var(--bucket-feedback-dialog-input-border, 1px solid #d8d9df);
+}
+
+.star-rating > .button:not(:first-of-type) {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.star-rating > .button:not(:last-of-type) {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  margin-inline-end: -1px;
+}
+
+.star-rating > .button > svg {
+  transition: transform 200ms ease-in-out;
+}
+
+.star-rating > .button:hover {
+  background-color: #e9e9ed;
+}
+
+.star-rating > .button:hover > svg {
+  transform: scale(1.2);
+}
+
+.star-rating > input:checked + .button {
+  background-color: #e9e9ed;
+}
+
+.star-rating > input:checked + .button > svg {
+  transform: scale(1.2);
 }

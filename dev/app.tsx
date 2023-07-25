@@ -1,6 +1,5 @@
 import { h } from "preact";
 import bucket from "../src/index";
-import { Button } from "../src/feedback/Button";
 
 export function App() {
   return (
@@ -12,14 +11,14 @@ export function App() {
       <hr></hr>
 
       <div style="display: flex; gap: 10px;">
-        <Button
+        <button
           onClick={() => {
             document.documentElement.toggleAttribute("data-dark-mode");
           }}
         >
           Toggle Darkmode
-        </Button>
-        <Button
+        </button>
+        <button
           onClick={() => {
             bucket.collectFeedback({
               isModal: true,
@@ -31,11 +30,11 @@ export function App() {
           }}
         >
           Modal feedback collection
-        </Button>
-        <Button
-          onClick={() => {
+        </button>
+        <button
+          onClick={({ target }) => {
             bucket.collectFeedback({
-              title: "Welcome back, how's FEATURE B?",
+              title: "Welcome back, how is FEATURE B?",
               featureId: "abc",
               onSubmit: (data) => console.log("Submitted data:", data),
               onClose: () => console.log("closed dialog"),
@@ -43,8 +42,25 @@ export function App() {
           }}
         >
           Dialog feedback collection
-        </Button>
+        </button>
+        <button
+          onClick={({ target }) => {
+            bucket.collectFeedback({
+              title: "Welcome back, how is FEATURE C?",
+              featureId: "abc",
+              anchor: target as HTMLElement,
+              onSubmit: (data) => console.log("Submitted data:", data),
+              onClose: () => console.log("closed dialog"),
+            });
+          }}
+        >
+          Dialog feedback anchored
+        </button>
       </div>
+
+      {Array.from({ length: 100 }).map((_, index) => (
+        <br />
+      ))}
     </main>
   );
 }

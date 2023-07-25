@@ -1,12 +1,15 @@
-import { h } from "preact";
+import { h, FunctionComponent } from "preact";
 
-export const Logo = () => (
+export const Logo: FunctionComponent<h.JSX.SVGAttributes<SVGSVGElement>> = (
+  props
+) => (
   <svg
     width="10px"
     height="10px"
     viewBox="0 0 300 316"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
+    {...props}
   >
     <path
       fill-rule="evenodd"

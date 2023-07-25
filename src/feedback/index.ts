@@ -18,10 +18,7 @@ function attachDialogContainer() {
   return container.shadowRoot!;
 }
 
-export function collectFeedback({
-  isModal = false,
-  ...options
-}: FeedbackDialogOptions): void {
+export function collectFeedback(options: FeedbackDialogOptions): void {
   const shadowRoot = attachDialogContainer();
 
   render(h(FeedbackDialog, options), shadowRoot);
@@ -29,6 +26,6 @@ export function collectFeedback({
   const dialog = shadowRoot.querySelector("dialog");
 
   if (dialog && !dialog.hasAttribute("open")) {
-    dialog[isModal ? "showModal" : "show"]();
+    dialog[options.isModal ? "showModal" : "show"]();
   }
 }

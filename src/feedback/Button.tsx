@@ -1,9 +1,7 @@
-import { h, FunctionComponent, ComponentChildren } from "preact";
-import styles from "./Button.styles.css?inline";
+import { h, FunctionComponent } from "preact";
 
 export type ButtonProps = h.JSX.HTMLAttributes<HTMLButtonElement> & {
   variant?: "primary" | "secondary";
-  children?: ComponentChildren;
 };
 
 export const Button: FunctionComponent<ButtonProps> = ({
@@ -14,11 +12,8 @@ export const Button: FunctionComponent<ButtonProps> = ({
   const classes = ["button", variant].join(" ");
 
   return (
-    <>
-      <style dangerouslySetInnerHTML={{ __html: styles }}></style>
-      <button class={classes} {...rest}>
-        {children}
-      </button>
-    </>
+    <button class={classes} {...rest}>
+      {children}
+    </button>
   );
 };
