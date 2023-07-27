@@ -2,6 +2,7 @@ import { h, FunctionComponent } from "preact";
 import { Feedback } from "./types";
 import { StarRating } from "./StarRating";
 import { Button } from "./Button";
+import { useState } from "preact/hooks";
 
 function getFeedbackDataFromForm(el: HTMLFormElement): Feedback {
   const formData = new FormData(el);
@@ -9,7 +10,6 @@ function getFeedbackDataFromForm(el: HTMLFormElement): Feedback {
     score: Number(formData.get("score")?.toString()),
     comment: (formData.get("comment")?.toString() || "").trim(),
   };
-
   return feedback;
 }
 
@@ -22,9 +22,23 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
   question,
   onSubmit,
 }) => {
+  const [submitted, setSubmitted] = useState(false);
+
   const handleSubmit: h.JSX.GenericEventHandler<HTMLFormElement> = (e) => {
-    onSubmit(getFeedbackDataFromForm(e.target as HTMLFormElement));
+    const data = getFeedbackDataFromForm(e.target as HTMLFormElement);
+    if (!data.score) return;
+    onSubmit(data);
+    setSubmitted(true);
   };
+
+  if (submitted) {
+    return (
+      <div class="submitted">
+        <p class="icon">🙏</p>
+        <p class="text">Thank you for sending your feedback!</p>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} method="dialog" class="form">

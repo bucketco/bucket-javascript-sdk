@@ -1,9 +1,9 @@
 import { h, FunctionComponent } from "preact";
-import { VeryDissatisfied } from "../icons/VeryDissatisfied";
-import { Dissatisfied } from "../icons/Dissatisfied";
-import { Neutral } from "../icons/Neutral";
-import { Satisfied } from "../icons/Satisfied";
-import { VerySatisfied } from "../icons/VerySatisfied";
+import { VeryDissatisfied } from "./icons/VeryDissatisfied";
+import { Dissatisfied } from "./icons/Dissatisfied";
+import { Neutral } from "./icons/Neutral";
+import { Satisfied } from "./icons/Satisfied";
+import { VerySatisfied } from "./icons/VerySatisfied";
 
 const scores = [
   { color: "#dd6b20", icon: <VeryDissatisfied />, label: "Very dissatisfied" },
@@ -28,6 +28,7 @@ export const StarRating: FunctionComponent<{ name: string }> = ({ name }) => {
             for={`bucket-feedback-score-${index + 1}`}
             class="button"
             style={{ color }}
+            aria-label={label}
           >
             {icon}
           </label>

@@ -5,7 +5,9 @@ export interface Feedback {
 
 export interface FeedbackDialogOptions {
   featureId: string;
-  title: string;
+  userId: string;
+  companyId?: string;
+  title?: string;
   isModal?: boolean;
   anchor?: HTMLElement;
   placement?: "bottom-right" | "bottom-left" | "top-right" | "top-left";

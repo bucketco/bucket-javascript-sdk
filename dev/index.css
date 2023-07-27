@@ -2,21 +2,21 @@
   --bucket-feedback-dialog-bg: #fff;
   --bucket-feedback-dialog-color: #1e1f24;
   --bucket-feedback-dialog-radius: 6px;
-  --bucket-feedback-dialog-border: 1px solid #d8d9df;
+  --bucket-feedback-dialog-border: #d8d9df;
   --bucket-feedback-dialog-font-family: InterVariable, Inter, system-ui, Open Sans, sans-serif;
   --bucket-feedback-dialog-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   --bucket-feedback-dialog-primary-bg: #655bfa;
   --bucket-feedback-dialog-primary-fg: white;
-  --bucket-feedback-dialog-input-border: 1px solid #d8d9df;
+  --bucket-feedback-dialog-input-border: #d8d9df;
 }
 
 [data-dark-mode] {
   --bucket-feedback-dialog-bg: #1e1f24;
   --bucket-feedback-dialog-color: rgba(255, 255, 255, 0.92);
-  --bucket-feedback-dialog-border: 1px solid rgba(255, 255, 255, 0.16);
+  --bucket-feedback-dialog-border: rgba(255, 255, 255, 0.16);
   --bucket-feedback-dialog-primary-bg: #655bfa;
   --bucket-feedback-dialog-primary-fg: white;
-  --bucket-feedback-dialog-input-border: 1px solid rgba(255, 255, 255, 0.16);
+  --bucket-feedback-dialog-input-border: rgba(255, 255, 255, 0.16);
 
   color: var(--bucket-feedback-dialog-color);
   background-color: #191a1f;

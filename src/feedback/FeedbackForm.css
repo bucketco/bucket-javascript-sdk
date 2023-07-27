@@ -40,3 +40,23 @@
   outline: none;
   border-color: var(--bucket-feedback-dialog-primary-bg, #655bfa);
 }
+
+.submitted {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.submitted p {
+  margin: 0;
+}
+
+.submitted .icon {
+  font-size: 2em;
+}
+
+.submitted .text {
+  font-size: 0.8125em;
+}

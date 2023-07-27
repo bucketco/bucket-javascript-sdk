@@ -21,9 +21,10 @@ export function App() {
         <button
           onClick={() => {
             bucket.collectFeedback({
-              isModal: true,
-              title: "Hello, how do you like FEATURE A?",
               featureId: "abc",
+              userId: "123",
+              title: "Hello, how do you like FEATURE A?",
+              isModal: true,
               onSubmit: (data) => console.log("Submitted data:", data),
               onClose: () => console.log("closed dialog"),
             });
@@ -32,10 +33,11 @@ export function App() {
           Modal feedback collection
         </button>
         <button
-          onClick={({ target }) => {
+          onClick={() => {
             bucket.collectFeedback({
-              title: "Welcome back, how is FEATURE B?",
               featureId: "abc",
+              userId: "123",
+              title: "Welcome back, how is FEATURE B?",
               onSubmit: (data) => console.log("Submitted data:", data),
               onClose: () => console.log("closed dialog"),
             });
@@ -46,8 +48,9 @@ export function App() {
         <button
           onClick={({ target }) => {
             bucket.collectFeedback({
-              title: "Welcome back, how is FEATURE C?",
               featureId: "abc",
+              userId: "123",
+              title: "Welcome back, how is FEATURE C?",
               anchor: target as HTMLElement,
               onSubmit: (data) => console.log("Submitted data:", data),
               onClose: () => console.log("closed dialog"),

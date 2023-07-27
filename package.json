@@ -63,6 +63,7 @@
     "flush-promises": "^1.0.2"
   },
   "dependencies": {
+    "@floating-ui/dom": "^1.4.5",
     "ably": "^1.2.43",
     "cross-fetch": "^4.0.0",
     "is-bundling-for-browser-or-node": "^1.1.1",

@@ -1,6 +1,6 @@
 @keyframes scale {
   from {
-    transform: scale(0.9);
+    transform: scale(0.95);
   }
   to {
     transform: scale(1);
@@ -9,7 +9,7 @@
 
 @keyframes floatUp {
   from {
-    transform: translateY(20%);
+    transform: translateY(10%);
   }
   to {
     transform: translateY(0%);
@@ -27,10 +27,12 @@
 
 .dialog {
   position: fixed;
+  width: max-content;
   padding: 16px 24px;
   font-family: var(--bucket-feedback-dialog-font-family, InterVariable, Inter, system-ui, Open Sans, sans-serif);
   color: var(--bucket-feedback-dialog-color, #1e1f24);
-  border: var(--bucket-feedback-dialog-border, 1px solid #d8d9df);
+  border: 1px solid;
+  border-color: var(--bucket-feedback-dialog-border, #d8d9df);
   border-radius: var(--bucket-feedback-dialog-radius, 6px);
   box-shadow: var(
     --bucket-feedback-dialog-shadow,
@@ -38,14 +40,6 @@
     0 4px 6px -2px rgba(0, 0, 0, 0.05)
   );
   background-color: var(--bucket-feedback-dialog-bg, #fff);
-}
-
-.dialog[open] {
-  animation: floatUp 0.2s ease-in-out, fade 0.2s ease-in-out;
-}
-
-.dialog[open]::backdrop {
-  animation: fade 0.2s ease-in-out;
 }
 
 .dialog:not(.modal) {
@@ -56,25 +50,72 @@
   bottom: unset;
 }
 
-.dialog.modal {
-  margin: auto;
-  margin-top: 4rem;
-}
-
-.dialog.modal[open] {
-  animation: scale 0.2s ease-in-out, fade 0.2s ease-in-out;
-}
-
-.dialog.modal[open]::backdrop {
-  animation: fade 0.2s ease-in-out;
-}
-
-.dialog.popover {
+.arrow {
   position: absolute;
+  width: 8px;
+  height: 8px;
+  background-color: var(--bucket-feedback-dialog-bg, #fff);
+  box-shadow: var(--bucket-feedback-dialog-border) -1px -1px 1px 0px;
+  transform: rotate(45deg);
+}
+.arrow.bottom {
+  box-shadow: var(--bucket-feedback-dialog-border) -1px -1px 1px 0px;
+}
+.arrow.top {
+  box-shadow: var(--bucket-feedback-dialog-border) 1px 1px 1px 0px;
+}
+.arrow.left {
+  box-shadow: var(--bucket-feedback-dialog-border) 1px -1px 1px 0px;
+}
+.arrow.right {
+  box-shadow: var(--bucket-feedback-dialog-border) -1px 1px 1px 0px;
 }
 
 .plug {
   opacity: 0.5;
   font-size: 0.75em;
   text-align: center;
+}
+
+/* Modal */ 
+
+.dialog.modal {
+  margin: auto;
+  margin-top: 4rem;
+}
+
+.dialog.modal[open] {
+  animation: scale 100ms ease-in-out, fade 100ms ease-in-out;
+}
+
+.dialog.modal[open]::backdrop {
+  animation: fade 100ms ease-in-out;
+}
+
+/* Anchored */ 
+
+.dialog.anchored {
+  position: absolute;
+}
+.dialog.anchored.bottom {
+  transform-origin: top center;
+}
+.dialog.anchored.top {
+  transform-origin: bottom center;
+}
+.dialog.anchored.left {
+  transform-origin: right center;
+}
+.dialog.anchored.right {
+  transform-origin: left center;
+}
+
+.dialog.anchored[open] {
+  animation: scale 100ms ease-in-out, fade 100ms ease-in-out;
+}
+
+/* Unanchored */
+
+.dialog[open].unanchored {
+  animation: floatUp 100ms ease-in-out, fade 100ms ease-in-out;
 }
