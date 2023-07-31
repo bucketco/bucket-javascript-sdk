@@ -324,7 +324,18 @@ export default function main() {
 
   async function collectFeedback(options: FeedbackDialogOptions) {
     import("./feedback").then((lib) => {
-      lib.collectFeedback(options);
+      lib.collectFeedback({
+        onSubmit: async (data) => {
+          // Default onSubmit handler
+          return feedback({
+            featureId: options.featureId,
+            userId: options.userId,
+            companyId: options.companyId,
+            ...data,
+          });
+        },
+        ...options,
+      });
     });
   }
 

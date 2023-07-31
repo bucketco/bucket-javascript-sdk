@@ -11,6 +11,6 @@ export interface FeedbackDialogOptions {
   isModal?: boolean;
   anchor?: HTMLElement;
   placement?: "bottom-right" | "bottom-left" | "top-right" | "top-left";
-  onSubmit?: (data: Feedback) => void;
+  onSubmit?: (data: Feedback) => Promise<any>;
   onClose?: () => void;
 }

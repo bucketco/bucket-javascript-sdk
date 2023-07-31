@@ -1,6 +1,17 @@
 import { h } from "preact";
 import bucket from "../src/index";
 
+const ThemeButton = ({ theme }: { theme?: string }) => (
+  <button
+    onClick={() => {
+      if (theme) document.documentElement.setAttribute("data-theme", theme);
+      else document.documentElement.removeAttribute("data-theme");
+    }}
+  >
+    Set theme {theme}
+  </button>
+);
+
 export function App() {
   return (
     <main style="display: flex; flex-direction: column; gap: 20px;">
@@ -11,13 +22,9 @@ export function App() {
       <hr></hr>
 
       <div style="display: flex; gap: 10px;">
-        <button
-          onClick={() => {
-            document.documentElement.toggleAttribute("data-dark-mode");
-          }}
-        >
-          Toggle Darkmode
-        </button>
+        <ThemeButton theme="dark" />
+        <ThemeButton theme="custom" />
+        <ThemeButton theme="light" />
         <button
           onClick={() => {
             bucket.collectFeedback({
@@ -25,7 +32,7 @@ export function App() {
               userId: "123",
               title: "Hello, how do you like FEATURE A?",
               isModal: true,
-              onSubmit: (data) => console.log("Submitted data:", data),
+              onSubmit: async (data) => console.log("Submitted data:", data),
               onClose: () => console.log("closed dialog"),
             });
           }}
@@ -38,7 +45,10 @@ export function App() {
               featureId: "abc",
               userId: "123",
               title: "Welcome back, how is FEATURE B?",
-              onSubmit: (data) => console.log("Submitted data:", data),
+              onSubmit: async (data) => {
+                throw "this shit is broken";
+                console.log("Submitted data:", data);
+              },
               onClose: () => console.log("closed dialog"),
             });
           }}
@@ -52,7 +62,7 @@ export function App() {
               userId: "123",
               title: "Welcome back, how is FEATURE C?",
               anchor: target as HTMLElement,
-              onSubmit: (data) => console.log("Submitted data:", data),
+              onSubmit: async (data) => console.log("Submitted data:", data),
               onClose: () => console.log("closed dialog"),
             });
           }}

@@ -15,23 +15,49 @@ function getFeedbackDataFromForm(el: HTMLFormElement): Feedback {
 
 type FeedbackFormProps = {
   question: string;
-  onSubmit: (data: Feedback) => void;
+  onSubmit: (data: Feedback) => Promise<any>;
 };
 
 export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
   question,
   onSubmit,
 }) => {
-  const [submitted, setSubmitted] = useState(false);
+  const [hasRating, setHasRating] = useState(false);
+  const [status, setStatus] = useState<
+    "default" | "submitting" | "error" | "submitted"
+  >("default");
+  const [error, setError] = useState<string>();
 
-  const handleSubmit: h.JSX.GenericEventHandler<HTMLFormElement> = (e) => {
+  const handleSubmit: h.JSX.GenericEventHandler<HTMLFormElement> = async (
+    e
+  ) => {
+    e.preventDefault();
     const data = getFeedbackDataFromForm(e.target as HTMLFormElement);
     if (!data.score) return;
-    onSubmit(data);
-    setSubmitted(true);
+    try {
+      setStatus("submitting");
+      await onSubmit(data);
+      setStatus("submitted");
+    } catch (e) {
+      setStatus("error");
+      if (e instanceof Error) {
+        setError(e.message);
+      } else {
+        setError("Couldn't submit feedback.");
+      }
+    }
   };
 
-  if (submitted) {
+  if (status == "error") {
+    return (
+      <div class="error">
+        <p class="icon">😞</p>
+        <p class="text">{error}</p>
+      </div>
+    );
+  }
+
+  if (status == "submitted") {
     return (
       <div class="submitted">
         <p class="icon">🙏</p>
@@ -50,7 +76,7 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
         <div id="bucket-feedback-score-label" class="label">
           {question}
         </div>
-        <StarRating name="score" />
+        <StarRating name="score" onChange={() => setHasRating(true)} />
       </div>
 
       <div class="form-control">
@@ -66,7 +92,9 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
         />
       </div>
 
-      <Button type="submit">Send</Button>
+      <Button type="submit" disabled={!hasRating}>
+        Send
+      </Button>
     </form>
   );
 };

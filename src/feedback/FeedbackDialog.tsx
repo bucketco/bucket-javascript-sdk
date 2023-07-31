@@ -1,11 +1,12 @@
 import { h, FunctionComponent } from "preact";
+import { useEffect, useRef } from "preact/hooks";
 import { FeedbackForm } from "./FeedbackForm";
-import { Feedback, FeedbackDialogOptions } from "./types";
+import { FeedbackDialogOptions } from "./types";
 import { Logo } from "./icons/Logo";
+import { autoUpdate, offset, shift, useFloating, arrow } from "../floating";
 
 import styles from "./index.css?inline";
-import { autoUpdate, offset, shift, useFloating, arrow } from "../floating";
-import { useRef } from "preact/hooks";
+import { feedbackContainerId } from "./constants";
 
 type Position = Partial<
   Record<"top" | "left" | "right" | "bottom", number | string>
@@ -16,7 +17,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogOptions> = ({
   isModal = false,
   anchor = null,
   placement: propPlacement = "bottom-right",
-  onSubmit = () => {},
+  onSubmit = () => Promise.resolve(),
 }) => {
   const arrowRef = useRef<HTMLDivElement>(null);
   const { refs, floatingStyles, middlewareData, placement } = useFloating({
@@ -68,11 +69,29 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogOptions> = ({
     [staticSide]: "-4px",
   };
 
-  const handleSubmit = (feedback: Feedback) => {
-    // TODO: Submit to Bucket
-
-    onSubmit(feedback);
-  };
+  useEffect(() => {
+    const escapeHandler = (e: KeyboardEvent) => {
+      if (e.key == "Escape") {
+        const dialog = refs.floating.current as HTMLDialogElement | null;
+        dialog?.close();
+      }
+    };
+    const clickOutsideHandler = (e: MouseEvent) => {
+      const dialog = refs.floating.current as HTMLDialogElement | null;
+      if (
+        !(e.target instanceof Element) ||
+        !e.target.closest(`#${feedbackContainerId}`)
+      ) {
+        dialog?.close();
+      }
+    };
+    window.addEventListener("click", clickOutsideHandler);
+    window.addEventListener("keydown", escapeHandler);
+    return () => {
+      window.removeEventListener("click", clickOutsideHandler);
+      window.removeEventListener("keydown", escapeHandler);
+    };
+  }, []);
 
   return (
     <>
@@ -86,7 +105,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogOptions> = ({
         ].join(" ")}
         style={anchor ? floatingStyles : unanchoredPosition}
       >
-        <FeedbackForm question={title} onSubmit={handleSubmit} />
+        <FeedbackForm question={title} onSubmit={onSubmit} />
         <footer class="plug">
           Powered by <Logo /> Bucket
         </footer>

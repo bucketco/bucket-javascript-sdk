@@ -2,8 +2,8 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
 
 .form-control {
@@ -28,35 +28,36 @@
 .textarea {
   background-color: transparent;
   min-width: 16rem;
-  border: var(--bucket-feedback-dialog-input-border, 1px solid #d8d9df);
+  border: 1px solid;
+  border-color: var(--bucket-feedback-dialog-input-border, #d8d9df);
   padding: 0.5rem 0.75rem;
   border-radius: 2px;
   transition: border-color 0.2s ease-in-out;
   font-family: var(--bucket-feedback-dialog-font-family, InterVariable, Inter, system-ui, Open Sans, sans-serif);
   resize: vertical;
+
+  &:focus {
+    outline: none;
+    border-color: var(--bucket-feedback-dialog-primary-bg, #655bfa);
+  }
 }
 
-.textarea:focus {
-  outline: none;
-  border-color: var(--bucket-feedback-dialog-primary-bg, #655bfa);
-}
-
-.submitted {
+.submitted, .error {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 1rem;
   margin-bottom: 1.5rem;
-}
 
-.submitted p {
-  margin: 0;
-}
+  p {
+    margin: 0;
+  }
 
-.submitted .icon {
-  font-size: 2em;
-}
+  .icon {
+    font-size: 2em;
+  }
 
-.submitted .text {
-  font-size: 0.8125em;
+  .text {
+    font-size: 0.8125em;
+  }
 }

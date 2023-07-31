@@ -29,6 +29,7 @@
   position: fixed;
   width: max-content;
   padding: 16px 24px;
+  font-size: var(--bucket-feedback-dialog-font-size, 1rem);
   font-family: var(--bucket-feedback-dialog-font-family, InterVariable, Inter, system-ui, Open Sans, sans-serif);
   color: var(--bucket-feedback-dialog-color, #1e1f24);
   border: 1px solid;

@@ -1,16 +1,28 @@
 :root {
+  --bucket-feedback-dialog-font-size: 1rem;
+  --bucket-feedback-dialog-font-family: InterVariable, Inter, system-ui, Open Sans, sans-serif;
   --bucket-feedback-dialog-bg: #fff;
   --bucket-feedback-dialog-color: #1e1f24;
   --bucket-feedback-dialog-radius: 6px;
   --bucket-feedback-dialog-border: #d8d9df;
-  --bucket-feedback-dialog-font-family: InterVariable, Inter, system-ui, Open Sans, sans-serif;
   --bucket-feedback-dialog-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   --bucket-feedback-dialog-primary-bg: #655bfa;
   --bucket-feedback-dialog-primary-fg: white;
   --bucket-feedback-dialog-input-border: #d8d9df;
+
+  --bucket-feedback-dialog-very-dissatisfied-color: #dd6b20;
+  --bucket-feedback-dialog-very-dissatisfied-bg: #fbd38d;
+  --bucket-feedback-dialog-dissatisfied-color: #ed8936;
+  --bucket-feedback-dialog-dissatisfied-bg: #feebc8;
+  --bucket-feedback-dialog-neutral-color: #787c91;
+  --bucket-feedback-dialog-neutral-bg: #e9e9ed;
+  --bucket-feedback-dialog-satisfied-color: #48bb78;
+  --bucket-feedback-dialog-satisfied-bg: #c6f6d5;
+  --bucket-feedback-dialog-very-satisfied-color: #38a169;
+  --bucket-feedback-dialog-very-satisfied-bg: #9ae6b4;
 }
 
-[data-dark-mode] {
+[data-theme="dark"] {
   --bucket-feedback-dialog-bg: #1e1f24;
   --bucket-feedback-dialog-color: rgba(255, 255, 255, 0.92);
   --bucket-feedback-dialog-border: rgba(255, 255, 255, 0.16);
@@ -18,8 +30,34 @@
   --bucket-feedback-dialog-primary-fg: white;
   --bucket-feedback-dialog-input-border: rgba(255, 255, 255, 0.16);
 
+  --bucket-feedback-dialog-very-dissatisfied-color: #ed8936;
+  --bucket-feedback-dialog-very-dissatisfied-bg: #7b341e;
+  --bucket-feedback-dialog-dissatisfied-color: #dd6b20;
+  --bucket-feedback-dialog-dissatisfied-bg: #652b19;
+  --bucket-feedback-dialog-neutral-color: #787c91;
+  --bucket-feedback-dialog-neutral-bg: #3e404c;
+  --bucket-feedback-dialog-satisfied-color: #38a169;
+  --bucket-feedback-dialog-satisfied-bg: #1c4532;
+  --bucket-feedback-dialog-very-satisfied-color: #48bb78;
+  --bucket-feedback-dialog-very-satisfied-bg: #22543d;
+
   color: var(--bucket-feedback-dialog-color);
   background-color: #191a1f;
+}
+
+[data-theme="custom"] {
+  --bucket-feedback-dialog-font-size: 1.5rem;
+  --bucket-feedback-dialog-font-family: monospace;
+  --bucket-feedback-dialog-radius: 0px;
+  --bucket-feedback-dialog-bg: papayawhip;
+  --bucket-feedback-dialog-color: firebrick;
+  --bucket-feedback-dialog-border: palevioletred;
+  --bucket-feedback-dialog-primary-bg: palevioletred;
+  --bucket-feedback-dialog-primary-fg: white;
+  --bucket-feedback-dialog-input-border: palevioletred;
+
+  color: var(--bucket-feedback-dialog-color);
+  background-color: #fff;
 }
 
 html,
