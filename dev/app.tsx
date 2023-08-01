@@ -1,6 +1,10 @@
 import { h } from "preact";
 import bucket from "../src/index";
 
+bucket.init("123", {
+  persistUser: false,
+});
+
 const ThemeButton = ({ theme }: { theme?: string }) => (
   <button
     onClick={() => {
@@ -28,7 +32,7 @@ export function App() {
         <button
           onClick={() => {
             bucket.collectFeedback({
-              featureId: "abc",
+              featureId: "featA",
               userId: "123",
               title: "Hello, how do you like FEATURE A?",
               isModal: true,
@@ -42,11 +46,10 @@ export function App() {
         <button
           onClick={() => {
             bucket.collectFeedback({
-              featureId: "abc",
+              featureId: "featB",
               userId: "123",
               title: "Welcome back, how is FEATURE B?",
               onSubmit: async (data) => {
-                throw "this shit is broken";
                 console.log("Submitted data:", data);
               },
               onClose: () => console.log("closed dialog"),
@@ -58,7 +61,7 @@ export function App() {
         <button
           onClick={({ target }) => {
             bucket.collectFeedback({
-              featureId: "abc",
+              featureId: "featC",
               userId: "123",
               title: "Welcome back, how is FEATURE C?",
               anchor: target as HTMLElement,

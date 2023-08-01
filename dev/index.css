@@ -9,6 +9,7 @@
   --bucket-feedback-dialog-primary-bg: #655bfa;
   --bucket-feedback-dialog-primary-fg: white;
   --bucket-feedback-dialog-input-border: #d8d9df;
+  --bucket-feedback-dialog-error-fg: #e53e3e;
 
   --bucket-feedback-dialog-very-dissatisfied-color: #dd6b20;
   --bucket-feedback-dialog-very-dissatisfied-bg: #fbd38d;
@@ -29,6 +30,7 @@
   --bucket-feedback-dialog-primary-bg: #655bfa;
   --bucket-feedback-dialog-primary-fg: white;
   --bucket-feedback-dialog-input-border: rgba(255, 255, 255, 0.16);
+  --bucket-feedback-dialog-error-fg: #f56565;
 
   --bucket-feedback-dialog-very-dissatisfied-color: #ed8936;
   --bucket-feedback-dialog-very-dissatisfied-bg: #7b341e;

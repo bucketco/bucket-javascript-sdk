@@ -1,0 +1,34 @@
+@keyframes spinning {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner {
+  display: inline-block;
+  border-top: 2px solid currentcolor;
+  border-right: 2px solid currentcolor;
+  border-bottom-style: solid;
+  border-left-style: solid;
+  border-radius: 99999px;
+  border-bottom-width: 2px;
+  border-left-width: 2px;
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+  animation: 0.45s linear 0s infinite normal none running spinning;
+
+  .hidden {
+    border: 0px;
+    clip: rect(0px, 0px, 0px, 0px);
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0px;
+    overflow: hidden;
+    white-space: nowrap;
+    position: absolute;
+  }
+}

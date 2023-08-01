@@ -1,9 +1,9 @@
 import { h, FunctionComponent } from "preact";
 import { useEffect, useRef } from "preact/hooks";
 import { FeedbackForm } from "./FeedbackForm";
-import { FeedbackDialogOptions } from "./types";
+import { FeedbackDialogOptions, WithRequired } from "./types";
 import { Logo } from "./icons/Logo";
-import { autoUpdate, offset, shift, useFloating, arrow } from "../floating";
+import { autoUpdate, offset, shift, useFloating, arrow } from "./floating";
 
 import styles from "./index.css?inline";
 import { feedbackContainerId } from "./constants";
@@ -12,15 +12,28 @@ type Position = Partial<
   Record<"top" | "left" | "right" | "bottom", number | string>
 >;
 
-export const FeedbackDialog: FunctionComponent<FeedbackDialogOptions> = ({
+export type FeedbackDialogProps = WithRequired<
+  FeedbackDialogOptions,
+  "onSubmit"
+>;
+
+export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
+  featureId,
   title = "How satisfied are you with this feature?",
   isModal = false,
-  anchor = null,
-  placement: propPlacement = "bottom-right",
-  onSubmit = () => Promise.resolve(),
+  placement = "bottom-right",
+  anchor,
+  quickDismiss = true,
+  onSubmit,
+  onClose,
 }) => {
   const arrowRef = useRef<HTMLDivElement>(null);
-  const { refs, floatingStyles, middlewareData, placement } = useFloating({
+  const {
+    refs,
+    floatingStyles,
+    middlewareData,
+    placement: actualPlacement,
+  } = useFloating({
     elements: {
       reference: anchor,
     },
@@ -36,7 +49,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogOptions> = ({
   });
 
   let unanchoredPosition: Position = {};
-  switch (propPlacement) {
+  switch (placement) {
     case "top-left":
       unanchoredPosition = { top: "1rem", left: "1rem" };
       break;
@@ -59,7 +72,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogOptions> = ({
       right: "left",
       bottom: "top",
       left: "right",
-    }[placement.split("-")[0]] || "bottom";
+    }[actualPlacement.split("-")[0]] || "bottom";
 
   const arrowStyles = {
     left: arrowX != null ? `${arrowX}px` : "",
@@ -70,10 +83,12 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogOptions> = ({
   };
 
   useEffect(() => {
+    if (!quickDismiss) return;
     const escapeHandler = (e: KeyboardEvent) => {
       if (e.key == "Escape") {
         const dialog = refs.floating.current as HTMLDialogElement | null;
         dialog?.close();
+        onClose?.();
       }
     };
     const clickOutsideHandler = (e: MouseEvent) => {
@@ -83,6 +98,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogOptions> = ({
         !e.target.closest(`#${feedbackContainerId}`)
       ) {
         dialog?.close();
+        onClose?.();
       }
     };
     window.addEventListener("click", clickOutsideHandler);
@@ -101,18 +117,19 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogOptions> = ({
         class={[
           "dialog",
           isModal ? "modal" : anchor ? "anchored" : "unanchored",
-          placement,
+          actualPlacement,
         ].join(" ")}
         style={anchor ? floatingStyles : unanchoredPosition}
       >
-        <FeedbackForm question={title} onSubmit={onSubmit} />
+        {/* todo: better alternative to reset the form than featureId switch */}
+        <FeedbackForm key={featureId} question={title} onSubmit={onSubmit} />
         <footer class="plug">
           Powered by <Logo /> Bucket
         </footer>
         {anchor && (
           <div
             ref={arrowRef}
-            class={["arrow", placement].join(" ")}
+            class={["arrow", actualPlacement].join(" ")}
             style={arrowStyles}
           ></div>
         )}

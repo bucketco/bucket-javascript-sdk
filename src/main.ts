@@ -323,6 +323,12 @@ export default function main() {
   }
 
   async function collectFeedback(options: FeedbackDialogOptions) {
+    if (!options.featureId) err("No featureId provided");
+    if (persistUser) {
+      options.userId = getSessionUser();
+    } else if (!options.userId) {
+      err("No userId provided and persistUser is disabled");
+    }
     import("./feedback").then((lib) => {
       lib.collectFeedback({
         onSubmit: async (data) => {

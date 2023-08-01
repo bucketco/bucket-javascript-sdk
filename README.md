@@ -37,13 +37,21 @@ bucket.company("acme_inc", { name: "Acme Inc", plan: "pro" }, "john_doe");
 // track events
 bucket.track("sent_message", { foo: "bar" }, "john_doe", "company_id");
 
-// collect qualitative feedback
+// send qualitative feedback
 bucket.feedback({
   featureId: "my_feature_id",
   userId: "john_doe",
   companyId: "acme_inc", // String (optional)
   score: 5, // Number: 1-5 (optional)
   comment: "Absolutely stellar work!", // String (optional)
+});
+
+// collect qualitative feedback using built-in dialog
+bucket.collectFeedback({
+  featureId: "my_feature_id",
+  userId: "john_doe",
+  companyId: "acme_inc", // String (optional)
+  // supply onSubmit to overwrite default call to bucket.feedback(...)
 });
 ```
 
@@ -72,11 +80,59 @@ Feedback can be submitted to Bucket using the SDK:
 ```js
 bucket.feedback({
   featureId: "my_feature_id", // String (required), copy from Feature feedback tab
-  userId: "john_doe", // String, optional if using user persistence
+  userId: "john_doe", // String, (optional) if using user persistence
   companyId: "acme_inc", // String (optional)
   score: 5, // Number: 1-5 (optional)
   comment: "Absolutely stellar work!", // String (optional)
 });
+```
+
+Or by prompting a user through the built-in dialog.
+
+```js
+bucket.collectFeedback({
+  featureId: "my_feature_id", // String (required), copy from Feature feedback tab
+  userId: "john_doe", // String, (optional) if using user persistence
+  companyId: "acme_inc", // String (optional)
+  title: "How do you like feature A?", // String (optional), dialog title
+  isModal: true, // Boolean (optional), dialog is a blocking modal, default false
+  anchor: trigger, // HTMLElement (optional), displays dialog by trigger
+  placement: "top-right", // String (optional), corner placement if not anchored
+  quickDismiss: false, // Boolean (optional), escape and click outside to close, default true
+  onSubmit: (data: Feedback) => Promise<any>, // Function (optional), override default submit function
+  onClose: () => void, // Function (optional), called when dialog is dismissed
+});
+```
+
+#### Styling Bucket's feedback dialog
+
+Styling the dialog can be done using custom CSS properties. Below are the default ones:
+
+```css
+:root {
+  --bucket-feedback-dialog-font-size: 1rem;
+  --bucket-feedback-dialog-font-family: InterVariable, Inter, system-ui, Open Sans, sans-serif;
+  --bucket-feedback-dialog-bg: #fff;
+  --bucket-feedback-dialog-color: #1e1f24;
+  --bucket-feedback-dialog-radius: 6px;
+  --bucket-feedback-dialog-border: #d8d9df;
+  --bucket-feedback-dialog-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --bucket-feedback-dialog-primary-bg: #655bfa;
+  --bucket-feedback-dialog-primary-fg: white;
+  --bucket-feedback-dialog-input-border: #d8d9df;
+  --bucket-feedback-dialog-error-fg: #e53e3e;
+
+  --bucket-feedback-dialog-very-dissatisfied-color: #dd6b20;
+  --bucket-feedback-dialog-very-dissatisfied-bg: #fbd38d;
+  --bucket-feedback-dialog-dissatisfied-color: #ed8936;
+  --bucket-feedback-dialog-dissatisfied-bg: #feebc8;
+  --bucket-feedback-dialog-neutral-color: #787c91;
+  --bucket-feedback-dialog-neutral-bg: #e9e9ed;
+  --bucket-feedback-dialog-satisfied-color: #48bb78;
+  --bucket-feedback-dialog-satisfied-bg: #c6f6d5;
+  --bucket-feedback-dialog-very-satisfied-color: #38a169;
+  --bucket-feedback-dialog-very-satisfied-bg: #9ae6b4;
+}
 ```
 
 #### Bucket feedback API

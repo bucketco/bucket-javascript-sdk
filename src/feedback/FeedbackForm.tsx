@@ -23,9 +23,9 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
   onSubmit,
 }) => {
   const [hasRating, setHasRating] = useState(false);
-  const [status, setStatus] = useState<
-    "default" | "submitting" | "error" | "submitted"
-  >("default");
+  const [status, setStatus] = useState<"idle" | "submitting" | "submitted">(
+    "idle"
+  );
   const [error, setError] = useState<string>();
 
   const handleSubmit: h.JSX.GenericEventHandler<HTMLFormElement> = async (
@@ -34,30 +34,24 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
     e.preventDefault();
     const data = getFeedbackDataFromForm(e.target as HTMLFormElement);
     if (!data.score) return;
+    setError("");
     try {
       setStatus("submitting");
       await onSubmit(data);
       setStatus("submitted");
     } catch (e) {
-      setStatus("error");
+      setStatus("idle");
       if (e instanceof Error) {
         setError(e.message);
+      } else if (typeof e === "string") {
+        setError(e);
       } else {
-        setError("Couldn't submit feedback.");
+        setError("Couldn't submit feedback. Please try again.");
       }
     }
   };
 
-  if (status == "error") {
-    return (
-      <div class="error">
-        <p class="icon">😞</p>
-        <p class="text">{error}</p>
-      </div>
-    );
-  }
-
-  if (status == "submitted") {
+  if (status === "submitted") {
     return (
       <div class="submitted">
         <p class="icon">🙏</p>
@@ -92,7 +86,13 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
         />
       </div>
 
-      <Button type="submit" disabled={!hasRating}>
+      {error && <p class="error">{error}</p>}
+
+      <Button
+        type="submit"
+        disabled={!hasRating || status === "submitting"}
+        loadingText="Submitting"
+      >
         Send
       </Button>
     </form>
