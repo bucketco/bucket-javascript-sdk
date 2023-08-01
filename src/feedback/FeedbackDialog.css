@@ -41,14 +41,14 @@
     0 4px 6px -2px rgba(0, 0, 0, 0.05)
   );
   background-color: var(--bucket-feedback-dialog-bg, #fff);
-}
-
-.dialog:not(.modal) {
-  margin: unset;
-  top: unset;
-  right: unset;
-  left: unset;
-  bottom: unset;
+  
+  &:not(.modal) {
+    margin: unset;
+    top: unset;
+    right: unset;
+    left: unset;
+    bottom: unset;
+  }
 }
 
 .arrow {
@@ -58,18 +58,19 @@
   background-color: var(--bucket-feedback-dialog-bg, #fff);
   box-shadow: var(--bucket-feedback-dialog-border) -1px -1px 1px 0px;
   transform: rotate(45deg);
-}
-.arrow.bottom {
-  box-shadow: var(--bucket-feedback-dialog-border) -1px -1px 1px 0px;
-}
-.arrow.top {
-  box-shadow: var(--bucket-feedback-dialog-border) 1px 1px 1px 0px;
-}
-.arrow.left {
-  box-shadow: var(--bucket-feedback-dialog-border) 1px -1px 1px 0px;
-}
-.arrow.right {
-  box-shadow: var(--bucket-feedback-dialog-border) -1px 1px 1px 0px;
+
+  &.bottom {
+    box-shadow: var(--bucket-feedback-dialog-border) -1px -1px 1px 0px;
+  }
+  &.top {
+    box-shadow: var(--bucket-feedback-dialog-border) 1px 1px 1px 0px;
+  }
+  &.left {
+    box-shadow: var(--bucket-feedback-dialog-border) 1px -1px 1px 0px;
+  }
+  &.right {
+    box-shadow: var(--bucket-feedback-dialog-border) -1px 1px 1px 0px;
+  }
 }
 
 .plug {
@@ -83,37 +84,38 @@
 .dialog.modal {
   margin: auto;
   margin-top: 4rem;
-}
+  
+  &[open] {
+    animation: scale 100ms ease-in-out, fade 100ms ease-in-out;
 
-.dialog.modal[open] {
-  animation: scale 100ms ease-in-out, fade 100ms ease-in-out;
-}
-
-.dialog.modal[open]::backdrop {
-  animation: fade 100ms ease-in-out;
+    &::backdrop {
+      animation: fade 100ms ease-in-out;
+    }
+  }
 }
 
 /* Anchored */ 
 
 .dialog.anchored {
   position: absolute;
-}
-.dialog.anchored.bottom {
-  transform-origin: top center;
-}
-.dialog.anchored.top {
-  transform-origin: bottom center;
-}
-.dialog.anchored.left {
-  transform-origin: right center;
-}
-.dialog.anchored.right {
-  transform-origin: left center;
+
+  &[open] {
+    animation: scale 100ms ease-in-out, fade 100ms ease-in-out;
+  }  
+  &.bottom {
+    transform-origin: top center;
+  }
+  &.top {
+    transform-origin: bottom center;
+  }
+  &.left {
+    transform-origin: right center;
+  }
+  &.right {
+    transform-origin: left center;
+  }
 }
 
-.dialog.anchored[open] {
-  animation: scale 100ms ease-in-out, fade 100ms ease-in-out;
-}
 
 /* Unanchored */
 

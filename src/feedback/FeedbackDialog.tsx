@@ -107,7 +107,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
       window.removeEventListener("click", clickOutsideHandler);
       window.removeEventListener("keydown", escapeHandler);
     };
-  }, []);
+  }, [quickDismiss]);
 
   return (
     <>
