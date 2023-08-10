@@ -4,13 +4,15 @@ import { TRACKING_HOST } from "./config";
 import {
   Company,
   Context,
-  Feedback,
+  Feedback, FeedbackPrompt, FeedbackPromptCallback,
   Key,
   Options,
   TrackedEvent,
   User,
 } from "./types";
 import modulePackage from "../package.json";
+import Ably from "ably/promises";
+import { closeAblyConnection, openAblyConnection } from "./ably";
 
 async function request(url: string, body: any) {
   return fetch(url, {
@@ -27,7 +29,10 @@ export default function main() {
   let trackingKey: string | undefined = undefined;
   let trackingHost: string = TRACKING_HOST;
   let sessionUserId: string | undefined = undefined;
-  let persistUser: boolean = isForNode ? false : true;
+  let persistUser: boolean = !isForNode;
+  let automaticFeedbackPrompting: boolean = false;
+  let feedbackPromptCallback: FeedbackPromptCallback | undefined = undefined;
+  let ablyClient: Ably.Realtime | undefined = undefined;
   let debug = false;
 
   log("Instance created");
@@ -63,14 +68,25 @@ export default function main() {
   // methods
 
   function init(key: Key, options?: Options) {
+    reset();
     if (!key) {
       err("Tracking key was not provided");
     }
     trackingKey = key;
-    if (options?.host) trackingHost = options?.host;
+    if (options?.host) trackingHost = options.host;
     if (typeof options?.persistUser !== "undefined")
-      persistUser = options?.persistUser;
-    if (options?.debug) debug = options?.debug;
+      persistUser = options.persistUser;
+    if (options?.debug) debug = options.debug;
+    if (options?.automaticFeedbackPrompting) {
+      if (!persistUser) {
+        err("Feedback prompting is not supported when persistUser is disabled");
+      } else {
+        automaticFeedbackPrompting = options.automaticFeedbackPrompting;
+      }
+    }
+    if (options?.feedbackPromptCallback) {
+      feedbackPromptCallback = options.feedbackPromptCallback;
+    }
     log(`initialized with key "${trackingKey}" and options`, options);
   }
 
@@ -81,7 +97,15 @@ export default function main() {
   ) {
     checkKey();
     if (!userId) err("No userId provided");
-    if (persistUser) sessionUserId = userId;
+    if (persistUser) {
+      if (sessionUserId && sessionUserId !== userId) {
+        reset();
+      }
+      sessionUserId = userId;
+      if (automaticFeedbackPrompting && !ablyClient) {
+        await initFeedbackPrompting(userId, feedbackPromptCallback)
+      }
+    }
     const payload: User = {
       userId,
       attributes,
@@ -181,8 +205,57 @@ export default function main() {
     return res;
   }
 
+  async function initFeedbackPrompting(
+    userId?: User["userId"],
+    requestCallback?: FeedbackPromptCallback,
+  ) {
+    checkKey();
+    if (persistUser) {
+      userId = getSessionUser();
+    } else if (!userId) {
+      err("No userId provided and persistUser is disabled");
+    }
+    const res = await request(`${getUrl()}/feedback/prompting-status`, {
+      userId,
+    });
+    log(`feedback prompting status sent`, res);
+    const body: { success: boolean } = await res.json()
+    if (!body.success) {
+      log(`feedback prompting not enabled`);
+      return res;
+    }
+
+    log(`feedback prompting enabled`);
+    const actualCallback = requestCallback || showFeedbackPrompt;
+    ablyClient = await openAblyConnection(`${getUrl()}/feedback/prompting-auth`, userId, (data) => {
+      console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+      if (typeof data?.question !== "string" ||
+        typeof data?.showAfter !== "number" ||
+        typeof data?.showBefore !== "number") {
+        err(`invalid feedback prompt message received`, data);
+      } else {
+        log(`feedback prompt received`, data);
+        actualCallback({
+          question: data.question,
+          showAfter: new Date(data.showAfter),
+          showBefore: new Date(data.showBefore),
+        });
+      }
+    })
+    return res;
+  }
+
+  function showFeedbackPrompt(prompt: FeedbackPrompt) {
+    // nothing to do here yet
+    log(`showing feedback prompt`, prompt);
+  }
+
   function reset() {
     sessionUserId = undefined;
+    if (ablyClient) {
+      closeAblyConnection(ablyClient);
+      ablyClient = undefined;
+    }
   }
 
   return {
@@ -194,5 +267,7 @@ export default function main() {
     company,
     track,
     feedback,
+    // feedback prompting
+    initFeedbackPrompting,
   };
 }

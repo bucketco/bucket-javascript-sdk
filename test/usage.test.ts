@@ -1,14 +1,21 @@
 import nock from "nock";
-import { describe, expect, test } from "vitest";
+import { describe, expect, vi, test, afterEach, beforeAll, afterAll } from "vitest";
 import { TRACKING_HOST } from "../src/config";
 import bucket from "../src/main";
 import { version } from "../package.json";
+import { closeAblyConnection, openAblyConnection } from "../src/ably";
 
 const KEY = "123";
 
 describe("usage", () => {
+
+  afterEach(() => {
+    nock.cleanAll();
+    vi.clearAllMocks();
+  });
+
   test("golden path - register user, company, send event, send feedback", async () => {
-    const userMock = nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${TRACKING_HOST}/${KEY}`)
       .post(/.*\/user/, {
         userId: "foo",
         attributes: {
@@ -16,7 +23,7 @@ describe("usage", () => {
         },
       })
       .reply(200);
-    const companyMock = nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${TRACKING_HOST}/${KEY}`)
       .post(/.*\/company/, {
         userId: "foo",
         companyId: "bar",
@@ -25,7 +32,7 @@ describe("usage", () => {
         },
       })
       .reply(200);
-    const eventMock = nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${TRACKING_HOST}/${KEY}`)
       .post(/.*\/event/, {
         userId: "foo",
         event: "baz",
@@ -34,7 +41,7 @@ describe("usage", () => {
         },
       })
       .reply(200);
-    const feedbackMock = nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${TRACKING_HOST}/${KEY}`)
       .post(/.*\/feedback/, {
         userId: "foo",
         featureId: "featureId1",
@@ -45,24 +52,20 @@ describe("usage", () => {
     const bucketInstance = bucket();
     bucketInstance.init(KEY, { persistUser: true });
     await bucketInstance.user("foo", { name: "john doe" });
-    userMock.done();
 
     await bucketInstance.company("bar", { name: "bar corp" });
-    companyMock.done();
 
     await bucketInstance.track("baz", { baz: true });
-    eventMock.done();
 
     await bucketInstance.feedback({
       featureId: "featureId1",
       score: 5,
       userId: "foo",
     });
-    feedbackMock.done();
   });
 
   test("re-register user and send event", async () => {
-    const userMock = nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${TRACKING_HOST}/${KEY}`)
       .post(/.*\/user/, {
         userId: "foo",
         attributes: {
@@ -71,7 +74,7 @@ describe("usage", () => {
       })
       .reply(200);
 
-    const eventMock = nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${TRACKING_HOST}/${KEY}`)
       .post(/.*\/event/, {
         userId: "foo",
         event: "baz",
@@ -81,7 +84,7 @@ describe("usage", () => {
       })
       .reply(200);
 
-    const userMock2 = nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${TRACKING_HOST}/${KEY}`)
       .post(/.*\/user/, {
         userId: "foo2",
         attributes: {
@@ -90,7 +93,7 @@ describe("usage", () => {
       })
       .reply(200);
 
-    const eventMock2 = nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${TRACKING_HOST}/${KEY}`)
       .post(/.*\/event/, {
         userId: "foo2",
         event: "baz",
@@ -100,7 +103,7 @@ describe("usage", () => {
       })
       .reply(200);
 
-    const eventMock3 = nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${TRACKING_HOST}/${KEY}`)
       .post(/.*\/event/, {
         userId: "foo2",
         event: "baz",
@@ -114,37 +117,32 @@ describe("usage", () => {
     const bucketInstance = bucket();
     bucketInstance.init(KEY, { persistUser: true });
     await bucketInstance.user("foo", { name: "john doe" });
-    userMock.done();
 
     await bucketInstance.track("baz", { baz: true });
-    eventMock.done();
 
     await bucketInstance.user("foo2", { name: "john doe 2" });
-    userMock2.done();
 
     // here we ensure that "userId" is updated to "foo2" in the event request
     await bucketInstance.track("baz", { baz: true });
-    eventMock2.done();
 
     await bucketInstance.track("baz", { baz: true }, "foo2", "company1");
-    eventMock3.done();
   });
 
   test("disable persist user for server-side usage", async () => {
-    const userMock = nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${TRACKING_HOST}/${KEY}`)
       .post(/.*\/user/, {
         userId: "fooUser",
       })
       .reply(200);
 
-    const companyMock = nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${TRACKING_HOST}/${KEY}`)
       .post(/.*\/company/, {
         userId: "fooUser",
         companyId: "fooCompany",
       })
       .reply(200);
 
-    const eventMock = nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${TRACKING_HOST}/${KEY}`)
       .post(/.*\/event/, {
         userId: "fooUser",
         event: "fooEvent",
@@ -155,23 +153,20 @@ describe("usage", () => {
     bucketInstance.init(KEY, { persistUser: false });
 
     await bucketInstance.user("fooUser");
-    userMock.done();
 
     await expect(() =>
       bucketInstance.company("fooCompany")
     ).rejects.toThrowError("No userId provided and persistUser is disabled");
     await bucketInstance.company("fooCompany", null, "fooUser");
-    companyMock.done();
 
     await expect(() => bucketInstance.track("fooEvent")).rejects.toThrowError(
       "No userId provided and persistUser is disabled"
     );
     await bucketInstance.track("fooEvent", null, "fooUser");
-    eventMock.done();
   });
 
   test("will send sdk version as header", async () => {
-    const userMock = nock(`${TRACKING_HOST}/${KEY}`, {
+    nock(`${TRACKING_HOST}/${KEY}`, {
       reqheaders: {
         "Bucket-Sdk-Version": version,
       },
@@ -184,11 +179,10 @@ describe("usage", () => {
     const bucketInstance = bucket();
     bucketInstance.init(KEY);
     await bucketInstance.user("foo");
-    userMock.done();
   });
 
   test("can reset user", async () => {
-    const userMock = nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${TRACKING_HOST}/${KEY}`)
       .post(/.*\/user/, {
         userId: "foo",
         attributes: {
@@ -200,11 +194,138 @@ describe("usage", () => {
     const bucketInstance = bucket();
     bucketInstance.init(KEY, { persistUser: true });
     await bucketInstance.user("foo", { name: "john doe" });
-    userMock.done();
 
     bucketInstance.reset();
     await expect(() => bucketInstance.track("foo")).rejects.toThrowError(
       "User is not set, please call user() first"
     );
+  });
+});
+
+const message = {
+  question: "How are you",
+  showAfter: new Date().valueOf(),
+  showBefore: new Date().valueOf()
+};
+
+describe("feedback prompting", () => {
+  beforeAll(() => {
+    vi.mock("/src/ably", () => {
+      return {
+        openAblyConnection: vi.fn().mockImplementation((_a:string, _b:string, callback: (data: any) => void) => {
+          callback(message);
+          return Promise.resolve("fake_client");
+        }),
+        closeAblyConnection: vi.fn()
+      };
+    })
+  })
+
+  afterAll(() => {
+    vi.unmock("/src/ably");
+  })
+
+  afterEach(() => {
+    nock.cleanAll();
+    vi.clearAllMocks();
+  });
+
+  test("initiates and resets feedback prompting", async () => {
+    nock(`${TRACKING_HOST}/${KEY}`)
+      .post(/.*\/feedback\/prompting-status/, {
+        userId: "foo",
+      })
+      .reply(200, { success: true });
+
+
+    const bucketInstance = bucket();
+    bucketInstance.init(KEY);
+
+    await bucketInstance.initFeedbackPrompting("foo");
+
+    expect(openAblyConnection).toBeCalledTimes(1);
+    expect(openAblyConnection).toBeCalledWith(`${TRACKING_HOST}/${KEY}/feedback/prompting-auth`, "foo", expect.anything());
+
+    // call twice, expect only one reset to go through
+    bucketInstance.reset();
+    bucketInstance.reset();
+
+    expect(closeAblyConnection).toBeCalledTimes(1);
+    expect(closeAblyConnection).toBeCalledWith("fake_client");
+  });
+
+  test("does not initiate feedback prompting if server does not agree", async () => {
+    nock(`${TRACKING_HOST}/${KEY}`)
+      .post(/.*\/feedback\/prompting-status/, {
+        userId: "foo",
+      })
+      .reply(200, { success: false });
+
+    const bucketInstance = bucket();
+    bucketInstance.init(KEY);
+
+    await bucketInstance.initFeedbackPrompting("foo");
+
+    expect(openAblyConnection).toBeCalledTimes(0);
+  });
+
+  test("initiates feedback prompting automatically on user call if configured", async () => {
+    nock(`${TRACKING_HOST}/${KEY}`)
+      .post(/.*\/feedback\/prompting-status/)
+      .times(2)
+      .reply(200, { success: true })
+    nock(`${TRACKING_HOST}/${KEY}`)
+      .post(/.*\/user/)
+      .times(2)
+      .reply(200);
+
+    const bucketInstance = bucket();
+    bucketInstance.init(KEY, { automaticFeedbackPrompting: true, persistUser: true });
+
+    // connects to ably for first time
+    await bucketInstance.user("foo");
+    expect(openAblyConnection).toBeCalledTimes(1);
+
+    // automatically resets if another user persisted
+    await bucketInstance.user("boo");
+    expect(closeAblyConnection).toBeCalledTimes(1);
+    expect(openAblyConnection).toBeCalledTimes(2);
+  });
+
+  test("reset closes previously open feedback prompting connection", async () => {
+    nock(`${TRACKING_HOST}/${KEY}`)
+      .post(/.*\/feedback\/prompting-status/)
+      .reply(200, { success: true })
+
+    const bucketInstance = bucket();
+    bucketInstance.init(KEY);
+
+    // connects to ably for first time
+    await bucketInstance.initFeedbackPrompting("foo");
+    expect(openAblyConnection).toBeCalledTimes(1);
+
+    bucketInstance.reset()
+    expect(closeAblyConnection).toBeCalledTimes(1);
+  });
+
+  test("propagates the callback to the proper method", async () => {
+    nock(`${TRACKING_HOST}/${KEY}`)
+      .post(/.*\/feedback\/prompting-status/)
+      .reply(200, { success: true })
+
+    const bucketInstance = bucket();
+    bucketInstance.init(KEY);
+
+    // connects to ably for first time
+    const callback = vi.fn();
+
+    await bucketInstance.initFeedbackPrompting("foo", callback);
+
+    expect(callback).toBeCalledTimes(1);
+    expect(callback).toBeCalledWith({
+      question: "How are you",
+      showAfter: new Date(message.showAfter),
+      showBefore: new Date(message.showBefore)
+    });
   });
 });
