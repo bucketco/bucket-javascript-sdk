@@ -328,4 +328,18 @@ describe("feedback prompting", () => {
       showBefore: new Date(message.showBefore)
     });
   });
+
+  test("rejects if feedback prompting already initialized", async () => {
+    nock(`${TRACKING_HOST}/${KEY}`)
+      .post(/.*\/feedback\/prompting-status/)
+      .reply(200, { success: true })
+
+    const bucketInstance = bucket();
+    bucketInstance.init(KEY);
+
+    await bucketInstance.initFeedbackPrompting("foo");
+    await expect(() => bucketInstance.initFeedbackPrompting("foo")).rejects.toThrowError(
+      "Feedback prompting already initialized. Use reset() first."
+    );
+  });
 });

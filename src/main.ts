@@ -210,6 +210,7 @@ export default function main() {
     requestCallback?: FeedbackPromptCallback,
   ) {
     checkKey();
+    if (ablyClient) err("Feedback prompting already initialized. Use reset() first.");
     if (persistUser) {
       userId = getSessionUser();
     } else if (!userId) {
@@ -228,7 +229,6 @@ export default function main() {
     log(`feedback prompting enabled`);
     const actualCallback = requestCallback || showFeedbackPrompt;
     ablyClient = await openAblyConnection(`${getUrl()}/feedback/prompting-auth`, userId, (data) => {
-      console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
       if (typeof data?.question !== "string" ||
         typeof data?.showAfter !== "number" ||
         typeof data?.showBefore !== "number") {

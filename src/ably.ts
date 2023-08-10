@@ -1,6 +1,6 @@
 import Ably from "ably/promises";
 
-const ablyChannel = "feedback"
+const ablyChannel = "feedback-prompting"
 
 export async function openAblyConnection(authUrl: string, userId: string, callback: (req: any) => void) {
   const client = new Ably.Realtime.Promise({
@@ -17,6 +17,5 @@ export async function openAblyConnection(authUrl: string, userId: string, callba
 }
 
 export function closeAblyConnection(client: Ably.Types.RealtimePromise) {
-  client.channels.release(ablyChannel)
   client.close();
 }
