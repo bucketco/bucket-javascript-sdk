@@ -220,15 +220,15 @@ export default function main() {
       userId,
     });
     log(`feedback prompting status sent`, res);
-    const body: { success: boolean } = await res.json()
-    if (!body.success) {
+    const body: { success: boolean, channel?: string } = await res.json()
+    if (!body.success || !body.channel) {
       log(`feedback prompting not enabled`);
       return res;
     }
 
     log(`feedback prompting enabled`);
     const actualCallback = requestCallback || showFeedbackPrompt;
-    ablyClient = await openAblyConnection(`${getUrl()}/feedback/prompting-auth`, userId, (data) => {
+    ablyClient = await openAblyConnection(`${getUrl()}/feedback/prompting-auth`, userId, body.channel, (data) => {
       if (typeof data?.question !== "string" ||
         typeof data?.showAfter !== "number" ||
         typeof data?.showBefore !== "number") {

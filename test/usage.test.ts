@@ -212,7 +212,7 @@ describe("feedback prompting", () => {
   beforeAll(() => {
     vi.mock("/src/ably", () => {
       return {
-        openAblyConnection: vi.fn().mockImplementation((_a:string, _b:string, callback: (data: any) => void) => {
+        openAblyConnection: vi.fn().mockImplementation((_a:string, _b:string, _c:string, callback: (data: any) => void) => {
           callback(message);
           return Promise.resolve("fake_client");
         }),
@@ -235,7 +235,7 @@ describe("feedback prompting", () => {
       .post(/.*\/feedback\/prompting-status/, {
         userId: "foo",
       })
-      .reply(200, { success: true });
+      .reply(200, { success: true, channel: "test-channel" });
 
 
     const bucketInstance = bucket();
@@ -244,7 +244,8 @@ describe("feedback prompting", () => {
     await bucketInstance.initFeedbackPrompting("foo");
 
     expect(openAblyConnection).toBeCalledTimes(1);
-    expect(openAblyConnection).toBeCalledWith(`${TRACKING_HOST}/${KEY}/feedback/prompting-auth`, "foo", expect.anything(), expect.anything());
+    expect(openAblyConnection).toBeCalledWith(`${TRACKING_HOST}/${KEY}/feedback/prompting-auth`,
+        "foo", "test-channel", expect.anything(), expect.anything());
 
     // call twice, expect only one reset to go through
     bucketInstance.reset();
@@ -273,7 +274,7 @@ describe("feedback prompting", () => {
     nock(`${TRACKING_HOST}/${KEY}`)
       .post(/.*\/feedback\/prompting-status/)
       .times(2)
-      .reply(200, { success: true })
+      .reply(200, { success: true, channel: "test-channel" })
     nock(`${TRACKING_HOST}/${KEY}`)
       .post(/.*\/user/)
       .times(2)
@@ -295,7 +296,7 @@ describe("feedback prompting", () => {
   test("reset closes previously open feedback prompting connection", async () => {
     nock(`${TRACKING_HOST}/${KEY}`)
       .post(/.*\/feedback\/prompting-status/)
-      .reply(200, { success: true })
+      .reply(200, { success: true, channel: "test-channel" })
 
     const bucketInstance = bucket();
     bucketInstance.init(KEY);
@@ -311,7 +312,7 @@ describe("feedback prompting", () => {
   test("propagates the callback to the proper method", async () => {
     nock(`${TRACKING_HOST}/${KEY}`)
       .post(/.*\/feedback\/prompting-status/)
-      .reply(200, { success: true })
+      .reply(200, { success: true, channel: "test-channel" })
 
     const bucketInstance = bucket();
     bucketInstance.init(KEY);
@@ -332,7 +333,7 @@ describe("feedback prompting", () => {
   test("rejects if feedback prompting already initialized", async () => {
     nock(`${TRACKING_HOST}/${KEY}`)
       .post(/.*\/feedback\/prompting-status/)
-      .reply(200, { success: true })
+      .reply(200, { success: true, channel: "test-channel" })
 
     const bucketInstance = bucket();
     bucketInstance.init(KEY);

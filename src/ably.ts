@@ -1,7 +1,6 @@
 import Ably from "ably/promises";
-import { ABLY_CHANNEL } from "./config";
 
-export async function openAblyConnection(authUrl: string, userId: string, callback: (req: any) => void, debug?: boolean) {
+export async function openAblyConnection(authUrl: string, userId: string, channel: string, callback: (req: any) => void, debug?: boolean) {
   const client = new Ably.Realtime.Promise({
     authUrl: authUrl,
     log: { level: debug ? 4 : 1 },
@@ -9,7 +8,7 @@ export async function openAblyConnection(authUrl: string, userId: string, callba
       userId,
     }
   });
-  const c = client.channels.get(ABLY_CHANNEL);
+  const c = client.channels.get(channel);
   await c.subscribe((message) => {
       callback(message.data);
   });
