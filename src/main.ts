@@ -241,7 +241,7 @@ export default function main() {
           showBefore: new Date(data.showBefore),
         });
       }
-    })
+    }, debug)
 
     log(`feedback prompting connection established`);
     return res;

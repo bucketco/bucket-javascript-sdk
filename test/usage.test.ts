@@ -244,7 +244,7 @@ describe("feedback prompting", () => {
     await bucketInstance.initFeedbackPrompting("foo");
 
     expect(openAblyConnection).toBeCalledTimes(1);
-    expect(openAblyConnection).toBeCalledWith(`${TRACKING_HOST}/${KEY}/feedback/prompting-auth`, "foo", expect.anything());
+    expect(openAblyConnection).toBeCalledWith(`${TRACKING_HOST}/${KEY}/feedback/prompting-auth`, "foo", expect.anything(), expect.anything());
 
     // call twice, expect only one reset to go through
     bucketInstance.reset();
