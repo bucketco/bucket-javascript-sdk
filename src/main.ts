@@ -242,6 +242,8 @@ export default function main() {
         });
       }
     })
+
+    log(`feedback prompting connection established`);
     return res;
   }
 
@@ -254,6 +256,8 @@ export default function main() {
     sessionUserId = undefined;
     if (ablyClient) {
       closeAblyConnection(ablyClient);
+      log(`feedback prompting connection closed`);
+
       ablyClient = undefined;
     }
   }
