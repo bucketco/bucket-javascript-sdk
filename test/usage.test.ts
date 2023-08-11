@@ -232,7 +232,7 @@ describe("feedback prompting", () => {
 
   test("initiates and resets feedback prompting", async () => {
     nock(`${TRACKING_HOST}/${KEY}`)
-      .post(/.*\/feedback\/prompting-status/, {
+      .post(/.*\/feedback\/prompting-init/, {
         userId: "foo",
       })
       .reply(200, { success: true, channel: "test-channel" });
@@ -257,7 +257,7 @@ describe("feedback prompting", () => {
 
   test("does not initiate feedback prompting if server does not agree", async () => {
     nock(`${TRACKING_HOST}/${KEY}`)
-      .post(/.*\/feedback\/prompting-status/, {
+      .post(/.*\/feedback\/prompting-init/, {
         userId: "foo",
       })
       .reply(200, { success: false });
@@ -272,7 +272,7 @@ describe("feedback prompting", () => {
 
   test("initiates feedback prompting automatically on user call if configured", async () => {
     nock(`${TRACKING_HOST}/${KEY}`)
-      .post(/.*\/feedback\/prompting-status/)
+      .post(/.*\/feedback\/prompting-init/)
       .times(2)
       .reply(200, { success: true, channel: "test-channel" })
     nock(`${TRACKING_HOST}/${KEY}`)
@@ -295,7 +295,7 @@ describe("feedback prompting", () => {
 
   test("reset closes previously open feedback prompting connection", async () => {
     nock(`${TRACKING_HOST}/${KEY}`)
-      .post(/.*\/feedback\/prompting-status/)
+      .post(/.*\/feedback\/prompting-init/)
       .reply(200, { success: true, channel: "test-channel" })
 
     const bucketInstance = bucket();
@@ -311,7 +311,7 @@ describe("feedback prompting", () => {
 
   test("propagates the callback to the proper method", async () => {
     nock(`${TRACKING_HOST}/${KEY}`)
-      .post(/.*\/feedback\/prompting-status/)
+      .post(/.*\/feedback\/prompting-init/)
       .reply(200, { success: true, channel: "test-channel" })
 
     const bucketInstance = bucket();
@@ -332,7 +332,7 @@ describe("feedback prompting", () => {
 
   test("rejects if feedback prompting already initialized", async () => {
     nock(`${TRACKING_HOST}/${KEY}`)
-      .post(/.*\/feedback\/prompting-status/)
+      .post(/.*\/feedback\/prompting-init/)
       .reply(200, { success: true, channel: "test-channel" })
 
     const bucketInstance = bucket();

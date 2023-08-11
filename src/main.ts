@@ -217,7 +217,7 @@ export default function main() {
     } else if (!userId) {
       err("No userId provided and persistUser is disabled");
     }
-    const res = await request(`${getUrl()}/feedback/prompting-status`, {
+    const res = await request(`${getUrl()}/feedback/prompting-init`, {
       userId,
     });
     log(`feedback prompting status sent`, res);
