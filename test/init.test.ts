@@ -3,7 +3,7 @@ import { describe, expect, spyOn, test } from "vitest";
 import bucket from "../src/main";
 
 const KEY = "123";
-const CUSTOM_HOST = "http://example.com";
+const CUSTOM_HOST = "https://example.com";
 
 describe("init", () => {
   test("will accept setup with key and debug flag", () => {
@@ -38,6 +38,13 @@ describe("init", () => {
     const bucketInstance = bucket();
     await expect(() => bucketInstance.user("foo")).rejects.toThrowError(
       "Tracking key is not set, please call init() first"
+    );
+  });
+
+  test("will reject automatic feedback prompting if not persisting user", async () => {
+    const bucketInstance = bucket();
+    expect(() => bucketInstance.init(KEY, { automaticFeedbackPrompting: true, persistUser: false })).toThrowError(
+        "Feedback prompting is not supported when persistUser is disabled"
     );
   });
 });

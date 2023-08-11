@@ -2,6 +2,8 @@ export type Key = string;
 
 export type Options = {
   persistUser?: boolean;
+  automaticFeedbackPrompting?: boolean;
+  feedbackPromptCallback?: FeedbackPromptCallback;
   host?: string;
   debug?: boolean;
 };
@@ -42,6 +44,14 @@ export type Feedback = {
   score?: number;
   comment?: string;
 };
+
+export type FeedbackPrompt = {
+  question: string;
+  showAfter: Date,
+  showBefore: Date,
+}
+
+export type FeedbackPromptCallback = (req: FeedbackPrompt) => void
 
 export type Context = {
   active?: boolean;
