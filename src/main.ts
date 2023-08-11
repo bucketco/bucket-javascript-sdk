@@ -14,6 +14,7 @@ import {
 import modulePackage from "../package.json";
 import Ably from "ably/promises";
 import { closeAblyConnection, openAblyConnection } from "./ably";
+import {parsePromptMessage} from "./prompts";
 
 async function request(url: string, body: any) {
   return fetch(url, {
@@ -230,17 +231,12 @@ export default function main() {
     log(`feedback prompting enabled`);
     const actualCallback = requestCallback || (() => {}); // dummy callback if not provided
     ablyClient = await openAblyConnection(`${getUrl()}/feedback/prompting-auth`, userId, body.channel, (data) => {
-      if (typeof data?.question !== "string" ||
-        typeof data?.showAfter !== "number" ||
-        typeof data?.showBefore !== "number") {
+      const msg = parsePromptMessage(data)
+      if (!msg) {
         err(`invalid feedback prompt message received`, data);
       } else {
         log(`feedback prompt received`, data);
-        actualCallback({
-          question: data.question,
-          showAfter: new Date(data.showAfter),
-          showBefore: new Date(data.showBefore),
-        });
+        actualCallback(msg);
       }
     }, debug)
 
