@@ -57,16 +57,13 @@ Supply these to the `init` call (2nd argument)
 {
   debug?: false, // enable debug mode to log all info and errors
   persistUser?: true | false // default value depends on environment, see below under "persisting users"
-  automaticFeedbackPrompting?: false, // enable automatic feedback prompting (see below)
-  feedbackPromptCallback?: undefined, // callback function to be called when feedback promp received from Bucket
   host?: "https://tracking.bucket.co", // don't change this
 }
 ```
 
 ### Qualitative feedback
 
-Bucket can collect qualitative feedback from your users in the form of a [Customer Satisfaction Score](https://en.wikipedia.org/wiki/Customer_satisfaction) and a comment. 
-This feedback can be submitted either manually, through the SDK, or can be prompted automatically by Bucket (if configured at feature level).
+Bucket can collect qualitative feedback from your users in the form of a [Customer Satisfaction Score](https://en.wikipedia.org/wiki/Customer_satisfaction) and a comment.
 
 #### Bucket feedback SDK
 
@@ -96,48 +93,6 @@ We have built a few scaffolds you can get started with easily:
 
 - [Vanilla HTML/JS feedback form](./example/feedback/feedback.html)
 - [React feedback form](./example/feedback/Feedback.jsx)
-
-#### Bucket automatic feedback prompting
-
-Bucket can automatically prompt your users for feedback when they use a feature that has feedback enabled. 
-By default, this is disabled, but can be enabled by setting `automaticFeedbackPrompting: true` in the `init` options. 
-If this option is enabled, the SDK will automatically connect to Bucket's servers on the first `user` call. Otherwise, 
-one can manually initialize the feedback prompting by calling `initFeedbackPrompting` method for a given user.
-
-Example for automatic feedback prompting:
-```ts
-// enable automatic feedback prompting (if enabled for the application)
-bucket.init("tk123", { automaticFeedbackPrompting: true });
-bucket.user("john_doe");
-
-// switching users, will automatically reset the feedback prompt connection for the new user,
-bucket.user("mary_doe");
-```
-
-Example for manual feedback prompting:
-```ts
-// enable automatic feedback prompting (if enabled for the application)
-bucket.init("tk123");
-bucket.initFeedbackPrompting("john_doe");
-
-// custom UI for feedback prompt
-const customCallback = (prompt) => {
-  // show feedback prompt to user
-  // ...
-  // submit feedback
-  bucket.feedback(feedback);
-};
-
-// requires a reset when switching users
-bucket.reset();
-bucket.initFeedbackPrompting("mary_doe", customCallback);
-```
-
-If the caller supplies a `feedbackPromptCallback` function in the `init` options, the SDK will call this function when 
-it receives a feedback prompt from Bucket. Callers can configure a custom UI for the feedback prompt by using this callback.
-
-Bucket SDK uses a persistent connection to Bucket's servers to receive feedback prompts. This connection is kept open 
-until the user closes the browser tab or navigates away from the page, or the `reset` method is explicitly called.
 
 ### Zero PII
 
@@ -181,10 +136,8 @@ bucket.company("acme_inc", { name: "Acme Inc", plan: "pro" }, "john_doe", {
 ### Persisting users
 
 **Usage in the browser** (imported or script tag):
-Once you call `user`, the userId will be persisted, so you don't have to supply userId to each subsequent `company` and `track` calls.
+Once you call `user`, the userId will be persisted so you don't have to supply userId to each subsequent `company` and `track` calls.
 This is practical for client-side usage where a session always is a single user.
-
-_Note: `automaticFeedbackPrompting` can only be enabled if `persistUser` is enabled._
 
 **Usage in node.js**
 User persistence is disabled by default when imported in node.js to avoid that companies or events are tied to the wrong user by mistake. This is because your server is (usually) not in a single user context.
