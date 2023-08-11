@@ -4,7 +4,8 @@ import { TRACKING_HOST } from "./config";
 import {
   Company,
   Context,
-  Feedback, FeedbackPrompt, FeedbackPromptCallback,
+  Feedback,
+  FeedbackPromptCallback,
   Key,
   Options,
   TrackedEvent,
@@ -227,7 +228,7 @@ export default function main() {
     }
 
     log(`feedback prompting enabled`);
-    const actualCallback = requestCallback || showFeedbackPrompt;
+    const actualCallback = requestCallback || (() => {}); // dummy callback if not provided
     ablyClient = await openAblyConnection(`${getUrl()}/feedback/prompting-auth`, userId, body.channel, (data) => {
       if (typeof data?.question !== "string" ||
         typeof data?.showAfter !== "number" ||
@@ -245,11 +246,6 @@ export default function main() {
 
     log(`feedback prompting connection established`);
     return res;
-  }
-
-  function showFeedbackPrompt(prompt: FeedbackPrompt) {
-    // nothing to do here yet
-    log(`showing feedback prompt`, prompt);
   }
 
   function reset() {
