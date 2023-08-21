@@ -1,10 +1,14 @@
-import {FeedbackPrompt} from "./types";
+import { FeedbackPrompt } from "./types";
 
-export const parsePromptMessage = (message: any): FeedbackPrompt | undefined => {
-  if (typeof message?.question !== "string" ||
+export const parsePromptMessage = (
+  message: any,
+): FeedbackPrompt | undefined => {
+  if (
+    typeof message?.question !== "string" ||
     !message.question.length ||
     typeof message?.showAfter !== "number" ||
-    typeof message?.showBefore !== "number") {
+    typeof message?.showBefore !== "number"
+  ) {
     return undefined;
   } else {
     return {
@@ -13,4 +17,4 @@ export const parsePromptMessage = (message: any): FeedbackPrompt | undefined => 
       showBefore: new Date(message.showBefore),
     };
   }
-}
+};

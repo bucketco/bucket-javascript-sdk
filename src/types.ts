@@ -47,11 +47,11 @@ export type Feedback = {
 
 export type FeedbackPrompt = {
   question: string;
-  showAfter: Date,
-  showBefore: Date,
-}
+  showAfter: Date;
+  showBefore: Date;
+};
 
-export type FeedbackPromptCallback = (req: FeedbackPrompt) => void
+export type FeedbackPromptCallback = (req: FeedbackPrompt) => void;
 
 export type Context = {
   active?: boolean;

@@ -1,6 +1,12 @@
+import Ably from "ably/promises";
 import fetch from "cross-fetch";
 import { isForNode } from "is-bundling-for-browser-or-node";
+
+import modulePackage from "../package.json";
+
+import { closeAblyConnection, openAblyConnection } from "./ably";
 import { TRACKING_HOST } from "./config";
+import { parsePromptMessage } from "./prompts";
 import {
   Company,
   Context,
@@ -11,10 +17,6 @@ import {
   TrackedEvent,
   User,
 } from "./types";
-import modulePackage from "../package.json";
-import Ably from "ably/promises";
-import { closeAblyConnection, openAblyConnection } from "./ably";
-import {parsePromptMessage} from "./prompts";
 
 async function request(url: string, body: any) {
   return fetch(url, {
@@ -50,21 +52,23 @@ export default function main() {
   function getSessionUser() {
     if (!sessionUserId) {
       err(
-        "User is not set, please call user() first or provide userId as argument"
+        "User is not set, please call user() first or provide userId as argument",
       );
     }
     return sessionUserId;
   }
-  function log(...args: any[]) {
+
+  function log(message: string, ...args: any[]) {
     if (debug) {
-      console.log("[Bucket]", ...args);
+      console.log("[Bucket]", message, ...args);
     }
   }
-  function err(...args: any[]): never {
+
+  function err(message: string, ...args: any[]): never {
     if (debug) {
-      console.error("[Bucket]", ...args);
+      console.error("[Bucket]", message, ...args);
     }
-    throw new Error(...args);
+    throw new Error(message);
   }
 
   // methods
@@ -95,7 +99,7 @@ export default function main() {
   async function user(
     userId: User["userId"],
     attributes?: User["attributes"],
-    context?: Context
+    context?: Context,
   ) {
     checkKey();
     if (!userId) err("No userId provided");
@@ -105,7 +109,7 @@ export default function main() {
       }
       sessionUserId = userId;
       if (automaticFeedbackPrompting && !ablyClient) {
-        await initFeedbackPrompting(userId, feedbackPromptCallback)
+        await initFeedbackPrompting(userId, feedbackPromptCallback);
       }
     }
     const payload: User = {
@@ -122,7 +126,7 @@ export default function main() {
     companyId: Company["companyId"],
     attributes?: Company["attributes"] | null,
     userId?: Company["userId"],
-    context?: Context
+    context?: Context,
   ) {
     checkKey();
     if (!companyId) err("No companyId provided");
@@ -147,7 +151,7 @@ export default function main() {
     attributes?: TrackedEvent["attributes"] | null,
     userId?: Company["userId"],
     companyId?: Company["companyId"],
-    context?: Context
+    context?: Context,
   ) {
     checkKey();
     if (!eventName) err("No eventName provided");
@@ -212,7 +216,8 @@ export default function main() {
     requestCallback?: FeedbackPromptCallback,
   ) {
     checkKey();
-    if (ablyClient) err("Feedback prompting already initialized. Use reset() first.");
+    if (ablyClient)
+      err("Feedback prompting already initialized. Use reset() first.");
     if (persistUser) {
       userId = getSessionUser();
     } else if (!userId) {
@@ -222,23 +227,33 @@ export default function main() {
       userId,
     });
     log(`feedback prompting status sent`, res);
-    const body: { success: boolean, channel?: string } = await res.json()
+    const body: { success: boolean; channel?: string } = await res.json();
     if (!body.success || !body.channel) {
       log(`feedback prompting not enabled`);
       return res;
     }
 
     log(`feedback prompting enabled`);
-    const actualCallback = requestCallback || (() => {}); // dummy callback if not provided
-    ablyClient = await openAblyConnection(`${getUrl()}/feedback/prompting-auth`, userId, body.channel, (data) => {
-      const msg = parsePromptMessage(data)
-      if (!msg) {
-        err(`invalid feedback prompt message received`, data);
-      } else {
-        log(`feedback prompt received`, data);
-        actualCallback(msg);
-      }
-    }, debug)
+    const actualCallback =
+      requestCallback ||
+      (() => {
+        return true;
+      }); // dummy callback if not provided
+    ablyClient = await openAblyConnection(
+      `${getUrl()}/feedback/prompting-auth`,
+      userId,
+      body.channel,
+      (data) => {
+        const msg = parsePromptMessage(data);
+        if (!msg) {
+          err(`invalid feedback prompt message received`, data);
+        } else {
+          log(`feedback prompt received`, data);
+          actualCallback(msg);
+        }
+      },
+      debug,
+    );
 
     log(`feedback prompting connection established`);
     return res;

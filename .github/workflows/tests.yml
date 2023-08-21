@@ -13,19 +13,41 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Checkout source code
+        uses: actions/checkout@v3
+      - name: Use Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18.16.0
+          node-version-file: '.nvmrc'
           cache: "yarn"
-      - run: yarn install
-      - run: yarn build
-      - run: yarn test:ci
-      - name: Test Reporter
-        uses: dorny/test-reporter@v1.5.0
-        if: always() # run this step even if previous step failed
+          cache-dependency-path: "**/yarn.lock"
+      - name: Restore Node.js dependencies
+        run: yarn install --frozen-lockfile
+      - id: build
+        name: Build the project
+        run: yarn build
+      - id: test
+        name: Test the project
+        run: yarn test:ci
+      - name: Report test results
+        uses: dorny/test-reporter@v1.6.0
+        if: ${{ steps.build.conclusion == 'success' }}
         with:
-          name: Build & Test Report # Name of the check run which will be created
-          path: ./junit.xml # Path to test results
-          reporter: java-junit # Format of test results
+          name: Build & Test Report
+          path: ./junit.xml
+          reporter: jest-junit
+      - id: prettier
+        if: ${{ steps.test.conclusion == 'success' }}
+        name: Check styling
+        run: yarn prettier
+      - id: lint
+        if: ${{ steps.prettier.conclusion == 'success' }}
+        name: Check for linting errors
+        run: yarn lint:ci
+      - name: Annotate from ESLint report
+        if: ${{ steps.prettier.conclusion == 'success' }}
+        uses: ataylorme/eslint-annotate-action@v2
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          report-json: "eslint-report.json"
+          fail-on-warning: true

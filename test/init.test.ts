@@ -30,21 +30,26 @@ describe("init", () => {
 
   test("will reject setup without key", async () => {
     expect(() => bucket().init("")).toThrowError(
-      "Tracking key was not provided"
+      "Tracking key was not provided",
     );
   });
 
   test("will reject user call without key", async () => {
     const bucketInstance = bucket();
     await expect(() => bucketInstance.user("foo")).rejects.toThrowError(
-      "Tracking key is not set, please call init() first"
+      "Tracking key is not set, please call init() first",
     );
   });
 
   test("will reject automatic feedback prompting if not persisting user", async () => {
     const bucketInstance = bucket();
-    expect(() => bucketInstance.init(KEY, { automaticFeedbackPrompting: true, persistUser: false })).toThrowError(
-        "Feedback prompting is not supported when persistUser is disabled"
+    expect(() =>
+      bucketInstance.init(KEY, {
+        automaticFeedbackPrompting: true,
+        persistUser: false,
+      }),
+    ).toThrowError(
+      "Feedback prompting is not supported when persistUser is disabled",
     );
   });
 });
