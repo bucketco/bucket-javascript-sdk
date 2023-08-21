@@ -1,17 +1,18 @@
 import nock from "nock";
 import {
-  describe,
-  expect,
-  vi,
-  test,
+  afterAll,
   afterEach,
   beforeAll,
-  afterAll,
+  describe,
+  expect,
+  test,
+  vi,
 } from "vitest";
-import { TRACKING_HOST } from "../src/config";
-import bucket from "../src/main";
+
 import { version } from "../package.json";
 import { closeAblyConnection, openAblyConnection } from "../src/ably";
+import { TRACKING_HOST } from "../src/config";
+import bucket from "../src/main";
 
 const KEY = "123";
 

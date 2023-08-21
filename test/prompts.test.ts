@@ -1,4 +1,5 @@
 import { describe, expect, test } from "vitest";
+
 import { parsePromptMessage } from "../src/prompts";
 
 describe("parsePromptMessage", () => {

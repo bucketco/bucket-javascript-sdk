@@ -11,7 +11,7 @@ const prettierConfig = require("eslint-config-prettier");
 module.exports = [
   {
     // Blacklisted Folders, including **/node_modules/ and .git/
-    ignores: ["build/"],
+    ignores: ["dist/", "example/"],
   },
   {
     files: [
@@ -37,6 +37,7 @@ module.exports = [
         // This is required to avoid ecmaVersion < 2015 error or 'import' / 'export' error
         ecmaVersion: "latest",
         sourceType: "module",
+        project: "./tsconfig.json",
       },
     },
     settings: {
@@ -121,7 +122,7 @@ module.exports = [
       "@typescript-eslint/no-unused-vars": "off", // handled by unused-imports
       "@typescript-eslint/explicit-module-boundary-types": ["off"],
       "@typescript-eslint/switch-exhaustiveness-check": ["warn"],
-      "@typescript-eslint/no-non-null-assertion": ["warn"],
+      "@typescript-eslint/no-non-null-assertion": ["off"],
       "@typescript-eslint/no-empty-function": ["warn"],
       "@typescript-eslint/no-explicit-any": ["off"],
       "@typescript-eslint/no-use-before-define": ["off"],
