@@ -1,5 +1,6 @@
 import nock from "nock";
-import { describe, expect, spyOn, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
+
 import bucket from "../src/main";
 
 const KEY = "123";
@@ -8,8 +9,8 @@ const CUSTOM_HOST = "https://example.com";
 describe("init", () => {
   test("will accept setup with key and debug flag", () => {
     const bucketInstance = bucket();
-    const spyInit = spyOn(bucketInstance, "init");
-    const spyLog = spyOn(console, "log");
+    const spyInit = vi.spyOn(bucketInstance, "init");
+    const spyLog = vi.spyOn(console, "log");
     spyLog.mockImplementationOnce(() => null);
     bucketInstance.init(KEY, { debug: true });
     expect(spyInit).toHaveBeenCalled();
@@ -30,21 +31,26 @@ describe("init", () => {
 
   test("will reject setup without key", async () => {
     expect(() => bucket().init("")).toThrowError(
-      "Tracking key was not provided"
+      "Tracking key was not provided",
     );
   });
 
   test("will reject user call without key", async () => {
     const bucketInstance = bucket();
     await expect(() => bucketInstance.user("foo")).rejects.toThrowError(
-      "Tracking key is not set, please call init() first"
+      "Tracking key is not set, please call init() first",
     );
   });
 
   test("will reject automatic feedback prompting if not persisting user", async () => {
     const bucketInstance = bucket();
-    expect(() => bucketInstance.init(KEY, { automaticFeedbackPrompting: true, persistUser: false })).toThrowError(
-        "Feedback prompting is not supported when persistUser is disabled"
+    expect(() =>
+      bucketInstance.init(KEY, {
+        automaticFeedbackPrompting: true,
+        persistUser: false,
+      }),
+    ).toThrowError(
+      "Feedback prompting is not supported when persistUser is disabled",
     );
   });
 });

@@ -29,7 +29,8 @@ const config: Configuration[] = [
         export: "default",
       },
     },
-    externals: [nodeExternals()],
+    externalsPresets: { node: true },
+    externals: [nodeExternals() as any], // type system is confused for some reason
   },
   // Browser UMD
   {

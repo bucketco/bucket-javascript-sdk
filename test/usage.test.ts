@@ -1,14 +1,22 @@
 import nock from "nock";
-import { describe, expect, vi, test, afterEach, beforeAll, afterAll } from "vitest";
-import { TRACKING_HOST } from "../src/config";
-import bucket from "../src/main";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  test,
+  vi,
+} from "vitest";
+
 import { version } from "../package.json";
 import { closeAblyConnection, openAblyConnection } from "../src/ably";
+import { TRACKING_HOST } from "../src/config";
+import bucket from "../src/main";
 
 const KEY = "123";
 
 describe("usage", () => {
-
   afterEach(() => {
     nock.cleanAll();
     vi.clearAllMocks();
@@ -155,12 +163,12 @@ describe("usage", () => {
     await bucketInstance.user("fooUser");
 
     await expect(() =>
-      bucketInstance.company("fooCompany")
+      bucketInstance.company("fooCompany"),
     ).rejects.toThrowError("No userId provided and persistUser is disabled");
     await bucketInstance.company("fooCompany", null, "fooUser");
 
     await expect(() => bucketInstance.track("fooEvent")).rejects.toThrowError(
-      "No userId provided and persistUser is disabled"
+      "No userId provided and persistUser is disabled",
     );
     await bucketInstance.track("fooEvent", null, "fooUser");
   });
@@ -197,7 +205,7 @@ describe("usage", () => {
 
     bucketInstance.reset();
     await expect(() => bucketInstance.track("foo")).rejects.toThrowError(
-      "User is not set, please call user() first"
+      "User is not set, please call user() first",
     );
   });
 });
@@ -205,25 +213,34 @@ describe("usage", () => {
 const message = {
   question: "How are you",
   showAfter: new Date().valueOf(),
-  showBefore: new Date().valueOf()
+  showBefore: new Date().valueOf(),
 };
 
 describe("feedback prompting", () => {
   beforeAll(() => {
     vi.mock("/src/ably", () => {
       return {
-        openAblyConnection: vi.fn().mockImplementation((_a:string, _b:string, _c:string, callback: (data: any) => void) => {
-          callback(message);
-          return Promise.resolve("fake_client");
-        }),
-        closeAblyConnection: vi.fn()
+        openAblyConnection: vi
+          .fn()
+          .mockImplementation(
+            (
+              _a: string,
+              _b: string,
+              _c: string,
+              callback: (data: any) => void,
+            ) => {
+              callback(message);
+              return Promise.resolve("fake_client");
+            },
+          ),
+        closeAblyConnection: vi.fn(),
       };
-    })
-  })
+    });
+  });
 
   afterAll(() => {
     vi.unmock("/src/ably");
-  })
+  });
 
   afterEach(() => {
     nock.cleanAll();
@@ -237,15 +254,19 @@ describe("feedback prompting", () => {
       })
       .reply(200, { success: true, channel: "test-channel" });
 
-
     const bucketInstance = bucket();
     bucketInstance.init(KEY);
 
     await bucketInstance.initFeedbackPrompting("foo");
 
     expect(openAblyConnection).toBeCalledTimes(1);
-    expect(openAblyConnection).toBeCalledWith(`${TRACKING_HOST}/${KEY}/feedback/prompting-auth`,
-        "foo", "test-channel", expect.anything(), expect.anything());
+    expect(openAblyConnection).toBeCalledWith(
+      `${TRACKING_HOST}/${KEY}/feedback/prompting-auth`,
+      "foo",
+      "test-channel",
+      expect.anything(),
+      expect.anything(),
+    );
 
     // call twice, expect only one reset to go through
     bucketInstance.reset();
@@ -274,14 +295,17 @@ describe("feedback prompting", () => {
     nock(`${TRACKING_HOST}/${KEY}`)
       .post(/.*\/feedback\/prompting-init/)
       .times(2)
-      .reply(200, { success: true, channel: "test-channel" })
+      .reply(200, { success: true, channel: "test-channel" });
     nock(`${TRACKING_HOST}/${KEY}`)
       .post(/.*\/user/)
       .times(2)
       .reply(200);
 
     const bucketInstance = bucket();
-    bucketInstance.init(KEY, { automaticFeedbackPrompting: true, persistUser: true });
+    bucketInstance.init(KEY, {
+      automaticFeedbackPrompting: true,
+      persistUser: true,
+    });
 
     // connects to ably for first time
     await bucketInstance.user("foo");
@@ -296,7 +320,7 @@ describe("feedback prompting", () => {
   test("reset closes previously open feedback prompting connection", async () => {
     nock(`${TRACKING_HOST}/${KEY}`)
       .post(/.*\/feedback\/prompting-init/)
-      .reply(200, { success: true, channel: "test-channel" })
+      .reply(200, { success: true, channel: "test-channel" });
 
     const bucketInstance = bucket();
     bucketInstance.init(KEY);
@@ -305,14 +329,14 @@ describe("feedback prompting", () => {
     await bucketInstance.initFeedbackPrompting("foo");
     expect(openAblyConnection).toBeCalledTimes(1);
 
-    bucketInstance.reset()
+    bucketInstance.reset();
     expect(closeAblyConnection).toBeCalledTimes(1);
   });
 
   test("propagates the callback to the proper method", async () => {
     nock(`${TRACKING_HOST}/${KEY}`)
       .post(/.*\/feedback\/prompting-init/)
-      .reply(200, { success: true, channel: "test-channel" })
+      .reply(200, { success: true, channel: "test-channel" });
 
     const bucketInstance = bucket();
     bucketInstance.init(KEY);
@@ -326,21 +350,23 @@ describe("feedback prompting", () => {
     expect(callback).toBeCalledWith({
       question: "How are you",
       showAfter: new Date(message.showAfter),
-      showBefore: new Date(message.showBefore)
+      showBefore: new Date(message.showBefore),
     });
   });
 
   test("rejects if feedback prompting already initialized", async () => {
     nock(`${TRACKING_HOST}/${KEY}`)
       .post(/.*\/feedback\/prompting-init/)
-      .reply(200, { success: true, channel: "test-channel" })
+      .reply(200, { success: true, channel: "test-channel" });
 
     const bucketInstance = bucket();
     bucketInstance.init(KEY);
 
     await bucketInstance.initFeedbackPrompting("foo");
-    await expect(() => bucketInstance.initFeedbackPrompting("foo")).rejects.toThrowError(
-      "Feedback prompting already initialized. Use reset() first."
+    await expect(() =>
+      bucketInstance.initFeedbackPrompting("foo"),
+    ).rejects.toThrowError(
+      "Feedback prompting already initialized. Use reset() first.",
     );
   });
 });
