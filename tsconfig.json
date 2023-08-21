@@ -13,7 +13,8 @@
     "declarationDir": "./dist/types",
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noImplicitReturns": true
+    "noImplicitReturns": true,
+    "typeRoots": ["./node_modules/@types", "./types"]
   },
   "include": ["src", "test", "webpack.config.ts"]
 }
