@@ -1,5 +1,5 @@
 import nock from "nock";
-import { describe, expect, spyOn, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 
 import bucket from "../src/main";
 
@@ -9,8 +9,8 @@ const CUSTOM_HOST = "https://example.com";
 describe("init", () => {
   test("will accept setup with key and debug flag", () => {
     const bucketInstance = bucket();
-    const spyInit = spyOn(bucketInstance, "init");
-    const spyLog = spyOn(console, "log");
+    const spyInit = vi.spyOn(bucketInstance, "init");
+    const spyLog = vi.spyOn(console, "log");
     spyLog.mockImplementationOnce(() => null);
     bucketInstance.init(KEY, { debug: true });
     expect(spyInit).toHaveBeenCalled();
