@@ -29,6 +29,11 @@ const rememberMessage = (userId: string, promptId: string) => {
   localStorage.setItem(`prompt-${userId}`, promptId);
 };
 
+const seenMessage = (userId: string, promptId: string) => {
+  const id = localStorage.getItem(`prompt-${userId}`);
+  return id === promptId;
+};
+
 export type FeedbackPromptActionedCallback = () => void;
 export type ShowPromptCallback = (
   userId: string,
@@ -47,7 +52,9 @@ export const processPromptMessage = (
     rememberMessage(userId, prompt.promptId);
   };
 
-  if (now > prompt.showBefore) {
+  if (seenMessage(userId, prompt.promptId)) {
+    return false;
+  } else if (now > prompt.showBefore) {
     rememberMessage(userId, prompt.promptId);
     return false;
   } else if (now < prompt.showAfter) {

@@ -104,6 +104,22 @@ describe("processPromptMessage", () => {
     vi.useRealTimers();
   });
 
+  test("will not process seen prompts", () => {
+    localStorage.setItem("prompt-user", "123");
+
+    const prompt = {
+      ...promptTemplate,
+      showAfter: new Date(now - 1000),
+      showBefore: new Date(now + 1000),
+    };
+
+    const showCallback = vi.fn();
+
+    expect(processPromptMessage("user", prompt, showCallback)).toBe(false);
+
+    expect(showCallback).not.toHaveBeenCalled();
+  });
+
   test("will not process expired prompts", () => {
     const prompt = {
       ...promptTemplate,

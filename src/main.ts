@@ -6,12 +6,17 @@ import modulePackage from "../package.json";
 
 import { closeAblyConnection, openAblyConnection } from "./ably";
 import { TRACKING_HOST } from "./config";
-import { parsePromptMessage } from "./prompts";
+import {
+  FeedbackPromptActionedCallback as FeedbackPromptActionedHandler,
+  parsePromptMessage,
+  processPromptMessage,
+} from "./prompts";
 import {
   Company,
   Context,
   Feedback,
-  FeedbackPromptCallback,
+  FeedbackPrompt,
+  FeedbackPromptHandler,
   Key,
   Options,
   TrackedEvent,
@@ -35,8 +40,9 @@ export default function main() {
   let sessionUserId: string | undefined = undefined;
   let persistUser: boolean = !isForNode;
   let automaticFeedbackPrompting: boolean = false;
-  let feedbackPromptCallback: FeedbackPromptCallback | undefined = undefined;
+  let feedbackPromptHandler: FeedbackPromptHandler | undefined = undefined;
   let ablyClient: Ably.Realtime | undefined = undefined;
+  let feedbackPromptingUserId: string | undefined = undefined;
   let debug = false;
 
   log("Instance created");
@@ -52,7 +58,7 @@ export default function main() {
   function getSessionUser() {
     if (!sessionUserId) {
       err(
-        "User is not set, please call user() first or provide userId as argument",
+        "User is not set, please call user() first or provide userId as argument"
       );
     }
     return sessionUserId;
@@ -69,6 +75,16 @@ export default function main() {
       console.error("[Bucket]", message, ...args);
     }
     throw new Error(message);
+  }
+
+  function resolveUser(userId?: User["userId"]): string | never {
+    if (persistUser) {
+      return getSessionUser();
+    } else if (!userId) {
+      err("No userId provided and persistUser is disabled");
+    }
+
+    return userId!;
   }
 
   // methods
@@ -90,8 +106,8 @@ export default function main() {
         automaticFeedbackPrompting = options.automaticFeedbackPrompting;
       }
     }
-    if (options?.feedbackPromptCallback) {
-      feedbackPromptCallback = options.feedbackPromptCallback;
+    if (options?.feedbackPromptHandler) {
+      feedbackPromptHandler = options.feedbackPromptHandler;
     }
     log(`initialized with key "${trackingKey}" and options`, options);
   }
@@ -99,7 +115,7 @@ export default function main() {
   async function user(
     userId: User["userId"],
     attributes?: User["attributes"],
-    context?: Context,
+    context?: Context
   ) {
     checkKey();
     if (!userId) err("No userId provided");
@@ -109,7 +125,7 @@ export default function main() {
       }
       sessionUserId = userId;
       if (automaticFeedbackPrompting && !ablyClient) {
-        await initFeedbackPrompting(userId, feedbackPromptCallback);
+        await initFeedbackPrompting(userId, feedbackPromptHandler);
       }
     }
     const payload: User = {
@@ -126,15 +142,12 @@ export default function main() {
     companyId: Company["companyId"],
     attributes?: Company["attributes"] | null,
     userId?: Company["userId"],
-    context?: Context,
+    context?: Context
   ) {
     checkKey();
     if (!companyId) err("No companyId provided");
-    if (persistUser) {
-      userId = getSessionUser();
-    } else if (!userId) {
-      err("No userId provided and persistUser is disabled");
-    }
+    userId = resolveUser(userId);
+
     const payload: Company = {
       userId,
       companyId,
@@ -151,15 +164,12 @@ export default function main() {
     attributes?: TrackedEvent["attributes"] | null,
     userId?: Company["userId"],
     companyId?: Company["companyId"],
-    context?: Context,
+    context?: Context
   ) {
     checkKey();
     if (!eventName) err("No eventName provided");
-    if (persistUser) {
-      userId = getSessionUser();
-    } else if (!userId) {
-      err("No userId provided and persistUser is disabled");
-    }
+    userId = resolveUser(userId);
+
     const payload: TrackedEvent = {
       userId,
       event: eventName,
@@ -179,6 +189,7 @@ export default function main() {
     companyId?: string;
     score?: number;
     comment?: string;
+    promptId?: FeedbackPrompt["promptId"];
   };
 
   async function feedback({
@@ -187,16 +198,12 @@ export default function main() {
     userId,
     companyId,
     comment,
+    promptId,
   }: FeedbackOptions) {
     checkKey();
     if (!featureId) err("No featureId provided");
     if (!score && !comment) err("Either 'score' or 'comment' must be provided");
-
-    if (persistUser) {
-      userId = getSessionUser();
-    } else if (!userId) {
-      err("No userId provided and persistUser is disabled");
-    }
+    userId = resolveUser(userId);
 
     const payload: Feedback = {
       userId,
@@ -204,6 +211,7 @@ export default function main() {
       score,
       companyId,
       comment,
+      promptId,
     };
 
     const res = await request(`${getUrl()}/feedback`, payload);
@@ -213,16 +221,14 @@ export default function main() {
 
   async function initFeedbackPrompting(
     userId?: User["userId"],
-    requestCallback?: FeedbackPromptCallback,
+    handler?: FeedbackPromptHandler
   ) {
     checkKey();
-    if (ablyClient)
+    if (ablyClient) {
       err("Feedback prompting already initialized. Use reset() first.");
-    if (persistUser) {
-      userId = getSessionUser();
-    } else if (!userId) {
-      err("No userId provided and persistUser is disabled");
     }
+    userId = resolveUser(userId);
+
     const res = await request(`${getUrl()}/feedback/prompting-init`, {
       userId,
     });
@@ -234,33 +240,111 @@ export default function main() {
     }
 
     log(`feedback prompting enabled`);
-    const actualCallback =
-      requestCallback ||
-      (() => {
-        return true;
-      }); // dummy callback if not provided
+
+    feedbackPromptingUserId = userId;
     ablyClient = await openAblyConnection(
       `${getUrl()}/feedback/prompting-auth`,
       userId,
       body.channel,
-      (data) => {
-        const msg = parsePromptMessage(data);
-        if (!msg) {
-          err(`invalid feedback prompt message received`, data);
-        } else {
-          log(`feedback prompt received`, data);
-          actualCallback(msg);
-        }
-      },
-      debug,
+      (message) =>
+        handleFeedbackPromptRequest(
+          userId!,
+          message,
+          handler || feedbackPromptHandler
+        ),
+      debug
     );
 
     log(`feedback prompting connection established`);
     return res;
   }
 
+  function handleFeedbackPromptRequest(
+    userId: User["userId"],
+    message: any,
+    userCallback: FeedbackPromptHandler | undefined
+  ) {
+    const parsed = parsePromptMessage(message);
+    if (!parsed) {
+      err(`invalid feedback prompt message received`, message);
+    } else {
+      feedbackPromptEvent(parsed.promptId, "received", userId);
+
+      if (
+        !processPromptMessage(userId, parsed, (u, m, cb) =>
+          triggerFeedbackPrompt(u, m, cb, userCallback)
+        )
+      ) {
+        log(
+          `feedback prompt not shown, it was either expired or already processed`,
+          message
+        );
+      }
+    }
+  }
+
+  function triggerFeedbackPrompt(
+    userId: User["userId"],
+    message: FeedbackPrompt,
+    actioned: FeedbackPromptActionedHandler,
+    handler: FeedbackPromptHandler | undefined
+  ) {
+    if (feedbackPromptingUserId !== userId) {
+      log(
+        `feedback prompt not shown, received for another user`,
+        userId,
+        message
+      );
+      return;
+    }
+
+    if (handler) {
+      feedbackPromptEvent(message.promptId, "shown", userId);
+
+      handler(message, (reply) => {
+        if (!reply) {
+          feedbackPromptEvent(message.promptId, "dismissed", userId);
+        } else {
+          feedback({
+            featureId: message.featureId,
+            userId,
+            companyId: reply.companyId,
+            score: reply.score,
+            comment: reply.comment,
+            promptId: message.promptId,
+          });
+        }
+
+        actioned();
+      });
+    } else {
+      log(`feedback prompt not shown, no active handler`, message);
+    }
+  }
+
+  async function feedbackPromptEvent(
+    promptId: string,
+    event: "received" | "shown" | "dismissed",
+    userId: User["userId"]
+  ) {
+    checkKey();
+    if (!promptId) err("No promptId provided");
+    if (!event) err("No event provided");
+
+    const payload = {
+      userId,
+      promptId,
+      action: event,
+    };
+
+    const res = await request(`${getUrl()}/feedback/prompt-events`, payload);
+    log(`sent prompt event`, res);
+    return res;
+  }
+
   function reset() {
     sessionUserId = undefined;
+    feedbackPromptingUserId = undefined;
     if (ablyClient) {
       closeAblyConnection(ablyClient);
       log(`feedback prompting connection closed`);

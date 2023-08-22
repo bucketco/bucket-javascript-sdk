@@ -10,11 +10,25 @@ import {
 } from "vitest";
 
 import { version } from "../package.json";
+import { Types } from "ably/promises";
 import { closeAblyConnection, openAblyConnection } from "../src/ably";
 import { TRACKING_HOST } from "../src/config";
 import bucket from "../src/main";
 
 const KEY = "123";
+
+beforeAll(() => {
+  vi.mock("/src/ably", () => {
+    return {
+      openAblyConnection: vi.fn().mockReturnValue("fake_client"),
+      closeAblyConnection: vi.fn(),
+    };
+  });
+});
+
+afterAll(() => {
+  vi.unmock("/src/ably");
+});
 
 describe("usage", () => {
   afterEach(() => {
@@ -210,40 +224,7 @@ describe("usage", () => {
   });
 });
 
-const message = {
-  question: "How are you",
-  showAfter: new Date().valueOf(),
-  showBefore: new Date().valueOf(),
-  promptId: "123",
-  featureId: "456",
-};
-
 describe("feedback prompting", () => {
-  beforeAll(() => {
-    vi.mock("/src/ably", () => {
-      return {
-        openAblyConnection: vi
-          .fn()
-          .mockImplementation(
-            (
-              _a: string,
-              _b: string,
-              _c: string,
-              callback: (data: any) => void
-            ) => {
-              callback(message);
-              return Promise.resolve("fake_client");
-            }
-          ),
-        closeAblyConnection: vi.fn(),
-      };
-    });
-  });
-
-  afterAll(() => {
-    vi.unmock("/src/ably");
-  });
-
   afterEach(() => {
     nock.cleanAll();
     vi.clearAllMocks();
@@ -335,29 +316,6 @@ describe("feedback prompting", () => {
     expect(closeAblyConnection).toBeCalledTimes(1);
   });
 
-  test("propagates the callback to the proper method", async () => {
-    nock(`${TRACKING_HOST}/${KEY}`)
-      .post(/.*\/feedback\/prompting-init/)
-      .reply(200, { success: true, channel: "test-channel" });
-
-    const bucketInstance = bucket();
-    bucketInstance.init(KEY);
-
-    // connects to ably for first time
-    const callback = vi.fn();
-
-    await bucketInstance.initFeedbackPrompting("foo", callback);
-
-    expect(callback).toBeCalledTimes(1);
-    expect(callback).toBeCalledWith({
-      question: "How are you",
-      showAfter: new Date(message.showAfter),
-      showBefore: new Date(message.showBefore),
-      promptId: "123",
-      featureId: "456",
-    });
-  });
-
   test("rejects if feedback prompting already initialized", async () => {
     nock(`${TRACKING_HOST}/${KEY}`)
       .post(/.*\/feedback\/prompting-init/)
@@ -371,6 +329,62 @@ describe("feedback prompting", () => {
       bucketInstance.initFeedbackPrompting("foo")
     ).rejects.toThrowError(
       "Feedback prompting already initialized. Use reset() first."
+    );
+  });
+});
+
+describe("feedback state management", () => {
+  const bucketInstance = bucket();
+  bucketInstance.init(KEY);
+
+  beforeAll(() => {
+    nock(`${TRACKING_HOST}/${KEY}`)
+      .post(/.*\/feedback\/prompting-init/)
+      .reply(200, { success: true, channel: "test-channel" });
+
+    nock(`${TRACKING_HOST}/${KEY}`)
+      .post(/.*\/feedback\/prompt-events/)
+      .reply(200, { success: true, channel: "test-channel" });
+  });
+
+  afterEach(() => {
+    nock.cleanAll();
+    vi.clearAllMocks();
+  });
+
+  const message = {
+    question: "How are you",
+    showAfter: new Date(Date.now() - 1000).valueOf(),
+    showBefore: new Date(Date.now() + 1000).valueOf(),
+    promptId: "123",
+    featureId: "456",
+  };
+
+  test("propagates the callback to the proper method", async () => {
+    vi.mocked(openAblyConnection).mockImplementation(
+      (_a, _b_, _c, callback, _d) => {
+        callback(message);
+        return Promise.resolve(
+          "fake_client" as unknown as Types.RealtimePromise
+        );
+      }
+    );
+
+    // connects to ably for first time
+    const callback = vi.fn();
+
+    await bucketInstance.initFeedbackPrompting("foo", callback);
+
+    expect(callback).toBeCalledTimes(1);
+    expect(callback).toBeCalledWith(
+      {
+        question: "How are you",
+        showAfter: new Date(message.showAfter),
+        showBefore: new Date(message.showBefore),
+        promptId: "123",
+        featureId: "456",
+      },
+      expect.anything()
     );
   });
 });
