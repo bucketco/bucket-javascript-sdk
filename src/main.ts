@@ -324,6 +324,10 @@ export default function main() {
   }
 
   async function openFeedbackForm(options: FeedbackDialogOptions) {
+    if (typeof window === "undefined") {
+      err("openFeedbackForm can only be called in the browser");
+    }
+
     if (!options.featureId) err("No featureId provided");
     if (persistUser) {
       options.userId = getSessionUser();
