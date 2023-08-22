@@ -227,6 +227,7 @@ export default function main() {
     if (ablyClient) {
       err("Feedback prompting already initialized. Use reset() first.");
     }
+
     userId = resolveUser(userId);
 
     const res = await request(`${getUrl()}/feedback/prompting-init`, {
@@ -254,7 +255,6 @@ export default function main() {
         ),
       debug
     );
-
     log(`feedback prompting connection established`);
     return res;
   }
@@ -264,6 +264,7 @@ export default function main() {
     message: any,
     userCallback: FeedbackPromptHandler | undefined
   ) {
+    console.log("handleFeedbackPromptRequest", message);
     const parsed = parsePromptMessage(message);
     if (!parsed) {
       err(`invalid feedback prompt message received`, message);

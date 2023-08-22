@@ -3,32 +3,22 @@ import {
   afterAll,
   afterEach,
   beforeAll,
+  beforeEach,
   describe,
   expect,
   test,
   vi,
 } from "vitest";
 
-import { version } from "../package.json";
 import { Types } from "ably/promises";
+import { version } from "../package.json";
 import { closeAblyConnection, openAblyConnection } from "../src/ably";
 import { TRACKING_HOST } from "../src/config";
 import bucket from "../src/main";
 
 const KEY = "123";
 
-beforeAll(() => {
-  vi.mock("/src/ably", () => {
-    return {
-      openAblyConnection: vi.fn().mockReturnValue("fake_client"),
-      closeAblyConnection: vi.fn(),
-    };
-  });
-});
-
-afterAll(() => {
-  vi.unmock("/src/ably");
-});
+vi.mock("/src/ably");
 
 describe("usage", () => {
   afterEach(() => {
@@ -225,6 +215,11 @@ describe("usage", () => {
 });
 
 describe("feedback prompting", () => {
+  beforeAll(() => {
+    vi.mocked(openAblyConnection).mockResolvedValue("fake_client" as any);
+    vi.mocked(closeAblyConnection).mockResolvedValue(undefined);
+  });
+
   afterEach(() => {
     nock.cleanAll();
     vi.clearAllMocks();
@@ -337,40 +332,76 @@ describe("feedback state management", () => {
   const bucketInstance = bucket();
   bucketInstance.init(KEY);
 
-  beforeAll(() => {
-    nock(`${TRACKING_HOST}/${KEY}`)
-      .post(/.*\/feedback\/prompting-init/)
-      .reply(200, { success: true, channel: "test-channel" });
-
-    nock(`${TRACKING_HOST}/${KEY}`)
-      .post(/.*\/feedback\/prompt-events/)
-      .reply(200, { success: true, channel: "test-channel" });
-  });
-
-  afterEach(() => {
-    nock.cleanAll();
-    vi.clearAllMocks();
-  });
-
-  const message = {
+  const goodMessage = {
     question: "How are you",
     showAfter: new Date(Date.now() - 1000).valueOf(),
     showBefore: new Date(Date.now() + 1000).valueOf(),
     promptId: "123",
     featureId: "456",
   };
+  const badMessage = {
+    foo: "bar",
+  };
+
+  beforeEach((tc) => {
+    nock(`${TRACKING_HOST}/${KEY}`)
+      .post(/.*\/feedback\/prompting-init/)
+      .reply(200, { success: true, channel: "test-channel" });
+
+    if (tc.meta.name.includes("propagates")) {
+      vi.mocked(openAblyConnection).mockImplementation(
+        (_a, _b_, _c, callback, _d) => {
+          callback(goodMessage);
+          return Promise.resolve("fake_client" as any);
+        }
+      );
+    } else if (tc.meta.name.includes("blocks")) {
+      vi.mocked(openAblyConnection).mockImplementation(
+        (_a, _b_, _c, callback, _d) => {
+          callback(badMessage);
+          return Promise.resolve("fake_client" as any);
+        }
+      );
+    }
+
+    bucketInstance.reset();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+    nock.cleanAll();
+  });
+
+  const expectAsyncNockDone = async (nk: nock.Scope) => {
+    const delay = (ms: number) =>
+      new Promise((resolve) => setTimeout(resolve, ms));
+
+    for (let i = 0; i < 10; i++) {
+      if (nk.isDone()) {
+        expect(nk.isDone()).toBe(true);
+      }
+      await delay(100);
+    }
+
+    expect(nk.isDone()).toBe(true);
+  };
 
   test("propagates the callback to the proper method", async () => {
-    vi.mocked(openAblyConnection).mockImplementation(
-      (_a, _b_, _c, callback, _d) => {
-        callback(message);
-        return Promise.resolve(
-          "fake_client" as unknown as Types.RealtimePromise
-        );
-      }
-    );
+    const n1 = nock(`${TRACKING_HOST}/${KEY}`)
+      .post(/.*\/feedback\/prompt-events/, {
+        userId: "foo",
+        promptId: "123",
+        action: "received",
+      })
+      .reply(200, { success: true });
+    const n2 = nock(`${TRACKING_HOST}/${KEY}`)
+      .post(/.*\/feedback\/prompt-events/, {
+        userId: "foo",
+        promptId: "123",
+        action: "shown",
+      })
+      .reply(200, { success: true });
 
-    // connects to ably for first time
     const callback = vi.fn();
 
     await bucketInstance.initFeedbackPrompting("foo", callback);
@@ -379,12 +410,25 @@ describe("feedback state management", () => {
     expect(callback).toBeCalledWith(
       {
         question: "How are you",
-        showAfter: new Date(message.showAfter),
-        showBefore: new Date(message.showBefore),
+        showAfter: new Date(goodMessage.showAfter),
+        showBefore: new Date(goodMessage.showBefore),
         promptId: "123",
         featureId: "456",
       },
       expect.anything()
     );
+
+    expectAsyncNockDone(n1);
+    expectAsyncNockDone(n2);
+  });
+
+  test("blocks invalid messages", async () => {
+    const callback = vi.fn();
+
+    await expect(
+      bucketInstance.initFeedbackPrompting("foo", callback)
+    ).rejects.toThrowError();
+
+    expect(callback).not.toBeCalled;
   });
 });
