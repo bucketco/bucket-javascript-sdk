@@ -322,7 +322,7 @@ export default function main() {
     return res;
   }
 
-  async function collectFeedback(options: FeedbackDialogOptions) {
+  async function openFeedbackForm(options: FeedbackDialogOptions) {
     if (!options.featureId) err("No featureId provided");
     if (persistUser) {
       options.userId = getSessionUser();
@@ -330,7 +330,7 @@ export default function main() {
       err("No userId provided and persistUser is disabled");
     }
     import("./feedback").then((lib) => {
-      lib.collectFeedback({
+      lib.openFeedbackForm({
         onSubmit: async (data) => {
           // Default onSubmit handler
           return feedback({
@@ -366,7 +366,7 @@ export default function main() {
     track,
     feedback,
     // feedback prompting
+    openFeedbackForm,
     initFeedbackPrompting,
-    collectFeedback,
   };
 }

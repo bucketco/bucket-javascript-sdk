@@ -47,7 +47,7 @@ bucket.feedback({
 });
 
 // collect qualitative feedback using built-in dialog
-bucket.collectFeedback({
+bucket.openFeedbackForm({
   featureId: "my_feature_id",
   userId: "john_doe",
   companyId: "acme_inc", // String (optional)
@@ -90,7 +90,7 @@ bucket.feedback({
 Or by prompting a user through the built-in dialog.
 
 ```js
-bucket.collectFeedback({
+bucket.openFeedbackForm({
   featureId: "my_feature_id", // String (required), copy from Feature feedback tab
   userId: "john_doe", // String, (optional) if using user persistence
   companyId: "acme_inc", // String (optional)

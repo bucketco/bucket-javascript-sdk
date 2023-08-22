@@ -16,7 +16,7 @@ function attachDialogContainer() {
   return container.shadowRoot!;
 }
 
-export function collectFeedback(options: FeedbackDialogProps): void {
+export function openFeedbackForm(options: FeedbackDialogProps): void {
   const shadowRoot = attachDialogContainer();
 
   render(h(FeedbackDialog, options), shadowRoot);

@@ -60,7 +60,7 @@ export function App() {
       <div style="display: flex; gap: 10px;">
         <button
           onClick={() => {
-            bucket.collectFeedback({
+            bucket.openFeedbackForm({
               featureId: "featA",
               userId: "123",
               title: "Hello, how do you like the modal?",
@@ -74,7 +74,7 @@ export function App() {
         </button>
         <button
           onClick={() => {
-            bucket.collectFeedback({
+            bucket.openFeedbackForm({
               featureId: "featB",
               userId: "123",
               title: "Hello, how do you like the dialog?",
@@ -89,7 +89,7 @@ export function App() {
         </button>
         <button
           onClick={({ target }) => {
-            bucket.collectFeedback({
+            bucket.openFeedbackForm({
               featureId: "featC",
               userId: "123",
               title: "Hello, how do you like the popover?",
