@@ -3,7 +3,13 @@ import { useEffect, useRef } from "preact/hooks";
 import { FeedbackForm } from "./FeedbackForm";
 import { FeedbackDialogOptions, WithRequired } from "./types";
 import { Logo } from "./icons/Logo";
-import { autoUpdate, offset, shift, useFloating, arrow } from "./floating";
+import {
+  autoUpdate,
+  offset,
+  shift,
+  useFloating,
+  arrow,
+} from "./packages/floating-ui-preact-dom";
 
 import styles from "./index.css?inline";
 import { feedbackContainerId } from "./constants";
