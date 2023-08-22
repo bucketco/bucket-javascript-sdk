@@ -24,6 +24,7 @@ import {
 } from "./types";
 import { version } from "../package.json";
 import type { FeedbackDialogOptions } from "./feedback/types";
+import * as feedbackLib from "./feedback";
 
 async function request(url: string, body: any) {
   return fetch(url, {
@@ -329,19 +330,18 @@ export default function main() {
     } else if (!options.userId) {
       err("No userId provided and persistUser is disabled");
     }
-    import("./feedback").then((lib) => {
-      lib.openFeedbackForm({
-        onSubmit: async (data) => {
-          // Default onSubmit handler
-          return feedback({
-            featureId: options.featureId,
-            userId: options.userId,
-            companyId: options.companyId,
-            ...data,
-          });
-        },
-        ...options,
-      });
+
+    feedbackLib.openFeedbackForm({
+      onSubmit: async (data) => {
+        // Default onSubmit handler
+        return feedback({
+          featureId: options.featureId,
+          userId: options.userId,
+          companyId: options.companyId,
+          ...data,
+        });
+      },
+      ...options,
     });
   }
 
