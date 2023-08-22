@@ -163,12 +163,12 @@ describe("usage", () => {
     await bucketInstance.user("fooUser");
 
     await expect(() =>
-      bucketInstance.company("fooCompany"),
+      bucketInstance.company("fooCompany")
     ).rejects.toThrowError("No userId provided and persistUser is disabled");
     await bucketInstance.company("fooCompany", null, "fooUser");
 
     await expect(() => bucketInstance.track("fooEvent")).rejects.toThrowError(
-      "No userId provided and persistUser is disabled",
+      "No userId provided and persistUser is disabled"
     );
     await bucketInstance.track("fooEvent", null, "fooUser");
   });
@@ -205,7 +205,7 @@ describe("usage", () => {
 
     bucketInstance.reset();
     await expect(() => bucketInstance.track("foo")).rejects.toThrowError(
-      "User is not set, please call user() first",
+      "User is not set, please call user() first"
     );
   });
 });
@@ -214,6 +214,8 @@ const message = {
   question: "How are you",
   showAfter: new Date().valueOf(),
   showBefore: new Date().valueOf(),
+  promptId: "123",
+  featureId: "456",
 };
 
 describe("feedback prompting", () => {
@@ -227,11 +229,11 @@ describe("feedback prompting", () => {
               _a: string,
               _b: string,
               _c: string,
-              callback: (data: any) => void,
+              callback: (data: any) => void
             ) => {
               callback(message);
               return Promise.resolve("fake_client");
-            },
+            }
           ),
         closeAblyConnection: vi.fn(),
       };
@@ -265,7 +267,7 @@ describe("feedback prompting", () => {
       "foo",
       "test-channel",
       expect.anything(),
-      expect.anything(),
+      expect.anything()
     );
 
     // call twice, expect only one reset to go through
@@ -351,6 +353,8 @@ describe("feedback prompting", () => {
       question: "How are you",
       showAfter: new Date(message.showAfter),
       showBefore: new Date(message.showBefore),
+      promptId: "123",
+      featureId: "456",
     });
   });
 
@@ -364,9 +368,9 @@ describe("feedback prompting", () => {
 
     await bucketInstance.initFeedbackPrompting("foo");
     await expect(() =>
-      bucketInstance.initFeedbackPrompting("foo"),
+      bucketInstance.initFeedbackPrompting("foo")
     ).rejects.toThrowError(
-      "Feedback prompting already initialized. Use reset() first.",
+      "Feedback prompting already initialized. Use reset() first."
     );
   });
 });

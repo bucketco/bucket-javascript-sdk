@@ -49,6 +49,8 @@ export type FeedbackPrompt = {
   question: string;
   showAfter: Date;
   showBefore: Date;
+  promptId: string;
+  featureId: string;
 };
 
 export type FeedbackPromptCallback = (req: FeedbackPrompt) => void;
