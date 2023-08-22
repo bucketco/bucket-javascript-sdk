@@ -335,18 +335,21 @@ export default function main() {
       err("No userId provided and persistUser is disabled");
     }
 
-    feedbackLib.openFeedbackForm({
-      onSubmit: async (data) => {
-        // Default onSubmit handler
-        return feedback({
-          featureId: options.featureId,
-          userId: options.userId,
-          companyId: options.companyId,
-          ...data,
-        });
-      },
-      ...options,
-    });
+    // TODO: remove set timeout
+    setTimeout(() => {
+      feedbackLib.openFeedbackForm({
+        onSubmit: async (data) => {
+          // Default onSubmit handler
+          return feedback({
+            featureId: options.featureId,
+            userId: options.userId,
+            companyId: options.companyId,
+            ...data,
+          });
+        },
+        ...options,
+      });
+    }, 1);
   }
 
   function reset() {
