@@ -1,6 +1,17 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
+import {
+  checkPromptMessageCompleted,
+  markPromptMessageCompleted,
+} from "../src/prompt-storage";
 import { parsePromptMessage, processPromptMessage } from "../src/prompts";
+
+vi.mock("../src/prompt-storage", () => {
+  return {
+    markPromptMessageCompleted: vi.fn(),
+    checkPromptMessageCompleted: vi.fn(),
+  };
+});
 
 describe("parsePromptMessage", () => {
   test("will not parse invalid messages", () => {
@@ -88,16 +99,17 @@ describe("processPromptMessage", () => {
   };
 
   beforeEach(() => {
+    vi.mocked(checkPromptMessageCompleted).mockReturnValue(false);
     vi.useFakeTimers();
   });
 
   afterEach(() => {
-    localStorage.clear();
     vi.useRealTimers();
+    vi.clearAllMocks();
   });
 
   test("will not process seen prompts", () => {
-    localStorage.setItem("prompt-user", "123");
+    vi.mocked(checkPromptMessageCompleted).mockReturnValue(true);
 
     const prompt = {
       ...promptTemplate,
@@ -110,6 +122,7 @@ describe("processPromptMessage", () => {
     expect(processPromptMessage("user", prompt, showCallback)).toBe(false);
 
     expect(showCallback).not.toHaveBeenCalled();
+    expect(markPromptMessageCompleted).not.toHaveBeenCalled();
   });
 
   test("will not process expired prompts", () => {
@@ -124,7 +137,9 @@ describe("processPromptMessage", () => {
     expect(processPromptMessage("user", prompt, showCallback)).toBe(false);
 
     expect(showCallback).not.toHaveBeenCalled();
-    expect(localStorage.getItem("prompt-user")).toBe("123");
+
+    expect(markPromptMessageCompleted).toHaveBeenCalledOnce();
+    expect(markPromptMessageCompleted).toBeCalledWith("user", "123");
   });
 
   test("will process prompts that are ready to be shown", () => {
@@ -147,7 +162,8 @@ describe("processPromptMessage", () => {
       expect.any(Function),
     );
 
-    expect(localStorage.getItem("prompt-user")).toBe("123");
+    expect(markPromptMessageCompleted).toHaveBeenCalledOnce();
+    expect(markPromptMessageCompleted).toBeCalledWith("user", "123");
   });
 
   test("will process and delay prompts that are not yet ready to be shown", () => {
@@ -174,6 +190,7 @@ describe("processPromptMessage", () => {
       expect.any(Function),
     );
 
-    expect(localStorage.getItem("prompt-user")).toBe("123");
+    expect(markPromptMessageCompleted).toHaveBeenCalledOnce();
+    expect(markPromptMessageCompleted).toBeCalledWith("user", "123");
   });
 });

@@ -15,6 +15,10 @@ import { closeAblyConnection, openAblyConnection } from "../src/ably";
 import { TRACKING_HOST } from "../src/config";
 import bucket from "../src/main";
 import {
+  checkPromptMessageCompleted,
+  markPromptMessageCompleted,
+} from "../src/prompt-storage";
+import {
   FeedbackPrompt,
   FeedbackPromptHandler,
   FeedbackPromptReplyHandler,
@@ -24,6 +28,12 @@ const KEY = "123";
 
 vi.mock("/src/ably");
 vi.mock("is-bundling-for-browser-or-node");
+vi.mock("../src/prompt-storage", () => {
+  return {
+    markPromptMessageCompleted: vi.fn(),
+    checkPromptMessageCompleted: vi.fn(),
+  };
+});
 
 describe("usage", () => {
   afterEach(() => {
@@ -358,6 +368,7 @@ describe("feedback state management", () => {
     promptId: "123",
     featureId: "456",
   };
+
   const badMessage = {
     foo: "bar",
   };
@@ -388,8 +399,7 @@ describe("feedback state management", () => {
   });
 
   afterEach(() => {
-    localStorage.clear();
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     nock.cleanAll();
   });
 
@@ -441,7 +451,7 @@ describe("feedback state management", () => {
 
     expectAsyncNockDone(n1);
 
-    expect(localStorage.getItem("prompt-foo")).toBeNull();
+    expect(markPromptMessageCompleted).not.toHaveBeenCalledOnce();
 
     vi.clearAllTimers();
     vi.useRealTimers();
@@ -465,7 +475,7 @@ describe("feedback state management", () => {
 
     expectAsyncNockDone(n1);
 
-    expect(localStorage.getItem("prompt-foo")).toBeNull();
+    expect(markPromptMessageCompleted).not.toHaveBeenCalledOnce();
 
     vi.clearAllTimers();
     vi.useRealTimers();
@@ -474,7 +484,7 @@ describe("feedback state management", () => {
   test("ignores prompt if already seen", async () => {
     const n1 = setupFeedbackPromptEventNock("received");
 
-    localStorage.setItem("prompt-foo", "123");
+    vi.mocked(checkPromptMessageCompleted).mockReturnValue(true);
 
     const callback = vi.fn();
 
@@ -482,6 +492,9 @@ describe("feedback state management", () => {
     await bucketInstance.initFeedbackPrompting("foo");
 
     expect(callback).not.toBeCalled;
+
+    expect(checkPromptMessageCompleted).toHaveBeenCalledOnce();
+    expect(checkPromptMessageCompleted).toHaveBeenCalledWith("foo", "123");
 
     expectAsyncNockDone(n1);
   });
@@ -510,19 +523,7 @@ describe("feedback state management", () => {
     expectAsyncNockDone(n1);
     expectAsyncNockDone(n2);
 
-    expect(localStorage.getItem("prompt-foo")).toBeNull();
-  });
-
-  test("propagates prompt to the init-supplied callback", async () => {
-    setupFeedbackPromptEventNock("received");
-    setupFeedbackPromptEventNock("shown");
-
-    const callback = vi.fn();
-
-    const bucketInstance = createBucketInstance(callback);
-    await bucketInstance.initFeedbackPrompting("foo");
-
-    expect(callback).toBeCalledTimes(1);
+    expect(markPromptMessageCompleted).not.toHaveBeenCalled();
   });
 
   test("propagates timed prompt to the callback", async () => {
@@ -546,7 +547,7 @@ describe("feedback state management", () => {
     expectAsyncNockDone(n1);
     expectAsyncNockDone(n2);
 
-    expect(localStorage.getItem("prompt-foo")).toBeNull();
+    expect(markPromptMessageCompleted).not.toHaveBeenCalled();
 
     vi.clearAllTimers();
     vi.useRealTimers();
@@ -568,7 +569,8 @@ describe("feedback state management", () => {
     expectAsyncNockDone(n2);
     expectAsyncNockDone(n3);
 
-    expect(localStorage.getItem("prompt-foo")).toBe("123");
+    expect(markPromptMessageCompleted).toHaveBeenCalledOnce();
+    expect(markPromptMessageCompleted).toHaveBeenCalledWith("foo", "123");
   });
 
   test("propagates prompt to the callback and reacts to feedback", async () => {
@@ -601,7 +603,8 @@ describe("feedback state management", () => {
     expectAsyncNockDone(n2);
     expectAsyncNockDone(n3);
 
-    expect(localStorage.getItem("prompt-foo")).toBe("123");
+    expect(markPromptMessageCompleted).toHaveBeenCalledOnce();
+    expect(markPromptMessageCompleted).toHaveBeenCalledWith("foo", "123");
   });
 
   test("blocks invalid messages", async () => {

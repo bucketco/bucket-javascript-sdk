@@ -1,3 +1,7 @@
+import {
+  checkPromptMessageCompleted,
+  markPromptMessageCompleted,
+} from "./prompt-storage";
 import { FeedbackPrompt, User } from "./types";
 
 export const parsePromptMessage = (
@@ -25,15 +29,6 @@ export const parsePromptMessage = (
   }
 };
 
-const rememberMessage = (userId: string, promptId: string) => {
-  localStorage.setItem(`prompt-${userId}`, promptId);
-};
-
-const seenMessage = (userId: string, promptId: string) => {
-  const id = localStorage.getItem(`prompt-${userId}`);
-  return id === promptId;
-};
-
 export type FeedbackPromptCompletionHandler = () => void;
 export type FeedbackPromptDisplayHandler = (
   userId: User["userId"],
@@ -49,13 +44,13 @@ export const processPromptMessage = (
   const now = new Date();
 
   const completionHandler = () => {
-    rememberMessage(userId, prompt.promptId);
+    markPromptMessageCompleted(userId, prompt.promptId);
   };
 
-  if (seenMessage(userId, prompt.promptId)) {
+  if (checkPromptMessageCompleted(userId, prompt.promptId)) {
     return false;
   } else if (now > prompt.showBefore) {
-    rememberMessage(userId, prompt.promptId);
+    markPromptMessageCompleted(userId, prompt.promptId);
     return false;
   } else if (now < prompt.showAfter) {
     setTimeout(() => {
