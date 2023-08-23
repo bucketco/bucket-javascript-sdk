@@ -14,7 +14,11 @@ import { version } from "../package.json";
 import { closeAblyConnection, openAblyConnection } from "../src/ably";
 import { TRACKING_HOST } from "../src/config";
 import bucket from "../src/main";
-import { FeedbackPrompt, FeedbackPromptReplyHandler } from "../src/types";
+import {
+  FeedbackPrompt,
+  FeedbackPromptHandler,
+  FeedbackPromptReplyHandler,
+} from "../src/types";
 
 const KEY = "123";
 
@@ -347,9 +351,6 @@ describe("feedback prompting", () => {
 });
 
 describe("feedback state management", () => {
-  const bucketInstance = bucket();
-  bucketInstance.init(KEY, { persistUser: false });
-
   const goodMessage = {
     question: "How are you",
     showAfter: new Date(Date.now() - 1000).valueOf(),
@@ -384,8 +385,6 @@ describe("feedback state management", () => {
         },
       );
     }
-
-    bucketInstance.reset();
   });
 
   afterEach(() => {
@@ -418,6 +417,15 @@ describe("feedback state management", () => {
       .reply(200, { success: true });
   };
 
+  const createBucketInstance = (callback: FeedbackPromptHandler) => {
+    const bucketInstance = bucket();
+    bucketInstance.init(KEY, {
+      persistUser: false,
+      feedbackPromptHandler: callback,
+    });
+    return bucketInstance;
+  };
+
   test("ignores prompt if expired", async () => {
     const n1 = setupFeedbackPromptEventNock("received");
 
@@ -426,7 +434,8 @@ describe("feedback state management", () => {
 
     const callback = vi.fn();
 
-    await bucketInstance.initFeedbackPrompting("foo", callback);
+    const bucketInstance = createBucketInstance(callback);
+    await bucketInstance.initFeedbackPrompting("foo");
 
     expect(callback).not.toBeCalled;
 
@@ -446,7 +455,9 @@ describe("feedback state management", () => {
 
     const callback = vi.fn();
 
-    await bucketInstance.initFeedbackPrompting("foo", callback);
+    const bucketInstance = createBucketInstance(callback);
+    await bucketInstance.initFeedbackPrompting("foo");
+
     bucketInstance.reset();
 
     vi.runAllTimers();
@@ -467,7 +478,8 @@ describe("feedback state management", () => {
 
     const callback = vi.fn();
 
-    await bucketInstance.initFeedbackPrompting("foo", callback);
+    const bucketInstance = createBucketInstance(callback);
+    await bucketInstance.initFeedbackPrompting("foo");
 
     expect(callback).not.toBeCalled;
 
@@ -480,7 +492,8 @@ describe("feedback state management", () => {
 
     const callback = vi.fn();
 
-    await bucketInstance.initFeedbackPrompting("foo", callback);
+    const bucketInstance = createBucketInstance(callback);
+    await bucketInstance.initFeedbackPrompting("foo");
 
     expect(callback).toBeCalledTimes(1);
     expect(callback).toBeCalledWith(
@@ -506,10 +519,8 @@ describe("feedback state management", () => {
 
     const callback = vi.fn();
 
-    const bi = bucket();
-    bi.init(KEY, { persistUser: false, feedbackPromptHandler: callback });
-
-    await bi.initFeedbackPrompting("foo", callback);
+    const bucketInstance = createBucketInstance(callback);
+    await bucketInstance.initFeedbackPrompting("foo");
 
     expect(callback).toBeCalledTimes(1);
   });
@@ -523,7 +534,8 @@ describe("feedback state management", () => {
     vi.useFakeTimers();
     vi.setSystemTime(goodMessage.showAfter - 500);
 
-    await bucketInstance.initFeedbackPrompting("foo", callback);
+    const bucketInstance = createBucketInstance(callback);
+    await bucketInstance.initFeedbackPrompting("foo");
 
     expect(callback).not.toBeCalled();
 
@@ -549,7 +561,8 @@ describe("feedback state management", () => {
       cb(null);
     };
 
-    await bucketInstance.initFeedbackPrompting("foo", callback);
+    const bucketInstance = createBucketInstance(callback);
+    await bucketInstance.initFeedbackPrompting("foo");
 
     expectAsyncNockDone(n1);
     expectAsyncNockDone(n2);
@@ -581,7 +594,8 @@ describe("feedback state management", () => {
       });
     };
 
-    await bucketInstance.initFeedbackPrompting("foo", callback);
+    const bucketInstance = createBucketInstance(callback);
+    await bucketInstance.initFeedbackPrompting("foo");
 
     expectAsyncNockDone(n1);
     expectAsyncNockDone(n2);
@@ -593,8 +607,10 @@ describe("feedback state management", () => {
   test("blocks invalid messages", async () => {
     const callback = vi.fn();
 
+    const bucketInstance = createBucketInstance(callback);
+
     await expect(
-      bucketInstance.initFeedbackPrompting("foo", callback),
+      bucketInstance.initFeedbackPrompting("foo"),
     ).rejects.toThrowError();
 
     expect(callback).not.toBeCalled;
