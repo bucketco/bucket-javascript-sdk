@@ -1,4 +1,4 @@
-import { FeedbackPrompt } from "./types";
+import { FeedbackPrompt, User } from "./types";
 
 export const parsePromptMessage = (
   message: any,
@@ -34,21 +34,21 @@ const seenMessage = (userId: string, promptId: string) => {
   return id === promptId;
 };
 
-export type FeedbackPromptActionedCallback = () => void;
-export type ShowPromptCallback = (
-  userId: string,
+export type FeedbackPromptCompletionHandler = () => void;
+export type FeedbackPromptDisplayHandler = (
+  userId: User["userId"],
   prompt: FeedbackPrompt,
-  actionedCallback: FeedbackPromptActionedCallback,
+  completionHandler: FeedbackPromptCompletionHandler,
 ) => void;
 
 export const processPromptMessage = (
-  userId: string,
+  userId: User["userId"],
   prompt: FeedbackPrompt,
-  showCallback: ShowPromptCallback,
+  displayHandler: FeedbackPromptDisplayHandler,
 ) => {
   const now = new Date();
 
-  const actionedCallback = () => {
+  const completionHandler = () => {
     rememberMessage(userId, prompt.promptId);
   };
 
@@ -59,12 +59,12 @@ export const processPromptMessage = (
     return false;
   } else if (now < prompt.showAfter) {
     setTimeout(() => {
-      showCallback(userId, prompt, actionedCallback);
+      displayHandler(userId, prompt, completionHandler);
     }, prompt.showAfter.getTime() - now.getTime());
 
     return true;
   } else {
-    showCallback(userId, prompt, actionedCallback);
+    displayHandler(userId, prompt, completionHandler);
     return true;
   }
 };

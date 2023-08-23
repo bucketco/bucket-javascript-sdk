@@ -7,7 +7,7 @@ import modulePackage from "../package.json";
 import { closeAblyConnection, openAblyConnection } from "./ably";
 import { TRACKING_HOST } from "./config";
 import {
-  FeedbackPromptActionedCallback as FeedbackPromptActionedHandler,
+  FeedbackPromptCompletionHandler,
   parsePromptMessage,
   processPromptMessage,
 } from "./prompts";
@@ -185,16 +185,6 @@ export default function main() {
     return res;
   }
 
-  type FeedbackOptions = {
-    featureId: string;
-    // userId is optional. If not provided, it will be taken from session
-    userId?: string;
-    companyId?: string;
-    score?: number;
-    comment?: string;
-    promptId?: FeedbackPrompt["promptId"];
-  };
-
   async function feedback({
     featureId,
     score,
@@ -202,13 +192,13 @@ export default function main() {
     companyId,
     comment,
     promptId,
-  }: FeedbackOptions) {
+  }: Feedback) {
     checkKey();
     if (!featureId) err("No featureId provided");
     if (!score && !comment) err("Either 'score' or 'comment' must be provided");
     userId = resolveUser(userId);
 
-    const payload: Feedback = {
+    const payload: Feedback & { userId: User["userId"] } = {
       userId,
       featureId,
       score,
@@ -269,7 +259,7 @@ export default function main() {
   function handleFeedbackPromptRequest(
     userId: User["userId"],
     message: any,
-    userCallback: FeedbackPromptHandler,
+    handler: FeedbackPromptHandler,
   ) {
     const parsed = parsePromptMessage(message);
     if (!parsed) {
@@ -279,7 +269,7 @@ export default function main() {
 
       if (
         !processPromptMessage(userId, parsed, (u, m, cb) =>
-          triggerFeedbackPrompt(u, m, cb, userCallback),
+          triggerFeedbackPrompt(u, m, cb, handler),
         )
       ) {
         log(
@@ -293,7 +283,7 @@ export default function main() {
   function triggerFeedbackPrompt(
     userId: User["userId"],
     message: FeedbackPrompt,
-    actioned: FeedbackPromptActionedHandler,
+    completionHandler: FeedbackPromptCompletionHandler,
     handler: FeedbackPromptHandler,
   ) {
     if (feedbackPromptingUserId !== userId) {
@@ -321,7 +311,7 @@ export default function main() {
         });
       }
 
-      actioned();
+      completionHandler();
     });
   }
 

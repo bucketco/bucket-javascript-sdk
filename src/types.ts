@@ -39,7 +39,7 @@ export type TrackedEvent = {
 
 export type Feedback = {
   featureId: string;
-  userId: User["userId"];
+  userId?: User["userId"];
   companyId?: Company["companyId"];
   score?: number;
   comment?: string;
@@ -65,8 +65,8 @@ export type FeedbackPromptReplyHandler = (
 ) => void;
 
 export type FeedbackPromptHandler = (
-  req: FeedbackPrompt,
-  replyCallback: FeedbackPromptReplyHandler,
+  prompt: FeedbackPrompt,
+  replyHandler: FeedbackPromptReplyHandler,
 ) => void;
 
 export type Context = {
