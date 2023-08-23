@@ -168,12 +168,12 @@ describe("usage", () => {
     await bucketInstance.user("fooUser");
 
     await expect(() =>
-      bucketInstance.company("fooCompany"),
+      bucketInstance.company("fooCompany")
     ).rejects.toThrowError("No userId provided and persistUser is disabled");
     await bucketInstance.company("fooCompany", null, "fooUser");
 
     await expect(() => bucketInstance.track("fooEvent")).rejects.toThrowError(
-      "No userId provided and persistUser is disabled",
+      "No userId provided and persistUser is disabled"
     );
     await bucketInstance.track("fooEvent", null, "fooUser");
   });
@@ -210,7 +210,7 @@ describe("usage", () => {
 
     bucketInstance.reset();
     await expect(() => bucketInstance.track("foo")).rejects.toThrowError(
-      "User is not set, please call user() first",
+      "User is not set, please call user() first"
     );
   });
 });
@@ -237,9 +237,9 @@ describe("feedback prompting", () => {
     bucketInstance.init(KEY);
 
     await expect(
-      bucketInstance.initFeedbackPrompting("foo"),
+      bucketInstance.initFeedbackPrompting("foo")
     ).rejects.toThrowError(
-      "Feedback prompting is not supported in Node.js environment",
+      "Feedback prompting is not supported in Node.js environment"
     );
   });
 
@@ -261,7 +261,7 @@ describe("feedback prompting", () => {
       "foo",
       "test-channel",
       expect.anything(),
-      expect.anything(),
+      expect.anything()
     );
 
     // call twice, expect only one reset to go through
@@ -339,9 +339,9 @@ describe("feedback prompting", () => {
 
     await bucketInstance.initFeedbackPrompting("foo");
     await expect(() =>
-      bucketInstance.initFeedbackPrompting("foo"),
+      bucketInstance.initFeedbackPrompting("foo")
     ).rejects.toThrowError(
-      "Feedback prompting already initialized. Use reset() first.",
+      "Feedback prompting already initialized. Use reset() first."
     );
   });
 });
@@ -374,14 +374,14 @@ describe("feedback state management", () => {
         (_a, _b_, _c, callback, _d) => {
           callback(goodMessage);
           return Promise.resolve("fake_client" as any);
-        },
+        }
       );
     } else if (tc.meta.name.includes("blocks")) {
       vi.mocked(openAblyConnection).mockImplementation(
         (_a, _b_, _c, callback, _d) => {
           callback(badMessage);
           return Promise.resolve("fake_client" as any);
-        },
+        }
       );
     }
 
@@ -491,13 +491,27 @@ describe("feedback state management", () => {
         promptId: "123",
         featureId: "456",
       },
-      expect.anything(),
+      expect.anything()
     );
 
     expectAsyncNockDone(n1);
     expectAsyncNockDone(n2);
 
     expect(localStorage.getItem("prompt-foo")).toBeNull();
+  });
+
+  test("propagates prompt to the init-supplied callback", async () => {
+    setupFeedbackPromptEventNock("received");
+    setupFeedbackPromptEventNock("shown");
+
+    const callback = vi.fn();
+
+    const bi = bucket();
+    bi.init(KEY, { persistUser: false, feedbackPromptHandler: callback });
+
+    await bi.initFeedbackPrompting("foo", callback);
+
+    expect(callback).toBeCalledTimes(1);
   });
 
   test("propagates timed prompt to the callback", async () => {
@@ -580,7 +594,7 @@ describe("feedback state management", () => {
     const callback = vi.fn();
 
     await expect(
-      bucketInstance.initFeedbackPrompting("foo", callback),
+      bucketInstance.initFeedbackPrompting("foo", callback)
     ).rejects.toThrowError();
 
     expect(callback).not.toBeCalled;
