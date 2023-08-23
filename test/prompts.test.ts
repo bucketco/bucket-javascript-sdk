@@ -36,14 +36,6 @@ describe("parsePromptMessage", () => {
       parsePromptMessage({
         question: "hello?",
         showAfter: Date.now(),
-        promptId: "123",
-        featureId: "123",
-      }),
-    ).toBeUndefined();
-    expect(
-      parsePromptMessage({
-        question: "hello?",
-        showAfter: Date.now(),
         showBefore: Date.now(),
       }),
     ).toBeUndefined();
