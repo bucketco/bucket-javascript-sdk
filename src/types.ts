@@ -60,7 +60,10 @@ export type FeedbackPromptReply = {
   comment?: Feedback["comment"];
 };
 
-export type FeedbackPromptReplyHandler = (reply?: FeedbackPromptReply) => void;
+export type FeedbackPromptReplyHandler = (
+  reply: FeedbackPromptReply | null
+) => void;
+
 export type FeedbackPromptHandler = (
   req: FeedbackPrompt,
   replyCallback: FeedbackPromptReplyHandler

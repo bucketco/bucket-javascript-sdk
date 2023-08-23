@@ -1,6 +1,5 @@
 import nock from "nock";
 import {
-  afterAll,
   afterEach,
   beforeAll,
   beforeEach,
@@ -10,15 +9,17 @@ import {
   vi,
 } from "vitest";
 
-import { Types } from "ably/promises";
 import { version } from "../package.json";
 import { closeAblyConnection, openAblyConnection } from "../src/ably";
 import { TRACKING_HOST } from "../src/config";
 import bucket from "../src/main";
+import { FeedbackPrompt, FeedbackPromptReplyHandler } from "../src/types";
+import * as bundling from "is-bundling-for-browser-or-node";
 
 const KEY = "123";
 
 vi.mock("/src/ably");
+vi.mock("is-bundling-for-browser-or-node");
 
 describe("usage", () => {
   afterEach(() => {
@@ -220,9 +221,26 @@ describe("feedback prompting", () => {
     vi.mocked(closeAblyConnection).mockResolvedValue(undefined);
   });
 
+  beforeEach(() => {
+    vi.spyOn(bundling, "isForNode", "get").mockReturnValue(false);
+  });
+
   afterEach(() => {
     nock.cleanAll();
     vi.clearAllMocks();
+  });
+
+  test("rejects feedback prompting in node environment", async () => {
+    vi.spyOn(bundling, "isForNode", "get").mockReturnValue(true);
+
+    const bucketInstance = bucket();
+    bucketInstance.init(KEY);
+
+    await expect(
+      bucketInstance.initFeedbackPrompting("foo")
+    ).rejects.toThrowError(
+      "Feedback prompting is not supported in Node.js environment"
+    );
   });
 
   test("initiates and resets feedback prompting", async () => {
@@ -233,7 +251,7 @@ describe("feedback prompting", () => {
       .reply(200, { success: true, channel: "test-channel" });
 
     const bucketInstance = bucket();
-    bucketInstance.init(KEY);
+    bucketInstance.init(KEY, { persistUser: false });
 
     await bucketInstance.initFeedbackPrompting("foo");
 
@@ -262,7 +280,7 @@ describe("feedback prompting", () => {
       .reply(200, { success: false });
 
     const bucketInstance = bucket();
-    bucketInstance.init(KEY);
+    bucketInstance.init(KEY, { persistUser: false });
 
     await bucketInstance.initFeedbackPrompting("foo");
 
@@ -301,7 +319,7 @@ describe("feedback prompting", () => {
       .reply(200, { success: true, channel: "test-channel" });
 
     const bucketInstance = bucket();
-    bucketInstance.init(KEY);
+    bucketInstance.init(KEY, { persistUser: false });
 
     // connects to ably for first time
     await bucketInstance.initFeedbackPrompting("foo");
@@ -317,7 +335,7 @@ describe("feedback prompting", () => {
       .reply(200, { success: true, channel: "test-channel" });
 
     const bucketInstance = bucket();
-    bucketInstance.init(KEY);
+    bucketInstance.init(KEY, { persistUser: false });
 
     await bucketInstance.initFeedbackPrompting("foo");
     await expect(() =>
@@ -330,7 +348,7 @@ describe("feedback prompting", () => {
 
 describe("feedback state management", () => {
   const bucketInstance = bucket();
-  bucketInstance.init(KEY);
+  bucketInstance.init(KEY, { persistUser: false });
 
   const goodMessage = {
     question: "How are you",
@@ -348,7 +366,10 @@ describe("feedback state management", () => {
       .post(/.*\/feedback\/prompting-init/)
       .reply(200, { success: true, channel: "test-channel" });
 
-    if (tc.meta.name.includes("propagates")) {
+    if (
+      tc.meta.name.includes("propagates") ||
+      tc.meta.name.includes("ignores")
+    ) {
       vi.mocked(openAblyConnection).mockImplementation(
         (_a, _b_, _c, callback, _d) => {
           callback(goodMessage);
@@ -368,6 +389,7 @@ describe("feedback state management", () => {
   });
 
   afterEach(() => {
+    localStorage.clear();
     vi.clearAllMocks();
     nock.cleanAll();
   });
@@ -386,21 +408,75 @@ describe("feedback state management", () => {
     expect(nk.isDone()).toBe(true);
   };
 
-  test("propagates the callback to the proper method", async () => {
-    const n1 = nock(`${TRACKING_HOST}/${KEY}`)
+  const setupFeedbackPromptEventNock = (event: string) => {
+    return nock(`${TRACKING_HOST}/${KEY}`)
       .post(/.*\/feedback\/prompt-events/, {
         userId: "foo",
         promptId: "123",
-        action: "received",
+        action: event,
       })
       .reply(200, { success: true });
-    const n2 = nock(`${TRACKING_HOST}/${KEY}`)
-      .post(/.*\/feedback\/prompt-events/, {
-        userId: "foo",
-        promptId: "123",
-        action: "shown",
-      })
-      .reply(200, { success: true });
+  };
+
+  test("ignores prompt if expired", async () => {
+    const n1 = setupFeedbackPromptEventNock("received");
+
+    vi.useFakeTimers();
+    vi.setSystemTime(goodMessage.showAfter - 1000);
+
+    const callback = vi.fn();
+
+    await bucketInstance.initFeedbackPrompting("foo", callback);
+
+    expect(callback).not.toBeCalled;
+
+    expectAsyncNockDone(n1);
+
+    expect(localStorage.getItem("prompt-foo")).toBeNull();
+
+    vi.clearAllTimers();
+    vi.useRealTimers();
+  });
+
+  test("ignores prompt if timed but feedback prompting disabled/user changed", async () => {
+    const n1 = setupFeedbackPromptEventNock("received");
+
+    vi.useFakeTimers();
+    vi.setSystemTime(goodMessage.showAfter - 500);
+
+    const callback = vi.fn();
+
+    await bucketInstance.initFeedbackPrompting("foo", callback);
+    bucketInstance.reset();
+
+    vi.runAllTimers();
+    expect(callback).not.toBeCalled;
+
+    expectAsyncNockDone(n1);
+
+    expect(localStorage.getItem("prompt-foo")).toBeNull();
+
+    vi.clearAllTimers();
+    vi.useRealTimers();
+  });
+
+  test("ignores prompt if already seen", async () => {
+    const n1 = setupFeedbackPromptEventNock("received");
+
+    localStorage.setItem("prompt-foo", "123");
+
+    const callback = vi.fn();
+
+    await bucketInstance.initFeedbackPrompting("foo", callback);
+
+    expect(callback).not.toBeCalled;
+
+    expectAsyncNockDone(n1);
+  });
+
+  test("propagates prompt to the callback", async () => {
+    const n1 = setupFeedbackPromptEventNock("received");
+    const n2 = setupFeedbackPromptEventNock("shown");
 
     const callback = vi.fn();
 
@@ -420,6 +496,84 @@ describe("feedback state management", () => {
 
     expectAsyncNockDone(n1);
     expectAsyncNockDone(n2);
+
+    expect(localStorage.getItem("prompt-foo")).toBeNull();
+  });
+
+  test("propagates timed prompt to the callback", async () => {
+    const n1 = setupFeedbackPromptEventNock("received");
+    const n2 = setupFeedbackPromptEventNock("shown");
+
+    const callback = vi.fn();
+
+    vi.useFakeTimers();
+    vi.setSystemTime(goodMessage.showAfter - 500);
+
+    await bucketInstance.initFeedbackPrompting("foo", callback);
+
+    expect(callback).not.toBeCalled();
+
+    vi.runAllTimers();
+
+    expect(callback).toBeCalledTimes(1);
+
+    expectAsyncNockDone(n1);
+    expectAsyncNockDone(n2);
+
+    expect(localStorage.getItem("prompt-foo")).toBeNull();
+
+    vi.clearAllTimers();
+    vi.useRealTimers();
+  });
+
+  test("propagates prompt to the callback and reacts to dismissal", async () => {
+    const n1 = setupFeedbackPromptEventNock("received");
+    const n2 = setupFeedbackPromptEventNock("shown");
+    const n3 = setupFeedbackPromptEventNock("dismissed");
+
+    const callback = (_: FeedbackPrompt, cb: FeedbackPromptReplyHandler) => {
+      cb(null);
+    };
+
+    await bucketInstance.initFeedbackPrompting("foo", callback);
+
+    expectAsyncNockDone(n1);
+    expectAsyncNockDone(n2);
+    expectAsyncNockDone(n3);
+
+    expect(localStorage.getItem("prompt-foo")).toBe("123");
+  });
+
+  test("propagates prompt to the callback and reacts to feedback", async () => {
+    const n1 = setupFeedbackPromptEventNock("received");
+    const n2 = setupFeedbackPromptEventNock("shown");
+
+    const n3 = nock(`${TRACKING_HOST}/${KEY}`)
+      .post(/.*\/feedback/, {
+        userId: "foo",
+        featureId: "456",
+        promptId: "123",
+        companyId: "bar",
+        comment: "hello",
+        score: 5,
+      })
+      .reply(200);
+
+    const callback = (_: FeedbackPrompt, cb: FeedbackPromptReplyHandler) => {
+      cb({
+        companyId: "bar",
+        score: 5,
+        comment: "hello",
+      });
+    };
+
+    await bucketInstance.initFeedbackPrompting("foo", callback);
+
+    expectAsyncNockDone(n1);
+    expectAsyncNockDone(n2);
+    expectAsyncNockDone(n3);
+
+    expect(localStorage.getItem("prompt-foo")).toBe("123");
   });
 
   test("blocks invalid messages", async () => {

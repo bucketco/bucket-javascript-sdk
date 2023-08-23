@@ -100,6 +100,9 @@ export default function main() {
       persistUser = options.persistUser;
     if (options?.debug) debug = options.debug;
     if (options?.automaticFeedbackPrompting) {
+      if (isForNode) {
+        err("Feedback prompting is not supported in Node.js environment");
+      }
       if (!persistUser) {
         err("Feedback prompting is not supported when persistUser is disabled");
       } else {
@@ -224,10 +227,13 @@ export default function main() {
     handler?: FeedbackPromptHandler
   ) {
     checkKey();
+    if (isForNode) {
+      err("Feedback prompting is not supported in Node.js environment");
+    }
+
     if (ablyClient) {
       err("Feedback prompting already initialized. Use reset() first.");
     }
-
     userId = resolveUser(userId);
 
     const res = await request(`${getUrl()}/feedback/prompting-init`, {
@@ -243,16 +249,17 @@ export default function main() {
     log(`feedback prompting enabled`);
 
     feedbackPromptingUserId = userId;
+    const actualHandler =
+      handler ||
+      feedbackPromptHandler ||
+      (() => {
+        return false;
+      });
     ablyClient = await openAblyConnection(
       `${getUrl()}/feedback/prompting-auth`,
       userId,
       body.channel,
-      (message) =>
-        handleFeedbackPromptRequest(
-          userId!,
-          message,
-          handler || feedbackPromptHandler
-        ),
+      (message) => handleFeedbackPromptRequest(userId!, message, actualHandler),
       debug
     );
     log(`feedback prompting connection established`);
@@ -262,9 +269,8 @@ export default function main() {
   function handleFeedbackPromptRequest(
     userId: User["userId"],
     message: any,
-    userCallback: FeedbackPromptHandler | undefined
+    userCallback: FeedbackPromptHandler
   ) {
-    console.log("handleFeedbackPromptRequest", message);
     const parsed = parsePromptMessage(message);
     if (!parsed) {
       err(`invalid feedback prompt message received`, message);
@@ -288,7 +294,7 @@ export default function main() {
     userId: User["userId"],
     message: FeedbackPrompt,
     actioned: FeedbackPromptActionedHandler,
-    handler: FeedbackPromptHandler | undefined
+    handler: FeedbackPromptHandler
   ) {
     if (feedbackPromptingUserId !== userId) {
       log(
@@ -299,28 +305,24 @@ export default function main() {
       return;
     }
 
-    if (handler) {
-      feedbackPromptEvent(message.promptId, "shown", userId);
+    feedbackPromptEvent(message.promptId, "shown", userId);
 
-      handler(message, (reply) => {
-        if (!reply) {
-          feedbackPromptEvent(message.promptId, "dismissed", userId);
-        } else {
-          feedback({
-            featureId: message.featureId,
-            userId,
-            companyId: reply.companyId,
-            score: reply.score,
-            comment: reply.comment,
-            promptId: message.promptId,
-          });
-        }
+    handler(message, (reply) => {
+      if (!reply) {
+        feedbackPromptEvent(message.promptId, "dismissed", userId);
+      } else {
+        feedback({
+          featureId: message.featureId,
+          userId,
+          companyId: reply.companyId,
+          score: reply.score,
+          comment: reply.comment,
+          promptId: message.promptId,
+        });
+      }
 
-        actioned();
-      });
-    } else {
-      log(`feedback prompt not shown, no active handler`, message);
-    }
+      actioned();
+    });
   }
 
   async function feedbackPromptEvent(
