@@ -570,7 +570,11 @@ describe("feedback state management", () => {
     expectAsyncNockDone(n3);
 
     expect(markPromptMessageCompleted).toHaveBeenCalledOnce();
-    expect(markPromptMessageCompleted).toHaveBeenCalledWith("foo", "123");
+    expect(markPromptMessageCompleted).toHaveBeenCalledWith(
+      "foo",
+      "123",
+      new Date(goodMessage.showBefore),
+    );
   });
 
   test("propagates prompt to the callback and reacts to feedback", async () => {
@@ -604,7 +608,11 @@ describe("feedback state management", () => {
     expectAsyncNockDone(n3);
 
     expect(markPromptMessageCompleted).toHaveBeenCalledOnce();
-    expect(markPromptMessageCompleted).toHaveBeenCalledWith("foo", "123");
+    expect(markPromptMessageCompleted).toHaveBeenCalledWith(
+      "foo",
+      "123",
+      new Date(goodMessage.showBefore),
+    );
   });
 
   test("blocks invalid messages", async () => {

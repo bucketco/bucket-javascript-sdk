@@ -44,13 +44,12 @@ export const processPromptMessage = (
   const now = new Date();
 
   const completionHandler = () => {
-    markPromptMessageCompleted(userId, prompt.promptId);
+    markPromptMessageCompleted(userId, prompt.promptId, prompt.showBefore);
   };
 
   if (checkPromptMessageCompleted(userId, prompt.promptId)) {
     return false;
   } else if (now > prompt.showBefore) {
-    markPromptMessageCompleted(userId, prompt.promptId);
     return false;
   } else if (now < prompt.showAfter) {
     setTimeout(() => {

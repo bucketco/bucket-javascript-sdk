@@ -1,15 +1,17 @@
+import Cookies from "js-cookie";
+
 export const markPromptMessageCompleted = (
   userId: string,
   promptId: string,
+  expiresAt: Date,
 ) => {
-  localStorage.setItem(`prompt-${userId}`, promptId);
+  Cookies.set(`prompt-${userId}`, promptId, { expires: expiresAt });
 };
 
 export const checkPromptMessageCompleted = (
   userId: string,
   promptId: string,
 ) => {
-  console.log(userId, promptId);
-  const id = localStorage.getItem(`prompt-${userId}`);
+  const id = Cookies.get(`prompt-${userId}`);
   return id === promptId;
 };
