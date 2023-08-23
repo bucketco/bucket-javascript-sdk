@@ -58,7 +58,7 @@ export default function main() {
   function getSessionUser() {
     if (!sessionUserId) {
       err(
-        "User is not set, please call user() first or provide userId as argument"
+        "User is not set, please call user() first or provide userId as argument",
       );
     }
     return sessionUserId;
@@ -118,7 +118,7 @@ export default function main() {
   async function user(
     userId: User["userId"],
     attributes?: User["attributes"],
-    context?: Context
+    context?: Context,
   ) {
     checkKey();
     if (!userId) err("No userId provided");
@@ -145,7 +145,7 @@ export default function main() {
     companyId: Company["companyId"],
     attributes?: Company["attributes"] | null,
     userId?: Company["userId"],
-    context?: Context
+    context?: Context,
   ) {
     checkKey();
     if (!companyId) err("No companyId provided");
@@ -167,7 +167,7 @@ export default function main() {
     attributes?: TrackedEvent["attributes"] | null,
     userId?: Company["userId"],
     companyId?: Company["companyId"],
-    context?: Context
+    context?: Context,
   ) {
     checkKey();
     if (!eventName) err("No eventName provided");
@@ -224,7 +224,7 @@ export default function main() {
 
   async function initFeedbackPrompting(
     userId?: User["userId"],
-    handler?: FeedbackPromptHandler
+    handler?: FeedbackPromptHandler,
   ) {
     checkKey();
     if (isForNode) {
@@ -260,7 +260,7 @@ export default function main() {
       userId,
       body.channel,
       (message) => handleFeedbackPromptRequest(userId!, message, actualHandler),
-      debug
+      debug,
     );
     log(`feedback prompting connection established`);
     return res;
@@ -269,7 +269,7 @@ export default function main() {
   function handleFeedbackPromptRequest(
     userId: User["userId"],
     message: any,
-    userCallback: FeedbackPromptHandler
+    userCallback: FeedbackPromptHandler,
   ) {
     const parsed = parsePromptMessage(message);
     if (!parsed) {
@@ -279,12 +279,12 @@ export default function main() {
 
       if (
         !processPromptMessage(userId, parsed, (u, m, cb) =>
-          triggerFeedbackPrompt(u, m, cb, userCallback)
+          triggerFeedbackPrompt(u, m, cb, userCallback),
         )
       ) {
         log(
           `feedback prompt not shown, it was either expired or already processed`,
-          message
+          message,
         );
       }
     }
@@ -294,13 +294,13 @@ export default function main() {
     userId: User["userId"],
     message: FeedbackPrompt,
     actioned: FeedbackPromptActionedHandler,
-    handler: FeedbackPromptHandler
+    handler: FeedbackPromptHandler,
   ) {
     if (feedbackPromptingUserId !== userId) {
       log(
         `feedback prompt not shown, received for another user`,
         userId,
-        message
+        message,
       );
       return;
     }
@@ -328,7 +328,7 @@ export default function main() {
   async function feedbackPromptEvent(
     promptId: string,
     event: "received" | "shown" | "dismissed",
-    userId: User["userId"]
+    userId: User["userId"],
   ) {
     checkKey();
     if (!promptId) err("No promptId provided");

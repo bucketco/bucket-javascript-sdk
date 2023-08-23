@@ -5,7 +5,7 @@ export async function openAblyConnection(
   userId: string,
   channel: string,
   callback: (req: object) => void,
-  debug?: boolean
+  debug?: boolean,
 ) {
   const client = new Ably.Realtime.Promise({
     authUrl: authUrl,

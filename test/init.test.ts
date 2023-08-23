@@ -1,7 +1,7 @@
+import * as bundling from "is-bundling-for-browser-or-node";
 import nock from "nock";
 import { describe, expect, test, vi } from "vitest";
 
-import * as bundling from "is-bundling-for-browser-or-node";
 import bucket from "../src/main";
 
 const KEY = "123";
@@ -34,14 +34,14 @@ describe("init", () => {
 
   test("will reject setup without key", async () => {
     expect(() => bucket().init("")).toThrowError(
-      "Tracking key was not provided"
+      "Tracking key was not provided",
     );
   });
 
   test("will reject user call without key", async () => {
     const bucketInstance = bucket();
     await expect(() => bucketInstance.user("foo")).rejects.toThrowError(
-      "Tracking key is not set, please call init() first"
+      "Tracking key is not set, please call init() first",
     );
   });
 
@@ -53,9 +53,9 @@ describe("init", () => {
       bucketInstance.init(KEY, {
         automaticFeedbackPrompting: true,
         persistUser: false,
-      })
+      }),
     ).toThrowError(
-      "Feedback prompting is not supported when persistUser is disabled"
+      "Feedback prompting is not supported when persistUser is disabled",
     );
   });
 
@@ -67,9 +67,9 @@ describe("init", () => {
       bucketInstance.init(KEY, {
         automaticFeedbackPrompting: true,
         persistUser: false,
-      })
+      }),
     ).toThrowError(
-      "Feedback prompting is not supported in Node.js environment"
+      "Feedback prompting is not supported in Node.js environment",
     );
   });
 });

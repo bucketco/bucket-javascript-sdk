@@ -1,7 +1,7 @@
 import { FeedbackPrompt } from "./types";
 
 export const parsePromptMessage = (
-  message: any
+  message: any,
 ): FeedbackPrompt | undefined => {
   if (
     typeof message?.question !== "string" ||
@@ -38,13 +38,13 @@ export type FeedbackPromptActionedCallback = () => void;
 export type ShowPromptCallback = (
   userId: string,
   prompt: FeedbackPrompt,
-  actionedCallback: FeedbackPromptActionedCallback
+  actionedCallback: FeedbackPromptActionedCallback,
 ) => void;
 
 export const processPromptMessage = (
   userId: string,
   prompt: FeedbackPrompt,
-  showCallback: ShowPromptCallback
+  showCallback: ShowPromptCallback,
 ) => {
   const now = new Date();
 

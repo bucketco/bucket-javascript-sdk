@@ -7,14 +7,14 @@ describe("parsePromptMessage", () => {
     expect(parsePromptMessage(undefined)).toBeUndefined();
     expect(parsePromptMessage("invalid")).toBeUndefined();
     expect(
-      parsePromptMessage({ showAfter: Date.now(), showBefore: Date.now() })
+      parsePromptMessage({ showAfter: Date.now(), showBefore: Date.now() }),
     ).toBeUndefined();
     expect(
       parsePromptMessage({
         question: "",
         showAfter: Date.now(),
         showBefore: Date.now(),
-      })
+      }),
     ).toBeUndefined();
     expect(
       parsePromptMessage({
@@ -22,7 +22,7 @@ describe("parsePromptMessage", () => {
         showBefore: Date.now(),
         promptId: "123",
         featureId: "123",
-      })
+      }),
     ).toBeUndefined();
     expect(
       parsePromptMessage({
@@ -30,7 +30,7 @@ describe("parsePromptMessage", () => {
         showAfter: Date.now(),
         promptId: "123",
         featureId: "123",
-      })
+      }),
     ).toBeUndefined();
     expect(
       parsePromptMessage({
@@ -38,14 +38,14 @@ describe("parsePromptMessage", () => {
         showAfter: Date.now(),
         promptId: "123",
         featureId: "123",
-      })
+      }),
     ).toBeUndefined();
     expect(
       parsePromptMessage({
         question: "hello?",
         showAfter: Date.now(),
         showBefore: Date.now(),
-      })
+      }),
     ).toBeUndefined();
     expect(
       parsePromptMessage({
@@ -53,7 +53,7 @@ describe("parsePromptMessage", () => {
         showAfter: Date.now(),
         showBefore: Date.now(),
         promptId: "123",
-      })
+      }),
     ).toBeUndefined();
     expect(
       parsePromptMessage({
@@ -61,7 +61,7 @@ describe("parsePromptMessage", () => {
         showAfter: Date.now(),
         showBefore: Date.now(),
         featureId: "123",
-      })
+      }),
     ).toBeUndefined();
   });
 
@@ -76,7 +76,7 @@ describe("parsePromptMessage", () => {
         showBefore: end,
         promptId: "123",
         featureId: "456",
-      })
+      }),
     ).toEqual({
       question: "hello?",
       showAfter: new Date(start),
@@ -152,7 +152,7 @@ describe("processPromptMessage", () => {
     expect(showCallback).toHaveBeenCalledWith(
       "user",
       prompt,
-      expect.any(Function)
+      expect.any(Function),
     );
 
     expect(localStorage.getItem("prompt-user")).toBe("123");
@@ -179,7 +179,7 @@ describe("processPromptMessage", () => {
     expect(showCallback).toHaveBeenCalledWith(
       "user",
       prompt,
-      expect.any(Function)
+      expect.any(Function),
     );
 
     expect(localStorage.getItem("prompt-user")).toBe("123");

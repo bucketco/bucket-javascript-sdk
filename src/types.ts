@@ -61,12 +61,12 @@ export type FeedbackPromptReply = {
 };
 
 export type FeedbackPromptReplyHandler = (
-  reply: FeedbackPromptReply | null
+  reply: FeedbackPromptReply | null,
 ) => void;
 
 export type FeedbackPromptHandler = (
   req: FeedbackPrompt,
-  replyCallback: FeedbackPromptReplyHandler
+  replyCallback: FeedbackPromptReplyHandler,
 ) => void;
 
 export type Context = {
