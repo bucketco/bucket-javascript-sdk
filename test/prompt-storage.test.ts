@@ -14,7 +14,7 @@ describe("prompt-storage", () => {
 
     markPromptMessageCompleted("user", "prompt", new Date("2021-01-01"));
 
-    expect(spy).toHaveBeenCalledWith("prompt-user", "prompt", {
+    expect(spy).toHaveBeenCalledWith("bucket-prompt-user", "prompt", {
       expires: new Date("2021-01-01"),
     });
   });
@@ -24,7 +24,7 @@ describe("prompt-storage", () => {
 
     expect(checkPromptMessageCompleted("user", "prompt")).toBe(true);
 
-    expect(spy).toHaveBeenCalledWith("prompt-user");
+    expect(spy).toHaveBeenCalledWith("bucket-prompt-user");
   });
 
   test("checkPromptMessageCompleted with negative result", async () => {
@@ -32,6 +32,6 @@ describe("prompt-storage", () => {
 
     expect(checkPromptMessageCompleted("user", "prompt")).toBe(false);
 
-    expect(spy).toHaveBeenCalledWith("prompt-user");
+    expect(spy).toHaveBeenCalledWith("bucket-prompt-user");
   });
 });
