@@ -14,7 +14,11 @@ export async function openAblyConnection(
       userId,
     },
   });
-  const c = client.channels.get(channel);
+  const c = client.channels.get(channel, {
+    params: {
+      rewind: "1",
+    },
+  });
   await c.subscribe((message) => {
     callback(message.data);
   });

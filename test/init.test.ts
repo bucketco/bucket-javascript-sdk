@@ -1,3 +1,4 @@
+import * as bundling from "is-bundling-for-browser-or-node";
 import nock from "nock";
 import { describe, expect, test, vi } from "vitest";
 
@@ -5,6 +6,8 @@ import bucket from "../src/main";
 
 const KEY = "123";
 const CUSTOM_HOST = "https://example.com";
+
+vi.mock("is-bundling-for-browser-or-node");
 
 describe("init", () => {
   test("will accept setup with key and debug flag", () => {
@@ -43,6 +46,8 @@ describe("init", () => {
   });
 
   test("will reject automatic feedback prompting if not persisting user", async () => {
+    vi.spyOn(bundling, "isForNode", "get").mockReturnValue(false);
+
     const bucketInstance = bucket();
     expect(() =>
       bucketInstance.init(KEY, {
@@ -51,6 +56,20 @@ describe("init", () => {
       }),
     ).toThrowError(
       "Feedback prompting is not supported when persistUser is disabled",
+    );
+  });
+
+  test("will reject automatic feedback prompting if in node environment", async () => {
+    vi.spyOn(bundling, "isForNode", "get").mockReturnValue(true);
+
+    const bucketInstance = bucket();
+    expect(() =>
+      bucketInstance.init(KEY, {
+        automaticFeedbackPrompting: true,
+        persistUser: false,
+      }),
+    ).toThrowError(
+      "Feedback prompting is not supported in Node.js environment",
     );
   });
 });

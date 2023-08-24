@@ -3,7 +3,7 @@ export type Key = string;
 export type Options = {
   persistUser?: boolean;
   automaticFeedbackPrompting?: boolean;
-  feedbackPromptCallback?: FeedbackPromptCallback;
+  feedbackPromptHandler?: FeedbackPromptHandler;
   host?: string;
   debug?: boolean;
 };
@@ -18,7 +18,7 @@ export type User = {
 };
 
 export type Company = {
-  userId: string;
+  userId: User["userId"];
   companyId: string;
   attributes?: {
     name?: string;
@@ -29,8 +29,8 @@ export type Company = {
 
 export type TrackedEvent = {
   event: string;
-  userId: string;
-  companyId?: string;
+  userId: User["userId"];
+  companyId?: Company["companyId"];
   attributes?: {
     [key: string]: any;
   };
@@ -39,19 +39,35 @@ export type TrackedEvent = {
 
 export type Feedback = {
   featureId: string;
-  userId: string;
-  companyId?: string;
+  userId?: User["userId"];
+  companyId?: Company["companyId"];
   score?: number;
   comment?: string;
+  promptId?: FeedbackPrompt["promptId"];
 };
 
 export type FeedbackPrompt = {
   question: string;
   showAfter: Date;
   showBefore: Date;
+  promptId: string;
+  featureId: Feedback["featureId"];
 };
 
-export type FeedbackPromptCallback = (req: FeedbackPrompt) => void;
+export type FeedbackPromptReply = {
+  companyId?: Company["companyId"];
+  score?: Feedback["score"];
+  comment?: Feedback["comment"];
+};
+
+export type FeedbackPromptReplyHandler = (
+  reply: FeedbackPromptReply | null,
+) => void;
+
+export type FeedbackPromptHandler = (
+  prompt: FeedbackPrompt,
+  replyHandler: FeedbackPromptReplyHandler,
+) => void;
 
 export type Context = {
   active?: boolean;

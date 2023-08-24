@@ -6,12 +6,17 @@ import modulePackage from "../package.json";
 
 import { closeAblyConnection, openAblyConnection } from "./ably";
 import { TRACKING_HOST } from "./config";
-import { parsePromptMessage } from "./prompts";
+import {
+  FeedbackPromptCompletionHandler,
+  parsePromptMessage,
+  processPromptMessage,
+} from "./prompts";
 import {
   Company,
   Context,
   Feedback,
-  FeedbackPromptCallback,
+  FeedbackPrompt,
+  FeedbackPromptHandler,
   Key,
   Options,
   TrackedEvent,
@@ -35,8 +40,9 @@ export default function main() {
   let sessionUserId: string | undefined = undefined;
   let persistUser: boolean = !isForNode;
   let automaticFeedbackPrompting: boolean = false;
-  let feedbackPromptCallback: FeedbackPromptCallback | undefined = undefined;
+  let feedbackPromptHandler: FeedbackPromptHandler | undefined = undefined;
   let ablyClient: Ably.Realtime | undefined = undefined;
+  let feedbackPromptingUserId: string | undefined = undefined;
   let debug = false;
 
   log("Instance created");
@@ -71,6 +77,16 @@ export default function main() {
     throw new Error(message);
   }
 
+  function resolveUser(userId?: User["userId"]): string | never {
+    if (persistUser) {
+      return getSessionUser();
+    } else if (!userId) {
+      err("No userId provided and persistUser is disabled");
+    }
+
+    return userId!;
+  }
+
   // methods
 
   function init(key: Key, options?: Options) {
@@ -84,14 +100,17 @@ export default function main() {
       persistUser = options.persistUser;
     if (options?.debug) debug = options.debug;
     if (options?.automaticFeedbackPrompting) {
+      if (isForNode) {
+        err("Feedback prompting is not supported in Node.js environment");
+      }
       if (!persistUser) {
         err("Feedback prompting is not supported when persistUser is disabled");
       } else {
         automaticFeedbackPrompting = options.automaticFeedbackPrompting;
       }
     }
-    if (options?.feedbackPromptCallback) {
-      feedbackPromptCallback = options.feedbackPromptCallback;
+    if (options?.feedbackPromptHandler) {
+      feedbackPromptHandler = options.feedbackPromptHandler;
     }
     log(`initialized with key "${trackingKey}" and options`, options);
   }
@@ -109,7 +128,7 @@ export default function main() {
       }
       sessionUserId = userId;
       if (automaticFeedbackPrompting && !ablyClient) {
-        await initFeedbackPrompting(userId, feedbackPromptCallback);
+        await initFeedbackPrompting(userId);
       }
     }
     const payload: User = {
@@ -130,11 +149,8 @@ export default function main() {
   ) {
     checkKey();
     if (!companyId) err("No companyId provided");
-    if (persistUser) {
-      userId = getSessionUser();
-    } else if (!userId) {
-      err("No userId provided and persistUser is disabled");
-    }
+    userId = resolveUser(userId);
+
     const payload: Company = {
       userId,
       companyId,
@@ -155,11 +171,8 @@ export default function main() {
   ) {
     checkKey();
     if (!eventName) err("No eventName provided");
-    if (persistUser) {
-      userId = getSessionUser();
-    } else if (!userId) {
-      err("No userId provided and persistUser is disabled");
-    }
+    userId = resolveUser(userId);
+
     const payload: TrackedEvent = {
       userId,
       event: eventName,
@@ -172,38 +185,26 @@ export default function main() {
     return res;
   }
 
-  type FeedbackOptions = {
-    featureId: string;
-    // userId is optional. If not provided, it will be taken from session
-    userId?: string;
-    companyId?: string;
-    score?: number;
-    comment?: string;
-  };
-
   async function feedback({
     featureId,
     score,
     userId,
     companyId,
     comment,
-  }: FeedbackOptions) {
+    promptId,
+  }: Feedback) {
     checkKey();
     if (!featureId) err("No featureId provided");
     if (!score && !comment) err("Either 'score' or 'comment' must be provided");
+    userId = resolveUser(userId);
 
-    if (persistUser) {
-      userId = getSessionUser();
-    } else if (!userId) {
-      err("No userId provided and persistUser is disabled");
-    }
-
-    const payload: Feedback = {
+    const payload: Feedback & { userId: User["userId"] } = {
       userId,
       featureId,
       score,
       companyId,
       comment,
+      promptId,
     };
 
     const res = await request(`${getUrl()}/feedback`, payload);
@@ -211,18 +212,17 @@ export default function main() {
     return res;
   }
 
-  async function initFeedbackPrompting(
-    userId?: User["userId"],
-    requestCallback?: FeedbackPromptCallback,
-  ) {
+  async function initFeedbackPrompting(userId?: User["userId"]) {
     checkKey();
-    if (ablyClient)
-      err("Feedback prompting already initialized. Use reset() first.");
-    if (persistUser) {
-      userId = getSessionUser();
-    } else if (!userId) {
-      err("No userId provided and persistUser is disabled");
+    if (isForNode) {
+      err("Feedback prompting is not supported in Node.js environment");
     }
+
+    if (ablyClient) {
+      err("Feedback prompting already initialized. Use reset() first.");
+    }
+    userId = resolveUser(userId);
+
     const res = await request(`${getUrl()}/feedback/prompting-init`, {
       userId,
     });
@@ -234,33 +234,96 @@ export default function main() {
     }
 
     log(`feedback prompting enabled`);
-    const actualCallback =
-      requestCallback ||
-      (() => {
-        return true;
-      }); // dummy callback if not provided
+
+    feedbackPromptingUserId = userId;
     ablyClient = await openAblyConnection(
       `${getUrl()}/feedback/prompting-auth`,
       userId,
       body.channel,
-      (data) => {
-        const msg = parsePromptMessage(data);
-        if (!msg) {
-          err(`invalid feedback prompt message received`, data);
-        } else {
-          log(`feedback prompt received`, data);
-          actualCallback(msg);
-        }
-      },
+      (message) => handleFeedbackPromptRequest(userId!, message),
       debug,
     );
-
     log(`feedback prompting connection established`);
+    return res;
+  }
+
+  function handleFeedbackPromptRequest(userId: User["userId"], message: any) {
+    const parsed = parsePromptMessage(message);
+    if (!parsed) {
+      err(`invalid feedback prompt message received`, message);
+    } else {
+      feedbackPromptEvent(parsed.promptId, "received", userId);
+
+      if (
+        !processPromptMessage(userId, parsed, (u, m, cb) =>
+          triggerFeedbackPrompt(u, m, cb),
+        )
+      ) {
+        log(
+          `feedback prompt not shown, it was either expired or already processed`,
+          message,
+        );
+      }
+    }
+  }
+
+  function triggerFeedbackPrompt(
+    userId: User["userId"],
+    message: FeedbackPrompt,
+    completionHandler: FeedbackPromptCompletionHandler,
+  ) {
+    if (feedbackPromptingUserId !== userId) {
+      log(
+        `feedback prompt not shown, received for another user`,
+        userId,
+        message,
+      );
+      return;
+    }
+
+    feedbackPromptEvent(message.promptId, "shown", userId);
+
+    feedbackPromptHandler?.(message, (reply) => {
+      if (!reply) {
+        feedbackPromptEvent(message.promptId, "dismissed", userId);
+      } else {
+        feedback({
+          featureId: message.featureId,
+          userId,
+          companyId: reply.companyId,
+          score: reply.score,
+          comment: reply.comment,
+          promptId: message.promptId,
+        });
+      }
+
+      completionHandler();
+    });
+  }
+
+  async function feedbackPromptEvent(
+    promptId: string,
+    event: "received" | "shown" | "dismissed",
+    userId: User["userId"],
+  ) {
+    checkKey();
+    if (!promptId) err("No promptId provided");
+    if (!event) err("No event provided");
+
+    const payload = {
+      userId,
+      promptId,
+      action: event,
+    };
+
+    const res = await request(`${getUrl()}/feedback/prompt-events`, payload);
+    log(`sent prompt event`, res);
     return res;
   }
 
   function reset() {
     sessionUserId = undefined;
+    feedbackPromptingUserId = undefined;
     if (ablyClient) {
       closeAblyConnection(ablyClient);
       log(`feedback prompting connection closed`);
