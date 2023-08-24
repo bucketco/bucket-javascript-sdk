@@ -5,7 +5,7 @@ export const markPromptMessageCompleted = (
   promptId: string,
   expiresAt: Date,
 ) => {
-  Cookies.set(`prompt-${userId}`, promptId, { expires: expiresAt });
+  Cookies.set(`bucket-prompt-${userId}`, promptId, { expires: expiresAt });
 };
 
 export const checkPromptMessageCompleted = (
