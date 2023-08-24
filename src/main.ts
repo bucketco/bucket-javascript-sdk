@@ -252,12 +252,11 @@ export default function main() {
     if (!parsed) {
       err(`invalid feedback prompt message received`, message);
     } else {
-      feedbackPromptEvent(parsed.promptId, "received", userId);
-
       if (
-        !processPromptMessage(userId, parsed, (u, m, cb) =>
-          triggerFeedbackPrompt(u, m, cb),
-        )
+        !processPromptMessage(userId, parsed, (u, m, cb) => {
+          feedbackPromptEvent(parsed.promptId, "received", userId).then();
+          triggerFeedbackPrompt(u, m, cb);
+        })
       ) {
         log(
           `feedback prompt not shown, it was either expired or already processed`,
@@ -281,11 +280,11 @@ export default function main() {
       return;
     }
 
-    feedbackPromptEvent(message.promptId, "shown", userId);
+    feedbackPromptEvent(message.promptId, "shown", userId).then();
 
     feedbackPromptHandler?.(message, (reply) => {
       if (!reply) {
-        feedbackPromptEvent(message.promptId, "dismissed", userId);
+        feedbackPromptEvent(message.promptId, "dismissed", userId).then();
       } else {
         feedback({
           featureId: message.featureId,
@@ -294,7 +293,7 @@ export default function main() {
           score: reply.score,
           comment: reply.comment,
           promptId: message.promptId,
-        });
+        }).then();
       }
 
       completionHandler();

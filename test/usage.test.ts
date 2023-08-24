@@ -449,7 +449,7 @@ describe("feedback state management", () => {
 
     expect(callback).not.toBeCalled;
 
-    expectAsyncNockDone(n1);
+    expectAsyncNockDone(n1).then();
 
     expect(markPromptMessageCompleted).not.toHaveBeenCalledOnce();
 
@@ -473,7 +473,7 @@ describe("feedback state management", () => {
     vi.runAllTimers();
     expect(callback).not.toBeCalled;
 
-    expectAsyncNockDone(n1);
+    expectAsyncNockDone(n1).then();
 
     expect(markPromptMessageCompleted).not.toHaveBeenCalledOnce();
 
@@ -482,8 +482,6 @@ describe("feedback state management", () => {
   });
 
   test("ignores prompt if already seen", async () => {
-    const n1 = setupFeedbackPromptEventNock("received");
-
     vi.mocked(checkPromptMessageCompleted).mockReturnValue(true);
 
     const callback = vi.fn();
@@ -495,8 +493,6 @@ describe("feedback state management", () => {
 
     expect(checkPromptMessageCompleted).toHaveBeenCalledOnce();
     expect(checkPromptMessageCompleted).toHaveBeenCalledWith("foo", "123");
-
-    expectAsyncNockDone(n1);
   });
 
   test("propagates prompt to the callback", async () => {
@@ -520,8 +516,8 @@ describe("feedback state management", () => {
       expect.anything(),
     );
 
-    expectAsyncNockDone(n1);
-    expectAsyncNockDone(n2);
+    expectAsyncNockDone(n1).then();
+    expectAsyncNockDone(n2).then();
 
     expect(markPromptMessageCompleted).not.toHaveBeenCalled();
   });
@@ -544,8 +540,8 @@ describe("feedback state management", () => {
 
     expect(callback).toBeCalledTimes(1);
 
-    expectAsyncNockDone(n1);
-    expectAsyncNockDone(n2);
+    expectAsyncNockDone(n1).then();
+    expectAsyncNockDone(n2).then();
 
     expect(markPromptMessageCompleted).not.toHaveBeenCalled();
 
@@ -565,9 +561,9 @@ describe("feedback state management", () => {
     const bucketInstance = createBucketInstance(callback);
     await bucketInstance.initFeedbackPrompting("foo");
 
-    expectAsyncNockDone(n1);
-    expectAsyncNockDone(n2);
-    expectAsyncNockDone(n3);
+    expectAsyncNockDone(n1).then();
+    expectAsyncNockDone(n2).then();
+    expectAsyncNockDone(n3).then();
 
     expect(markPromptMessageCompleted).toHaveBeenCalledOnce();
     expect(markPromptMessageCompleted).toHaveBeenCalledWith(
@@ -603,9 +599,9 @@ describe("feedback state management", () => {
     const bucketInstance = createBucketInstance(callback);
     await bucketInstance.initFeedbackPrompting("foo");
 
-    expectAsyncNockDone(n1);
-    expectAsyncNockDone(n2);
-    expectAsyncNockDone(n3);
+    expectAsyncNockDone(n1).then();
+    expectAsyncNockDone(n2).then();
+    expectAsyncNockDone(n3).then();
 
     expect(markPromptMessageCompleted).toHaveBeenCalledOnce();
     expect(markPromptMessageCompleted).toHaveBeenCalledWith(
