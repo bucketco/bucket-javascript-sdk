@@ -324,7 +324,7 @@ export default function main() {
   }
 
   async function openFeedbackForm(options: FeedbackDialogOptions) {
-    if (typeof window === "undefined") {
+    if (isForNode) {
       err("openFeedbackForm can only be called in the browser");
     }
 
