@@ -12,6 +12,6 @@ export const checkPromptMessageCompleted = (
   userId: string,
   promptId: string,
 ) => {
-  const id = Cookies.get(`prompt-${userId}`);
+  const id = Cookies.get(`bucket-prompt-${userId}`);
   return id === promptId;
 };
