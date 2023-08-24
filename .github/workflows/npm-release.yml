@@ -16,6 +16,7 @@ jobs:
           cache: "yarn"
           cache-dependency-path: "**/yarn.lock"
           registry-url: "https://registry.npmjs.org"
+          scope: "@bucketco"
       - name: Install dependencies
         run: yarn install --immutable
       - name: Build SDK

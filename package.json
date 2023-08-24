@@ -1,8 +1,12 @@
 {
   "name": "@bucketco/tracking-sdk",
-  "version": "1.4.0-0",
+  "version": "1.4.0-2",
   "license": "MIT",
   "private": false,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bucketco/bucket-tracking-sdk.git"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && webpack",
