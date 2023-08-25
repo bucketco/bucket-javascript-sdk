@@ -27,6 +27,7 @@
   "types": "./dist/types/src/index.d.ts",
   "devDependencies": {
     "@eslint/js": "^8.47.0",
+    "@playwright/test": "^1.37.1",
     "@types/js-cookie": "^3.0.3",
     "@types/node": "^18.16.20",
     "@types/webpack": "^5.28.1",
@@ -42,6 +43,7 @@
     "eslint-plugin-simple-import-sort": "^10.0.0",
     "eslint-plugin-unused-imports": "^3.0.0",
     "globals": "^13.21.0",
+    "http-server": "^14.1.1",
     "jsdom": "^22.1.0",
     "nock": "^13.3.3",
     "prettier": "^3.0.2",
