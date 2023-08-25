@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { randomUUID } from "crypto";
-import { beforeEach, test } from "vitest";
+import { beforeEach, expect, test } from "vitest";
 import nock from "nock";
 import bucket from "../../";
 
@@ -57,4 +57,6 @@ test("Acceptance", async () => {
     score: 5,
     comment: "test!",
   });
+
+  expect(nock.isDone()).toBeTruthy();
 });
