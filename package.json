@@ -12,7 +12,7 @@
     "build": "tsc && webpack",
     "test": "vitest -c vite.config.js",
     "test:e2e": "yarn build && vitest run -c vite.e2e.config.js && playwright test",
-    "test:ci": "vitest run -c vite.config.js && vitest run -c vite.e2e.config.js && CI=true playwright test",
+    "test:ci": "vitest run -c vite.config.js --reporter=junit --outputFile=junit.xml && vitest run -c vite.e2e.config.js && CI=true playwright test",
     "coverage": "vitest run --coverage",
     "lint": "eslint .",
     "lint:ci": "eslint --output-file eslint-report.json --format json .",
