@@ -11,7 +11,7 @@
     "dev": "vite",
     "build": "tsc && webpack",
     "test": "vitest -c vite.config.js",
-    "test:e2e": "vitest run -c vite.e2e.config.js && playwright test",
+    "test:e2e": "yarn build && vitest run -c vite.e2e.config.js && playwright test",
     "test:ci": "vitest run -c vite.config.js && vitest run -c vite.e2e.config.js && CI=true playwright test",
     "coverage": "vitest run --coverage",
     "lint": "eslint .",
