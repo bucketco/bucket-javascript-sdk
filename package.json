@@ -18,7 +18,7 @@
     "lint:ci": "eslint --output-file eslint-report.json --format json .",
     "prettier": "prettier --check .",
     "format": "yarn prettier --write && yarn lint --fix",
-    "preversion": "yarn lint && yarn prettier && yarn vitest run && yarn build"
+    "preversion": "yarn lint && yarn prettier && yarn vitest run -c vite.config.js && yarn build"
   },
   "files": [
     "dist"
