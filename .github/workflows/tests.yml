@@ -23,6 +23,8 @@ jobs:
           cache-dependency-path: "**/yarn.lock"
       - name: Restore Node.js dependencies
         run: yarn install --frozen-lockfile
+      - name: Install Playwright Browsers
+        run: yarn playwright install --with-deps
       - id: build
         name: Build the project
         run: yarn build
