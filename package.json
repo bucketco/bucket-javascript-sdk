@@ -58,6 +58,7 @@
   "dependencies": {
     "ably": "^1.2.43",
     "cross-fetch": "^4.0.0",
+    "flush-promises": "^1.0.2",
     "is-bundling-for-browser-or-node": "^1.1.1",
     "js-cookie": "^3.0.5"
   }

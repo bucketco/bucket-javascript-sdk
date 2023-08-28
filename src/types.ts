@@ -62,7 +62,7 @@ export type FeedbackPromptReply = {
 
 export type FeedbackPromptReplyHandler = (
   reply: FeedbackPromptReply | null,
-) => void;
+) => Promise<void>;
 
 export type FeedbackPromptHandler = (
   prompt: FeedbackPrompt,

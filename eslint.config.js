@@ -121,6 +121,7 @@ module.exports = [
       // Typescript Specific
       "@typescript-eslint/no-unused-vars": "off", // handled by unused-imports
       "@typescript-eslint/explicit-module-boundary-types": ["off"],
+      "@typescript-eslint/no-floating-promises": "error",
       "@typescript-eslint/switch-exhaustiveness-check": ["warn"],
       "@typescript-eslint/no-non-null-assertion": ["off"],
       "@typescript-eslint/no-empty-function": ["warn"],
