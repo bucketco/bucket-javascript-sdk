@@ -53,12 +53,12 @@
     "vitest": "^0.30.1",
     "webpack": "^5.88.2",
     "webpack-cli": "^5.1.4",
-    "webpack-node-externals": "^3.0.0"
+    "webpack-node-externals": "^3.0.0",
+    "flush-promises": "^1.0.2"
   },
   "dependencies": {
     "ably": "^1.2.43",
     "cross-fetch": "^4.0.0",
-    "flush-promises": "^1.0.2",
     "is-bundling-for-browser-or-node": "^1.1.1",
     "js-cookie": "^3.0.5"
   }
