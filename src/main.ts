@@ -2,8 +2,12 @@ import Ably from "ably/promises";
 import fetch from "cross-fetch";
 import { isForNode } from "is-bundling-for-browser-or-node";
 
+import { version } from "../package.json";
+
+import type { FeedbackDialogOptions } from "./feedback/types";
 import { closeAblyConnection, openAblyConnection } from "./ably";
 import { TRACKING_HOST } from "./config";
+import * as feedbackLib from "./feedback";
 import {
   FeedbackPromptCompletionHandler,
   parsePromptMessage,
@@ -20,9 +24,6 @@ import {
   TrackedEvent,
   User,
 } from "./types";
-import { version } from "../package.json";
-import type { FeedbackDialogOptions } from "./feedback/types";
-import * as feedbackLib from "./feedback";
 
 async function request(url: string, body: any) {
   return fetch(url, {

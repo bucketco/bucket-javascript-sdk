@@ -33,7 +33,14 @@
   padding: 0.5rem 0.75rem;
   border-radius: 2px;
   transition: border-color 0.2s ease-in-out;
-  font-family: var(--bucket-feedback-dialog-font-family, InterVariable, Inter, system-ui, Open Sans, sans-serif);
+  font-family: var(
+    --bucket-feedback-dialog-font-family,
+    InterVariable,
+    Inter,
+    system-ui,
+    Open Sans,
+    sans-serif
+  );
   resize: vertical;
 
   &:focus {

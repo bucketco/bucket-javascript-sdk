@@ -1,5 +1,5 @@
-export {arrow} from './arrow';
-export {useFloating} from './useFloating';
+export { arrow } from "./arrow";
+export { useFloating } from "./useFloating";
 export {
   autoPlacement,
   autoUpdate,
@@ -14,4 +14,4 @@ export {
   platform,
   shift,
   size,
-} from '@floating-ui/dom';
+} from "@floating-ui/dom";

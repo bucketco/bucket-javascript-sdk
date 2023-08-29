@@ -1,11 +1,13 @@
 :root {
   --bucket-feedback-dialog-font-size: 1rem;
-  --bucket-feedback-dialog-font-family: InterVariable, Inter, system-ui, Open Sans, sans-serif;
+  --bucket-feedback-dialog-font-family: InterVariable, Inter, system-ui,
+    Open Sans, sans-serif;
   --bucket-feedback-dialog-bg: #fff;
   --bucket-feedback-dialog-color: #1e1f24;
   --bucket-feedback-dialog-radius: 6px;
   --bucket-feedback-dialog-border: #d8d9df;
-  --bucket-feedback-dialog-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --bucket-feedback-dialog-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
   --bucket-feedback-dialog-primary-bg: #655bfa;
   --bucket-feedback-dialog-primary-fg: white;
   --bucket-feedback-dialog-input-border: #d8d9df;

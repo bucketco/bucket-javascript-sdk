@@ -1,4 +1,4 @@
-import { h, FunctionComponent } from "preact";
+import { FunctionComponent, h } from "preact";
 
 export const Dissatisfied: FunctionComponent<
   h.JSX.SVGAttributes<SVGSVGElement>

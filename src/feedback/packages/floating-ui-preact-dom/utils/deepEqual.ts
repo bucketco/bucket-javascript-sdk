@@ -9,13 +9,13 @@ export function deepEqual(a: any, b: any) {
     return false;
   }
 
-  if (typeof a === 'function' && a.toString() === b.toString()) {
+  if (typeof a === "function" && a.toString() === b.toString()) {
     return true;
   }
 
   let length, i, keys;
 
-  if (a && b && typeof a == 'object') {
+  if (a && b && typeof a == "object") {
     if (Array.isArray(a)) {
       length = a.length;
       if (length != b.length) return false;
@@ -42,7 +42,7 @@ export function deepEqual(a: any, b: any) {
 
     for (i = length; i-- !== 0; ) {
       const key = keys[i];
-      if (key === '_owner' && a.$$typeof) {
+      if (key === "_owner" && a.$$typeof) {
         continue;
       }
 

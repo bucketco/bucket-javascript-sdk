@@ -1,6 +1,7 @@
 import { h, render } from "preact";
-import { FeedbackDialog, FeedbackDialogProps } from "./FeedbackDialog";
+
 import { feedbackContainerId } from "./constants";
+import { FeedbackDialog, FeedbackDialogProps } from "./FeedbackDialog";
 
 function attachDialogContainer() {
   let container = document.querySelector(`#${feedbackContainerId}`);

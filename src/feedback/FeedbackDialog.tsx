@@ -1,18 +1,18 @@
-import { h, FunctionComponent, Fragment } from "preact";
+import { Fragment, FunctionComponent, h } from "preact";
 import { useEffect, useRef } from "preact/hooks";
-import { FeedbackForm } from "./FeedbackForm";
-import { FeedbackDialogOptions, WithRequired } from "./types";
+
 import { Logo } from "./icons/Logo";
 import {
+  arrow,
   autoUpdate,
   offset,
   shift,
   useFloating,
-  arrow,
 } from "./packages/floating-ui-preact-dom";
-
-import styles from "./index.css?inline";
 import { feedbackContainerId } from "./constants";
+import { FeedbackForm } from "./FeedbackForm";
+import styles from "./index.css?inline";
+import { FeedbackDialogOptions, WithRequired } from "./types";
 
 type Position = Partial<
   Record<"top" | "left" | "right" | "bottom", number | string>

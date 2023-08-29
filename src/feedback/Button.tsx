@@ -1,4 +1,5 @@
-import { h, FunctionComponent } from "preact";
+import { FunctionComponent, h } from "preact";
+
 import { Spinner } from "./Spinner";
 
 export type ButtonProps = h.JSX.HTMLAttributes<HTMLButtonElement> & {

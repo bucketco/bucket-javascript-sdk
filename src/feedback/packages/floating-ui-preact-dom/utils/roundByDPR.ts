@@ -1,4 +1,4 @@
-import {getDPR} from './getDPR';
+import { getDPR } from "./getDPR";
 
 export function roundByDPR(element: Element, value: number) {
   const dpr = getDPR(element);

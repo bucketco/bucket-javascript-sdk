@@ -1,4 +1,4 @@
-import { h, FunctionComponent } from "preact";
+import { FunctionComponent, h } from "preact";
 
 export type SpinnerProps = Omit<h.JSX.HTMLAttributes<HTMLElement>, "size"> & {
   size?: string | number;

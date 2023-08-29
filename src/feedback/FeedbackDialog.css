@@ -30,7 +30,14 @@
   width: max-content;
   padding: 16px 24px;
   font-size: var(--bucket-feedback-dialog-font-size, 1rem);
-  font-family: var(--bucket-feedback-dialog-font-family, InterVariable, Inter, system-ui, Open Sans, sans-serif);
+  font-family: var(
+    --bucket-feedback-dialog-font-family,
+    InterVariable,
+    Inter,
+    system-ui,
+    Open Sans,
+    sans-serif
+  );
   color: var(--bucket-feedback-dialog-color, #1e1f24);
   border: 1px solid;
   border-color: var(--bucket-feedback-dialog-border, #d8d9df);
@@ -41,7 +48,7 @@
     0 4px 6px -2px rgba(0, 0, 0, 0.05)
   );
   background-color: var(--bucket-feedback-dialog-bg, #fff);
-  
+
   &:not(.modal) {
     margin: unset;
     top: unset;
@@ -79,14 +86,16 @@
   text-align: center;
 }
 
-/* Modal */ 
+/* Modal */
 
 .dialog.modal {
   margin: auto;
   margin-top: 4rem;
-  
+
   &[open] {
-    animation: scale 100ms ease-in-out, fade 100ms ease-in-out;
+    animation:
+      scale 100ms ease-in-out,
+      fade 100ms ease-in-out;
 
     &::backdrop {
       animation: fade 100ms ease-in-out;
@@ -94,14 +103,16 @@
   }
 }
 
-/* Anchored */ 
+/* Anchored */
 
 .dialog.anchored {
   position: absolute;
 
   &[open] {
-    animation: scale 100ms ease-in-out, fade 100ms ease-in-out;
-  }  
+    animation:
+      scale 100ms ease-in-out,
+      fade 100ms ease-in-out;
+  }
   &.bottom {
     transform-origin: top center;
   }
@@ -116,9 +127,10 @@
   }
 }
 
-
 /* Unanchored */
 
 .dialog[open].unanchored {
-  animation: floatUp 100ms ease-in-out, fade 100ms ease-in-out;
+  animation:
+    floatUp 100ms ease-in-out,
+    fade 100ms ease-in-out;
 }

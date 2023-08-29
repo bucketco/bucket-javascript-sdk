@@ -3,7 +3,7 @@ import type {
   ComputePositionReturn,
   VirtualElement,
 } from "@floating-ui/dom";
-import { RefObject, h } from "preact";
+import { h, RefObject } from "preact";
 
 export { arrow, Options as ArrowOptions } from "./arrow";
 export { useFloating } from "./useFloating";
@@ -126,7 +126,7 @@ export type UseFloatingOptions<RT extends ReferenceType = ReferenceType> =
       whileElementsMounted?: (
         reference: RT,
         floating: HTMLElement,
-        update: () => void
+        update: () => void,
       ) => () => void;
       elements?: {
         reference?: RT | null;

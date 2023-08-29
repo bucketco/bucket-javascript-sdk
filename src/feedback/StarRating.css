@@ -1,6 +1,6 @@
 .star-rating {
   display: flex;
-  
+
   > input {
     border: 0px;
     clip: rect(0px, 0px, 0px, 0px);
@@ -16,7 +16,7 @@
   > .button {
     border: 1px solid;
     border-color: var(--bucket-feedback-dialog-input-border, #d8d9df);
-  
+
     &:not(:first-of-type) {
       border-top-left-radius: 0;
       border-bottom-left-radius: 0;
@@ -47,7 +47,6 @@
   > input:checked + .button > svg {
     transform: scale(1.2);
   }
-
 }
 
 .star-rating-labels {

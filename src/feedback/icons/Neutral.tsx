@@ -1,7 +1,7 @@
-import { h, FunctionComponent } from "preact";
+import { FunctionComponent, h } from "preact";
 
 export const Neutral: FunctionComponent<h.JSX.SVGAttributes<SVGSVGElement>> = (
-  props
+  props,
 ) => (
   <svg
     width="22"

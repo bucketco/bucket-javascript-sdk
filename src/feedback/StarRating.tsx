@@ -1,8 +1,9 @@
-import { h, FunctionComponent, Fragment } from "preact"; // TODO: Fragment import not ideal
-import { VeryDissatisfied } from "./icons/VeryDissatisfied";
+import { Fragment, FunctionComponent, h } from "preact"; // TODO: Fragment import not ideal
+
 import { Dissatisfied } from "./icons/Dissatisfied";
 import { Neutral } from "./icons/Neutral";
 import { Satisfied } from "./icons/Satisfied";
+import { VeryDissatisfied } from "./icons/VeryDissatisfied";
 import { VerySatisfied } from "./icons/VerySatisfied";
 
 const scores = [

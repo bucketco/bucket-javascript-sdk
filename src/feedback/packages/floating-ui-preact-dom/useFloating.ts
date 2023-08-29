@@ -1,16 +1,4 @@
 import { computePosition } from "@floating-ui/dom";
-
-import type {
-  ComputePositionConfig,
-  ReferenceType,
-  UseFloatingData,
-  UseFloatingOptions,
-  UseFloatingReturn,
-} from "./types";
-import { deepEqual } from "./utils/deepEqual";
-import { getDPR } from "./utils/getDPR";
-import { roundByDPR } from "./utils/roundByDPR";
-import { useLatestRef } from "./utils/useLatestRef";
 import {
   useCallback,
   useLayoutEffect,
@@ -19,12 +7,24 @@ import {
   useState,
 } from "preact/hooks";
 
+import { deepEqual } from "./utils/deepEqual";
+import { getDPR } from "./utils/getDPR";
+import { roundByDPR } from "./utils/roundByDPR";
+import { useLatestRef } from "./utils/useLatestRef";
+import type {
+  ComputePositionConfig,
+  ReferenceType,
+  UseFloatingData,
+  UseFloatingOptions,
+  UseFloatingReturn,
+} from "./types";
+
 /**
  * Provides data to position a floating element.
  * @see https://floating-ui.com/docs/react
  */
 export function useFloating<RT extends ReferenceType = ReferenceType>(
-  options: UseFloatingOptions = {}
+  options: UseFloatingOptions = {},
 ): UseFloatingReturn<RT> {
   const {
     placement = "bottom",
@@ -62,7 +62,7 @@ export function useFloating<RT extends ReferenceType = ReferenceType>(
         _setReference(node);
       }
     },
-    [_setReference]
+    [_setReference],
   );
 
   const setFloating = useCallback(
@@ -72,7 +72,7 @@ export function useFloating<RT extends ReferenceType = ReferenceType>(
         _setFloating(node);
       }
     },
-    [_setFloating]
+    [_setFloating],
   );
 
   const referenceEl = (externalReference || _reference) as RT | null;
@@ -107,7 +107,7 @@ export function useFloating<RT extends ReferenceType = ReferenceType>(
           dataRef.current = fullData;
           setData(fullData);
         }
-      }
+      },
     );
   }, [latestMiddleware, placement, strategy, platformRef]);
 
@@ -146,12 +146,12 @@ export function useFloating<RT extends ReferenceType = ReferenceType>(
       setReference,
       setFloating,
     }),
-    [setReference, setFloating]
+    [setReference, setFloating],
   );
 
   const elements = useMemo(
     () => ({ reference: referenceEl, floating: floatingEl }),
-    [referenceEl, floatingEl]
+    [referenceEl, floatingEl],
   );
 
   const floatingStyles = useMemo(() => {
@@ -191,6 +191,6 @@ export function useFloating<RT extends ReferenceType = ReferenceType>(
       elements,
       floatingStyles,
     }),
-    [data, update, refs, elements, floatingStyles]
+    [data, update, refs, elements, floatingStyles],
   );
 }

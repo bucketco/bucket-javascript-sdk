@@ -1,6 +1,6 @@
-import { RefObject } from "preact";
 import type { Middleware, Padding } from "@floating-ui/core";
 import { arrow as arrowCore, MiddlewareState } from "@floating-ui/dom";
+import { RefObject } from "preact";
 
 export interface Options {
   /**
@@ -23,7 +23,7 @@ export interface Options {
  * @see https://floating-ui.com/docs/arrow
  */
 export const arrow = (
-  options: Options | ((state: MiddlewareState) => Options)
+  options: Options | ((state: MiddlewareState) => Options),
 ): Middleware => {
   function isRef(value: unknown): value is RefObject<unknown> {
     return {}.hasOwnProperty.call(value, "current");

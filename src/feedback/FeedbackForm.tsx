@@ -1,8 +1,9 @@
-import { h, FunctionComponent } from "preact";
-import { Feedback } from "./types";
-import { StarRating } from "./StarRating";
-import { Button } from "./Button";
+import { FunctionComponent, h } from "preact";
 import { useState } from "preact/hooks";
+
+import { Button } from "./Button";
+import { StarRating } from "./StarRating";
+import { Feedback } from "./types";
 
 function getFeedbackDataFromForm(el: HTMLFormElement): Feedback {
   const formData = new FormData(el);
@@ -24,12 +25,12 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
 }) => {
   const [hasRating, setHasRating] = useState(false);
   const [status, setStatus] = useState<"idle" | "submitting" | "submitted">(
-    "idle"
+    "idle",
   );
   const [error, setError] = useState<string>();
 
   const handleSubmit: h.JSX.GenericEventHandler<HTMLFormElement> = async (
-    e
+    e,
   ) => {
     e.preventDefault();
     const data = getFeedbackDataFromForm(e.target as HTMLFormElement);

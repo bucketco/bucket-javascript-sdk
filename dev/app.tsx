@@ -1,7 +1,8 @@
 import { h } from "preact";
-import bucket from "../src/index";
 import { useState } from "preact/hooks";
+
 import { Placement } from "../src/feedback/types";
+import bucket from "../src/index";
 
 bucket.init("123", {
   persistUser: false,

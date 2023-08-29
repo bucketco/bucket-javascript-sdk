@@ -1,7 +1,7 @@
-import { h, FunctionComponent } from "preact";
+import { FunctionComponent, h } from "preact";
 
 export const Logo: FunctionComponent<h.JSX.SVGAttributes<SVGSVGElement>> = (
-  props
+  props,
 ) => (
   <svg
     width="10px"
