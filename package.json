@@ -10,14 +10,15 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && webpack",
-    "test": "vitest",
-    "test:ci": "vitest --reporter=junit --outputFile=junit.xml",
+    "test": "vitest -c vite.config.js",
+    "test:e2e": "yarn build && vitest run -c vite.e2e.config.js && playwright test",
+    "test:ci": "vitest run -c vite.config.js --reporter=junit --outputFile=junit.xml && vitest run -c vite.e2e.config.js && CI=true playwright test",
     "coverage": "vitest run --coverage",
     "lint": "eslint .",
     "lint:ci": "eslint --output-file eslint-report.json --format json .",
     "prettier": "prettier --check .",
     "format": "yarn prettier --write && yarn lint --fix",
-    "preversion": "yarn lint && yarn prettier && yarn vitest run && yarn build"
+    "preversion": "yarn lint && yarn prettier && yarn vitest run -c vite.config.js && yarn build"
   },
   "files": [
     "dist"
@@ -27,6 +28,7 @@
   "types": "./dist/types/src/index.d.ts",
   "devDependencies": {
     "@eslint/js": "^8.47.0",
+    "@playwright/test": "^1.37.1",
     "@types/js-cookie": "^3.0.3",
     "@types/node": "^18.16.20",
     "@types/webpack": "^5.28.1",
@@ -42,6 +44,7 @@
     "eslint-plugin-simple-import-sort": "^10.0.0",
     "eslint-plugin-unused-imports": "^3.0.0",
     "globals": "^13.21.0",
+    "http-server": "^14.1.1",
     "jsdom": "^22.1.0",
     "nock": "^13.3.3",
     "prettier": "^3.0.2",
