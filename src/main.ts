@@ -334,7 +334,8 @@ export default function main() {
       err("No userId provided and persistUser is disabled");
     }
 
-    // TODO: remove set timeout
+    // Wait a tick before opening the feedback form,
+    // to prevent the same click from closing it.
     setTimeout(() => {
       feedbackLib.openFeedbackForm({
         onSubmit: async (data) => {

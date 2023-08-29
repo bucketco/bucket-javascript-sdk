@@ -127,7 +127,6 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
         ].join(" ")}
         style={anchor ? floatingStyles : unanchoredPosition}
       >
-        {/* todo: better alternative to reset the form than featureId switch */}
         <FeedbackForm key={featureId} question={title} onSubmit={onSubmit} />
         <footer class="plug">
           Powered by <Logo /> Bucket

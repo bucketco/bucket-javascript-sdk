@@ -9,7 +9,6 @@ const config: Configuration[] = [
     mode: "production",
     module: {
       rules: [
-        // TODO: remove? not doing any harm...
         {
           test: /\.css$/i,
           use: ["style-loader", "css-loader", "postcss-loader"],

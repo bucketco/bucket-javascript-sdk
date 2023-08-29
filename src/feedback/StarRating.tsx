@@ -1,4 +1,4 @@
-import { Fragment, FunctionComponent, h } from "preact"; // TODO: Fragment import not ideal
+import { Fragment, FunctionComponent, h } from "preact";
 
 import { Dissatisfied } from "./icons/Dissatisfied";
 import { Neutral } from "./icons/Neutral";
