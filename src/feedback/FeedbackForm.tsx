@@ -40,12 +40,12 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
       setStatus("submitting");
       await onSubmit(data);
       setStatus("submitted");
-    } catch (e) {
+    } catch (err) {
       setStatus("idle");
-      if (e instanceof Error) {
-        setError(e.message);
-      } else if (typeof e === "string") {
-        setError(e);
+      if (err instanceof Error) {
+        setError(err.message);
+      } else if (typeof err === "string") {
+        setError(err);
       } else {
         setError("Couldn't submit feedback. Please try again.");
       }
