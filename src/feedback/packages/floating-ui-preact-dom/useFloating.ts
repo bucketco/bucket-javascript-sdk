@@ -100,9 +100,10 @@ export function useFloating<RT extends ReferenceType = ReferenceType>(
       config.platform = platformRef.current;
     }
 
+    /*eslint-disable-next-line @typescript-eslint/no-floating-promises*/
     computePosition(referenceRef.current, floatingRef.current, config).then(
-      (data) => {
-        const fullData = { ...data, isPositioned: true };
+      (positionData) => {
+        const fullData = { ...positionData, isPositioned: true };
         if (isMountedRef.current && !deepEqual(dataRef.current, fullData)) {
           dataRef.current = fullData;
           setData(fullData);
@@ -114,7 +115,7 @@ export function useFloating<RT extends ReferenceType = ReferenceType>(
   useLayoutEffect(() => {
     if (open === false && dataRef.current.isPositioned) {
       dataRef.current.isPositioned = false;
-      setData((data) => ({ ...data, isPositioned: false }));
+      setData((positionData) => ({ ...positionData, isPositioned: false }));
     }
   }, [open]);
 
