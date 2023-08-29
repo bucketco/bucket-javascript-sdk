@@ -1,7 +1,8 @@
 // @vitest-environment node
 import { randomUUID } from "crypto";
-import { beforeEach, expect, test } from "vitest";
 import nock from "nock";
+import { beforeEach, expect, test } from "vitest";
+
 import bucket from "../../";
 
 const KEY = randomUUID();

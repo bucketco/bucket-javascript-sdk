@@ -16,5 +16,5 @@
     "noImplicitReturns": true,
     "typeRoots": ["./node_modules/@types", "./types"]
   },
-  "include": ["src", "webpack.config.ts"]
+  "include": ["src"]
 }
