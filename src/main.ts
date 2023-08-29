@@ -322,7 +322,7 @@ export default function main() {
     return res;
   }
 
-  async function openFeedbackForm(options: FeedbackDialogOptions) {
+  function openFeedbackForm(options: FeedbackDialogOptions) {
     if (isForNode) {
       err("openFeedbackForm can only be called in the browser");
     }
