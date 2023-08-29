@@ -1,4 +1,4 @@
-import { h, FunctionComponent } from "preact";
+import { h, FunctionComponent, Fragment } from "preact"; // TODO: Fragment import not ideal
 import { VeryDissatisfied } from "./icons/VeryDissatisfied";
 import { Dissatisfied } from "./icons/Dissatisfied";
 import { Neutral } from "./icons/Neutral";
@@ -59,7 +59,7 @@ export const StarRating: FunctionComponent<StarRatingProps> = ({
             }
             .star-rating > input:nth-of-type(${index + 1}):checked + .button {
               background-color: ${bg};
-            }`
+            }`,
         )}
       </style>
       <div class="star-rating">

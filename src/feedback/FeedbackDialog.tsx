@@ -1,4 +1,4 @@
-import { h, FunctionComponent } from "preact";
+import { h, FunctionComponent, Fragment } from "preact";
 import { useEffect, useRef } from "preact/hooks";
 import { FeedbackForm } from "./FeedbackForm";
 import { FeedbackDialogOptions, WithRequired } from "./types";

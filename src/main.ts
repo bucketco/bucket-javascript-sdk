@@ -2,8 +2,6 @@ import Ably from "ably/promises";
 import fetch from "cross-fetch";
 import { isForNode } from "is-bundling-for-browser-or-node";
 
-import modulePackage from "../package.json";
-
 import { closeAblyConnection, openAblyConnection } from "./ably";
 import { TRACKING_HOST } from "./config";
 import {
