@@ -253,9 +253,9 @@ export default function main() {
       err(`invalid feedback prompt message received`, message);
     } else {
       if (
-        !processPromptMessage(userId, parsed, (u, m, cb) => {
-          feedbackPromptEvent(parsed.promptId, "received", userId).then();
-          triggerFeedbackPrompt(u, m, cb);
+        !processPromptMessage(userId, parsed, async (u, m, cb) => {
+          await feedbackPromptEvent(parsed.promptId, "received", userId);
+          await triggerFeedbackPrompt(u, m, cb);
         })
       ) {
         log(
@@ -266,7 +266,7 @@ export default function main() {
     }
   }
 
-  function triggerFeedbackPrompt(
+  async function triggerFeedbackPrompt(
     userId: User["userId"],
     message: FeedbackPrompt,
     completionHandler: FeedbackPromptCompletionHandler,
@@ -280,20 +280,20 @@ export default function main() {
       return;
     }
 
-    feedbackPromptEvent(message.promptId, "shown", userId).then();
+    await feedbackPromptEvent(message.promptId, "shown", userId);
 
-    feedbackPromptHandler?.(message, (reply) => {
+    feedbackPromptHandler?.(message, async (reply) => {
       if (!reply) {
-        feedbackPromptEvent(message.promptId, "dismissed", userId).then();
+        await feedbackPromptEvent(message.promptId, "dismissed", userId);
       } else {
-        feedback({
+        await feedback({
           featureId: message.featureId,
           userId,
           companyId: reply.companyId,
           score: reply.score,
           comment: reply.comment,
           promptId: message.promptId,
-        }).then();
+        });
       }
 
       completionHandler();
