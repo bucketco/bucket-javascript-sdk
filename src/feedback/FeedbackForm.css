@@ -1,0 +1,77 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.form-control {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 0.5em;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.label {
+  font-size: 0.8125em;
+  font-weight: 500;
+}
+
+.dimmed {
+  opacity: 0.5;
+}
+
+.textarea {
+  background-color: transparent;
+  min-width: 16rem;
+  border: 1px solid;
+  border-color: var(--bucket-feedback-dialog-input-border, #d8d9df);
+  padding: 0.5rem 0.75rem;
+  border-radius: 2px;
+  transition: border-color 0.2s ease-in-out;
+  font-family: var(
+    --bucket-feedback-dialog-font-family,
+    InterVariable,
+    Inter,
+    system-ui,
+    Open Sans,
+    sans-serif
+  );
+  resize: vertical;
+
+  &:focus {
+    outline: none;
+    border-color: var(--bucket-feedback-dialog-primary-bg, #655bfa);
+  }
+}
+
+.error {
+  margin: 0;
+  color: var(--bucket-feedback-dialog-error-fg, #e53e3e);
+  font-size: 0.8125em;
+  font-weight: 500;
+}
+
+.submitted {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+
+  p {
+    margin: 0;
+  }
+
+  .icon {
+    font-size: 2em;
+  }
+
+  .text {
+    font-size: 0.8125em;
+  }
+}

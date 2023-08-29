@@ -1,0 +1,136 @@
+@keyframes scale {
+  from {
+    transform: scale(0.95);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes floatUp {
+  from {
+    transform: translateY(10%);
+  }
+  to {
+    transform: translateY(0%);
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.dialog {
+  position: fixed;
+  width: max-content;
+  padding: 16px 24px;
+  font-size: var(--bucket-feedback-dialog-font-size, 1rem);
+  font-family: var(
+    --bucket-feedback-dialog-font-family,
+    InterVariable,
+    Inter,
+    system-ui,
+    Open Sans,
+    sans-serif
+  );
+  color: var(--bucket-feedback-dialog-color, #1e1f24);
+  border: 1px solid;
+  border-color: var(--bucket-feedback-dialog-border, #d8d9df);
+  border-radius: var(--bucket-feedback-dialog-radius, 6px);
+  box-shadow: var(
+    --bucket-feedback-dialog-shadow,
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05)
+  );
+  background-color: var(--bucket-feedback-dialog-bg, #fff);
+
+  &:not(.modal) {
+    margin: unset;
+    top: unset;
+    right: unset;
+    left: unset;
+    bottom: unset;
+  }
+}
+
+.arrow {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background-color: var(--bucket-feedback-dialog-bg, #fff);
+  box-shadow: var(--bucket-feedback-dialog-border) -1px -1px 1px 0px;
+  transform: rotate(45deg);
+
+  &.bottom {
+    box-shadow: var(--bucket-feedback-dialog-border) -1px -1px 1px 0px;
+  }
+  &.top {
+    box-shadow: var(--bucket-feedback-dialog-border) 1px 1px 1px 0px;
+  }
+  &.left {
+    box-shadow: var(--bucket-feedback-dialog-border) 1px -1px 1px 0px;
+  }
+  &.right {
+    box-shadow: var(--bucket-feedback-dialog-border) -1px 1px 1px 0px;
+  }
+}
+
+.plug {
+  opacity: 0.5;
+  font-size: 0.75em;
+  text-align: center;
+}
+
+/* Modal */
+
+.dialog.modal {
+  margin: auto;
+  margin-top: 4rem;
+
+  &[open] {
+    animation:
+      scale 100ms ease-in-out,
+      fade 100ms ease-in-out;
+
+    &::backdrop {
+      animation: fade 100ms ease-in-out;
+    }
+  }
+}
+
+/* Anchored */
+
+.dialog.anchored {
+  position: absolute;
+
+  &[open] {
+    animation:
+      scale 100ms ease-in-out,
+      fade 100ms ease-in-out;
+  }
+  &.bottom {
+    transform-origin: top center;
+  }
+  &.top {
+    transform-origin: bottom center;
+  }
+  &.left {
+    transform-origin: right center;
+  }
+  &.right {
+    transform-origin: left center;
+  }
+}
+
+/* Unanchored */
+
+.dialog[open].unanchored {
+  animation:
+    floatUp 100ms ease-in-out,
+    fade 100ms ease-in-out;
+}

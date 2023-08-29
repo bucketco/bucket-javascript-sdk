@@ -10,6 +10,10 @@ const config: Configuration[] = [
     module: {
       rules: [
         {
+          test: /\.css$/i,
+          use: ["style-loader", "css-loader", "postcss-loader"],
+        },
+        {
           test: /\.tsx?$/,
           use: "ts-loader",
           exclude: /node_modules/,
@@ -38,6 +42,10 @@ const config: Configuration[] = [
     mode: "production",
     module: {
       rules: [
+        {
+          test: /\.css$/i,
+          use: ["style-loader", "css-loader", "postcss-loader"],
+        },
         {
           test: /\.tsx?$/,
           use: "ts-loader",

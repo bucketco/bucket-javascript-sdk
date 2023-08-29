@@ -2,10 +2,12 @@ import Ably from "ably/promises";
 import fetch from "cross-fetch";
 import { isForNode } from "is-bundling-for-browser-or-node";
 
-import modulePackage from "../package.json";
+import { version } from "../package.json";
 
+import type { FeedbackDialogOptions } from "./feedback/types";
 import { closeAblyConnection, openAblyConnection } from "./ably";
 import { TRACKING_HOST } from "./config";
+import * as feedbackLib from "./feedback";
 import {
   FeedbackPromptCompletionHandler,
   parsePromptMessage,
@@ -28,7 +30,7 @@ async function request(url: string, body: any) {
     method: "post",
     headers: {
       "Content-Type": "application/json",
-      "Bucket-Sdk-Version": modulePackage.version,
+      "Bucket-Sdk-Version": version,
     },
     body: JSON.stringify(body),
   });
@@ -320,6 +322,36 @@ export default function main() {
     return res;
   }
 
+  function openFeedbackForm(options: FeedbackDialogOptions) {
+    if (isForNode) {
+      err("openFeedbackForm can only be called in the browser");
+    }
+
+    if (!options.featureId) err("No featureId provided");
+    if (persistUser) {
+      options.userId = getSessionUser();
+    } else if (!options.userId) {
+      err("No userId provided and persistUser is disabled");
+    }
+
+    // Wait a tick before opening the feedback form,
+    // to prevent the same click from closing it.
+    setTimeout(() => {
+      feedbackLib.openFeedbackForm({
+        onSubmit: async (data) => {
+          // Default onSubmit handler
+          return feedback({
+            featureId: options.featureId,
+            userId: options.userId,
+            companyId: options.companyId,
+            ...data,
+          });
+        },
+        ...options,
+      });
+    }, 1);
+  }
+
   function reset() {
     sessionUserId = undefined;
     feedbackPromptingUserId = undefined;
@@ -341,6 +373,7 @@ export default function main() {
     track,
     feedback,
     // feedback prompting
+    openFeedbackForm,
     initFeedbackPrompting,
   };
 }
