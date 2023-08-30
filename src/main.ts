@@ -23,6 +23,7 @@ import {
   TrackedEvent,
   User,
 } from "./types";
+import { defaultFeedbackPromptHandler } from "./default-feedback-prompt-handler";
 
 async function request(url: string, body: any) {
   return fetch(url, {
@@ -112,6 +113,8 @@ export default function main() {
     }
     if (options?.feedbackPromptHandler) {
       feedbackPromptHandler = options.feedbackPromptHandler;
+    } else {
+      feedbackPromptHandler = defaultFeedbackPromptHandler;
     }
     log(`initialized with key "${trackingKey}" and options`, options);
   }

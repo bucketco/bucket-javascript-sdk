@@ -52,6 +52,7 @@ export type FeedbackPrompt = {
   showBefore: Date;
   promptId: string;
   featureId: Feedback["featureId"];
+  userId: string;
 };
 
 export type FeedbackPromptReply = {
