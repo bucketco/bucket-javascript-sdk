@@ -15,7 +15,8 @@ import {
   ABLY_REST_HOST,
   TRACKING_HOST,
 } from "../src/config";
-import { AblySSEChannel } from "../src/sse";
+import { AblySSEChannel, closeSSEChannel, openSSEChannel } from "../src/sse";
+import flushPromises from "flush-promises";
 
 const trackingKey = "123";
 const tokenRequest = {
@@ -173,9 +174,12 @@ describe("connection handling", () => {
       expect.any(Function),
     );
 
+    expect(sse.isConnected()).toBe(true);
+
     sse.disconnect();
 
     expect(close).toHaveBeenCalledTimes(1);
+    expect(sse.isConnected()).toBe(false);
   });
 
   test("disconnects and re-requests token on re-connect", async () => {
@@ -317,5 +321,105 @@ describe("message handling", () => {
 
     expect(close).toHaveBeenCalled();
     expect(vi.mocked(ReconnectingEventSource)).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("open and close SSE channel", () => {
+  const nockWait = (n: nock.Scope) => {
+    return new Promise((resolve) => {
+      n.on("replied", () => {
+        resolve(undefined);
+      });
+    });
+  };
+
+  afterEach(() => {
+    expect(nock.isDone()).toBe(true);
+
+    vi.clearAllMocks();
+    nock.cleanAll();
+  });
+
+  test("opens and connects to a channel", async () => {
+    const n1 = setupAuthNock(true);
+    const n2 = setupTokenNock(true);
+
+    const ch = openSSEChannel(trackingKey, userId, channel, vi.fn());
+
+    await nockWait(n1);
+    await nockWait(n2);
+
+    await flushPromises();
+    expect(ch.sse.isConnected()).toBe(true);
+  });
+
+  test("opens and connects later to a failed channel", async () => {
+    const n1 = setupAuthNock(false);
+
+    vi.useFakeTimers();
+    const ch = openSSEChannel(trackingKey, userId, channel, vi.fn(), {
+      retryInterval: 100,
+    });
+
+    await nockWait(n1);
+
+    const n2 = setupAuthNock(true);
+    const n3 = setupTokenNock(true);
+
+    expect(ch.sse.isConnected()).toBe(false);
+
+    vi.advanceTimersByTime(100);
+
+    await nockWait(n2);
+    await nockWait(n3);
+
+    vi.useRealTimers();
+
+    await flushPromises();
+    expect(ch.sse.isConnected()).toBe(true);
+  });
+
+  test("opens and does not connect later to a failed channel if no retries", async () => {
+    const n1 = setupAuthNock(false);
+
+    vi.useFakeTimers();
+    const ch = openSSEChannel(trackingKey, userId, channel, vi.fn(), {
+      retryCount: 0,
+      retryInterval: 100,
+    });
+
+    await nockWait(n1);
+
+    vi.advanceTimersByTime(100);
+    vi.useRealTimers();
+
+    await flushPromises();
+
+    expect(ch.interval).toBe(undefined);
+  });
+
+  test("closes an open channel", async () => {
+    const n1 = setupAuthNock(true);
+    const n2 = setupTokenNock(true);
+
+    const close = vi.fn();
+    vi.mocked(ReconnectingEventSource).mockReturnValue({
+      addEventListener: vi.fn(),
+      close,
+    } as any);
+
+    const ch = openSSEChannel(trackingKey, userId, channel, vi.fn());
+
+    await nockWait(n1);
+    await nockWait(n2);
+    await flushPromises();
+
+    closeSSEChannel(ch);
+
+    await flushPromises();
+
+    expect(ch.sse.isConnected()).toBe(false);
+    expect(close).toHaveBeenCalledTimes(1);
+    expect(ch.interval).toBe(undefined);
   });
 });
