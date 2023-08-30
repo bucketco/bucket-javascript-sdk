@@ -380,8 +380,8 @@ describe("feedback state management", () => {
       .reply(200, { success: true, channel: "test-channel" });
 
     if (
-      tc.meta.name.includes("propagates") ||
-      tc.meta.name.includes("ignores")
+      tc.task.name.includes("propagates") ||
+      tc.task.name.includes("ignores")
     ) {
       vi.mocked(openAblyConnection).mockImplementation(
         (_a, _b_, _c, callback, _d) => {
@@ -389,7 +389,7 @@ describe("feedback state management", () => {
           return Promise.resolve("fake_client" as any);
         },
       );
-    } else if (tc.meta.name.includes("blocks")) {
+    } else if (tc.task.name.includes("blocks")) {
       vi.mocked(openAblyConnection).mockImplementation(
         (_a, _b_, _c, callback, _d) => {
           callback(badMessage);
