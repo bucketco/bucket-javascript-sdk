@@ -13,8 +13,6 @@ interface AblyTokenRequest {
 
 export class AblySSEChannel {
   private eventSource: ReconnectingEventSource | null = null;
-  private tokenRequest: AblyTokenRequest | null = null;
-  private token: AblyTokenDetails | null = null;
   private retryInterval: ReturnType<typeof setInterval> | null = null;
   private debug: boolean;
 
@@ -36,6 +34,10 @@ export class AblySSEChannel {
     }
   }
 
+  private warn(message: string, ...args: any[]) {
+    console.warn("[SSE]", message, ...args);
+  }
+
   private err(message: string, ...args: any[]): never {
     if (this.debug) {
       console.error("[SSE]", message, ...args);
@@ -44,11 +46,8 @@ export class AblySSEChannel {
   }
 
   private async refreshTokenRequest() {
-    this.tokenRequest = null;
-    this.token = null;
-
     const res = await fetch(
-      `${this.ablyAuthUrl}&userId=${encodeURIComponent(this.userId)}`,
+      `${this.ablyAuthUrl}?userId=${encodeURIComponent(this.userId)}`,
       {
         method: "get",
         headers: {
@@ -57,14 +56,14 @@ export class AblySSEChannel {
       },
     );
 
-    if (res.status == 200) {
+    if (res.ok) {
       const body = await res.json();
       if (body.success) {
         delete body.success;
-        this.tokenRequest = body;
+        const tokenRequest: AblyTokenRequest = body;
 
-        this.log("obtained new token request", this.tokenRequest);
-        return;
+        this.log("obtained new token request", tokenRequest);
+        return tokenRequest;
       }
     }
 
@@ -72,29 +71,25 @@ export class AblySSEChannel {
   }
 
   private async refreshToken() {
-    this.token = null;
-
-    if (!this.tokenRequest) {
-      await this.refreshTokenRequest();
-    }
+    const tokenRequest = await this.refreshTokenRequest();
 
     const res = await fetch(
       `${ABLY_REST_HOST}/keys/${encodeURIComponent(
-        this.tokenRequest!.keyName,
+        tokenRequest.keyName,
       )}/requestToken`,
       {
         method: "post",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(this.tokenRequest),
+        body: JSON.stringify(tokenRequest),
       },
     );
 
-    if (res.status == 200) {
-      this.token = await res.json();
-      this.log("obtained new token", this.token);
-      return;
+    if (res.ok) {
+      const token: AblyTokenDetails = await res.json();
+      this.log("obtained new token", token);
+      return token;
     }
 
     this.err("server did not release a token", res);
@@ -107,37 +102,55 @@ export class AblySSEChannel {
 
       if (errorCode >= 40140 && errorCode < 40150) {
         this.log("token expired, refreshing");
-        await this.connect();
+        await this.connect().catch((x) =>
+          this.warn("failed to refresh token", x),
+        );
       }
       return;
     }
 
-    this.err("unexpected error occured", e);
+    if ((e as any)?.target?.readyState === 2) {
+      this.log("event source connection closed");
+    } else {
+      this.warn("unexpected error occured", e);
+    }
   }
 
   private onMessage(e: MessageEvent) {
-    const message = JSON.parse(e.data);
-    this.log("received message", e);
+    if (e.data) {
+      const message = JSON.parse(e.data);
+      if (message.data) {
+        const payload = JSON.parse(message.data);
 
-    if (message?.data) {
-      this.messageHandler(message?.data);
+        this.log("received message", payload);
+        this.messageHandler(payload);
+
+        return;
+      }
     }
+
+    this.warn("received invalid message", e);
+  }
+
+  private onOpen(e: Event) {
+    this.log("event source connection opened", e);
   }
 
   public async connect() {
     this.disconnect();
-    await this.refreshToken();
+    const token = await this.refreshToken();
 
     this.eventSource = new ReconnectingEventSource(
       `${ABLY_REALTIME_HOST}/sse?v=1.2&accessToken=${encodeURIComponent(
-        this.token!.token,
+        token.token,
       )}&channels=${encodeURIComponent(this.channel)}&rewind=1`,
     );
 
     this.eventSource.addEventListener("error", (e) => this.onError(e));
+    this.eventSource.addEventListener("open", (e) => this.onOpen(e));
     this.eventSource.addEventListener("message", (m) => this.onMessage(m));
 
-    this.log("opened connection");
+    this.log("channel connection opened");
   }
 
   public disconnect() {
@@ -145,23 +158,21 @@ export class AblySSEChannel {
       this.eventSource.close();
       this.eventSource = null;
 
-      this.log("closed connection");
+      this.log("channel connection closed");
     }
   }
 
   public open(options?: { retryInterval?: number; retryCount?: number }) {
+    const retryInterval = options?.retryInterval ?? 1000 * 30;
+    let retryCount = options?.retryCount ?? 3;
+
     const tryConnect = async () => {
-      try {
-        await this.connect();
-      } catch (e) {
-        this.log("failed to connect, will reconnect", e);
-      }
+      await this.connect().catch((e) =>
+        this.warn(`failed to connect. ${retryCount} retries remaining`, e),
+      );
     };
 
     void tryConnect();
-
-    const retryInterval = options?.retryInterval ?? 1000 * 30;
-    let retryCount = options?.retryCount ?? 3;
 
     this.retryInterval = setInterval(() => {
       if (!this.eventSource && this.retryInterval) {
@@ -194,7 +205,7 @@ export class AblySSEChannel {
   }
 }
 
-export function openChannel(
+export function openAblySSEChannel(
   ablyAuthUrl: string,
   userId: string,
   channel: string,
@@ -210,6 +221,6 @@ export function openChannel(
   return sse;
 }
 
-export function closeChannel(channel: AblySSEChannel) {
+export function closeAblySSEChannel(channel: AblySSEChannel) {
   channel.close();
 }

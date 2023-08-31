@@ -12,7 +12,11 @@ import {
 
 import flushPromises from "flush-promises";
 import { ABLY_REST_HOST } from "../src/config";
-import { AblySSEChannel, closeChannel, openChannel } from "../src/sse";
+import {
+  AblySSEChannel,
+  closeAblySSEChannel,
+  openAblySSEChannel,
+} from "../src/sse";
 
 const ablyAuthUrl = "https://example.com/123/feedback/prompting-auth";
 const tokenRequest = {
@@ -35,7 +39,7 @@ vitest.mock("reconnecting-eventsource", () => {
 });
 
 function setupAuthNock(success: boolean | number) {
-  const n = nock(`${ablyAuthUrl}`).get(/.*&userId=foo/);
+  const n = nock(`${ablyAuthUrl}`).get(/.*?userId=foo/);
 
   if (success === true) {
     return n.reply(200, { success: true, ...tokenRequest });
@@ -117,7 +121,7 @@ describe("connection handling", () => {
     await sse.connect();
 
     expect(vi.mocked(ReconnectingEventSource)).toHaveBeenCalledTimes(1);
-    expect(addEventListener).toHaveBeenCalledTimes(2);
+    expect(addEventListener).toHaveBeenCalledTimes(3);
     expect(addEventListener).toHaveBeenCalledWith(
       "error",
       expect.any(Function),
@@ -126,6 +130,7 @@ describe("connection handling", () => {
       "message",
       expect.any(Function),
     );
+    expect(addEventListener).toHaveBeenCalledWith("open", expect.any(Function));
 
     expect(sse.isConnected()).toBe(true);
 
@@ -149,6 +154,7 @@ describe("connection handling", () => {
 
     await sse.connect();
 
+    setupAuthNock(true);
     setupTokenNock(true);
 
     await sse.connect();
@@ -204,13 +210,18 @@ describe("message handling", () => {
     expect(messageCallback).toBeDefined();
 
     messageCallback!({
-      data: JSON.stringify({ data: "foo" }),
+      data: JSON.stringify({ data: JSON.stringify("foo") }),
     } as any);
     expect(callback).toHaveBeenCalledWith("foo");
 
     messageCallback!({
       data: null,
     } as any);
+
+    messageCallback!({
+      data: JSON.stringify({}),
+    } as any);
+
     expect(callback).toHaveBeenCalledTimes(1);
   });
 
@@ -234,7 +245,7 @@ describe("message handling", () => {
 
     expect(errorCallback).toBeDefined();
 
-    await expect(errorCallback!({} as any)).rejects.toThrowError();
+    await errorCallback!({} as any);
     expect(close).not.toHaveBeenCalled();
 
     await errorCallback!(
@@ -264,6 +275,7 @@ describe("message handling", () => {
 
     await sse.connect();
 
+    setupAuthNock(true);
     setupTokenNock(true);
 
     await errorCallback!(
@@ -352,11 +364,13 @@ describe("automatic auth retries", () => {
 
     sse.disconnect();
 
-    const n3 = setupTokenNock(true);
+    const n3 = setupAuthNock(true);
+    const n4 = setupTokenNock(true);
 
     vi.advanceTimersByTime(100);
 
     await nockWait(n3);
+    await nockWait(n4);
 
     vi.useRealTimers();
 
@@ -435,7 +449,7 @@ describe("helper open and close functions", () => {
     const n1 = setupAuthNock(true);
     const n2 = setupTokenNock(true);
 
-    const sse = openChannel(ablyAuthUrl, userId, channel, vi.fn());
+    const sse = openAblySSEChannel(ablyAuthUrl, userId, channel, vi.fn());
 
     expect(sse.isOpen()).toBe(true);
 
@@ -443,7 +457,7 @@ describe("helper open and close functions", () => {
     await nockWait(n2);
     await flushPromises();
 
-    closeChannel(sse);
+    closeAblySSEChannel(sse);
 
     expect(sse.isConnected()).toBe(false);
     expect(sse.isOpen()).toBe(false);
