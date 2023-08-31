@@ -194,55 +194,22 @@ export class AblySSEChannel {
   }
 }
 
-type SSEChannel = {
-  sse: AblySSEChannel;
-  interval: NodeJS.Timeout | undefined;
-};
-
-export function openSSEChannel(
-  trackingKey: string,
+export function openChannel(
+  ablyAuthUrl: string,
   userId: string,
   channel: string,
   callback: (req: object) => void,
   options?: { debug?: boolean; retryInterval?: number; retryCount?: number },
-): SSEChannel {
-  const sse = new AblySSEChannel(userId, channel, trackingKey, callback, {
+) {
+  const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, callback, {
     debug: options?.debug,
   });
 
-  const tryConnect = async () => {
-    try {
-      await sse.connect();
-    } catch (e) {
-      // nothing
-    }
-  };
+  sse.open();
 
-  void tryConnect();
-
-  const retryInterval = options?.retryInterval ?? 1000 * 30;
-  let retryCount = options?.retryCount ?? 3;
-  const ch: SSEChannel = {
-    sse,
-    interval: setInterval(() => {
-      if (!ch.sse.isConnected()) {
-        if (retryCount <= 0) {
-          clearInterval(ch.interval);
-          ch.interval = undefined;
-          return;
-        }
-
-        retryCount--;
-        void tryConnect();
-      }
-    }, retryInterval),
-  };
-
-  return ch;
+  return sse;
 }
 
-export function closeSSEChannel(channel: SSEChannel) {
-  clearInterval(channel.interval);
-  channel.interval = undefined;
-  channel.sse.disconnect();
+export function closeChannel(channel: AblySSEChannel) {
+  channel.close();
 }

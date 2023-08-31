@@ -12,7 +12,7 @@ import {
 
 import flushPromises from "flush-promises";
 import { ABLY_REST_HOST } from "../src/config";
-import { AblySSEChannel, closeSSEChannel, openSSEChannel } from "../src/sse";
+import { AblySSEChannel, closeChannel, openChannel } from "../src/sse";
 
 const ablyAuthUrl = "https://example.com/123/feedback/prompting-auth";
 const tokenRequest = {
@@ -415,7 +415,7 @@ describe("automatic auth retries", () => {
   });
 });
 
-describe("open and close SSE channel", () => {
+describe("helper open and close functions", () => {
   const nockWait = (n: nock.Scope) => {
     return new Promise((resolve) => {
       n.on("replied", () => {
@@ -431,28 +431,21 @@ describe("open and close SSE channel", () => {
     nock.cleanAll();
   });
 
-  test("closes an open channel", async () => {
+  test("opens and closes channel", async () => {
     const n1 = setupAuthNock(true);
     const n2 = setupTokenNock(true);
 
-    const close = vi.fn();
-    vi.mocked(ReconnectingEventSource).mockReturnValue({
-      addEventListener: vi.fn(),
-      close,
-    } as any);
+    const sse = openChannel(ablyAuthUrl, userId, channel, vi.fn());
 
-    const ch = openSSEChannel(ablyAuthUrl, userId, channel, vi.fn());
+    expect(sse.isOpen()).toBe(true);
 
     await nockWait(n1);
     await nockWait(n2);
     await flushPromises();
 
-    closeSSEChannel(ch);
+    closeChannel(sse);
 
-    await flushPromises();
-
-    expect(ch.sse.isConnected()).toBe(false);
-    expect(close).toHaveBeenCalledTimes(1);
-    expect(ch.interval).toBe(undefined);
+    expect(sse.isConnected()).toBe(false);
+    expect(sse.isOpen()).toBe(false);
   });
 });
