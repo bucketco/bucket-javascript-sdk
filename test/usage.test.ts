@@ -12,13 +12,13 @@ import {
 } from "vitest";
 
 import { version } from "../package.json";
-import { closeAblySSEChannel, openAblySSEChannel } from "../src/sse";
 import { TRACKING_HOST } from "../src/config";
 import bucket from "../src/main";
 import {
   checkPromptMessageCompleted,
   markPromptMessageCompleted,
 } from "../src/prompt-storage";
+import { closeAblySSEChannel, openAblySSEChannel } from "../src/sse";
 import {
   FeedbackPrompt,
   FeedbackPromptHandler,

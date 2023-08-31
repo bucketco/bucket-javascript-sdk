@@ -1,3 +1,4 @@
+import flushPromises from "flush-promises";
 import nock from "nock";
 import ReconnectingEventSource from "reconnecting-eventsource";
 import {
@@ -10,7 +11,6 @@ import {
   vitest,
 } from "vitest";
 
-import flushPromises from "flush-promises";
 import { ABLY_REST_HOST } from "../src/config";
 import {
   AblySSEChannel,

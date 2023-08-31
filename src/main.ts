@@ -3,9 +3,9 @@ import { isForNode } from "is-bundling-for-browser-or-node";
 
 import { version } from "../package.json";
 
+import type { FeedbackDialogOptions } from "./feedback/types";
 import { TRACKING_HOST } from "./config";
 import * as feedbackLib from "./feedback";
-import type { FeedbackDialogOptions } from "./feedback/types";
 import {
   FeedbackPromptCompletionHandler,
   parsePromptMessage,
