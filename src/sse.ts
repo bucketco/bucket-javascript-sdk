@@ -11,6 +11,9 @@ interface AblyTokenRequest {
   keyName: string;
 }
 
+const ABLY_TOKEN_ERROR_MIN = 40140;
+const ABLY_TOKEN_ERROR_MAX = 40149;
+
 export class AblySSEChannel {
   private eventSource: ReconnectingEventSource | null = null;
   private retryInterval: ReturnType<typeof setInterval> | null = null;
@@ -100,7 +103,10 @@ export class AblySSEChannel {
       const errorPayload = JSON.parse(e.data);
       const errorCode = Number(errorPayload?.code);
 
-      if (errorCode >= 40140 && errorCode < 40150) {
+      if (
+        errorCode >= ABLY_TOKEN_ERROR_MIN &&
+        errorCode <= ABLY_TOKEN_ERROR_MAX
+      ) {
         this.log("token expired, refreshing");
         await this.connect().catch((x) =>
           this.warn("failed to refresh token", x),
