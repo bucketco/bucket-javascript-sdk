@@ -10,15 +10,11 @@ import {
   vitest,
 } from "vitest";
 
-import {
-  ABLY_REALTIME_HOST,
-  ABLY_REST_HOST,
-  TRACKING_HOST,
-} from "../src/config";
-import { AblySSEChannel, closeSSEChannel, openSSEChannel } from "../src/sse";
 import flushPromises from "flush-promises";
+import { ABLY_REST_HOST } from "../src/config";
+import { AblySSEChannel, closeSSEChannel, openSSEChannel } from "../src/sse";
 
-const trackingKey = "123";
+const ablyAuthUrl = "https://example.com/123/feedback/prompting-auth";
 const tokenRequest = {
   keyName: "key-name",
   other: "other",
@@ -38,13 +34,8 @@ vitest.mock("reconnecting-eventsource", () => {
   };
 });
 
-function setupAuthNock(
-  success: boolean | number,
-  host: string = TRACKING_HOST,
-) {
-  const n = nock(`${host}/${trackingKey}`).get(
-    /.*\/feedback\/prompting-auth&userId=foo/,
-  );
+function setupAuthNock(success: boolean | number) {
+  const n = nock(`${ablyAuthUrl}`).get(/.*&userId=foo/);
 
   if (success === true) {
     return n.reply(200, { success: true, ...tokenRequest });
@@ -55,8 +46,8 @@ function setupAuthNock(
   }
 }
 
-function setupTokenNock(success: boolean, host: string = ABLY_REST_HOST) {
-  const n = nock(`${host}/keys/${tokenRequest.keyName}`).post(
+function setupTokenNock(success: boolean) {
+  const n = nock(`${ABLY_REST_HOST}/keys/${tokenRequest.keyName}`).post(
     /.*\/requestToken/,
     {
       ...tokenRequest,
@@ -70,44 +61,6 @@ function setupTokenNock(success: boolean, host: string = ABLY_REST_HOST) {
   }
 }
 
-describe("initialization", () => {
-  afterEach(() => {
-    expect(nock.isDone()).toBe(true);
-
-    vi.clearAllMocks();
-    nock.cleanAll();
-  });
-
-  test("uses custom hosts", async () => {
-    const sse = new AblySSEChannel(userId, channel, trackingKey, vi.fn(), {
-      trackingHost: "https://tracking.example.com",
-      ablyRestHost: "https://rest.example.com",
-      ablyRealtimeHost: "https://realtime.example.com",
-    });
-
-    setupAuthNock(true, "https://tracking.example.com");
-    setupTokenNock(true, "https://rest.example.com");
-
-    await sse.connect();
-    expect(vi.mocked(ReconnectingEventSource)).toHaveBeenCalledWith(
-      `https://realtime.example.com/sse?v=1.2&accessToken=${tokenDetails.token}&channels=${channel}&rewind=1`,
-    );
-  });
-
-  test("uses default hosts", async () => {
-    const sse = new AblySSEChannel(userId, channel, trackingKey, vi.fn());
-
-    setupAuthNock(true);
-    setupTokenNock(true);
-
-    await sse.connect();
-
-    expect(vi.mocked(ReconnectingEventSource)).toHaveBeenCalledWith(
-      `${ABLY_REALTIME_HOST}/sse?v=1.2&accessToken=${tokenDetails.token}&channels=${channel}&rewind=1`,
-    );
-  });
-});
-
 describe("connection handling", () => {
   afterEach(() => {
     expect(nock.isDone()).toBe(true);
@@ -117,7 +70,7 @@ describe("connection handling", () => {
   });
 
   test("rejects if auth endpoint is not success", async () => {
-    const sse = new AblySSEChannel(userId, channel, trackingKey, vi.fn());
+    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
 
     setupAuthNock(false);
 
@@ -127,7 +80,7 @@ describe("connection handling", () => {
   });
 
   test("rejects if auth endpoint is not 200", async () => {
-    const sse = new AblySSEChannel(userId, channel, trackingKey, vi.fn());
+    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
 
     setupAuthNock(403);
 
@@ -137,7 +90,7 @@ describe("connection handling", () => {
   });
 
   test("rejects if token endpoint rejects", async () => {
-    const sse = new AblySSEChannel(userId, channel, trackingKey, vi.fn());
+    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
 
     setupAuthNock(true);
     setupTokenNock(false);
@@ -148,7 +101,7 @@ describe("connection handling", () => {
   });
 
   test("obtains token, connects and subscribes, then closes", async () => {
-    const sse = new AblySSEChannel(userId, channel, trackingKey, vi.fn());
+    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
 
     const addEventListener = vi.fn();
     const close = vi.fn();
@@ -183,7 +136,7 @@ describe("connection handling", () => {
   });
 
   test("disconnects and re-requests token on re-connect", async () => {
-    const sse = new AblySSEChannel(userId, channel, trackingKey, vi.fn());
+    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
 
     const close = vi.fn();
     vi.mocked(ReconnectingEventSource).mockReturnValue({
@@ -205,7 +158,7 @@ describe("connection handling", () => {
   });
 
   test("disconnects only if connected", async () => {
-    const sse = new AblySSEChannel(userId, channel, trackingKey, vi.fn());
+    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
 
     const close = vi.fn();
     vi.mocked(ReconnectingEventSource).mockReturnValue({
@@ -233,7 +186,7 @@ describe("message handling", () => {
 
   test("passes message to callback", async () => {
     const callback = vi.fn();
-    const sse = new AblySSEChannel(userId, channel, trackingKey, callback);
+    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, callback);
 
     let messageCallback: ((e: Event) => void) | undefined = undefined;
     const addEventListener = (event: string, cb: (e: Event) => void) => {
@@ -262,7 +215,7 @@ describe("message handling", () => {
   });
 
   test("does not respond to unknown errors", async () => {
-    const sse = new AblySSEChannel(userId, channel, trackingKey, vi.fn());
+    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
 
     let errorCallback: ((e: Event) => Promise<void>) | undefined = undefined;
     const addEventListener = (event: string, cb: (e: Event) => void) => {
@@ -294,7 +247,7 @@ describe("message handling", () => {
   });
 
   test("resets the connection and refreshes token for ably expiry errors", async () => {
-    const sse = new AblySSEChannel(userId, channel, trackingKey, vi.fn());
+    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
 
     let errorCallback: ((e: Event) => Promise<void>) | undefined = undefined;
     const addEventListener = (event: string, cb: (e: Event) => void) => {
@@ -324,7 +277,7 @@ describe("message handling", () => {
   });
 });
 
-describe("open and close SSE channel", () => {
+describe("automatic auth retries", () => {
   const nockWait = (n: nock.Scope) => {
     return new Promise((resolve) => {
       n.on("replied", () => {
@@ -341,32 +294,35 @@ describe("open and close SSE channel", () => {
   });
 
   test("opens and connects to a channel", async () => {
+    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
+
     const n1 = setupAuthNock(true);
     const n2 = setupTokenNock(true);
 
-    const ch = openSSEChannel(trackingKey, userId, channel, vi.fn());
+    sse.open();
 
     await nockWait(n1);
     await nockWait(n2);
 
     await flushPromises();
-    expect(ch.sse.isConnected()).toBe(true);
+
+    expect(sse.isConnected()).toBe(true);
   });
 
   test("opens and connects later to a failed channel", async () => {
+    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
+
     const n1 = setupAuthNock(false);
 
     vi.useFakeTimers();
-    const ch = openSSEChannel(trackingKey, userId, channel, vi.fn(), {
-      retryInterval: 100,
-    });
+    sse.open({ retryInterval: 100 });
 
     await nockWait(n1);
 
     const n2 = setupAuthNock(true);
     const n3 = setupTokenNock(true);
 
-    expect(ch.sse.isConnected()).toBe(false);
+    expect(sse.isConnected()).toBe(false);
 
     vi.advanceTimersByTime(100);
 
@@ -376,14 +332,47 @@ describe("open and close SSE channel", () => {
     vi.useRealTimers();
 
     await flushPromises();
-    expect(ch.sse.isConnected()).toBe(true);
+    expect(sse.isConnected()).toBe(true);
+    expect(sse.isOpen()).toBe(true);
+  });
+
+  test("reconnects if manually disconnected", async () => {
+    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
+
+    const n1 = setupAuthNock(true);
+    const n2 = setupTokenNock(true);
+
+    vi.useFakeTimers();
+    sse.open({ retryInterval: 100 });
+
+    await nockWait(n1);
+    await nockWait(n2);
+
+    await flushPromises();
+
+    sse.disconnect();
+
+    const n3 = setupTokenNock(true);
+
+    vi.advanceTimersByTime(100);
+
+    await nockWait(n3);
+
+    vi.useRealTimers();
+
+    await flushPromises();
+
+    expect(sse.isConnected()).toBe(true);
+    expect(sse.isOpen()).toBe(true);
   });
 
   test("opens and does not connect later to a failed channel if no retries", async () => {
+    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
+
     const n1 = setupAuthNock(false);
 
     vi.useFakeTimers();
-    const ch = openSSEChannel(trackingKey, userId, channel, vi.fn(), {
+    sse.open({
       retryCount: 0,
       retryInterval: 100,
     });
@@ -395,7 +384,51 @@ describe("open and close SSE channel", () => {
 
     await flushPromises();
 
-    expect(ch.interval).toBe(undefined);
+    expect(sse.isOpen()).toBe(false);
+  });
+
+  test("closes an open channel", async () => {
+    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
+
+    const n1 = setupAuthNock(true);
+    const n2 = setupTokenNock(true);
+
+    const close = vi.fn();
+    vi.mocked(ReconnectingEventSource).mockReturnValue({
+      addEventListener: vi.fn(),
+      close,
+    } as any);
+
+    sse.open();
+
+    await nockWait(n1);
+    await nockWait(n2);
+    await flushPromises();
+
+    sse.close();
+
+    await flushPromises();
+
+    expect(sse.isConnected()).toBe(false);
+    expect(close).toHaveBeenCalledTimes(1);
+    expect(sse.isOpen()).toBe(false);
+  });
+});
+
+describe("open and close SSE channel", () => {
+  const nockWait = (n: nock.Scope) => {
+    return new Promise((resolve) => {
+      n.on("replied", () => {
+        resolve(undefined);
+      });
+    });
+  };
+
+  afterEach(() => {
+    expect(nock.isDone()).toBe(true);
+
+    vi.clearAllMocks();
+    nock.cleanAll();
   });
 
   test("closes an open channel", async () => {
@@ -408,7 +441,7 @@ describe("open and close SSE channel", () => {
       close,
     } as any);
 
-    const ch = openSSEChannel(trackingKey, userId, channel, vi.fn());
+    const ch = openSSEChannel(ablyAuthUrl, userId, channel, vi.fn());
 
     await nockWait(n1);
     await nockWait(n2);

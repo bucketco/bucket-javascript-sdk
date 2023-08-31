@@ -1,7 +1,7 @@
 import fetch from "cross-fetch";
 import ReconnectingEventSource from "reconnecting-eventsource";
 
-import { ABLY_REALTIME_HOST, ABLY_REST_HOST, TRACKING_HOST } from "./config";
+import { ABLY_REALTIME_HOST, ABLY_REST_HOST } from "./config";
 
 interface AblyTokenDetails {
   token: string;
@@ -15,26 +15,18 @@ export class AblySSEChannel {
   private eventSource: ReconnectingEventSource | null = null;
   private tokenRequest: AblyTokenRequest | null = null;
   private token: AblyTokenDetails | null = null;
-  private trackingHost: string;
-  private ablyRestHost: string;
-  private ablyRealtimeHost: string;
+  private retryInterval: ReturnType<typeof setInterval> | null = null;
   private debug: boolean;
 
   constructor(
     private userId: string,
     private channel: string,
-    private trackingKey: string,
+    private ablyAuthUrl: string,
     private messageHandler: (message: any) => void,
     options?: {
-      trackingHost?: string;
-      ablyRestHost?: string;
-      ablyRealtimeHost?: string;
       debug?: boolean;
     },
   ) {
-    this.trackingHost = options?.trackingHost ?? TRACKING_HOST;
-    this.ablyRestHost = options?.ablyRestHost ?? ABLY_REST_HOST;
-    this.ablyRealtimeHost = options?.ablyRealtimeHost ?? ABLY_REALTIME_HOST;
     this.debug = options?.debug ?? false;
   }
 
@@ -56,9 +48,7 @@ export class AblySSEChannel {
     this.token = null;
 
     const res = await fetch(
-      `${this.trackingHost}/${encodeURIComponent(
-        this.trackingKey,
-      )}/feedback/prompting-auth&userId=${encodeURIComponent(this.userId)}`,
+      `${this.ablyAuthUrl}&userId=${encodeURIComponent(this.userId)}`,
       {
         method: "get",
         headers: {
@@ -89,7 +79,7 @@ export class AblySSEChannel {
     }
 
     const res = await fetch(
-      `${this.ablyRestHost}/keys/${encodeURIComponent(
+      `${ABLY_REST_HOST}/keys/${encodeURIComponent(
         this.tokenRequest!.keyName,
       )}/requestToken`,
       {
@@ -139,7 +129,7 @@ export class AblySSEChannel {
     await this.refreshToken();
 
     this.eventSource = new ReconnectingEventSource(
-      `${this.ablyRealtimeHost}/sse?v=1.2&accessToken=${encodeURIComponent(
+      `${ABLY_REALTIME_HOST}/sse?v=1.2&accessToken=${encodeURIComponent(
         this.token!.token,
       )}&channels=${encodeURIComponent(this.channel)}&rewind=1`,
     );
@@ -157,6 +147,46 @@ export class AblySSEChannel {
 
       this.log("closed connection");
     }
+  }
+
+  public open(options?: { retryInterval?: number; retryCount?: number }) {
+    const tryConnect = async () => {
+      try {
+        await this.connect();
+      } catch (e) {
+        this.log("failed to connect, will reconnect", e);
+      }
+    };
+
+    void tryConnect();
+
+    const retryInterval = options?.retryInterval ?? 1000 * 30;
+    let retryCount = options?.retryCount ?? 3;
+
+    this.retryInterval = setInterval(() => {
+      if (!this.eventSource && this.retryInterval) {
+        if (retryCount <= 0) {
+          clearInterval(this.retryInterval);
+          this.retryInterval = null;
+          return;
+        }
+
+        retryCount--;
+        void tryConnect();
+      }
+    }, retryInterval);
+  }
+
+  public close() {
+    if (this.retryInterval) {
+      clearInterval(this.retryInterval);
+      this.retryInterval = null;
+      this.disconnect();
+    }
+  }
+
+  public isOpen() {
+    return this.retryInterval !== null;
   }
 
   public isConnected() {
