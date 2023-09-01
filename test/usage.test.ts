@@ -12,13 +12,13 @@ import {
 } from "vitest";
 
 import { version } from "../package.json";
-import { closeAblyConnection, openAblyConnection } from "../src/ably";
 import { TRACKING_HOST } from "../src/config";
 import bucket from "../src/main";
 import {
   checkPromptMessageCompleted,
   markPromptMessageCompleted,
 } from "../src/prompt-storage";
+import { closeAblySSEChannel, openAblySSEChannel } from "../src/sse";
 import {
   FeedbackPrompt,
   FeedbackPromptHandler,
@@ -27,7 +27,7 @@ import {
 
 const KEY = "123";
 
-vi.mock("/src/ably");
+vi.mock("../src/sse");
 vi.mock("is-bundling-for-browser-or-node");
 vi.mock("../src/prompt-storage", () => {
   return {
@@ -232,8 +232,8 @@ describe("usage", () => {
 
 describe("feedback prompting", () => {
   beforeAll(() => {
-    vi.mocked(openAblyConnection).mockResolvedValue("fake_client" as any);
-    vi.mocked(closeAblyConnection).mockResolvedValue(undefined);
+    vi.mocked(openAblySSEChannel).mockReturnValue("fake_client" as any);
+    vi.mocked(closeAblySSEChannel).mockResolvedValue(undefined);
   });
 
   beforeEach(() => {
@@ -270,8 +270,8 @@ describe("feedback prompting", () => {
 
     await bucketInstance.initFeedbackPrompting("foo");
 
-    expect(openAblyConnection).toBeCalledTimes(1);
-    expect(openAblyConnection).toBeCalledWith(
+    expect(openAblySSEChannel).toBeCalledTimes(1);
+    expect(openAblySSEChannel).toBeCalledWith(
       `${TRACKING_HOST}/${KEY}/feedback/prompting-auth`,
       "foo",
       "test-channel",
@@ -283,8 +283,8 @@ describe("feedback prompting", () => {
     bucketInstance.reset();
     bucketInstance.reset();
 
-    expect(closeAblyConnection).toBeCalledTimes(1);
-    expect(closeAblyConnection).toBeCalledWith("fake_client");
+    expect(closeAblySSEChannel).toBeCalledTimes(1);
+    expect(closeAblySSEChannel).toBeCalledWith("fake_client");
   });
 
   test("does not initiate feedback prompting if server does not agree", async () => {
@@ -299,7 +299,7 @@ describe("feedback prompting", () => {
 
     await bucketInstance.initFeedbackPrompting("foo");
 
-    expect(openAblyConnection).toBeCalledTimes(0);
+    expect(openAblySSEChannel).toBeCalledTimes(0);
   });
 
   test("initiates feedback prompting automatically on user call if configured", async () => {
@@ -320,12 +320,12 @@ describe("feedback prompting", () => {
 
     // connects to ably for first time
     await bucketInstance.user("foo");
-    expect(openAblyConnection).toBeCalledTimes(1);
+    expect(openAblySSEChannel).toBeCalledTimes(1);
 
     // automatically resets if another user persisted
     await bucketInstance.user("boo");
-    expect(closeAblyConnection).toBeCalledTimes(1);
-    expect(openAblyConnection).toBeCalledTimes(2);
+    expect(closeAblySSEChannel).toBeCalledTimes(1);
+    expect(openAblySSEChannel).toBeCalledTimes(2);
   });
 
   test("reset closes previously open feedback prompting connection", async () => {
@@ -338,10 +338,10 @@ describe("feedback prompting", () => {
 
     // connects to ably for first time
     await bucketInstance.initFeedbackPrompting("foo");
-    expect(openAblyConnection).toBeCalledTimes(1);
+    expect(openAblySSEChannel).toBeCalledTimes(1);
 
     bucketInstance.reset();
-    expect(closeAblyConnection).toBeCalledTimes(1);
+    expect(closeAblySSEChannel).toBeCalledTimes(1);
   });
 
   test("rejects if feedback prompting already initialized", async () => {
@@ -380,20 +380,20 @@ describe("feedback state management", () => {
       .reply(200, { success: true, channel: "test-channel" });
 
     if (
-      tc.meta.name.includes("propagates") ||
-      tc.meta.name.includes("ignores")
+      tc.task.name.includes("propagates") ||
+      tc.task.name.includes("ignores")
     ) {
-      vi.mocked(openAblyConnection).mockImplementation(
+      vi.mocked(openAblySSEChannel).mockImplementation(
         (_a, _b_, _c, callback, _d) => {
           callback(goodMessage);
-          return Promise.resolve("fake_client" as any);
+          return "fake_client" as any;
         },
       );
-    } else if (tc.meta.name.includes("blocks")) {
-      vi.mocked(openAblyConnection).mockImplementation(
+    } else if (tc.task.name.includes("blocks")) {
+      vi.mocked(openAblySSEChannel).mockImplementation(
         (_a, _b_, _c, callback, _d) => {
           callback(badMessage);
-          return Promise.resolve("fake_client" as any);
+          return "fake_client" as any;
         },
       );
     }

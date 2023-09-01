@@ -1,11 +1,9 @@
-import Ably from "ably/promises";
 import fetch from "cross-fetch";
 import { isForNode } from "is-bundling-for-browser-or-node";
 
 import { version } from "../package.json";
 
 import type { FeedbackDialogOptions } from "./feedback/types";
-import { closeAblyConnection, openAblyConnection } from "./ably";
 import { TRACKING_HOST } from "./config";
 import * as feedbackLib from "./feedback";
 import {
@@ -13,6 +11,7 @@ import {
   parsePromptMessage,
   processPromptMessage,
 } from "./prompts";
+import { AblySSEChannel, closeAblySSEChannel, openAblySSEChannel } from "./sse";
 import {
   Company,
   Context,
@@ -43,7 +42,7 @@ export default function main() {
   let persistUser: boolean = !isForNode;
   let automaticFeedbackPrompting: boolean = false;
   let feedbackPromptHandler: FeedbackPromptHandler | undefined = undefined;
-  let ablyClient: Ably.Realtime | undefined = undefined;
+  let sseChannel: AblySSEChannel | undefined = undefined;
   let feedbackPromptingUserId: string | undefined = undefined;
   let debug = false;
 
@@ -129,7 +128,7 @@ export default function main() {
         reset();
       }
       sessionUserId = userId;
-      if (automaticFeedbackPrompting && !ablyClient) {
+      if (automaticFeedbackPrompting && !sseChannel) {
         await initFeedbackPrompting(userId);
       }
     }
@@ -220,7 +219,7 @@ export default function main() {
       err("Feedback prompting is not supported in Node.js environment");
     }
 
-    if (ablyClient) {
+    if (sseChannel) {
       err("Feedback prompting already initialized. Use reset() first.");
     }
     userId = resolveUser(userId);
@@ -238,12 +237,12 @@ export default function main() {
     log(`feedback prompting enabled`);
 
     feedbackPromptingUserId = userId;
-    ablyClient = await openAblyConnection(
+    sseChannel = openAblySSEChannel(
       `${getUrl()}/feedback/prompting-auth`,
       userId,
       body.channel,
       (message) => handleFeedbackPromptRequest(userId!, message),
-      debug,
+      { debug },
     );
     log(`feedback prompting connection established`);
     return res;
@@ -355,11 +354,11 @@ export default function main() {
   function reset() {
     sessionUserId = undefined;
     feedbackPromptingUserId = undefined;
-    if (ablyClient) {
-      closeAblyConnection(ablyClient);
+    if (sseChannel) {
+      closeAblySSEChannel(sseChannel);
       log(`feedback prompting connection closed`);
 
-      ablyClient = undefined;
+      sseChannel = undefined;
     }
   }
 
