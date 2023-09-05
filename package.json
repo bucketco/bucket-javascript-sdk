@@ -18,7 +18,6 @@
     "lint": "eslint .",
     "lint:ci": "eslint --output-file eslint-report.json --format json .",
     "prettier": "prettier --check .",
-    "prettier:fix": "yarn run prettier -- --write",
     "format": "yarn prettier --write && yarn lint --fix",
     "preversion": "yarn lint && yarn prettier && yarn vitest run -c vite.config.js && yarn build"
   },

@@ -20,9 +20,7 @@ import {
 } from "../src/prompt-storage";
 import { closeAblySSEChannel, openAblySSEChannel } from "../src/sse";
 import {
-  FeedbackPrompt,
   FeedbackPromptHandler,
-  FeedbackPromptReplyHandler,
 } from "../src/types";
 
 const KEY = "123";
