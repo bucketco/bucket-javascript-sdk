@@ -79,6 +79,7 @@ describe("parsePromptMessage", () => {
         showBefore: end,
         promptId: "123",
         featureId: "456",
+        userId: "789"
       }),
     ).toEqual({
       question: "hello?",
@@ -86,6 +87,7 @@ describe("parsePromptMessage", () => {
       showBefore: new Date(end),
       promptId: "123",
       featureId: "456",
+      userId: "789"
     });
   });
 });
