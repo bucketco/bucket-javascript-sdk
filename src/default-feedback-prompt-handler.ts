@@ -1,10 +1,11 @@
-import bucketSDK from './index';
-import { FeedbackPrompt } from './types';
+import { FeedbackPrompt, FeedbackPromptHandler } from "./types";
 
-export function defaultFeedbackPromptHandler(prompt: FeedbackPrompt) {
-  bucketSDK.openFeedbackForm({
-    featureId: prompt.featureId,
-    userId: prompt.userId,
+export const defaultFeedbackPromptHandler: FeedbackPromptHandler = (
+  prompt: FeedbackPrompt,
+  handlers,
+) => {
+  handlers.openFeedbackForm({
+    placement: "bottom-right",
     title: prompt.question,
   });
-}
+};

@@ -1,3 +1,5 @@
+import { FeedbackDialogOptions } from "./feedback/types";
+
 export type Key = string;
 
 export type Options = {
@@ -52,7 +54,6 @@ export type FeedbackPrompt = {
   showBefore: Date;
   promptId: string;
   featureId: Feedback["featureId"];
-  userId: string;
 };
 
 export type FeedbackPromptReply = {
@@ -65,9 +66,20 @@ export type FeedbackPromptReplyHandler = (
   reply: FeedbackPromptReply | null,
 ) => Promise<void>;
 
+export type FeedbackPromptHandlerCallbacks = {
+  reply: FeedbackPromptReplyHandler;
+  // dismiss: function,
+  openFeedbackForm: (
+    options: Omit<
+      FeedbackDialogOptions,
+      "featureId" | "userId" | "companyId" | "onSubmit" | "onClose"
+    >,
+  ) => void;
+};
+
 export type FeedbackPromptHandler = (
   prompt: FeedbackPrompt,
-  replyHandler: FeedbackPromptReplyHandler,
+  handlers: FeedbackPromptHandlerCallbacks,
 ) => void;
 
 export type Context = {

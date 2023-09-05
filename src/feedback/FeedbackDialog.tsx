@@ -24,7 +24,6 @@ export type FeedbackDialogProps = WithRequired<
 >;
 
 export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
-  featureId,
   title = "How satisfied are you with this feature?",
   isModal = false,
   placement = "bottom-right",
@@ -127,7 +126,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
         ].join(" ")}
         style={anchor ? floatingStyles : unanchoredPosition}
       >
-        <FeedbackForm key={featureId} question={title} onSubmit={onSubmit} />
+        <FeedbackForm question={title} onSubmit={onSubmit} />
         <footer class="plug">
           Powered by <Logo /> Bucket
         </footer>

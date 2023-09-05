@@ -12,9 +12,6 @@ export interface Feedback {
 }
 
 export interface FeedbackDialogOptions {
-  featureId: string;
-  userId: string;
-  companyId?: string;
   title?: string;
   isModal?: boolean;
   anchor?: HTMLElement;

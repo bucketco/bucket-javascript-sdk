@@ -5,6 +5,7 @@ import { version } from "../package.json";
 
 import type { FeedbackDialogOptions } from "./feedback/types";
 import { TRACKING_HOST } from "./config";
+import { defaultFeedbackPromptHandler } from "./default-feedback-prompt-handler";
 import * as feedbackLib from "./feedback";
 import {
   FeedbackPromptCompletionHandler,
@@ -18,12 +19,13 @@ import {
   Feedback,
   FeedbackPrompt,
   FeedbackPromptHandler,
+  FeedbackPromptHandlerCallbacks,
+  FeedbackPromptReplyHandler,
   Key,
   Options,
   TrackedEvent,
   User,
 } from "./types";
-import { defaultFeedbackPromptHandler } from "./default-feedback-prompt-handler";
 
 async function request(url: string, body: any) {
   return fetch(url, {
@@ -286,7 +288,7 @@ export default function main() {
 
     await feedbackPromptEvent(message.promptId, "shown", userId);
 
-    feedbackPromptHandler?.(message, async (reply) => {
+    const replyCallback: FeedbackPromptReplyHandler = async (reply) => {
       if (!reply) {
         await feedbackPromptEvent(message.promptId, "dismissed", userId);
       } else {
@@ -301,7 +303,20 @@ export default function main() {
       }
 
       completionHandler();
-    });
+    };
+    const handlers: FeedbackPromptHandlerCallbacks = {
+      reply: replyCallback,
+      openFeedbackForm: (options) => {
+        feedbackLib.openFeedbackForm({
+          onSubmit: replyCallback,
+          onClose: () => replyCallback(null),
+          title: message.question,
+          ...options,
+        });
+      },
+    };
+
+    feedbackPromptHandler?.(message, handlers);
   }
 
   async function feedbackPromptEvent(
@@ -324,7 +339,13 @@ export default function main() {
     return res;
   }
 
-  function openFeedbackForm(options: FeedbackDialogOptions) {
+  function openFeedbackForm(
+    options: FeedbackDialogOptions & {
+      featureId: string;
+      userId: string;
+      companyId?: string;
+    },
+  ) {
     if (isForNode) {
       err("openFeedbackForm can only be called in the browser");
     }
