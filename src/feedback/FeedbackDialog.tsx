@@ -37,6 +37,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
   title = "How satisfied are you with this feature?",
   position = DEFAULT_POSITION,
   onSubmit,
+  onAfterSubmit,
   onClose,
 }) => {
   const arrowRef = useRef<HTMLDivElement>(null);
@@ -142,7 +143,12 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
         ].join(" ")}
         style={anchor ? floatingStyles : unanchoredPosition}
       >
-        <FeedbackForm key={featureId} question={title} onSubmit={onSubmit} />
+        <FeedbackForm
+          key={featureId}
+          question={title}
+          onSubmit={onSubmit}
+          onAfterSubmit={onAfterSubmit}
+        />
         <footer class="plug">
           Powered by <Logo /> Bucket
         </footer>

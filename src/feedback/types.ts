@@ -22,6 +22,7 @@ export interface OpenFeedbackFormOptions {
   companyId?: string;
   title?: string;
   position: FeedbackPosition;
-  onSubmit?: (data: Feedback) => Promise<any>;
+  onSubmit?: (data: Feedback) => Promise<void> | void;
+  onAfterSubmit?: (data: Feedback) => void;
   onClose?: () => void;
 }

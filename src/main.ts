@@ -339,7 +339,7 @@ export default function main() {
       feedbackLib.openFeedbackForm({
         onSubmit: async (data) => {
           // Default onSubmit handler
-          return feedback({
+          await feedback({
             featureId: options.featureId,
             userId: options.userId,
             companyId: options.companyId,

@@ -55,7 +55,8 @@ export function App() {
               userId: "123",
               title: "Hello, how do you like the modal?",
               position: { type: "MODAL" },
-              onSubmit: async (data) => console.log("Submitted data:", data),
+              onSubmit: async (data) => console.log("Submitting data:", data),
+              onAfterSubmit: async (data) => console.log("Submitted:", data),
               onClose: () => console.log("Closed dialog"),
             });
           }}
@@ -69,7 +70,8 @@ export function App() {
               userId: "123",
               title: "Hello, how do you like the dialog?",
               position: { type: "DIALOG", placement },
-              onSubmit: async (data) => console.log("Submitted data:", data),
+              onSubmit: async (data) => console.log("Submitting data:", data),
+              onAfterSubmit: async (data) => console.log("Submitted:", data),
               onClose: () => console.log("Closed dialog"),
             });
           }}
@@ -83,7 +85,8 @@ export function App() {
               userId: "123",
               title: "Hello, how do you like the popover?",
               position: { type: "POPOVER", anchor: currentTarget },
-              onSubmit: async (data) => console.log("Submitted data:", data),
+              onSubmit: async (data) => console.log("Submitting data:", data),
+              onAfterSubmit: async (data) => console.log("Submitted:", data),
               onClose: () => console.log("closed dialog"),
             });
           }}

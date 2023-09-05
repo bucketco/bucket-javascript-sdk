@@ -16,12 +16,14 @@ function getFeedbackDataFromForm(el: HTMLFormElement): Feedback {
 
 type FeedbackFormProps = {
   question: string;
-  onSubmit: (data: Feedback) => Promise<any>;
+  onSubmit: (data: Feedback) => Promise<void> | void;
+  onAfterSubmit?: (data: Feedback) => void;
 };
 
 export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
   question,
   onSubmit,
+  onAfterSubmit = () => {},
 }) => {
   const [hasRating, setHasRating] = useState(false);
   const [status, setStatus] = useState<"idle" | "submitting" | "submitted">(
@@ -40,6 +42,7 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
       setStatus("submitting");
       await onSubmit(data);
       setStatus("submitted");
+      onAfterSubmit(data);
     } catch (err) {
       setStatus("idle");
       if (err instanceof Error) {
