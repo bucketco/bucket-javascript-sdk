@@ -3,7 +3,10 @@ import { isForNode } from "is-bundling-for-browser-or-node";
 
 import { version } from "../package.json";
 
-import type { OpenFeedbackFormOptions } from "./feedback/types";
+import type {
+  OpenFeedbackFormOptions,
+  RequestFeedbackOptions,
+} from "./feedback/types";
 import { TRACKING_HOST } from "./config";
 import * as feedbackLib from "./feedback";
 import {
@@ -321,33 +324,48 @@ export default function main() {
     return res;
   }
 
-  function openFeedbackForm(options: OpenFeedbackFormOptions) {
+  function requestFeedback(options: RequestFeedbackOptions) {
     if (isForNode) {
-      err("openFeedbackForm can only be called in the browser");
+      err("requestFeedback can only be called in the browser");
     }
 
-    if (!options.featureId) err("No featureId provided");
+    if (!options.featureId) {
+      err("No featureId provided");
+    }
+
     if (persistUser) {
       options.userId = getSessionUser();
     } else if (!options.userId) {
       err("No userId provided and persistUser is disabled");
     }
 
+    openFeedbackForm({
+      key: options.featureId,
+      title: options.title,
+      position: options.position,
+      onAfterSubmit: options.onAfterSubmit,
+      onClose: options.onClose,
+      onSubmit: async (data) => {
+        // Default onSubmit handler
+        await feedback({
+          featureId: options.featureId,
+          userId: options.userId,
+          companyId: options.companyId,
+          ...data,
+        });
+      },
+    });
+  }
+
+  function openFeedbackForm(options: OpenFeedbackFormOptions) {
+    if (isForNode) {
+      err("openFeedbackForm can only be called in the browser");
+    }
+
     // Wait a tick before opening the feedback form,
     // to prevent the same click from closing it.
     setTimeout(() => {
-      feedbackLib.openFeedbackForm({
-        onSubmit: async (data) => {
-          // Default onSubmit handler
-          await feedback({
-            featureId: options.featureId,
-            userId: options.userId,
-            companyId: options.companyId,
-            ...data,
-          });
-        },
-        ...options,
-      });
+      feedbackLib.openFeedbackForm(options);
     }, 1);
   }
 
@@ -372,7 +390,7 @@ export default function main() {
     track,
     feedback,
     // feedback prompting
-    openFeedbackForm,
+    requestFeedback,
     initFeedbackPrompting,
   };
 }

@@ -17,12 +17,17 @@ export interface Feedback {
 }
 
 export interface OpenFeedbackFormOptions {
+  key: string;
+  title?: string;
+  position: FeedbackPosition;
+  onSubmit: (data: Feedback) => Promise<void> | void;
+  onAfterSubmit?: (data: Feedback) => void;
+  onClose?: () => void;
+}
+
+export interface RequestFeedbackOptions
+  extends Omit<OpenFeedbackFormOptions, "key" | "onSubmit"> {
   featureId: string;
   userId: string;
   companyId?: string;
-  title?: string;
-  position: FeedbackPosition;
-  onSubmit?: (data: Feedback) => Promise<void> | void;
-  onAfterSubmit?: (data: Feedback) => void;
-  onClose?: () => void;
 }

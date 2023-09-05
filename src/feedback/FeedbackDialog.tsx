@@ -33,7 +33,7 @@ const DEFAULT_POSITION: FeedbackPosition = {
 };
 
 export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
-  featureId,
+  key,
   title = "How satisfied are you with this feature?",
   position = DEFAULT_POSITION,
   onSubmit,
@@ -144,7 +144,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
         style={anchor ? floatingStyles : unanchoredPosition}
       >
         <FeedbackForm
-          key={featureId}
+          key={key}
           question={title}
           onSubmit={onSubmit}
           onAfterSubmit={onAfterSubmit}

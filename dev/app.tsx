@@ -50,12 +50,11 @@ export function App() {
       <div style="display: flex; gap: 10px;">
         <button
           onClick={() => {
-            bucket.openFeedbackForm({
+            bucket.requestFeedback({
               featureId: "featA",
               userId: "123",
               title: "Hello, how do you like the modal?",
               position: { type: "MODAL" },
-              onSubmit: async (data) => console.log("Submitting data:", data),
               onAfterSubmit: async (data) => console.log("Submitted:", data),
               onClose: () => console.log("Closed dialog"),
             });
@@ -65,12 +64,11 @@ export function App() {
         </button>
         <button
           onClick={() => {
-            bucket.openFeedbackForm({
+            bucket.requestFeedback({
               featureId: "featB",
               userId: "123",
               title: "Hello, how do you like the dialog?",
               position: { type: "DIALOG", placement },
-              onSubmit: async (data) => console.log("Submitting data:", data),
               onAfterSubmit: async (data) => console.log("Submitted:", data),
               onClose: () => console.log("Closed dialog"),
             });
@@ -80,12 +78,11 @@ export function App() {
         </button>
         <button
           onClick={({ currentTarget }) => {
-            bucket.openFeedbackForm({
+            bucket.requestFeedback({
               featureId: "featC",
               userId: "123",
               title: "Hello, how do you like the popover?",
               position: { type: "POPOVER", anchor: currentTarget },
-              onSubmit: async (data) => console.log("Submitting data:", data),
               onAfterSubmit: async (data) => console.log("Submitted:", data),
               onClose: () => console.log("closed dialog"),
             });

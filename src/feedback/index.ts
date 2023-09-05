@@ -1,7 +1,8 @@
 import { h, render } from "preact";
 
 import { feedbackContainerId } from "./constants";
-import { FeedbackDialog, FeedbackDialogProps } from "./FeedbackDialog";
+import { FeedbackDialog } from "./FeedbackDialog";
+import { OpenFeedbackFormOptions } from "./types";
 
 function attachDialogContainer() {
   let container = document.querySelector(`#${feedbackContainerId}`);
@@ -17,7 +18,7 @@ function attachDialogContainer() {
   return container.shadowRoot!;
 }
 
-export function openFeedbackForm(options: FeedbackDialogProps): void {
+export function openFeedbackForm(options: OpenFeedbackFormOptions): void {
   const shadowRoot = attachDialogContainer();
 
   render(h(FeedbackDialog, options), shadowRoot);
