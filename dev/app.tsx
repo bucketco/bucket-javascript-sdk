@@ -1,7 +1,7 @@
 import { h } from "preact";
 import { useState } from "preact/hooks";
 
-import { Placement } from "../src/feedback/types";
+import { FeedbackPlacement } from "../src/feedback/types";
 import bucket from "../src/index";
 
 bucket.init("123", {
@@ -20,7 +20,7 @@ const ThemeButton = ({ theme }: { theme?: string }) => (
 );
 
 export function App() {
-  const [placement, setPlacement] = useState<Placement>("bottom-right");
+  const [placement, setPlacement] = useState<FeedbackPlacement>("bottom-right");
   const [quickDismiss, setQuickDismiss] = useState<boolean>(true);
   return (
     <main style="display: flex; flex-direction: column; gap: 20px;">
@@ -37,7 +37,7 @@ export function App() {
       <div style="display: flex; gap: 10px;">
         <select
           onInput={(e) =>
-            setPlacement((e.target as HTMLSelectElement).value as Placement)
+            setPlacement(e.currentTarget.value as FeedbackPlacement)
           }
         >
           <option value="bottom-right">Bottom right</option>
@@ -49,9 +49,7 @@ export function App() {
           <input
             type="checkbox"
             checked={quickDismiss}
-            onInput={(e) =>
-              setQuickDismiss((e.target as HTMLInputElement).checked)
-            }
+            onInput={(e) => setQuickDismiss(e.currentTarget.checked)}
           />
           Quick dismiss
         </label>
@@ -65,7 +63,7 @@ export function App() {
               featureId: "featA",
               userId: "123",
               title: "Hello, how do you like the modal?",
-              isModal: true,
+              position: { type: "MODAL" },
               onSubmit: async (data) => console.log("Submitted data:", data),
               onClose: () => console.log("Closed dialog"),
             });
@@ -79,7 +77,7 @@ export function App() {
               featureId: "featB",
               userId: "123",
               title: "Hello, how do you like the dialog?",
-              placement,
+              position: { type: "DIALOG", placement },
               quickDismiss,
               onSubmit: async (data) => console.log("Submitted data:", data),
               onClose: () => console.log("Closed dialog"),
@@ -89,12 +87,12 @@ export function App() {
           Open Dialog
         </button>
         <button
-          onClick={({ target }) => {
+          onClick={({ currentTarget }) => {
             bucket.openFeedbackForm({
               featureId: "featC",
               userId: "123",
               title: "Hello, how do you like the popover?",
-              anchor: target as HTMLElement,
+              position: { type: "POPOVER", anchor: currentTarget },
               quickDismiss,
               onSubmit: async (data) => console.log("Submitted data:", data),
               onClose: () => console.log("closed dialog"),

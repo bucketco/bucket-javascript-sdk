@@ -25,6 +25,6 @@ export function openFeedbackForm(options: FeedbackDialogProps): void {
   const dialog = shadowRoot.querySelector("dialog");
 
   if (dialog && !dialog.hasAttribute("open")) {
-    dialog[options.isModal ? "showModal" : "show"]();
+    dialog[options.position.type === "MODAL" ? "showModal" : "show"]();
   }
 }

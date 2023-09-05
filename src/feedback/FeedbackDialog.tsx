@@ -12,7 +12,7 @@ import {
 import { feedbackContainerId } from "./constants";
 import { FeedbackForm } from "./FeedbackForm";
 import styles from "./index.css?inline";
-import { FeedbackDialogOptions, WithRequired } from "./types";
+import { FeedbackDialogOptions, WithRequired, FeedbackPosition } from "./types";
 
 type Position = Partial<
   Record<"top" | "left" | "right" | "bottom", number | string>
@@ -23,17 +23,21 @@ export type FeedbackDialogProps = WithRequired<
   "onSubmit"
 >;
 
+const DEFAULT_POSITION: FeedbackPosition = {
+  type: "DIALOG",
+  placement: "bottom-right",
+};
+
 export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
   featureId,
   title = "How satisfied are you with this feature?",
-  isModal = false,
-  placement = "bottom-right",
-  anchor,
+  position = DEFAULT_POSITION,
   quickDismiss = true,
   onSubmit,
   onClose,
 }) => {
   const arrowRef = useRef<HTMLDivElement>(null);
+  const anchor = position.type === "POPOVER" ? position.anchor : null;
   const {
     refs,
     floatingStyles,
@@ -55,19 +59,21 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
   });
 
   let unanchoredPosition: Position = {};
-  switch (placement) {
-    case "top-left":
-      unanchoredPosition = { top: "1rem", left: "1rem" };
-      break;
-    case "top-right":
-      unanchoredPosition = { top: "1rem", right: "1rem" };
-      break;
-    case "bottom-left":
-      unanchoredPosition = { bottom: "1rem", left: "1rem" };
-      break;
-    case "bottom-right":
-      unanchoredPosition = { bottom: "1rem", right: "1rem" };
-      break;
+  if (position.type === "DIALOG") {
+    switch (position.placement) {
+      case "top-left":
+        unanchoredPosition = { top: "1rem", left: "1rem" };
+        break;
+      case "top-right":
+        unanchoredPosition = { top: "1rem", right: "1rem" };
+        break;
+      case "bottom-left":
+        unanchoredPosition = { bottom: "1rem", left: "1rem" };
+        break;
+      case "bottom-right":
+        unanchoredPosition = { bottom: "1rem", right: "1rem" };
+        break;
+    }
   }
 
   const { x: arrowX, y: arrowY } = middlewareData.arrow ?? {};
@@ -122,7 +128,11 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
         ref={refs.setFloating}
         class={[
           "dialog",
-          isModal ? "modal" : anchor ? "anchored" : "unanchored",
+          position.type === "MODAL"
+            ? "modal"
+            : anchor
+            ? "anchored"
+            : "unanchored",
           actualPlacement,
         ].join(" ")}
         style={anchor ? floatingStyles : unanchoredPosition}
