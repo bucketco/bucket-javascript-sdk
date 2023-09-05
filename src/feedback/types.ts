@@ -9,7 +9,7 @@ export type FeedbackPlacement =
 export type FeedbackPosition =
   | { type: "MODAL" }
   | { type: "DIALOG"; placement: FeedbackPlacement }
-  | { type: "POPOVER"; anchor: HTMLElement };
+  | { type: "POPOVER"; anchor: HTMLElement | null };
 
 export interface Feedback {
   score: number;
