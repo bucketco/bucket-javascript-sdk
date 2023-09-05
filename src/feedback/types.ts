@@ -22,7 +22,6 @@ export interface FeedbackDialogOptions {
   companyId?: string;
   title?: string;
   position: FeedbackPosition;
-  quickDismiss?: boolean;
   onSubmit?: (data: Feedback) => Promise<any>;
   onClose?: () => void;
 }

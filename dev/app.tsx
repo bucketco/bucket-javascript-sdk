@@ -21,7 +21,6 @@ const ThemeButton = ({ theme }: { theme?: string }) => (
 
 export function App() {
   const [placement, setPlacement] = useState<FeedbackPlacement>("bottom-right");
-  const [quickDismiss, setQuickDismiss] = useState<boolean>(true);
   return (
     <main style="display: flex; flex-direction: column; gap: 20px;">
       <h1>Bucket tracking playground</h1>
@@ -45,14 +44,6 @@ export function App() {
           <option value="top-right">Top right</option>
           <option value="top-left">Top left</option>
         </select>
-        <label>
-          <input
-            type="checkbox"
-            checked={quickDismiss}
-            onInput={(e) => setQuickDismiss(e.currentTarget.checked)}
-          />
-          Quick dismiss
-        </label>
       </div>
 
       <h2>Feedback collection test</h2>
@@ -78,7 +69,6 @@ export function App() {
               userId: "123",
               title: "Hello, how do you like the dialog?",
               position: { type: "DIALOG", placement },
-              quickDismiss,
               onSubmit: async (data) => console.log("Submitted data:", data),
               onClose: () => console.log("Closed dialog"),
             });
@@ -93,7 +83,6 @@ export function App() {
               userId: "123",
               title: "Hello, how do you like the popover?",
               position: { type: "POPOVER", anchor: currentTarget },
-              quickDismiss,
               onSubmit: async (data) => console.log("Submitted data:", data),
               onClose: () => console.log("closed dialog"),
             });

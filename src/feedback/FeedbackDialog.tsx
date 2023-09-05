@@ -32,7 +32,6 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
   featureId,
   title = "How satisfied are you with this feature?",
   position = DEFAULT_POSITION,
-  quickDismiss = true,
   onSubmit,
   onClose,
 }) => {
@@ -95,7 +94,9 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
   };
 
   useEffect(() => {
-    if (!quickDismiss) return;
+    // Only enable 'quick dismiss' for popovers
+    if (position.type === "MODAL" || position.type === "DIALOG") return;
+
     const escapeHandler = (e: KeyboardEvent) => {
       if (e.key == "Escape") {
         const dialog = refs.floating.current as HTMLDialogElement | null;
@@ -119,7 +120,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
       window.removeEventListener("click", clickOutsideHandler);
       window.removeEventListener("keydown", escapeHandler);
     };
-  }, [quickDismiss]);
+  }, [position.type]);
 
   return (
     <>
