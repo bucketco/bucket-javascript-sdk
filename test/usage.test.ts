@@ -19,9 +19,7 @@ import {
   markPromptMessageCompleted,
 } from "../src/prompt-storage";
 import { closeAblySSEChannel, openAblySSEChannel } from "../src/sse";
-import {
-  FeedbackPromptHandler,
-} from "../src/types";
+import { FeedbackPromptHandler } from "../src/types";
 
 const KEY = "123";
 
