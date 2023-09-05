@@ -3,7 +3,7 @@ import { isForNode } from "is-bundling-for-browser-or-node";
 
 import { version } from "../package.json";
 
-import type { FeedbackDialogOptions } from "./feedback/types";
+import type { OpenFeedbackFormOptions } from "./feedback/types";
 import { TRACKING_HOST } from "./config";
 import * as feedbackLib from "./feedback";
 import {
@@ -321,7 +321,7 @@ export default function main() {
     return res;
   }
 
-  function openFeedbackForm(options: FeedbackDialogOptions) {
+  function openFeedbackForm(options: OpenFeedbackFormOptions) {
     if (isForNode) {
       err("openFeedbackForm can only be called in the browser");
     }

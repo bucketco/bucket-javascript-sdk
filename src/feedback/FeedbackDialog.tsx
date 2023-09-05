@@ -12,14 +12,18 @@ import {
 import { feedbackContainerId } from "./constants";
 import { FeedbackForm } from "./FeedbackForm";
 import styles from "./index.css?inline";
-import { FeedbackDialogOptions, WithRequired, FeedbackPosition } from "./types";
+import {
+  OpenFeedbackFormOptions,
+  WithRequired,
+  FeedbackPosition,
+} from "./types";
 
 type Position = Partial<
   Record<"top" | "left" | "right" | "bottom", number | string>
 >;
 
 export type FeedbackDialogProps = WithRequired<
-  FeedbackDialogOptions,
+  OpenFeedbackFormOptions,
   "onSubmit"
 >;
 

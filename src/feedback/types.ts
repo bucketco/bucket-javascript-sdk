@@ -16,7 +16,7 @@ export interface Feedback {
   comment: string;
 }
 
-export interface FeedbackDialogOptions {
+export interface OpenFeedbackFormOptions {
   featureId: string;
   userId: string;
   companyId?: string;
