@@ -15,7 +15,9 @@ export const parsePromptMessage = (
     typeof message.promptId !== "string" ||
     !message.promptId.length ||
     typeof message.featureId !== "string" ||
-    !message.featureId.length
+    !message.featureId.length ||
+    typeof message.userId !== "string" ||
+    !message.userId.length
   ) {
     return undefined;
   } else {
@@ -25,6 +27,7 @@ export const parsePromptMessage = (
       showBefore: new Date(message.showBefore),
       promptId: message.promptId,
       featureId: message.featureId,
+      userId: message.userId
     };
   }
 };
