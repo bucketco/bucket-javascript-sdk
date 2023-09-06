@@ -72,7 +72,7 @@ export type FeedbackPromptHandlerCallbacks = {
   openFeedbackForm: (
     options: Omit<
       RequestFeedbackOptions,
-      "featureId" | "userId" | "companyId" | "onSubmit" | "onClose"
+      "featureId" | "userId" | "companyId" | "onClose"
     >,
   ) => void;
 };
