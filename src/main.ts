@@ -391,6 +391,7 @@ export default function main() {
     feedback,
     // feedback prompting
     requestFeedback,
+    openFeedbackForm,
     initFeedbackPrompting,
   };
 }
