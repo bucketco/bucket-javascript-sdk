@@ -303,17 +303,20 @@ export default function main() {
       }
 
       completionHandler();
-      // TODO: add onAfterSubmit
     };
+
     const handlers: FeedbackPromptHandlerCallbacks = {
       reply: replyCallback,
       // TODO: consider different name - align w requestFeedback or be deliberately different?
       openFeedbackForm: (options) => {
         feedbackLib.openFeedbackForm({
           key: message.featureId,
-          onSubmit: replyCallback,
-          onClose: () => replyCallback(null),
           title: message.question,
+          onSubmit: async (data) => {
+            await replyCallback(data);
+            options.onAfterSubmit?.(data);
+          },
+          onClose: () => replyCallback(null),
           ...options,
         });
       },
@@ -375,7 +378,7 @@ export default function main() {
             ...data,
           });
 
-          // TODO: add onAfterSubmit
+          options.onAfterSubmit?.(data);
         },
       });
     }, 1);

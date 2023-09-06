@@ -28,7 +28,6 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
   title = "How satisfied are you with this feature?",
   position,
   onSubmit,
-  onAfterSubmit,
   onClose,
 }) => {
   const arrowRef = useRef<HTMLDivElement>(null);
@@ -134,12 +133,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
         ].join(" ")}
         style={anchor ? floatingStyles : unanchoredPosition}
       >
-        <FeedbackForm
-          key={key}
-          question={title}
-          onSubmit={onSubmit}
-          onAfterSubmit={onAfterSubmit} // TODO: move after submit concern out of jsx land
-        />
+        <FeedbackForm key={key} question={title} onSubmit={onSubmit} />
 
         <footer class="plug">
           Powered by <Logo /> Bucket
