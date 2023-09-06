@@ -51,7 +51,7 @@ export const StarRating: FunctionComponent<StarRatingProps> = ({
   onChange,
 }) => {
   return (
-    <>
+    <div class="star-rating">
       <style>
         {scores.map(
           ({ bg }, index) =>
@@ -63,7 +63,7 @@ export const StarRating: FunctionComponent<StarRatingProps> = ({
             }`,
         )}
       </style>
-      <div class="star-rating">
+      <div class="star-rating-icons">
         {scores.map(({ color, icon, label }, index) => (
           <>
             <input
@@ -89,6 +89,6 @@ export const StarRating: FunctionComponent<StarRatingProps> = ({
         <span>{scores[0].label}</span>
         <span>{scores[scores.length - 1].label}</span>
       </div>
-    </>
+    </div>
   );
 };
