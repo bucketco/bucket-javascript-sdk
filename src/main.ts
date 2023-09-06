@@ -3,11 +3,9 @@ import { isForNode } from "is-bundling-for-browser-or-node";
 
 import { version } from "../package.json";
 
-import type {
-  OpenFeedbackFormOptions,
-  RequestFeedbackOptions,
-} from "./feedback/types";
+import type { RequestFeedbackOptions } from "./feedback/types";
 import { TRACKING_HOST } from "./config";
+import { defaultFeedbackPromptHandler } from "./default-feedback-prompt-handler";
 import * as feedbackLib from "./feedback";
 import {
   FeedbackPromptCompletionHandler,
@@ -21,6 +19,8 @@ import {
   Feedback,
   FeedbackPrompt,
   FeedbackPromptHandler,
+  FeedbackPromptHandlerCallbacks,
+  FeedbackPromptReplyHandler,
   Key,
   Options,
   TrackedEvent,
@@ -115,6 +115,8 @@ export default function main() {
     }
     if (options?.feedbackPromptHandler) {
       feedbackPromptHandler = options.feedbackPromptHandler;
+    } else {
+      feedbackPromptHandler = defaultFeedbackPromptHandler;
     }
     log(`initialized with key "${trackingKey}" and options`, options);
   }
@@ -286,7 +288,7 @@ export default function main() {
 
     await feedbackPromptEvent(message.promptId, "shown", userId);
 
-    feedbackPromptHandler?.(message, async (reply) => {
+    const replyCallback: FeedbackPromptReplyHandler = async (reply) => {
       if (!reply) {
         await feedbackPromptEvent(message.promptId, "dismissed", userId);
       } else {
@@ -301,7 +303,23 @@ export default function main() {
       }
 
       completionHandler();
-    });
+      // TODO: add onAfterSubmit
+    };
+    const handlers: FeedbackPromptHandlerCallbacks = {
+      reply: replyCallback,
+      // TODO: consider different name - align w requestFeedback or be deliberately different?
+      openFeedbackForm: (options) => {
+        feedbackLib.openFeedbackForm({
+          key: message.featureId,
+          onSubmit: replyCallback,
+          onClose: () => replyCallback(null),
+          title: message.question,
+          ...options,
+        });
+      },
+    };
+
+    feedbackPromptHandler?.(message, handlers);
   }
 
   async function feedbackPromptEvent(
@@ -339,33 +357,27 @@ export default function main() {
       err("No userId provided and persistUser is disabled");
     }
 
-    openFeedbackForm({
-      key: options.featureId,
-      title: options.title,
-      position: options.position,
-      onAfterSubmit: options.onAfterSubmit,
-      onClose: options.onClose,
-      onSubmit: async (data) => {
-        // Default onSubmit handler
-        await feedback({
-          featureId: options.featureId,
-          userId: options.userId,
-          companyId: options.companyId,
-          ...data,
-        });
-      },
-    });
-  }
-
-  function openFeedbackForm(options: OpenFeedbackFormOptions) {
-    if (isForNode) {
-      err("openFeedbackForm can only be called in the browser");
-    }
-
     // Wait a tick before opening the feedback form,
     // to prevent the same click from closing it.
     setTimeout(() => {
-      feedbackLib.openFeedbackForm(options);
+      feedbackLib.openFeedbackForm({
+        key: options.featureId,
+        title: options.title,
+        position: options.position,
+        onAfterSubmit: options.onAfterSubmit,
+        onClose: options.onClose,
+        onSubmit: async (data) => {
+          // Default onSubmit handler
+          await feedback({
+            featureId: options.featureId,
+            userId: options.userId,
+            companyId: options.companyId,
+            ...data,
+          });
+
+          // TODO: add onAfterSubmit
+        },
+      });
     }, 1);
   }
 
@@ -391,7 +403,6 @@ export default function main() {
     feedback,
     // feedback prompting
     requestFeedback,
-    openFeedbackForm,
     initFeedbackPrompting,
   };
 }

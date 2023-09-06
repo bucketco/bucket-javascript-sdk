@@ -12,11 +12,7 @@ import {
 import { feedbackContainerId } from "./constants";
 import { FeedbackForm } from "./FeedbackForm";
 import styles from "./index.css?inline";
-import {
-  FeedbackPosition,
-  OpenFeedbackFormOptions,
-  WithRequired,
-} from "./types";
+import { OpenFeedbackFormOptions, WithRequired } from "./types";
 
 type Position = Partial<
   Record<"top" | "left" | "right" | "bottom", number | string>
@@ -24,18 +20,13 @@ type Position = Partial<
 
 export type FeedbackDialogProps = WithRequired<
   OpenFeedbackFormOptions,
-  "onSubmit"
+  "onSubmit" | "position"
 >;
-
-const DEFAULT_POSITION: FeedbackPosition = {
-  type: "DIALOG",
-  placement: "bottom-right",
-};
 
 export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
   key,
   title = "How satisfied are you with this feature?",
-  position = DEFAULT_POSITION,
+  position,
   onSubmit,
   onAfterSubmit,
   onClose,
@@ -147,8 +138,9 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
           key={key}
           question={title}
           onSubmit={onSubmit}
-          onAfterSubmit={onAfterSubmit}
+          onAfterSubmit={onAfterSubmit} // TODO: move after submit concern out of jsx land
         />
+
         <footer class="plug">
           Powered by <Logo /> Bucket
         </footer>

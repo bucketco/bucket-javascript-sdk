@@ -19,7 +19,7 @@ export interface Feedback {
 export interface OpenFeedbackFormOptions {
   key: string;
   title?: string;
-  position: FeedbackPosition;
+  position?: FeedbackPosition;
   onSubmit: (data: Feedback) => Promise<void> | void;
   onAfterSubmit?: (data: Feedback) => void;
   onClose?: () => void;

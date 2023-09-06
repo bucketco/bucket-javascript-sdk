@@ -19,11 +19,7 @@ import {
   markPromptMessageCompleted,
 } from "../src/prompt-storage";
 import { closeAblySSEChannel, openAblySSEChannel } from "../src/sse";
-import {
-  FeedbackPrompt,
-  FeedbackPromptHandler,
-  FeedbackPromptReplyHandler,
-} from "../src/types";
+import { FeedbackPromptHandler } from "../src/types";
 
 const KEY = "123";
 
@@ -560,11 +556,8 @@ describe("feedback state management", () => {
     const n2 = setupFeedbackPromptEventNock("shown");
     const n3 = setupFeedbackPromptEventNock("dismissed");
 
-    const callback = async (
-      _: FeedbackPrompt,
-      cb: FeedbackPromptReplyHandler,
-    ) => {
-      await cb(null);
+    const callback: FeedbackPromptHandler = async (_, handlers) => {
+      await handlers.reply(null);
     };
 
     const bucketInstance = createBucketInstance(callback);
@@ -598,11 +591,8 @@ describe("feedback state management", () => {
       })
       .reply(200);
 
-    const callback = async (
-      _: FeedbackPrompt,
-      cb: FeedbackPromptReplyHandler,
-    ) => {
-      await cb({
+    const callback: FeedbackPromptHandler = async (_, handlers) => {
+      await handlers.reply({
         companyId: "bar",
         score: 5,
         comment: "hello",
