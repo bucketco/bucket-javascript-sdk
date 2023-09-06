@@ -13,9 +13,9 @@ import { feedbackContainerId } from "./constants";
 import { FeedbackForm } from "./FeedbackForm";
 import styles from "./index.css?inline";
 import {
+  FeedbackPosition,
   OpenFeedbackFormOptions,
   WithRequired,
-  FeedbackPosition,
 } from "./types";
 
 type Position = Partial<
