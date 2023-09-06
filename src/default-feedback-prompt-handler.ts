@@ -1,11 +1,13 @@
 import { FeedbackPrompt, FeedbackPromptHandler } from "./types";
 
 export const defaultFeedbackPromptHandler: FeedbackPromptHandler = (
-  prompt: FeedbackPrompt,
+  _prompt: FeedbackPrompt,
   handlers,
 ) => {
   handlers.openFeedbackForm({
-    placement: "bottom-right",
-    title: prompt.question,
+    position: {
+      type: "DIALOG",
+      placement: "bottom-left",
+    },
   });
 };
