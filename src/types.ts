@@ -1,4 +1,4 @@
-import { FeedbackDialogOptions } from "./feedback/types";
+import { RequestFeedbackOptions } from "./feedback/types";
 
 export type Key = string;
 
@@ -71,7 +71,7 @@ export type FeedbackPromptHandlerCallbacks = {
   // dismiss: function,
   openFeedbackForm: (
     options: Omit<
-      FeedbackDialogOptions,
+      RequestFeedbackOptions,
       "featureId" | "userId" | "companyId" | "onSubmit" | "onClose"
     >,
   ) => void;
