@@ -1,7 +1,13 @@
 import { h, render } from "preact";
 
 import { feedbackContainerId } from "./constants";
-import { FeedbackDialog, FeedbackDialogProps } from "./FeedbackDialog";
+import { FeedbackDialog } from "./FeedbackDialog";
+import { FeedbackPosition, OpenFeedbackFormOptions } from "./types";
+
+const DEFAULT_POSITION: FeedbackPosition = {
+  type: "DIALOG",
+  placement: "bottom-right",
+};
 
 function attachDialogContainer() {
   let container = document.querySelector(`#${feedbackContainerId}`);
@@ -17,14 +23,15 @@ function attachDialogContainer() {
   return container.shadowRoot!;
 }
 
-export function openFeedbackForm(options: FeedbackDialogProps): void {
+export function openFeedbackForm(options: OpenFeedbackFormOptions): void {
   const shadowRoot = attachDialogContainer();
+  const position = options.position || DEFAULT_POSITION;
 
-  render(h(FeedbackDialog, options), shadowRoot);
+  render(h(FeedbackDialog, { ...options, position }), shadowRoot);
 
   const dialog = shadowRoot.querySelector("dialog");
 
   if (dialog && !dialog.hasAttribute("open")) {
-    dialog[options.isModal ? "showModal" : "show"]();
+    dialog[position.type === "MODAL" ? "showModal" : "show"]();
   }
 }

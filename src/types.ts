@@ -1,3 +1,5 @@
+import { RequestFeedbackOptions } from "./feedback/types";
+
 export type Key = string;
 
 export type Options = {
@@ -64,9 +66,20 @@ export type FeedbackPromptReplyHandler = (
   reply: FeedbackPromptReply | null,
 ) => Promise<void>;
 
+export type FeedbackPromptHandlerCallbacks = {
+  reply: FeedbackPromptReplyHandler;
+  // dismiss: function,
+  openFeedbackForm: (
+    options: Omit<
+      RequestFeedbackOptions,
+      "featureId" | "userId" | "companyId" | "onClose"
+    >,
+  ) => void;
+};
+
 export type FeedbackPromptHandler = (
   prompt: FeedbackPrompt,
-  replyHandler: FeedbackPromptReplyHandler,
+  handlers: FeedbackPromptHandlerCallbacks,
 ) => void;
 
 export type Context = {

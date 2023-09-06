@@ -1,25 +1,33 @@
 export type WithRequired<T, K extends keyof T> = T & { [P in K]-?: T[P] };
 
-export type Placement =
+export type FeedbackPlacement =
   | "bottom-right"
   | "bottom-left"
   | "top-right"
   | "top-left";
+
+export type FeedbackPosition =
+  | { type: "MODAL" }
+  | { type: "DIALOG"; placement: FeedbackPlacement }
+  | { type: "POPOVER"; anchor: HTMLElement | null };
 
 export interface Feedback {
   score: number;
   comment: string;
 }
 
-export interface FeedbackDialogOptions {
+export interface OpenFeedbackFormOptions {
+  key: string;
+  title?: string;
+  position?: FeedbackPosition;
+  onSubmit: (data: Feedback) => Promise<void> | void;
+  onClose?: () => void;
+}
+
+export interface RequestFeedbackOptions
+  extends Omit<OpenFeedbackFormOptions, "key" | "onSubmit"> {
   featureId: string;
   userId: string;
   companyId?: string;
-  title?: string;
-  isModal?: boolean;
-  anchor?: HTMLElement;
-  placement?: Placement;
-  quickDismiss?: boolean;
-  onSubmit?: (data: Feedback) => Promise<any>;
-  onClose?: () => void;
+  onAfterSubmit?: (data: Feedback) => void;
 }

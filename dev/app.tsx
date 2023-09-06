@@ -1,7 +1,7 @@
 import { h } from "preact";
 import { useState } from "preact/hooks";
 
-import { Placement } from "../src/feedback/types";
+import { FeedbackPlacement } from "../src/feedback/types";
 import bucket from "../src/index";
 
 bucket.init("123", {
@@ -20,8 +20,7 @@ const ThemeButton = ({ theme }: { theme?: string }) => (
 );
 
 export function App() {
-  const [placement, setPlacement] = useState<Placement>("bottom-right");
-  const [quickDismiss, setQuickDismiss] = useState<boolean>(true);
+  const [placement, setPlacement] = useState<FeedbackPlacement>("bottom-right");
   return (
     <main style="display: flex; flex-direction: column; gap: 20px;">
       <h1>Bucket tracking playground</h1>
@@ -37,7 +36,7 @@ export function App() {
       <div style="display: flex; gap: 10px;">
         <select
           onInput={(e) =>
-            setPlacement((e.target as HTMLSelectElement).value as Placement)
+            setPlacement(e.currentTarget.value as FeedbackPlacement)
           }
         >
           <option value="bottom-right">Bottom right</option>
@@ -45,28 +44,18 @@ export function App() {
           <option value="top-right">Top right</option>
           <option value="top-left">Top left</option>
         </select>
-        <label>
-          <input
-            type="checkbox"
-            checked={quickDismiss}
-            onInput={(e) =>
-              setQuickDismiss((e.target as HTMLInputElement).checked)
-            }
-          />
-          Quick dismiss
-        </label>
       </div>
 
       <h2>Feedback collection test</h2>
       <div style="display: flex; gap: 10px;">
         <button
           onClick={() => {
-            bucket.openFeedbackForm({
+            bucket.requestFeedback({
               featureId: "featA",
               userId: "123",
               title: "Hello, how do you like the modal?",
-              isModal: true,
-              onSubmit: async (data) => console.log("Submitted data:", data),
+              position: { type: "MODAL" },
+              onAfterSubmit: async (data) => console.log("Submitted:", data),
               onClose: () => console.log("Closed dialog"),
             });
           }}
@@ -75,13 +64,12 @@ export function App() {
         </button>
         <button
           onClick={() => {
-            bucket.openFeedbackForm({
+            bucket.requestFeedback({
               featureId: "featB",
               userId: "123",
               title: "Hello, how do you like the dialog?",
-              placement,
-              quickDismiss,
-              onSubmit: async (data) => console.log("Submitted data:", data),
+              position: { type: "DIALOG", placement },
+              onAfterSubmit: async (data) => console.log("Submitted:", data),
               onClose: () => console.log("Closed dialog"),
             });
           }}
@@ -89,14 +77,13 @@ export function App() {
           Open Dialog
         </button>
         <button
-          onClick={({ target }) => {
-            bucket.openFeedbackForm({
+          onClick={({ currentTarget }) => {
+            bucket.requestFeedback({
               featureId: "featC",
               userId: "123",
               title: "Hello, how do you like the popover?",
-              anchor: target as HTMLElement,
-              quickDismiss,
-              onSubmit: async (data) => console.log("Submitted data:", data),
+              position: { type: "POPOVER", anchor: currentTarget },
+              onAfterSubmit: async (data) => console.log("Submitted:", data),
               onClose: () => console.log("closed dialog"),
             });
           }}

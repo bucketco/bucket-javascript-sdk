@@ -3,8 +3,9 @@ import { isForNode } from "is-bundling-for-browser-or-node";
 
 import { version } from "../package.json";
 
-import type { FeedbackDialogOptions } from "./feedback/types";
+import type { RequestFeedbackOptions } from "./feedback/types";
 import { TRACKING_HOST } from "./config";
+import { defaultFeedbackPromptHandler } from "./default-feedback-prompt-handler";
 import * as feedbackLib from "./feedback";
 import {
   FeedbackPromptCompletionHandler,
@@ -18,6 +19,8 @@ import {
   Feedback,
   FeedbackPrompt,
   FeedbackPromptHandler,
+  FeedbackPromptHandlerCallbacks,
+  FeedbackPromptReplyHandler,
   Key,
   Options,
   TrackedEvent,
@@ -112,6 +115,8 @@ export default function main() {
     }
     if (options?.feedbackPromptHandler) {
       feedbackPromptHandler = options.feedbackPromptHandler;
+    } else {
+      feedbackPromptHandler = defaultFeedbackPromptHandler;
     }
     log(`initialized with key "${trackingKey}" and options`, options);
   }
@@ -283,7 +288,7 @@ export default function main() {
 
     await feedbackPromptEvent(message.promptId, "shown", userId);
 
-    feedbackPromptHandler?.(message, async (reply) => {
+    const replyCallback: FeedbackPromptReplyHandler = async (reply) => {
       if (!reply) {
         await feedbackPromptEvent(message.promptId, "dismissed", userId);
       } else {
@@ -298,7 +303,26 @@ export default function main() {
       }
 
       completionHandler();
-    });
+    };
+
+    const handlers: FeedbackPromptHandlerCallbacks = {
+      reply: replyCallback,
+      // TODO: consider different name - align w requestFeedback or be deliberately different?
+      openFeedbackForm: (options) => {
+        feedbackLib.openFeedbackForm({
+          key: message.featureId,
+          title: message.question,
+          onSubmit: async (data) => {
+            await replyCallback(data);
+            options.onAfterSubmit?.(data);
+          },
+          onClose: () => replyCallback(null),
+          ...options,
+        });
+      },
+    };
+
+    feedbackPromptHandler?.(message, handlers);
   }
 
   async function feedbackPromptEvent(
@@ -321,12 +345,15 @@ export default function main() {
     return res;
   }
 
-  function openFeedbackForm(options: FeedbackDialogOptions) {
+  function requestFeedback(options: RequestFeedbackOptions) {
     if (isForNode) {
-      err("openFeedbackForm can only be called in the browser");
+      err("requestFeedback can only be called in the browser");
     }
 
-    if (!options.featureId) err("No featureId provided");
+    if (!options.featureId) {
+      err("No featureId provided");
+    }
+
     if (persistUser) {
       options.userId = getSessionUser();
     } else if (!options.userId) {
@@ -337,16 +364,21 @@ export default function main() {
     // to prevent the same click from closing it.
     setTimeout(() => {
       feedbackLib.openFeedbackForm({
+        key: options.featureId,
+        title: options.title,
+        position: options.position,
+        onClose: options.onClose,
         onSubmit: async (data) => {
           // Default onSubmit handler
-          return feedback({
+          await feedback({
             featureId: options.featureId,
             userId: options.userId,
             companyId: options.companyId,
             ...data,
           });
+
+          options.onAfterSubmit?.(data);
         },
-        ...options,
       });
     }, 1);
   }
@@ -372,7 +404,7 @@ export default function main() {
     track,
     feedback,
     // feedback prompting
-    openFeedbackForm,
+    requestFeedback,
     initFeedbackPrompting,
   };
 }

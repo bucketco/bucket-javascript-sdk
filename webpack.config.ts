@@ -11,7 +11,17 @@ const config: Configuration[] = [
       rules: [
         {
           test: /\.css$/i,
-          use: ["style-loader", "css-loader", "postcss-loader"],
+          use: [
+            {
+              loader: "css-loader",
+              options: {
+                importLoaders: 1, // See: https://blog.jakoblind.no/postcss-webpack/
+              },
+            },
+            {
+              loader: "postcss-loader",
+            },
+          ],
         },
         {
           test: /\.tsx?$/,
@@ -44,7 +54,17 @@ const config: Configuration[] = [
       rules: [
         {
           test: /\.css$/i,
-          use: ["style-loader", "css-loader", "postcss-loader"],
+          use: [
+            {
+              loader: "css-loader",
+              options: {
+                importLoaders: 1, // See: https://blog.jakoblind.no/postcss-webpack/
+              },
+            },
+            {
+              loader: "postcss-loader",
+            },
+          ],
         },
         {
           test: /\.tsx?$/,

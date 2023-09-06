@@ -16,7 +16,7 @@ function getFeedbackDataFromForm(el: HTMLFormElement): Feedback {
 
 type FeedbackFormProps = {
   question: string;
-  onSubmit: (data: Feedback) => Promise<any>;
+  onSubmit: (data: Feedback) => Promise<void> | void;
 };
 
 export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({

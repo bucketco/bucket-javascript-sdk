@@ -12,28 +12,26 @@ import {
 import { feedbackContainerId } from "./constants";
 import { FeedbackForm } from "./FeedbackForm";
 import styles from "./index.css?inline";
-import { FeedbackDialogOptions, WithRequired } from "./types";
+import { OpenFeedbackFormOptions, WithRequired } from "./types";
 
 type Position = Partial<
   Record<"top" | "left" | "right" | "bottom", number | string>
 >;
 
 export type FeedbackDialogProps = WithRequired<
-  FeedbackDialogOptions,
-  "onSubmit"
+  OpenFeedbackFormOptions,
+  "onSubmit" | "position"
 >;
 
 export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
-  featureId,
+  key,
   title = "How satisfied are you with this feature?",
-  isModal = false,
-  placement = "bottom-right",
-  anchor,
-  quickDismiss = true,
+  position,
   onSubmit,
   onClose,
 }) => {
   const arrowRef = useRef<HTMLDivElement>(null);
+  const anchor = position.type === "POPOVER" ? position.anchor : null;
   const {
     refs,
     floatingStyles,
@@ -55,19 +53,21 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
   });
 
   let unanchoredPosition: Position = {};
-  switch (placement) {
-    case "top-left":
-      unanchoredPosition = { top: "1rem", left: "1rem" };
-      break;
-    case "top-right":
-      unanchoredPosition = { top: "1rem", right: "1rem" };
-      break;
-    case "bottom-left":
-      unanchoredPosition = { bottom: "1rem", left: "1rem" };
-      break;
-    case "bottom-right":
-      unanchoredPosition = { bottom: "1rem", right: "1rem" };
-      break;
+  if (position.type === "DIALOG") {
+    switch (position.placement) {
+      case "top-left":
+        unanchoredPosition = { top: "1rem", left: "1rem" };
+        break;
+      case "top-right":
+        unanchoredPosition = { top: "1rem", right: "1rem" };
+        break;
+      case "bottom-left":
+        unanchoredPosition = { bottom: "1rem", left: "1rem" };
+        break;
+      case "bottom-right":
+        unanchoredPosition = { bottom: "1rem", right: "1rem" };
+        break;
+    }
   }
 
   const { x: arrowX, y: arrowY } = middlewareData.arrow ?? {};
@@ -89,7 +89,9 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
   };
 
   useEffect(() => {
-    if (!quickDismiss) return;
+    // Only enable 'quick dismiss' for popovers
+    if (position.type === "MODAL" || position.type === "DIALOG") return;
+
     const escapeHandler = (e: KeyboardEvent) => {
       if (e.key == "Escape") {
         const dialog = refs.floating.current as HTMLDialogElement | null;
@@ -113,7 +115,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
       window.removeEventListener("click", clickOutsideHandler);
       window.removeEventListener("keydown", escapeHandler);
     };
-  }, [quickDismiss]);
+  }, [position.type]);
 
   return (
     <>
@@ -122,12 +124,17 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
         ref={refs.setFloating}
         class={[
           "dialog",
-          isModal ? "modal" : anchor ? "anchored" : "unanchored",
+          position.type === "MODAL"
+            ? "modal"
+            : anchor
+            ? "anchored"
+            : "unanchored",
           actualPlacement,
         ].join(" ")}
         style={anchor ? floatingStyles : unanchoredPosition}
       >
-        <FeedbackForm key={featureId} question={title} onSubmit={onSubmit} />
+        <FeedbackForm key={key} question={title} onSubmit={onSubmit} />
+
         <footer class="plug">
           Powered by <Logo /> Bucket
         </footer>
