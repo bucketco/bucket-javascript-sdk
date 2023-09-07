@@ -137,9 +137,9 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
 
       mutations.forEach((mutation) => {
         const removedNodes = Array.from(mutation.removedNodes);
-        const hasBeenRemoved =
-          removedNodes.includes(position.anchor!) ||
-          removedNodes.some((r) => r.contains(position.anchor!));
+        const hasBeenRemoved = removedNodes.some((node) => {
+          return node === position.anchor || node.contains(position.anchor);
+        });
 
         if (hasBeenRemoved) {
           close();
