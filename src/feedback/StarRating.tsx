@@ -5,37 +5,38 @@ import { Neutral } from "./icons/Neutral";
 import { Satisfied } from "./icons/Satisfied";
 import { VeryDissatisfied } from "./icons/VeryDissatisfied";
 import { VerySatisfied } from "./icons/VerySatisfied";
+import { FeedbackTranslations } from "./types";
 
 const scores = [
   {
     color: "var(--bucket-feedback-dialog-very-dissatisfied-color, #dd6b20)",
     bg: "var(--bucket-feedback-dialog-very-dissatisfied-bg, #fbd38d)",
     icon: <VeryDissatisfied />,
-    label: "Very dissatisfied",
+    getLabel: (t: FeedbackTranslations) => t.ScoreVeryDissatisfiedLabel,
   },
   {
     color: "var(--bucket-feedback-dialog-dissatisfied-color, #ed8936)",
     bg: "var(--bucket-feedback-dialog-dissatisfied-bg, #feebc8)",
     icon: <Dissatisfied />,
-    label: "Dissatisfied",
+    getLabel: (t: FeedbackTranslations) => t.ScoreDissatisfiedLabel,
   },
   {
     color: "var(--bucket-feedback-dialog-neutral-color, #787c91)",
     bg: "var(--bucket-feedback-dialog-neutral-bg, #e9e9ed)",
     icon: <Neutral />,
-    label: "Neutral",
+    getLabel: (t: FeedbackTranslations) => t.ScoreNeutralLabel,
   },
   {
     color: "var(--bucket-feedback-dialog-satisfied-color, #48bb78)",
     bg: "var(--bucket-feedback-dialog-satisfied-bg, #c6f6d5)",
     icon: <Satisfied />,
-    label: "Satisfied",
+    getLabel: (t: FeedbackTranslations) => t.ScoreSatisfiedLabel,
   },
   {
     color: "var(--bucket-feedback-dialog-very-satisfied-color, #38a169)",
     bg: "var(--bucket-feedback-dialog-very-satisfied-bg, #9ae6b4)",
     icon: <VerySatisfied />,
-    label: "Very satisfied",
+    getLabel: (t: FeedbackTranslations) => t.ScoreVerySatisfiedLabel,
   },
 ];
 
@@ -43,9 +44,11 @@ export type StarRatingProps = {
   name: string;
   value?: number;
   onChange?: h.JSX.GenericEventHandler<HTMLInputElement>;
+  t: FeedbackTranslations;
 };
 
 export const StarRating: FunctionComponent<StarRatingProps> = ({
+  t,
   name,
   value,
   onChange,
@@ -64,7 +67,7 @@ export const StarRating: FunctionComponent<StarRatingProps> = ({
         )}
       </style>
       <div class="star-rating-icons">
-        {scores.map(({ color, icon, label }, index) => (
+        {scores.map(({ color, icon, getLabel }, index) => (
           <>
             <input
               id={`bucket-feedback-score-${index + 1}`}
@@ -78,7 +81,7 @@ export const StarRating: FunctionComponent<StarRatingProps> = ({
               for={`bucket-feedback-score-${index + 1}`}
               class="button"
               style={{ color }}
-              aria-label={label}
+              aria-label={getLabel(t)}
             >
               {icon}
             </label>
@@ -86,8 +89,8 @@ export const StarRating: FunctionComponent<StarRatingProps> = ({
         ))}
       </div>
       <div class="star-rating-labels">
-        <span>{scores[0].label}</span>
-        <span>{scores[scores.length - 1].label}</span>
+        <span>{t.ScoreVeryDissatisfiedLabel}</span>
+        <span>{t.ScoreVerySatisfiedLabel}</span>
       </div>
     </div>
   );

@@ -367,6 +367,7 @@ export default function main() {
         key: options.featureId,
         title: options.title,
         position: options.position,
+        translations: options.translations,
         onClose: options.onClose,
         onSubmit: async (data) => {
           // Default onSubmit handler
