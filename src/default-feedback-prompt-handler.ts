@@ -7,7 +7,7 @@ export const defaultFeedbackPromptHandler: FeedbackPromptHandler = (
   handlers.openFeedbackForm({
     position: {
       type: "DIALOG",
-      placement: "bottom-left",
+      placement: "bottom-right",
     },
   });
 };
