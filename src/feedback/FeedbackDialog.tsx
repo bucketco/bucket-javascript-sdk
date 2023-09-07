@@ -1,6 +1,7 @@
 import { Fragment, FunctionComponent, h } from "preact";
-import { useEffect, useRef } from "preact/hooks";
+import { useCallback, useEffect, useRef } from "preact/hooks";
 
+import { Close } from "./icons/Close";
 import { Logo } from "./icons/Logo";
 import {
   arrow,
@@ -88,34 +89,38 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
     [staticSide]: "-4px",
   };
 
+  const close = useCallback(() => {
+    const dialog = refs.floating.current as HTMLDialogElement | null;
+    dialog?.close();
+    onClose?.();
+  }, [onClose]);
+
   useEffect(() => {
     // Only enable 'quick dismiss' for popovers
     if (position.type === "MODAL" || position.type === "DIALOG") return;
 
     const escapeHandler = (e: KeyboardEvent) => {
       if (e.key == "Escape") {
-        const dialog = refs.floating.current as HTMLDialogElement | null;
-        dialog?.close();
-        onClose?.();
+        close();
       }
     };
+
     const clickOutsideHandler = (e: MouseEvent) => {
-      const dialog = refs.floating.current as HTMLDialogElement | null;
       if (
         !(e.target instanceof Element) ||
         !e.target.closest(`#${feedbackContainerId}`)
       ) {
-        dialog?.close();
-        onClose?.();
+        close();
       }
     };
+
     window.addEventListener("click", clickOutsideHandler);
     window.addEventListener("keydown", escapeHandler);
     return () => {
       window.removeEventListener("click", clickOutsideHandler);
       window.removeEventListener("keydown", escapeHandler);
     };
-  }, [position.type]);
+  }, [position.type, close]);
 
   return (
     <>
@@ -133,11 +138,16 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
         ].join(" ")}
         style={anchor ? floatingStyles : unanchoredPosition}
       >
+        <button onClick={close} class="close">
+          <Close />
+        </button>
+
         <FeedbackForm key={key} question={title} onSubmit={onSubmit} />
 
         <footer class="plug">
           Powered by <Logo /> Bucket
         </footer>
+
         {anchor && (
           <div
             ref={arrowRef}

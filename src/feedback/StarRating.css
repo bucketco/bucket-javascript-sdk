@@ -1,5 +1,11 @@
 .star-rating {
   display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+.star-rating-icons {
+  display: flex;
 
   > input {
     border: 0px;
