@@ -1,6 +1,7 @@
 import { Fragment, FunctionComponent, h } from "preact";
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
+import { Close } from "./icons/Close";
 import { Logo } from "./icons/Logo";
 import {
   arrow,
@@ -13,7 +14,6 @@ import { feedbackContainerId } from "./constants";
 import { FeedbackForm } from "./FeedbackForm";
 import styles from "./index.css?inline";
 import { OpenFeedbackFormOptions, WithRequired } from "./types";
-import { Close } from "./icons/Close";
 
 type Position = Partial<
   Record<"top" | "left" | "right" | "bottom", number | string>
