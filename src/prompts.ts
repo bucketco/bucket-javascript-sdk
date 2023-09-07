@@ -44,7 +44,7 @@ export const processPromptMessage = (
   const now = new Date();
 
   const completionHandler = () => {
-    markPromptMessageCompleted(userId, prompt.promptId, prompt.showBefore);
+    markPromptMessageCompleted(userId, prompt.promptId);
   };
 
   if (checkPromptMessageCompleted(userId, prompt.promptId)) {

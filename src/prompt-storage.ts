@@ -3,9 +3,14 @@ import Cookies from "js-cookie";
 export const markPromptMessageCompleted = (
   userId: string,
   promptId: string,
-  expiresAt: Date,
 ) => {
-  Cookies.set(`bucket-prompt-${userId}`, promptId, { expires: expiresAt });
+  const expiry = new Date();
+  expiry.setFullYear(expiry.getFullYear() + 10);
+
+  Cookies.set(`bucket-prompt-${userId}`, promptId, {
+    // Don't show the same prompt again
+    expires: expiry,
+  });
 };
 
 export const checkPromptMessageCompleted = (

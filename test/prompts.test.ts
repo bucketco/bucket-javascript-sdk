@@ -162,11 +162,7 @@ describe("processPromptMessage", () => {
     );
 
     expect(markPromptMessageCompleted).toHaveBeenCalledOnce();
-    expect(markPromptMessageCompleted).toBeCalledWith(
-      "user",
-      "123",
-      prompt.showBefore,
-    );
+    expect(markPromptMessageCompleted).toBeCalledWith("user", "123");
   });
 
   test("will process and delay prompts that are not yet ready to be shown", () => {
@@ -194,10 +190,6 @@ describe("processPromptMessage", () => {
     );
 
     expect(markPromptMessageCompleted).toHaveBeenCalledOnce();
-    expect(markPromptMessageCompleted).toBeCalledWith(
-      "user",
-      "123",
-      prompt.showBefore,
-    );
+    expect(markPromptMessageCompleted).toBeCalledWith("user", "123");
   });
 });

@@ -569,11 +569,7 @@ describe("feedback state management", () => {
     await flushPromises();
 
     expect(markPromptMessageCompleted).toHaveBeenCalledOnce();
-    expect(markPromptMessageCompleted).toHaveBeenCalledWith(
-      "foo",
-      "123",
-      new Date(goodMessage.showBefore),
-    );
+    expect(markPromptMessageCompleted).toHaveBeenCalledWith("foo", "123");
   });
 
   test("propagates prompt to the callback and reacts to feedback", async () => {
@@ -608,11 +604,7 @@ describe("feedback state management", () => {
     await flushPromises();
 
     expect(markPromptMessageCompleted).toHaveBeenCalledOnce();
-    expect(markPromptMessageCompleted).toHaveBeenCalledWith(
-      "foo",
-      "123",
-      new Date(goodMessage.showBefore),
-    );
+    expect(markPromptMessageCompleted).toHaveBeenCalledWith("foo", "123");
   });
 
   test("blocks invalid messages", async () => {
