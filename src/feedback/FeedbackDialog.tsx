@@ -13,7 +13,11 @@ import {
 import { feedbackContainerId } from "./constants";
 import { FeedbackForm } from "./FeedbackForm";
 import styles from "./index.css?inline";
-import { OpenFeedbackFormOptions, WithRequired } from "./types";
+import {
+  FeedbackTranslations,
+  OpenFeedbackFormOptions,
+  WithRequired,
+} from "./types";
 
 type Position = Partial<
   Record<"top" | "left" | "right" | "bottom", number | string>
@@ -24,10 +28,24 @@ export type FeedbackDialogProps = WithRequired<
   "onSubmit" | "position"
 >;
 
+const DEFAULT_TRANSLATIONS: FeedbackTranslations = {
+  DefaultQuestionLabel: "How satisfied are you with this feature?",
+  QuestionPlaceholder: "How can we improve this feature?",
+  CommentLabel: "Leave a comment (optional)",
+  ScoreVeryDissatisfiedLabel: "Very dissatisfied",
+  ScoreDissatisfiedLabel: "Dissatisfied",
+  ScoreNeutralLabel: "Neutral",
+  ScoreSatisfiedLabel: "Satisfied",
+  ScoreVerySatisfiedLabel: "Very satisfied",
+  SuccessMessage: "Thank you for sending your feedback!",
+  SendButton: "Send",
+};
+
 export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
   key,
-  title = "How satisfied are you with this feature?",
+  title = DEFAULT_TRANSLATIONS.DefaultQuestionLabel,
   position,
+  translations = DEFAULT_TRANSLATIONS,
   onSubmit,
   onClose,
 }) => {
@@ -142,7 +160,12 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
           <Close />
         </button>
 
-        <FeedbackForm key={key} question={title} onSubmit={onSubmit} />
+        <FeedbackForm
+          t={{ ...DEFAULT_TRANSLATIONS, ...translations }}
+          key={key}
+          question={title}
+          onSubmit={onSubmit}
+        />
 
         <footer class="plug">
           Powered by <Logo /> Bucket

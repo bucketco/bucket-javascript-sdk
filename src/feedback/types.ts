@@ -20,6 +20,7 @@ export interface OpenFeedbackFormOptions {
   key: string;
   title?: string;
   position?: FeedbackPosition;
+  translations?: Partial<FeedbackTranslations>;
   onSubmit: (data: Feedback) => Promise<void> | void;
   onClose?: () => void;
 }
@@ -31,3 +32,16 @@ export interface RequestFeedbackOptions
   companyId?: string;
   onAfterSubmit?: (data: Feedback) => void;
 }
+
+export type FeedbackTranslations = {
+  DefaultQuestionLabel: string;
+  QuestionPlaceholder: string;
+  CommentLabel: string;
+  ScoreVeryDissatisfiedLabel: string;
+  ScoreDissatisfiedLabel: string;
+  ScoreNeutralLabel: string;
+  ScoreSatisfiedLabel: string;
+  ScoreVerySatisfiedLabel: string;
+  SuccessMessage: string;
+  SendButton: string;
+};
