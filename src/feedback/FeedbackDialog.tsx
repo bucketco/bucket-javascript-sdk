@@ -31,7 +31,7 @@ export type FeedbackDialogProps = WithRequired<
   "onSubmit" | "position"
 >;
 
-const INACTIVE_DURATION_MS = 15 * 1000;
+const INACTIVE_DURATION_MS = 30 * 1000;
 const DEFAULT_TRANSLATIONS: FeedbackTranslations = {
   DefaultQuestionLabel: "How satisfied are you with this feature?",
   QuestionPlaceholder: "How can we improve this feature?",
