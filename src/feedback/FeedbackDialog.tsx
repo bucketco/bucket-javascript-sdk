@@ -1,5 +1,5 @@
 import { Fragment, FunctionComponent, h } from "preact";
-import { useCallback, useEffect, useRef } from "preact/hooks";
+import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { Close } from "./icons/Close";
 import { Logo } from "./icons/Logo";
@@ -14,6 +14,7 @@ import { feedbackContainerId } from "./constants";
 import { FeedbackForm } from "./FeedbackForm";
 import styles from "./index.css?inline";
 import {
+  Feedback,
   FeedbackTranslations,
   OpenFeedbackFormOptions,
   WithRequired,
@@ -28,6 +29,7 @@ export type FeedbackDialogProps = WithRequired<
   "onSubmit" | "position"
 >;
 
+const INACTIVE_DURATION_MS = 15 * 1000;
 const DEFAULT_TRANSLATIONS: FeedbackTranslations = {
   DefaultQuestionLabel: "How satisfied are you with this feature?",
   QuestionPlaceholder: "How can we improve this feature?",
@@ -39,6 +41,97 @@ const DEFAULT_TRANSLATIONS: FeedbackTranslations = {
   ScoreVerySatisfiedLabel: "Very satisfied",
   SuccessMessage: "Thank you for sending your feedback!",
   SendButton: "Send",
+};
+
+const useAutoClose = ({
+  initialDuration,
+  enabled,
+  onEnd,
+}: {
+  initialDuration: number;
+  enabled: boolean;
+  onEnd: () => void;
+}): {
+  duration: number;
+  elapsedFraction: number;
+  startTime: number;
+  endTime: number;
+  stopped: boolean;
+  startWithDuration: (duration: number) => void;
+  stop: () => void;
+} => {
+  const [stopped, setStopped] = useState(!enabled);
+  const [duration, setDuration] = useState(initialDuration);
+  const [startTime, setStartTime] = useState(Date.now());
+  const [currentTime, setCurrentTime] = useState(Date.now());
+
+  useEffect(() => {
+    if (stopped) return;
+
+    const t = setInterval(() => {
+      setCurrentTime(Date.now());
+
+      if (Date.now() >= startTime + duration) {
+        clearTimeout(t);
+        setStopped(true);
+        onEnd();
+      }
+    }, 100);
+
+    return () => {
+      clearTimeout(t);
+    };
+  }, [stopped]);
+
+  const stop = useCallback(() => {
+    setStopped(true);
+  }, []);
+
+  const startWithDuration = useCallback((nextDuration: number) => {
+    setStartTime(Date.now());
+    setDuration(nextDuration);
+    setStopped(false);
+  }, []);
+
+  const endTime = startTime + duration;
+  const elapsedMs = stopped ? 0 : currentTime - startTime;
+  const elapsedFraction = elapsedMs / duration;
+
+  return {
+    duration,
+    elapsedFraction,
+    startTime,
+    endTime,
+    stopped,
+    startWithDuration,
+    stop,
+  };
+};
+
+const RadialProgress: FunctionComponent<{
+  diameter: number;
+  progress: number;
+}> = ({ diameter, progress }) => {
+  const stroke = 2;
+  const radius = diameter / 2 - stroke;
+  const circumference = 2 * Math.PI * radius;
+  const filled = circumference * progress;
+
+  return (
+    <svg className="radial-progress" width={diameter} height={diameter}>
+      <circle
+        fill="transparent"
+        stroke="#000"
+        strokeWidth={stroke}
+        cx={radius + stroke}
+        cy={radius + stroke}
+        r={radius}
+        stroke-dasharray={circumference}
+        stroke-dashoffset={filled}
+        transform={`rotate(-90) translate(-${radius * 2 + stroke * 2} 0)`}
+      />
+    </svg>
+  );
 };
 
 export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
@@ -110,8 +203,23 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
   const close = useCallback(() => {
     const dialog = refs.floating.current as HTMLDialogElement | null;
     dialog?.close();
+    autoClose.stop();
     onClose?.();
   }, [onClose]);
+
+  const submit = useCallback(
+    (data: Feedback) => {
+      onSubmit(data);
+      autoClose.startWithDuration(5000);
+    },
+    [onSubmit],
+  );
+
+  const autoClose = useAutoClose({
+    enabled: position.type === "DIALOG",
+    initialDuration: INACTIVE_DURATION_MS,
+    onEnd: close,
+  });
 
   useEffect(() => {
     // Only enable 'quick dismiss' for popovers
@@ -178,6 +286,12 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
         style={anchor ? floatingStyles : unanchoredPosition}
       >
         <button onClick={close} class="close">
+          {!autoClose.stopped && (
+            <RadialProgress
+              diameter={28}
+              progress={autoClose.elapsedFraction}
+            />
+          )}
           <Close />
         </button>
 
@@ -185,7 +299,8 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
           t={{ ...DEFAULT_TRANSLATIONS, ...translations }}
           key={key}
           question={title}
-          onSubmit={onSubmit}
+          onSubmit={submit}
+          onInteraction={autoClose.stop}
         />
 
         <footer class="plug">

@@ -17,11 +17,13 @@ function getFeedbackDataFromForm(el: HTMLFormElement): Feedback {
 type FeedbackFormProps = {
   t: FeedbackTranslations;
   question: string;
+  onInteraction: () => void;
   onSubmit: (data: Feedback) => Promise<void> | void;
 };
 
 export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
   question,
+  onInteraction,
   onSubmit,
   t,
 }) => {
@@ -64,7 +66,14 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
   }
 
   return (
-    <form onSubmit={handleSubmit} method="dialog" class="form">
+    <form
+      onSubmit={handleSubmit}
+      method="dialog"
+      class="form"
+      onFocus={onInteraction}
+      onFocusCapture={onInteraction}
+      onClick={onInteraction}
+    >
       <div
         role="group"
         class="form-control"
