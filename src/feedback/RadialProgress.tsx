@@ -13,11 +13,10 @@ export const RadialProgress: FunctionComponent<{
     <svg className="radial-progress" width={diameter} height={diameter}>
       <circle
         fill="transparent"
-        stroke="#000"
-        strokeWidth={stroke}
         cx={radius + stroke}
         cy={radius + stroke}
         r={radius}
+        stroke-width={stroke}
         stroke-dasharray={circumference}
         stroke-dashoffset={filled}
         transform={`rotate(-90) translate(-${radius * 2 + stroke * 2} 0)`}
