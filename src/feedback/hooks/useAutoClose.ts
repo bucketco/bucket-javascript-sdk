@@ -33,7 +33,7 @@ export const useAutoClose = ({
         setStopped(true);
         onEnd();
       }
-    }, 100);
+    }, 25);
 
     return () => {
       clearTimeout(t);
