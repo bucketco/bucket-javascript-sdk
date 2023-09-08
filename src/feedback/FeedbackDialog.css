@@ -16,6 +16,15 @@
   }
 }
 
+@keyframes floatDown {
+  from {
+    transform: translateY(-10%);
+  }
+  to {
+    transform: translateY(0%);
+  }
+}
+
 @keyframes fade {
   from {
     opacity: 0;
@@ -144,7 +153,17 @@
 /* Unanchored */
 
 .dialog[open].unanchored {
-  animation:
-    floatUp 100ms ease-in-out,
-    fade 100ms ease-in-out;
+  &.unanchored-bottom-left,
+  &.unanchored-bottom-right {
+    animation:
+      floatUp 100ms ease-in-out,
+      fade 100ms ease-in-out;
+  }
+
+  &.unanchored-top-left,
+  &.unanchored-top-right {
+    animation:
+      floatDown 100ms ease-in-out,
+      fade 100ms ease-in-out;
+  }
 }
