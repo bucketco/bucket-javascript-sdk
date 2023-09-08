@@ -200,7 +200,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
           {!autoClose.stopped && (
             <RadialProgress
               diameter={28}
-              progress={autoClose.elapsedFraction}
+              progress={1.0 - autoClose.elapsedFraction}
             />
           )}
           <Close />
