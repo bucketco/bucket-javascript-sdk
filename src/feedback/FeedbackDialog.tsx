@@ -121,7 +121,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
   const submit = useCallback(
     (data: Feedback) => {
       onSubmit(data);
-      autoClose.startWithDuration(5000);
+      autoClose.startWithDuration(3000);
     },
     [onSubmit],
   );
