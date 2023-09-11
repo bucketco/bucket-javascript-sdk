@@ -132,11 +132,32 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
       }
     };
 
+    const observer = new MutationObserver((mutations) => {
+      if (position.anchor === null) return;
+
+      mutations.forEach((mutation) => {
+        const removedNodes = Array.from(mutation.removedNodes);
+        const hasBeenRemoved = removedNodes.some((node) => {
+          return node === position.anchor || node.contains(position.anchor);
+        });
+
+        if (hasBeenRemoved) {
+          close();
+        }
+      });
+    });
+
     window.addEventListener("click", clickOutsideHandler);
     window.addEventListener("keydown", escapeHandler);
+    observer.observe(document.body, {
+      subtree: true,
+      childList: true,
+    });
+
     return () => {
       window.removeEventListener("click", clickOutsideHandler);
       window.removeEventListener("keydown", escapeHandler);
+      observer.disconnect();
     };
   }, [position.type, close]);
 
