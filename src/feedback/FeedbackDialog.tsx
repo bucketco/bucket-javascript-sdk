@@ -147,7 +147,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
       });
     });
 
-    window.addEventListener("click", clickOutsideHandler);
+    window.addEventListener("mousedown", clickOutsideHandler);
     window.addEventListener("keydown", escapeHandler);
     observer.observe(document.body, {
       subtree: true,
@@ -155,7 +155,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
     });
 
     return () => {
-      window.removeEventListener("click", clickOutsideHandler);
+      window.removeEventListener("mousedown", clickOutsideHandler);
       window.removeEventListener("keydown", escapeHandler);
       observer.disconnect();
     };
