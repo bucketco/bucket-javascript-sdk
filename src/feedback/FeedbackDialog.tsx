@@ -1,6 +1,7 @@
 import { Fragment, FunctionComponent, h } from "preact";
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
+import { useTimer } from "./hooks/useTimer";
 import { Close } from "./icons/Close";
 import { Logo } from "./icons/Logo";
 import {
@@ -13,7 +14,9 @@ import {
 import { feedbackContainerId } from "./constants";
 import { FeedbackForm } from "./FeedbackForm";
 import styles from "./index.css?inline";
+import { RadialProgress } from "./RadialProgress";
 import {
+  Feedback,
   FeedbackTranslations,
   OpenFeedbackFormOptions,
   WithRequired,
@@ -28,6 +31,8 @@ export type FeedbackDialogProps = WithRequired<
   "onSubmit" | "position"
 >;
 
+const INACTIVE_DURATION_MS = 20 * 1000;
+const SUCCESS_DURATION_MS = 3 * 1000;
 const DEFAULT_TRANSLATIONS: FeedbackTranslations = {
   DefaultQuestionLabel: "How satisfied are you with this feature?",
   QuestionPlaceholder: "How can we improve this feature?",
@@ -110,8 +115,23 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
   const close = useCallback(() => {
     const dialog = refs.floating.current as HTMLDialogElement | null;
     dialog?.close();
+    autoClose.stop();
     onClose?.();
   }, [onClose]);
+
+  const submit = useCallback(
+    async (data: Feedback) => {
+      await onSubmit(data);
+      autoClose.startWithDuration(SUCCESS_DURATION_MS);
+    },
+    [onSubmit],
+  );
+
+  const autoClose = useTimer({
+    enabled: position.type === "DIALOG",
+    initialDuration: INACTIVE_DURATION_MS,
+    onEnd: close,
+  });
 
   useEffect(() => {
     // Only enable 'quick dismiss' for popovers
@@ -178,6 +198,12 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
         style={anchor ? floatingStyles : unanchoredPosition}
       >
         <button onClick={close} class="close">
+          {!autoClose.stopped && (
+            <RadialProgress
+              diameter={28}
+              progress={1.0 - autoClose.elapsedFraction}
+            />
+          )}
           <Close />
         </button>
 
@@ -185,7 +211,8 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
           t={{ ...DEFAULT_TRANSLATIONS, ...translations }}
           key={key}
           question={title}
-          onSubmit={onSubmit}
+          onSubmit={submit}
+          onInteraction={autoClose.stop}
         />
 
         <footer class="plug">
