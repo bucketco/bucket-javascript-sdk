@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "preact/hooks";
+import { useCallback, useEffect, useState } from "preact/hooks";
 
 export const useTimer = ({
   initialDuration,

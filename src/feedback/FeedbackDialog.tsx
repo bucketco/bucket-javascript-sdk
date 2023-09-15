@@ -1,6 +1,7 @@
 import { Fragment, FunctionComponent, h } from "preact";
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
+import { useTimer } from "./hooks/useTimer";
 import { Close } from "./icons/Close";
 import { Logo } from "./icons/Logo";
 import {
@@ -13,14 +14,13 @@ import {
 import { feedbackContainerId } from "./constants";
 import { FeedbackForm } from "./FeedbackForm";
 import styles from "./index.css?inline";
+import { RadialProgress } from "./RadialProgress";
 import {
   Feedback,
   FeedbackTranslations,
   OpenFeedbackFormOptions,
   WithRequired,
 } from "./types";
-import { useTimer } from "./hooks/useTimer";
-import { RadialProgress } from "./RadialProgress";
 
 type Position = Partial<
   Record<"top" | "left" | "right" | "bottom", number | string>
@@ -120,8 +120,8 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
   }, [onClose]);
 
   const submit = useCallback(
-    (data: Feedback) => {
-      onSubmit(data);
+    async (data: Feedback) => {
+      await onSubmit(data);
       autoClose.startWithDuration(SUCCESS_DURATION_MS);
     },
     [onSubmit],
