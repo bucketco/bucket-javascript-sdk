@@ -19,7 +19,7 @@ import {
   OpenFeedbackFormOptions,
   WithRequired,
 } from "./types";
-import { useAutoClose } from "./hooks/useAutoClose";
+import { useTimer } from "./hooks/useTimer";
 import { RadialProgress } from "./RadialProgress";
 
 type Position = Partial<
@@ -127,7 +127,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
     [onSubmit],
   );
 
-  const autoClose = useAutoClose({
+  const autoClose = useTimer({
     enabled: position.type === "DIALOG",
     initialDuration: INACTIVE_DURATION_MS,
     onEnd: close,

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "preact/hooks";
 
-export const useAutoClose = ({
+export const useTimer = ({
   initialDuration,
   enabled,
   onEnd,
