@@ -198,7 +198,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
         style={anchor ? floatingStyles : unanchoredPosition}
       >
         <button onClick={close} class="close">
-          {!autoClose.stopped && (
+          {!autoClose.stopped && autoClose.elapsedFraction > 0 && (
             <RadialProgress
               diameter={28}
               progress={1.0 - autoClose.elapsedFraction}
