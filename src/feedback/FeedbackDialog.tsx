@@ -32,6 +32,7 @@ export type FeedbackDialogProps = WithRequired<
 >;
 
 const INACTIVE_DURATION_MS = 20 * 1000;
+const SUCCESS_DURATION_MS = 3 * 1000;
 const DEFAULT_TRANSLATIONS: FeedbackTranslations = {
   DefaultQuestionLabel: "How satisfied are you with this feature?",
   QuestionPlaceholder: "How can we improve this feature?",
@@ -121,7 +122,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
   const submit = useCallback(
     (data: Feedback) => {
       onSubmit(data);
-      autoClose.startWithDuration(3000);
+      autoClose.startWithDuration(SUCCESS_DURATION_MS);
     },
     [onSubmit],
   );
