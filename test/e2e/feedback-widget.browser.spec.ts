@@ -3,7 +3,7 @@ import { expect, Page, test } from "@playwright/test";
 
 import {
   feedbackContainerId,
-  nonPropagatedEvents,
+  propagatedEvents,
 } from "../../src/feedback/constants";
 
 const KEY = randomUUID();
@@ -65,7 +65,7 @@ test("Blocks event propagation to the containing document", async ({
         });
       }
     },
-    { trackedEvents: nonPropagatedEvents },
+    { trackedEvents: propagatedEvents },
   );
 
   await textarea.focus();

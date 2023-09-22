@@ -1,6 +1,6 @@
 import { h, render } from "preact";
 
-import { feedbackContainerId, nonPropagatedEvents } from "./constants";
+import { feedbackContainerId, propagatedEvents } from "./constants";
 import { FeedbackDialog } from "./FeedbackDialog";
 import { FeedbackPosition, OpenFeedbackFormOptions } from "./types";
 
@@ -23,7 +23,7 @@ function attachDialogContainer() {
     container.id = feedbackContainerId;
     document.body.appendChild(container);
 
-    for (const event of nonPropagatedEvents) {
+    for (const event of propagatedEvents) {
       container.addEventListener(event, stopPropagation);
     }
   }
