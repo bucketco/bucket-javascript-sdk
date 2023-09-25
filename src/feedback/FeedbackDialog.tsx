@@ -16,7 +16,7 @@ import { FeedbackForm } from "./FeedbackForm";
 import styles from "./index.css?inline";
 import { RadialProgress } from "./RadialProgress";
 import {
-  Feedback,
+  FeedbackSubmission,
   FeedbackTranslations,
   OpenFeedbackFormOptions,
   WithRequired,
@@ -120,7 +120,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
   }, [onClose]);
 
   const submit = useCallback(
-    async (data: Feedback) => {
+    async (data: FeedbackSubmission) => {
       await onSubmit(data);
       autoClose.startWithDuration(SUCCESS_DURATION_MS);
     },

@@ -1,13 +1,32 @@
-import { RequestFeedbackOptions } from "./feedback/types";
+import {
+  FeedbackPosition,
+  FeedbackSubmission,
+  FeedbackTranslations,
+  OpenFeedbackFormOptions,
+} from "./feedback/types";
 
 export type Key = string;
 
 export type Options = {
   persistUser?: boolean;
-  automaticFeedbackPrompting?: boolean;
-  feedbackPromptHandler?: FeedbackPromptHandler;
   host?: string;
   debug?: boolean;
+  feedback?: {
+    automaticPrompting?: boolean;
+    promptHandler?: FeedbackPromptHandler;
+    ui?: {
+      /**
+       * Control the placement and behavior of the feedback form.
+       */
+      position?: FeedbackPosition;
+
+      /**
+       * Add your own custom translations for the feedback form.
+       * Undefined translation keys fall back to english defaults.
+       */
+      translations?: Partial<FeedbackTranslations>;
+    };
+  };
 };
 
 export type User = {
@@ -39,12 +58,60 @@ export type TrackedEvent = {
   context?: Context;
 };
 
-export type Feedback = {
+export interface RequestFeedbackOptions
+  extends Omit<OpenFeedbackFormOptions, "key" | "onSubmit"> {
   featureId: string;
+  userId: string;
+  companyId?: string;
+
+  /**
+   * Allows you to handle a copy of the already submitted
+   * feedback.
+   *
+   * This can be used for side effects, such as storing a
+   * copy of the feedback in your own applicaiton or CRM.
+   *
+   * @param {Object} data
+   * @param data.
+   */
+  onAfterSubmit?: (data: FeedbackSubmission) => void;
+}
+
+export type Feedback = {
+  /**
+   * Bucket feature ID
+   */
+  featureId: string;
+
+  /**
+   * User id from your own appliction
+   */
   userId?: User["userId"];
+
+  /**
+   * Company id from your own application
+   */
   companyId?: Company["companyId"];
+
+  /**
+   * Customer satisfaction score
+   */
   score?: number;
+
+  /**
+   * User supplied comment about your feature
+   */
   comment?: string;
+
+  /**
+   * Bucket feedback prompt id.
+   *
+   * This only exists if the feedback was submitted
+   * as part of an automated prompt from Bucket.
+   *
+   * Used for internal state management of automated
+   * feedback.
+   */
   promptId?: FeedbackPrompt["promptId"];
 };
 
@@ -58,8 +125,8 @@ export type FeedbackPrompt = {
 
 export type FeedbackPromptReply = {
   companyId?: Company["companyId"];
-  score?: Feedback["score"];
-  comment?: Feedback["comment"];
+  score?: FeedbackSubmission["score"];
+  comment?: FeedbackSubmission["comment"];
 };
 
 export type FeedbackPromptReplyHandler = (
