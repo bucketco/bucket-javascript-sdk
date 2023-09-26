@@ -25,8 +25,11 @@
     box-shadow, transform;
 
   &.primary {
-    background-color: var(--bucket-feedback-dialog-primary-bg, #655bfa);
-    color: var(--bucket-feedback-dialog-primary-fg, white);
+    background-color: var(
+      --bucket-feedback-dialog-primary-button-background-color,
+      #655bfa
+    );
+    color: var(--bucket-feedback-dialog-primary-button-color, white);
     border-color: var(--bucket-feedback-dialog-primary-border, #d8d9df);
   }
 

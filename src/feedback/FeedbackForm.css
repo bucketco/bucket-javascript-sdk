@@ -30,7 +30,7 @@
   background-color: transparent;
   min-width: 16rem;
   border: 1px solid;
-  border-color: var(--bucket-feedback-dialog-input-border, #d8d9df);
+  border-color: var(--bucket-feedback-dialog-input-border-color, #d8d9df);
   padding: 0.5rem 0.75rem;
   border-radius: var(--bucket-feedback-dialog-border-radius, 6px);
   transition: border-color 0.2s ease-in-out;
@@ -46,13 +46,16 @@
 
   &:focus {
     outline: none;
-    border-color: var(--bucket-feedback-dialog-primary-bg, #655bfa);
+    border-color: var(
+      --bucket-feedback-dialog-primary-button-background-color,
+      #655bfa
+    );
   }
 }
 
 .error {
   margin: 0;
-  color: var(--bucket-feedback-dialog-error-fg, #e53e3e);
+  color: var(--bucket-feedback-dialog-error-color, #e53e3e);
   font-size: 0.8125em;
   font-weight: 500;
 }
