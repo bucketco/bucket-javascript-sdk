@@ -32,7 +32,7 @@
   border: 1px solid;
   border-color: var(--bucket-feedback-dialog-input-border, #d8d9df);
   padding: 0.5rem 0.75rem;
-  border-radius: 2px;
+  border-radius: var(--bucket-feedback-dialog-border-radius, 6px);
   transition: border-color 0.2s ease-in-out;
   font-family: var(
     --bucket-feedback-dialog-font-family,

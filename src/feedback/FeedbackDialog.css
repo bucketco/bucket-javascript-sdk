@@ -50,7 +50,7 @@
   color: var(--bucket-feedback-dialog-color, #1e1f24);
   border: 1px solid;
   border-color: var(--bucket-feedback-dialog-border, #d8d9df);
-  border-radius: var(--bucket-feedback-dialog-radius, 6px);
+  border-radius: var(--bucket-feedback-dialog-border-radius, 6px);
   box-shadow: var(
     --bucket-feedback-dialog-shadow,
     0 10px 15px -3px rgba(0, 0, 0, 0.1),
