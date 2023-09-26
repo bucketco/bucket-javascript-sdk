@@ -340,7 +340,7 @@ export default function main() {
             await replyCallback(data);
             options.onAfterSubmit?.(data);
           },
-          onClose: () => replyCallback(null),
+          onDismiss: () => replyCallback(null),
           position: feedbackPosition,
           translations: feedbackTranslations,
           ...options,
@@ -397,6 +397,7 @@ export default function main() {
         position: options.position ?? feedbackPosition,
         translations: options.translations ?? feedbackTranslations,
         onClose: options.onClose,
+        onDismiss: options.onDismiss,
         onSubmit: async (data) => {
           // Default onSubmit handler
           await feedback({

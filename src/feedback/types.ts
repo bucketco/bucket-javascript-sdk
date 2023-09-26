@@ -33,6 +33,7 @@ export interface OpenFeedbackFormOptions {
 
   onSubmit: (data: FeedbackSubmission) => Promise<void> | void;
   onClose?: () => void;
+  onDismiss?: () => void;
 }
 
 export type FeedbackTranslations = {

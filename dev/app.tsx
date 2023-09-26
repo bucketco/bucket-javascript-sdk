@@ -83,6 +83,7 @@ export function App() {
               position: { type: "MODAL" },
               onAfterSubmit: async (data) => console.log("Submitted:", data),
               onClose: () => console.log("Closed dialog"),
+              onDismiss: () => console.log("Dismissed dialog"),
               translations: customTranslations
                 ? CUSTOM_TRANSLATIONS
                 : undefined,
@@ -102,6 +103,7 @@ export function App() {
               position: { type: "DIALOG", placement },
               onAfterSubmit: async (data) => console.log("Submitted:", data),
               onClose: () => console.log("Closed dialog"),
+              onDismiss: () => console.log("Dismissed dialog"),
               translations: customTranslations
                 ? CUSTOM_TRANSLATIONS
                 : undefined,
@@ -120,7 +122,8 @@ export function App() {
                 : "Hello, how do you like the popover?",
               position: { type: "POPOVER", anchor: currentTarget },
               onAfterSubmit: async (data) => console.log("Submitted:", data),
-              onClose: () => console.log("closed dialog"),
+              onClose: () => console.log("Closed dialog"),
+              onDismiss: () => console.log("Dismissed dialog"),
               translations: customTranslations
                 ? CUSTOM_TRANSLATIONS
                 : undefined,
