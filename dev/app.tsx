@@ -6,6 +6,7 @@ import bucket from "../src/index";
 
 bucket.init("123", {
   persistUser: false,
+  automaticFeedbackPrompting: false,
 });
 
 const ThemeButton = ({ theme }: { theme?: string }) => (
