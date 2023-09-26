@@ -113,7 +113,7 @@ export default function main() {
     if (options.feedback?.ui?.translations) {
       feedbackTranslations = options.feedback?.ui?.translations;
     }
-    if (options.feedback?.automaticPrompting) {
+    if (options.feedback?.automaticPrompting !== false) {
       if (isForNode) {
         err("Feedback prompting is not supported in Node.js environment");
       }
