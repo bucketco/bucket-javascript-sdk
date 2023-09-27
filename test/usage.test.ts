@@ -310,7 +310,9 @@ describe("feedback prompting", () => {
 
     const bucketInstance = bucket();
     bucketInstance.init(KEY, {
-      automaticFeedbackPrompting: true,
+      feedback: {
+        automaticPrompting: true,
+      },
       persistUser: true,
     });
 
@@ -422,7 +424,9 @@ describe("feedback state management", () => {
     const bucketInstance = bucket();
     bucketInstance.init(KEY, {
       persistUser: false,
-      feedbackPromptHandler: callback,
+      feedback: {
+        promptHandler: callback,
+      },
     });
     return bucketInstance;
   };

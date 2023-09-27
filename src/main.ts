@@ -3,7 +3,7 @@ import { isForNode } from "is-bundling-for-browser-or-node";
 
 import { version } from "../package.json";
 
-import type { RequestFeedbackOptions } from "./feedback/types";
+import type { FeedbackPosition, FeedbackTranslations } from "./feedback/types";
 import { TRACKING_HOST } from "./config";
 import { defaultFeedbackPromptHandler } from "./default-feedback-prompt-handler";
 import * as feedbackLib from "./feedback";
@@ -13,7 +13,7 @@ import {
   processPromptMessage,
 } from "./prompts";
 import { AblySSEChannel, closeAblySSEChannel, openAblySSEChannel } from "./sse";
-import {
+import type {
   Company,
   Context,
   Feedback,
@@ -23,6 +23,7 @@ import {
   FeedbackPromptReplyHandler,
   Key,
   Options,
+  RequestFeedbackOptions,
   TrackedEvent,
   User,
 } from "./types";
@@ -39,15 +40,18 @@ async function request(url: string, body: any) {
 }
 
 export default function main() {
+  let debug = false;
   let trackingKey: string | undefined = undefined;
   let trackingHost: string = TRACKING_HOST;
   let sessionUserId: string | undefined = undefined;
   let persistUser: boolean = !isForNode;
+  let sseChannel: AblySSEChannel | undefined = undefined;
   let automaticFeedbackPrompting: boolean = false;
   let feedbackPromptHandler: FeedbackPromptHandler | undefined = undefined;
-  let sseChannel: AblySSEChannel | undefined = undefined;
   let feedbackPromptingUserId: string | undefined = undefined;
-  let debug = false;
+  let feedbackPosition: FeedbackPosition | undefined = undefined;
+  let feedbackTranslations: Partial<FeedbackTranslations> | undefined =
+    undefined;
 
   log("Instance created");
 
@@ -93,31 +97,36 @@ export default function main() {
 
   // methods
 
-  function init(key: Key, options?: Options) {
+  function init(key: Key, options: Options = {}) {
     reset();
     if (!key) {
       err("Tracking key was not provided");
     }
     trackingKey = key;
-    if (options?.host) trackingHost = options.host;
-    if (typeof options?.persistUser !== "undefined")
+    if (options.host) trackingHost = options.host;
+    if (typeof options.persistUser !== "undefined")
       persistUser = options.persistUser;
-    if (options?.debug) debug = options.debug;
-    if (options?.automaticFeedbackPrompting) {
+    if (options.debug) debug = options.debug;
+    if (options.feedback?.ui?.position) {
+      feedbackPosition = options.feedback?.ui?.position;
+    }
+    if (options.feedback?.ui?.translations) {
+      feedbackTranslations = options.feedback?.ui?.translations;
+    }
+    if (options.feedback?.automaticPrompting) {
       if (isForNode) {
         err("Feedback prompting is not supported in Node.js environment");
       }
       if (!persistUser) {
         err("Feedback prompting is not supported when persistUser is disabled");
       } else {
-        automaticFeedbackPrompting = options.automaticFeedbackPrompting;
+        automaticFeedbackPrompting = true;
       }
     }
-    if (options?.feedbackPromptHandler) {
-      feedbackPromptHandler = options.feedbackPromptHandler;
-    } else {
-      feedbackPromptHandler = defaultFeedbackPromptHandler;
-    }
+
+    feedbackPromptHandler =
+      options.feedback?.promptHandler ?? defaultFeedbackPromptHandler;
+
     log(`initialized with key "${trackingKey}" and options`, options);
   }
 
@@ -317,6 +326,8 @@ export default function main() {
             options.onAfterSubmit?.(data);
           },
           onClose: () => replyCallback(null),
+          position: feedbackPosition,
+          translations: feedbackTranslations,
           ...options,
         });
       },
@@ -366,8 +377,8 @@ export default function main() {
       feedbackLib.openFeedbackForm({
         key: options.featureId,
         title: options.title,
-        position: options.position,
-        translations: options.translations,
+        position: options.position ?? feedbackPosition,
+        translations: options.translations ?? feedbackTranslations,
         onClose: options.onClose,
         onSubmit: async (data) => {
           // Default onSubmit handler

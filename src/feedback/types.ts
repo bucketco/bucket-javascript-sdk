@@ -11,7 +11,7 @@ export type FeedbackPosition =
   | { type: "DIALOG"; placement: FeedbackPlacement }
   | { type: "POPOVER"; anchor: HTMLElement | null };
 
-export interface Feedback {
+export interface FeedbackSubmission {
   score: number;
   comment: string;
 }
@@ -19,18 +19,20 @@ export interface Feedback {
 export interface OpenFeedbackFormOptions {
   key: string;
   title?: string;
-  position?: FeedbackPosition;
-  translations?: Partial<FeedbackTranslations>;
-  onSubmit: (data: Feedback) => Promise<void> | void;
-  onClose?: () => void;
-}
 
-export interface RequestFeedbackOptions
-  extends Omit<OpenFeedbackFormOptions, "key" | "onSubmit"> {
-  featureId: string;
-  userId: string;
-  companyId?: string;
-  onAfterSubmit?: (data: Feedback) => void;
+  /**
+   * Control the placement and behavior of the feedback form.
+   */
+  position?: FeedbackPosition;
+
+  /**
+   * Add your own custom translations for the feedback form.
+   * Undefined translation keys fall back to english defaults.
+   */
+  translations?: Partial<FeedbackTranslations>;
+
+  onSubmit: (data: FeedbackSubmission) => Promise<void> | void;
+  onClose?: () => void;
 }
 
 export type FeedbackTranslations = {

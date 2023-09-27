@@ -3,11 +3,11 @@ import { useState } from "preact/hooks";
 
 import { Button } from "./Button";
 import { StarRating } from "./StarRating";
-import { Feedback, FeedbackTranslations } from "./types";
+import { FeedbackSubmission, FeedbackTranslations } from "./types";
 
-function getFeedbackDataFromForm(el: HTMLFormElement): Feedback {
+function getFeedbackDataFromForm(el: HTMLFormElement): FeedbackSubmission {
   const formData = new FormData(el);
-  const feedback: Feedback = {
+  const feedback: FeedbackSubmission = {
     score: Number(formData.get("score")?.toString()),
     comment: (formData.get("comment")?.toString() || "").trim(),
   };
@@ -18,7 +18,7 @@ type FeedbackFormProps = {
   t: FeedbackTranslations;
   question: string;
   onInteraction: () => void;
-  onSubmit: (data: Feedback) => Promise<void> | void;
+  onSubmit: (data: FeedbackSubmission) => Promise<void> | void;
 };
 
 export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
