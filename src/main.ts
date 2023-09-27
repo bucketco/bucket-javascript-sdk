@@ -340,21 +340,21 @@ export default function main() {
     feedbackPromptHandler?.(message, handlers);
   }
 
-  async function feedbackPromptEvent(options: {
+  async function feedbackPromptEvent(args: {
     event: "received" | "shown" | "dismissed";
     featureId: string;
     promptId: string;
     userId: User["userId"];
   }) {
     checkKey();
-    if (!options.promptId) err("No promptId provided");
-    if (!options.event) err("No event provided");
+    if (!args.promptId) err("No promptId provided");
+    if (!args.event) err("No event provided");
 
     const payload = {
-      action: options.event,
-      featureId: options.featureId,
-      promptId: options.promptId,
-      userId: options.userId,
+      action: args.event,
+      featureId: args.featureId,
+      promptId: args.promptId,
+      userId: args.userId,
     };
 
     const res = await request(`${getUrl()}/feedback/prompt-events`, payload);
