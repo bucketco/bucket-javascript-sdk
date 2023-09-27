@@ -415,6 +415,7 @@ describe("feedback state management", () => {
       .post(/.*\/feedback\/prompt-events/, {
         userId: "foo",
         promptId: "123",
+        featureId: "456",
         action: event,
       })
       .reply(200, { success: true });

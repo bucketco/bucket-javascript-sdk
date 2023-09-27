@@ -269,7 +269,12 @@ export default function main() {
     } else {
       if (
         !processPromptMessage(userId, parsed, async (u, m, cb) => {
-          await feedbackPromptEvent(parsed.promptId, "received", userId);
+          await feedbackPromptEvent({
+            promptId: parsed.promptId,
+            featureId: parsed.featureId,
+            event: "received",
+            userId,
+          });
           await triggerFeedbackPrompt(u, m, cb);
         })
       ) {
@@ -295,11 +300,21 @@ export default function main() {
       return;
     }
 
-    await feedbackPromptEvent(message.promptId, "shown", userId);
+    await feedbackPromptEvent({
+      promptId: message.promptId,
+      featureId: message.featureId,
+      event: "shown",
+      userId,
+    });
 
     const replyCallback: FeedbackPromptReplyHandler = async (reply) => {
       if (!reply) {
-        await feedbackPromptEvent(message.promptId, "dismissed", userId);
+        await feedbackPromptEvent({
+          promptId: message.promptId,
+          featureId: message.featureId,
+          event: "dismissed",
+          userId,
+        });
       } else {
         await feedback({
           featureId: message.featureId,
@@ -336,19 +351,21 @@ export default function main() {
     feedbackPromptHandler?.(message, handlers);
   }
 
-  async function feedbackPromptEvent(
-    promptId: string,
-    event: "received" | "shown" | "dismissed",
-    userId: User["userId"],
-  ) {
+  async function feedbackPromptEvent(args: {
+    event: "received" | "shown" | "dismissed";
+    featureId: string;
+    promptId: string;
+    userId: User["userId"];
+  }) {
     checkKey();
-    if (!promptId) err("No promptId provided");
-    if (!event) err("No event provided");
+    if (!args.promptId) err("No promptId provided");
+    if (!args.event) err("No event provided");
 
     const payload = {
-      userId,
-      promptId,
-      action: event,
+      action: args.event,
+      featureId: args.featureId,
+      promptId: args.promptId,
+      userId: args.userId,
     };
 
     const res = await request(`${getUrl()}/feedback/prompt-events`, payload);
