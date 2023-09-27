@@ -69,7 +69,7 @@ export interface RequestFeedbackOptions
    * feedback.
    *
    * This can be used for side effects, such as storing a
-   * copy of the feedback in your own applicaiton or CRM.
+   * copy of the feedback in your own application or CRM.
    *
    * @param {Object} data
    * @param data.
@@ -84,7 +84,7 @@ export type Feedback = {
   featureId: string;
 
   /**
-   * User id from your own appliction
+   * User id from your own application
    */
   userId?: User["userId"];
 
