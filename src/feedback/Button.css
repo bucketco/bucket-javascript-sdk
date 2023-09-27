@@ -19,14 +19,17 @@
   box-shadow:
     0 1px 2px 0 rgba(0, 0, 0, 0.06),
     0 1px 1px 0 rgba(0, 0, 0, 0.01);
-  border-radius: 6px;
+  border-radius: var(--bucket-feedback-dialog-border-radius, 6px);
   transition-duration: 200ms;
   transition-property: background-color, border-color, color, opacity,
     box-shadow, transform;
 
   &.primary {
-    background-color: var(--bucket-feedback-dialog-primary-bg, #655bfa);
-    color: var(--bucket-feedback-dialog-primary-fg, white);
+    background-color: var(
+      --bucket-feedback-dialog-primary-button-background-color,
+      #655bfa
+    );
+    color: var(--bucket-feedback-dialog-primary-button-color, white);
     border-color: var(--bucket-feedback-dialog-primary-border, #d8d9df);
   }
 

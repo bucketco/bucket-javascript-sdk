@@ -21,7 +21,7 @@
 
   > .button {
     border: 1px solid;
-    border-color: var(--bucket-feedback-dialog-input-border, #d8d9df);
+    border-color: var(--bucket-feedback-dialog-input-border-color, #d8d9df);
 
     &:not(:first-of-type) {
       border-top-left-radius: 0;

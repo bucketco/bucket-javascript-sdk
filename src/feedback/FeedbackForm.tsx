@@ -100,11 +100,7 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
 
       {error && <p class="error">{error}</p>}
 
-      <Button
-        type="submit"
-        disabled={!hasRating || status === "submitting"}
-        loadingText="Submitting"
-      >
+      <Button type="submit" disabled={!hasRating || status === "submitting"}>
         {t.SendButton}
       </Button>
     </form>

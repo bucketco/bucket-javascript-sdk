@@ -50,13 +50,13 @@
   color: var(--bucket-feedback-dialog-color, #1e1f24);
   border: 1px solid;
   border-color: var(--bucket-feedback-dialog-border, #d8d9df);
-  border-radius: var(--bucket-feedback-dialog-radius, 6px);
+  border-radius: var(--bucket-feedback-dialog-border-radius, 6px);
   box-shadow: var(
-    --bucket-feedback-dialog-shadow,
+    --bucket-feedback-dialog-box-shadow,
     0 10px 15px -3px rgba(0, 0, 0, 0.1),
     0 4px 6px -2px rgba(0, 0, 0, 0.05)
   );
-  background-color: var(--bucket-feedback-dialog-bg, #fff);
+  background-color: var(--bucket-feedback-dialog-background-color, #fff);
   z-index: 2147410000;
 
   &:not(.modal) {
@@ -72,7 +72,7 @@
   position: absolute;
   width: 8px;
   height: 8px;
-  background-color: var(--bucket-feedback-dialog-bg, #fff);
+  background-color: var(--bucket-feedback-dialog-background-color, #fff);
   box-shadow: var(--bucket-feedback-dialog-border, #d8d9df) -1px -1px 1px 0px;
   transform: rotate(45deg);
 
