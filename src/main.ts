@@ -46,7 +46,7 @@ export default function main() {
   let sessionUserId: string | undefined = undefined;
   let persistUser: boolean = !isForNode;
   let sseChannel: AblySSEChannel | undefined = undefined;
-  let automaticFeedbackPrompting: boolean = false;
+  let automaticFeedbackPrompting: boolean = !isForNode;
   let feedbackPromptHandler: FeedbackPromptHandler | undefined = undefined;
   let feedbackPromptingUserId: string | undefined = undefined;
   let feedbackPosition: FeedbackPosition | undefined = undefined;
@@ -102,26 +102,34 @@ export default function main() {
     if (!key) {
       err("Tracking key was not provided");
     }
+
     trackingKey = key;
-    if (options.host) trackingHost = options.host;
-    if (typeof options.persistUser !== "undefined")
-      persistUser = options.persistUser;
+
     if (options.debug) debug = options.debug;
+    if (options.host) trackingHost = options.host;
+
     if (options.feedback?.ui?.position) {
       feedbackPosition = options.feedback?.ui?.position;
     }
+
     if (options.feedback?.ui?.translations) {
       feedbackTranslations = options.feedback?.ui?.translations;
     }
-    if (options.feedback?.automaticPrompting) {
-      if (isForNode) {
-        err("Feedback prompting is not supported in Node.js environment");
-      }
-      if (!persistUser) {
-        err("Feedback prompting is not supported when persistUser is disabled");
-      } else {
-        automaticFeedbackPrompting = true;
-      }
+
+    if (typeof options.persistUser !== "undefined") {
+      persistUser = options.persistUser;
+    }
+
+    if (typeof options.feedback?.automaticPrompting !== "undefined") {
+      automaticFeedbackPrompting = options.feedback.automaticPrompting;
+    }
+
+    if (automaticFeedbackPrompting && isForNode) {
+      err("Feedback prompting is not supported in Node.js environment");
+    }
+
+    if (automaticFeedbackPrompting && !persistUser) {
+      err("Feedback prompting is not supported when persistUser is disabled");
     }
 
     feedbackPromptHandler =

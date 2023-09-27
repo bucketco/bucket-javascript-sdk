@@ -174,7 +174,10 @@ describe("usage", () => {
       .reply(200);
 
     const bucketInstance = bucket();
-    bucketInstance.init(KEY, { persistUser: false });
+    bucketInstance.init(KEY, {
+      persistUser: false,
+      feedback: { automaticPrompting: false },
+    });
 
     await bucketInstance.user("fooUser");
 
@@ -262,7 +265,10 @@ describe("feedback prompting", () => {
       .reply(200, { success: true, channel: "test-channel" });
 
     const bucketInstance = bucket();
-    bucketInstance.init(KEY, { persistUser: false });
+    bucketInstance.init(KEY, {
+      persistUser: false,
+      feedback: { automaticPrompting: false },
+    });
 
     await bucketInstance.initFeedbackPrompting("foo");
 
@@ -291,7 +297,10 @@ describe("feedback prompting", () => {
       .reply(200, { success: false });
 
     const bucketInstance = bucket();
-    bucketInstance.init(KEY, { persistUser: false });
+    bucketInstance.init(KEY, {
+      persistUser: false,
+      feedback: { automaticPrompting: false },
+    });
 
     await bucketInstance.initFeedbackPrompting("foo");
 
@@ -332,7 +341,10 @@ describe("feedback prompting", () => {
       .reply(200, { success: true, channel: "test-channel" });
 
     const bucketInstance = bucket();
-    bucketInstance.init(KEY, { persistUser: false });
+    bucketInstance.init(KEY, {
+      persistUser: false,
+      feedback: { automaticPrompting: false },
+    });
 
     // connects to ably for first time
     await bucketInstance.initFeedbackPrompting("foo");
@@ -348,7 +360,10 @@ describe("feedback prompting", () => {
       .reply(200, { success: true, channel: "test-channel" });
 
     const bucketInstance = bucket();
-    bucketInstance.init(KEY, { persistUser: false });
+    bucketInstance.init(KEY, {
+      persistUser: false,
+      feedback: { automaticPrompting: false },
+    });
 
     await bucketInstance.initFeedbackPrompting("foo");
     await expect(() =>
@@ -426,6 +441,7 @@ describe("feedback state management", () => {
     bucketInstance.init(KEY, {
       persistUser: false,
       feedback: {
+        automaticPrompting: false,
         promptHandler: callback,
       },
     });
