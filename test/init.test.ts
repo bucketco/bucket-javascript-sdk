@@ -51,7 +51,9 @@ describe("init", () => {
     const bucketInstance = bucket();
     expect(() =>
       bucketInstance.init(KEY, {
-        automaticFeedbackPrompting: true,
+        feedback: {
+          automaticPrompting: true,
+        },
         persistUser: false,
       }),
     ).toThrowError(
@@ -65,7 +67,9 @@ describe("init", () => {
     const bucketInstance = bucket();
     expect(() =>
       bucketInstance.init(KEY, {
-        automaticFeedbackPrompting: true,
+        feedback: {
+          automaticPrompting: true,
+        },
         persistUser: false,
       }),
     ).toThrowError(
