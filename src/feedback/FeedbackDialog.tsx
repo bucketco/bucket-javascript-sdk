@@ -51,8 +51,9 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
   title = DEFAULT_TRANSLATIONS.DefaultQuestionLabel,
   position,
   translations = DEFAULT_TRANSLATIONS,
-  onSubmit,
   onClose,
+  onDismiss,
+  onSubmit,
 }) => {
   const arrowRef = useRef<HTMLDivElement>(null);
   const anchor = position.type === "POPOVER" ? position.anchor : null;
@@ -119,6 +120,11 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
     onClose?.();
   }, [onClose]);
 
+  const dismiss = useCallback(() => {
+    close();
+    onDismiss?.();
+  }, [close, onDismiss]);
+
   const submit = useCallback(
     async (data: FeedbackSubmission) => {
       await onSubmit(data);
@@ -139,7 +145,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
 
     const escapeHandler = (e: KeyboardEvent) => {
       if (e.key == "Escape") {
-        close();
+        dismiss();
       }
     };
 
@@ -148,7 +154,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
         !(e.target instanceof Element) ||
         !e.target.closest(`#${feedbackContainerId}`)
       ) {
-        close();
+        dismiss();
       }
     };
 
@@ -197,7 +203,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
         ].join(" ")}
         style={anchor ? floatingStyles : unanchoredPosition}
       >
-        <button onClick={close} class="close">
+        <button onClick={dismiss} class="close">
           {!autoClose.stopped && autoClose.elapsedFraction > 0 && (
             <RadialProgress
               diameter={28}
