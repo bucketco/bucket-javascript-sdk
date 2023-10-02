@@ -38,7 +38,7 @@ See also:
 
 ## Manual feedback collection
 
-You can open up the feedback collection UI by calling `bucket.requestFeedback(options)` with the relevant options. This is great is you are interested in manually controlling the collection of feedback from your user, but want to use the convenience of the Bucket feedback UI to reduce the amount of code you need to maintain.
+To open up the feedback collection UI, call `bucket.requestFeedback(options)` with the appropriate options. This approach is particularly beneficial if you wish to retain manual control over feedback collection from your users while leveraging the convenience of the Bucket feedback UI to reduce the amount of code you need to maintain.
 
 Examples of this could be if you want the click of a `give us feedback`-button or the end of a specific user flow, to trigger a pop-up displaying the feedback user interface.
 
