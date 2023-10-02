@@ -269,7 +269,7 @@ Examples of custom styling can be found in our [development example stylesheet](
 
 You might have very strict design guidelines in your app, and maybe the Bucket feedback UI doesn"t quite work for you.
 
-In this case, you can actually implement your own feedback collection mechanism, which follows your own design guidelines.
+In this case, you can implement your own feedback collection mechanism, which follows your own design guidelines.
 
 This is the data type you need to collect:
 
