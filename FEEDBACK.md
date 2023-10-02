@@ -57,16 +57,16 @@ All options:
 
 ```javascript
 bucket.requestFeedback({
-  featureId: "bucket-feature-id", // required
-  userId: "your-user-id", // optional if user persistence is enabled (default in browsers),
-  companyId: "users-company-or-account-id", // optional
-  title: "How satisfied are you with file uploads?"
+  featureId: "bucket-feature-id", // [Required]
+  userId: "your-user-id",  // [Optional] if user persistence is enabled (default in browsers),
+  companyId: "users-company-or-account-id", // [Optional]
+  title: "How satisfied are you with file uploads?" // [Optional]
 
-  position: POSITION_CONFIG, // See positioning section
-  translations: TRANSLATION_KEYS // See internationalization section
+  position: POSITION_CONFIG, // [Optional] see the positioning section
+  translations: TRANSLATION_KEYS // [Optional] see the internationalization section
 
-  // Trigger side effects with the collected data,
-  // for example posting it back into your own CRM
+  // [Optional] trigger side effects with the collected data,
+  // for example sending the feedback to your own CRM
   onAfterSubmit: (feedback) => {
     storeFeedbackInCRM({
       score: feedback.score,
@@ -74,7 +74,6 @@ bucket.requestFeedback({
     })
   }
 })
-```
 
 See also:
 
