@@ -1,6 +1,7 @@
 import { Fragment, FunctionComponent, h } from "preact";
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
+import { DEFAULT_TRANSLATIONS } from "./config/defaultTranslations";
 import { useTimer } from "./hooks/useTimer";
 import { Close } from "./icons/Close";
 import { Logo } from "./icons/Logo";
@@ -20,7 +21,6 @@ import {
   OpenFeedbackFormOptions,
   WithRequired,
 } from "./types";
-import { DEFAULT_TRANSLATIONS } from "./config/defaultTranslations";
 
 type Position = Partial<
   Record<"top" | "left" | "right" | "bottom", number | string>
