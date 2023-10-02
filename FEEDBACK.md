@@ -40,7 +40,7 @@ See also:
 
 You can open up the feedback collection UI by calling `bucket.requestFeedback(options)` with the relevant options. This is great is you are interested in manually controlling the collection of feedback from your user, but want to use the convenience of the Bucket feedback UI to reduce the amount of code you need to maintain.
 
-Examples of this could be if you want to put a `give us feedback`-button on your page, or pop up the feedback UI at the end of specific user flows in your app.
+Examples of this could be if you want the click of a `give us feedback`-button or the end of a specific user flow, to trigger a pop-up displaying the feedback user interface.
 
 ### bucket.requestFeeback() options
 
