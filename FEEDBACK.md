@@ -4,7 +4,7 @@ The Bucket SDK includes a UI you can use to collect feedback from user about par
 
 ## Global feedback configuration
 
-The Bucket SDK feedback UI is configured with reasonable defaults of an english language, positioning itself as a [dialog](#dialog) in the lower right-hand corner of the viewport and with a [light-mode theme](#custom-styling).
+The Bucket SDK feedback UI is configured with reasonable defaults, positioning itself as a [dialog](#dialog) in the lower right-hand corner of the viewport, displayed in english, and with a [light-mode theme](#custom-styling).
 
 These settings can be overwritten when initializing the Bucket SDK:
 
