@@ -260,7 +260,7 @@ bucket.init({
 
 ## Custom styling
 
-You can adapt parts of the looks of the Bucket feedback UI by setting CSS custom properties on your CSS `:root`-scope.
+You can adapt parts of the look of the Bucket feedback UI by applying CSS custom properties to your page in your CSS `:root`-scope.
 
 Examples of custom styling can be found in our [development example stylesheet](./dev/index.css).
 
