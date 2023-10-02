@@ -167,7 +167,7 @@ position: {
 
 #### Popover
 
-A popover that is anchored relative to a DOM-element (typically a button). Can be dismissed with an outside click or pressing a close button.
+A popover that is anchored relative to a DOM-element (typically a button). It can be dismissed by clicking outside the popover or by pressing the dedicated close button.
 
 You can use the popover mode to implement your own button to collect feedback manually.
 
