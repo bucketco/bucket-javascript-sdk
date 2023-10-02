@@ -152,7 +152,7 @@ position: {
 
 #### Dialog
 
-A dialog that appears in a corner of the viewport, but lets the user continue with their interaction with the page. Can be dismissed with a close button, but also automatically disappears after a relatively shot time period if the user does not interact with it.
+A dialog that appears in a specified corner of the viewport, without limiting the user's interaction with the rest of the page. It can be dismissed with the dedicated close button, but will automatically disappear after a short time period if the user does not interact with it.
 
 Using a dialog is a soft push for feedback. It lets the user continue with their work with a minimal amount of intrusion. The user can opt in to responding, but is not required to. A good use case for this behavior is when a user used a feature where the expected outcome is predictable, possibly because they have used it multiple times before. For example: Uploading a file, switching to a different view of a visualization, visiting a specific page or manipulating some data.
 
