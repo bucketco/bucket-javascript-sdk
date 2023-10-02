@@ -81,7 +81,7 @@ bucket.feedback({
 
 #### Bucket feedback UI
 
-Bucket can help you collect feedback from your users by providing you with a UI. This lets you get started with collecting feedback with minimal code and affort.
+Bucket can assist you with collecting your user's feedback by offering a pre-built UI, allowing you to get started with minimal code and effort.
 
 [Read the Bucket feedback UI documentation](./FEEDBACK.md)
 
