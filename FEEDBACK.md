@@ -82,7 +82,7 @@ See also:
 
 ## Automated feedback collection
 
-When automated feedback collection is enabled the Bucket SDK will stay in contact with the Bucket service. When a user triggers an event used in a feature, and the user is eligible for being prompted for feedback, the Bucket service will push an event to the SDK instance. By default, this event will open up the Bucket feedback UI, but you have some abilities to intercept this event and add your own overrides to it.
+When automated feedback collection is enabled, the Bucket SDK will open and maintain a connection to the Bucket service. When a user triggers an event tracked by a feature and is eligible to be prompted for feedback, the Bucket service will send a request to the SDK instance. By default, this request will open up the Bucket feedback UI in the user's browser, but you can intercept the request and override this behaviour.
 
 ### Initializing automated feedback collection
 
