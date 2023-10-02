@@ -1,6 +1,7 @@
 import { Fragment, FunctionComponent, h } from "preact";
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
+import { DEFAULT_TRANSLATIONS } from "./config/defaultTranslations";
 import { useTimer } from "./hooks/useTimer";
 import { Close } from "./icons/Close";
 import { Logo } from "./icons/Logo";
@@ -17,7 +18,6 @@ import styles from "./index.css?inline";
 import { RadialProgress } from "./RadialProgress";
 import {
   FeedbackSubmission,
-  FeedbackTranslations,
   OpenFeedbackFormOptions,
   WithRequired,
 } from "./types";
@@ -33,18 +33,6 @@ export type FeedbackDialogProps = WithRequired<
 
 const INACTIVE_DURATION_MS = 20 * 1000;
 const SUCCESS_DURATION_MS = 3 * 1000;
-const DEFAULT_TRANSLATIONS: FeedbackTranslations = {
-  DefaultQuestionLabel: "How satisfied are you with this feature?",
-  QuestionPlaceholder: "How can we improve this feature?",
-  CommentLabel: "Leave a comment (optional)",
-  ScoreVeryDissatisfiedLabel: "Very dissatisfied",
-  ScoreDissatisfiedLabel: "Dissatisfied",
-  ScoreNeutralLabel: "Neutral",
-  ScoreSatisfiedLabel: "Satisfied",
-  ScoreVerySatisfiedLabel: "Very satisfied",
-  SuccessMessage: "Thank you for sending your feedback!",
-  SendButton: "Send",
-};
 
 export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
   key,
