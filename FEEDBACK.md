@@ -300,7 +300,7 @@ bucket.feedback({
 
 ### Intercepting automated feedback collection events
 
-When using automated feedback collection, Bucket will some times send a feedback prompt message to your users instance of the Bucket SDK. This will result in the feedback UI being opened.
+When using automated feedback collection, the Bucket service will, when specified, send a feedback prompt message to your user's instance of the Bucket SDK. This will result in the feedback UI being opened.
 
 You can intercept this behavior and open your own custom feedback collection form:
 
