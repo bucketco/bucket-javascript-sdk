@@ -156,7 +156,7 @@ A dialog that appears in a specified corner of the viewport, without limiting th
 
 Using a dialog is a soft push for feedback. It lets the user continue with their work with a minimal amount of intrusion. The user can opt in to responding, but is not required to. A good use case for this behavior is when a user used a feature where the expected outcome is predictable, possibly because they have used it multiple times before. For example: Uploading a file, switching to a different view of a visualization, visiting a specific page or manipulating some data.
 
-The default feedback UI behavior is a dialog placed at the bottom right of the users viewport.
+The default feedback UI behaviour is a dialog placed in the bottom right corner of the viewport.
 
 ```javascript
 position: {
