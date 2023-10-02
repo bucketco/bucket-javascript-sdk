@@ -140,7 +140,7 @@ The feedback UI can be configured to be placed and behave in 3 different ways:
 
 #### Modal
 
-A modal overlay with a backdrop that blocks interaction with the remaining page. Can be dismissed with `<ESC>` or a close button. It is always centered on the page, making it the primary thing the user needs to focus on.
+A modal overlay with a backdrop that blocks interaction with the underlying page. It can be dismissed with the keyboard shortcut `<ESC>` or the dedicated close button in the top right corner. It is always centered on the page, capturing focus, and making it the primary interface the user needs to interact with.
 
 Using a modal is the strongest possible push for feedback. You are interrupting the user's normal flow, which can cause annoyance. A good use-case for the modal is when the user finishes a linear flow that they don't perform often, for example setting up a new account.
 
