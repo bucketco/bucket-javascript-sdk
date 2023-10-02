@@ -222,7 +222,7 @@ bucket.init("my-tracking-key", {
 
 ### Runtime language configuration
 
-If you only know the users language after the page has loaded, you can provide translation keys in the two cases where you open the feedback UI:
+If you only know the user's language after the page has loaded, you can provide translations to either the `bucket.requestFeedback(options)` call or the `promptHandler` option before the feedback interface opens. See examples below.
 
 ### Manual feedback collection
 
