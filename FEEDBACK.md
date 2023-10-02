@@ -287,7 +287,7 @@ Either `score` or `comment` must be defined in order to pass validation in the B
 
 Examples of a HTML-form that collects the relevant data can be found in [feedback.html](./example/feedback/feedback.html) and [feedback.jsx](./example/feedback/feedback.jsx).
 
-Once you have the feedback data, pass it along to `bucket.feedback()`:
+Once you have collected the feedback data, pass it along to `bucket.feedback()`:
 
 ```javascript
 bucket.feedback({
