@@ -200,7 +200,7 @@ Popover feedback button example:
 
 ## Internationalization (i18n)
 
-The Feedback UI currently only comes in English. You can supply your own translation keys that will be used insude the UI by passing an object with your own translation keys.
+By default, the feedback UI is written in English. However, you can supply your own translations by passing an object to the options to either or both of the `bucket.init(options)` or `bucket.requestFeedback(options)` calls. These translations will replace the English ones used by the feedback interface. See examples below.
 
 See [default english localization keys](./src/feedback/config/defaultTranslations.tsx) for a reference of what translation keys can be supplied.
 
