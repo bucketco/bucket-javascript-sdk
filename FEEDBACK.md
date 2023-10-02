@@ -143,7 +143,7 @@ The feedback UI can be configured to be placed and behave in 3 different ways:
 
 A modal overlay with a backdrop that blocks interaction with the remaining page. Can be dismissed with `<ESC>` or a close button. It is always centered on the page, making it the primary thing the user needs to focus on.
 
-Using a modal is the strongest possible push for feedback. You are interrupting the users normal flow, which can cause annoyance. A good use case fora modal is when the user finishes a linear flow that they don"t use often, for example setting up an account.
+Using a modal is the strongest possible push for feedback. You are interrupting the user's normal flow, which can cause annoyance. A good use-case for the modal is when the user finishes a linear flow that they don't perform often, for example setting up a new account.
 
 ```javascript
 position: {
