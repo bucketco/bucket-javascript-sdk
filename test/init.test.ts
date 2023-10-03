@@ -52,7 +52,7 @@ describe("init", () => {
     expect(() =>
       bucketInstance.init(KEY, {
         feedback: {
-          automaticPrompting: true,
+          live: true,
         },
         persistUser: false,
       }),
@@ -68,7 +68,7 @@ describe("init", () => {
     expect(() =>
       bucketInstance.init(KEY, {
         feedback: {
-          automaticPrompting: true,
+          live: true,
         },
         persistUser: false,
       }),

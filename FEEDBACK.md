@@ -17,15 +17,15 @@ bucket.init("bucket-tracking-key", {
       position: POSITION_CONFIG, // See positioning section
       translations: TRANSLATION_KEYS, // See internationalization section
 
-      // Enable automated fedback collection. Default: `true`
-      automaticPrompting: boolean,
+      // Enable Live Feedback. Default: `true`
+      live: boolean,
 
       /**
        * Do your own feedback prompt handling or override
        * default settings at runtime.
        */
-      promptHandler: (promptMessage, handlers) => {
-        // See automated feedback collection section
+      liveHandler: (promptMessage, handlers) => {
+        // See Live Feedback section
       },
     },
   },
@@ -36,24 +36,24 @@ See also:
 
 - [Positioning and behavior](#positioning-and-behavior) for the position option.
 - [Static language configuration](#static-language-configuration) if you want to translate the feedback UI.
-- [Automated feedback collection](#automated-feedback-collection) to override default configuration.
+- [Live Feedback](#live-feedback) to override default configuration.
 
-## Automated feedback collection
+## Live Feedback
 
-Automated feedback collection is enabled by default.
+Live Feedback is enabled by default.
 
-When automated feedback collection is enabled, the Bucket SDK will open and maintain a connection to the Bucket service. When a user triggers an event tracked by a feature and is eligible to be prompted for feedback, the Bucket service will send a request to the SDK instance. By default, this request will open up the Bucket feedback UI in the user's browser, but you can intercept the request and override this behaviour.
+When Live Feedback is enabled, the Bucket SDK will open and maintain a connection to the Bucket service. When a user triggers an event tracked by a feature and is eligible to be prompted for feedback, the Bucket service will send a request to the SDK instance. By default, this request will open up the Bucket feedback UI in the user's browser, but you can intercept the request and override this behaviour.
 
 The live connection for automated feedback is established once you have identified a user with `bucket.user()`.
 
-### Disabling automated feedback collection
+### Disabling Live Feedback
 
 You can disable automated collection in the `bucket.init()`-call:
 
 ```javascript
 bucket.init("bucket-tracking-key", {
   feedback: {
-    automaticPrompting: false,
+    live: false,
   },
 });
 ```
@@ -65,7 +65,7 @@ If you are not satisfied with the default UI behavior when an automated prompt e
 ```javascript
 bucket.init("bucket-tracking-key", {
   feedback: {
-    promptHandler: (promptMessage, handlers) => {
+    liveHandler: (promptMessage, handlers) => {
       // Pass your overrides here. Everything is optional
       handlers.openFeedbackForm({
         title: promptMessage.question,
@@ -247,7 +247,7 @@ bucket.init("my-tracking-key", {
 
 ### Runtime language configuration
 
-If you only know the user's language after the page has loaded, you can provide translations to either the `bucket.requestFeedback(options)` call or the `promptHandler` option before the feedback interface opens. See examples below.
+If you only know the user's language after the page has loaded, you can provide translations to either the `bucket.requestFeedback(options)` call or the `liveHandler` option before the feedback interface opens. See examples below.
 
 ### Manual feedback collection
 
@@ -260,7 +260,7 @@ bucket.requestFeedback({
 })
 ```
 
-### Automated feedback collection
+### Live Feedback
 
 When you are collecting feedback through the Bucket automation, you can intercept the default prompt handling and override the defaults.
 
@@ -269,7 +269,7 @@ If you set the prompt question in the Bucket app to be one of your own translati
 ```javascript
 bucket.init("bucket-tracking-key", {
   feedback: {
-    promptHandler: (message, handlers) => {
+    liveHandler: (message, handlers) => {
       const translatedQuestion =
         i18nLookup[message.question] ?? message.question;
       handlers.openFeedbackForm({
@@ -324,16 +324,16 @@ bucket.feedback({
 });
 ```
 
-### Intercepting automated feedback collection events
+### Intercepting Live Feedback events
 
-When using automated feedback collection, the Bucket service will, when specified, send a feedback prompt message to your user's instance of the Bucket SDK. This will result in the feedback UI being opened.
+When using Live Feedback, the Bucket service will, when specified, send a feedback prompt message to your user's instance of the Bucket SDK. This will result in the feedback UI being opened.
 
 You can intercept this behavior and open your own custom feedback collection form:
 
 ```javascript
 bucket.init("bucket-tracking-key", {
   feedback: {
-    promptHandler: async (promptMessage, handlers) => {
+    liveHandler: async (promptMessage, handlers) => {
       // This opens your custom UI
       customFeedbackCollection({
         // The question configured in the Bucket UI for the feature
