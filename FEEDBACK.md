@@ -2,7 +2,8 @@
 
 The Bucket SDK includes a UI you can use to collect feedback from user about particular features.
 
-![image](https://github.com/bucketco/bucket-tracking-sdk/assets/331790/7172a053-5ff4-4f1a-b1da-e2ff0ef9770e)
+![image](https://github.com/bucketco/bucket-tracking-sdk/assets/331790/0a8814ff-a803-4734-9e86-3eb19e96d050)
+
 
 ## Global feedback configuration
 
