@@ -4,7 +4,6 @@ The Bucket SDK includes a UI you can use to collect feedback from user about par
 
 ![image](https://github.com/bucketco/bucket-tracking-sdk/assets/331790/0a8814ff-a803-4734-9e86-3eb19e96d050)
 
-
 ## Global feedback configuration
 
 The Bucket SDK feedback UI is configured with reasonable defaults, positioning itself as a [dialog](#dialog) in the lower right-hand corner of the viewport, displayed in english, and with a [light-mode theme](#custom-styling).
@@ -228,7 +227,18 @@ bucket.init("my-tracking-key", {
   feedback: {
     ui: {
       translations: {
-        // Your translation keys
+        DefaultQuestionLabel:
+          "Dans quelle mesure êtes-vous satisfait de cette fonctionnalité ?",
+        QuestionPlaceholder:
+          "Comment pouvons-nous améliorer cette fonctionnalité ?",
+        CommentLabel: "Laissez un commentaire (facultative)",
+        ScoreVeryDissatisfiedLabel: "Très insatisfait",
+        ScoreDissatisfiedLabel: "Insatisfait",
+        ScoreNeutralLabel: "Neutre",
+        ScoreSatisfiedLabel: "Satisfait",
+        ScoreVerySatisfiedLabel: "Très satisfait",
+        SuccessMessage: "Merci d'avoir envoyé vos commentaires!",
+        SendButton: "Envoyer",
       },
     },
   },
