@@ -51,7 +51,7 @@ The live connection for automated feedback is established once you have identifi
 You can disable automated collection in the `bucket.init()`-call:
 
 ```javascript
-bucke.init("bucket-tracking-key", {
+bucket.init("bucket-tracking-key", {
   feedback: {
     automaticPrompting: false,
   },
