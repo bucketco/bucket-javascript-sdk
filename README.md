@@ -65,6 +65,20 @@ Supply these to the `init` call (2nd argument)
 
 Bucket can collect qualitative feedback from your users in the form of a [Customer Satisfaction Score](https://en.wikipedia.org/wiki/Customer_satisfaction) and a comment.
 
+#### Live feedback collection
+
+The Bucket SDK comes with a live feedback collection mode enabled by default, which lets the Bucket service ask your users for feedback for relevant features just after they've used them.
+
+You can find all the options to make changes to this behaviour in the [Bucket feedback documentation](./FEEDBACK.md)].
+
+#### Bucket feedback UI
+
+Bucket can assist you with collecting your user's feedback by offering a pre-built UI, allowing you to get started with minimal code and effort.
+
+![image](https://github.com/bucketco/bucket-tracking-sdk/assets/331790/519c2236-bcf6-497a-bf0e-c2f171b6f697)
+
+[Read the Bucket feedback UI documentation](./FEEDBACK.md)
+
 #### Bucket feedback SDK
 
 Feedback can be submitted to Bucket using the SDK:
@@ -78,12 +92,6 @@ bucket.feedback({
   comment: "Absolutely stellar work!", // String (optional)
 });
 ```
-
-#### Bucket feedback UI
-
-Bucket can assist you with collecting your user's feedback by offering a pre-built UI, allowing you to get started with minimal code and effort.
-
-[Read the Bucket feedback UI documentation](./FEEDBACK.md)
 
 #### Bucket feedback API
 
