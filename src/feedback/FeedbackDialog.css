@@ -125,7 +125,7 @@
   color: var(--bucket-feedback-dialog-color, #1e1f24);
   text-decoration: none;
 
-  transition: opacity 300ms;
+  transition: opacity 200ms;
 }
 
 .plug a:hover {
