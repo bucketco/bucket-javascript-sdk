@@ -115,9 +115,21 @@
 }
 
 .plug {
-  opacity: 0.5;
   font-size: 0.75em;
   text-align: center;
+}
+
+.plug a {
+  opacity: 0.5;
+  padding: 10px;
+  color: var(--bucket-feedback-dialog-color, #1e1f24);
+  text-decoration: none;
+
+  transition: opacity 200ms;
+}
+
+.plug a:hover {
+  opacity: 0.7;
 }
 
 /* Modal */
