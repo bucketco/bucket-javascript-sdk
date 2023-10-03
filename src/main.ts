@@ -48,7 +48,7 @@ export default function main() {
   let sessionUserId: string | undefined = undefined;
   let persistUser: boolean = !isForNode;
   let sseChannel: AblySSEChannel | undefined = undefined;
-  let automaticFeedbackPrompting: boolean = !isForNode;
+  let liveFeedback: boolean = !isForNode;
   let feedbackPromptHandler: FeedbackPromptHandler | undefined = undefined;
   let feedbackPromptingUserId: string | undefined = undefined;
   let feedbackPosition: FeedbackPosition | undefined = undefined;
@@ -126,20 +126,20 @@ export default function main() {
       persistUser = options.persistUser;
     }
 
-    if (typeof options.feedback?.automaticPrompting !== "undefined") {
-      automaticFeedbackPrompting = options.feedback.automaticPrompting;
+    if (typeof options.feedback?.enableLiveFeedback !== "undefined") {
+      liveFeedback = options.feedback.enableLiveFeedback;
     }
 
-    if (automaticFeedbackPrompting && isForNode) {
+    if (liveFeedback && isForNode) {
       err("Feedback prompting is not supported in Node.js environment");
     }
 
-    if (automaticFeedbackPrompting && !persistUser) {
+    if (liveFeedback && !persistUser) {
       err("Feedback prompting is not supported when persistUser is disabled");
     }
 
     feedbackPromptHandler =
-      options.feedback?.promptHandler ?? defaultFeedbackPromptHandler;
+      options.feedback?.liveFeedbackHandler ?? defaultFeedbackPromptHandler;
 
     log(`initialized with key "${trackingKey}" and options`, options);
   }
@@ -156,8 +156,8 @@ export default function main() {
         reset();
       }
       sessionUserId = userId;
-      if (automaticFeedbackPrompting && !sseChannel) {
-        await initFeedbackPrompting(userId);
+      if (liveFeedback && !sseChannel) {
+        await initLiveFeedback(userId);
       }
     }
     const payload: User = {
@@ -241,7 +241,7 @@ export default function main() {
     return res;
   }
 
-  async function initFeedbackPrompting(userId?: User["userId"]) {
+  async function initLiveFeedback(userId?: User["userId"]) {
     checkKey();
 
     if (isForNode) {
@@ -456,6 +456,6 @@ export default function main() {
     feedback,
     // feedback prompting
     requestFeedback,
-    initFeedbackPrompting,
+    initLiveFeedback,
   };
 }
