@@ -75,7 +75,7 @@ You can find all the options to make changes to this behaviour in the [Bucket fe
 
 Bucket can assist you with collecting your user's feedback by offering a pre-built UI, allowing you to get started with minimal code and effort.
 
-![image](https://github.com/bucketco/bucket-tracking-sdk/assets/331790/ce30d507-bf90-45ee-9880-d86f6036983d)
+![image](https://github.com/bucketco/bucket-tracking-sdk/assets/331790/519c2236-bcf6-497a-bf0e-c2f171b6f697)
 
 [Read the Bucket feedback UI documentation](./FEEDBACK.md)
 
