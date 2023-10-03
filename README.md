@@ -69,7 +69,7 @@ Bucket can collect qualitative feedback from your users in the form of a [Custom
 
 The Bucket SDK comes with a live feedback collection mode enabled by default, which lets the Bucket service ask your users for feedback for relevant features just after they've used them.
 
-You can find all the options to make changes to this behaviour in the [Bucket feedback documentation](./FEEDBACK.md)].
+You can find all the options to make changes to this behaviour in the [Bucket feedback documentation](./FEEDBACK.md).
 
 #### Bucket feedback UI
 
