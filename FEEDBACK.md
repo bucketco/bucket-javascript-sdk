@@ -15,7 +15,7 @@ bucket.init("bucket-tracking-key", {
       position: POSITION_CONFIG, // See positioning section
       translations: TRANSLATION_KEYS, // See internationalization section
 
-      // Enable automated fedback collection. Default: `false`
+      // Enable automated fedback collection. Default: `true`
       automaticPrompting: boolean,
 
       /**
@@ -35,6 +35,61 @@ See also:
 - [Positioning and behavior](#positioning-and-behavior) for the position option.
 - [Static language configuration](#static-language-configuration) if you want to translate the feedback UI.
 - [Automated feedback collection](#automated-feedback-collection) to override default configuration.
+
+## Automated feedback collection
+
+Automated feedback collection is enabled by default.
+
+When automated feedback collection is enabled, the Bucket SDK will open and maintain a connection to the Bucket service. When a user triggers an event tracked by a feature and is eligible to be prompted for feedback, the Bucket service will send a request to the SDK instance. By default, this request will open up the Bucket feedback UI in the user's browser, but you can intercept the request and override this behaviour.
+
+The live connection for automated feedback is established once you have identified a user with `bucket.user()`.
+
+### Disabling automated feedback collection
+
+You can disable automated collection in the `bucket.init()`-call:
+
+```javascript
+bucke.init("bucket-tracking-key", {
+  feedback: {
+    automaticPrompting: false,
+  },
+});
+```
+
+### Overriding prompt event defaults
+
+If you are not satisfied with the default UI behavior when an automated prompt event arrives, you can acn [override the global defaults](#global-feedback-configuration) or intercept and override settings at runtime like this:
+
+```javascript
+bucket.init("bucket-tracking-key", {
+  feedback: {
+    promptHandler: (promptMessage, handlers) => {
+      // Pass your overrides here. Everything is optional
+      handlers.openFeedbackForm({
+        title: promptMessage.question,
+
+        position: POSITION_CONFIG, // See positioning section
+        translations: TRANSLATION_KEYS, // See internationalization section
+
+        // Trigger side effects with the collected data,
+        // for example posting it back into your own CRM
+        onAfterSubmit: (feedback) => {
+          storeFeedbackInCRM({
+            score: feedback.score,
+            comment: feedback.comment,
+          });
+        },
+      });
+    },
+  },
+});
+```
+
+See also:
+
+- [Positioning and behavior](#positioning-and-behavior) for the position option.
+- [Runtime language configuration](#runtime-language-configuration) if you want to translate the feedback UI.
+- [Use your own UI to collect feedback](#using-your-own-ui-to-collect-feedback) if the feedback UI doesn't match your design.
 
 ## Manual feedback collection
 
@@ -80,58 +135,6 @@ See also:
 
 - [Positioning and behavior](#positioning-and-behavior) for the position option.
 - [Runtime language configuration](#runtime-language-configuration) if you want to translate the feedback UI.
-
-## Automated feedback collection
-
-When automated feedback collection is enabled, the Bucket SDK will open and maintain a connection to the Bucket service. When a user triggers an event tracked by a feature and is eligible to be prompted for feedback, the Bucket service will send a request to the SDK instance. By default, this request will open up the Bucket feedback UI in the user's browser, but you can intercept the request and override this behaviour.
-
-### Initializing automated feedback collection
-
-You can enable automated collection in the `bucket.init()`-call:
-
-```javascript
-bucke.init({
-  feedback: {
-    automaticPrompting: true,
-  },
-});
-```
-
-### Overriding prompt event defaults
-
-If you are not satisfied with the default UI behavior when an automated prompt event arrives, you can intercept and override settings like this:
-
-```javascript
-bucket.init({
-  feedback: {
-    automaticPrompting: true,
-    promptHandler: (promptMessage, handlers) => {
-      // Pass your overrides here. Everything is optional
-      handlers.openFeedbackForm({
-        title: promptMessage.question,
-
-        position: POSITION_CONFIG, // See positioning section
-        translations: TRANSLATION_KEYS, // See internationalization section
-
-        // Trigger side effects with the collected data,
-        // for example posting it back into your own CRM
-        onAfterSubmit: (feedback) => {
-          storeFeedbackInCRM({
-            score: feedback.score,
-            comment: feedback.comment,
-          });
-        },
-      });
-    },
-  },
-});
-```
-
-See also:
-
-- [Positioning and behavior](#positioning-and-behavior) for the position option.
-- [Runtime language configuration](#runtime-language-configuration) if you want to translate the feedback UI.
-- [Use your own UI to collect feedback](#using-your-own-ui-to-collect-feedback) if the feedback UI doesn't match your design.
 
 ## Positioning and behavior
 
@@ -243,7 +246,7 @@ When you are collecting feedback through the Bucket automation, you can intercep
 If you set the prompt question in the Bucket app to be one of your own translation keys, you can even get a translated version of the question you want to ask your customer in the feedback UI.
 
 ```javascript
-bucket.init({
+bucket.init("bucket-tracking-key", {
   feedback: {
     promptHandler: (message, handlers) => {
       const translatedQuestion =
@@ -305,7 +308,7 @@ When using automated feedback collection, the Bucket service will, when specifie
 You can intercept this behavior and open your own custom feedback collection form:
 
 ```javascript
-bucket.init({
+bucket.init("bucket-tracking-key", {
   feedback: {
     promptHandler: async (promptMessage, handlers) => {
       // This opens your custom UI
