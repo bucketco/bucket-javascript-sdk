@@ -2,6 +2,8 @@
 
 The Bucket SDK includes a UI you can use to collect feedback from user about particular features.
 
+![image](https://github.com/bucketco/bucket-tracking-sdk/assets/331790/7172a053-5ff4-4f1a-b1da-e2ff0ef9770e)
+
 ## Global feedback configuration
 
 The Bucket SDK feedback UI is configured with reasonable defaults, positioning itself as a [dialog](#dialog) in the lower right-hand corner of the viewport, displayed in english, and with a [light-mode theme](#custom-styling).
@@ -146,6 +148,8 @@ The feedback UI can be configured to be placed and behave in 3 different ways:
 
 A modal overlay with a backdrop that blocks interaction with the underlying page. It can be dismissed with the keyboard shortcut `<ESC>` or the dedicated close button in the top right corner. It is always centered on the page, capturing focus, and making it the primary interface the user needs to interact with.
 
+![image](https://github.com/bucketco/bucket-tracking-sdk/assets/331790/6c6efbd3-cf7d-4d5b-b126-7ac978b2e512)
+
 Using a modal is the strongest possible push for feedback. You are interrupting the user's normal flow, which can cause annoyance. A good use-case for the modal is when the user finishes a linear flow that they don't perform often, for example setting up a new account.
 
 ```javascript
@@ -157,6 +161,8 @@ position: {
 #### Dialog
 
 A dialog that appears in a specified corner of the viewport, without limiting the user's interaction with the rest of the page. It can be dismissed with the dedicated close button, but will automatically disappear after a short time period if the user does not interact with it.
+
+![image](https://github.com/bucketco/bucket-tracking-sdk/assets/331790/30413513-fd5f-4a2c-852a-9b074fa4666c)
 
 Using a dialog is a soft push for feedback. It lets the user continue their work with a minimal amount of intrusion. The user can opt-in to respond but is not required to. A good use case for this behaviour is when a user uses a feature where the expected outcome is predictable, possibly because they have used it multiple times before. For example: Uploading a file, switching to a different view of a visualisation, visiting a specific page, or manipulating some data.
 
@@ -172,6 +178,8 @@ position: {
 #### Popover
 
 A popover that is anchored relative to a DOM-element (typically a button). It can be dismissed by clicking outside the popover or by pressing the dedicated close button.
+
+![image](https://github.com/bucketco/bucket-tracking-sdk/assets/331790/4c5c5597-9ed3-4d4d-90c0-950926d0d967)
 
 You can use the popover mode to implement your own button to collect feedback manually.
 
@@ -205,6 +213,8 @@ Popover feedback button example:
 ## Internationalization (i18n)
 
 By default, the feedback UI is written in English. However, you can supply your own translations by passing an object to the options to either or both of the `bucket.init(options)` or `bucket.requestFeedback(options)` calls. These translations will replace the English ones used by the feedback interface. See examples below.
+
+![image](https://github.com/bucketco/bucket-tracking-sdk/assets/331790/68805b38-e9f6-4de5-9f55-188216983e3c)
 
 See [default english localization keys](./src/feedback/config/defaultTranslations.tsx) for a reference of what translation keys can be supplied.
 
@@ -265,6 +275,8 @@ bucket.init("bucket-tracking-key", {
 ## Custom styling
 
 You can adapt parts of the look of the Bucket feedback UI by applying CSS custom properties to your page in your CSS `:root`-scope.
+
+![image](https://github.com/bucketco/bucket-tracking-sdk/assets/331790/ff7ed885-8308-4c9b-98c6-5623f1026b69)
 
 Examples of custom styling can be found in our [development example stylesheet](./dev/index.css).
 
