@@ -32,6 +32,9 @@ vi.mock("../src/prompt-storage", () => {
   };
 });
 
+// Treat test environment as desktop
+window.innerWidth = 1024;
+
 describe("usage", () => {
   afterEach(() => {
     nock.cleanAll();

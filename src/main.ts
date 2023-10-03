@@ -39,6 +39,8 @@ async function request(url: string, body: any) {
   });
 }
 
+const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+
 export default function main() {
   let debug = false;
   let trackingKey: string | undefined = undefined;
@@ -76,6 +78,10 @@ export default function main() {
     if (debug) {
       console.log("[Bucket]", message, ...args);
     }
+  }
+
+  function warn(message: string, ...args: any[]) {
+    console.warn("[Bucket]", message, ...args);
   }
 
   function err(message: string, ...args: any[]): never {
@@ -237,6 +243,7 @@ export default function main() {
 
   async function initFeedbackPrompting(userId?: User["userId"]) {
     checkKey();
+
     if (isForNode) {
       err("Feedback prompting is not supported in Node.js environment");
     }
@@ -244,6 +251,12 @@ export default function main() {
     if (sseChannel) {
       err("Feedback prompting already initialized. Use reset() first.");
     }
+
+    if (isMobile) {
+      warn("Feedback prompting is not supported on mobile devices");
+      return;
+    }
+
     userId = resolveUser(userId);
 
     const res = await request(`${getUrl()}/feedback/prompting-init`, {
