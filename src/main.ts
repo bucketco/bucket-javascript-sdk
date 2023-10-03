@@ -126,8 +126,8 @@ export default function main() {
       persistUser = options.persistUser;
     }
 
-    if (typeof options.feedback?.live !== "undefined") {
-      liveFeedback = options.feedback.live;
+    if (typeof options.feedback?.enableLiveFeedback !== "undefined") {
+      liveFeedback = options.feedback.enableLiveFeedback;
     }
 
     if (liveFeedback && isForNode) {
@@ -139,7 +139,7 @@ export default function main() {
     }
 
     feedbackPromptHandler =
-      options.feedback?.liveHandler ?? defaultFeedbackPromptHandler;
+      options.feedback?.liveFeedbackHandler ?? defaultFeedbackPromptHandler;
 
     log(`initialized with key "${trackingKey}" and options`, options);
   }

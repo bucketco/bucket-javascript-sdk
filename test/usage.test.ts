@@ -179,7 +179,7 @@ describe("usage", () => {
     const bucketInstance = bucket();
     bucketInstance.init(KEY, {
       persistUser: false,
-      feedback: { live: false },
+      feedback: { enableLiveFeedback: false },
     });
 
     await bucketInstance.user("fooUser");
@@ -268,7 +268,7 @@ describe("feedback prompting", () => {
     const bucketInstance = bucket();
     bucketInstance.init(KEY, {
       persistUser: false,
-      feedback: { live: false },
+      feedback: { enableLiveFeedback: false },
     });
 
     await bucketInstance.initLiveFeedback("foo");
@@ -300,7 +300,7 @@ describe("feedback prompting", () => {
     const bucketInstance = bucket();
     bucketInstance.init(KEY, {
       persistUser: false,
-      feedback: { live: false },
+      feedback: { enableLiveFeedback: false },
     });
 
     await bucketInstance.initLiveFeedback("foo");
@@ -321,7 +321,7 @@ describe("feedback prompting", () => {
     const bucketInstance = bucket();
     bucketInstance.init(KEY, {
       feedback: {
-        live: true,
+        enableLiveFeedback: true,
       },
       persistUser: true,
     });
@@ -344,7 +344,7 @@ describe("feedback prompting", () => {
     const bucketInstance = bucket();
     bucketInstance.init(KEY, {
       persistUser: false,
-      feedback: { live: false },
+      feedback: { enableLiveFeedback: false },
     });
 
     // connects to ably for first time
@@ -363,7 +363,7 @@ describe("feedback prompting", () => {
     const bucketInstance = bucket();
     bucketInstance.init(KEY, {
       persistUser: false,
-      feedback: { live: false },
+      feedback: { enableLiveFeedback: false },
     });
 
     await bucketInstance.initLiveFeedback("foo");
@@ -442,8 +442,8 @@ describe("feedback state management", () => {
     bucketInstance.init(KEY, {
       persistUser: false,
       feedback: {
-        live: false,
-        liveHandler: callback,
+        enableLiveFeedback: false,
+        liveFeedbackHandler: callback,
       },
     });
     return bucketInstance;

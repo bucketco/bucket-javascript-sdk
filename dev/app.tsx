@@ -7,7 +7,7 @@ import bucket from "../src/index";
 bucket.init("123", {
   persistUser: false,
   feedback: {
-    live: false,
+    enableLiveFeedback: false,
   },
 });
 
