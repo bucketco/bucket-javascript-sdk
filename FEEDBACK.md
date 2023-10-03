@@ -60,7 +60,7 @@ bucke.init("bucket-tracking-key", {
 
 ### Overriding prompt event defaults
 
-If you are not satisfied with the default UI behavior when an automated prompt event arrives, you can acn [override the global defaults](#global-feedback-configuration) or intercept and override settings at runtime like this:
+If you are not satisfied with the default UI behavior when an automated prompt event arrives, you can can [override the global defaults](#global-feedback-configuration) or intercept and override settings at runtime like this:
 
 ```javascript
 bucket.init("bucket-tracking-key", {
