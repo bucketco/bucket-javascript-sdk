@@ -210,7 +210,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
         />
 
         <footer class="plug">
-          Powered by <Logo /> Bucket
+          <a href="https://bucket.co" target="_blank">Powered by <Logo /> Bucket</a>
         </footer>
 
         {anchor && (
