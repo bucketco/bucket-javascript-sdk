@@ -39,20 +39,5 @@
     > svg {
       transition: transform 200ms ease-in-out;
     }
-
-    &:hover {
-      background-color: #e9e9ed;
-      > svg {
-        transform: scale(1.2);
-      }
-    }
-  }
-
-  > input:checked + .button {
-    background-color: #e9e9ed;
-  }
-
-  > input:checked + .button > svg {
-    transform: scale(1.2);
   }
 }

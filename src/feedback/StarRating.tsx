@@ -57,13 +57,27 @@ export const StarRating: FunctionComponent<StarRatingProps> = ({
     <div class="star-rating">
       <style>
         {scores.map(
-          ({ bg }, index) =>
-            `.star-rating > .button:nth-of-type(${index + 1}):hover {
-              background-color: ${bg}
+          ({ bg, color }, index) => `
+            .star-rating-icons > input:nth-of-type(${
+              index + 1
+            }):checked + .button {
+              border-color: ${color};
             }
-            .star-rating > input:nth-of-type(${index + 1}):checked + .button {
+
+            /* TODO: use -bg var? */
+            .star-rating-icons > input:nth-of-type(${
+              index + 1
+            }):checked + .button > div {
               background-color: ${bg};
-            }`,
+            }
+
+            /* TODO: fix corner cut outs */
+            .star-rating-icons > input:nth-of-type(${
+              index + 1
+            }):checked ~ input:nth-of-type(${index + 2}) + .button {
+              border-left-color: ${color};
+            }
+          `,
         )}
       </style>
       <div class="star-rating-icons">
@@ -77,13 +91,30 @@ export const StarRating: FunctionComponent<StarRatingProps> = ({
               defaultChecked={value === index + 1}
               onChange={onChange}
             />
+            {/* TODO: center vertically perfectly */}
             <label
               for={`bucket-feedback-score-${index + 1}`}
               class="button"
               style={{ color }}
               aria-label={getLabel(t)}
             >
-              {icon}
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100%",
+                  opacity: 0.2,
+                  zIndex: 1,
+                }}
+              />
+              {/* TODO: fix zindexes */}
+              <span
+                style={{ zIndex: 2, display: "flex", alignItems: "center" }}
+              >
+                {icon}
+              </span>
             </label>
           </>
         ))}
