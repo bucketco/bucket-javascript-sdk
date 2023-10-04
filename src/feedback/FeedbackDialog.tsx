@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef } from "preact/hooks";
 import { DEFAULT_TRANSLATIONS } from "./config/defaultTranslations";
 import { useTimer } from "./hooks/useTimer";
 import { Close } from "./icons/Close";
-import { Logo } from "./icons/Logo";
 import {
   arrow,
   autoUpdate,
@@ -208,12 +207,6 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
           onSubmit={submit}
           onInteraction={autoClose.stop}
         />
-
-        <footer class="plug">
-          <a href="https://bucket.co" target="_blank">
-            Powered by <Logo /> Bucket
-          </a>
-        </footer>
 
         {anchor && (
           <div

@@ -6,7 +6,6 @@
   user-select: none;
   position: relative;
   white-space: nowrap;
-  flex-grow: 1;
   height: 2rem;
   padding-inline-start: 0.75rem;
   padding-inline-end: 0.75rem;

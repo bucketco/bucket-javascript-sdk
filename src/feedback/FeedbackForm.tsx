@@ -1,9 +1,10 @@
 import { FunctionComponent, h } from "preact";
-import { useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 
 import { Button } from "./Button";
 import { StarRating } from "./StarRating";
 import { FeedbackSubmission, FeedbackTranslations } from "./types";
+import { Logo } from "./icons/Logo";
 
 function getFeedbackDataFromForm(el: HTMLFormElement): FeedbackSubmission {
   const formData = new FormData(el);
@@ -28,6 +29,7 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
   t,
 }) => {
   const [hasRating, setHasRating] = useState(false);
+  // const [hasComment, setHasComment] = useState(false);
   const [status, setStatus] = useState<"idle" | "submitting" | "submitted">(
     "idle",
   );
@@ -56,6 +58,18 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
     }
   };
 
+  const formRef = useRef<HTMLFormElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (formRef.current === null) return;
+    if (headerRef.current === null) return;
+
+    formRef.current.style.maxHeight = hasRating
+      ? "400px" // TODO: reconsider?
+      : headerRef.current.clientHeight + "px";
+  }, [formRef, headerRef, hasRating]);
+
   if (status === "submitted") {
     return (
       <div class="submitted">
@@ -67,6 +81,7 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
 
   return (
     <form
+      ref={formRef}
       onSubmit={handleSubmit}
       method="dialog"
       class="form"
@@ -75,6 +90,7 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
       onClick={onInteraction}
     >
       <div
+        ref={headerRef}
         role="group"
         class="form-control"
         aria-labelledby="bucket-feedback-score-label"
@@ -83,8 +99,13 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
           {question}
         </div>
         <StarRating t={t} name="score" onChange={() => setHasRating(true)} />
-        {/* TODO: translation */}
-        <span>Pick a score and leave a comment</span>
+        {/* TODO: translations */}
+        {hasRating ? (
+          // TODO: fix this lie
+          <span>Rating has been received!</span>
+        ) : (
+          <span>Pick a score and leave a comment</span>
+        )}
       </div>
 
       <div class="form-control">
@@ -94,14 +115,25 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
           name="comment"
           placeholder={t.QuestionPlaceholder}
           rows={5}
+          // TODO: dedup + use?
+          // onBlur={(e) => setHasComment(e.currentTarget?.value.trim() !== "")}
+          // onChange={(e) => setHasComment(e.currentTarget?.value.trim() !== "")}
+          // onKeyUp={(e) => setHasComment(e.currentTarget?.value.trim() !== "")}
         />
       </div>
 
       {error && <p class="error">{error}</p>}
 
-      <Button type="submit" disabled={!hasRating || status === "submitting"}>
+      <Button type="submit" disabled={status === "submitting"}>
         {t.SendButton}
       </Button>
+
+      {/* TODO: put in Plug component */}
+      <footer class="plug">
+        <a href="https://bucket.co" target="_blank">
+          Powered by <Logo /> Bucket
+        </a>
+      </footer>
     </form>
   );
 };
