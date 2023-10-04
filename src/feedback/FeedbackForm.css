@@ -20,6 +20,15 @@
   color: #787c91; /* TODO: var */
 }
 
+.form-expanded-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  transition: opacity 300ms ease-in-out;
+}
+
 .title {
   color: var(--bucket-feedback-dialog-color, #1e1f24);
   font-size: 15px;
