@@ -116,12 +116,12 @@
 
 .plug {
   font-size: 0.75em;
-  text-align: center;
+  text-align: left;
 }
 
 .plug a {
   opacity: 0.5;
-  padding: 10px;
+  padding: 10px 10px 10px 0px;
   color: var(--bucket-feedback-dialog-color, #1e1f24);
   text-decoration: none;
 
