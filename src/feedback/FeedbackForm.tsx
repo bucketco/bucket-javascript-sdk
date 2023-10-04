@@ -61,85 +61,99 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
   const formRef = useRef<HTMLFormElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const expandedContentRef = useRef<HTMLDivElement>(null);
+  const submittedRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (formRef.current === null) return;
     if (headerRef.current === null) return;
     if (expandedContentRef.current === null) return;
+    if (submittedRef.current === null) return;
 
-    formRef.current.style.maxHeight = hasRating
-      ? "400px" // TODO: reconsider?
-      : headerRef.current.clientHeight + "px";
+    if (status === "submitted") {
+      formRef.current.style.opacity = "0";
+      formRef.current.style.maxHeight =
+        submittedRef.current.clientHeight + "px";
 
-    expandedContentRef.current.style.opacity = hasRating ? "1" : "0";
-  }, [formRef, headerRef, expandedContentRef, hasRating]);
+      setTimeout(() => {
+        submittedRef.current!.style.opacity = "1";
+      }, 310); // TODO: magic number, consider impact of new effect
+    } else {
+      formRef.current.style.maxHeight = hasRating
+        ? "400px" // TODO: reconsider?
+        : headerRef.current.clientHeight + "px";
 
-  if (status === "submitted") {
-    return (
-      <div class="submitted">
+      expandedContentRef.current.style.opacity = hasRating ? "1" : "0";
+    }
+  }, [formRef, headerRef, expandedContentRef, hasRating, status]);
+
+  return (
+    <div>
+      <div
+        ref={submittedRef}
+        class="submitted"
+        style={{ position: "absolute", opacity: 0 }}
+      >
         <p class="icon">🙏</p>
         <p class="text">{t.SuccessMessage}</p>
       </div>
-    );
-  }
-
-  return (
-    <form
-      ref={formRef}
-      onSubmit={handleSubmit}
-      method="dialog"
-      class="form"
-      onFocus={onInteraction}
-      onFocusCapture={onInteraction}
-      onClick={onInteraction}
-    >
-      <div
-        ref={headerRef}
-        role="group"
-        class="form-control"
-        aria-labelledby="bucket-feedback-score-label"
+      <form
+        ref={formRef}
+        onSubmit={handleSubmit}
+        method="dialog"
+        class="form"
+        onFocus={onInteraction}
+        onFocusCapture={onInteraction}
+        onClick={onInteraction}
+        style={{ opacity: 1 }}
       >
-        <div id="bucket-feedback-score-label" class="title">
-          {question}
-        </div>
-        <StarRating t={t} name="score" onChange={() => setHasRating(true)} />
-        {/* TODO: translations */}
-        {hasRating ? (
-          // TODO: fix this lie
-          <span>Rating has been received!</span>
-        ) : (
-          <span>Pick a score and leave a comment</span>
-        )}
-      </div>
-
-      <div ref={expandedContentRef} class="form-expanded-content">
-        <div class="form-control">
-          <textarea
-            id="bucket-feedback-comment-label"
-            class="textarea"
-            name="comment"
-            placeholder={t.QuestionPlaceholder}
-            rows={5}
-            // TODO: dedup + use?
-            // onBlur={(e) => setHasComment(e.currentTarget?.value.trim() !== "")}
-            // onChange={(e) => setHasComment(e.currentTarget?.value.trim() !== "")}
-            // onKeyUp={(e) => setHasComment(e.currentTarget?.value.trim() !== "")}
-          />
+        <div
+          ref={headerRef}
+          role="group"
+          class="form-control"
+          aria-labelledby="bucket-feedback-score-label"
+        >
+          <div id="bucket-feedback-score-label" class="title">
+            {question}
+          </div>
+          <StarRating t={t} name="score" onChange={() => setHasRating(true)} />
+          {/* TODO: translations */}
+          {hasRating ? (
+            // TODO: fix this lie
+            <span>Rating has been received!</span>
+          ) : (
+            <span>Pick a score and leave a comment</span>
+          )}
         </div>
 
-        {error && <p class="error">{error}</p>}
+        <div ref={expandedContentRef} class="form-expanded-content">
+          <div class="form-control">
+            <textarea
+              id="bucket-feedback-comment-label"
+              class="textarea"
+              name="comment"
+              placeholder={t.QuestionPlaceholder}
+              rows={5}
+              // TODO: dedup + use?
+              // onBlur={(e) => setHasComment(e.currentTarget?.value.trim() !== "")}
+              // onChange={(e) => setHasComment(e.currentTarget?.value.trim() !== "")}
+              // onKeyUp={(e) => setHasComment(e.currentTarget?.value.trim() !== "")}
+            />
+          </div>
 
-        <Button type="submit" disabled={status === "submitting"}>
-          {t.SendButton}
-        </Button>
+          {error && <p class="error">{error}</p>}
 
-        {/* TODO: put in Plug component */}
-        <footer class="plug">
-          <a href="https://bucket.co" target="_blank">
-            Powered by <Logo /> Bucket
-          </a>
-        </footer>
-      </div>
-    </form>
+          <Button type="submit" disabled={status === "submitting"}>
+            {t.SendButton}
+          </Button>
+
+          {/* TODO: put in Plug component */}
+          <footer class="plug">
+            <a href="https://bucket.co" target="_blank">
+              Powered by <Logo /> Bucket
+            </a>
+          </footer>
+        </div>
+      </form>
+    </div>
   );
 };
