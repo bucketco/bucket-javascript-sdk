@@ -54,10 +54,3 @@
     transform: scale(1.2);
   }
 }
-
-.star-rating-labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.75em;
-  opacity: 0.5;
-}

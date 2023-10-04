@@ -79,16 +79,13 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
         class="form-control"
         aria-labelledby="bucket-feedback-score-label"
       >
-        <div id="bucket-feedback-score-label" class="label">
+        <div id="bucket-feedback-score-label" class="title">
           {question}
         </div>
         <StarRating t={t} name="score" onChange={() => setHasRating(true)} />
       </div>
 
       <div class="form-control">
-        <label for="bucket-feedback-comment-label" class="label">
-          {t.CommentLabel}
-        </label>
         <textarea
           id="bucket-feedback-comment-label"
           class="textarea"

@@ -39,7 +39,6 @@ export interface OpenFeedbackFormOptions {
 export type FeedbackTranslations = {
   DefaultQuestionLabel: string;
   QuestionPlaceholder: string;
-  CommentLabel: string;
   ScoreVeryDissatisfiedLabel: string;
   ScoreDissatisfiedLabel: string;
   ScoreNeutralLabel: string;

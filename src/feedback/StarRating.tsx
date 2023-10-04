@@ -88,10 +88,6 @@ export const StarRating: FunctionComponent<StarRatingProps> = ({
           </>
         ))}
       </div>
-      <div class="star-rating-labels">
-        <span>{t.ScoreVeryDissatisfiedLabel}</span>
-        <span>{t.ScoreVerySatisfiedLabel}</span>
-      </div>
     </div>
   );
 };

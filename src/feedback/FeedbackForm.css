@@ -16,9 +16,11 @@
   margin: 0;
 }
 
-.label {
-  font-size: 0.8125em;
-  font-weight: 500;
+.title {
+  color: var(--bucket-feedback-dialog-color, #1e1f24);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 115%;
   max-width: calc(100% - 32px);
 }
 

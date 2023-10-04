@@ -231,7 +231,6 @@ bucket.init("my-tracking-key", {
           "Dans quelle mesure êtes-vous satisfait de cette fonctionnalité ?",
         QuestionPlaceholder:
           "Comment pouvons-nous améliorer cette fonctionnalité ?",
-        CommentLabel: "Laissez un commentaire (facultative)",
         ScoreVeryDissatisfiedLabel: "Très insatisfait",
         ScoreDissatisfiedLabel: "Insatisfait",
         ScoreNeutralLabel: "Neutre",

@@ -26,7 +26,6 @@ const CUSTOM_TRANSLATIONS: FeedbackTranslations = {
   DefaultQuestionLabel:
     "Dans quelle mesure êtes-vous satisfait de cette fonctionnalité ?",
   QuestionPlaceholder: "Comment pouvons-nous améliorer cette fonctionnalité ?",
-  CommentLabel: "Laissez un commentaire (facultative)",
   ScoreVeryDissatisfiedLabel: "Très insatisfait",
   ScoreDissatisfiedLabel: "Insatisfait",
   ScoreNeutralLabel: "Neutre",
