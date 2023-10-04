@@ -8,6 +8,6 @@ export const DEFAULT_TRANSLATIONS: FeedbackTranslations = {
   ScoreNeutralLabel: "Neutral",
   ScoreSatisfiedLabel: "Satisfied",
   ScoreVerySatisfiedLabel: "Very satisfied",
-  SuccessMessage: "Thank you for sending your feedback!",
+  SuccessMessage: "Feedback received, thank you!",
   SendButton: "Send feedback",
 };

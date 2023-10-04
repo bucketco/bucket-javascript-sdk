@@ -71,11 +71,13 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
 
     if (status === "submitted") {
       formRef.current.style.opacity = "0";
+      formRef.current.style.pointerEvents = "none";
       formRef.current.style.maxHeight =
         submittedRef.current.clientHeight + "px";
 
       setTimeout(() => {
         submittedRef.current!.style.opacity = "1";
+        submittedRef.current!.style.pointerEvents = "all";
       }, 310); // TODO: magic number, consider impact of new effect
     } else {
       formRef.current.style.maxHeight = hasRating
@@ -83,6 +85,9 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
         : headerRef.current.clientHeight + "px";
 
       expandedContentRef.current.style.opacity = hasRating ? "1" : "0";
+      expandedContentRef.current.style.pointerEvents = hasRating
+        ? "all"
+        : "none";
     }
   }, [formRef, headerRef, expandedContentRef, hasRating, status]);
 
@@ -91,10 +96,14 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
       <div
         ref={submittedRef}
         class="submitted"
-        style={{ position: "absolute", opacity: 0 }}
+        style={{ position: "absolute", opacity: 0, pointerEvents: "none" }}
       >
-        <p class="icon">🙏</p>
-        <p class="text">{t.SuccessMessage}</p>
+        <p className="text">{t.SuccessMessage}</p>
+        <footer class="plug">
+          <a href="https://bucket.co" target="_blank">
+            Powered by <Logo /> Bucket
+          </a>
+        </footer>
       </div>
       <form
         ref={formRef}
