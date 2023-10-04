@@ -83,6 +83,8 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
           {question}
         </div>
         <StarRating t={t} name="score" onChange={() => setHasRating(true)} />
+        {/* TODO: translation */}
+        <span>Pick a score and leave a comment</span>
       </div>
 
       <div class="form-control">

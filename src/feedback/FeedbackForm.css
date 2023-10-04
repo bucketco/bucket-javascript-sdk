@@ -10,10 +10,13 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  gap: 16px;
+  gap: 8px;
   border: none;
   padding: 0;
   margin: 0;
+
+  font-size: 12px;
+  color: #787c91; /* TODO: var */
 }
 
 .title {
