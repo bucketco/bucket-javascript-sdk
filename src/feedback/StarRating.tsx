@@ -9,40 +9,45 @@ import { FeedbackTranslations } from "./types";
 
 const scores = [
   {
-    color: "var(--bucket-feedback-dialog-rating-1-color, #dd6b20)",
-    bg: "var(--bucket-feedback-dialog-rating-1-background-color, #fbd38d)",
-    icon: <VeryDissatisfied />,
-    getLabel: (t: FeedbackTranslations) => t.ScoreVeryDissatisfiedLabel,
-  },
-  {
-    color: "var(--bucket-feedback-dialog-rating-2-color, #ed8936)",
-    bg: "var(--bucket-feedback-dialog-rating-2-background-color, #feebc8)",
-    icon: <Dissatisfied />,
-    getLabel: (t: FeedbackTranslations) => t.ScoreDissatisfiedLabel,
-  },
-  {
-    color: "var(--bucket-feedback-dialog-rating-3-color, #787c91)",
-    bg: "var(--bucket-feedback-dialog-rating-3-background-color, #e9e9ed)",
-    icon: <Neutral />,
-    getLabel: (t: FeedbackTranslations) => t.ScoreNeutralLabel,
+    color: "var(--bucket-feedback-dialog-rating-5-color, #38a169)",
+    bg: "var(--bucket-feedback-dialog-rating-5-background-color, #9ae6b4)",
+    icon: <VerySatisfied />,
+    getLabel: (t: FeedbackTranslations) => t.ScoreVerySatisfiedLabel,
+    value: 5,
   },
   {
     color: "var(--bucket-feedback-dialog-rating-4-color, #48bb78)",
     bg: "var(--bucket-feedback-dialog-rating-4-background-color, #c6f6d5)",
     icon: <Satisfied />,
     getLabel: (t: FeedbackTranslations) => t.ScoreSatisfiedLabel,
+    value: 4,
   },
   {
-    color: "var(--bucket-feedback-dialog-rating-5-color, #38a169)",
-    bg: "var(--bucket-feedback-dialog-rating-5-background-color, #9ae6b4)",
-    icon: <VerySatisfied />,
-    getLabel: (t: FeedbackTranslations) => t.ScoreVerySatisfiedLabel,
+    color: "var(--bucket-feedback-dialog-rating-3-color, #787c91)",
+    bg: "var(--bucket-feedback-dialog-rating-3-background-color, #e9e9ed)",
+    icon: <Neutral />,
+    getLabel: (t: FeedbackTranslations) => t.ScoreNeutralLabel,
+    value: 3,
+  },
+  {
+    color: "var(--bucket-feedback-dialog-rating-2-color, #ed8936)",
+    bg: "var(--bucket-feedback-dialog-rating-2-background-color, #feebc8)",
+    icon: <Dissatisfied />,
+    getLabel: (t: FeedbackTranslations) => t.ScoreDissatisfiedLabel,
+    value: 2,
+  },
+  {
+    color: "var(--bucket-feedback-dialog-rating-1-color, #dd6b20)",
+    bg: "var(--bucket-feedback-dialog-rating-1-background-color, #fbd38d)",
+    icon: <VeryDissatisfied />,
+    getLabel: (t: FeedbackTranslations) => t.ScoreVeryDissatisfiedLabel,
+    value: 1,
   },
 ];
 
 export type StarRatingProps = {
   name: string;
-  value?: number;
+  selectedValue?: number;
   onChange?: h.JSX.GenericEventHandler<HTMLInputElement>;
   t: FeedbackTranslations;
 };
@@ -50,7 +55,7 @@ export type StarRatingProps = {
 export const StarRating: FunctionComponent<StarRatingProps> = ({
   t,
   name,
-  value,
+  selectedValue,
   onChange,
 }) => {
   return (
@@ -81,19 +86,19 @@ export const StarRating: FunctionComponent<StarRatingProps> = ({
         )}
       </style>
       <div class="star-rating-icons">
-        {scores.map(({ color, icon, getLabel }, index) => (
+        {scores.map(({ color, icon, getLabel, value }) => (
           <>
             <input
-              id={`bucket-feedback-score-${index + 1}`}
+              id={`bucket-feedback-score-${value}`}
               type="radio"
               name={name}
-              value={index + 1}
-              defaultChecked={value === index + 1}
+              value={value}
+              defaultChecked={value === selectedValue}
               onChange={onChange}
             />
             {/* TODO: center vertically perfectly */}
             <label
-              for={`bucket-feedback-score-${index + 1}`}
+              for={`bucket-feedback-score-${value}`}
               class="button"
               style={{ color }}
               aria-label={getLabel(t)}
