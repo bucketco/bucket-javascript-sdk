@@ -1,11 +1,11 @@
 .star-rating {
   display: flex;
   flex-direction: column;
-  gap: 0.5em;
 }
 
 .star-rating-icons {
   display: flex;
+  width: 0;
 
   > input {
     border: 0px;
@@ -22,6 +22,8 @@
   > .button {
     border: 1px solid;
     border-color: var(--bucket-feedback-dialog-input-border-color, #d8d9df);
+
+    padding: 0px 7px;
 
     &:not(:first-of-type) {
       border-top-left-radius: 0;
