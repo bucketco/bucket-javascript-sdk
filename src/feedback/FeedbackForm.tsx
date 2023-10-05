@@ -1,6 +1,7 @@
 import { FunctionComponent, h } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
+import { Check } from "./icons/Check";
 import { Button } from "./Button";
 import { StarRating } from "./StarRating";
 import { FeedbackSubmission, FeedbackTranslations } from "./types";
@@ -94,6 +95,9 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
   return (
     <div>
       <div ref={submittedRef} class="submitted">
+        <div className="submitted-check">
+          <Check width={16} height={16} />
+        </div>
         <p className="text">{t.SuccessMessage}</p>
         <Plug />
       </div>
@@ -120,9 +124,14 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
           {/* TODO: translations */}
           {hasRating ? (
             // TODO: fix this lie
-            <span>Rating has been received!</span>
+            <span className="score-status">
+              <Check width={14} height={14} style={{ marginRight: 3 }} /> Rating
+              has been received!
+            </span>
           ) : (
-            <span>Pick a score and leave a comment</span>
+            <span className="score-status">
+              Pick a score and leave a comment
+            </span>
           )}
         </div>
 
