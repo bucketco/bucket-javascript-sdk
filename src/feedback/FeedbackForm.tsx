@@ -93,11 +93,7 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
 
   return (
     <div>
-      <div
-        ref={submittedRef}
-        class="submitted"
-        style={{ position: "absolute", opacity: 0, pointerEvents: "none" }}
-      >
+      <div ref={submittedRef} class="submitted">
         <p className="text">{t.SuccessMessage}</p>
         <footer class="plug">
           <a href="https://bucket.co" target="_blank">

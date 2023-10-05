@@ -37,7 +37,7 @@
 .dialog {
   position: fixed;
   width: 274px;
-  padding: 16px;
+  padding: 18px 28px;
   font-size: var(--bucket-feedback-dialog-font-size, 1rem);
   font-family: var(
     --bucket-feedback-dialog-font-family,
@@ -116,8 +116,9 @@
 
 .plug {
   font-size: 0.75em;
-  text-align: left;
+  text-align: center;
   margin-top: 7px;
+  width: 100%;
 }
 
 .plug a {
