@@ -190,6 +190,14 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
         ].join(" ")}
         style={anchor ? floatingStyles : unanchoredPosition}
       >
+        <FeedbackForm
+          t={{ ...DEFAULT_TRANSLATIONS, ...translations }}
+          key={key}
+          question={title}
+          onSubmit={submit}
+          onInteraction={autoClose.stop}
+        />
+
         <button onClick={dismiss} class="close">
           {!autoClose.stopped && autoClose.elapsedFraction > 0 && (
             <RadialProgress
@@ -199,14 +207,6 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
           )}
           <Close />
         </button>
-
-        <FeedbackForm
-          t={{ ...DEFAULT_TRANSLATIONS, ...translations }}
-          key={key}
-          question={title}
-          onSubmit={submit}
-          onInteraction={autoClose.stop}
-        />
 
         {anchor && (
           <div
