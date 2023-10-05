@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import { Button } from "./Button";
 import { StarRating } from "./StarRating";
 import { FeedbackSubmission, FeedbackTranslations } from "./types";
-import { Logo } from "./icons/Logo";
+import { Plug } from "./Plug";
 
 function getFeedbackDataFromForm(el: HTMLFormElement): FeedbackSubmission {
   const formData = new FormData(el);
@@ -95,11 +95,7 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
     <div>
       <div ref={submittedRef} class="submitted">
         <p className="text">{t.SuccessMessage}</p>
-        <footer class="plug">
-          <a href="https://bucket.co" target="_blank">
-            Powered by <Logo /> Bucket
-          </a>
-        </footer>
+        <Plug />
       </div>
       <form
         ref={formRef}
@@ -151,12 +147,7 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
             {t.SendButton}
           </Button>
 
-          {/* TODO: put in Plug component */}
-          <footer class="plug">
-            <a href="https://bucket.co" target="_blank">
-              Powered by <Logo /> Bucket
-            </a>
-          </footer>
+          <Plug />
         </div>
       </form>
     </div>
