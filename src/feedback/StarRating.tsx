@@ -43,7 +43,9 @@ const scores = [
     getLabel: (t: FeedbackTranslations) => t.ScoreVeryDissatisfiedLabel,
     value: 1,
   },
-];
+] as const;
+
+type Score = (typeof scores)[number];
 
 export type StarRatingProps = {
   name: string;
@@ -86,44 +88,66 @@ export const StarRating: FunctionComponent<StarRatingProps> = ({
         )}
       </style>
       <div class="star-rating-icons">
-        {scores.map(({ color, icon, getLabel, value }) => (
-          <>
-            <input
-              id={`bucket-feedback-score-${value}`}
-              type="radio"
-              name={name}
-              value={value}
-              defaultChecked={value === selectedValue}
-              onChange={onChange}
-            />
-            {/* TODO: center vertically perfectly */}
-            <label
-              for={`bucket-feedback-score-${value}`}
-              class="button"
-              style={{ color }}
-              aria-label={getLabel(t)}
-            >
-              <div
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: "100%",
-                  opacity: 0.2,
-                  zIndex: 1,
-                }}
-              />
-              {/* TODO: fix zindexes */}
-              <span
-                style={{ zIndex: 2, display: "flex", alignItems: "center" }}
-              >
-                {icon}
-              </span>
-            </label>
-          </>
+        {scores.map((score) => (
+          <Score
+            isSelected={score.value === selectedValue}
+            name={name}
+            onChange={onChange}
+            score={score}
+            t={t}
+          />
         ))}
       </div>
     </div>
+  );
+};
+
+const Score = ({
+  isSelected,
+  name,
+  onChange,
+  score,
+  t,
+}: {
+  isSelected: boolean;
+  name: string;
+  onChange?: h.JSX.GenericEventHandler<HTMLInputElement>;
+  score: Score;
+  t: FeedbackTranslations;
+}) => {
+  return (
+    <>
+      <input
+        id={`bucket-feedback-score-${score.value}`}
+        type="radio"
+        name={name}
+        value={score.value}
+        defaultChecked={isSelected}
+        onChange={onChange}
+      />
+      {/* TODO: center vertically perfectly */}
+      <label
+        for={`bucket-feedback-score-${score.value}`}
+        class="button"
+        style={{ color: score.color }}
+        aria-label={score.getLabel(t)}
+      >
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            opacity: 0.2,
+            zIndex: 1,
+          }}
+        />
+        {/* TODO: fix zindexes */}
+        <span style={{ zIndex: 2, display: "flex", alignItems: "center" }}>
+          {score.icon}
+        </span>
+      </label>
+    </>
   );
 };
