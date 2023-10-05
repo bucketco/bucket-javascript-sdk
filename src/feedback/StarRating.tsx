@@ -6,6 +6,8 @@ import { Satisfied } from "./icons/Satisfied";
 import { VeryDissatisfied } from "./icons/VeryDissatisfied";
 import { VerySatisfied } from "./icons/VerySatisfied";
 import { FeedbackTranslations } from "./types";
+import { arrow, offset, useFloating } from "./packages/floating-ui-preact-dom";
+import { useRef } from "preact/hooks";
 
 const scores = [
   {
@@ -115,6 +117,17 @@ const Score = ({
   score: Score;
   t: FeedbackTranslations;
 }) => {
+  const arrowRef = useRef<HTMLDivElement>(null);
+  const { refs, floatingStyles, middlewareData } = useFloating({
+    placement: "top",
+    middleware: [
+      offset(4),
+      arrow({
+        element: arrowRef,
+      }),
+    ],
+  });
+
   return (
     <>
       <input
@@ -127,6 +140,7 @@ const Score = ({
       />
       {/* TODO: center vertically perfectly */}
       <label
+        ref={refs.setReference}
         for={`bucket-feedback-score-${score.value}`}
         class="button"
         style={{ color: score.color }}
@@ -148,6 +162,23 @@ const Score = ({
           {score.icon}
         </span>
       </label>
+      <div ref={refs.setFloating} class="button-tooltip" style={floatingStyles}>
+        {score.getLabel(t)}
+        <div
+          ref={arrowRef}
+          class="button-tooltip-arrow"
+          style={{
+            left:
+              middlewareData.arrow?.x != null
+                ? `${middlewareData.arrow.x}px`
+                : "",
+            top:
+              middlewareData.arrow?.y != null
+                ? `${middlewareData.arrow.y}px`
+                : "",
+          }}
+        ></div>
+      </div>
     </>
   );
 };

@@ -36,8 +36,32 @@
       margin-inline-end: -1px;
     }
 
+    + .button-tooltip {
+      pointer-events: none;
+      opacity: 0;
+
+      /* TODO: customisation */
+      background: #000;
+      color: #fff;
+      padding: 6px 8px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+
+    &:hover + .button-tooltip {
+      opacity: 1;
+    }
+
     > svg {
       transition: transform 200ms ease-in-out;
     }
   }
+}
+
+.button-tooltip-arrow {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background-color: #000;
+  transform: rotate(45deg);
 }
