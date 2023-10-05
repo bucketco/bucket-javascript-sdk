@@ -17,7 +17,7 @@ bucket.init("bucket-tracking-key", {
       position: POSITION_CONFIG, // See positioning section
       translations: TRANSLATION_KEYS, // See internationalization section
 
-      // Enable LiveFeedback. Default: `true`
+      // Enable Live Feedback. Default: `true`
       enableLiveFeedback: boolean,
 
       /**
@@ -25,7 +25,7 @@ bucket.init("bucket-tracking-key", {
        * default settings at runtime.
        */
       liveFeedbackHandler: (promptMessage, handlers) => {
-        // See LiveFeedback section
+        // See Live Feedback section
       },
     },
   },
@@ -36,17 +36,17 @@ See also:
 
 - [Positioning and behavior](#positioning-and-behavior) for the position option.
 - [Static language configuration](#static-language-configuration) if you want to translate the feedback UI.
-- [LiveFeedback](#livefeedback) to override default configuration.
+- [Live Feedback](#live-feedback) to override default configuration.
 
-## LiveFeedback
+## Live Feedback
 
-LiveFeedback is enabled by default.
+Live Feedback is enabled by default.
 
-When LiveFeedback is enabled, the Bucket SDK will open and maintain a connection to the Bucket service. When a user triggers an event tracked by a feature and is eligible to be prompted for feedback, the Bucket service will send a request to the SDK instance. By default, this request will open up the Bucket feedback UI in the user's browser, but you can intercept the request and override this behaviour.
+When Live Feedback is enabled, the Bucket SDK will open and maintain a connection to the Bucket service. When a user triggers an event tracked by a feature and is eligible to be prompted for feedback, the Bucket service will send a request to the SDK instance. By default, this request will open up the Bucket feedback UI in the user's browser, but you can intercept the request and override this behaviour.
 
 The live connection for automated feedback is established once you have identified a user with `bucket.user()`.
 
-### Disabling LiveFeedback
+### Disabling Live Feedback
 
 You can disable automated collection in the `bucket.init()`-call:
 
@@ -260,7 +260,7 @@ bucket.requestFeedback({
 })
 ```
 
-### LiveFeedback
+### Live Feedback
 
 When you are collecting feedback through the Bucket automation, you can intercept the default prompt handling and override the defaults.
 
@@ -324,9 +324,9 @@ bucket.feedback({
 });
 ```
 
-### Intercepting LiveFeedback events
+### Intercepting Live Feedback events
 
-When using LiveFeedback, the Bucket service will, when specified, send a feedback prompt message to your user's instance of the Bucket SDK. This will result in the feedback UI being opened.
+When using Live Feedback, the Bucket service will, when specified, send a feedback prompt message to your user's instance of the Bucket SDK. This will result in the feedback UI being opened.
 
 You can intercept this behavior and open your own custom feedback collection form:
 
