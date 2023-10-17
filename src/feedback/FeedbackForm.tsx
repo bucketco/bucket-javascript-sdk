@@ -34,13 +34,12 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
   t,
 }) => {
   const [hasRating, setHasRating] = useState(false);
-  // const [hasComment, setHasComment] = useState(false);
   const [status, setStatus] = useState<"idle" | "submitting" | "submitted">(
     "idle",
   );
   const [error, setError] = useState<string>();
-
   const [showForm, setShowForm] = useState(true);
+
   const handleSubmit: h.JSX.GenericEventHandler<HTMLFormElement> = async (
     e,
   ) => {
@@ -64,12 +63,14 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
     }
   };
 
+  const containerRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const expandedContentRef = useRef<HTMLDivElement>(null);
   const submittedRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (containerRef.current === null) return;
     if (formRef.current === null) return;
     if (headerRef.current === null) return;
     if (expandedContentRef.current === null) return;
@@ -78,18 +79,21 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
     if (status === "submitted") {
       formRef.current.style.opacity = "0";
       formRef.current.style.pointerEvents = "none";
-      formRef.current.style.maxHeight =
+      containerRef.current.style.maxHeight =
         submittedRef.current.clientHeight + "px";
 
       setTimeout(() => {
+        submittedRef.current!.style.position = "relative";
         submittedRef.current!.style.opacity = "1";
         submittedRef.current!.style.pointerEvents = "all";
+        setShowForm(false);
       }, 310); // TODO: magic number, consider impact of new effect
     } else {
-      formRef.current.style.maxHeight = hasRating
+      containerRef.current.style.maxHeight = hasRating
         ? "400px" // TODO: reconsider?
         : headerRef.current.clientHeight + "px";
 
+      expandedContentRef.current.style.display = hasRating ? "block" : "none";
       expandedContentRef.current.style.opacity = hasRating ? "1" : "0";
       expandedContentRef.current.style.pointerEvents = hasRating
         ? "all"
@@ -155,10 +159,6 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
                 name="comment"
                 placeholder={t.QuestionPlaceholder}
                 rows={5}
-                // TODO: dedup + use?
-                // onBlur={(e) => setHasComment(e.currentTarget?.value.trim() !== "")}
-                // onChange={(e) => setHasComment(e.currentTarget?.value.trim() !== "")}
-                // onKeyUp={(e) => setHasComment(e.currentTarget?.value.trim() !== "")}
               />
             </div>
 
