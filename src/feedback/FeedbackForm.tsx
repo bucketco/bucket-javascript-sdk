@@ -150,7 +150,7 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
               name="score"
               onChange={(e) => {
                 setHasRating(true);
-                onScoreSubmit(Number(e.currentTarget.value)); // TODO: check
+                onScoreSubmit(Number(e.currentTarget.value));
               }}
             />
             {scoreState === "idle" ? (

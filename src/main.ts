@@ -423,7 +423,6 @@ export default function main() {
         onClose: options.onClose,
         onDismiss: options.onDismiss,
         onScoreSubmit: async (data) => {
-          // TODO: maybe store feedbackId locally rather than passing back to react
           const res = await feedback({
             featureId: options.featureId,
             userId: options.userId,

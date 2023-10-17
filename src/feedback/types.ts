@@ -17,6 +17,15 @@ export interface FeedbackSubmission {
   comment: string;
 }
 
+export interface FeedbackScoreSubmission {
+  feedbackId?: string;
+  score: number;
+}
+
+export interface OnScoreSubmitResult {
+  feedbackId: string;
+}
+
 export interface OpenFeedbackFormOptions {
   key: string;
   title?: string;
@@ -39,10 +48,9 @@ export interface OpenFeedbackFormOptions {
   openWithCommentVisible?: boolean;
 
   onSubmit: (data: FeedbackSubmission) => Promise<void> | void;
-  onScoreSubmit?: (data: {
-    score: number;
-    feedbackId?: string;
-  }) => Promise<{ feedbackId: string }>; // TODO: clean up
+  onScoreSubmit?: (
+    data: FeedbackScoreSubmission,
+  ) => Promise<OnScoreSubmitResult>;
   onClose?: () => void;
   onDismiss?: () => void;
 }

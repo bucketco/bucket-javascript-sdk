@@ -73,14 +73,12 @@ export const StarRating: FunctionComponent<StarRatingProps> = ({
               border-color: ${color};
             }
 
-            /* TODO: use -bg var? */
             .star-rating-icons > input:nth-of-type(${
               index + 1
             }):checked + .button > div {
               background-color: ${bg};
             }
 
-            /* TODO: fix corner cut outs */
             .star-rating-icons > input:nth-of-type(${
               index + 1
             }):checked ~ input:nth-of-type(${index + 2}) + .button {
@@ -138,7 +136,6 @@ const Score = ({
         defaultChecked={isSelected}
         onChange={onChange}
       />
-      {/* TODO: center vertically perfectly */}
       <label
         ref={refs.setReference}
         for={`bucket-feedback-score-${score.value}`}
@@ -157,7 +154,6 @@ const Score = ({
             zIndex: 1,
           }}
         />
-        {/* TODO: fix zindexes */}
         <span style={{ zIndex: 2, display: "flex", alignItems: "center" }}>
           {score.icon}
         </span>
