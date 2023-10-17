@@ -7,6 +7,8 @@ import { StarRating } from "./StarRating";
 import { FeedbackSubmission, FeedbackTranslations } from "./types";
 import { Plug } from "./Plug";
 
+const ANIMATION_SPEED = 300;
+
 function getFeedbackDataFromForm(el: HTMLFormElement): FeedbackSubmission {
   const formData = new FormData(el);
   const feedback: FeedbackSubmission = {
@@ -82,12 +84,13 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
       containerRef.current.style.maxHeight =
         submittedRef.current.clientHeight + "px";
 
+      // Fade in "submitted" step once container has resized
       setTimeout(() => {
         submittedRef.current!.style.position = "relative";
         submittedRef.current!.style.opacity = "1";
         submittedRef.current!.style.pointerEvents = "all";
         setShowForm(false);
-      }, 310); // TODO: magic number, consider impact of new effect
+      }, ANIMATION_SPEED + 10);
     } else {
       containerRef.current.style.maxHeight = hasRating
         ? "400px" // TODO: reconsider?
