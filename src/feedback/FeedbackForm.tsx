@@ -141,15 +141,12 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
                 onScoreSubmit(Number(e.currentTarget.value)); // TODO: check
               }}
             />
-            {/* TODO: translations */}
             {scoreState === "idle" ? (
-              <span className="score-status">
-                Pick a score and leave a comment
-              </span>
+              <span className="score-status">{t.ScoreStatusDescription}</span>
             ) : (
               <span className="score-status">
                 <Check width={14} height={14} style={{ marginRight: 3 }} />{" "}
-                Rating has been received!
+                {t.ScoreStatusReceived}
               </span>
             )}
           </div>

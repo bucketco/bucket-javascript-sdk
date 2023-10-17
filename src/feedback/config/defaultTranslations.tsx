@@ -3,6 +3,8 @@ import { FeedbackTranslations } from "../types";
 export const DEFAULT_TRANSLATIONS: FeedbackTranslations = {
   DefaultQuestionLabel: "How satisfied are you with this feature?",
   QuestionPlaceholder: "Write a comment",
+  ScoreStatusDescription: "Pick a score and leave a comment",
+  ScoreStatusReceived: "Rating has been received!",
   ScoreVeryDissatisfiedLabel: "Very dissatisfied (1/5)",
   ScoreDissatisfiedLabel: "Dissatisfied (2/5)",
   ScoreNeutralLabel: "Neutral (3/5)",
