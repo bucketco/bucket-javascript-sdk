@@ -23,7 +23,7 @@
   margin: 0;
 
   font-size: 12px;
-  color: #787c91; /* TODO: var */
+  color: var(--bucket-feedback-dialog-secondary-color, #787c91);
 }
 
 .form-expanded-content {
@@ -109,12 +109,15 @@
   padding: 16px 28px 6px;
 
   .submitted-check {
-    background: #38a169; /* TODO: var */
+    color: var(--bucket-feedback-dialog-submitted-check-color, #fff);
+    background: var(
+      --bucket-feedback-dialog-submitted-check-background-color,
+      #38a169
+    );
     height: 24px;
     width: 24px;
     display: block;
     border-radius: 50%;
-    color: #fff;
     flex-shrink: 0;
     display: flex;
     align-items: center;

@@ -150,7 +150,7 @@ const Score = ({
             left: 0,
             width: "100%",
             height: "100%",
-            opacity: 0.2,
+            opacity: 0.2, // TODO: fix overflow
             zIndex: 1,
           }}
         />

@@ -1,6 +1,7 @@
 [data-theme="dark"] {
   --bucket-feedback-dialog-background-color: #1e1f24;
   --bucket-feedback-dialog-color: rgba(255, 255, 255, 0.92);
+  --bucket-feedback-dialog-secondary-color: rgba(255, 255, 255, 0.3);
   --bucket-feedback-dialog-border: rgba(255, 255, 255, 0.16);
   --bucket-feedback-dialog-primary-button-background-color: #655bfa;
   --bucket-feedback-dialog-primary-button-color: white;
@@ -18,6 +19,9 @@
   --bucket-feedback-dialog-rating-5-color: #48bb78;
   --bucket-feedback-dialog-rating-5-background-color: #22543d;
 
+  --bucket-feedback-dialog-submitted-check-background-color: #38a169;
+  --bucket-feedback-dialog-submitted-check-color: #ffffff;
+
   color: var(--bucket-feedback-dialog-color);
   background-color: #191a1f;
 }
@@ -28,10 +32,28 @@
   --bucket-feedback-dialog-border-radius: 0px;
   --bucket-feedback-dialog-background-color: papayawhip;
   --bucket-feedback-dialog-color: firebrick;
+  --bucket-feedback-dialog-secondary-color: palevioletred;
   --bucket-feedback-dialog-border: palevioletred;
   --bucket-feedback-dialog-primary-button-background-color: palevioletred;
   --bucket-feedback-dialog-primary-button-color: white;
   --bucket-feedback-dialog-input-border-color: palevioletred;
+
+  --bucket-feedback-dialog-submitted-check-background-color: firebrick;
+  --bucket-feedback-dialog-submitted-check-color: papayawhip;
+
+  --bucket-feedback-dialog-tooltip-color: white;
+  --bucket-feedback-dialog-tooltip-background-color: palevioletred;
+
+  --bucket-feedback-dialog-rating-1-color: firebrick;
+  --bucket-feedback-dialog-rating-1-background-color: #fff;
+  --bucket-feedback-dialog-rating-2-color: firebrick;
+  --bucket-feedback-dialog-rating-2-background-color: #fff;
+  --bucket-feedback-dialog-rating-3-color: firebrick;
+  --bucket-feedback-dialog-rating-3-background-color: #fff;
+  --bucket-feedback-dialog-rating-4-color: firebrick;
+  --bucket-feedback-dialog-rating-4-background-color: #fff;
+  --bucket-feedback-dialog-rating-5-color: firebrick;
+  --bucket-feedback-dialog-rating-5-background-color: #fff;
 
   color: var(--bucket-feedback-dialog-color);
   background-color: #fff;
