@@ -101,7 +101,7 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
         ? "400px" // TODO: reconsider?
         : headerRef.current.clientHeight + "px";
 
-      expandedContentRef.current.style.display = isExpanded ? "block" : "none";
+      expandedContentRef.current.style.display = isExpanded ? "flex" : "none";
       expandedContentRef.current.style.opacity = isExpanded ? "1" : "0";
       expandedContentRef.current.style.pointerEvents = isExpanded
         ? "all"
