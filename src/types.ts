@@ -78,6 +78,8 @@ export interface RequestFeedbackOptions
 }
 
 export type Feedback = {
+  feedbackId?: string; // TODO: fix
+
   /**
    * Bucket feature ID
    */

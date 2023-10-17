@@ -215,6 +215,7 @@ export default function main() {
   }
 
   async function feedback({
+    feedbackId,
     featureId,
     score,
     userId,
@@ -228,6 +229,7 @@ export default function main() {
     userId = resolveUser(userId);
 
     const payload: Feedback & { userId: User["userId"] } = {
+      feedbackId,
       userId,
       featureId,
       score,
@@ -419,6 +421,18 @@ export default function main() {
         translations: options.translations ?? feedbackTranslations,
         onClose: options.onClose,
         onDismiss: options.onDismiss,
+        onScoreSubmit: async (data) => {
+          // TODO: maybe store feedbackId locally rather than passing back to react
+          const res = await feedback({
+            featureId: options.featureId,
+            userId: options.userId,
+            companyId: options.companyId,
+            ...data,
+          });
+
+          const json = await res.json();
+          return { feedbackId: json.feedbackId };
+        },
         onSubmit: async (data) => {
           // Default onSubmit handler
           await feedback({

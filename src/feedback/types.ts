@@ -12,6 +12,7 @@ export type FeedbackPosition =
   | { type: "POPOVER"; anchor: HTMLElement | null };
 
 export interface FeedbackSubmission {
+  feedbackId?: string;
   score: number;
   comment: string;
 }
@@ -32,6 +33,10 @@ export interface OpenFeedbackFormOptions {
   translations?: Partial<FeedbackTranslations>;
 
   onSubmit: (data: FeedbackSubmission) => Promise<void> | void;
+  onScoreSubmit?: (data: {
+    score: number;
+    feedbackId?: string;
+  }) => Promise<{ feedbackId: string }>; // TODO: clean up
   onClose?: () => void;
   onDismiss?: () => void;
 }

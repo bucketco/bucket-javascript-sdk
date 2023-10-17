@@ -19,14 +19,18 @@ function getFeedbackDataFromForm(el: HTMLFormElement): FeedbackSubmission {
 type FeedbackFormProps = {
   t: FeedbackTranslations;
   question: string;
+  scoreState: "idle" | "submitting" | "submitted";
   onInteraction: () => void;
   onSubmit: (data: FeedbackSubmission) => Promise<void> | void;
+  onScoreSubmit: (score: number) => Promise<void> | void;
 };
 
 export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
   question,
+  scoreState,
   onInteraction,
   onSubmit,
+  onScoreSubmit,
   t,
 }) => {
   const [hasRating, setHasRating] = useState(false);
@@ -36,6 +40,7 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
   );
   const [error, setError] = useState<string>();
 
+  const [showForm, setShowForm] = useState(true);
   const handleSubmit: h.JSX.GenericEventHandler<HTMLFormElement> = async (
     e,
   ) => {
@@ -93,7 +98,7 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
   }, [formRef, headerRef, expandedContentRef, hasRating, status]);
 
   return (
-    <div>
+    <div ref={containerRef} class="container">
       <div ref={submittedRef} class="submitted">
         <div className="submitted-check">
           <Check width={16} height={16} />
@@ -101,64 +106,72 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
         <p className="text">{t.SuccessMessage}</p>
         <Plug />
       </div>
-      <form
-        ref={formRef}
-        onSubmit={handleSubmit}
-        method="dialog"
-        class="form"
-        onFocus={onInteraction}
-        onFocusCapture={onInteraction}
-        onClick={onInteraction}
-        style={{ opacity: 1 }}
-      >
-        <div
-          ref={headerRef}
-          role="group"
-          class="form-control"
-          aria-labelledby="bucket-feedback-score-label"
+      {showForm && (
+        <form
+          ref={formRef}
+          onSubmit={handleSubmit}
+          method="dialog"
+          class="form"
+          onFocus={onInteraction}
+          onFocusCapture={onInteraction}
+          onClick={onInteraction}
+          style={{ opacity: 1 }}
         >
-          <div id="bucket-feedback-score-label" class="title">
-            {question}
-          </div>
-          <StarRating t={t} name="score" onChange={() => setHasRating(true)} />
-          {/* TODO: translations */}
-          {hasRating ? (
-            // TODO: fix this lie
-            <span className="score-status">
-              <Check width={14} height={14} style={{ marginRight: 3 }} /> Rating
-              has been received!
-            </span>
-          ) : (
-            <span className="score-status">
-              Pick a score and leave a comment
-            </span>
-          )}
-        </div>
-
-        <div ref={expandedContentRef} class="form-expanded-content">
-          <div class="form-control">
-            <textarea
-              id="bucket-feedback-comment-label"
-              class="textarea"
-              name="comment"
-              placeholder={t.QuestionPlaceholder}
-              rows={5}
-              // TODO: dedup + use?
-              // onBlur={(e) => setHasComment(e.currentTarget?.value.trim() !== "")}
-              // onChange={(e) => setHasComment(e.currentTarget?.value.trim() !== "")}
-              // onKeyUp={(e) => setHasComment(e.currentTarget?.value.trim() !== "")}
+          <div
+            ref={headerRef}
+            role="group"
+            class="form-control"
+            aria-labelledby="bucket-feedback-score-label"
+          >
+            <div id="bucket-feedback-score-label" class="title">
+              {question}
+            </div>
+            <StarRating
+              t={t}
+              name="score"
+              onChange={(e) => {
+                setHasRating(true);
+                onScoreSubmit(Number(e.currentTarget.value)); // TODO: check
+              }}
             />
+            {/* TODO: translations */}
+            {scoreState === "idle" ? (
+              <span className="score-status">
+                Pick a score and leave a comment
+              </span>
+            ) : (
+              <span className="score-status">
+                <Check width={14} height={14} style={{ marginRight: 3 }} />{" "}
+                Rating has been received!
+              </span>
+            )}
           </div>
 
-          {error && <p class="error">{error}</p>}
+          <div ref={expandedContentRef} class="form-expanded-content">
+            <div class="form-control">
+              <textarea
+                id="bucket-feedback-comment-label"
+                class="textarea"
+                name="comment"
+                placeholder={t.QuestionPlaceholder}
+                rows={5}
+                // TODO: dedup + use?
+                // onBlur={(e) => setHasComment(e.currentTarget?.value.trim() !== "")}
+                // onChange={(e) => setHasComment(e.currentTarget?.value.trim() !== "")}
+                // onKeyUp={(e) => setHasComment(e.currentTarget?.value.trim() !== "")}
+              />
+            </div>
 
-          <Button type="submit" disabled={status === "submitting"}>
-            {t.SendButton}
-          </Button>
+            {error && <p class="error">{error}</p>}
 
-          <Plug />
-        </div>
-      </form>
+            <Button type="submit" disabled={status === "submitting"}>
+              {t.SendButton}
+            </Button>
+
+            <Plug />
+          </div>
+        </form>
+      )}
     </div>
   );
 };
