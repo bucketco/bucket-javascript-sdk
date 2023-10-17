@@ -95,7 +95,6 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
       }, ANIMATION_SPEED + 10);
     } else {
       const isExpanded = openWithCommentVisible || hasRating;
-      console.log({ isExpanded });
 
       containerRef.current.style.maxHeight = isExpanded
         ? "400px" // TODO: reconsider?
