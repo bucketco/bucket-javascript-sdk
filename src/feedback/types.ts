@@ -32,6 +32,12 @@ export interface OpenFeedbackFormOptions {
    */
   translations?: Partial<FeedbackTranslations>;
 
+  /**
+   * Open the form with both the score and comment fields visible.
+   * Defaults to `false`
+   */
+  openWithCommentVisible?: boolean;
+
   onSubmit: (data: FeedbackSubmission) => Promise<void> | void;
   onScoreSubmit?: (data: {
     score: number;

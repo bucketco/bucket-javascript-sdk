@@ -419,6 +419,7 @@ export default function main() {
         title: options.title,
         position: options.position ?? feedbackPosition,
         translations: options.translations ?? feedbackTranslations,
+        openWithCommentVisible: options.openWithCommentVisible,
         onClose: options.onClose,
         onDismiss: options.onDismiss,
         onScoreSubmit: async (data) => {

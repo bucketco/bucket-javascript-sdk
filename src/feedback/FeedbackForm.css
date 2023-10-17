@@ -32,8 +32,6 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 10px;
-  opacity: 0;
-  pointer-events: none;
   transition: opacity 300ms ease-in-out;
 }
 

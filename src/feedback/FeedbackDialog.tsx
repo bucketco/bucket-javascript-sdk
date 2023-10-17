@@ -38,6 +38,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
   title = DEFAULT_TRANSLATIONS.DefaultQuestionLabel,
   position,
   translations = DEFAULT_TRANSLATIONS,
+  openWithCommentVisible = false,
   onClose,
   onDismiss,
   onSubmit,
@@ -213,6 +214,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
           t={{ ...DEFAULT_TRANSLATIONS, ...translations }}
           key={key}
           question={title}
+          openWithCommentVisible={openWithCommentVisible}
           onSubmit={submit}
           onScoreSubmit={submitScore}
           scoreState={scoreState}

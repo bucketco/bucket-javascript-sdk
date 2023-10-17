@@ -22,6 +22,7 @@ type FeedbackFormProps = {
   t: FeedbackTranslations;
   question: string;
   scoreState: "idle" | "submitting" | "submitted";
+  openWithCommentVisible: boolean;
   onInteraction: () => void;
   onSubmit: (data: FeedbackSubmission) => Promise<void> | void;
   onScoreSubmit: (score: number) => Promise<void> | void;
@@ -30,6 +31,7 @@ type FeedbackFormProps = {
 export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
   question,
   scoreState,
+  openWithCommentVisible,
   onInteraction,
   onSubmit,
   onScoreSubmit,
@@ -92,17 +94,27 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
         setShowForm(false);
       }, ANIMATION_SPEED + 10);
     } else {
-      containerRef.current.style.maxHeight = hasRating
+      const isExpanded = openWithCommentVisible || hasRating;
+      console.log({ isExpanded });
+
+      containerRef.current.style.maxHeight = isExpanded
         ? "400px" // TODO: reconsider?
         : headerRef.current.clientHeight + "px";
 
-      expandedContentRef.current.style.display = hasRating ? "block" : "none";
-      expandedContentRef.current.style.opacity = hasRating ? "1" : "0";
-      expandedContentRef.current.style.pointerEvents = hasRating
+      expandedContentRef.current.style.display = isExpanded ? "block" : "none";
+      expandedContentRef.current.style.opacity = isExpanded ? "1" : "0";
+      expandedContentRef.current.style.pointerEvents = isExpanded
         ? "all"
         : "none";
     }
-  }, [formRef, headerRef, expandedContentRef, hasRating, status]);
+  }, [
+    formRef,
+    headerRef,
+    expandedContentRef,
+    openWithCommentVisible,
+    hasRating,
+    status,
+  ]);
 
   return (
     <div ref={containerRef} class="container">
@@ -164,7 +176,10 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
 
             {error && <p class="error">{error}</p>}
 
-            <Button type="submit" disabled={status === "submitting"}>
+            <Button
+              type="submit"
+              disabled={!hasRating || status === "submitting"}
+            >
               {t.SendButton}
             </Button>
 
