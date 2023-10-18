@@ -8,7 +8,7 @@ import { Plug } from "./Plug";
 import { StarRating } from "./StarRating";
 import { FeedbackSubmission, FeedbackTranslations } from "./types";
 
-const ANIMATION_SPEED = 300;
+const ANIMATION_SPEED = 400;
 
 function getFeedbackDataFromForm(el: HTMLFormElement): FeedbackSubmission {
   const formData = new FormData(el);
