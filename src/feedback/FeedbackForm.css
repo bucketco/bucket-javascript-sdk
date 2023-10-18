@@ -76,8 +76,8 @@
   &:focus {
     outline: none;
     border-color: var(
-      --bucket-feedback-dialog-primary-button-background-color,
-      #655bfa
+      --bucket-feedback-dialog-input-focus-border-color,
+      #787c91
     );
   }
 }
