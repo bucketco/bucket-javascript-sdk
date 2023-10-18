@@ -7,7 +7,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 1rem;
+  gap: 10px;
   overflow-y: hidden;
   max-height: 400px;
   transition: opacity 300ms ease-in-out;
@@ -85,6 +85,7 @@
 .score-status {
   display: flex;
   align-items: center;
+  padding-bottom: 6px;
 }
 
 .error {
@@ -106,7 +107,7 @@
   pointer-events: none;
   width: calc(100% - 56px);
 
-  padding: 16px 28px 6px;
+  padding: 0px 28px;
 
   .submitted-check {
     color: var(--bucket-feedback-dialog-submitted-check-color, #fff);
