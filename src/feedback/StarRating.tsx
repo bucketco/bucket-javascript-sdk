@@ -1,13 +1,13 @@
 import { Fragment, FunctionComponent, h } from "preact";
+import { useRef } from "preact/hooks";
 
 import { Dissatisfied } from "./icons/Dissatisfied";
 import { Neutral } from "./icons/Neutral";
 import { Satisfied } from "./icons/Satisfied";
 import { VeryDissatisfied } from "./icons/VeryDissatisfied";
 import { VerySatisfied } from "./icons/VerySatisfied";
-import { FeedbackTranslations } from "./types";
 import { arrow, offset, useFloating } from "./packages/floating-ui-preact-dom";
-import { useRef } from "preact/hooks";
+import { FeedbackTranslations } from "./types";
 
 const scores = [
   {

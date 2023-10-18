@@ -1,4 +1,5 @@
 import { FunctionComponent, h } from "preact";
+
 import { Logo } from "./icons/Logo";
 
 export const Plug: FunctionComponent = () => {

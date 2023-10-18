@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
-import { expect, Locator, Page, Request, test } from "@playwright/test";
-import { DEFAULT_TRANSLATIONS } from "../../src/feedback/config/defaultTranslations";
+import { expect, Locator, Page, test } from "@playwright/test";
 
+import { DEFAULT_TRANSLATIONS } from "../../src/feedback/config/defaultTranslations";
 import {
   feedbackContainerId,
   propagatedEvents,
@@ -213,7 +213,7 @@ test("Shows a success message after submitting", async ({ page }) => {
 
   await new Promise((resolve) => setTimeout(resolve, 300)); // TODO: remove
 
-  expect(
+  await expect(
     container.getByText(DEFAULT_TRANSLATIONS.SuccessMessage),
   ).toBeVisible();
 });

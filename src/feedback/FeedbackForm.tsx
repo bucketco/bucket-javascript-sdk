@@ -4,9 +4,9 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import { Check } from "./icons/Check";
 import { CheckCircle } from "./icons/CheckCircle";
 import { Button } from "./Button";
+import { Plug } from "./Plug";
 import { StarRating } from "./StarRating";
 import { FeedbackSubmission, FeedbackTranslations } from "./types";
-import { Plug } from "./Plug";
 
 const ANIMATION_SPEED = 300;
 
@@ -148,9 +148,9 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
             <StarRating
               t={t}
               name="score"
-              onChange={(e) => {
+              onChange={async (e) => {
                 setHasRating(true);
-                onScoreSubmit(Number(e.currentTarget.value));
+                await onScoreSubmit(Number(e.currentTarget.value));
               }}
             />
             {scoreState === "idle" ? (
