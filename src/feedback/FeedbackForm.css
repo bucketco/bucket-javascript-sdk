@@ -110,8 +110,8 @@
   padding: 0px 28px;
 
   .submitted-check {
-    color: var(--bucket-feedback-dialog-submitted-check-color, #fff);
-    background: var(
+    background: var(--bucket-feedback-dialog-submitted-check-color, #fff);
+    color: var(
       --bucket-feedback-dialog-submitted-check-background-color,
       #38a169
     );

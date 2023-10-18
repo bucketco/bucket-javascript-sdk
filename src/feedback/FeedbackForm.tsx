@@ -2,6 +2,7 @@ import { FunctionComponent, h } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import { Check } from "./icons/Check";
+import { CheckCircle } from "./icons/CheckCircle";
 import { Button } from "./Button";
 import { StarRating } from "./StarRating";
 import { FeedbackSubmission, FeedbackTranslations } from "./types";
@@ -119,7 +120,7 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
     <div ref={containerRef} class="container">
       <div ref={submittedRef} class="submitted">
         <div className="submitted-check">
-          <Check width={16} height={16} />
+          <CheckCircle width={24} height={24} />
         </div>
         <p className="text">{t.SuccessMessage}</p>
         <Plug />
