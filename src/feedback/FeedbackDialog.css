@@ -1,6 +1,6 @@
 @keyframes scale {
   from {
-    transform: scale(0.95);
+    transform: scale(0.9);
   }
   to {
     transform: scale(1);
@@ -9,7 +9,7 @@
 
 @keyframes floatUp {
   from {
-    transform: translateY(10%);
+    transform: translateY(15%);
   }
   to {
     transform: translateY(0%);
@@ -18,7 +18,7 @@
 
 @keyframes floatDown {
   from {
-    transform: translateY(-10%);
+    transform: translateY(-15%);
   }
   to {
     transform: translateY(0%);
@@ -37,7 +37,7 @@
 .dialog {
   position: fixed;
   width: 274px;
-  padding: 18px 28px 12px;
+  padding: 16px 22px 10px;
   font-size: var(--bucket-feedback-dialog-font-size, 1rem);
   font-family: var(
     --bucket-feedback-dialog-font-family,
@@ -92,8 +92,8 @@
 
 .close {
   position: absolute;
-  top: 10px;
-  right: 14px;
+  top: 6px;
+  right: 6px;
 
   width: 28px;
   height: 28px;
@@ -142,12 +142,12 @@
   margin-top: 4rem;
 
   &[open] {
-    animation:
-      scale 100ms ease-in-out,
-      fade 100ms ease-in-out;
+    animation: /* easeOutQuint */
+      scale 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      fade 200ms cubic-bezier(0.22, 1, 0.36, 1);
 
     &::backdrop {
-      animation: fade 100ms ease-in-out;
+      animation: fade 200ms cubic-bezier(0.22, 1, 0.36, 1);
     }
   }
 }
@@ -158,9 +158,9 @@
   position: absolute;
 
   &[open] {
-    animation:
-      scale 100ms ease-in-out,
-      fade 100ms ease-in-out;
+    animation: /* easeOutQuint */
+      scale 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      fade 200ms cubic-bezier(0.22, 1, 0.36, 1);
   }
   &.bottom {
     transform-origin: top center;
@@ -181,15 +181,15 @@
 .dialog[open].unanchored {
   &.unanchored-bottom-left,
   &.unanchored-bottom-right {
-    animation:
-      floatUp 100ms ease-in-out,
-      fade 100ms ease-in-out;
+    animation: /* easeOutQuint */
+      floatUp 300ms cubic-bezier(0.22, 1, 0.36, 1),
+      fade 300ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   &.unanchored-top-left,
   &.unanchored-top-right {
-    animation:
-      floatDown 100ms ease-in-out,
-      fade 100ms ease-in-out;
+    animation: /* easeOutQuint */
+      floatDown 300ms cubic-bezier(0.22, 1, 0.36, 1),
+      fade 300ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 }
