@@ -68,7 +68,8 @@
     Open Sans,
     sans-serif
   );
-  resize: vertical;
+
+  resize: none;
 
   color: var(--bucket-feedback-dialog-color, #1e1f24);
   font-size: 13px;
