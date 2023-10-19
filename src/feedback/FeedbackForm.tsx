@@ -81,6 +81,7 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
     if (expandedContentRef.current === null) return;
     if (submittedRef.current === null) return;
 
+    // TODO: clean this up
     if (status === "submitted") {
       formRef.current.style.opacity = "0";
       formRef.current.style.pointerEvents = "none";
@@ -98,10 +99,16 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
       const isExpanded = openWithCommentVisible || hasRating;
 
       containerRef.current.style.maxHeight = isExpanded
-        ? "400px" // TODO: reconsider?
+        ? headerRef.current.clientHeight + // Header height
+          expandedContentRef.current.clientHeight + // Comment + Button Height
+          10 + // Gap height
+          "px"
         : headerRef.current.clientHeight + "px";
 
-      expandedContentRef.current.style.display = isExpanded ? "flex" : "none";
+      expandedContentRef.current.style.position = isExpanded
+        ? "relative"
+        : "absolute";
+
       expandedContentRef.current.style.opacity = isExpanded ? "1" : "0";
       expandedContentRef.current.style.pointerEvents = isExpanded
         ? "all"
