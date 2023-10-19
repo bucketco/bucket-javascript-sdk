@@ -88,10 +88,22 @@
   }
 }
 
-.score-status {
-  display: flex;
-  align-items: center;
+.score-status-container {
+  position: relative;
   padding-bottom: 6px;
+  height: 14px;
+
+  > .score-status {
+    display: flex;
+    align-items: center;
+
+    position: absolute;
+    top: 0;
+    left: 0;
+
+    opacity: 0;
+    transition: opacity 200ms ease-in-out;
+  }
 }
 
 .error {

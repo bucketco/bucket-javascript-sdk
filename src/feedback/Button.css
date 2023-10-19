@@ -38,6 +38,10 @@
     opacity: 0.5;
     cursor: not-allowed;
     border-color: var(--bucket-feedback-dialog-primary-border-color, #d8d9df);
+
+    transition-duration: 200ms;
+    transition-property: background-color, border-color, color, opacity,
+      box-shadow, transform;
   }
 
   &:focus {

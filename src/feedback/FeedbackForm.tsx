@@ -45,6 +45,20 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
   const [error, setError] = useState<string>();
   const [showForm, setShowForm] = useState(true);
 
+  const [showScoreStateLoading, setShowScoreStateLoading] = useState(false);
+  useEffect(() => {
+    if (scoreState === "idle" || scoreState === "submitted") {
+      setShowScoreStateLoading(false);
+      return;
+    }
+
+    const t = setTimeout(() => {
+      setShowScoreStateLoading(true);
+    }, 400);
+
+    return () => clearTimeout(t);
+  }, [scoreState]);
+
   const handleSubmit: h.JSX.GenericEventHandler<HTMLFormElement> = async (
     e,
   ) => {
@@ -160,14 +174,39 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
                 await onScoreSubmit(Number(e.currentTarget.value));
               }}
             />
-            {scoreState === "idle" ? (
-              <span className="score-status">{t.ScoreStatusDescription}</span>
-            ) : (
-              <span className="score-status">
+
+            <div className="score-status-container">
+              <span
+                className="score-status"
+                style={{
+                  opacity:
+                    scoreState === "idle" ||
+                    (scoreState === "submitting" && !showScoreStateLoading)
+                      ? 1
+                      : 0,
+                }}
+              >
+                {t.ScoreStatusDescription}
+              </span>
+
+              <div
+                className="score-status"
+                style={{
+                  opacity:
+                    scoreState !== "submitted" && showScoreStateLoading ? 1 : 0,
+                }}
+              >
+                Submitting...
+              </div>
+
+              <span
+                className="score-status"
+                style={{ opacity: scoreState === "submitted" ? 1 : 0 }}
+              >
                 <Check width={14} height={14} style={{ marginRight: 3 }} />{" "}
                 {t.ScoreStatusReceived}
               </span>
-            )}
+            </div>
           </div>
 
           <div ref={expandedContentRef} class="form-expanded-content">
@@ -185,7 +224,11 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
 
             <Button
               type="submit"
-              disabled={!hasRating || status === "submitting"}
+              disabled={
+                !hasRating ||
+                status === "submitting" ||
+                scoreState === "submitting"
+              }
             >
               {t.SendButton}
             </Button>
