@@ -216,29 +216,43 @@ const ScoreStatus: FunctionComponent<{
   t: FeedbackTranslations;
   scoreState: "idle" | "submitting" | "submitted";
 }> = ({ t, scoreState }) => {
-  const [canShowLoading, setCanShowLoading] = useState(false);
+  // Keep track of whether we can show a loading indication - only if 400ms have
+  // elapsed without the score request finishing.
+  const [loadingTimeElapsed, setLoadingTimeElapsed] = useState(false);
+
+  // Keep track of whether we can fall back to the idle/loading states - once
+  // it's been submit once it won't, to prevent flashing.
+  const [hasBeenSubmitted, setHasBeenSubmitted] = useState(false);
 
   useEffect(() => {
-    if (scoreState === "idle" || scoreState === "submitted") {
-      setCanShowLoading(false);
+    if (scoreState === "idle") {
+      setLoadingTimeElapsed(false);
+      return;
+    }
+
+    if (scoreState === "submitted") {
+      setLoadingTimeElapsed(false);
+      setHasBeenSubmitted(true);
       return;
     }
 
     const t = setTimeout(() => {
-      setCanShowLoading(true);
+      setLoadingTimeElapsed(true);
     }, 400);
 
     return () => clearTimeout(t);
   }, [scoreState]);
 
-  const showSubmitted = scoreState === "submitted";
-  const showLoading = scoreState !== "submitted" && canShowLoading;
-  const showBase =
-    scoreState === "idle" || (scoreState === "submitting" && !canShowLoading);
+  const showIdle =
+    scoreState === "idle" ||
+    (scoreState === "submitting" && !hasBeenSubmitted && !loadingTimeElapsed);
+  const showLoading =
+    scoreState !== "submitted" && !hasBeenSubmitted && loadingTimeElapsed;
+  const showSubmitted = scoreState === "submitted" || hasBeenSubmitted;
 
   return (
     <div className="score-status-container">
-      <span className="score-status" style={{ opacity: showBase ? 1 : 0 }}>
+      <span className="score-status" style={{ opacity: showIdle ? 1 : 0 }}>
         {t.ScoreStatusDescription}
       </span>
 
