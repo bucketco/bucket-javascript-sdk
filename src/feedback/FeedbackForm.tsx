@@ -1,5 +1,5 @@
 import { FunctionComponent, h } from "preact";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { Check } from "./icons/Check";
 import { CheckCircle } from "./icons/CheckCircle";
@@ -74,50 +74,66 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
   const expandedContentRef = useRef<HTMLDivElement>(null);
   const submittedRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  const transitionToDefault = useCallback(() => {
     if (containerRef.current === null) return;
-    if (formRef.current === null) return;
     if (headerRef.current === null) return;
     if (expandedContentRef.current === null) return;
+
+    containerRef.current.style.maxHeight =
+      headerRef.current.clientHeight + "px";
+
+    expandedContentRef.current.style.position = "absolute";
+    expandedContentRef.current.style.opacity = "0";
+    expandedContentRef.current.style.pointerEvents = "none";
+  }, [containerRef, headerRef, expandedContentRef]);
+
+  const transitionToExpanded = useCallback(() => {
+    if (containerRef.current === null) return;
+    if (headerRef.current === null) return;
+    if (expandedContentRef.current === null) return;
+
+    containerRef.current.style.maxHeight =
+      headerRef.current.clientHeight + // Header height
+      expandedContentRef.current.clientHeight + // Comment + Button Height
+      10 + // Gap height
+      "px";
+
+    expandedContentRef.current.style.position = "relative";
+    expandedContentRef.current.style.opacity = "1";
+    expandedContentRef.current.style.pointerEvents = "all";
+  }, [containerRef, headerRef, expandedContentRef]);
+
+  const transitionToSuccess = useCallback(() => {
+    if (containerRef.current === null) return;
+    if (formRef.current === null) return;
     if (submittedRef.current === null) return;
 
-    // TODO: clean this up
+    formRef.current.style.opacity = "0";
+    formRef.current.style.pointerEvents = "none";
+    containerRef.current.style.maxHeight =
+      submittedRef.current.clientHeight + "px";
+
+    // Fade in "submitted" step once container has resized
+    setTimeout(() => {
+      submittedRef.current!.style.position = "relative";
+      submittedRef.current!.style.opacity = "1";
+      submittedRef.current!.style.pointerEvents = "all";
+      setShowForm(false);
+    }, ANIMATION_SPEED + 10);
+  }, [formRef, containerRef, submittedRef]);
+
+  useEffect(() => {
     if (status === "submitted") {
-      formRef.current.style.opacity = "0";
-      formRef.current.style.pointerEvents = "none";
-      containerRef.current.style.maxHeight =
-        submittedRef.current.clientHeight + "px";
-
-      // Fade in "submitted" step once container has resized
-      setTimeout(() => {
-        submittedRef.current!.style.position = "relative";
-        submittedRef.current!.style.opacity = "1";
-        submittedRef.current!.style.pointerEvents = "all";
-        setShowForm(false);
-      }, ANIMATION_SPEED + 10);
+      transitionToSuccess();
+    } else if (openWithCommentVisible || hasRating) {
+      transitionToExpanded();
     } else {
-      const isExpanded = openWithCommentVisible || hasRating;
-
-      containerRef.current.style.maxHeight = isExpanded
-        ? headerRef.current.clientHeight + // Header height
-          expandedContentRef.current.clientHeight + // Comment + Button Height
-          10 + // Gap height
-          "px"
-        : headerRef.current.clientHeight + "px";
-
-      expandedContentRef.current.style.position = isExpanded
-        ? "relative"
-        : "absolute";
-
-      expandedContentRef.current.style.opacity = isExpanded ? "1" : "0";
-      expandedContentRef.current.style.pointerEvents = isExpanded
-        ? "all"
-        : "none";
+      transitionToDefault();
     }
   }, [
-    formRef,
-    headerRef,
-    expandedContentRef,
+    transitionToDefault,
+    transitionToExpanded,
+    transitionToSuccess,
     openWithCommentVisible,
     hasRating,
     status,
