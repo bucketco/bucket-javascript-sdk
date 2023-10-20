@@ -27,6 +27,7 @@ const CUSTOM_TRANSLATIONS: FeedbackTranslations = {
     "Dans quelle mesure êtes-vous satisfait de cette fonctionnalité ?",
   QuestionPlaceholder: "Comment pouvons-nous améliorer cette fonctionnalité ?",
   ScoreStatusDescription: "Choisissez une note et laissez un commentaire",
+  ScoreStatusLoading: "Chargement...",
   ScoreStatusReceived: "La note a été reçue !",
   ScoreVeryDissatisfiedLabel: "Très insatisfait",
   ScoreDissatisfiedLabel: "Insatisfait",

@@ -59,6 +59,7 @@ export type FeedbackTranslations = {
   DefaultQuestionLabel: string;
   QuestionPlaceholder: string;
   ScoreStatusDescription: string;
+  ScoreStatusLoading: string;
   ScoreStatusReceived: string;
   ScoreVeryDissatisfiedLabel: string;
   ScoreDissatisfiedLabel: string;

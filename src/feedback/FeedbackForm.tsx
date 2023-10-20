@@ -45,20 +45,6 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
   const [error, setError] = useState<string>();
   const [showForm, setShowForm] = useState(true);
 
-  const [showScoreStateLoading, setShowScoreStateLoading] = useState(false);
-  useEffect(() => {
-    if (scoreState === "idle" || scoreState === "submitted") {
-      setShowScoreStateLoading(false);
-      return;
-    }
-
-    const t = setTimeout(() => {
-      setShowScoreStateLoading(true);
-    }, 400);
-
-    return () => clearTimeout(t);
-  }, [scoreState]);
-
   const handleSubmit: h.JSX.GenericEventHandler<HTMLFormElement> = async (
     e,
   ) => {
@@ -175,38 +161,7 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
               }}
             />
 
-            <div className="score-status-container">
-              <span
-                className="score-status"
-                style={{
-                  opacity:
-                    scoreState === "idle" ||
-                    (scoreState === "submitting" && !showScoreStateLoading)
-                      ? 1
-                      : 0,
-                }}
-              >
-                {t.ScoreStatusDescription}
-              </span>
-
-              <div
-                className="score-status"
-                style={{
-                  opacity:
-                    scoreState !== "submitted" && showScoreStateLoading ? 1 : 0,
-                }}
-              >
-                Submitting...
-              </div>
-
-              <span
-                className="score-status"
-                style={{ opacity: scoreState === "submitted" ? 1 : 0 }}
-              >
-                <Check width={14} height={14} style={{ marginRight: 3 }} />{" "}
-                {t.ScoreStatusReceived}
-              </span>
-            </div>
+            <ScoreStatus t={t} scoreState={scoreState} />
           </div>
 
           <div ref={expandedContentRef} class="form-expanded-content">
@@ -237,6 +192,48 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
           </div>
         </form>
       )}
+    </div>
+  );
+};
+
+const ScoreStatus: FunctionComponent<{
+  t: FeedbackTranslations;
+  scoreState: "idle" | "submitting" | "submitted";
+}> = ({ t, scoreState }) => {
+  const [canShowLoading, setCanShowLoading] = useState(false);
+
+  useEffect(() => {
+    if (scoreState === "idle" || scoreState === "submitted") {
+      setCanShowLoading(false);
+      return;
+    }
+
+    const t = setTimeout(() => {
+      setCanShowLoading(true);
+    }, 400);
+
+    return () => clearTimeout(t);
+  }, [scoreState]);
+
+  const showSubmitted = scoreState === "submitted";
+  const showLoading = scoreState !== "submitted" && canShowLoading;
+  const showBase =
+    scoreState === "idle" || (scoreState === "submitting" && !canShowLoading);
+
+  return (
+    <div className="score-status-container">
+      <span className="score-status" style={{ opacity: showBase ? 1 : 0 }}>
+        {t.ScoreStatusDescription}
+      </span>
+
+      <div className="score-status" style={{ opacity: showLoading ? 1 : 0 }}>
+        {t.ScoreStatusLoading}
+      </div>
+
+      <span className="score-status" style={{ opacity: showSubmitted ? 1 : 0 }}>
+        <Check width={14} height={14} style={{ marginRight: 3 }} />{" "}
+        {t.ScoreStatusReceived}
+      </span>
     </div>
   );
 };

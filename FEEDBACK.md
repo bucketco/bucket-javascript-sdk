@@ -232,6 +232,7 @@ bucket.init("my-tracking-key", {
         QuestionPlaceholder:
           "Comment pouvons-nous améliorer cette fonctionnalité ?",
         ScoreStatusDescription: "Choisissez une note et laissez un commentaire",
+        ScoreStatusLoading: "Chargement...",
         ScoreStatusReceived: "La note a été reçue !",
         ScoreVeryDissatisfiedLabel: "Très insatisfait",
         ScoreDissatisfiedLabel: "Insatisfait",
