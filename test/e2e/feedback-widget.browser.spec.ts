@@ -110,18 +110,18 @@ test("Shows a success message after submitting a score", async ({ page }) => {
   const container = await getOpenedWidgetContainer(page);
   await new Promise((resolve) => setTimeout(resolve, 100)); // TODO: remove
 
-  await expect(container).toContainText(
-    DEFAULT_TRANSLATIONS.ScoreStatusDescription,
-  );
-  await expect(container).not.toContainText(
-    DEFAULT_TRANSLATIONS.ScoreStatusReceived,
-  );
+  await expect(
+    container.getByText(DEFAULT_TRANSLATIONS.ScoreStatusDescription),
+  ).toBeVisible();
+  await expect(
+    container.getByText(DEFAULT_TRANSLATIONS.ScoreStatusReceived),
+  ).toBeVisible();
 
   await setScore(container, 3);
 
-  await expect(container).not.toContainText(
-    DEFAULT_TRANSLATIONS.ScoreStatusDescription,
-  );
+  await expect(
+    container.getByText(DEFAULT_TRANSLATIONS.ScoreStatusDescription),
+  ).toBeVisible();
   await expect(container).toContainText(
     DEFAULT_TRANSLATIONS.ScoreStatusReceived,
   );
