@@ -12,8 +12,8 @@ export type Options = {
   host?: string;
   debug?: boolean;
   feedback?: {
-    automaticPrompting?: boolean;
-    promptHandler?: FeedbackPromptHandler;
+    enableLiveFeedback?: boolean;
+    liveFeedbackHandler?: FeedbackPromptHandler;
     ui?: {
       /**
        * Control the placement and behavior of the feedback form.
