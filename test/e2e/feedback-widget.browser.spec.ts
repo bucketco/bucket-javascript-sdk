@@ -63,16 +63,31 @@ async function submitForm(container: Locator) {
   await container.locator(".form-expanded-content").getByRole("button").click();
 }
 
-// // Use this for debug
-// test.beforeEach(({ page, browserName }) => {
-//   page.on("request", (request) =>
-//     console.info(`[${browserName}]`, ">>", request.method(), request.url()),
-//   );
+test.beforeEach(async ({ page, browserName }) => {
+  // Log any calls to tracking.bucket.co which aren't mocked by subsequent
+  // `page.route` calls. With page.route, the last matching mock takes
+  // precedence, so this logs any which may have been missed, and responds
+  // with a 200 to prevent an internet request.
+  await page.route(/^https:\/\/tracking.bucket\.co.*/, async (route) => {
+    const meta = `${route.request().method()} ${route.request().url()}`;
 
-//   page.on("response", (response) =>
-//     console.info(`[${browserName}]`, "<<", response.status(), response.url()),
-//   );
-// });
+    console.debug(`\n Unmocked request:        [${browserName}] > ${meta}`);
+    console.debug(`Sent stub mock response: [${browserName}] < ${meta} 200\n`);
+
+    await route.fulfill({ status: 200, body: "{}" });
+  });
+
+  // Mock prompting-init as if prompting is `disabled` for all tests.
+  await page.route(
+    `${TRACKING_HOST}/${KEY}/feedback/prompting-init`,
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        body: JSON.stringify({ success: false }),
+      });
+    },
+  );
+});
 
 test("Opens a feedback widget", async ({ page }) => {
   const container = await getOpenedWidgetContainer(page);
