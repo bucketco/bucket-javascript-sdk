@@ -22,7 +22,6 @@ function pick<T>(options: T[]): T {
 
 async function getOpenedWidgetContainer(page: Page) {
   // Mock API calls
-  // TODO: mock every call
   await page.route(`${TRACKING_HOST}/${KEY}/user`, async (route) => {
     await route.fulfill({ status: 200 });
   });
