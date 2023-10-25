@@ -106,7 +106,6 @@ test("Sends a request when choosing a score immediately", async ({ page }) => {
   });
 
   const container = await getOpenedWidgetContainer(page);
-  await new Promise((resolve) => setTimeout(resolve, 100)); // TODO: remove
   await setScore(container, expectedScore);
 
   expect(sentJSON).toEqual({
@@ -119,27 +118,30 @@ test("Sends a request when choosing a score immediately", async ({ page }) => {
 
 test("Shows a success message after submitting a score", async ({ page }) => {
   await page.route(`${TRACKING_HOST}/${KEY}/feedback`, async (route) => {
-    await route.fulfill({ status: 200 });
+    await route.fulfill({
+      status: 200,
+      body: JSON.stringify({ feedbackId: "123" }),
+      contentType: "application/json",
+    });
   });
 
   const container = await getOpenedWidgetContainer(page);
-  await new Promise((resolve) => setTimeout(resolve, 100)); // TODO: remove
 
   await expect(
     container.getByText(DEFAULT_TRANSLATIONS.ScoreStatusDescription),
-  ).toBeVisible();
+  ).toHaveCSS("opacity", "1");
   await expect(
     container.getByText(DEFAULT_TRANSLATIONS.ScoreStatusReceived),
-  ).toBeVisible();
+  ).toHaveCSS("opacity", "0");
 
   await setScore(container, 3);
 
   await expect(
     container.getByText(DEFAULT_TRANSLATIONS.ScoreStatusDescription),
-  ).toBeVisible();
-  await expect(container).toContainText(
-    DEFAULT_TRANSLATIONS.ScoreStatusReceived,
-  );
+  ).toHaveCSS("opacity", "0");
+  await expect(
+    container.getByText(DEFAULT_TRANSLATIONS.ScoreStatusReceived),
+  ).toHaveCSS("opacity", "1");
 });
 
 test("Updates the score on every change", async ({ page }) => {
@@ -147,18 +149,21 @@ test("Updates the score on every change", async ({ page }) => {
 
   await page.route(`${TRACKING_HOST}/${KEY}/feedback`, async (route) => {
     lastSentJSON = route.request().postDataJSON();
-    await route.fulfill({ status: 200 });
+    await route.fulfill({
+      status: 200,
+      body: JSON.stringify({ feedbackId: "123" }),
+      contentType: "application/json",
+    });
   });
 
   const container = await getOpenedWidgetContainer(page);
-  await new Promise((resolve) => setTimeout(resolve, 100)); // TODO: remove
 
   await setScore(container, 1);
   await setScore(container, 5);
   await setScore(container, 3);
-  await new Promise((resolve) => setTimeout(resolve, 10)); // TODO: remove
 
   expect(lastSentJSON).toEqual({
+    feedbackId: "123",
     companyId: "bar",
     featureId: "featureId1",
     score: 3,
@@ -168,21 +173,26 @@ test("Updates the score on every change", async ({ page }) => {
 
 test("Shows the comment field after submitting a score", async ({ page }) => {
   await page.route(`${TRACKING_HOST}/${KEY}/feedback`, async (route) => {
-    await route.fulfill({ status: 200 });
+    await route.fulfill({
+      status: 200,
+      body: JSON.stringify({ feedbackId: "123" }),
+      contentType: "application/json",
+    });
   });
 
   const container = await getOpenedWidgetContainer(page);
-  await new Promise((resolve) => setTimeout(resolve, 100)); // TODO: remove
 
-  await expect(
-    container.locator("#bucket-feedback-comment-label"),
-  ).not.toBeVisible();
+  await expect(container.locator(".form-expanded-content")).toHaveCSS(
+    "opacity",
+    "0",
+  );
 
   await setScore(container, 1);
 
-  await expect(
-    container.locator("#bucket-feedback-comment-label"),
-  ).toBeVisible();
+  await expect(container.locator(".form-expanded-content")).toHaveCSS(
+    "opacity",
+    "1",
+  );
 });
 
 test("Sends a request with both the score and comment when submitting", async ({
@@ -195,11 +205,14 @@ test("Sends a request with both the score and comment when submitting", async ({
 
   await page.route(`${TRACKING_HOST}/${KEY}/feedback`, async (route) => {
     sentJSON = route.request().postDataJSON();
-    await route.fulfill({ status: 200 });
+    await route.fulfill({
+      status: 200,
+      body: JSON.stringify({ feedbackId: "123" }),
+      contentType: "application/json",
+    });
   });
 
   const container = await getOpenedWidgetContainer(page);
-  await new Promise((resolve) => setTimeout(resolve, 100)); // TODO: remove
 
   await setScore(container, expectedScore);
   await setComment(container, expectedComment);
@@ -210,23 +223,25 @@ test("Sends a request with both the score and comment when submitting", async ({
     score: expectedScore,
     companyId: "bar",
     featureId: "featureId1",
+    feedbackId: "123",
     userId: "foo",
   });
 });
 
 test("Shows a success message after submitting", async ({ page }) => {
   await page.route(`${TRACKING_HOST}/${KEY}/feedback`, async (route) => {
-    await route.fulfill({ status: 200 });
+    await route.fulfill({
+      status: 200,
+      body: JSON.stringify({ feedbackId: "123" }),
+      contentType: "application/json",
+    });
   });
 
   const container = await getOpenedWidgetContainer(page);
-  await new Promise((resolve) => setTimeout(resolve, 100)); // TODO: remove
 
   await setScore(container, 3);
   await setComment(container, "Test comment!");
   await submitForm(container);
-
-  await new Promise((resolve) => setTimeout(resolve, 300)); // TODO: remove
 
   await expect(
     container.getByText(DEFAULT_TRANSLATIONS.SuccessMessage),
@@ -235,17 +250,18 @@ test("Shows a success message after submitting", async ({ page }) => {
 
 test("Closes the dialog shortly after submitting", async ({ page }) => {
   await page.route(`${TRACKING_HOST}/${KEY}/feedback`, async (route) => {
-    await route.fulfill({ status: 200 });
+    await route.fulfill({
+      status: 200,
+      body: JSON.stringify({ feedbackId: "123" }),
+      contentType: "application/json",
+    });
   });
 
   const container = await getOpenedWidgetContainer(page);
-  await new Promise((resolve) => setTimeout(resolve, 100)); // TODO: remove
 
   await setScore(container, 3);
   await setComment(container, "Test comment!");
   await submitForm(container);
-
-  await new Promise((resolve) => setTimeout(resolve, 500)); // TODO: remove, fake?
 
   await expect(container.locator("dialog")).not.toHaveAttribute("open", "");
 });
