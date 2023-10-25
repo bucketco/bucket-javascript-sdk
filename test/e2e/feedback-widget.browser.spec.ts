@@ -102,18 +102,24 @@ test("Sends a request when choosing a score immediately", async ({ page }) => {
 
   await page.route(`${TRACKING_HOST}/${KEY}/feedback`, async (route) => {
     sentJSON = route.request().postDataJSON();
-    await route.fulfill({ status: 200 });
+    await route.fulfill({
+      status: 200,
+      body: JSON.stringify({ feedbackId: "123" }),
+      contentType: "application/json",
+    });
   });
 
   const container = await getOpenedWidgetContainer(page);
   await setScore(container, expectedScore);
 
-  expect(sentJSON).toEqual({
-    companyId: "bar",
-    featureId: "featureId1",
-    score: expectedScore,
-    userId: "foo",
-  });
+  await expect
+    .poll(() => sentJSON)
+    .toEqual({
+      companyId: "bar",
+      featureId: "featureId1",
+      score: expectedScore,
+      userId: "foo",
+    });
 });
 
 test("Shows a success message after submitting a score", async ({ page }) => {
@@ -162,13 +168,15 @@ test("Updates the score on every change", async ({ page }) => {
   await setScore(container, 5);
   await setScore(container, 3);
 
-  expect(lastSentJSON).toEqual({
-    feedbackId: "123",
-    companyId: "bar",
-    featureId: "featureId1",
-    score: 3,
-    userId: "foo",
-  });
+  await expect
+    .poll(() => lastSentJSON)
+    .toEqual({
+      feedbackId: "123",
+      companyId: "bar",
+      featureId: "featureId1",
+      score: 3,
+      userId: "foo",
+    });
 });
 
 test("Shows the comment field after submitting a score", async ({ page }) => {
