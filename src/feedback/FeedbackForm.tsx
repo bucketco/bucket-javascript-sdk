@@ -236,11 +236,11 @@ const ScoreStatus: FunctionComponent<{
       return;
     }
 
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       setLoadingTimeElapsed(true);
     }, 400);
 
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [scoreState]);
 
   const showIdle =
