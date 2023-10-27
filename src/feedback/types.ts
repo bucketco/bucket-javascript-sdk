@@ -12,6 +12,7 @@ export type FeedbackPosition =
   | { type: "POPOVER"; anchor: HTMLElement | null };
 
 export interface FeedbackSubmission {
+  question: string;
   score: number;
   comment: string;
 }

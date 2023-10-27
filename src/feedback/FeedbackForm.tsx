@@ -5,13 +5,12 @@ import { Button } from "./Button";
 import { StarRating } from "./StarRating";
 import { FeedbackSubmission, FeedbackTranslations } from "./types";
 
-function getFeedbackDataFromForm(el: HTMLFormElement): FeedbackSubmission {
+function getFeedbackDataFromForm(el: HTMLFormElement) {
   const formData = new FormData(el);
-  const feedback: FeedbackSubmission = {
+  return {
     score: Number(formData.get("score")?.toString()),
     comment: (formData.get("comment")?.toString() || "").trim(),
   };
-  return feedback;
 }
 
 type FeedbackFormProps = {
@@ -37,7 +36,10 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
     e,
   ) => {
     e.preventDefault();
-    const data = getFeedbackDataFromForm(e.target as HTMLFormElement);
+    const data: FeedbackSubmission = {
+      ...getFeedbackDataFromForm(e.target as HTMLFormElement),
+      question,
+    };
     if (!data.score) return;
     setError("");
     try {
