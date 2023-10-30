@@ -11,25 +11,11 @@ import { FeedbackTranslations } from "./types";
 
 const scores = [
   {
-    color: "var(--bucket-feedback-dialog-rating-5-color, #38a169)",
-    bg: "var(--bucket-feedback-dialog-rating-5-background-color, #9ae6b4)",
-    icon: <VerySatisfied />,
-    getLabel: (t: FeedbackTranslations) => t.ScoreVerySatisfiedLabel,
-    value: 5,
-  },
-  {
-    color: "var(--bucket-feedback-dialog-rating-4-color, #48bb78)",
-    bg: "var(--bucket-feedback-dialog-rating-4-background-color, #c6f6d5)",
-    icon: <Satisfied />,
-    getLabel: (t: FeedbackTranslations) => t.ScoreSatisfiedLabel,
-    value: 4,
-  },
-  {
-    color: "var(--bucket-feedback-dialog-rating-3-color, #787c91)",
-    bg: "var(--bucket-feedback-dialog-rating-3-background-color, #e9e9ed)",
-    icon: <Neutral />,
-    getLabel: (t: FeedbackTranslations) => t.ScoreNeutralLabel,
-    value: 3,
+    color: "var(--bucket-feedback-dialog-rating-1-color, #dd6b20)",
+    bg: "var(--bucket-feedback-dialog-rating-1-background-color, #fbd38d)",
+    icon: <VeryDissatisfied />,
+    getLabel: (t: FeedbackTranslations) => t.ScoreVeryDissatisfiedLabel,
+    value: 1,
   },
   {
     color: "var(--bucket-feedback-dialog-rating-2-color, #ed8936)",
@@ -39,11 +25,25 @@ const scores = [
     value: 2,
   },
   {
-    color: "var(--bucket-feedback-dialog-rating-1-color, #dd6b20)",
-    bg: "var(--bucket-feedback-dialog-rating-1-background-color, #fbd38d)",
-    icon: <VeryDissatisfied />,
-    getLabel: (t: FeedbackTranslations) => t.ScoreVeryDissatisfiedLabel,
-    value: 1,
+    color: "var(--bucket-feedback-dialog-rating-3-color, #787c91)",
+    bg: "var(--bucket-feedback-dialog-rating-3-background-color, #e9e9ed)",
+    icon: <Neutral />,
+    getLabel: (t: FeedbackTranslations) => t.ScoreNeutralLabel,
+    value: 3,
+  },
+  {
+    color: "var(--bucket-feedback-dialog-rating-4-color, #48bb78)",
+    bg: "var(--bucket-feedback-dialog-rating-4-background-color, #c6f6d5)",
+    icon: <Satisfied />,
+    getLabel: (t: FeedbackTranslations) => t.ScoreSatisfiedLabel,
+    value: 4,
+  },
+  {
+    color: "var(--bucket-feedback-dialog-rating-5-color, #38a169)",
+    bg: "var(--bucket-feedback-dialog-rating-5-background-color, #9ae6b4)",
+    icon: <VerySatisfied />,
+    getLabel: (t: FeedbackTranslations) => t.ScoreVerySatisfiedLabel,
+    value: 5,
   },
 ] as const;
 
