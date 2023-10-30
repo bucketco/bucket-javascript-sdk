@@ -26,7 +26,9 @@ const CUSTOM_TRANSLATIONS: FeedbackTranslations = {
   DefaultQuestionLabel:
     "Dans quelle mesure êtes-vous satisfait de cette fonctionnalité ?",
   QuestionPlaceholder: "Comment pouvons-nous améliorer cette fonctionnalité ?",
-  CommentLabel: "Laissez un commentaire (facultative)",
+  ScoreStatusDescription: "Choisissez une note et laissez un commentaire",
+  ScoreStatusLoading: "Chargement...",
+  ScoreStatusReceived: "La note a été reçue !",
   ScoreVeryDissatisfiedLabel: "Très insatisfait",
   ScoreDissatisfiedLabel: "Insatisfait",
   ScoreNeutralLabel: "Neutre",
@@ -38,6 +40,7 @@ const CUSTOM_TRANSLATIONS: FeedbackTranslations = {
 
 export function App() {
   const [placement, setPlacement] = useState<FeedbackPlacement>("bottom-right");
+  const [openWithCommentVisible, setOpenWithCommentVisible] = useState(false);
   const [customTranslations, setCustomTranslations] = useState(false);
 
   return (
@@ -71,6 +74,14 @@ export function App() {
           />
           Use custom translations?
         </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={openWithCommentVisible}
+            onInput={(e) => setOpenWithCommentVisible(e.currentTarget.checked)}
+          />
+          Start with comment expanded?
+        </label>
       </div>
 
       <h2>Feedback collection test</h2>
@@ -84,6 +95,7 @@ export function App() {
                 ? "Bonjour, que pensez-vous du modal ?"
                 : "Hello, how do you like the modal?",
               position: { type: "MODAL" },
+              openWithCommentVisible: openWithCommentVisible,
               onAfterSubmit: async (data) => console.log("Submitted:", data),
               onClose: () => console.log("Closed dialog"),
               onDismiss: () => console.log("Dismissed dialog"),
@@ -104,6 +116,7 @@ export function App() {
                 ? "Bonjour, que pensez-vous du dialog ?"
                 : "Hello, how do you like the dialog?",
               position: { type: "DIALOG", placement },
+              openWithCommentVisible: openWithCommentVisible,
               onAfterSubmit: async (data) => console.log("Submitted:", data),
               onClose: () => console.log("Closed dialog"),
               onDismiss: () => console.log("Dismissed dialog"),
@@ -124,6 +137,7 @@ export function App() {
                 ? "Bonjour, que pensez-vous du popover ?"
                 : "Hello, how do you like the popover?",
               position: { type: "POPOVER", anchor: currentTarget },
+              openWithCommentVisible: openWithCommentVisible,
               onAfterSubmit: async (data) => console.log("Submitted:", data),
               onClose: () => console.log("Closed dialog"),
               onDismiss: () => console.log("Dismissed dialog"),

@@ -6,7 +6,6 @@
   user-select: none;
   position: relative;
   white-space: nowrap;
-  flex-grow: 1;
   height: 2rem;
   padding-inline-start: 0.75rem;
   padding-inline-end: 0.75rem;
@@ -15,7 +14,8 @@
   border: none;
   cursor: pointer;
   font-family: var(--bucket-feedback-dialog-font-family);
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 500;
   box-shadow:
     0 1px 2px 0 rgba(0, 0, 0, 0.06),
     0 1px 1px 0 rgba(0, 0, 0, 0.01);
@@ -27,14 +27,28 @@
   &.primary {
     background-color: var(
       --bucket-feedback-dialog-primary-button-background-color,
-      #655bfa
+      white
     );
-    color: var(--bucket-feedback-dialog-primary-button-color, white);
-    border-color: var(--bucket-feedback-dialog-primary-border, #d8d9df);
+    color: var(--bucket-feedback-dialog-primary-button-color, #1e1f24);
+    border: 1px solid
+      var(--bucket-feedback-dialog-primary-border-color, #d8d9df);
   }
 
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    border-color: var(--bucket-feedback-dialog-primary-border-color, #d8d9df);
+
+    transition-duration: 200ms;
+    transition-property: background-color, border-color, color, opacity,
+      box-shadow, transform;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(
+      --bucket-feedback-dialog-input-focus-border-color,
+      #787c91
+    );
   }
 }

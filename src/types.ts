@@ -79,6 +79,11 @@ export interface RequestFeedbackOptions
 
 export type Feedback = {
   /**
+   * Bucket feedback ID
+   */
+  feedbackId?: string;
+
+  /**
    * Bucket feature ID
    */
   featureId: string;
