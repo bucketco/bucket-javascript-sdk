@@ -36,7 +36,7 @@
 
 .dialog {
   position: fixed;
-  width: 274px;
+  width: 280px;
   padding: 16px 22px 10px;
   font-size: var(--bucket-feedback-dialog-font-size, 1rem);
   font-family: var(
