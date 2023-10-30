@@ -12,8 +12,16 @@ export type Options = {
   host?: string;
   debug?: boolean;
   feedback?: {
+    /**
+     * @deprecated Use `enableLiveSatisfaction` instead
+     */
     enableLiveFeedback?: boolean;
+    enableLiveSatisfaction?: boolean;
+    /**
+     * @deprecated Use `liveSatisfactionHandler` instead
+     */
     liveFeedbackHandler?: FeedbackPromptHandler;
+    liveSatisfactionHandler?: FeedbackPromptHandler;
     ui?: {
       /**
        * Control the placement and behavior of the feedback form.
