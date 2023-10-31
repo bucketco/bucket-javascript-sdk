@@ -622,7 +622,9 @@ describe("feedback state management", () => {
         question: "Cum esti?",
         promptedQuestion: "How are you?",
       })
-      .reply(200);
+      .reply(200, {
+        feedbackId: "feedback123",
+      });
 
     const callback: FeedbackPromptHandler = async (_, handlers) => {
       await handlers.reply({
