@@ -52,7 +52,7 @@ describe("init", () => {
     expect(() =>
       bucketInstance.init(KEY, {
         feedback: {
-          enableLiveFeedback: true,
+          enableLiveSatisfaction: true,
         },
         persistUser: false,
       }),
@@ -68,7 +68,7 @@ describe("init", () => {
     expect(() =>
       bucketInstance.init(KEY, {
         feedback: {
-          enableLiveFeedback: true,
+          enableLiveSatisfaction: true,
         },
         persistUser: false,
       }),

@@ -130,6 +130,10 @@ export default function main() {
       liveFeedback = options.feedback.enableLiveFeedback;
     }
 
+    if (typeof options.feedback?.enableLiveSatisfaction !== "undefined") {
+      liveFeedback = options.feedback.enableLiveSatisfaction;
+    }
+
     if (liveFeedback && isForNode) {
       err("Feedback prompting is not supported in Node.js environment");
     }
@@ -139,7 +143,9 @@ export default function main() {
     }
 
     feedbackPromptHandler =
-      options.feedback?.liveFeedbackHandler ?? defaultFeedbackPromptHandler;
+      options.feedback?.liveFeedbackHandler ??
+      options.feedback?.liveSatisfactionHandler ??
+      defaultFeedbackPromptHandler;
 
     log(`initialized with key "${trackingKey}" and options`, options);
   }
@@ -157,7 +163,7 @@ export default function main() {
       }
       sessionUserId = userId;
       if (liveFeedback && !sseChannel) {
-        await initLiveFeedback(userId);
+        await initLiveSatisfaction(userId);
       }
     }
     const payload: User = {
@@ -247,7 +253,11 @@ export default function main() {
     return res;
   }
 
-  async function initLiveFeedback(userId?: User["userId"]) {
+  /**
+   * @deprecated Use `initLiveSatisfaction` instead
+   */
+  const initLiveFeedback = initLiveSatisfaction;
+  async function initLiveSatisfaction(userId?: User["userId"]) {
     checkKey();
 
     if (isForNode) {
@@ -495,6 +505,7 @@ export default function main() {
     feedback,
     // feedback prompting
     requestFeedback,
+    initLiveSatisfaction,
     initLiveFeedback,
   };
 }

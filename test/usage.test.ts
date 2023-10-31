@@ -185,7 +185,7 @@ describe("usage", () => {
     const bucketInstance = bucket();
     bucketInstance.init(KEY, {
       persistUser: false,
-      feedback: { enableLiveFeedback: false },
+      feedback: { enableLiveSatisfaction: false },
     });
 
     await bucketInstance.user("fooUser");
@@ -259,7 +259,9 @@ describe("feedback prompting", () => {
     const bucketInstance = bucket();
     bucketInstance.init(KEY);
 
-    await expect(bucketInstance.initLiveFeedback("foo")).rejects.toThrowError(
+    await expect(
+      bucketInstance.initLiveSatisfaction("foo"),
+    ).rejects.toThrowError(
       "Feedback prompting is not supported in Node.js environment",
     );
   });
@@ -274,10 +276,10 @@ describe("feedback prompting", () => {
     const bucketInstance = bucket();
     bucketInstance.init(KEY, {
       persistUser: false,
-      feedback: { enableLiveFeedback: false },
+      feedback: { enableLiveSatisfaction: false },
     });
 
-    await bucketInstance.initLiveFeedback("foo");
+    await bucketInstance.initLiveSatisfaction("foo");
 
     expect(openAblySSEChannel).toBeCalledTimes(1);
     expect(openAblySSEChannel).toBeCalledWith(
@@ -306,10 +308,10 @@ describe("feedback prompting", () => {
     const bucketInstance = bucket();
     bucketInstance.init(KEY, {
       persistUser: false,
-      feedback: { enableLiveFeedback: false },
+      feedback: { enableLiveSatisfaction: false },
     });
 
-    await bucketInstance.initLiveFeedback("foo");
+    await bucketInstance.initLiveSatisfaction("foo");
 
     expect(openAblySSEChannel).toBeCalledTimes(0);
   });
@@ -327,7 +329,7 @@ describe("feedback prompting", () => {
     const bucketInstance = bucket();
     bucketInstance.init(KEY, {
       feedback: {
-        enableLiveFeedback: true,
+        enableLiveSatisfaction: true,
       },
       persistUser: true,
     });
@@ -350,11 +352,11 @@ describe("feedback prompting", () => {
     const bucketInstance = bucket();
     bucketInstance.init(KEY, {
       persistUser: false,
-      feedback: { enableLiveFeedback: false },
+      feedback: { enableLiveSatisfaction: false },
     });
 
     // connects to ably for first time
-    await bucketInstance.initLiveFeedback("foo");
+    await bucketInstance.initLiveSatisfaction("foo");
     expect(openAblySSEChannel).toBeCalledTimes(1);
 
     bucketInstance.reset();
@@ -369,12 +371,12 @@ describe("feedback prompting", () => {
     const bucketInstance = bucket();
     bucketInstance.init(KEY, {
       persistUser: false,
-      feedback: { enableLiveFeedback: false },
+      feedback: { enableLiveSatisfaction: false },
     });
 
-    await bucketInstance.initLiveFeedback("foo");
+    await bucketInstance.initLiveSatisfaction("foo");
     await expect(() =>
-      bucketInstance.initLiveFeedback("foo"),
+      bucketInstance.initLiveSatisfaction("foo"),
     ).rejects.toThrowError(
       "Feedback prompting already initialized. Use reset() first.",
     );
@@ -449,7 +451,7 @@ describe("feedback state management", () => {
     bucketInstance.init(KEY, {
       persistUser: false,
       feedback: {
-        enableLiveFeedback: false,
+        enableLiveSatisfaction: false,
         liveFeedbackHandler: callback,
       },
     });
@@ -465,7 +467,7 @@ describe("feedback state management", () => {
     const callback = vi.fn();
 
     const bucketInstance = createBucketInstance(callback);
-    await bucketInstance.initLiveFeedback("foo");
+    await bucketInstance.initLiveSatisfaction("foo");
 
     await flushPromises();
 
@@ -488,7 +490,7 @@ describe("feedback state management", () => {
     const callback = vi.fn();
 
     const bucketInstance = createBucketInstance(callback);
-    await bucketInstance.initLiveFeedback("foo");
+    await bucketInstance.initLiveSatisfaction("foo");
 
     bucketInstance.reset();
 
@@ -511,7 +513,7 @@ describe("feedback state management", () => {
     const callback = vi.fn();
 
     const bucketInstance = createBucketInstance(callback);
-    await bucketInstance.initLiveFeedback("foo");
+    await bucketInstance.initLiveSatisfaction("foo");
 
     await flushPromises();
     expect(callback).not.toBeCalled;
@@ -526,7 +528,7 @@ describe("feedback state management", () => {
 
     const callback = vi.fn();
     const bucketInstance = createBucketInstance(callback);
-    await bucketInstance.initLiveFeedback("foo");
+    await bucketInstance.initLiveSatisfaction("foo");
 
     await nockWait(n1);
     await nockWait(n2);
@@ -560,7 +562,7 @@ describe("feedback state management", () => {
     vi.setSystemTime(goodMessage.showAfter - 500);
 
     const bucketInstance = createBucketInstance(callback);
-    await bucketInstance.initLiveFeedback("foo");
+    await bucketInstance.initLiveSatisfaction("foo");
 
     await flushPromises();
 
@@ -590,7 +592,7 @@ describe("feedback state management", () => {
     };
 
     const bucketInstance = createBucketInstance(callback);
-    await bucketInstance.initLiveFeedback("foo");
+    await bucketInstance.initLiveSatisfaction("foo");
 
     await nockWait(n1);
     await nockWait(n2);
@@ -632,7 +634,7 @@ describe("feedback state management", () => {
     };
 
     const bucketInstance = createBucketInstance(callback);
-    await bucketInstance.initLiveFeedback("foo");
+    await bucketInstance.initLiveSatisfaction("foo");
 
     await nockWait(n1);
     await nockWait(n2);
@@ -652,7 +654,9 @@ describe("feedback state management", () => {
 
     const bucketInstance = createBucketInstance(callback);
 
-    await expect(bucketInstance.initLiveFeedback("foo")).rejects.toThrowError();
+    await expect(
+      bucketInstance.initLiveSatisfaction("foo"),
+    ).rejects.toThrowError();
 
     expect(callback).not.toBeCalled;
   });

@@ -65,9 +65,9 @@ Supply these to the `init` call (2nd argument)
 
 Bucket can collect qualitative feedback from your users in the form of a [Customer Satisfaction Score](https://en.wikipedia.org/wiki/Customer_satisfaction) and a comment.
 
-#### Live feedback collection
+#### Live Satisfaction collection
 
-The Bucket SDK comes with a live feedback collection mode enabled by default, which lets the Bucket service ask your users for feedback for relevant features just after they've used them.
+The Bucket SDK comes with a Live Satisfaction collection mode enabled by default, which lets the Bucket service ask your users for feedback for relevant features just after they've used them.
 
 Note: To get started with automatic feedback collection, make sure you call `bucket.user()`.
 
@@ -158,11 +158,11 @@ Types are bundled together with the library and exposed automatically when impor
 
 If you are running with strict Content Security Policies active on your website, you will need to enable these directives in order to use the SDK:
 
-| Directive   | Values                          | Module        | Reason                                                                                                                                   |
-| ----------- | ------------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| connect-src | https://tracking.bucket.co      | tracking      | Used for all tracking methods: `bucket.user()`, `bucket.company()`, `bucket.track()` and `bucket.feedback()`                             |
-| connect-src | https://livemessaging.bucket.co | live feedback | Server sent events from the Bucket Live Feedback service, which allows for automatically collecting feedback when a user used a feature. |
-| style-src   | 'unsafe-inline'                 | feedback UI   | The feedback UI is styled with inline script tags. Not having this directive results unstyled HTML elements.                             |
+| Directive   | Values                          | Module            | Reason                                                                                                                                       |
+| ----------- | ------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| connect-src | https://tracking.bucket.co      | tracking          | Used for all tracking methods: `bucket.user()`, `bucket.company()`, `bucket.track()` and `bucket.feedback()`                                 |
+| connect-src | https://livemessaging.bucket.co | live satisfaction | Server sent events from the Bucket Live Satisfaction service, which allows for automatically collecting feedback when a user used a feature. |
+| style-src   | 'unsafe-inline'                 | feedback UI       | The feedback UI is styled with inline script tags. Not having this directive results unstyled HTML elements.                                 |
 
 If you are including the Bucket tracking SDK with a `<script>`-tag from `jsdelivr.net` you will also need:
 
