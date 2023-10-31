@@ -35,6 +35,24 @@ export function openFeedbackForm(options: OpenFeedbackFormOptions): void {
   const shadowRoot = attachDialogContainer();
   const position = options.position || DEFAULT_POSITION;
 
+  if (position.type === "POPOVER") {
+    if (!position.anchor) {
+      console.warn(
+        "[Bucket]",
+        "Unable to open popover. Anchor must be a defined DOM-element",
+      );
+      return;
+    }
+
+    if (!document.body.contains(position.anchor)) {
+      console.warn(
+        "[Bucket]",
+        "Unable to open popover. Anchor must be an attached DOM-element",
+      );
+      return;
+    }
+  }
+
   render(h(FeedbackDialog, { ...options, position }), shadowRoot);
 
   const dialog = shadowRoot.querySelector("dialog");

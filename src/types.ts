@@ -12,8 +12,8 @@ export type Options = {
   host?: string;
   debug?: boolean;
   feedback?: {
-    automaticPrompting?: boolean;
-    promptHandler?: FeedbackPromptHandler;
+    enableLiveFeedback?: boolean;
+    liveFeedbackHandler?: FeedbackPromptHandler;
     ui?: {
       /**
        * Control the placement and behavior of the feedback form.
@@ -69,7 +69,7 @@ export interface RequestFeedbackOptions
    * feedback.
    *
    * This can be used for side effects, such as storing a
-   * copy of the feedback in your own applicaiton or CRM.
+   * copy of the feedback in your own application or CRM.
    *
    * @param {Object} data
    * @param data.
@@ -79,32 +79,48 @@ export interface RequestFeedbackOptions
 
 export type Feedback = {
   /**
+   * Bucket feedback ID
+   */
+  feedbackId?: string;
+
+  /**
    * Bucket feature ID
    */
   featureId: string;
 
   /**
-   * User id from your own appliction
+   * User id from your own application.
    */
   userId?: User["userId"];
 
   /**
-   * Company id from your own application
+   * Company id from your own application.
    */
   companyId?: Company["companyId"];
 
   /**
-   * Customer satisfaction score
+   * The question that was presented to the user.
+   */
+  question?: string;
+
+  /**
+   * The original question.
+   * This only needs to be populated if the feedback was submitted through the Live Satisfaction channel.
+   */
+  promptedQuestion?: string;
+
+  /**
+   * Customer satisfaction score.
    */
   score?: number;
 
   /**
-   * User supplied comment about your feature
+   * User supplied comment about your feature.
    */
   comment?: string;
 
   /**
-   * Bucket feedback prompt id.
+   * Bucket feedback prompt ID.
    *
    * This only exists if the feedback was submitted
    * as part of an automated prompt from Bucket.
@@ -124,6 +140,7 @@ export type FeedbackPrompt = {
 };
 
 export type FeedbackPromptReply = {
+  question: string;
   companyId?: Company["companyId"];
   score?: FeedbackSubmission["score"];
   comment?: FeedbackSubmission["comment"];

@@ -1,11 +1,11 @@
 .star-rating {
   display: flex;
   flex-direction: column;
-  gap: 0.5em;
 }
 
 .star-rating-icons {
   display: flex;
+  width: 0;
 
   > input {
     border: 0px;
@@ -23,6 +23,8 @@
     border: 1px solid;
     border-color: var(--bucket-feedback-dialog-input-border-color, #d8d9df);
 
+    padding: 0px 7px;
+
     &:not(:first-of-type) {
       border-top-left-radius: 0;
       border-bottom-left-radius: 0;
@@ -34,30 +36,34 @@
       margin-inline-end: -1px;
     }
 
+    + .button-tooltip {
+      pointer-events: none;
+      opacity: 0;
+
+      background: var(--bucket-feedback-dialog-tooltip-background-color, #000);
+      color: var(--bucket-feedback-dialog-tooltip-color, #fff);
+      padding: 6px 8px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+
+    &:hover + .button-tooltip {
+      opacity: 1;
+    }
+
     > svg {
       transition: transform 200ms ease-in-out;
     }
-
-    &:hover {
-      background-color: #e9e9ed;
-      > svg {
-        transform: scale(1.2);
-      }
-    }
-  }
-
-  > input:checked + .button {
-    background-color: #e9e9ed;
-  }
-
-  > input:checked + .button > svg {
-    transform: scale(1.2);
   }
 }
 
-.star-rating-labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.75em;
-  opacity: 0.5;
+.button-tooltip-arrow {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background-color: var(
+    --bucket-feedback-dialog-tooltip-background-color,
+    #000
+  );
+  transform: rotate(45deg);
 }

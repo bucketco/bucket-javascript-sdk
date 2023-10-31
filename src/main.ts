@@ -39,6 +39,8 @@ async function request(url: string, body: any) {
   });
 }
 
+const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+
 export default function main() {
   let debug = false;
   let trackingKey: string | undefined = undefined;
@@ -46,7 +48,7 @@ export default function main() {
   let sessionUserId: string | undefined = undefined;
   let persistUser: boolean = !isForNode;
   let sseChannel: AblySSEChannel | undefined = undefined;
-  let automaticFeedbackPrompting: boolean = !isForNode;
+  let liveFeedback: boolean = !isForNode;
   let feedbackPromptHandler: FeedbackPromptHandler | undefined = undefined;
   let feedbackPromptingUserId: string | undefined = undefined;
   let feedbackPosition: FeedbackPosition | undefined = undefined;
@@ -76,6 +78,10 @@ export default function main() {
     if (debug) {
       console.log("[Bucket]", message, ...args);
     }
+  }
+
+  function warn(message: string, ...args: any[]) {
+    console.warn("[Bucket]", message, ...args);
   }
 
   function err(message: string, ...args: any[]): never {
@@ -120,20 +126,20 @@ export default function main() {
       persistUser = options.persistUser;
     }
 
-    if (typeof options.feedback?.automaticPrompting !== "undefined") {
-      automaticFeedbackPrompting = options.feedback.automaticPrompting;
+    if (typeof options.feedback?.enableLiveFeedback !== "undefined") {
+      liveFeedback = options.feedback.enableLiveFeedback;
     }
 
-    if (automaticFeedbackPrompting && isForNode) {
+    if (liveFeedback && isForNode) {
       err("Feedback prompting is not supported in Node.js environment");
     }
 
-    if (automaticFeedbackPrompting && !persistUser) {
+    if (liveFeedback && !persistUser) {
       err("Feedback prompting is not supported when persistUser is disabled");
     }
 
     feedbackPromptHandler =
-      options.feedback?.promptHandler ?? defaultFeedbackPromptHandler;
+      options.feedback?.liveFeedbackHandler ?? defaultFeedbackPromptHandler;
 
     log(`initialized with key "${trackingKey}" and options`, options);
   }
@@ -150,8 +156,8 @@ export default function main() {
         reset();
       }
       sessionUserId = userId;
-      if (automaticFeedbackPrompting && !sseChannel) {
-        await initFeedbackPrompting(userId);
+      if (liveFeedback && !sseChannel) {
+        await initLiveFeedback(userId);
       }
     }
     const payload: User = {
@@ -209,12 +215,15 @@ export default function main() {
   }
 
   async function feedback({
+    feedbackId,
     featureId,
+    question,
     score,
     userId,
     companyId,
     comment,
     promptId,
+    promptedQuestion,
   }: Feedback) {
     checkKey();
     if (!featureId) err("No featureId provided");
@@ -222,12 +231,15 @@ export default function main() {
     userId = resolveUser(userId);
 
     const payload: Feedback & { userId: User["userId"] } = {
+      feedbackId,
       userId,
       featureId,
       score,
       companyId,
       comment,
       promptId,
+      question,
+      promptedQuestion,
     };
 
     const res = await request(`${getUrl()}/feedback`, payload);
@@ -235,8 +247,9 @@ export default function main() {
     return res;
   }
 
-  async function initFeedbackPrompting(userId?: User["userId"]) {
+  async function initLiveFeedback(userId?: User["userId"]) {
     checkKey();
+
     if (isForNode) {
       err("Feedback prompting is not supported in Node.js environment");
     }
@@ -244,6 +257,12 @@ export default function main() {
     if (sseChannel) {
       err("Feedback prompting already initialized. Use reset() first.");
     }
+
+    if (isMobile) {
+      warn("Feedback prompting is not supported on mobile devices");
+      return;
+    }
+
     userId = resolveUser(userId);
 
     const res = await request(`${getUrl()}/feedback/prompting-init`, {
@@ -280,6 +299,7 @@ export default function main() {
           await feedbackPromptEvent({
             promptId: parsed.promptId,
             featureId: parsed.featureId,
+            promptedQuestion: parsed.question,
             event: "received",
             userId,
           });
@@ -299,6 +319,8 @@ export default function main() {
     message: FeedbackPrompt,
     completionHandler: FeedbackPromptCompletionHandler,
   ) {
+    let feedbackId: string | undefined = undefined;
+
     if (feedbackPromptingUserId !== userId) {
       log(
         `feedback prompt not shown, received for another user`,
@@ -311,6 +333,7 @@ export default function main() {
     await feedbackPromptEvent({
       promptId: message.promptId,
       featureId: message.featureId,
+      promptedQuestion: message.question,
       event: "shown",
       userId,
     });
@@ -322,15 +345,19 @@ export default function main() {
           featureId: message.featureId,
           event: "dismissed",
           userId,
+          promptedQuestion: message.question,
         });
       } else {
         await feedback({
+          feedbackId: feedbackId,
           featureId: message.featureId,
           userId,
           companyId: reply.companyId,
           score: reply.score,
           comment: reply.comment,
           promptId: message.promptId,
+          question: reply.question,
+          promptedQuestion: message.question,
         });
       }
 
@@ -339,11 +366,22 @@ export default function main() {
 
     const handlers: FeedbackPromptHandlerCallbacks = {
       reply: replyCallback,
-      // TODO: consider different name - align w requestFeedback or be deliberately different?
       openFeedbackForm: (options) => {
         feedbackLib.openFeedbackForm({
           key: message.featureId,
           title: message.question,
+          onScoreSubmit: async (data) => {
+            const res = await feedback({
+              featureId: message.featureId,
+              feedbackId: data.feedbackId,
+              userId: userId,
+              score: data.score,
+            });
+
+            const json = await res.json();
+            feedbackId = json.feedbackId;
+            return { feedbackId: json.feedbackId };
+          },
           onSubmit: async (data) => {
             await replyCallback(data);
             options.onAfterSubmit?.(data);
@@ -363,6 +401,7 @@ export default function main() {
     event: "received" | "shown" | "dismissed";
     featureId: string;
     promptId: string;
+    promptedQuestion: string;
     userId: User["userId"];
   }) {
     checkKey();
@@ -374,6 +413,7 @@ export default function main() {
       featureId: args.featureId,
       promptId: args.promptId,
       userId: args.userId,
+      promptedQuestion: args.promptedQuestion,
     };
 
     const res = await request(`${getUrl()}/feedback/prompt-events`, payload);
@@ -404,8 +444,20 @@ export default function main() {
         title: options.title,
         position: options.position ?? feedbackPosition,
         translations: options.translations ?? feedbackTranslations,
+        openWithCommentVisible: options.openWithCommentVisible,
         onClose: options.onClose,
         onDismiss: options.onDismiss,
+        onScoreSubmit: async (data) => {
+          const res = await feedback({
+            featureId: options.featureId,
+            userId: options.userId,
+            companyId: options.companyId,
+            ...data,
+          });
+
+          const json = await res.json();
+          return { feedbackId: json.feedbackId };
+        },
         onSubmit: async (data) => {
           // Default onSubmit handler
           await feedback({
@@ -443,6 +495,6 @@ export default function main() {
     feedback,
     // feedback prompting
     requestFeedback,
-    initFeedbackPrompting,
+    initLiveFeedback,
   };
 }

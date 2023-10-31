@@ -9,7 +9,7 @@ The library can be included directly as an external script or you can import it.
 A. Script tag (client-side directly in html)
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@bucketco/tracking-sdk@1"></script>
+<script src="https://cdn.jsdelivr.net/npm/@bucketco/tracking-sdk@2"></script>
 ```
 
 B. Import module (in either node or browser bundling)
@@ -65,6 +65,22 @@ Supply these to the `init` call (2nd argument)
 
 Bucket can collect qualitative feedback from your users in the form of a [Customer Satisfaction Score](https://en.wikipedia.org/wiki/Customer_satisfaction) and a comment.
 
+#### Live feedback collection
+
+The Bucket SDK comes with a live feedback collection mode enabled by default, which lets the Bucket service ask your users for feedback for relevant features just after they've used them.
+
+Note: To get started with automatic feedback collection, make sure you call `bucket.user()`.
+
+You can find all the options to make changes to the default behaviour in the [Bucket feedback documentation](./FEEDBACK.md).
+
+#### Bucket feedback UI
+
+Bucket can assist you with collecting your user's feedback by offering a pre-built UI, allowing you to get started with minimal code and effort.
+
+![image](https://github.com/bucketco/bucket-tracking-sdk/assets/331790/519c2236-bcf6-497a-bf0e-c2f171b6f697)
+
+[Read the Bucket feedback UI documentation](./FEEDBACK.md)
+
 #### Bucket feedback SDK
 
 Feedback can be submitted to Bucket using the SDK:
@@ -84,15 +100,6 @@ bucket.feedback({
 If you are not using the Bucket SDK, you can still submit feedback using the HTTP API.
 
 See details in [Feedback HTTP API](https://docs.bucket.co/reference/http-tracking-api#feedback)
-
-#### Bucket feedback example UI
-
-In order to collect feedback from a customer, you might want to build your own UI that matches your own style guide.
-
-We have built a few scaffolds you can get started with easily:
-
-- [Vanilla HTML/JS feedback form](./example/feedback/feedback.html)
-- [React feedback form](./example/feedback/Feedback.jsx)
 
 ### Zero PII
 
@@ -146,6 +153,22 @@ Instead, you should provide the userId to each call, as the 3rd argument to `com
 ### Typescript
 
 Types are bundled together with the library and exposed automatically when importing through a package manager.
+
+## Content Security Policy (CSP)
+
+If you are running with strict Content Security Policies active on your website, you will need to enable these directives in order to use the SDK:
+
+| Directive   | Values                          | Module        | Reason                                                                                                                                   |
+| ----------- | ------------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| connect-src | https://tracking.bucket.co      | tracking      | Used for all tracking methods: `bucket.user()`, `bucket.company()`, `bucket.track()` and `bucket.feedback()`                             |
+| connect-src | https://livemessaging.bucket.co | live feedback | Server sent events from the Bucket Live Feedback service, which allows for automatically collecting feedback when a user used a feature. |
+| style-src   | 'unsafe-inline'                 | feedback UI   | The feedback UI is styled with inline script tags. Not having this directive results unstyled HTML elements.                             |
+
+If you are including the Bucket tracking SDK with a `<script>`-tag from `jsdelivr.net` you will also need:
+
+| Directive       | Values                   | Module    | Reason                                   |
+| --------------- | ------------------------ | --------- | ---------------------------------------- |
+| script-src-elem | https://cdn.jsdelivr.net | bootstrap | Loads the Bucket tracking SDK from a CDN |
 
 # License
 
