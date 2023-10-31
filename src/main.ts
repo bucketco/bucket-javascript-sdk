@@ -357,21 +357,25 @@ export default function main() {
           userId,
           promptedQuestion: message.question,
         });
-      } else {
-        await feedback({
-          feedbackId: feedbackId,
-          featureId: message.featureId,
-          userId,
-          companyId: reply.companyId,
-          score: reply.score,
-          comment: reply.comment,
-          promptId: message.promptId,
-          question: reply.question,
-          promptedQuestion: message.question,
-        });
+
+        completionHandler();
+        return;
       }
 
+      const response = await feedback({
+        feedbackId: feedbackId,
+        featureId: message.featureId,
+        userId,
+        companyId: reply.companyId,
+        score: reply.score,
+        comment: reply.comment,
+        promptId: message.promptId,
+        question: reply.question,
+        promptedQuestion: message.question,
+      });
+
       completionHandler();
+      return await response.json();
     };
 
     const handlers: FeedbackPromptHandlerCallbacks = {
@@ -381,16 +385,9 @@ export default function main() {
           key: message.featureId,
           title: message.question,
           onScoreSubmit: async (data) => {
-            const res = await feedback({
-              featureId: message.featureId,
-              feedbackId: data.feedbackId,
-              userId: userId,
-              score: data.score,
-            });
-
-            const json = await res.json();
-            feedbackId = json.feedbackId;
-            return { feedbackId: json.feedbackId };
+            const res = await replyCallback(data);
+            feedbackId = res.feedbackId;
+            return { feedbackId: res.feedbackId };
           },
           onSubmit: async (data) => {
             await replyCallback(data);

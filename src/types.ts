@@ -154,9 +154,9 @@ export type FeedbackPromptReply = {
   comment?: FeedbackSubmission["comment"];
 };
 
-export type FeedbackPromptReplyHandler = (
-  reply: FeedbackPromptReply | null,
-) => Promise<void>;
+export type FeedbackPromptReplyHandler = <T extends FeedbackPromptReply | null>(
+  reply: T,
+) => T extends null ? Promise<void> : Promise<{ feedbackId: string }>;
 
 export type FeedbackPromptHandlerCallbacks = {
   reply: FeedbackPromptReplyHandler;
