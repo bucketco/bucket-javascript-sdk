@@ -6,17 +6,20 @@ import { CheckCircle } from "./icons/CheckCircle";
 import { Button } from "./Button";
 import { Plug } from "./Plug";
 import { StarRating } from "./StarRating";
-import { FeedbackSubmission, FeedbackTranslations } from "./types";
+import {
+  FeedbackScoreSubmission,
+  FeedbackSubmission,
+  FeedbackTranslations,
+} from "./types";
 
 const ANIMATION_SPEED = 400;
 
-function getFeedbackDataFromForm(el: HTMLFormElement): FeedbackSubmission {
+function getFeedbackDataFromForm(el: HTMLFormElement) {
   const formData = new FormData(el);
-  const feedback: FeedbackSubmission = {
+  return {
     score: Number(formData.get("score")?.toString()),
     comment: (formData.get("comment")?.toString() || "").trim(),
   };
-  return feedback;
 }
 
 type FeedbackFormProps = {
@@ -25,8 +28,12 @@ type FeedbackFormProps = {
   scoreState: "idle" | "submitting" | "submitted";
   openWithCommentVisible: boolean;
   onInteraction: () => void;
-  onSubmit: (data: FeedbackSubmission) => Promise<void> | void;
-  onScoreSubmit: (score: number) => Promise<void> | void;
+  onSubmit: (
+    data: Omit<FeedbackSubmission, "feebackId">,
+  ) => Promise<void> | void;
+  onScoreSubmit: (
+    score: Omit<FeedbackScoreSubmission, "feebackId">,
+  ) => Promise<void> | void;
 };
 
 export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
@@ -49,7 +56,10 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
     e,
   ) => {
     e.preventDefault();
-    const data = getFeedbackDataFromForm(e.target as HTMLFormElement);
+    const data: FeedbackSubmission = {
+      ...getFeedbackDataFromForm(e.target as HTMLFormElement),
+      question,
+    };
     if (!data.score) return;
     setError("");
     try {
@@ -173,7 +183,10 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
               name="score"
               onChange={async (e) => {
                 setHasRating(true);
-                await onScoreSubmit(Number(e.currentTarget.value));
+                await onScoreSubmit({
+                  question,
+                  score: Number(e.currentTarget.value),
+                });
               }}
             />
 
