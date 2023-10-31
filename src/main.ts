@@ -217,11 +217,13 @@ export default function main() {
   async function feedback({
     feedbackId,
     featureId,
+    question,
     score,
     userId,
     companyId,
     comment,
     promptId,
+    promptedQuestion,
   }: Feedback) {
     checkKey();
     if (!featureId) err("No featureId provided");
@@ -236,6 +238,8 @@ export default function main() {
       companyId,
       comment,
       promptId,
+      question,
+      promptedQuestion,
     };
 
     const res = await request(`${getUrl()}/feedback`, payload);
@@ -295,6 +299,7 @@ export default function main() {
           await feedbackPromptEvent({
             promptId: parsed.promptId,
             featureId: parsed.featureId,
+            promptedQuestion: parsed.question,
             event: "received",
             userId,
           });
@@ -328,6 +333,7 @@ export default function main() {
     await feedbackPromptEvent({
       promptId: message.promptId,
       featureId: message.featureId,
+      promptedQuestion: message.question,
       event: "shown",
       userId,
     });
@@ -339,6 +345,7 @@ export default function main() {
           featureId: message.featureId,
           event: "dismissed",
           userId,
+          promptedQuestion: message.question,
         });
       } else {
         await feedback({
@@ -349,6 +356,8 @@ export default function main() {
           score: reply.score,
           comment: reply.comment,
           promptId: message.promptId,
+          question: reply.question,
+          promptedQuestion: message.question,
         });
       }
 
@@ -392,6 +401,7 @@ export default function main() {
     event: "received" | "shown" | "dismissed";
     featureId: string;
     promptId: string;
+    promptedQuestion: string;
     userId: User["userId"];
   }) {
     checkKey();
@@ -403,6 +413,7 @@ export default function main() {
       featureId: args.featureId,
       promptId: args.promptId,
       userId: args.userId,
+      promptedQuestion: args.promptedQuestion,
     };
 
     const res = await request(`${getUrl()}/feedback/prompt-events`, payload);

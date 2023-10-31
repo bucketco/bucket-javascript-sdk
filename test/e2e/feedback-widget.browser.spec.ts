@@ -49,6 +49,7 @@ async function getOpenedWidgetContainer(page: Page) {
 }
 
 async function setScore(container: Locator, score: number) {
+  await new Promise((resolve) => setTimeout(resolve, 50)); // allow react to update its state
   await container
     .locator(`#bucket-feedback-score-${score}`)
     .dispatchEvent("click");
@@ -117,6 +118,7 @@ test("Sends a request when choosing a score immediately", async ({ page }) => {
       companyId: "bar",
       featureId: "featureId1",
       score: expectedScore,
+      question: "baz",
       userId: "foo",
     });
 });
@@ -173,6 +175,7 @@ test("Updates the score on every change", async ({ page }) => {
       feedbackId: "123",
       companyId: "bar",
       featureId: "featureId1",
+      question: "baz",
       score: 3,
       userId: "foo",
     });
@@ -229,6 +232,7 @@ test("Sends a request with both the score and comment when submitting", async ({
     comment: expectedComment,
     score: expectedScore,
     companyId: "bar",
+    question: "baz",
     featureId: "featureId1",
     feedbackId: "123",
     userId: "foo",

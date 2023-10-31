@@ -62,6 +62,8 @@ test("Acceptance", async ({ page }) => {
         featureId: "featureId1",
         score: 5,
         comment: "test!",
+        question: "actual question",
+        promptedQuestion: "prompted question",
       });
 
       successfulRequests.push("FEEDBACK");
@@ -87,6 +89,8 @@ test("Acceptance", async ({ page }) => {
         companyId: "bar",
         score: 5,
         comment: "test!",
+        question: "actual question",
+        promptedQuestion: "prompted question",
       });
     })()
   `);

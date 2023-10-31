@@ -73,6 +73,9 @@ describe("usage", () => {
         userId: "foo",
         featureId: "featureId1",
         score: 5,
+        comment: "Sunt bine!",
+        question: "Cum esti?",
+        promptedQuestion: "How are you?",
       })
       .reply(200);
 
@@ -87,7 +90,10 @@ describe("usage", () => {
     await bucketInstance.feedback({
       featureId: "featureId1",
       score: 5,
+      comment: "Sunt bine!",
       userId: "foo",
+      question: "Cum esti?",
+      promptedQuestion: "How are you?",
     });
   });
 
@@ -377,7 +383,7 @@ describe("feedback prompting", () => {
 
 describe("feedback state management", () => {
   const goodMessage = {
-    question: "How are you",
+    question: "How are you?",
     showAfter: new Date(Date.now() - 1000).valueOf(),
     showBefore: new Date(Date.now() + 1000).valueOf(),
     promptId: "123",
@@ -433,6 +439,7 @@ describe("feedback state management", () => {
         promptId: "123",
         featureId: "456",
         action: event,
+        promptedQuestion: "How are you?",
       })
       .reply(200, { success: true });
   };
@@ -528,7 +535,7 @@ describe("feedback state management", () => {
     expect(callback).toBeCalledTimes(1);
     expect(callback).toBeCalledWith(
       {
-        question: "How are you",
+        question: "How are you?",
         showAfter: new Date(goodMessage.showAfter),
         showBefore: new Date(goodMessage.showBefore),
         promptId: "123",
@@ -610,6 +617,8 @@ describe("feedback state management", () => {
         companyId: "bar",
         comment: "hello",
         score: 5,
+        question: "Cum esti?",
+        promptedQuestion: "How are you?",
       })
       .reply(200);
 
@@ -618,6 +627,7 @@ describe("feedback state management", () => {
         companyId: "bar",
         score: 5,
         comment: "hello",
+        question: "Cum esti?",
       });
     };
 
