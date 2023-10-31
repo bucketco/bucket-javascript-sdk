@@ -6,7 +6,11 @@ import { CheckCircle } from "./icons/CheckCircle";
 import { Button } from "./Button";
 import { Plug } from "./Plug";
 import { StarRating } from "./StarRating";
-import { FeedbackSubmission, FeedbackTranslations } from "./types";
+import {
+  FeedbackScoreSubmission,
+  FeedbackSubmission,
+  FeedbackTranslations,
+} from "./types";
 
 const ANIMATION_SPEED = 400;
 
@@ -24,8 +28,12 @@ type FeedbackFormProps = {
   scoreState: "idle" | "submitting" | "submitted";
   openWithCommentVisible: boolean;
   onInteraction: () => void;
-  onSubmit: (data: FeedbackSubmission) => Promise<void> | void;
-  onScoreSubmit: (score: number) => Promise<void> | void;
+  onSubmit: (
+    data: Omit<FeedbackSubmission, "feebackId">,
+  ) => Promise<void> | void;
+  onScoreSubmit: (
+    score: Omit<FeedbackScoreSubmission, "feebackId">,
+  ) => Promise<void> | void;
 };
 
 export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
@@ -175,7 +183,10 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
               name="score"
               onChange={async (e) => {
                 setHasRating(true);
-                await onScoreSubmit(Number(e.currentTarget.value));
+                await onScoreSubmit({
+                  question,
+                  score: Number(e.currentTarget.value),
+                });
               }}
             />
 

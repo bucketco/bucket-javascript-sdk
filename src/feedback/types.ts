@@ -20,6 +20,7 @@ export interface FeedbackSubmission {
 
 export interface FeedbackScoreSubmission {
   feedbackId?: string;
+  question: string;
   score: number;
 }
 

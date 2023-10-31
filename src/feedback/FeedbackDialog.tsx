@@ -16,6 +16,7 @@ import { FeedbackForm } from "./FeedbackForm";
 import styles from "./index.css?inline";
 import { RadialProgress } from "./RadialProgress";
 import {
+  FeedbackScoreSubmission,
   FeedbackSubmission,
   OpenFeedbackFormOptions,
   WithRequired,
@@ -120,7 +121,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
   >("idle");
 
   const submit = useCallback(
-    async (data: FeedbackSubmission) => {
+    async (data: Omit<FeedbackSubmission, "feedbackId">) => {
       await onSubmit({ ...data, feedbackId });
       autoClose.startWithDuration(SUCCESS_DURATION_MS);
     },
@@ -128,11 +129,11 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
   );
 
   const submitScore = useCallback(
-    async (score: number) => {
+    async (data: Omit<FeedbackScoreSubmission, "feedbackId">) => {
       if (onScoreSubmit !== undefined) {
         setScoreState("submitting");
 
-        const res = await onScoreSubmit({ score, feedbackId });
+        const res = await onScoreSubmit({ ...data, feedbackId });
         setFeedbackId(res.feedbackId);
         setScoreState("submitted");
       }
