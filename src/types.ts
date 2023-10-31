@@ -79,7 +79,12 @@ export interface RequestFeedbackOptions
 
 export type Feedback = {
   /**
-   * Bucket feature ID.
+   * Bucket feedback ID
+   */
+  feedbackId?: string;
+
+  /**
+   * Bucket feature ID
    */
   featureId: string;
 
@@ -115,7 +120,7 @@ export type Feedback = {
   comment?: string;
 
   /**
-   * Bucket feedback prompt id.
+   * Bucket feedback prompt ID.
    *
    * This only exists if the feedback was submitted
    * as part of an automated prompt from Bucket.

@@ -1,10 +1,9 @@
 import { Fragment, FunctionComponent, h } from "preact";
-import { useCallback, useEffect, useRef } from "preact/hooks";
+import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { DEFAULT_TRANSLATIONS } from "./config/defaultTranslations";
 import { useTimer } from "./hooks/useTimer";
 import { Close } from "./icons/Close";
-import { Logo } from "./icons/Logo";
 import {
   arrow,
   autoUpdate,
@@ -39,9 +38,11 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
   title = DEFAULT_TRANSLATIONS.DefaultQuestionLabel,
   position,
   translations = DEFAULT_TRANSLATIONS,
+  openWithCommentVisible = false,
   onClose,
   onDismiss,
   onSubmit,
+  onScoreSubmit,
 }) => {
   const arrowRef = useRef<HTMLDivElement>(null);
   const anchor = position.type === "POPOVER" ? position.anchor : null;
@@ -113,12 +114,30 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
     onDismiss?.();
   }, [close, onDismiss]);
 
+  const [feedbackId, setFeedbackId] = useState<string | undefined>(undefined);
+  const [scoreState, setScoreState] = useState<
+    "idle" | "submitting" | "submitted"
+  >("idle");
+
   const submit = useCallback(
     async (data: FeedbackSubmission) => {
-      await onSubmit(data);
+      await onSubmit({ ...data, feedbackId });
       autoClose.startWithDuration(SUCCESS_DURATION_MS);
     },
-    [onSubmit],
+    [feedbackId, onSubmit],
+  );
+
+  const submitScore = useCallback(
+    async (score: number) => {
+      if (onScoreSubmit !== undefined) {
+        setScoreState("submitting");
+
+        const res = await onScoreSubmit({ score, feedbackId });
+        setFeedbackId(res.feedbackId);
+        setScoreState("submitted");
+      }
+    },
+    [feedbackId, onSubmit],
   );
 
   const autoClose = useTimer({
@@ -191,6 +210,17 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
         ].join(" ")}
         style={anchor ? floatingStyles : unanchoredPosition}
       >
+        <FeedbackForm
+          t={{ ...DEFAULT_TRANSLATIONS, ...translations }}
+          key={key}
+          question={title}
+          openWithCommentVisible={openWithCommentVisible}
+          onSubmit={submit}
+          onScoreSubmit={submitScore}
+          scoreState={scoreState}
+          onInteraction={autoClose.stop}
+        />
+
         <button onClick={dismiss} class="close">
           {!autoClose.stopped && autoClose.elapsedFraction > 0 && (
             <RadialProgress
@@ -200,20 +230,6 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
           )}
           <Close />
         </button>
-
-        <FeedbackForm
-          t={{ ...DEFAULT_TRANSLATIONS, ...translations }}
-          key={key}
-          question={title}
-          onSubmit={submit}
-          onInteraction={autoClose.stop}
-        />
-
-        <footer class="plug">
-          <a href="https://bucket.co" target="_blank">
-            Powered by <Logo /> Bucket
-          </a>
-        </footer>
 
         {anchor && (
           <div

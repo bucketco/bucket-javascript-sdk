@@ -215,6 +215,7 @@ export default function main() {
   }
 
   async function feedback({
+    feedbackId,
     featureId,
     question,
     score,
@@ -230,6 +231,7 @@ export default function main() {
     userId = resolveUser(userId);
 
     const payload: Feedback & { userId: User["userId"] } = {
+      feedbackId,
       userId,
       featureId,
       score,
@@ -317,6 +319,8 @@ export default function main() {
     message: FeedbackPrompt,
     completionHandler: FeedbackPromptCompletionHandler,
   ) {
+    let feedbackId: string | undefined = undefined;
+
     if (feedbackPromptingUserId !== userId) {
       log(
         `feedback prompt not shown, received for another user`,
@@ -345,6 +349,7 @@ export default function main() {
         });
       } else {
         await feedback({
+          feedbackId: feedbackId,
           featureId: message.featureId,
           userId,
           companyId: reply.companyId,
@@ -361,11 +366,22 @@ export default function main() {
 
     const handlers: FeedbackPromptHandlerCallbacks = {
       reply: replyCallback,
-      // TODO: consider different name - align w requestFeedback or be deliberately different?
       openFeedbackForm: (options) => {
         feedbackLib.openFeedbackForm({
           key: message.featureId,
           title: message.question,
+          onScoreSubmit: async (data) => {
+            const res = await feedback({
+              featureId: message.featureId,
+              feedbackId: data.feedbackId,
+              userId: userId,
+              score: data.score,
+            });
+
+            const json = await res.json();
+            feedbackId = json.feedbackId;
+            return { feedbackId: json.feedbackId };
+          },
           onSubmit: async (data) => {
             await replyCallback(data);
             options.onAfterSubmit?.(data);
@@ -428,8 +444,20 @@ export default function main() {
         title: options.title,
         position: options.position ?? feedbackPosition,
         translations: options.translations ?? feedbackTranslations,
+        openWithCommentVisible: options.openWithCommentVisible,
         onClose: options.onClose,
         onDismiss: options.onDismiss,
+        onScoreSubmit: async (data) => {
+          const res = await feedback({
+            featureId: options.featureId,
+            userId: options.userId,
+            companyId: options.companyId,
+            ...data,
+          });
+
+          const json = await res.json();
+          return { feedbackId: json.feedbackId };
+        },
         onSubmit: async (data) => {
           // Default onSubmit handler
           await feedback({

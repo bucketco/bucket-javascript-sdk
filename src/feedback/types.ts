@@ -13,8 +13,18 @@ export type FeedbackPosition =
 
 export interface FeedbackSubmission {
   question: string;
+  feedbackId?: string;
   score: number;
   comment: string;
+}
+
+export interface FeedbackScoreSubmission {
+  feedbackId?: string;
+  score: number;
+}
+
+export interface OnScoreSubmitResult {
+  feedbackId: string;
 }
 
 export interface OpenFeedbackFormOptions {
@@ -32,7 +42,16 @@ export interface OpenFeedbackFormOptions {
    */
   translations?: Partial<FeedbackTranslations>;
 
+  /**
+   * Open the form with both the score and comment fields visible.
+   * Defaults to `false`
+   */
+  openWithCommentVisible?: boolean;
+
   onSubmit: (data: FeedbackSubmission) => Promise<void> | void;
+  onScoreSubmit?: (
+    data: FeedbackScoreSubmission,
+  ) => Promise<OnScoreSubmitResult>;
   onClose?: () => void;
   onDismiss?: () => void;
 }
@@ -40,7 +59,9 @@ export interface OpenFeedbackFormOptions {
 export type FeedbackTranslations = {
   DefaultQuestionLabel: string;
   QuestionPlaceholder: string;
-  CommentLabel: string;
+  ScoreStatusDescription: string;
+  ScoreStatusLoading: string;
+  ScoreStatusReceived: string;
   ScoreVeryDissatisfiedLabel: string;
   ScoreDissatisfiedLabel: string;
   ScoreNeutralLabel: string;
