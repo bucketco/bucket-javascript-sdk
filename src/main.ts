@@ -287,6 +287,19 @@ export default function main() {
 
     log(`feedback prompting enabled`);
 
+    if (sseChannel) {
+      if (feedbackPromptingUserId !== userId) {
+        err(
+          "Feedback prompting already initialized for a different user. Are you calling initLiveSatisfaction() or user() in a loop?",
+        );
+      } else {
+        warn(
+          "Feedback prompting already initialized for this user. Are you calling initLiveSatisfaction() or user() in a loop?",
+        );
+        return res;
+      }
+    }
+
     feedbackPromptingUserId = userId;
     sseChannel = openAblySSEChannel(
       `${getUrl()}/feedback/prompting-auth`,
