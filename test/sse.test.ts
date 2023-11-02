@@ -34,6 +34,7 @@ vitest.mock("reconnecting-eventsource", () => {
   return {
     default: vi.fn().mockReturnValue({
       addEventListener: vi.fn(),
+      close: vi.fn(),
     }),
   };
 });
@@ -225,7 +226,7 @@ describe("message handling", () => {
     expect(callback).toHaveBeenCalledTimes(1);
   });
 
-  test("does not respond to unknown errors", async () => {
+  test("disconnects on unknown event source errors without data", async () => {
     const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
 
     let errorCallback: ((e: Event) => Promise<void>) | undefined = undefined;
@@ -246,18 +247,10 @@ describe("message handling", () => {
     expect(errorCallback).toBeDefined();
 
     await errorCallback!({} as any);
-    expect(close).not.toHaveBeenCalled();
-
-    await errorCallback!(
-      new MessageEvent("error", {
-        data: JSON.stringify({ code: 400 }),
-      }),
-    );
-
-    expect(close).not.toHaveBeenCalled();
+    expect(close).toHaveBeenCalledTimes(1);
   });
 
-  test("resets the connection and refreshes token for ably expiry errors", async () => {
+  test("disconnects on unknown event source errors with data", async () => {
     const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
 
     let errorCallback: ((e: Event) => Promise<void>) | undefined = undefined;
@@ -275,8 +268,34 @@ describe("message handling", () => {
 
     await sse.connect();
 
-    setupAuthNock(true);
-    setupTokenNock(true);
+    expect(errorCallback).toBeDefined();
+
+    await errorCallback!(
+      new MessageEvent("error", {
+        data: JSON.stringify({ code: 400 }),
+      }),
+    );
+
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
+  test("disconnects when ably reports token is expired", async () => {
+    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
+
+    let errorCallback: ((e: Event) => Promise<void>) | undefined = undefined;
+    const addEventListener = (event: string, cb: (e: Event) => void) => {
+      if (event === "error") {
+        errorCallback = cb as typeof errorCallback;
+      }
+    };
+
+    const close = vi.fn();
+    vi.mocked(ReconnectingEventSource).mockReturnValue({
+      addEventListener,
+      close,
+    } as any);
+
+    await sse.connect();
 
     await errorCallback!(
       new MessageEvent("error", {
@@ -285,11 +304,10 @@ describe("message handling", () => {
     );
 
     expect(close).toHaveBeenCalled();
-    expect(vi.mocked(ReconnectingEventSource)).toHaveBeenCalledTimes(2);
   });
 });
 
-describe("automatic auth retries", () => {
+describe("automatic retries", () => {
   const nockWait = (n: nock.Scope) => {
     return new Promise((resolve) => {
       n.on("replied", () => {
@@ -298,11 +316,13 @@ describe("automatic auth retries", () => {
     });
   };
 
-  afterEach(() => {
-    expect(nock.isDone()).toBe(true);
-
+  beforeEach(() => {
     vi.clearAllMocks();
     nock.cleanAll();
+  });
+
+  afterEach(() => {
+    expect(nock.isDone()).toBe(true);
   });
 
   test("opens and connects to a channel", async () => {
@@ -346,6 +366,59 @@ describe("automatic auth retries", () => {
     await flushPromises();
     expect(sse.isConnected()).toBe(true);
     expect(sse.isOpen()).toBe(true);
+  });
+
+  test("resets retry count on successfull connect", async () => {
+    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
+
+    // mock event source
+    let errorCallback: ((e: Event) => Promise<void>) | undefined = undefined;
+    const addEventListener = (event: string, cb: (e: Event) => void) => {
+      if (event === "error") {
+        errorCallback = cb as typeof errorCallback;
+      }
+    };
+
+    const close = vi.fn();
+    vi.mocked(ReconnectingEventSource).mockReturnValue({
+      addEventListener,
+      close,
+    } as any);
+
+    // make initial failed attempt
+    vi.useFakeTimers();
+    const n = setupAuthNock(false);
+    sse.open({ retryInterval: 100, retryCount: 1 });
+    await nockWait(n);
+
+    const attempt = async () => {
+      const n1 = setupAuthNock(true);
+      const n2 = setupTokenNock(true);
+
+      vi.advanceTimersByTime(100);
+
+      await nockWait(n1);
+      await nockWait(n2);
+
+      await flushPromises();
+      vi.advanceTimersByTime(100);
+
+      expect(sse.isConnected()).toBe(true);
+
+      // simulate an error
+      vi.advanceTimersByTime(100);
+
+      await errorCallback!({} as any);
+      await flushPromises();
+
+      expect(sse.isConnected()).toBe(false);
+    };
+
+    await attempt();
+    await attempt();
+    await attempt();
+
+    vi.useRealTimers();
   });
 
   test("reconnects if manually disconnected", async () => {
