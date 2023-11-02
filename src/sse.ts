@@ -112,10 +112,10 @@ export class AblySSEChannel {
     } else {
       const connectionState = (e as any)?.target?.readyState;
       if (connectionState === 2) {
-        this.log("event source connection closed");
+        this.log("event source connection closed", e);
       }
       if (connectionState === 1) {
-        this.warn("event source connection failed to open");
+        this.warn("event source connection failed to open", e);
       } else {
         this.warn("event source unexpected error occured", e);
       }
