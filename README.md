@@ -22,7 +22,7 @@ var bucket = require("@bucketco/tracking-sdk");
 
 Other languages than Javascript/Typescript are currently not supported by an SDK. You can [use the HTTP API directly](https://docs.bucket.co/reference/http-tracking-api)
 
-## Usage
+## Basic usage
 
 ```js
 // init the script with your Tracking Key
@@ -36,15 +36,6 @@ bucket.company("acme_inc", { name: "Acme Inc", plan: "pro" }, "john_doe");
 
 // track events
 bucket.track("sent_message", { foo: "bar" }, "john_doe", "company_id");
-
-// collect qualitative feedback
-bucket.feedback({
-  featureId: "my_feature_id",
-  userId: "john_doe",
-  companyId: "acme_inc", // String (optional)
-  score: 5, // Number: 1-5 (optional)
-  comment: "Absolutely stellar work!", // String (optional)
-});
 ```
 
 **NOTE**: When used in the browser, you can omit the 3rd argument (userId) to the `company` and `track` methods. See [persisting users](#persisting-users) for more details.
@@ -77,7 +68,7 @@ You can find all the options to make changes to the default behaviour in the [Bu
 
 Bucket can assist you with collecting your user's feedback by offering a pre-built UI, allowing you to get started with minimal code and effort.
 
-![image](https://github.com/bucketco/bucket-tracking-sdk/assets/331790/519c2236-bcf6-497a-bf0e-c2f171b6f697)
+![image](https://github.com/bucketco/bucket-tracking-sdk/assets/34348/c387bac1-f2e2-4efd-9dda-5030d76f9532)
 
 [Read the Bucket feedback UI documentation](./FEEDBACK.md)
 
