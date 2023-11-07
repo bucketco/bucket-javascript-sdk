@@ -407,6 +407,42 @@ describe("feedback prompting", () => {
 
     await expect(init).resolves.not.toBeUndefined();
   });
+
+  test("does not think it is connected if the connection fails", async () => {
+    nock(`${TRACKING_HOST}/${KEY}`)
+      .post(/.*\/feedback\/prompting-init/)
+      .reply(200, { success: false });
+
+    const bucketInstance = bucket();
+    bucketInstance.init(KEY, {
+      persistUser: false,
+      feedback: { enableLiveSatisfaction: false },
+    });
+
+    await bucketInstance.initLiveSatisfaction("foo");
+
+    nock(`${TRACKING_HOST}/${KEY}`)
+      .post(/.*\/feedback\/prompting-init/)
+      .reply(200, { success: true, channel: "test-channel" });
+
+    vi.mocked(openAblySSEChannel).mockImplementation(() => {
+      throw new Error("something bad happened");
+    });
+
+    await expect(() =>
+      bucketInstance.initLiveSatisfaction("foo"),
+    ).rejects.toThrowError("something bad happened");
+
+    nock(`${TRACKING_HOST}/${KEY}`)
+      .post(/.*\/feedback\/prompting-init/)
+      .reply(200, { success: true, channel: "test-channel" });
+
+    vi.mocked(openAblySSEChannel).mockImplementation(() => {
+      return "fake_client" as any;
+    });
+
+    await bucketInstance.initLiveSatisfaction("foo");
+  });
 });
 
 describe("feedback state management", () => {
