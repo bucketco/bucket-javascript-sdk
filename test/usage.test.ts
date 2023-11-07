@@ -381,6 +381,32 @@ describe("feedback prompting", () => {
       "Feedback prompting already initialized. Use reset() first.",
     );
   });
+
+  test("rejects if feedback prompting already initialized (loop)", async () => {
+    nock(`${TRACKING_HOST}/${KEY}`)
+      .post(/.*\/feedback\/prompting-init/)
+      .reply(200, { success: true, channel: "test-channel" });
+
+    const bucketInstance = bucket();
+    bucketInstance.init(KEY, {
+      persistUser: false,
+      feedback: { enableLiveSatisfaction: false },
+    });
+
+    const init = bucketInstance.initLiveSatisfaction("foo");
+
+    const p1 = bucketInstance.initLiveSatisfaction("foo");
+    const p2 = bucketInstance.initLiveSatisfaction("moo");
+
+    await expect(p1).rejects.toThrowError(
+      "Feedback prompting already initialized. Use reset() first.",
+    );
+    await expect(p2).rejects.toThrowError(
+      "Feedback prompting already initialized. Use reset() first.",
+    );
+
+    await expect(init).resolves.not.toBeUndefined();
+  });
 });
 
 describe("feedback state management", () => {

@@ -47,6 +47,7 @@ export default function main() {
   let trackingHost: string = TRACKING_HOST;
   let sessionUserId: string | undefined = undefined;
   let persistUser: boolean = !isForNode;
+  let sseChannelActive: boolean = false;
   let sseChannel: AblySSEChannel | undefined = undefined;
   let liveFeedback: boolean = !isForNode;
   let feedbackPromptHandler: FeedbackPromptHandler | undefined = undefined;
@@ -100,8 +101,6 @@ export default function main() {
 
     return userId!;
   }
-
-  // methods
 
   function init(key: Key, options: Options = {}) {
     reset();
@@ -162,7 +161,7 @@ export default function main() {
         reset();
       }
       sessionUserId = userId;
-      if (liveFeedback && !sseChannel) {
+      if (liveFeedback && !sseChannelActive) {
         await initLiveSatisfaction(userId);
       }
     }
@@ -264,7 +263,7 @@ export default function main() {
       err("Feedback prompting is not supported in Node.js environment");
     }
 
-    if (sseChannel) {
+    if (sseChannelActive) {
       err("Feedback prompting already initialized. Use reset() first.");
     }
 
@@ -275,41 +274,38 @@ export default function main() {
 
     userId = resolveUser(userId);
 
-    const res = await request(`${getUrl()}/feedback/prompting-init`, {
-      userId,
-    });
-    log(`feedback prompting status sent`, res);
-    const body: { success: boolean; channel?: string } = await res.json();
-    if (!body.success || !body.channel) {
-      log(`feedback prompting not enabled`);
-      return res;
-    }
+    // while initializeing, consider the channel active
+    sseChannelActive = true;
+    try {
+      const res = await request(`${getUrl()}/feedback/prompting-init`, {
+        userId,
+      });
 
-    log(`feedback prompting enabled`);
-
-    if (sseChannel) {
-      if (feedbackPromptingUserId !== userId) {
-        err(
-          "Feedback prompting already initialized for a different user. Are you calling initLiveSatisfaction() or user() in a loop?",
-        );
-      } else {
-        warn(
-          "Feedback prompting already initialized for this user. Are you calling initLiveSatisfaction() or user() in a loop?",
-        );
+      log(`feedback prompting status sent`, res);
+      const body: { success: boolean; channel?: string } = await res.json();
+      if (!body.success || !body.channel) {
+        log(`feedback prompting not enabled`);
         return res;
       }
-    }
 
-    feedbackPromptingUserId = userId;
-    sseChannel = openAblySSEChannel(
-      `${getUrl()}/feedback/prompting-auth`,
-      userId,
-      body.channel,
-      (message) => handleFeedbackPromptRequest(userId!, message),
-      { debug },
-    );
-    log(`feedback prompting connection established`);
-    return res;
+      log(`feedback prompting enabled`);
+
+      sseChannel = openAblySSEChannel(
+        `${getUrl()}/feedback/prompting-auth`,
+        userId,
+        body.channel,
+        (message) => handleFeedbackPromptRequest(userId!, message),
+        { debug },
+      );
+
+      feedbackPromptingUserId = userId;
+
+      log(`feedback prompting connection established`);
+      return res;
+    } finally {
+      // check that SSE channel has actually been opened, otherwise reset the value
+      sseChannelActive = !!sseChannel;
+    }
   }
 
   function handleFeedbackPromptRequest(userId: User["userId"], message: any) {
@@ -496,6 +492,7 @@ export default function main() {
   function reset() {
     sessionUserId = undefined;
     feedbackPromptingUserId = undefined;
+    sseChannelActive = false;
     if (sseChannel) {
       closeAblySSEChannel(sseChannel);
       log(`feedback prompting connection closed`);
