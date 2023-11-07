@@ -200,7 +200,7 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
                 class="textarea"
                 name="comment"
                 placeholder={t.QuestionPlaceholder}
-                rows={5}
+                rows={4}
               />
             </div>
 
