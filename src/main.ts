@@ -47,9 +47,9 @@ export default function main() {
   let trackingHost: string = TRACKING_HOST;
   let sessionUserId: string | undefined = undefined;
   let persistUser: boolean = !isForNode;
-  let sseChannelActive: boolean = false;
+  let liveSatisfactionActive: boolean = false;
   let sseChannel: AblySSEChannel | undefined = undefined;
-  let liveFeedback: boolean = !isForNode;
+  let liveSatisfactionEnabled: boolean = !isForNode;
   let feedbackPromptHandler: FeedbackPromptHandler | undefined = undefined;
   let feedbackPromptingUserId: string | undefined = undefined;
   let feedbackPosition: FeedbackPosition | undefined = undefined;
@@ -126,18 +126,18 @@ export default function main() {
     }
 
     if (typeof options.feedback?.enableLiveFeedback !== "undefined") {
-      liveFeedback = options.feedback.enableLiveFeedback;
+      liveSatisfactionEnabled = options.feedback.enableLiveFeedback;
     }
 
     if (typeof options.feedback?.enableLiveSatisfaction !== "undefined") {
-      liveFeedback = options.feedback.enableLiveSatisfaction;
+      liveSatisfactionEnabled = options.feedback.enableLiveSatisfaction;
     }
 
-    if (liveFeedback && isForNode) {
+    if (liveSatisfactionEnabled && isForNode) {
       err("Feedback prompting is not supported in Node.js environment");
     }
 
-    if (liveFeedback && !persistUser) {
+    if (liveSatisfactionEnabled && !persistUser) {
       err("Feedback prompting is not supported when persistUser is disabled");
     }
 
@@ -161,7 +161,7 @@ export default function main() {
         reset();
       }
       sessionUserId = userId;
-      if (liveFeedback && !sseChannelActive) {
+      if (liveSatisfactionEnabled && !liveSatisfactionActive) {
         await initLiveSatisfaction(userId);
       }
     }
@@ -263,7 +263,7 @@ export default function main() {
       err("Feedback prompting is not supported in Node.js environment");
     }
 
-    if (sseChannelActive) {
+    if (liveSatisfactionActive) {
       err("Feedback prompting already initialized. Use reset() first.");
     }
 
@@ -275,7 +275,7 @@ export default function main() {
     userId = resolveUser(userId);
 
     // while initializeing, consider the channel active
-    sseChannelActive = true;
+    liveSatisfactionActive = true;
     try {
       const res = await request(`${getUrl()}/feedback/prompting-init`, {
         userId,
@@ -304,7 +304,7 @@ export default function main() {
       return res;
     } finally {
       // check that SSE channel has actually been opened, otherwise reset the value
-      sseChannelActive = !!sseChannel;
+      liveSatisfactionActive = !!sseChannel;
     }
   }
 
@@ -492,7 +492,7 @@ export default function main() {
   function reset() {
     sessionUserId = undefined;
     feedbackPromptingUserId = undefined;
-    sseChannelActive = false;
+    liveSatisfactionActive = false;
     if (sseChannel) {
       closeAblySSEChannel(sseChannel);
       log(`feedback prompting connection closed`);
