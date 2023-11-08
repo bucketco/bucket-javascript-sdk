@@ -107,19 +107,21 @@ export class AblySSEChannel {
         errorCode >= ABLY_TOKEN_ERROR_MIN &&
         errorCode <= ABLY_TOKEN_ERROR_MAX
       ) {
-        this.log("token expired, refreshing");
-        await this.connect().catch((x) =>
-          this.warn("failed to refresh token", x),
-        );
+        this.log("event source token expired, refresh required");
       }
-      return;
+    } else {
+      const connectionState = (e as any)?.target?.readyState;
+      if (connectionState === 2) {
+        this.log("event source connection closed", e);
+      }
+      if (connectionState === 1) {
+        this.warn("event source connection failed to open", e);
+      } else {
+        this.warn("event source unexpected error occured", e);
+      }
     }
 
-    if ((e as any)?.target?.readyState === 2) {
-      this.log("event source connection closed");
-    } else {
-      this.warn("unexpected error occured", e);
-    }
+    this.disconnect();
   }
 
   private onMessage(e: MessageEvent) {
@@ -170,25 +172,40 @@ export class AblySSEChannel {
 
   public open(options?: { retryInterval?: number; retryCount?: number }) {
     const retryInterval = options?.retryInterval ?? 1000 * 30;
-    let retryCount = options?.retryCount ?? 3;
+    const retryCount = options?.retryCount ?? 3;
+    let retriesRemaining = retryCount;
 
     const tryConnect = async () => {
-      await this.connect().catch((e) =>
-        this.warn(`failed to connect. ${retryCount} retries remaining`, e),
-      );
+      try {
+        await this.connect();
+        retriesRemaining = retryCount;
+      } catch (e) {
+        if (retriesRemaining > 0) {
+          this.warn(
+            `failed to connect, ${retriesRemaining} retries remaining`,
+            e,
+          );
+        } else {
+          this.warn(`failed to connect, no retries remaining`, e);
+        }
+      }
     };
 
     void tryConnect();
 
     this.retryInterval = setInterval(() => {
       if (!this.eventSource && this.retryInterval) {
-        if (retryCount <= 0) {
+        if (retriesRemaining <= 0) {
+          this.warn(
+            "failed to initiate a connection to feedback prompting, all retries exhausted",
+          );
+
           clearInterval(this.retryInterval);
           this.retryInterval = null;
           return;
         }
 
-        retryCount--;
+        retriesRemaining--;
         void tryConnect();
       }
     }, retryInterval);
@@ -198,8 +215,8 @@ export class AblySSEChannel {
     if (this.retryInterval) {
       clearInterval(this.retryInterval);
       this.retryInterval = null;
-      this.disconnect();
     }
+    this.disconnect();
   }
 
   public isOpen() {
