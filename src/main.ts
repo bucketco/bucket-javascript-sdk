@@ -274,7 +274,7 @@ export default function main() {
 
     userId = resolveUser(userId);
 
-    // while initializeing, consider the channel active
+    // while initializing, consider the channel active
     liveSatisfactionActive = true;
     try {
       const res = await request(`${getUrl()}/feedback/prompting-init`, {
