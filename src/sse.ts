@@ -1,5 +1,4 @@
 import fetch from "cross-fetch";
-import ReconnectingEventSource from "reconnecting-eventsource";
 
 import { ABLY_REALTIME_HOST, ABLY_REST_HOST } from "./config";
 
@@ -15,7 +14,7 @@ const ABLY_TOKEN_ERROR_MIN = 40140;
 const ABLY_TOKEN_ERROR_MAX = 40149;
 
 export class AblySSEChannel {
-  private eventSource: ReconnectingEventSource | null = null;
+  private eventSource: EventSource | null = null;
   private retryInterval: ReturnType<typeof setInterval> | null = null;
   private debug: boolean;
 
@@ -100,10 +99,17 @@ export class AblySSEChannel {
 
   private async onError(e: Event) {
     if (e instanceof MessageEvent) {
-      const errorPayload = JSON.parse(e.data);
-      const errorCode = Number(errorPayload?.code);
+      let errorCode: number | undefined;
+
+      try {
+        const errorPayload = JSON.parse(e.data);
+        errorCode = errorPayload?.code && Number(errorPayload.code);
+      } catch (error: any) {
+        this.warn("received unparseable error message", error, e);
+      }
 
       if (
+        errorCode &&
         errorCode >= ABLY_TOKEN_ERROR_MIN &&
         errorCode <= ABLY_TOKEN_ERROR_MAX
       ) {
@@ -111,10 +117,10 @@ export class AblySSEChannel {
       }
     } else {
       const connectionState = (e as any)?.target?.readyState;
+
       if (connectionState === 2) {
         this.log("event source connection closed", e);
-      }
-      if (connectionState === 1) {
+      } else if (connectionState === 1) {
         this.warn("event source connection failed to open", e);
       } else {
         this.warn("event source unexpected error occured", e);
@@ -125,16 +131,30 @@ export class AblySSEChannel {
   }
 
   private onMessage(e: MessageEvent) {
-    if (e.data) {
-      const message = JSON.parse(e.data);
-      if (message.data) {
-        const payload = JSON.parse(message.data);
+    let payload: any;
 
-        this.log("received message", payload);
-        this.messageHandler(payload);
-
-        return;
+    try {
+      if (e.data) {
+        const message = JSON.parse(e.data);
+        if (message.data) {
+          payload = JSON.parse(message.data);
+        }
       }
+    } catch (error: any) {
+      this.warn("received unparseable message", error, e);
+      return;
+    }
+
+    if (payload) {
+      this.log("received message", payload);
+
+      try {
+        this.messageHandler(payload);
+      } catch (error: any) {
+        this.warn("failed to handle message", error, payload);
+      }
+
+      return;
     }
 
     this.warn("received invalid message", e);
@@ -148,7 +168,7 @@ export class AblySSEChannel {
     this.disconnect();
     const token = await this.refreshToken();
 
-    this.eventSource = new ReconnectingEventSource(
+    this.eventSource = new EventSource(
       `${ABLY_REALTIME_HOST}/sse?v=1.2&accessToken=${encodeURIComponent(
         token.token,
       )}&channels=${encodeURIComponent(this.channel)}&rewind=1`,

@@ -73,7 +73,6 @@
     "cross-fetch": "^4.0.0",
     "is-bundling-for-browser-or-node": "^1.1.1",
     "js-cookie": "^3.0.5",
-    "preact": "^10.16.0",
-    "reconnecting-eventsource": "^1.6.2"
+    "preact": "^10.16.0"
   }
 }
