@@ -1,15 +1,6 @@
 import flushPromises from "flush-promises";
 import nock from "nock";
-import ReconnectingEventSource from "reconnecting-eventsource";
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  test,
-  vi,
-  vitest,
-} from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import { ABLY_REST_HOST } from "../src/config";
 import {
@@ -30,13 +21,8 @@ const tokenDetails = {
 const userId = "foo";
 const channel = "channel";
 
-vitest.mock("reconnecting-eventsource", () => {
-  return {
-    default: vi.fn().mockReturnValue({
-      addEventListener: vi.fn(),
-      close: vi.fn(),
-    }),
-  };
+Object.defineProperty(window, "EventSource", {
+  value: vi.fn(),
 });
 
 function setupAuthNock(success: boolean | number) {
@@ -81,7 +67,7 @@ describe("connection handling", () => {
 
     await expect(sse.connect()).rejects.toThrowError();
 
-    expect(vi.mocked(ReconnectingEventSource)).not.toHaveBeenCalled();
+    expect(vi.mocked(window.EventSource)).not.toHaveBeenCalled();
   });
 
   test("rejects if auth endpoint is not 200", async () => {
@@ -91,7 +77,7 @@ describe("connection handling", () => {
 
     await expect(sse.connect()).rejects.toThrowError();
 
-    expect(vi.mocked(ReconnectingEventSource)).not.toHaveBeenCalled();
+    expect(vi.mocked(window.EventSource)).not.toHaveBeenCalled();
   });
 
   test("rejects if token endpoint rejects", async () => {
@@ -102,7 +88,7 @@ describe("connection handling", () => {
 
     await expect(sse.connect()).rejects.toThrowError();
 
-    expect(vi.mocked(ReconnectingEventSource)).not.toHaveBeenCalled();
+    expect(vi.mocked(window.EventSource)).not.toHaveBeenCalled();
   });
 
   test("obtains token, connects and subscribes, then closes", async () => {
@@ -111,7 +97,7 @@ describe("connection handling", () => {
     const addEventListener = vi.fn();
     const close = vi.fn();
 
-    vi.mocked(ReconnectingEventSource).mockReturnValue({
+    vi.mocked(window.EventSource).mockReturnValue({
       addEventListener,
       close,
     } as any);
@@ -121,7 +107,7 @@ describe("connection handling", () => {
 
     await sse.connect();
 
-    expect(vi.mocked(ReconnectingEventSource)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(window.EventSource)).toHaveBeenCalledTimes(1);
     expect(addEventListener).toHaveBeenCalledTimes(3);
     expect(addEventListener).toHaveBeenCalledWith(
       "error",
@@ -141,11 +127,33 @@ describe("connection handling", () => {
     expect(sse.isConnected()).toBe(false);
   });
 
-  test("disconnects and re-requests token on re-connect", async () => {
+  test("does not try to re-connect if already connecting", async () => {
     const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
 
     const close = vi.fn();
-    vi.mocked(ReconnectingEventSource).mockReturnValue({
+    vi.mocked(window.EventSource).mockReturnValue({
+      addEventListener: vi.fn(),
+      close,
+    } as any);
+
+    setupAuthNock(true);
+    setupTokenNock(true);
+
+    const c1 = sse.connect();
+    const c2 = sse.connect();
+
+    await c1;
+    await c2;
+
+    expect(close).toHaveBeenCalledTimes(0);
+    expect(vi.mocked(window.EventSource)).toHaveBeenCalledTimes(1);
+  });
+
+  test("does not re-connect if already connected", async () => {
+    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
+
+    const close = vi.fn();
+    vi.mocked(window.EventSource).mockReturnValue({
       addEventListener: vi.fn(),
       close,
     } as any);
@@ -154,21 +162,17 @@ describe("connection handling", () => {
     setupTokenNock(true);
 
     await sse.connect();
-
-    setupAuthNock(true);
-    setupTokenNock(true);
-
     await sse.connect();
 
-    expect(close).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(ReconnectingEventSource)).toHaveBeenCalledTimes(2);
+    expect(close).toHaveBeenCalledTimes(0);
+    expect(vi.mocked(window.EventSource)).toHaveBeenCalledTimes(1);
   });
 
   test("disconnects only if connected", async () => {
     const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
 
     const close = vi.fn();
-    vi.mocked(ReconnectingEventSource).mockReturnValue({
+    vi.mocked(window.EventSource).mockReturnValue({
       close,
     } as any);
 
@@ -202,7 +206,7 @@ describe("message handling", () => {
       }
     };
 
-    vi.mocked(ReconnectingEventSource).mockReturnValue({
+    vi.mocked(window.EventSource).mockReturnValue({
       addEventListener,
     } as any);
 
@@ -237,7 +241,7 @@ describe("message handling", () => {
     };
 
     const close = vi.fn();
-    vi.mocked(ReconnectingEventSource).mockReturnValue({
+    vi.mocked(window.EventSource).mockReturnValue({
       addEventListener,
       close,
     } as any);
@@ -261,7 +265,7 @@ describe("message handling", () => {
     };
 
     const close = vi.fn();
-    vi.mocked(ReconnectingEventSource).mockReturnValue({
+    vi.mocked(window.EventSource).mockReturnValue({
       addEventListener,
       close,
     } as any);
@@ -290,7 +294,7 @@ describe("message handling", () => {
     };
 
     const close = vi.fn();
-    vi.mocked(ReconnectingEventSource).mockReturnValue({
+    vi.mocked(window.EventSource).mockReturnValue({
       addEventListener,
       close,
     } as any);
@@ -353,6 +357,7 @@ describe("automatic retries", () => {
 
     const n2 = setupAuthNock(true);
     const n3 = setupTokenNock(true);
+    await flushPromises();
 
     expect(sse.isConnected()).toBe(false);
 
@@ -365,7 +370,34 @@ describe("automatic retries", () => {
 
     await flushPromises();
     expect(sse.isConnected()).toBe(true);
-    expect(sse.isOpen()).toBe(true);
+    expect(sse.isActive()).toBe(true);
+  });
+
+  test("only, ever, allow one connection to SSE", async () => {
+    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
+
+    const n1 = setupAuthNock(true);
+    const n2 = setupTokenNock(true);
+
+    vi.useFakeTimers();
+    sse.open({ retryInterval: 1, retryCount: 100 });
+
+    for (let i = 0; i < 10; i++) {
+      await flushPromises();
+      vi.advanceTimersByTime(1);
+    }
+
+    await nockWait(n1);
+    await nockWait(n2);
+
+    await flushPromises();
+
+    expect(sse.isConnected()).toBe(true);
+    expect(sse.isActive()).toBe(true);
+
+    expect(vi.mocked(window.EventSource)).toHaveBeenCalledOnce();
+
+    vi.useRealTimers();
   });
 
   test("resets retry count on successfull connect", async () => {
@@ -380,7 +412,7 @@ describe("automatic retries", () => {
     };
 
     const close = vi.fn();
-    vi.mocked(ReconnectingEventSource).mockReturnValue({
+    vi.mocked(window.EventSource).mockReturnValue({
       addEventListener,
       close,
     } as any);
@@ -388,8 +420,11 @@ describe("automatic retries", () => {
     // make initial failed attempt
     vi.useFakeTimers();
     const n = setupAuthNock(false);
+
     sse.open({ retryInterval: 100, retryCount: 1 });
+
     await nockWait(n);
+    await flushPromises();
 
     const attempt = async () => {
       const n1 = setupAuthNock(true);
@@ -424,6 +459,11 @@ describe("automatic retries", () => {
   test("reconnects if manually disconnected", async () => {
     const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
 
+    vi.mocked(window.EventSource).mockReturnValue({
+      addEventListener: vi.fn(),
+      close: vi.fn(),
+    } as any);
+
     const n1 = setupAuthNock(true);
     const n2 = setupTokenNock(true);
 
@@ -450,7 +490,7 @@ describe("automatic retries", () => {
     await flushPromises();
 
     expect(sse.isConnected()).toBe(true);
-    expect(sse.isOpen()).toBe(true);
+    expect(sse.isActive()).toBe(true);
   });
 
   test("opens and does not connect later to a failed channel if no retries", async () => {
@@ -465,13 +505,14 @@ describe("automatic retries", () => {
     });
 
     await nockWait(n1);
+    await flushPromises();
 
     vi.advanceTimersByTime(100);
     vi.useRealTimers();
 
     await flushPromises();
 
-    expect(sse.isOpen()).toBe(false);
+    expect(sse.isActive()).toBe(false);
   });
 
   test("closes an open channel", async () => {
@@ -481,7 +522,7 @@ describe("automatic retries", () => {
     const n2 = setupTokenNock(true);
 
     const close = vi.fn();
-    vi.mocked(ReconnectingEventSource).mockReturnValue({
+    vi.mocked(window.EventSource).mockReturnValue({
       addEventListener: vi.fn(),
       close,
     } as any);
@@ -498,7 +539,7 @@ describe("automatic retries", () => {
 
     expect(sse.isConnected()).toBe(false);
     expect(close).toHaveBeenCalledTimes(1);
-    expect(sse.isOpen()).toBe(false);
+    expect(sse.isActive()).toBe(false);
   });
 });
 
@@ -524,7 +565,7 @@ describe("helper open and close functions", () => {
 
     const sse = openAblySSEChannel(ablyAuthUrl, userId, channel, vi.fn());
 
-    expect(sse.isOpen()).toBe(true);
+    expect(sse.isActive()).toBe(true);
 
     await nockWait(n1);
     await nockWait(n2);
@@ -533,6 +574,6 @@ describe("helper open and close functions", () => {
     closeAblySSEChannel(sse);
 
     expect(sse.isConnected()).toBe(false);
-    expect(sse.isOpen()).toBe(false);
+    expect(sse.isActive()).toBe(false);
   });
 });
