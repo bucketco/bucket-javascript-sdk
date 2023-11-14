@@ -231,6 +231,7 @@ export default function main() {
     comment,
     promptId,
     promptedQuestion,
+    source,
   }: Feedback) {
     checkKey();
     if (!featureId) err("No featureId provided");
@@ -247,6 +248,7 @@ export default function main() {
       promptId,
       question,
       promptedQuestion,
+      source: source ?? "SDK",
     };
 
     const res = await request(`${getUrl()}/feedback`, payload);
@@ -383,6 +385,7 @@ export default function main() {
         promptId: message.promptId,
         question: reply.question,
         promptedQuestion: message.question,
+        source: "PROMPT",
       });
 
       completionHandler();
@@ -470,6 +473,7 @@ export default function main() {
             featureId: options.featureId,
             userId: options.userId,
             companyId: options.companyId,
+            source: "WIDGET",
             ...data,
           });
 
@@ -482,6 +486,7 @@ export default function main() {
             featureId: options.featureId,
             userId: options.userId,
             companyId: options.companyId,
+            source: "WIDGET",
             ...data,
           });
 

@@ -44,6 +44,7 @@ test("Acceptance", async () => {
       featureId: "featureId1",
       score: 5,
       comment: "test!",
+      source: "SDK",
     })
     .reply(200);
 

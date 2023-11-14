@@ -76,6 +76,7 @@ describe("usage", () => {
         comment: "Sunt bine!",
         question: "Cum esti?",
         promptedQuestion: "How are you?",
+        source: "SDK",
       })
       .reply(200);
 
@@ -683,6 +684,7 @@ describe("feedback state management", () => {
         score: 5,
         question: "Cum esti?",
         promptedQuestion: "How are you?",
+        source: "PROMPT",
       })
       .reply(200, {
         feedbackId: "feedback123",
