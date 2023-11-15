@@ -248,7 +248,7 @@ export default function main() {
       promptId,
       question,
       promptedQuestion,
-      source: source ?? "SDK",
+      source: source ?? "sdk",
     };
 
     const res = await request(`${getUrl()}/feedback`, payload);
@@ -385,7 +385,7 @@ export default function main() {
         promptId: message.promptId,
         question: reply.question,
         promptedQuestion: message.question,
-        source: "PROMPT",
+        source: "prompt",
       });
 
       completionHandler();
@@ -473,7 +473,7 @@ export default function main() {
             featureId: options.featureId,
             userId: options.userId,
             companyId: options.companyId,
-            source: "WIDGET",
+            source: "widget",
             ...data,
           });
 
@@ -486,7 +486,7 @@ export default function main() {
             featureId: options.featureId,
             userId: options.userId,
             companyId: options.companyId,
-            source: "WIDGET",
+            source: "widget",
             ...data,
           });
 
