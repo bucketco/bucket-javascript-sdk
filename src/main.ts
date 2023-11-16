@@ -4,7 +4,7 @@ import { isForNode } from "is-bundling-for-browser-or-node";
 import { version } from "../package.json";
 
 import type { FeedbackPosition, FeedbackTranslations } from "./feedback/types";
-import { TRACKING_HOST } from "./config";
+import { SSE_REALTIME_HOST, TRACKING_HOST } from "./config";
 import { defaultFeedbackPromptHandler } from "./default-feedback-prompt-handler";
 import * as feedbackLib from "./feedback";
 import {
@@ -45,6 +45,7 @@ export default function main() {
   let debug = false;
   let trackingKey: string | undefined = undefined;
   let trackingHost: string = TRACKING_HOST;
+  let sseHost: string = SSE_REALTIME_HOST;
   let sessionUserId: string | undefined = undefined;
   let persistUser: boolean = !isForNode;
   let liveSatisfactionActive: boolean = false;
@@ -112,6 +113,7 @@ export default function main() {
 
     if (options.debug) debug = options.debug;
     if (options.host) trackingHost = options.host;
+    if (options.sseHost) sseHost = options.sseHost;
 
     if (options.feedback?.ui?.position) {
       feedbackPosition = options.feedback?.ui?.position;
@@ -295,7 +297,7 @@ export default function main() {
         userId,
         body.channel,
         (message) => handleFeedbackPromptRequest(userId!, message),
-        { debug },
+        { debug, sseHost },
       );
 
       feedbackPromptingUserId = userId;
