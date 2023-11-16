@@ -75,8 +75,7 @@ export class AblySSEChannel {
   }
 
   private async refreshToken() {
-    const tokenRequest = await this.refreshTokenRequest();
-
+    const tokenRequest = await this.refreshTokenRequest();    
     const res = await fetch(
       `${this.sseHost}/keys/${encodeURIComponent(
         tokenRequest.keyName,
