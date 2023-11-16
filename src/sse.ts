@@ -1,6 +1,6 @@
 import fetch from "cross-fetch";
-import { SSE_REALTIME_HOST } from "./config";
 
+import { SSE_REALTIME_HOST } from "./config";
 
 interface AblyTokenDetails {
   token: string;
@@ -75,7 +75,7 @@ export class AblySSEChannel {
   }
 
   private async refreshToken() {
-    const tokenRequest = await this.refreshTokenRequest();    
+    const tokenRequest = await this.refreshTokenRequest();
     const res = await fetch(
       `${this.sseHost}/keys/${encodeURIComponent(
         tokenRequest.keyName,
@@ -267,7 +267,12 @@ export function openAblySSEChannel(
   userId: string,
   channel: string,
   callback: (req: object) => void,
-  options?: { debug?: boolean; retryInterval?: number; retryCount?: number, sseHost?: string },
+  options?: {
+    debug?: boolean;
+    retryInterval?: number;
+    retryCount?: number;
+    sseHost?: string;
+  },
 ) {
   const sse = new AblySSEChannel(
     userId,
@@ -275,7 +280,7 @@ export function openAblySSEChannel(
     ablyAuthUrl,
     options?.sseHost || SSE_REALTIME_HOST,
     callback,
-    {debug: options?.debug}
+    { debug: options?.debug },
   );
 
   sse.open();
