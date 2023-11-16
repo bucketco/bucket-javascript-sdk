@@ -10,6 +10,7 @@ export type Key = string;
 export type Options = {
   persistUser?: boolean;
   host?: string;
+  sseHost?: string;
   debug?: boolean;
   feedback?: {
     /**

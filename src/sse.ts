@@ -1,6 +1,6 @@
 import fetch from "cross-fetch";
 
-import { ABLY_REALTIME_HOST, ABLY_REST_HOST } from "./config";
+import { SSE_REALTIME_HOST } from "./config";
 
 interface AblyTokenDetails {
   token: string;
@@ -23,6 +23,7 @@ export class AblySSEChannel {
     private userId: string,
     private channel: string,
     private ablyAuthUrl: string,
+    private sseHost: string,
     private messageHandler: (message: any) => void,
     options?: {
       debug?: boolean;
@@ -75,9 +76,8 @@ export class AblySSEChannel {
 
   private async refreshToken() {
     const tokenRequest = await this.refreshTokenRequest();
-
     const res = await fetch(
-      `${ABLY_REST_HOST}/keys/${encodeURIComponent(
+      `${this.sseHost}/keys/${encodeURIComponent(
         tokenRequest.keyName,
       )}/requestToken`,
       {
@@ -176,7 +176,7 @@ export class AblySSEChannel {
       const token = await this.refreshToken();
 
       this.eventSource = new EventSource(
-        `${ABLY_REALTIME_HOST}/sse?v=1.2&accessToken=${encodeURIComponent(
+        `${this.sseHost}/sse?v=1.2&accessToken=${encodeURIComponent(
           token.token,
         )}&channels=${encodeURIComponent(this.channel)}&rewind=1`,
       );
@@ -267,11 +267,21 @@ export function openAblySSEChannel(
   userId: string,
   channel: string,
   callback: (req: object) => void,
-  options?: { debug?: boolean; retryInterval?: number; retryCount?: number },
+  options?: {
+    debug?: boolean;
+    retryInterval?: number;
+    retryCount?: number;
+    sseHost?: string;
+  },
 ) {
-  const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, callback, {
-    debug: options?.debug,
-  });
+  const sse = new AblySSEChannel(
+    userId,
+    channel,
+    ablyAuthUrl,
+    options?.sseHost || SSE_REALTIME_HOST,
+    callback,
+    { debug: options?.debug },
+  );
 
   sse.open();
 

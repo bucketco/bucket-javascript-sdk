@@ -48,7 +48,8 @@ Supply these to the `init` call (2nd argument)
 {
   debug?: false, // enable debug mode to log all info and errors
   persistUser?: true | false // default value depends on environment, see below under "persisting users"
-  host?: "https://tracking.bucket.co", // don't change this
+  host?: "https://tracking.bucket.co",
+  sseHost?: "https://livemessaging.bucket.co"
 }
 ```
 

@@ -2,7 +2,6 @@ import flushPromises from "flush-promises";
 import nock from "nock";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
-import { ABLY_REST_HOST } from "../src/config";
 import {
   AblySSEChannel,
   closeAblySSEChannel,
@@ -10,6 +9,7 @@ import {
 } from "../src/sse";
 
 const ablyAuthUrl = "https://example.com/123/feedback/prompting-auth";
+const sseHost = "https://ssehost.com";
 const tokenRequest = {
   keyName: "key-name",
   other: "other",
@@ -38,7 +38,7 @@ function setupAuthNock(success: boolean | number) {
 }
 
 function setupTokenNock(success: boolean) {
-  const n = nock(`${ABLY_REST_HOST}/keys/${tokenRequest.keyName}`).post(
+  const n = nock(`${sseHost}/keys/${tokenRequest.keyName}`).post(
     /.*\/requestToken/,
     {
       ...tokenRequest,
@@ -61,7 +61,13 @@ describe("connection handling", () => {
   });
 
   test("rejects if auth endpoint is not success", async () => {
-    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
+    const sse = new AblySSEChannel(
+      userId,
+      channel,
+      ablyAuthUrl,
+      sseHost,
+      vi.fn(),
+    );
 
     setupAuthNock(false);
 
@@ -71,7 +77,13 @@ describe("connection handling", () => {
   });
 
   test("rejects if auth endpoint is not 200", async () => {
-    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
+    const sse = new AblySSEChannel(
+      userId,
+      channel,
+      ablyAuthUrl,
+      sseHost,
+      vi.fn(),
+    );
 
     setupAuthNock(403);
 
@@ -81,7 +93,13 @@ describe("connection handling", () => {
   });
 
   test("rejects if token endpoint rejects", async () => {
-    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
+    const sse = new AblySSEChannel(
+      userId,
+      channel,
+      ablyAuthUrl,
+      sseHost,
+      vi.fn(),
+    );
 
     setupAuthNock(true);
     setupTokenNock(false);
@@ -92,7 +110,13 @@ describe("connection handling", () => {
   });
 
   test("obtains token, connects and subscribes, then closes", async () => {
-    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
+    const sse = new AblySSEChannel(
+      userId,
+      channel,
+      ablyAuthUrl,
+      sseHost,
+      vi.fn(),
+    );
 
     const addEventListener = vi.fn();
     const close = vi.fn();
@@ -128,7 +152,13 @@ describe("connection handling", () => {
   });
 
   test("does not try to re-connect if already connecting", async () => {
-    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
+    const sse = new AblySSEChannel(
+      userId,
+      channel,
+      ablyAuthUrl,
+      sseHost,
+      vi.fn(),
+    );
 
     const close = vi.fn();
     vi.mocked(window.EventSource).mockReturnValue({
@@ -150,7 +180,13 @@ describe("connection handling", () => {
   });
 
   test("does not re-connect if already connected", async () => {
-    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
+    const sse = new AblySSEChannel(
+      userId,
+      channel,
+      ablyAuthUrl,
+      sseHost,
+      vi.fn(),
+    );
 
     const close = vi.fn();
     vi.mocked(window.EventSource).mockReturnValue({
@@ -169,7 +205,13 @@ describe("connection handling", () => {
   });
 
   test("disconnects only if connected", async () => {
-    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
+    const sse = new AblySSEChannel(
+      userId,
+      channel,
+      ablyAuthUrl,
+      sseHost,
+      vi.fn(),
+    );
 
     const close = vi.fn();
     vi.mocked(window.EventSource).mockReturnValue({
@@ -197,7 +239,13 @@ describe("message handling", () => {
 
   test("passes message to callback", async () => {
     const callback = vi.fn();
-    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, callback);
+    const sse = new AblySSEChannel(
+      userId,
+      channel,
+      ablyAuthUrl,
+      sseHost,
+      callback,
+    );
 
     let messageCallback: ((e: Event) => void) | undefined = undefined;
     const addEventListener = (event: string, cb: (e: Event) => void) => {
@@ -231,7 +279,13 @@ describe("message handling", () => {
   });
 
   test("disconnects on unknown event source errors without data", async () => {
-    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
+    const sse = new AblySSEChannel(
+      userId,
+      channel,
+      ablyAuthUrl,
+      sseHost,
+      vi.fn(),
+    );
 
     let errorCallback: ((e: Event) => Promise<void>) | undefined = undefined;
     const addEventListener = (event: string, cb: (e: Event) => void) => {
@@ -255,8 +309,14 @@ describe("message handling", () => {
   });
 
   test("disconnects on unknown event source errors with data", async () => {
-    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
-
+    const sse = new AblySSEChannel(
+      userId,
+      channel,
+      ablyAuthUrl,
+      sseHost,
+      vi.fn(),
+    );
+    sseHost;
     let errorCallback: ((e: Event) => Promise<void>) | undefined = undefined;
     const addEventListener = (event: string, cb: (e: Event) => void) => {
       if (event === "error") {
@@ -284,7 +344,13 @@ describe("message handling", () => {
   });
 
   test("disconnects when ably reports token is expired", async () => {
-    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
+    const sse = new AblySSEChannel(
+      userId,
+      channel,
+      ablyAuthUrl,
+      sseHost,
+      vi.fn(),
+    );
 
     let errorCallback: ((e: Event) => Promise<void>) | undefined = undefined;
     const addEventListener = (event: string, cb: (e: Event) => void) => {
@@ -330,7 +396,13 @@ describe("automatic retries", () => {
   });
 
   test("opens and connects to a channel", async () => {
-    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
+    const sse = new AblySSEChannel(
+      userId,
+      channel,
+      ablyAuthUrl,
+      sseHost,
+      vi.fn(),
+    );
 
     const n1 = setupAuthNock(true);
     const n2 = setupTokenNock(true);
@@ -346,7 +418,13 @@ describe("automatic retries", () => {
   });
 
   test("opens and connects later to a failed channel", async () => {
-    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
+    const sse = new AblySSEChannel(
+      userId,
+      channel,
+      ablyAuthUrl,
+      sseHost,
+      vi.fn(),
+    );
 
     const n1 = setupAuthNock(false);
 
@@ -374,7 +452,13 @@ describe("automatic retries", () => {
   });
 
   test("only, ever, allow one connection to SSE", async () => {
-    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
+    const sse = new AblySSEChannel(
+      userId,
+      channel,
+      ablyAuthUrl,
+      sseHost,
+      vi.fn(),
+    );
 
     const n1 = setupAuthNock(true);
     const n2 = setupTokenNock(true);
@@ -401,7 +485,13 @@ describe("automatic retries", () => {
   });
 
   test("resets retry count on successfull connect", async () => {
-    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
+    const sse = new AblySSEChannel(
+      userId,
+      channel,
+      ablyAuthUrl,
+      sseHost,
+      vi.fn(),
+    );
 
     // mock event source
     let errorCallback: ((e: Event) => Promise<void>) | undefined = undefined;
@@ -457,7 +547,13 @@ describe("automatic retries", () => {
   });
 
   test("reconnects if manually disconnected", async () => {
-    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
+    const sse = new AblySSEChannel(
+      userId,
+      channel,
+      ablyAuthUrl,
+      sseHost,
+      vi.fn(),
+    );
 
     vi.mocked(window.EventSource).mockReturnValue({
       addEventListener: vi.fn(),
@@ -494,7 +590,13 @@ describe("automatic retries", () => {
   });
 
   test("opens and does not connect later to a failed channel if no retries", async () => {
-    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
+    const sse = new AblySSEChannel(
+      userId,
+      channel,
+      ablyAuthUrl,
+      sseHost,
+      vi.fn(),
+    );
 
     const n1 = setupAuthNock(false);
 
@@ -516,7 +618,13 @@ describe("automatic retries", () => {
   });
 
   test("closes an open channel", async () => {
-    const sse = new AblySSEChannel(userId, channel, ablyAuthUrl, vi.fn());
+    const sse = new AblySSEChannel(
+      userId,
+      channel,
+      ablyAuthUrl,
+      sseHost,
+      vi.fn(),
+    );
 
     const n1 = setupAuthNock(true);
     const n2 = setupTokenNock(true);
@@ -563,7 +671,9 @@ describe("helper open and close functions", () => {
     const n1 = setupAuthNock(true);
     const n2 = setupTokenNock(true);
 
-    const sse = openAblySSEChannel(ablyAuthUrl, userId, channel, vi.fn());
+    const sse = openAblySSEChannel(ablyAuthUrl, userId, channel, vi.fn(), {
+      sseHost,
+    });
 
     expect(sse.isActive()).toBe(true);
 
