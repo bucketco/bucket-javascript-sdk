@@ -142,7 +142,7 @@ export type Feedback = {
   /**
    * Source, depending on how the user was asked
    */
-  source?: "api" | "manual" | "prompt" | "sdk" | "widget";
+  source?: "prompt" | "sdk" | "widget";
 };
 
 export type FeedbackPrompt = {
