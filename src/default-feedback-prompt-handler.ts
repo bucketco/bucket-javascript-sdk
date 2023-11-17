@@ -1,13 +1,13 @@
-import { FeedbackPrompt, FeedbackPromptHandler } from "./types";
+import {
+  FeedbackPrompt,
+  FeedbackPromptHandler,
+  FeedbackPromptHandlerOpenFeedbackFormOptions,
+} from "./types";
 
-export const defaultFeedbackPromptHandler: FeedbackPromptHandler = (
-  _prompt: FeedbackPrompt,
-  handlers,
-) => {
-  handlers.openFeedbackForm({
-    position: {
-      type: "DIALOG",
-      placement: "bottom-right",
-    },
-  });
+export const createDefaultFeedbackPromptHandler = (
+  options: FeedbackPromptHandlerOpenFeedbackFormOptions = {},
+): FeedbackPromptHandler => {
+  return (_prompt: FeedbackPrompt, handlers) => {
+    handlers.openFeedbackForm(options);
+  };
 };

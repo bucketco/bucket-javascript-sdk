@@ -159,14 +159,15 @@ export type FeedbackPromptReplyHandler = <T extends FeedbackPromptReply | null>(
   reply: T,
 ) => T extends null ? Promise<void> : Promise<{ feedbackId: string }>;
 
+export type FeedbackPromptHandlerOpenFeedbackFormOptions = Omit<
+  RequestFeedbackOptions,
+  "featureId" | "userId" | "companyId" | "onClose" | "onDismiss"
+>;
+
 export type FeedbackPromptHandlerCallbacks = {
   reply: FeedbackPromptReplyHandler;
-  // dismiss: function,
   openFeedbackForm: (
-    options: Omit<
-      RequestFeedbackOptions,
-      "featureId" | "userId" | "companyId" | "onClose" | "onDismiss"
-    >,
+    options: FeedbackPromptHandlerOpenFeedbackFormOptions,
   ) => void;
 };
 
