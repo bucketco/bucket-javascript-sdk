@@ -138,6 +138,14 @@ export type Feedback = {
    * feedback.
    */
   promptId?: FeedbackPrompt["promptId"];
+
+  /**
+   * Source of the feedback, depending on how the user was asked
+   * - `prompt` - Feedback submitted by a Live Satisfaction prompt
+   * - `widget` - Feedback submitted via `requestFeedback`
+   * - `sdk` - Feedback submitted via `feedback`
+   */
+  source?: "prompt" | "sdk" | "widget";
 };
 
 export type FeedbackPrompt = {

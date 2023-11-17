@@ -193,6 +193,7 @@ test("Sends a request when choosing a score immediately", async ({ page }) => {
       score: expectedScore,
       question: "baz",
       userId: "foo",
+      source: "widget",
     });
 });
 
@@ -251,6 +252,7 @@ test("Updates the score on every change", async ({ page }) => {
       question: "baz",
       score: 3,
       userId: "foo",
+      source: "widget",
     });
 });
 
@@ -309,6 +311,7 @@ test("Sends a request with both the score and comment when submitting", async ({
     featureId: "featureId1",
     feedbackId: "123",
     userId: "foo",
+    source: "widget",
   });
 });
 
