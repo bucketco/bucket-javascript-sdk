@@ -6,9 +6,14 @@ import {
   feedbackContainerId,
   propagatedEvents,
 } from "../../src/feedback/constants";
+import { FeedbackTranslations } from "../../src/feedback/types";
+import type { Options } from "../../src/types";
 
 const KEY = randomUUID();
 const TRACKING_HOST = `https://tracking.bucket.co`;
+
+const WINDOW_WIDTH = 1280;
+const WINDOW_HEIGHT = 720;
 
 declare global {
   interface Window {
@@ -20,7 +25,7 @@ function pick<T>(options: T[]): T {
   return options[Math.floor(Math.random() * options.length)];
 }
 
-async function getOpenedWidgetContainer(page: Page) {
+async function getOpenedWidgetContainer(page: Page, initOptions: Options = {}) {
   // Mock API calls
   await page.route(`${TRACKING_HOST}/${KEY}/user`, async (route) => {
     await route.fulfill({ status: 200 });
@@ -34,7 +39,7 @@ async function getOpenedWidgetContainer(page: Page) {
   // Golden path requests
   await page.evaluate(`
     ;(async () => {
-      bucket.init("${KEY}", {});
+      bucket.init("${KEY}", ${JSON.stringify(initOptions)});
       await bucket.user('foo')
       await bucket.requestFeedback({
         featureId: "featureId1",
@@ -94,6 +99,74 @@ test("Opens a feedback widget", async ({ page }) => {
 
   await expect(container).toBeAttached();
   await expect(container.locator("dialog")).toHaveAttribute("open", "");
+});
+
+test("Opens a feedback widget in the bottom right by default", async ({
+  page,
+}) => {
+  const container = await getOpenedWidgetContainer(page);
+
+  await expect(container).toBeAttached();
+
+  const bbox = await container.locator("dialog").boundingBox();
+  expect(bbox?.x).toEqual(WINDOW_WIDTH - bbox!.width - 16);
+  expect(bbox?.y).toBeGreaterThan(WINDOW_HEIGHT - bbox!.height - 16); // Account for browser differences
+  expect(bbox?.y).toBeLessThan(WINDOW_HEIGHT - bbox!.height);
+});
+
+test("Opens a feedback widget in the correct position when overridden", async ({
+  page,
+}) => {
+  const container = await getOpenedWidgetContainer(page, {
+    feedback: {
+      ui: {
+        position: {
+          type: "DIALOG",
+          placement: "top-left",
+        },
+      },
+    },
+  });
+
+  await expect(container).toBeAttached();
+
+  const bbox = await container.locator("dialog").boundingBox();
+  expect(bbox?.x).toEqual(16);
+  expect(bbox?.y).toBeGreaterThan(0); // Account for browser differences
+  expect(bbox?.y).toBeLessThan(16);
+});
+
+test("Opens a feedback widget with the correct translations", async ({
+  page,
+}) => {
+  const translations: Partial<FeedbackTranslations> = {
+    ScoreStatusDescription: "Choisissez une note et laissez un commentaire",
+    ScoreVeryDissatisfiedLabel: "Très insatisfait",
+    ScoreDissatisfiedLabel: "Insatisfait",
+    ScoreNeutralLabel: "Neutre",
+    ScoreSatisfiedLabel: "Satisfait",
+    ScoreVerySatisfiedLabel: "Très satisfait",
+    SendButton: "Envoyer",
+  };
+
+  const container = await getOpenedWidgetContainer(page, {
+    feedback: {
+      ui: {
+        translations,
+      },
+    },
+  });
+
+  await expect(container).toBeAttached();
+  await expect(container).toContainText(translations.ScoreStatusDescription!);
+  await expect(container).toContainText(
+    translations.ScoreVeryDissatisfiedLabel!,
+  );
+  await expect(container).toContainText(translations.ScoreDissatisfiedLabel!);
+  await expect(container).toContainText(translations.ScoreNeutralLabel!);
+  await expect(container).toContainText(translations.ScoreSatisfiedLabel!);
+  await expect(container).toContainText(translations.ScoreVerySatisfiedLabel!);
+  await expect(container).toContainText(translations.SendButton!);
 });
 
 test("Sends a request when choosing a score immediately", async ({ page }) => {
