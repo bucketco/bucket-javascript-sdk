@@ -5,7 +5,7 @@ import { version } from "../package.json";
 
 import type { FeedbackPosition, FeedbackTranslations } from "./feedback/types";
 import { SSE_REALTIME_HOST, TRACKING_HOST } from "./config";
-import { defaultFeedbackPromptHandler } from "./default-feedback-prompt-handler";
+import { createDefaultFeedbackPromptHandler } from "./default-feedback-prompt-handler";
 import * as feedbackLib from "./feedback";
 import {
   FeedbackPromptCompletionHandler,
@@ -146,7 +146,7 @@ export default function main() {
     feedbackPromptHandler =
       options.feedback?.liveFeedbackHandler ??
       options.feedback?.liveSatisfactionHandler ??
-      defaultFeedbackPromptHandler;
+      createDefaultFeedbackPromptHandler(options.feedback?.ui);
 
     log(`initialized with key "${trackingKey}" and options`, options);
   }
