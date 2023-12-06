@@ -5,8 +5,8 @@ import { version } from "../package.json";
 
 import {
   FEEDBACK_STYLES_MAP,
-  FeedbackStyle,
   type FeedbackPosition,
+  FeedbackStyle,
   type FeedbackTranslations,
 } from "./feedback/types";
 import { SSE_REALTIME_HOST, TRACKING_HOST } from "./config";
@@ -129,9 +129,9 @@ export default function main() {
     }
 
     if (options.feedback?.ui?.styles) {
-      for (const key in options.feedback.ui.styles) {
-        const variable = FEEDBACK_STYLES_MAP[key as FeedbackStyle];
-        const value = options.feedback.ui.styles[key as FeedbackStyle];
+      for (const style in options.feedback.ui.styles) {
+        const variable = FEEDBACK_STYLES_MAP[style as FeedbackStyle];
+        const value = options.feedback.ui.styles[style as FeedbackStyle];
 
         document.documentElement.style.setProperty(variable, value ?? null);
       }
