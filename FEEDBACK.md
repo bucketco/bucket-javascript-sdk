@@ -36,7 +36,7 @@ See also:
 
 - [Positioning and behavior](#positioning-and-behavior) for the position option.
 - [Static language configuration](#static-language-configuration) if you want to translate the feedback UI.
-- [Live Satisfaction](#live-feedback) to override default configuration.
+- [Live Satisfaction](#live-satisfaction) to override default configuration.
 
 ## Live Satisfaction
 
@@ -289,9 +289,39 @@ bucket.init("bucket-tracking-key", {
 
 You can adapt parts of the look of the Bucket feedback UI by applying CSS custom properties to your page in your CSS `:root`-scope.
 
-![image](https://github.com/bucketco/bucket-tracking-sdk/assets/331790/ff7ed885-8308-4c9b-98c6-5623f1026b69)
+For example, a dark mode theme might look like this:
 
-Examples of custom styling can be found in our [development example stylesheet](./dev/index.css).
+<img width="276" alt="image" src="https://github.com/bucketco/bucket-tracking-sdk/assets/34348/5d579b7b-a830-4530-8b40-864488a8597e">
+
+```css
+:root {
+  --bucket-feedback-dialog-background-color: #1e1f24;
+  --bucket-feedback-dialog-color: rgba(255, 255, 255, 0.92);
+  --bucket-feedback-dialog-secondary-color: rgba(255, 255, 255, 0.3);
+  --bucket-feedback-dialog-border: rgba(255, 255, 255, 0.16);
+  --bucket-feedback-dialog-primary-button-background-color: #655bfa;
+  --bucket-feedback-dialog-primary-button-color: white;
+  --bucket-feedback-dialog-input-border-color: rgba(255, 255, 255, 0.16);
+  --bucket-feedback-dialog-input-focus-border-color: rgba(255, 255, 255, 0.3);
+  --bucket-feedback-dialog-error-color: #f56565;
+
+  --bucket-feedback-dialog-rating-1-color: #ed8936;
+  --bucket-feedback-dialog-rating-1-background-color: #7b341e;
+  --bucket-feedback-dialog-rating-2-color: #dd6b20;
+  --bucket-feedback-dialog-rating-2-background-color: #652b19;
+  --bucket-feedback-dialog-rating-3-color: #787c91;
+  --bucket-feedback-dialog-rating-3-background-color: #3e404c;
+  --bucket-feedback-dialog-rating-4-color: #38a169;
+  --bucket-feedback-dialog-rating-4-background-color: #1c4532;
+  --bucket-feedback-dialog-rating-5-color: #48bb78;
+  --bucket-feedback-dialog-rating-5-background-color: #22543d;
+
+  --bucket-feedback-dialog-submitted-check-background-color: #38a169;
+  --bucket-feedback-dialog-submitted-check-color: #ffffff;
+}
+```
+
+Other examples of custom styling can be found in our [development example stylesheet](./dev/index.css).
 
 ## Using your own UI to collect feedback
 
