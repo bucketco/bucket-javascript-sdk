@@ -3,7 +3,12 @@ import { isForNode } from "is-bundling-for-browser-or-node";
 
 import { version } from "../package.json";
 
-import type { FeedbackPosition, FeedbackTranslations } from "./feedback/types";
+import {
+  FEEDBACK_STYLES_MAP,
+  FeedbackStyle,
+  type FeedbackPosition,
+  type FeedbackTranslations,
+} from "./feedback/types";
 import { SSE_REALTIME_HOST, TRACKING_HOST } from "./config";
 import { createDefaultFeedbackPromptHandler } from "./default-feedback-prompt-handler";
 import * as feedbackLib from "./feedback";
@@ -121,6 +126,15 @@ export default function main() {
 
     if (options.feedback?.ui?.translations) {
       feedbackTranslations = options.feedback?.ui?.translations;
+    }
+
+    if (options.feedback?.ui?.styles) {
+      for (const key in options.feedback.ui.styles) {
+        const variable = FEEDBACK_STYLES_MAP[key as FeedbackStyle];
+        const value = options.feedback.ui.styles[key as FeedbackStyle];
+
+        document.documentElement.style.setProperty(variable, value ?? null);
+      }
     }
 
     if (typeof options.persistUser !== "undefined") {

@@ -71,3 +71,39 @@ export type FeedbackTranslations = {
   SuccessMessage: string;
   SendButton: string;
 };
+
+export const FEEDBACK_STYLES_MAP = {
+  fontSize: "--bucket-feedback-dialog-font-size",
+  fontFamily: "--bucket-feedback-dialog-font-family",
+  borderRadius: "--bucket-feedback-dialog-border-radius",
+  backgroundColor: "--bucket-feedback-dialog-background-color",
+  color: "--bucket-feedback-dialog-color",
+  secondaryColor: "--bucket-feedback-dialog-secondary-color",
+  border: "--bucket-feedback-dialog-border",
+  primaryButtonBackgroundColor:
+    "--bucket-feedback-dialog-primary-button-background-color",
+  primaryButtonColor: "--bucket-feedback-dialog-primary-button-color",
+  inputBorderColor: "--bucket-feedback-dialog-input-border-color",
+  inputFocusBorderColor: "--bucket-feedback-dialog-input-focus-border-color",
+  submittedCheckBackgroundColor:
+    "--bucket-feedback-dialog-submitted-check-background-color",
+  submittedCheckColor: "--bucket-feedback-dialog-submitted-check-color",
+  tooltipColor: "--bucket-feedback-dialog-tooltip-color",
+  tooltipBackgroundColor: "--bucket-feedback-dialog-tooltip-background-color",
+  rating1Color: "--bucket-feedback-dialog-rating-1-color",
+  rating1BackgroundColor: "--bucket-feedback-dialog-rating-1-background-color",
+  rating2Color: "--bucket-feedback-dialog-rating-2-color",
+  rating2BackgroundColor: "--bucket-feedback-dialog-rating-2-background-color",
+  rating3Color: "--bucket-feedback-dialog-rating-3-color",
+  rating3BackgroundColor: "--bucket-feedback-dialog-rating-3-background-color",
+  rating4Color: "--bucket-feedback-dialog-rating-4-color",
+  rating4BackgroundColor: "--bucket-feedback-dialog-rating-4-background-color",
+  rating5Color: "--bucket-feedback-dialog-rating-5-color",
+  rating5BackgroundColor: "--bucket-feedback-dialog-rating-5-background-color",
+} as const;
+
+export type FeedbackStyle = keyof typeof FEEDBACK_STYLES_MAP;
+
+export type FeedbackStyles = {
+  [K in FeedbackStyle]: string;
+};

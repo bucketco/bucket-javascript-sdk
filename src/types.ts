@@ -1,5 +1,6 @@
 import {
   FeedbackPosition,
+  FeedbackStyles,
   FeedbackSubmission,
   FeedbackTranslations,
   OpenFeedbackFormOptions,
@@ -34,6 +35,11 @@ export type Options = {
        * Undefined translation keys fall back to english defaults.
        */
       translations?: Partial<FeedbackTranslations>;
+
+      /**
+       * Style customizations to set globally for Bucket UI.
+       */
+      styles?: Partial<FeedbackStyles>;
     };
   };
 };
