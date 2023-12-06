@@ -69,8 +69,19 @@ export type TrackedEvent = {
 
 export interface RequestFeedbackOptions
   extends Omit<OpenFeedbackFormOptions, "key" | "onSubmit"> {
+  /**
+   * Bucket feature ID
+   */
   featureId: string;
+
+  /**
+   * User id from your own application.
+   */
   userId: string;
+
+  /**
+   * Company id from your own application.
+   */
   companyId?: string;
 
   /**

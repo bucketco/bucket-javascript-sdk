@@ -103,6 +103,14 @@ export default function main() {
     return userId!;
   }
 
+  /**
+   * Initialize the Bucket SDK.
+   *
+   * Must be called before calling other SDK methods.
+   *
+   * @param key Your Bucket tracking key
+   * @param options
+   */
   function init(key: Key, options: Options = {}) {
     reset();
     if (!key) {
@@ -151,6 +159,13 @@ export default function main() {
     log(`initialized with key "${trackingKey}" and options`, options);
   }
 
+  /**
+   * Identify the current user in Bucket, so they are tracked against each `track` call and receive Live Satisfaction events.
+   *
+   * @param userId The ID you use to identify this user
+   * @param attributes Any attributes you want to attach to the user in Bucket
+   * @param context
+   */
   async function user(
     userId: User["userId"],
     attributes?: User["attributes"],
@@ -177,6 +192,14 @@ export default function main() {
     return res;
   }
 
+  /**
+   * Identify the current user's company in Bucket, so it is tracked against each `track` call.
+   *
+   * @param companyId The ID you use to identify this company
+   * @param attributes Any attributes you want to attach to the company in Bucket
+   * @param userId The ID you use to identify the current user
+   * @param context
+   */
   async function company(
     companyId: Company["companyId"],
     attributes?: Company["attributes"] | null,
@@ -198,6 +221,15 @@ export default function main() {
     return res;
   }
 
+  /**
+   * Track an event in Bucket.
+   *
+   * @param eventName The name of the event
+   * @param attributes Any attributes you want to attach to the event
+   * @param userId The ID you use to identify the current user
+   * @param companyId The ID you use to identify the current user's company
+   * @param context
+   */
   async function track(
     eventName: TrackedEvent["event"],
     attributes?: TrackedEvent["attributes"] | null,
@@ -221,6 +253,12 @@ export default function main() {
     return res;
   }
 
+  /**
+   * Submit user feedback to Bucket. Must include either `score` or `comment`, or both.
+   *
+   * @param options
+   * @returns
+   */
   async function feedback({
     feedbackId,
     featureId,
@@ -260,6 +298,14 @@ export default function main() {
    * @deprecated Use `initLiveSatisfaction` instead
    */
   const initLiveFeedback = initLiveSatisfaction;
+
+  /**
+   * Start receiving Live Satisfaction feedback prompts.
+   *
+   * This doesn't need to be called unless you set `enableLiveSatisfaction` to false when calling `init`.
+   *
+   * @param userId The ID you use to identify the user
+   */
   async function initLiveSatisfaction(userId?: User["userId"]) {
     checkKey();
 
@@ -442,6 +488,13 @@ export default function main() {
     return res;
   }
 
+  /**
+   * Display the Bucket feedback form UI programmatically.
+   *
+   * This can be used to collect feedback from users in Bucket in cases where Live Satisfaction isn't appropriate.
+   *
+   * @param options
+   */
   function requestFeedback(options: RequestFeedbackOptions) {
     if (isForNode) {
       err("requestFeedback can only be called in the browser");
@@ -496,6 +549,9 @@ export default function main() {
     }, 1);
   }
 
+  /**
+   * Reset the active user and disconnect from Live Satisfaction events.
+   */
   function reset() {
     sessionUserId = undefined;
     feedbackPromptingUserId = undefined;
