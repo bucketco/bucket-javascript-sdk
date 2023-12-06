@@ -75,12 +75,12 @@ export interface RequestFeedbackOptions
   featureId: string;
 
   /**
-   * User id from your own application.
+   * User ID from your own application.
    */
   userId: string;
 
   /**
-   * Company id from your own application.
+   * Company ID from your own application.
    */
   companyId?: string;
 
@@ -109,12 +109,12 @@ export type Feedback = {
   featureId: string;
 
   /**
-   * User id from your own application.
+   * User ID from your own application.
    */
   userId?: User["userId"];
 
   /**
-   * Company id from your own application.
+   * Company ID from your own application.
    */
   companyId?: Company["companyId"];
 
