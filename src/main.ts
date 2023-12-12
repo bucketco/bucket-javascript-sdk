@@ -7,6 +7,7 @@ import type { FeedbackPosition, FeedbackTranslations } from "./feedback/types";
 import { SSE_REALTIME_HOST, TRACKING_HOST } from "./config";
 import { createDefaultFeedbackPromptHandler } from "./default-feedback-prompt-handler";
 import * as feedbackLib from "./feedback";
+import { getAuthToken } from "./prompt-storage";
 import {
   FeedbackPromptCompletionHandler,
   parsePromptMessage,
@@ -27,7 +28,6 @@ import type {
   TrackedEvent,
   User,
 } from "./types";
-import { getAuthToken } from "./prompt-storage";
 
 async function request(url: string, body: any) {
   return fetch(url, {
