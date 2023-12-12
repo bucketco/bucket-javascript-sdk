@@ -242,7 +242,7 @@ describe("usage", () => {
   });
 });
 
-describe("fetdback prompting", () => {
+describe("feedback prompting", () => {
   beforeAll(() => {
     vi.mocked(openAblySSEChannel).mockReturnValue("fake_client" as any);
     vi.mocked(closeAblySSEChannel).mockResolvedValue(undefined);
