@@ -77,10 +77,10 @@ export class AblySSEChannel {
   }
 
   private async refreshToken() {
-    const token = getAuthToken(this.userId);
-    if (token) {
-      this.log("using existing token", token);
-      return token;
+    const cached = getAuthToken(this.userId);
+    if (cached && cached.channel === this.channel) {
+      this.log("using existing token", cached.channel, cached.token);
+      return cached.token;
     }
 
     const tokenRequest = await this.refreshTokenRequest();
@@ -99,9 +99,14 @@ export class AblySSEChannel {
 
     if (res.ok) {
       const details: AblyTokenDetails = await res.json();
-      this.log("obtained new token", token);
+      this.log("obtained new token", details);
 
-      rememberAuthToken(this.userId, details.token, new Date(details.expires));
+      rememberAuthToken(
+        this.userId,
+        this.channel,
+        details.token,
+        new Date(details.expires),
+      );
       return details.token;
     }
 

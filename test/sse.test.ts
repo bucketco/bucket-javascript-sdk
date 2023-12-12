@@ -128,8 +128,6 @@ describe("connection handling", () => {
       vi.fn(),
     );
 
-    vi.mocked(getAuthToken).mockReturnValue(undefined);
-
     const addEventListener = vi.fn();
     const close = vi.fn();
 
@@ -143,9 +141,9 @@ describe("connection handling", () => {
 
     await sse.connect();
 
-    expect(getAuthToken).toHaveBeenCalledWith("foo");
+    expect(getAuthToken).toHaveBeenCalledWith(userId, channel);
     expect(rememberAuthToken).toHaveBeenCalledWith(
-      "foo",
+      userId,
       "token",
       new Date("2023-01-01T00:00:00.000Z"),
     );
@@ -178,7 +176,10 @@ describe("connection handling", () => {
       vi.fn(),
     );
 
-    vi.mocked(getAuthToken).mockReturnValue("cached_token");
+    vi.mocked(getAuthToken).mockReturnValue({
+      channel: channel,
+      token: "cached_token",
+    });
 
     const addEventListener = vi.fn();
     const close = vi.fn();
@@ -190,10 +191,45 @@ describe("connection handling", () => {
 
     await sse.connect();
 
-    expect(getAuthToken).toHaveBeenCalledWith("foo");
+    expect(getAuthToken).toHaveBeenCalledWith(userId);
     expect(rememberAuthToken).not.toHaveBeenCalled();
 
     expect(sse.isConnected()).toBe(true);
+  });
+
+  test("does not reuse cached token with wrong channel", async () => {
+    const sse = new AblySSEChannel(
+      userId,
+      channel,
+      ablyAuthUrl,
+      sseHost,
+      vi.fn(),
+    );
+
+    vi.mocked(getAuthToken).mockReturnValue({
+      channel: "haha",
+      token: "cached_token",
+    });
+
+    const addEventListener = vi.fn();
+    const close = vi.fn();
+
+    vi.mocked(window.EventSource).mockReturnValue({
+      addEventListener,
+      close,
+    } as any);
+
+    setupAuthNock(true);
+    setupTokenNock(true);
+
+    await sse.connect();
+
+    expect(rememberAuthToken).toHaveBeenCalledWith(
+      userId,
+      channel,
+      "token",
+      new Date("2023-01-01T00:00:00.000Z"),
+    );
   });
 
   test("does not try to re-connect if already connecting", async () => {
@@ -308,9 +344,9 @@ describe("message handling", () => {
     expect(messageCallback).toBeDefined();
 
     messageCallback!({
-      data: JSON.stringify({ data: JSON.stringify("foo") }),
+      data: JSON.stringify({ data: JSON.stringify(userId) }),
     } as any);
-    expect(callback).toHaveBeenCalledWith("foo");
+    expect(callback).toHaveBeenCalledWith(userId);
 
     messageCallback!({
       data: null,

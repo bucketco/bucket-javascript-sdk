@@ -16,6 +16,7 @@ import { TRACKING_HOST } from "../src/config";
 import bucket from "../src/main";
 import {
   checkPromptMessageCompleted,
+  getAuthToken,
   markPromptMessageCompleted,
 } from "../src/prompt-storage";
 import { closeAblySSEChannel, openAblySSEChannel } from "../src/sse";
@@ -29,6 +30,8 @@ vi.mock("../src/prompt-storage", () => {
   return {
     markPromptMessageCompleted: vi.fn(),
     checkPromptMessageCompleted: vi.fn(),
+    rememberAuthToken: vi.fn(),
+    getAuthToken: vi.fn(),
   };
 });
 
@@ -239,7 +242,7 @@ describe("usage", () => {
   });
 });
 
-describe("feedback prompting", () => {
+describe("fetdback prompting", () => {
   beforeAll(() => {
     vi.mocked(openAblySSEChannel).mockReturnValue("fake_client" as any);
     vi.mocked(closeAblySSEChannel).mockResolvedValue(undefined);
@@ -252,6 +255,7 @@ describe("feedback prompting", () => {
   afterEach(() => {
     nock.cleanAll();
     vi.clearAllMocks();
+    vi.mocked(getAuthToken).mockReturnValue(undefined);
   });
 
   test("rejects feedback prompting in node environment", async () => {
@@ -297,6 +301,28 @@ describe("feedback prompting", () => {
 
     expect(closeAblySSEChannel).toBeCalledTimes(1);
     expect(closeAblySSEChannel).toBeCalledWith("fake_client");
+  });
+
+  test("does not call tracking endpoint if token cached", async () => {
+    vi.mocked(getAuthToken).mockReturnValue({
+      channel: "super-channel",
+      token: "something",
+    });
+    const bucketInstance = bucket();
+    bucketInstance.init(KEY, {
+      persistUser: false,
+      feedback: { enableLiveSatisfaction: false },
+    });
+
+    await bucketInstance.initLiveSatisfaction("foo");
+
+    expect(openAblySSEChannel).toBeCalledWith(
+      `${TRACKING_HOST}/${KEY}/feedback/prompting-auth`,
+      "foo",
+      "super-channel",
+      expect.anything(),
+      expect.anything(),
+    );
   });
 
   test("does not initiate feedback prompting if server does not agree", async () => {

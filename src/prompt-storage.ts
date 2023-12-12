@@ -22,10 +22,11 @@ export const checkPromptMessageCompleted = (
 
 export const rememberAuthToken = (
   userId: string,
+  channel: string,
   token: string,
   expiresAt: Date,
 ) => {
-  Cookies.set(`bucket-token-${userId}`, token, {
+  Cookies.set(`bucket-token-${userId}`, `${channel}:${token}`, {
     expires: expiresAt,
     sameSite: "strict",
     secure: true,
@@ -33,5 +34,18 @@ export const rememberAuthToken = (
 };
 
 export const getAuthToken = (userId: string) => {
-  return Cookies.get(`bucket-token-${userId}`);
+  const val = Cookies.get(`bucket-token-${userId}`);
+  if (!val) {
+    return undefined;
+  }
+
+  const [channel, token] = val.split(":");
+  if (!channel?.length || !token?.length) {
+    throw new Error(`Invalid token: ${val}`);
+  }
+
+  return {
+    channel,
+    token,
+  };
 };
