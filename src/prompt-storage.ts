@@ -5,7 +5,11 @@ export const markPromptMessageCompleted = (
   promptId: string,
   expiresAt: Date,
 ) => {
-  Cookies.set(`bucket-prompt-${userId}`, promptId, { expires: expiresAt });
+  Cookies.set(`bucket-prompt-${userId}`, promptId, {
+    expires: expiresAt,
+    sameSite: "strict",
+    secure: true,
+  });
 };
 
 export const checkPromptMessageCompleted = (
@@ -21,7 +25,11 @@ export const rememberAuthToken = (
   token: string,
   expiresAt: Date,
 ) => {
-  Cookies.set(`bucket-token-${userId}`, token, { expires: expiresAt });
+  Cookies.set(`bucket-token-${userId}`, token, {
+    expires: expiresAt,
+    sameSite: "strict",
+    secure: true,
+  });
 };
 
 export const getAuthToken = (userId: string) => {
