@@ -141,9 +141,10 @@ describe("connection handling", () => {
 
     await sse.connect();
 
-    expect(getAuthToken).toHaveBeenCalledWith(userId, channel);
+    expect(getAuthToken).toHaveBeenCalledWith(userId);
     expect(rememberAuthToken).toHaveBeenCalledWith(
       userId,
+      channel,
       "token",
       new Date("2023-01-01T00:00:00.000Z"),
     );

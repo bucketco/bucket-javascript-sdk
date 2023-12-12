@@ -56,7 +56,10 @@ describe("prompt-storage", () => {
       .spyOn(Cookies, "get")
       .mockReturnValue("channel:token" as any);
 
-    expect(getAuthToken("user")).toBe({ channel: "channel", token: "token" });
+    expect(getAuthToken("user")).toStrictEqual({
+      channel: "channel",
+      token: "token",
+    });
 
     expect(spy).toHaveBeenCalledWith("bucket-token-user");
   });
