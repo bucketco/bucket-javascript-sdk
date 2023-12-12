@@ -2,6 +2,7 @@ import flushPromises from "flush-promises";
 import nock from "nock";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
+import { getAuthToken, rememberAuthToken } from "../src/prompt-storage";
 import {
   AblySSEChannel,
   closeAblySSEChannel,
@@ -16,6 +17,7 @@ const tokenRequest = {
 };
 const tokenDetails = {
   token: "token",
+  expires: new Date(2023, 0, 1).getTime(),
 };
 
 const userId = "foo";
@@ -23,6 +25,13 @@ const channel = "channel";
 
 Object.defineProperty(window, "EventSource", {
   value: vi.fn(),
+});
+
+vi.mock("../src/prompt-storage", () => {
+  return {
+    rememberAuthToken: vi.fn(),
+    getAuthToken: vi.fn(),
+  };
 });
 
 function setupAuthNock(success: boolean | number) {
@@ -58,6 +67,7 @@ describe("connection handling", () => {
 
     vi.clearAllMocks();
     nock.cleanAll();
+    vi.mocked(getAuthToken).mockReturnValue(undefined);
   });
 
   test("rejects if auth endpoint is not success", async () => {
@@ -118,6 +128,8 @@ describe("connection handling", () => {
       vi.fn(),
     );
 
+    vi.mocked(getAuthToken).mockReturnValue(undefined);
+
     const addEventListener = vi.fn();
     const close = vi.fn();
 
@@ -131,6 +143,12 @@ describe("connection handling", () => {
 
     await sse.connect();
 
+    expect(getAuthToken).toHaveBeenCalledWith("foo");
+    expect(rememberAuthToken).toHaveBeenCalledWith(
+      "foo",
+      "token",
+      new Date("2023-01-01T00:00:00.000Z"),
+    );
     expect(vi.mocked(window.EventSource)).toHaveBeenCalledTimes(1);
     expect(addEventListener).toHaveBeenCalledTimes(3);
     expect(addEventListener).toHaveBeenCalledWith(
@@ -149,6 +167,33 @@ describe("connection handling", () => {
 
     expect(close).toHaveBeenCalledTimes(1);
     expect(sse.isConnected()).toBe(false);
+  });
+
+  test("reuses cached token", async () => {
+    const sse = new AblySSEChannel(
+      userId,
+      channel,
+      ablyAuthUrl,
+      sseHost,
+      vi.fn(),
+    );
+
+    vi.mocked(getAuthToken).mockReturnValue("cached_token");
+
+    const addEventListener = vi.fn();
+    const close = vi.fn();
+
+    vi.mocked(window.EventSource).mockReturnValue({
+      addEventListener,
+      close,
+    } as any);
+
+    await sse.connect();
+
+    expect(getAuthToken).toHaveBeenCalledWith("foo");
+    expect(rememberAuthToken).not.toHaveBeenCalled();
+
+    expect(sse.isConnected()).toBe(true);
   });
 
   test("does not try to re-connect if already connecting", async () => {

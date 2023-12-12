@@ -15,3 +15,15 @@ export const checkPromptMessageCompleted = (
   const id = Cookies.get(`bucket-prompt-${userId}`);
   return id === promptId;
 };
+
+export const rememberAuthToken = (
+  userId: string,
+  token: string,
+  expiresAt: Date,
+) => {
+  Cookies.set(`bucket-token-${userId}`, token, { expires: expiresAt });
+};
+
+export const getAuthToken = (userId: string) => {
+  return Cookies.get(`bucket-token-${userId}`);
+};
