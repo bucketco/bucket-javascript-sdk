@@ -18,6 +18,8 @@ describe("prompt-storage", () => {
 
     expect(spy).toHaveBeenCalledWith("bucket-prompt-user", "prompt", {
       expires: new Date("2021-01-01"),
+      sameSite: "strict",
+      secure: true,
     });
   });
 
@@ -44,6 +46,8 @@ describe("prompt-storage", () => {
 
     expect(spy).toHaveBeenCalledWith("bucket-token-user", "token", {
       expires: new Date("2021-01-01"),
+      sameSite: "strict",
+      secure: true,
     });
   });
 
