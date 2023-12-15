@@ -41,7 +41,7 @@ export const getAuthToken = (userId: string) => {
 
   const [channel, token] = val.split(":");
   if (!channel?.length || !token?.length) {
-    throw new Error(`Invalid token: ${val}`);
+    return undefined;
   }
 
   return {

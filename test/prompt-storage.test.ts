@@ -67,7 +67,7 @@ describe("prompt-storage", () => {
   test("getAuthToken with error", async () => {
     const spy = vi.spyOn(Cookies, "get").mockReturnValue("token" as any);
 
-    expect(() => getAuthToken("user")).toThrowError();
+    expect(getAuthToken("user")).toBeUndefined();
 
     expect(spy).toHaveBeenCalledWith("bucket-token-user");
   });
