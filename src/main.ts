@@ -7,6 +7,7 @@ import type { FeedbackPosition, FeedbackTranslations } from "./feedback/types";
 import { SSE_REALTIME_HOST, TRACKING_HOST } from "./config";
 import { createDefaultFeedbackPromptHandler } from "./default-feedback-prompt-handler";
 import * as feedbackLib from "./feedback";
+import { getAuthToken } from "./prompt-storage";
 import {
   FeedbackPromptCompletionHandler,
   parsePromptMessage,
@@ -324,26 +325,33 @@ export default function main() {
 
     userId = resolveUser(userId);
 
+    const existingAuth = getAuthToken(userId);
+    let channel = existingAuth?.channel;
+
     // while initializing, consider the channel active
     liveSatisfactionActive = true;
     try {
-      const res = await request(`${getUrl()}/feedback/prompting-init`, {
-        userId,
-      });
+      if (!channel) {
+        const res = await request(`${getUrl()}/feedback/prompting-init`, {
+          userId,
+        });
 
-      log(`feedback prompting status sent`, res);
-      const body: { success: boolean; channel?: string } = await res.json();
-      if (!body.success || !body.channel) {
-        log(`feedback prompting not enabled`);
-        return res;
+        log(`feedback prompting status sent`, res);
+        const body: { success: boolean; channel?: string } = await res.json();
+        if (!body.success || !body.channel) {
+          log(`feedback prompting not enabled`);
+          return res;
+        }
+
+        channel = body.channel;
       }
 
-      log(`feedback prompting enabled`);
+      log(`feedback prompting enabled`, channel);
 
       sseChannel = openAblySSEChannel(
         `${getUrl()}/feedback/prompting-auth`,
         userId,
-        body.channel,
+        channel,
         (message) => handleFeedbackPromptRequest(userId!, message),
         { debug, sseHost },
       );
@@ -351,11 +359,11 @@ export default function main() {
       feedbackPromptingUserId = userId;
 
       log(`feedback prompting connection established`);
-      return res;
     } finally {
       // check that SSE channel has actually been opened, otherwise reset the value
       liveSatisfactionActive = !!sseChannel;
     }
+    return channel;
   }
 
   function handleFeedbackPromptRequest(userId: User["userId"], message: any) {

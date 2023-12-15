@@ -4,6 +4,8 @@ import { expect, test } from "@playwright/test";
 const KEY = randomUUID();
 
 test("Acceptance", async ({ page }) => {
+  await page.goto("http://localhost:8000/example/empty.html");
+
   const successfulRequests: string[] = [];
 
   // Mock API calls with assertions

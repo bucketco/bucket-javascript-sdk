@@ -1,9 +1,11 @@
 import fetch from "cross-fetch";
 
 import { SSE_REALTIME_HOST } from "./config";
+import { getAuthToken, rememberAuthToken } from "./prompt-storage";
 
 interface AblyTokenDetails {
   token: string;
+  expires: number;
 }
 
 interface AblyTokenRequest {
@@ -75,6 +77,12 @@ export class AblySSEChannel {
   }
 
   private async refreshToken() {
+    const cached = getAuthToken(this.userId);
+    if (cached && cached.channel === this.channel) {
+      this.log("using existing token", cached.channel, cached.token);
+      return cached.token;
+    }
+
     const tokenRequest = await this.refreshTokenRequest();
     const res = await fetch(
       `${this.sseHost}/keys/${encodeURIComponent(
@@ -90,9 +98,16 @@ export class AblySSEChannel {
     );
 
     if (res.ok) {
-      const token: AblyTokenDetails = await res.json();
-      this.log("obtained new token", token);
-      return token;
+      const details: AblyTokenDetails = await res.json();
+      this.log("obtained new token", details);
+
+      rememberAuthToken(
+        this.userId,
+        this.channel,
+        details.token,
+        new Date(details.expires),
+      );
+      return details.token;
     }
 
     this.err("server did not release a token", res);
@@ -177,7 +192,7 @@ export class AblySSEChannel {
 
       this.eventSource = new EventSource(
         `${this.sseHost}/sse?v=1.2&accessToken=${encodeURIComponent(
-          token.token,
+          token,
         )}&channels=${encodeURIComponent(this.channel)}&rewind=1`,
       );
 
