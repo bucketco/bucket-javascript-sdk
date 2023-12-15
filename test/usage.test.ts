@@ -332,7 +332,7 @@ describe("feedback prompting", () => {
     );
 
     expect(n.isDone()).toBe(false);
-    n.done;
+    n.done();
   });
 
   test("does not initiate feedback prompting if server does not agree", async () => {
