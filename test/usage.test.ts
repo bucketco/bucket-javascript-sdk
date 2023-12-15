@@ -303,11 +303,18 @@ describe("feedback prompting", () => {
     expect(closeAblySSEChannel).toBeCalledWith("fake_client");
   });
 
-  test("does not call tracking endpoint if token cached", async () => {
+  test("does not call tracking endpoints if token cached", async () => {
     vi.mocked(getAuthToken).mockReturnValue({
       channel: "super-channel",
       token: "something",
     });
+
+    const n = nock(`${TRACKING_HOST}/${KEY}`)
+      .post(/.*\/feedback\/prompting-init/, {
+        userId: "foo",
+      })
+      .reply(200, { success: true, channel: "test-channel" });
+
     const bucketInstance = bucket();
     bucketInstance.init(KEY, {
       persistUser: false,
@@ -323,6 +330,9 @@ describe("feedback prompting", () => {
       expect.anything(),
       expect.anything(),
     );
+
+    expect(n.isDone()).toBe(false);
+    n.done;
   });
 
   test("does not initiate feedback prompting if server does not agree", async () => {
