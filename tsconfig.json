@@ -17,7 +17,8 @@
     "typeRoots": ["./node_modules/@types", "./types"],
     "jsx": "react",
     "jsxFactory": "h",
-    "jsxFragmentFactory": "Fragment"
+    "jsxFragmentFactory": "Fragment",
+    "skipLibCheck": true
   },
   "include": ["src", "dev"]
 }

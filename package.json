@@ -32,6 +32,7 @@
     "@eslint/js": "^8.47.0",
     "@playwright/test": "^1.37.1",
     "@preact/preset-vite": "^2.5.0",
+    "@rrweb/types": "^2.0.0-alpha.11",
     "@types/js-cookie": "^3.0.3",
     "@types/node": "^20.4.4",
     "@types/webpack": "^5.28.2",
@@ -73,6 +74,7 @@
     "cross-fetch": "^4.0.0",
     "is-bundling-for-browser-or-node": "^1.1.1",
     "js-cookie": "^3.0.5",
-    "preact": "^10.16.0"
+    "preact": "^10.16.0",
+    "rrweb": "^2.0.0-alpha.4"
   }
 }

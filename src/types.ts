@@ -5,6 +5,8 @@ import {
   OpenFeedbackFormOptions,
 } from "./feedback/types";
 
+export { eventWithTime as RecorderEvent } from "@rrweb/types"
+
 export type Key = string;
 
 export type Options = {
@@ -12,6 +14,10 @@ export type Options = {
   host?: string;
   sseHost?: string;
   debug?: boolean;
+  sessionRecording?: {
+    enable: boolean;
+    expirySec: number;
+  },
   feedback?: {
     /**
      * @deprecated Use `enableLiveSatisfaction` instead
@@ -66,6 +72,7 @@ export type TrackedEvent = {
   };
   context?: Context;
 };
+
 
 export interface RequestFeedbackOptions
   extends Omit<OpenFeedbackFormOptions, "key" | "onSubmit"> {
@@ -198,3 +205,13 @@ export type FeedbackPromptHandler = (
 export type Context = {
   active?: boolean;
 };
+
+export type RecordingEvent = {
+  userId: string;
+  sessionId: string;
+  event: any
+  timestamp: number; 
+  recordingData: string;
+};
+
+export type BulkEvent = User & {type: 'user'} | Company & {type: 'company'} | TrackedEvent & {type: 'event'} | Feedback & {type: 'feedback'} |  RecordingEvent & {type: 'session-recording'};

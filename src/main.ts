@@ -2,7 +2,7 @@ import fetch from "cross-fetch";
 import { isForNode } from "is-bundling-for-browser-or-node";
 
 import { version } from "../package.json";
-
+import record from "./record"
 import type { FeedbackPosition, FeedbackTranslations } from "./feedback/types";
 import { SSE_REALTIME_HOST, TRACKING_HOST } from "./config";
 import { createDefaultFeedbackPromptHandler } from "./default-feedback-prompt-handler";
@@ -15,6 +15,7 @@ import {
 } from "./prompts";
 import { AblySSEChannel, closeAblySSEChannel, openAblySSEChannel } from "./sse";
 import type {
+  BulkEvent,
   Company,
   Context,
   Feedback,
@@ -28,6 +29,7 @@ import type {
   TrackedEvent,
   User,
 } from "./types";
+
 
 async function request(url: string, body: any) {
   return fetch(url, {
@@ -51,6 +53,11 @@ export default function main() {
   let persistUser: boolean = !isForNode;
   let liveSatisfactionActive: boolean = false;
   let sseChannel: AblySSEChannel | undefined = undefined;
+  let sessionRecordingConfig = {
+    enable: true,
+    expirySec: 30 * 60,
+  }
+  let recordSessionStop: (() => void) | undefined = undefined;
   let liveSatisfactionEnabled: boolean = !isForNode;
   let feedbackPromptHandler: FeedbackPromptHandler | undefined = undefined;
   let feedbackPromptingUserId: string | undefined = undefined;
@@ -144,6 +151,11 @@ export default function main() {
       liveSatisfactionEnabled = options.feedback.enableLiveSatisfaction;
     }
 
+    sessionRecordingConfig = {
+      ...sessionRecordingConfig,
+      ...(options.sessionRecording ?? {})
+    }
+
     if (liveSatisfactionEnabled && isForNode) {
       err("Feedback prompting is not supported in Node.js environment");
     }
@@ -181,6 +193,10 @@ export default function main() {
       sessionUserId = userId;
       if (liveSatisfactionEnabled && !liveSatisfactionActive) {
         await initLiveSatisfaction(userId);
+      }
+
+      if (sessionRecordingConfig.enable && !recordSessionStop) {
+        recordSessionStop = initRecording(userId);
       }
     }
     const payload: User = {
@@ -293,6 +309,25 @@ export default function main() {
     const res = await request(`${getUrl()}/feedback`, payload);
     log(`sent feedback`, res);
     return res;
+  }
+
+  /**
+   * Start recording the current user's session.
+   *
+   * This doesn't need to be called unless you set `sessionRecording.enable` to false when calling `init`.
+   *
+   * @param userId The ID you use to identify the user
+   */
+ function initRecording(userId?: User["userId"]) {
+    checkKey();
+
+    if (isForNode) {
+      return err("Feedback prompting is not supported in Node.js environment");
+    }
+
+    userId = resolveUser(userId);
+
+    return record(userId, sessionRecordingConfig.expirySec, bulk)
   }
 
   /**
@@ -557,6 +592,23 @@ export default function main() {
     }, 1);
   }
 
+  async function bulk(events: BulkEvent[]) {
+    checkKey();
+
+    // these events might have been collecting over a period of time and should have
+    // a timestamp field. To assist in adjusting for clock skew in the client, we'll
+    // add a sentAt field to each event. The server compares this to the server time
+    // and uses the difference to adjust the timestamp field.
+    const eventWithSentAt = events.map((e) => ({
+      ...e,
+      sentAt: new Date().toISOString(),
+    }));
+
+    const res = await request(`${getUrl()}/bulk`, eventWithSentAt);
+    log(`sent bulk`, res);
+    return res;
+  }
+
   /**
    * Reset the active user and disconnect from Live Satisfaction events.
    */
@@ -581,6 +633,7 @@ export default function main() {
     company,
     track,
     feedback,
+    bulk,
     // feedback prompting
     requestFeedback,
     initLiveSatisfaction,
