@@ -42,11 +42,11 @@ describe("prompt-storage", () => {
   test("rememberAuthToken", async () => {
     const spy = vi.spyOn(Cookies, "set");
 
-    rememberAuthToken("user", "channel", "token", new Date("2021-01-01"));
+    rememberAuthToken("user", "channel:suffix", "token", new Date("2021-01-01"));
 
     expect(spy).toHaveBeenCalledWith(
       "bucket-token-user",
-      '["channel","token"]',
+      '["channel:suffix","token"]',
       {
         expires: new Date("2021-01-01"),
         sameSite: "strict",
@@ -58,10 +58,10 @@ describe("prompt-storage", () => {
   test("getAuthToken with positive result", async () => {
     const spy = vi
       .spyOn(Cookies, "get")
-      .mockReturnValue('["channel","token"]' as any);
+      .mockReturnValue('["channel:suffix","token"]' as any);
 
     expect(getAuthToken("user")).toStrictEqual({
-      channel: "channel",
+      channel: "channel:suffix",
       token: "token",
     });
 
