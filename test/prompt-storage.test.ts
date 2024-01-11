@@ -44,7 +44,7 @@ describe("prompt-storage", () => {
 
     rememberAuthToken("user", "channel", "token", new Date("2021-01-01"));
 
-    expect(spy).toHaveBeenCalledWith("bucket-token-user", "channel:token", {
+    expect(spy).toHaveBeenCalledWith("bucket-token-user", "[\"channel\",\"token\"]", {
       expires: new Date("2021-01-01"),
       sameSite: "strict",
       secure: true,
@@ -54,7 +54,7 @@ describe("prompt-storage", () => {
   test("getAuthToken with positive result", async () => {
     const spy = vi
       .spyOn(Cookies, "get")
-      .mockReturnValue("channel:token" as any);
+      .mockReturnValue("[\"channel\",\"token\"]" as any);
 
     expect(getAuthToken("user")).toStrictEqual({
       channel: "channel",
