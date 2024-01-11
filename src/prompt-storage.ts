@@ -52,3 +52,7 @@ export const getAuthToken = (userId: string) => {
     return undefined;
   }
 };
+
+export const forgetAuthToken = (userId: string) => {
+  Cookies.remove(`bucket-token-${userId}`);
+};
