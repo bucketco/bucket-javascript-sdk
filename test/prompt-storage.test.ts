@@ -3,6 +3,7 @@ import { describe, expect, test, vi } from "vitest";
 
 import {
   checkPromptMessageCompleted,
+  forgetAuthToken,
   getAuthToken,
   markPromptMessageCompleted,
   rememberAuthToken,
@@ -58,6 +59,14 @@ describe("prompt-storage", () => {
         secure: true,
       },
     );
+  });
+
+  test("forgetAuthToken", async () => {
+    const spy = vi.spyOn(Cookies, "remove");
+
+    forgetAuthToken("user");
+
+    expect(spy).toHaveBeenCalledWith("bucket-token-user");
   });
 
   test("getAuthToken with positive result", async () => {
