@@ -42,7 +42,12 @@ describe("prompt-storage", () => {
   test("rememberAuthToken", async () => {
     const spy = vi.spyOn(Cookies, "set");
 
-    rememberAuthToken("user", "channel:suffix", "token", new Date("2021-01-01"));
+    rememberAuthToken(
+      "user",
+      "channel:suffix",
+      "token",
+      new Date("2021-01-01"),
+    );
 
     expect(spy).toHaveBeenCalledWith(
       "bucket-token-user",
