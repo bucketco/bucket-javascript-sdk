@@ -26,7 +26,7 @@ export const rememberAuthToken = (
   token: string,
   expiresAt: Date,
 ) => {
-  Cookies.set(`bucket-token-${userId}`, `${channel}:${token}`, {
+  Cookies.set(`bucket-token-${userId}`, JSON.stringify({ channel, token }), {
     expires: expiresAt,
     sameSite: "strict",
     secure: true,
@@ -39,13 +39,23 @@ export const getAuthToken = (userId: string) => {
     return undefined;
   }
 
-  const [channel, token] = val.split(":");
-  if (!channel?.length || !token?.length) {
+  try {
+    const { channel, token } = JSON.parse(val) as {
+      channel: string;
+      token: string;
+    };
+    if (!channel?.length || !token?.length) {
+      return undefined;
+    }
+    return {
+      channel,
+      token,
+    };
+  } catch (e) {
     return undefined;
   }
+};
 
-  return {
-    channel,
-    token,
-  };
+export const forgetAuthToken = (userId: string) => {
+  Cookies.remove(`bucket-token-${userId}`);
 };
