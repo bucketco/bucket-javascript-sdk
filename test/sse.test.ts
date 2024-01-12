@@ -2,7 +2,11 @@ import flushPromises from "flush-promises";
 import nock from "nock";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
-import { getAuthToken, rememberAuthToken } from "../src/prompt-storage";
+import {
+  forgetAuthToken,
+  getAuthToken,
+  rememberAuthToken,
+} from "../src/prompt-storage";
 import {
   AblySSEChannel,
   closeAblySSEChannel,
@@ -30,6 +34,7 @@ Object.defineProperty(window, "EventSource", {
 vi.mock("../src/prompt-storage", () => {
   return {
     rememberAuthToken: vi.fn(),
+    forgetAuthToken: vi.fn(),
     getAuthToken: vi.fn(),
   };
 });
@@ -387,6 +392,8 @@ describe("message handling", () => {
     expect(errorCallback).toBeDefined();
 
     await errorCallback!({} as any);
+
+    expect(forgetAuthToken).not.toHaveBeenCalled();
     expect(close).toHaveBeenCalledTimes(1);
   });
 
@@ -425,7 +432,7 @@ describe("message handling", () => {
     expect(close).toHaveBeenCalledTimes(1);
   });
 
-  test("disconnects when ably reports token is expired", async () => {
+  test("disconnects when ably reports token errors", async () => {
     const sse = new AblySSEChannel(
       userId,
       channel,
@@ -451,10 +458,11 @@ describe("message handling", () => {
 
     await errorCallback!(
       new MessageEvent("error", {
-        data: JSON.stringify({ code: 40140 }),
+        data: JSON.stringify({ code: 40110 }),
       }),
     );
 
+    expect(forgetAuthToken).toHaveBeenCalledTimes(1);
     expect(close).toHaveBeenCalled();
   });
 });
@@ -566,7 +574,7 @@ describe("automatic retries", () => {
     vi.useRealTimers();
   });
 
-  test("resets retry count on successfull connect", async () => {
+  test("resets retry count on successful connect", async () => {
     const sse = new AblySSEChannel(
       userId,
       channel,

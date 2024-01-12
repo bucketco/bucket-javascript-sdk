@@ -1,7 +1,11 @@
 import fetch from "cross-fetch";
 
 import { SSE_REALTIME_HOST } from "./config";
-import { getAuthToken, rememberAuthToken } from "./prompt-storage";
+import {
+  forgetAuthToken,
+  getAuthToken,
+  rememberAuthToken,
+} from "./prompt-storage";
 
 interface AblyTokenDetails {
   token: string;
@@ -12,8 +16,8 @@ interface AblyTokenRequest {
   keyName: string;
 }
 
-const ABLY_TOKEN_ERROR_MIN = 40140;
-const ABLY_TOKEN_ERROR_MAX = 40149;
+const ABLY_TOKEN_ERROR_MIN = 40000;
+const ABLY_TOKEN_ERROR_MAX = 49999;
 
 export class AblySSEChannel {
   private isOpen: boolean = false;
@@ -130,6 +134,7 @@ export class AblySSEChannel {
         errorCode <= ABLY_TOKEN_ERROR_MAX
       ) {
         this.log("event source token expired, refresh required");
+        forgetAuthToken(this.userId);
       }
     } else {
       const connectionState = (e as any)?.target?.readyState;
