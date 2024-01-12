@@ -1,4 +1,12 @@
-import { afterEach, beforeAll, describe, expect, test, vi } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  test,
+  vi,
+} from "vitest";
 
 import {
   checkPromptMessageCompleted,
@@ -33,6 +41,10 @@ describe("prompt-storage", () => {
   afterEach(() => {
     document.cookie = undefined!;
     vi.clearAllMocks();
+  });
+
+  afterAll(() => {
+    vi.useRealTimers();
   });
 
   describe("markPromptMessageCompleted", () => {
