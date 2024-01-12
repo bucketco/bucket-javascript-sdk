@@ -46,13 +46,13 @@ describe("prompt-storage", () => {
     rememberAuthToken(
       "user",
       "channel:suffix",
-      "token",
+      "secret$%",
       new Date("2021-01-01"),
     );
 
     expect(spy).toHaveBeenCalledWith(
       "bucket-token-user",
-      '["channel:suffix","token"]',
+      '{"channel":"channel:suffix","token":"secret$%"}',
       {
         expires: new Date("2021-01-01"),
         sameSite: "strict",
@@ -72,11 +72,13 @@ describe("prompt-storage", () => {
   test("getAuthToken with positive result", async () => {
     const spy = vi
       .spyOn(Cookies, "get")
-      .mockReturnValue('["channel:suffix","token"]' as any);
+      .mockReturnValue(
+        '{"channel":"channel:suffix","token":"secret%$"}' as any,
+      );
 
     expect(getAuthToken("user")).toStrictEqual({
       channel: "channel:suffix",
-      token: "token",
+      token: "secret%$",
     });
 
     expect(spy).toHaveBeenCalledWith("bucket-token-user");
@@ -84,6 +86,16 @@ describe("prompt-storage", () => {
 
   test("getAuthToken with error", async () => {
     const spy = vi.spyOn(Cookies, "get").mockReturnValue("token" as any);
+
+    expect(getAuthToken("user")).toBeUndefined();
+
+    expect(spy).toHaveBeenCalledWith("bucket-token-user");
+  });
+
+  test("getAuthToken with empty field", async () => {
+    const spy = vi
+      .spyOn(Cookies, "get")
+      .mockReturnValue('{"channel":"","token":"secret%$"}' as any);
 
     expect(getAuthToken("user")).toBeUndefined();
 
