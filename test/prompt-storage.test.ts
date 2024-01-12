@@ -1,5 +1,4 @@
-import Cookies from "js-cookie";
-import { describe, expect, test, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, test, vi } from "vitest";
 
 import {
   checkPromptMessageCompleted,
@@ -9,104 +8,217 @@ import {
   rememberAuthToken,
 } from "../src/prompt-storage";
 
-vi.mock("js-cookie");
-
 describe("prompt-storage", () => {
-  test("markPromptMessageCompleted", async () => {
-    const spy = vi.spyOn(Cookies, "set");
+  beforeAll(() => {
+    const cookies: Record<string, string> = {};
 
-    markPromptMessageCompleted("user", "prompt", new Date("2021-01-01"));
-
-    expect(spy).toHaveBeenCalledWith("bucket-prompt-user", "prompt", {
-      expires: new Date("2021-01-01"),
-      sameSite: "strict",
-      secure: true,
-    });
-  });
-
-  test("checkPromptMessageCompleted with positive result", async () => {
-    const spy = vi.spyOn(Cookies, "get").mockReturnValue("prompt" as any);
-
-    expect(checkPromptMessageCompleted("user", "prompt")).toBe(true);
-
-    expect(spy).toHaveBeenCalledWith("bucket-prompt-user");
-  });
-
-  test("checkPromptMessageCompleted with negative result", async () => {
-    const spy = vi.spyOn(Cookies, "get").mockReturnValue("other" as any);
-
-    expect(checkPromptMessageCompleted("user", "prompt")).toBe(false);
-
-    expect(spy).toHaveBeenCalledWith("bucket-prompt-user");
-  });
-
-  test("rememberAuthToken", async () => {
-    const spy = vi.spyOn(Cookies, "set");
-
-    rememberAuthToken(
-      "user",
-      "channel:suffix",
-      "secret$%",
-      new Date("2021-01-01"),
-    );
-
-    expect(spy).toHaveBeenCalledWith(
-      "bucket-token-user",
-      '{"channel":"channel:suffix","token":"secret$%"}',
-      {
-        expires: new Date("2021-01-01"),
-        sameSite: "strict",
-        secure: true,
+    Object.defineProperty(document, "cookie", {
+      set: (val: string) => {
+        if (!val) {
+          Object.keys(cookies).forEach((k) => delete cookies[k]);
+          return;
+        }
+        const i = val.indexOf("=");
+        cookies[val.slice(0, i)] = val.slice(i + 1);
       },
-    );
+      get: () =>
+        Object.entries(cookies)
+          .map(([k, v]) => `${k}=${v}`)
+          .join("; "),
+    });
+
+    vi.setSystemTime(new Date("2024-01-11T09:55:37.000Z"));
   });
 
-  test("forgetAuthToken", async () => {
-    const spy = vi.spyOn(Cookies, "remove");
-
-    forgetAuthToken("user");
-
-    expect(spy).toHaveBeenCalledWith("bucket-token-user");
+  afterEach(() => {
+    document.cookie = undefined!;
+    vi.clearAllMocks();
   });
 
-  test("getAuthToken with positive result", async () => {
-    const spy = vi
-      .spyOn(Cookies, "get")
-      .mockReturnValue(
-        '{"channel":"channel:suffix","token":"secret%$"}' as any,
+  describe("markPromptMessageCompleted", () => {
+    test("adds new cookie", async () => {
+      markPromptMessageCompleted(
+        "user",
+        "prompt2",
+        new Date("2024-01-04T14:01:20.000Z"),
       );
 
-    expect(getAuthToken("user")).toStrictEqual({
-      channel: "channel:suffix",
-      token: "secret%$",
+      expect(document.cookie).toBe(
+        "bucket-prompt-user=prompt2; path=/; expires=Thu, 04 Jan 2024 14:01:20 GMT; sameSite=strict; secure",
+      );
     });
 
-    expect(spy).toHaveBeenCalledWith("bucket-token-user");
+    test("rewrites existing cookie", async () => {
+      document.cookie =
+        "bucket-prompt-user=prompt1; path=/; expires=Thu, 04 Jan 2021 14:01:20 GMT; sameSite=strict; secure";
+
+      markPromptMessageCompleted(
+        "user",
+        "prompt2",
+        new Date("2024-01-04T14:01:20.000Z"),
+      );
+
+      expect(document.cookie).toBe(
+        "bucket-prompt-user=prompt2; path=/; expires=Thu, 04 Jan 2024 14:01:20 GMT; sameSite=strict; secure",
+      );
+    });
   });
 
-  test("getAuthToken with error", async () => {
-    const spy = vi.spyOn(Cookies, "get").mockReturnValue("token" as any);
+  describe("checkPromptMessageCompleted", () => {
+    test("cookie with same use and prompt results in true", async () => {
+      document.cookie =
+        "bucket-prompt-user=prompt; path=/; expires=Thu, 04 Jan 2024 14:01:20 GMT; sameSite=strict; secure";
 
-    expect(getAuthToken("user")).toBeUndefined();
+      expect(checkPromptMessageCompleted("user", "prompt")).toBe(true);
 
-    expect(spy).toHaveBeenCalledWith("bucket-token-user");
+      expect(document.cookie).toBe(
+        "bucket-prompt-user=prompt; path=/; expires=Thu, 04 Jan 2024 14:01:20 GMT; sameSite=strict; secure",
+      );
+    });
+
+    test("cookie with different prompt results in false", async () => {
+      document.cookie =
+        "bucket-prompt-user=prompt1; path=/; expires=Thu, 04 Jan 2024 14:01:20 GMT; sameSite=strict; secure";
+
+      expect(checkPromptMessageCompleted("user", "prompt2")).toBe(false);
+    });
+
+    test("cookie with different user results in false", async () => {
+      document.cookie =
+        "bucket-prompt-user1=prompt1; path=/; expires=Thu, 04 Jan 2024 14:01:20 GMT; sameSite=strict; secure";
+
+      expect(checkPromptMessageCompleted("user2", "prompt1")).toBe(false);
+    });
+
+    test("no cookie results in false", async () => {
+      expect(checkPromptMessageCompleted("user", "prompt2")).toBe(false);
+    });
   });
 
-  test("getAuthToken with empty field", async () => {
-    const spy = vi
-      .spyOn(Cookies, "get")
-      .mockReturnValue('{"channel":"","token":"secret%$"}' as any);
+  describe("rememberAuthToken", () => {
+    test("adds new cookie if none was there", async () => {
+      expect(document.cookie).toBe("");
 
-    expect(getAuthToken("user")).toBeUndefined();
+      rememberAuthToken(
+        'user1"%%',
+        "channel:suffix",
+        "secret$%",
+        new Date("2024-01-02T15:02:20.000Z"),
+      );
 
-    expect(spy).toHaveBeenCalledWith("bucket-token-user");
+      expect(document.cookie).toBe(
+        "bucket-token-user1%22%25%25={%22channel%22:%22channel:suffix%22%2C%22token%22:%22secret$%25%22}; path=/; expires=Tue, 02 Jan 2024 15:02:20 GMT; sameSite=strict; secure",
+      );
+    });
+
+    test("replaces existing cookie for same user", async () => {
+      document.cookie =
+        "bucket-token-user1%22%25%25={%22channel%22:%22channel:suffix%22%2C%22token%22:%22secret$%25%22}; path=/; expires=Tue, 02 Jan 2024 15:02:20 GMT; sameSite=strict; secure";
+
+      rememberAuthToken(
+        'user1"%%',
+        "channel2:suffix2",
+        "secret2$%",
+        new Date("2023-01-02T15:02:20.000Z"),
+      );
+
+      expect(document.cookie).toBe(
+        "bucket-token-user1%22%25%25={%22channel%22:%22channel2:suffix2%22%2C%22token%22:%22secret2$%25%22}; path=/; expires=Mon, 02 Jan 2023 15:02:20 GMT; sameSite=strict; secure",
+      );
+    });
   });
 
-  test("getAuthToken with negative result", async () => {
-    const spy = vi.spyOn(Cookies, "get").mockReturnValue(undefined as any);
+  describe("forgetAuthToken", () => {
+    test("clears the user's cookie if even if there was nothing before", async () => {
+      forgetAuthToken("user");
 
-    expect(getAuthToken("user")).toBeUndefined();
+      expect(document.cookie).toBe(
+        "bucket-token-user=; path=/; expires=Wed, 10 Jan 2024 09:55:37 GMT",
+      );
+    });
 
-    expect(spy).toHaveBeenCalledWith("bucket-token-user");
+    test("clears the user's cookie", async () => {
+      document.cookie =
+        "bucket-token-user1={%22channel%22:%22channel:suffix%22%2C%22token%22:%22secret$%25%22}; path=/; expires=Tue, 02 Jan 2024 15:02:20 GMT; sameSite=strict; secure";
+
+      forgetAuthToken("user1");
+
+      expect(document.cookie).toBe(
+        "bucket-token-user1=; path=/; expires=Wed, 10 Jan 2024 09:55:37 GMT",
+      );
+    });
+
+    test("does nothing if there is a cookie for a different user", async () => {
+      document.cookie =
+        "bucket-token-user1={%22channel%22:%22channel:suffix%22%2C%22token%22:%22secret$%25%22}; path=/; expires=Tue, 02 Jan 2028 15:02:20 GMT; sameSite=strict; secure";
+
+      forgetAuthToken("user2");
+
+      expect(document.cookie).toBe(
+        "bucket-token-user1={%22channel%22:%22channel:suffix%22%2C%22token%22:%22secret$%25%22}; path=/; expires=Tue, 02 Jan 2028 15:02:20 GMT; sameSite=strict; secure; bucket-token-user2=; path=/; expires=Wed, 10 Jan 2024 09:55:37 GMT",
+      );
+    });
+  });
+
+  describe("getAuthToken", () => {
+    test("returns the auth token if it's available for the user", async () => {
+      document.cookie =
+        "bucket-token-user1%22%25%25={%22channel%22:%22channel:suffix%22%2C%22token%22:%22secret$%25%22}; path=/; expires=Tue, 02 Jan 2024 15:02:20 GMT; sameSite=strict; secure";
+
+      expect(getAuthToken('user1"%%')).toStrictEqual({
+        channel: "channel:suffix",
+        token: "secret$%",
+      });
+    });
+
+    test("return undefined if no cookie for user", async () => {
+      document.cookie =
+        "bucket-token-user1={%22channel%22:%22channel:suffix%22%2C%22token%22:%22secret$%25%22}; path=/; expires=Tue, 02 Jan 2024 15:02:20 GMT; sameSite=strict; secure";
+
+      expect(getAuthToken("user2")).toBeUndefined();
+    });
+
+    test("returns undefined if no cookie", async () => {
+      expect(getAuthToken("user")).toBeUndefined();
+    });
+
+    test("return undefined if corrupted cookie", async () => {
+      document.cookie =
+        "bucket-token-user={channel%22:%22channel:suffix%22%2C%22token%22:%22secret$%25%22}; path=/; expires=Tue, 02 Jan 2024 15:02:20 GMT; sameSite=strict; secure";
+
+      expect(getAuthToken("user")).toBeUndefined();
+    });
+
+    test("return undefined if a field is missing", async () => {
+      document.cookie =
+        "bucket-token-user={%2C%22token%22:%22secret$%25%22}; path=/; expires=Tue, 02 Jan 2024 15:02:20 GMT; sameSite=strict; secure";
+
+      expect(getAuthToken("user")).toBeUndefined();
+    });
+  });
+
+  test("manages all cookies for the user", () => {
+    rememberAuthToken(
+      "user1",
+      "channel:suffix",
+      "secret$%",
+      new Date("2024-01-02T15:02:20.000Z"),
+    );
+
+    markPromptMessageCompleted(
+      "user1",
+      "alex-prompt",
+      new Date("2024-01-02T15:03:20.000Z"),
+    );
+
+    expect(document.cookie).toBe(
+      "bucket-token-user1={%22channel%22:%22channel:suffix%22%2C%22token%22:%22secret$%25%22}; path=/; expires=Tue, 02 Jan 2024 15:02:20 GMT; sameSite=strict; secure; bucket-prompt-user1=alex-prompt; path=/; expires=Tue, 02 Jan 2024 15:03:20 GMT; sameSite=strict; secure",
+    );
+
+    forgetAuthToken("user1");
+
+    expect(document.cookie).toBe(
+      "bucket-token-user1=; path=/; expires=Wed, 10 Jan 2024 09:55:37 GMT; bucket-prompt-user1=alex-prompt; path=/; expires=Tue, 02 Jan 2024 15:03:20 GMT; sameSite=strict; secure",
+    );
   });
 });
