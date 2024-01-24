@@ -1,6 +1,10 @@
 import fetch from "cross-fetch";
 
-import { SSE_REALTIME_HOST } from "./config";
+import {
+  SDK_VERSION,
+  SDK_VERSION_HEADER_NAME,
+  SSE_REALTIME_HOST,
+} from "./config";
 import {
   forgetAuthToken,
   getAuthToken,
@@ -62,6 +66,7 @@ export class AblySSEChannel {
         method: "get",
         headers: {
           "Content-Type": "application/json",
+          [SDK_VERSION_HEADER_NAME]: SDK_VERSION,
         },
       },
     );

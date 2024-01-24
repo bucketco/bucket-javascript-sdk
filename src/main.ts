@@ -1,10 +1,13 @@
 import fetch from "cross-fetch";
 import { isForNode } from "is-bundling-for-browser-or-node";
 
-import { version } from "../package.json";
-
 import type { FeedbackPosition, FeedbackTranslations } from "./feedback/types";
-import { SSE_REALTIME_HOST, TRACKING_HOST } from "./config";
+import {
+  SDK_VERSION,
+  SDK_VERSION_HEADER_NAME,
+  SSE_REALTIME_HOST,
+  TRACKING_HOST,
+} from "./config";
 import { createDefaultFeedbackPromptHandler } from "./default-feedback-prompt-handler";
 import * as feedbackLib from "./feedback";
 import { getAuthToken } from "./prompt-storage";
@@ -34,7 +37,7 @@ async function request(url: string, body: any) {
     method: "post",
     headers: {
       "Content-Type": "application/json",
-      "Bucket-Sdk-Version": version,
+      [SDK_VERSION_HEADER_NAME]: SDK_VERSION,
     },
     body: JSON.stringify(body),
   });
@@ -576,6 +579,7 @@ export default function main() {
     // lifecycle
     init,
     reset,
+    version: SDK_VERSION,
     // requests
     user,
     company,
