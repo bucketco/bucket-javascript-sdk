@@ -12,7 +12,11 @@ import {
 } from "vitest";
 
 import { version } from "../package.json";
-import { TRACKING_HOST } from "../src/config";
+import {
+  SDK_VERSION,
+  SDK_VERSION_HEADER_NAME,
+  TRACKING_HOST,
+} from "../src/config";
 import bucket from "../src/main";
 import {
   checkPromptMessageCompleted,
@@ -208,7 +212,7 @@ describe("usage", () => {
   test("will send sdk version as header", async () => {
     nock(`${TRACKING_HOST}/${KEY}`, {
       reqheaders: {
-        "Bucket-Sdk-Version": version,
+        [SDK_VERSION_HEADER_NAME]: version,
       },
     })
       .post(/.*\/user/, {
@@ -219,6 +223,12 @@ describe("usage", () => {
     const bucketInstance = bucket();
     bucketInstance.init(KEY);
     await bucketInstance.user("foo");
+  });
+
+  test("will send sdk version as header", async () => {
+    const bucketInstance = bucket();
+
+    expect(bucketInstance.version).toBe(SDK_VERSION);
   });
 
   test("can reset user", async () => {
