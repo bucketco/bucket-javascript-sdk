@@ -63,6 +63,9 @@ The Bucket SDK comes with a Live Satisfaction collection mode enabled by default
 
 Note: To get started with automatic feedback collection, make sure you call `bucket.user()`.
 
+Live Satisfaction works even if you're not using the SDK to send events to Bucket.
+It works because the Bucket SDK maintains a live connection to Bucket's servers and can show a Live Satisfaction prompt whenever the Bucket servers determines that an event should trigger a prompt - regardless of how this event is sent to Bucket.
+
 You can find all the options to make changes to the default behaviour in the [Bucket feedback documentation](./FEEDBACK.md).
 
 #### Bucket feedback UI
@@ -105,6 +108,15 @@ import { sha256 } from 'crypto-hash';
 
 bucket.user(await sha256("john_doe"));
 ```
+
+### Use of cookies
+
+The Bucket SDK uses a couple of cookies to support Live Satisfaction. These cookies are not used for tracking purposes and thus should not need to appear in cookie consent forms.
+
+The two cookies are:
+
+- `bucket-prompt-${userId}`: store the last Live Satisfaction prompt message ID received to avoid repeating prompts
+- `bucket-token-${userId}`: caching a token used to connect to Bucket's live messaging infrastructure that is used to deliver Live Satisfaction prompts in real time.
 
 ### Custom attributes
 
