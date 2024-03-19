@@ -6,9 +6,14 @@ export type FeedbackPlacement =
   | "top-right"
   | "top-left";
 
+export type Offset = {
+  left?: string | number;
+  top?: string | number;
+};
+
 export type FeedbackPosition =
   | { type: "MODAL" }
-  | { type: "DIALOG"; placement: FeedbackPlacement }
+  | { type: "DIALOG"; placement: FeedbackPlacement; offset?: Offset }
   | { type: "POPOVER"; anchor: HTMLElement | null };
 
 export interface FeedbackSubmission {

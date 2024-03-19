@@ -18,6 +18,7 @@ import { RadialProgress } from "./RadialProgress";
 import {
   FeedbackScoreSubmission,
   FeedbackSubmission,
+  Offset,
   OpenFeedbackFormOptions,
   WithRequired,
 } from "./types";
@@ -69,18 +70,33 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
 
   let unanchoredPosition: Position = {};
   if (position.type === "DIALOG") {
+    const offsetLeft = parseOffset(position.offset?.left);
+    const offsetTop = parseOffset(position.offset?.top);
+
     switch (position.placement) {
       case "top-left":
-        unanchoredPosition = { top: "1rem", left: "1rem" };
+        unanchoredPosition = {
+          top: `calc(1rem + ${offsetTop})`,
+          left: `calc(1rem + ${offsetLeft})`,
+        };
         break;
       case "top-right":
-        unanchoredPosition = { top: "1rem", right: "1rem" };
+        unanchoredPosition = {
+          top: `calc(1rem + ${offsetTop})`,
+          right: `calc(1rem - ${offsetLeft})`,
+        };
         break;
       case "bottom-left":
-        unanchoredPosition = { bottom: "1rem", left: "1rem" };
+        unanchoredPosition = {
+          bottom: `calc(1rem - ${offsetTop})`,
+          left: `calc(1rem + ${offsetLeft})`,
+        };
         break;
       case "bottom-right":
-        unanchoredPosition = { bottom: "1rem", right: "1rem" };
+        unanchoredPosition = {
+          bottom: `calc(1rem - ${offsetTop})`,
+          right: `calc(1rem - ${offsetLeft})`,
+        };
         break;
     }
   }
@@ -205,8 +221,8 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
           position.type === "MODAL"
             ? "modal"
             : position.type === "POPOVER"
-              ? "anchored"
-              : `unanchored unanchored-${position.placement}`,
+            ? "anchored"
+            : `unanchored unanchored-${position.placement}`,
           actualPlacement,
         ].join(" ")}
         style={anchor ? floatingStyles : unanchoredPosition}
@@ -243,3 +259,10 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
     </>
   );
 };
+
+function parseOffset(offset?: Offset["left"] | Offset["top"]) {
+  if (offset === undefined) return "0px";
+  if (typeof offset === "number") return offset + "px";
+
+  return offset;
+}
