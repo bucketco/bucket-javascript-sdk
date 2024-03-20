@@ -260,9 +260,9 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
   );
 };
 
-function parseOffset(offset?: Offset["x"] | Offset["y"]) {
-  if (offset === undefined) return "1rem";
-  if (typeof offset === "number") return offset + "px";
+function parseOffset(offsetInput?: Offset["x"] | Offset["y"]) {
+  if (offsetInput === undefined) return "1rem";
+  if (typeof offsetInput === "number") return offsetInput + "px";
 
-  return offset;
+  return offsetInput;
 }
