@@ -40,8 +40,8 @@ const CUSTOM_TRANSLATIONS: FeedbackTranslations = {
 
 export function App() {
   const [placement, setPlacement] = useState<FeedbackPlacement>("bottom-right");
-  const [offsetLeft, setOffsetLeft] = useState("0px");
-  const [offsetTop, setOffsetTop] = useState("0px");
+  const [offsetX, setOffsetX] = useState("1rem");
+  const [offsetY, setOffsetY] = useState("1rem");
   const [openWithCommentVisible, setOpenWithCommentVisible] = useState(false);
   const [customTranslations, setCustomTranslations] = useState(false);
 
@@ -70,21 +70,21 @@ export function App() {
           <option value="top-right">Top right</option>
           <option value="top-left">Top left</option>
         </select>
-        <label htmlFor="offsetLeft">Offset Left</label>
+        <label htmlFor="offsetX">Offset X</label>
         <input
-          id="offsetLeft"
+          id="offsetX"
           type="text"
-          placeholder="Offset Left"
-          value={offsetLeft}
-          onChange={(e) => setOffsetLeft(e.currentTarget.value)}
+          placeholder="Offset X"
+          value={offsetX}
+          onChange={(e) => setOffsetX(e.currentTarget.value)}
         />
-        <label htmlFor="offsetTop">Offset Top</label>
+        <label htmlFor="offsetY">Offset Y</label>
         <input
-          id="offsetTop"
+          id="offsetY"
           type="text"
-          placeholder="Offset Top"
-          value={offsetTop}
-          onChange={(e) => setOffsetTop(e.currentTarget.value)}
+          placeholder="Offset Y"
+          value={offsetY}
+          onChange={(e) => setOffsetY(e.currentTarget.value)}
         />
         <label>
           <input
@@ -139,8 +139,8 @@ export function App() {
                 type: "DIALOG",
                 placement,
                 offset: {
-                  left: offsetLeft,
-                  top: offsetTop,
+                  x: offsetX,
+                  y: offsetY,
                 },
               },
               openWithCommentVisible: openWithCommentVisible,

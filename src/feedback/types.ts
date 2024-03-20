@@ -7,8 +7,8 @@ export type FeedbackPlacement =
   | "top-left";
 
 export type Offset = {
-  left?: string | number;
-  top?: string | number;
+  x?: string | number;
+  y?: string | number;
 };
 
 export type FeedbackPosition =

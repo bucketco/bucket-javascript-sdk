@@ -70,32 +70,32 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
 
   let unanchoredPosition: Position = {};
   if (position.type === "DIALOG") {
-    const offsetLeft = parseOffset(position.offset?.left);
-    const offsetTop = parseOffset(position.offset?.top);
+    const offsetY = parseOffset(position.offset?.y);
+    const offsetX = parseOffset(position.offset?.x);
 
     switch (position.placement) {
       case "top-left":
         unanchoredPosition = {
-          top: `calc(1rem + ${offsetTop})`,
-          left: `calc(1rem + ${offsetLeft})`,
+          top: offsetY,
+          left: offsetX,
         };
         break;
       case "top-right":
         unanchoredPosition = {
-          top: `calc(1rem + ${offsetTop})`,
-          right: `calc(1rem - ${offsetLeft})`,
+          top: offsetY,
+          right: offsetX,
         };
         break;
       case "bottom-left":
         unanchoredPosition = {
-          bottom: `calc(1rem - ${offsetTop})`,
-          left: `calc(1rem + ${offsetLeft})`,
+          bottom: offsetY,
+          left: offsetX,
         };
         break;
       case "bottom-right":
         unanchoredPosition = {
-          bottom: `calc(1rem - ${offsetTop})`,
-          right: `calc(1rem - ${offsetLeft})`,
+          bottom: offsetY,
+          right: offsetX,
         };
         break;
     }
@@ -260,8 +260,8 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
   );
 };
 
-function parseOffset(offset?: Offset["left"] | Offset["top"]) {
-  if (offset === undefined) return "0px";
+function parseOffset(offset?: Offset["x"] | Offset["y"]) {
+  if (offset === undefined) return "1rem";
   if (typeof offset === "number") return offset + "px";
 
   return offset;

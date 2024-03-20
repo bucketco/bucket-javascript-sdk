@@ -173,8 +173,8 @@ position: {
   type: "DIALOG",
   placement: "top-left" | "top-right" | "bottom-left" | "bottom-right"
   offset?: {
-    left?: string | number; // e.g. "-5rem", "10px" or 10 (pixels)
-    top?: string | number;
+    x?: string | number; // e.g. "-5rem", "10px" or 10 (pixels)
+    y?: string | number;
   }
 }
 ```
