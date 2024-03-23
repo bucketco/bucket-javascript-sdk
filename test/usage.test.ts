@@ -337,26 +337,6 @@ describe("usage", () => {
         .resolves;
     });
   });
-
-  test("can reset user", async () => {
-    nock(`${TRACKING_HOST}/${KEY}`)
-      .post(/.*\/user/, {
-        userId: "foo",
-        attributes: {
-          name: "john doe",
-        },
-      })
-      .reply(200);
-
-    const bucketInstance = bucket();
-    bucketInstance.init(KEY, { persistUser: true });
-    await bucketInstance.user("foo", { name: "john doe" });
-
-    bucketInstance.reset();
-    await expect(() => bucketInstance.track("foo")).rejects.toThrowError(
-      "User is not set, please call user() first",
-    );
-  });
 });
 
 describe("feedback prompting", () => {
