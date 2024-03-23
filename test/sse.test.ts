@@ -21,7 +21,7 @@ const tokenRequest = {
 };
 const tokenDetails = {
   token: "token",
-  expires: new Date(2023, 0, 1).getTime(),
+  expires: new Date("2023-01-01T00:00:00.000Z").getTime(),
 };
 
 const userId = "foo";
