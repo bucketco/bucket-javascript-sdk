@@ -221,8 +221,8 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
           position.type === "MODAL"
             ? "modal"
             : position.type === "POPOVER"
-            ? "anchored"
-            : `unanchored unanchored-${position.placement}`,
+              ? "anchored"
+              : `unanchored unanchored-${position.placement}`,
           actualPlacement,
         ].join(" ")}
         style={anchor ? floatingStyles : unanchoredPosition}
