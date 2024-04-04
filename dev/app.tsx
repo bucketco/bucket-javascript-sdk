@@ -40,6 +40,8 @@ const CUSTOM_TRANSLATIONS: FeedbackTranslations = {
 
 export function App() {
   const [placement, setPlacement] = useState<FeedbackPlacement>("bottom-right");
+  const [offsetX, setOffsetX] = useState("1rem");
+  const [offsetY, setOffsetY] = useState("1rem");
   const [openWithCommentVisible, setOpenWithCommentVisible] = useState(false);
   const [customTranslations, setCustomTranslations] = useState(false);
 
@@ -55,8 +57,10 @@ export function App() {
       </div>
 
       <h2>Feedback configs</h2>
-      <div style="display: flex; gap: 10px;">
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <label htmlFor="placement">Placement</label>
         <select
+          id="placement"
           onInput={(e) =>
             setPlacement(e.currentTarget.value as FeedbackPlacement)
           }
@@ -66,6 +70,22 @@ export function App() {
           <option value="top-right">Top right</option>
           <option value="top-left">Top left</option>
         </select>
+        <label htmlFor="offsetX">Offset X</label>
+        <input
+          id="offsetX"
+          type="text"
+          placeholder="Offset X"
+          value={offsetX}
+          onChange={(e) => setOffsetX(e.currentTarget.value)}
+        />
+        <label htmlFor="offsetY">Offset Y</label>
+        <input
+          id="offsetY"
+          type="text"
+          placeholder="Offset Y"
+          value={offsetY}
+          onChange={(e) => setOffsetY(e.currentTarget.value)}
+        />
         <label>
           <input
             type="checkbox"
@@ -115,7 +135,14 @@ export function App() {
               title: customTranslations
                 ? "Bonjour, que pensez-vous du dialog ?"
                 : "Hello, how do you like the dialog?",
-              position: { type: "DIALOG", placement },
+              position: {
+                type: "DIALOG",
+                placement,
+                offset: {
+                  x: offsetX,
+                  y: offsetY,
+                },
+              },
               openWithCommentVisible: openWithCommentVisible,
               onAfterSubmit: async (data) => console.log("Submitted:", data),
               onClose: () => console.log("Closed dialog"),
