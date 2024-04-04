@@ -18,6 +18,7 @@ import { RadialProgress } from "./RadialProgress";
 import {
   FeedbackScoreSubmission,
   FeedbackSubmission,
+  Offset,
   OpenFeedbackFormOptions,
   WithRequired,
 } from "./types";
@@ -69,18 +70,33 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
 
   let unanchoredPosition: Position = {};
   if (position.type === "DIALOG") {
+    const offsetY = parseOffset(position.offset?.y);
+    const offsetX = parseOffset(position.offset?.x);
+
     switch (position.placement) {
       case "top-left":
-        unanchoredPosition = { top: "1rem", left: "1rem" };
+        unanchoredPosition = {
+          top: offsetY,
+          left: offsetX,
+        };
         break;
       case "top-right":
-        unanchoredPosition = { top: "1rem", right: "1rem" };
+        unanchoredPosition = {
+          top: offsetY,
+          right: offsetX,
+        };
         break;
       case "bottom-left":
-        unanchoredPosition = { bottom: "1rem", left: "1rem" };
+        unanchoredPosition = {
+          bottom: offsetY,
+          left: offsetX,
+        };
         break;
       case "bottom-right":
-        unanchoredPosition = { bottom: "1rem", right: "1rem" };
+        unanchoredPosition = {
+          bottom: offsetY,
+          right: offsetX,
+        };
         break;
     }
   }
@@ -243,3 +259,10 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
     </>
   );
 };
+
+function parseOffset(offsetInput?: Offset["x"] | Offset["y"]) {
+  if (offsetInput === undefined) return "1rem";
+  if (typeof offsetInput === "number") return offsetInput + "px";
+
+  return offsetInput;
+}

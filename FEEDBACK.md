@@ -168,10 +168,14 @@ Using a dialog is a soft push for feedback. It lets the user continue their work
 
 The default feedback UI behaviour is a dialog placed in the bottom right corner of the viewport.
 
-```javascript
+```typescript
 position: {
   type: "DIALOG",
   placement: "top-left" | "top-right" | "bottom-left" | "bottom-right"
+  offset?: {
+    x?: string | number; // e.g. "-5rem", "10px" or 10 (pixels)
+    y?: string | number;
+  }
 }
 ```
 
