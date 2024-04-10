@@ -97,7 +97,7 @@ export default function main() {
     throw new Error(message);
   }
 
-  function resolveUser(userId?: User["userId"]): string | never {
+  function resolveUser(userId?: string): string | never {
     if (persistUser) {
       return getSessionUser();
     } else if (!userId) {
@@ -171,8 +171,8 @@ export default function main() {
    * @param context
    */
   async function user(
-    userId: User["userId"],
-    attributes?: User["attributes"],
+    userId: string,
+    attributes?: Record<string,any>,
     context?: Context,
   ) {
     checkKey();
@@ -205,9 +205,9 @@ export default function main() {
    * @param context
    */
   async function company(
-    companyId: Company["companyId"],
-    attributes?: Company["attributes"] | null,
-    userId?: Company["userId"],
+    companyId: string,
+    attributes?: Record<string,any> | null,
+    userId?: string,
     context?: Context,
   ) {
     checkKey();
@@ -235,10 +235,10 @@ export default function main() {
    * @param context
    */
   async function track(
-    eventName: TrackedEvent["event"],
-    attributes?: TrackedEvent["attributes"] | null,
-    userId?: Company["userId"],
-    companyId?: Company["companyId"],
+    eventName: string,
+    attributes?: Record<string, any> | null,
+    userId?: string,
+    companyId?: string,
     context?: Context,
   ) {
     checkKey();
@@ -280,7 +280,7 @@ export default function main() {
     if (!score && !comment) err("Either 'score' or 'comment' must be provided");
     userId = resolveUser(userId);
 
-    const payload: Feedback & { userId: User["userId"] } = {
+    const payload: Feedback & { userId: string } = {
       feedbackId,
       userId,
       featureId,
@@ -310,7 +310,7 @@ export default function main() {
    *
    * @param userId The ID you use to identify the user
    */
-  async function initLiveSatisfaction(userId?: User["userId"]) {
+  async function initLiveSatisfaction(userId?: string) {
     checkKey();
 
     if (isForNode) {
@@ -369,7 +369,7 @@ export default function main() {
     return channel;
   }
 
-  function handleFeedbackPromptRequest(userId: User["userId"], message: any) {
+  function handleFeedbackPromptRequest(userId: string, message: any) {
     const parsed = parsePromptMessage(message);
     if (!parsed) {
       err(`invalid feedback prompt message received`, message);
@@ -395,7 +395,7 @@ export default function main() {
   }
 
   async function triggerFeedbackPrompt(
-    userId: User["userId"],
+    userId: string,
     message: FeedbackPrompt,
     completionHandler: FeedbackPromptCompletionHandler,
   ) {
@@ -480,7 +480,7 @@ export default function main() {
     featureId: string;
     promptId: string;
     promptedQuestion: string;
-    userId: User["userId"];
+    userId: string;
   }) {
     checkKey();
     if (!args.promptId) err("No promptId provided");
