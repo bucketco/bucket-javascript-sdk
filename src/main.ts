@@ -172,7 +172,7 @@ export default function main() {
    */
   async function user(
     userId: string,
-    attributes?: Record<string,any>,
+    attributes?: Record<string, any>,
     context?: Context,
   ) {
     checkKey();
@@ -206,7 +206,7 @@ export default function main() {
    */
   async function company(
     companyId: string,
-    attributes?: Record<string,any> | null,
+    attributes?: Record<string, any> | null,
     userId?: string,
     context?: Context,
   ) {
