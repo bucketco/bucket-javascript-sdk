@@ -31,8 +31,9 @@ import type {
   TrackedEvent,
   User,
 } from "./types";
+import { Flags, getFlags, mergeDeep } from "./flags";
 
-async function request(url: string, body: any) {
+async function postRequest(url: string, body: any) {
   return fetch(url, {
     method: "post",
     headers: {
@@ -47,11 +48,13 @@ const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
 export default function main() {
   let debug = false;
-  let trackingKey: string | undefined = undefined;
-  let trackingHost: string = TRACKING_HOST;
+  let clientSideKey: string | undefined = undefined;
+  let host: string = TRACKING_HOST;
   let sseHost: string = SSE_REALTIME_HOST;
   let sessionUserId: string | undefined = undefined;
+  let sessionCompanyId: string | undefined = undefined;
   let persistUser: boolean = !isForNode;
+  let persistCompany: boolean = !isForNode;
   let liveSatisfactionActive: boolean = false;
   let sseChannel: AblySSEChannel | undefined = undefined;
   let liveSatisfactionEnabled: boolean = !isForNode;
@@ -64,10 +67,10 @@ export default function main() {
   log("Instance created");
 
   function getUrl() {
-    return `${trackingHost}/${trackingKey}`;
+    return `${host}/${clientSideKey}`;
   }
   function checkKey() {
-    if (!trackingKey) {
+    if (!clientSideKey) {
       err("Tracking key is not set, please call init() first");
     }
   }
@@ -107,12 +110,22 @@ export default function main() {
     return userId!;
   }
 
+  function resolveCompany(companyId?: string): string | never {
+    if (companyId) return companyId;
+
+    if (sessionCompanyId) {
+      return sessionCompanyId;
+    } else {
+      err("No companyId provided and persistUser is disabled");
+    }
+  }
+
   /**
    * Initialize the Bucket SDK.
    *
    * Must be called before calling other SDK methods.
    *
-   * @param key Your Bucket tracking key
+   * @param key Your Bucket client-side key
    * @param options
    */
   function init(key: Key, options: Options = {}) {
@@ -121,10 +134,10 @@ export default function main() {
       err("Tracking key was not provided");
     }
 
-    trackingKey = key;
+    clientSideKey = key;
 
     if (options.debug) debug = options.debug;
-    if (options.host) trackingHost = options.host;
+    if (options.host) host = options.host;
     if (options.sseHost) sseHost = options.sseHost;
 
     if (options.feedback?.ui?.position) {
@@ -160,7 +173,7 @@ export default function main() {
       options.feedback?.liveSatisfactionHandler ??
       createDefaultFeedbackPromptHandler(options.feedback?.ui);
 
-    log(`initialized with key "${trackingKey}" and options`, options);
+    log(`initialized with key "${clientSideKey}" and options`, options);
   }
 
   /**
@@ -191,7 +204,7 @@ export default function main() {
       attributes,
       context,
     };
-    const res = await request(`${getUrl()}/user`, payload);
+    const res = await postRequest(`${getUrl()}/user`, payload);
     log(`sent user`, res);
     return res;
   }
@@ -214,13 +227,15 @@ export default function main() {
     if (!companyId) err("No companyId provided");
     userId = resolveUser(userId);
 
+    if (persistCompany) sessionCompanyId = companyId;
+
     const payload: Company = {
       userId,
       companyId,
       context,
     };
     if (attributes) payload.attributes = attributes;
-    const res = await request(`${getUrl()}/company`, payload);
+    const res = await postRequest(`${getUrl()}/company`, payload);
     log(`sent company`, res);
     return res;
   }
@@ -244,6 +259,7 @@ export default function main() {
     checkKey();
     if (!eventName) err("No eventName provided");
     userId = resolveUser(userId);
+    companyId = resolveCompany(companyId);
 
     const payload: TrackedEvent = {
       userId,
@@ -252,7 +268,7 @@ export default function main() {
       context,
     };
     if (attributes) payload.attributes = attributes;
-    const res = await request(`${getUrl()}/event`, payload);
+    const res = await postRequest(`${getUrl()}/event`, payload);
     log(`sent event`, res);
     return res;
   }
@@ -293,7 +309,7 @@ export default function main() {
       source: source ?? "sdk",
     };
 
-    const res = await request(`${getUrl()}/feedback`, payload);
+    const res = await postRequest(`${getUrl()}/feedback`, payload);
     log(`sent feedback`, res);
     return res;
   }
@@ -335,7 +351,7 @@ export default function main() {
     liveSatisfactionActive = true;
     try {
       if (!channel) {
-        const res = await request(`${getUrl()}/feedback/prompting-init`, {
+        const res = await postRequest(`${getUrl()}/feedback/prompting-init`, {
           userId,
         });
 
@@ -494,7 +510,10 @@ export default function main() {
       promptedQuestion: args.promptedQuestion,
     };
 
-    const res = await request(`${getUrl()}/feedback/prompt-events`, payload);
+    const res = await postRequest(
+      `${getUrl()}/feedback/prompt-events`,
+      payload,
+    );
     log(`sent prompt event`, res);
     return res;
   }
@@ -560,6 +579,33 @@ export default function main() {
     }, 1);
   }
 
+  async function getFeatureFlags({
+    context,
+    fallbackFeatures = [],
+    timeoutMs,
+  }: {
+    context: Record<string, any>;
+    fallbackFeatures?: string[];
+    timeoutMs?: number;
+  }): Promise<Flags> {
+    const baseContext = {
+      user: { id: sessionUserId },
+      company: { id: sessionCompanyId },
+    };
+
+    const mergedContext = mergeDeep(baseContext, context);
+
+    try {
+      return await getFlags(getUrl(), mergedContext, timeoutMs);
+    } catch (e) {
+      warn(`failed to fetch feature flags, using fall back flags`, e);
+      return fallbackFeatures.reduce((acc, key) => {
+        acc[key] = { value: true, identifier: key };
+        return acc;
+      }, {} as Flags);
+    }
+  }
+
   /**
    * Reset the active user and disconnect from Live Satisfaction events.
    */
@@ -589,5 +635,7 @@ export default function main() {
     requestFeedback,
     initLiveSatisfaction,
     initLiveFeedback,
+    // feature flags
+    getFeatureFlags,
   };
 }

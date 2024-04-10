@@ -146,7 +146,7 @@ export type Feedback = {
    * Used for internal state management of automated
    * feedback.
    */
-  promptId?: FeedbackPrompt["promptId"];
+  promptId?: string;
 
   /**
    * Source of the feedback, depending on how the user was asked
