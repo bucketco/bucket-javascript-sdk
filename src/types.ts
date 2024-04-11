@@ -48,7 +48,7 @@ export type User = {
 };
 
 export type Company = {
-  userId: User["userId"];
+  userId: string;
   companyId: string;
   attributes?: {
     name?: string;
@@ -59,11 +59,9 @@ export type Company = {
 
 export type TrackedEvent = {
   event: string;
-  userId: User["userId"];
-  companyId?: Company["companyId"];
-  attributes?: {
-    [key: string]: any;
-  };
+  userId: string;
+  companyId?: string;
+  attributes?: Record<string, any>;
   context?: Context;
 };
 
@@ -111,12 +109,12 @@ export type Feedback = {
   /**
    * User ID from your own application.
    */
-  userId?: User["userId"];
+  userId?: string;
 
   /**
    * Company ID from your own application.
    */
-  companyId?: Company["companyId"];
+  companyId?: string;
 
   /**
    * The question that was presented to the user.
@@ -164,14 +162,14 @@ export type FeedbackPrompt = {
   showAfter: Date;
   showBefore: Date;
   promptId: string;
-  featureId: Feedback["featureId"];
+  featureId: string;
 };
 
 export type FeedbackPromptReply = {
   question: string;
-  companyId?: Company["companyId"];
-  score?: FeedbackSubmission["score"];
-  comment?: FeedbackSubmission["comment"];
+  companyId?: string;
+  score?: number;
+  comment?: string;
 };
 
 export type FeedbackPromptReplyHandler = <T extends FeedbackPromptReply | null>(
