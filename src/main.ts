@@ -101,13 +101,15 @@ export default function main() {
   }
 
   function resolveUser(userId?: string): string | never {
-    if (persistUser) {
-      return getSessionUser();
-    } else if (!userId) {
-      err("No userId provided and persistUser is disabled");
+    if (userId) {
+      return userId;
     }
 
-    return userId!;
+    if (persistUser) {
+      return getSessionUser();
+    } else {
+      err("No userId provided and persistUser is disabled");
+    }
   }
 
   function resolveCompany(companyId?: string): string | never {
@@ -534,11 +536,7 @@ export default function main() {
       err("No featureId provided");
     }
 
-    if (persistUser) {
-      options.userId = getSessionUser();
-    } else if (!options.userId) {
-      err("No userId provided and persistUser is disabled");
-    }
+    const userId = resolveUser(options.userId);
 
     // Wait a tick before opening the feedback form,
     // to prevent the same click from closing it.
@@ -554,7 +552,7 @@ export default function main() {
         onScoreSubmit: async (data) => {
           const res = await feedback({
             featureId: options.featureId,
-            userId: options.userId,
+            userId,
             companyId: options.companyId,
             source: "widget",
             ...data,
@@ -567,7 +565,7 @@ export default function main() {
           // Default onSubmit handler
           await feedback({
             featureId: options.featureId,
-            userId: options.userId,
+            userId,
             companyId: options.companyId,
             source: "widget",
             ...data,
