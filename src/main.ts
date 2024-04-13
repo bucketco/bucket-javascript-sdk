@@ -581,11 +581,13 @@ export default function main() {
 
   async function getFeatureFlags({
     context,
-    fallbackFeatures = [],
+    fallbackFlags = [],
+    forceFlags = [],
     timeoutMs,
   }: {
     context: Record<string, any>;
-    fallbackFeatures?: string[];
+    fallbackFlags?: string[];
+    forceFlags?: string[];
     timeoutMs?: number;
   }): Promise<Flags> {
     const baseContext = {
@@ -595,12 +597,22 @@ export default function main() {
 
     const mergedContext = mergeDeep(baseContext, context);
 
+    const forceFlagsObj = forceFlags.reduce((acc, key) => {
+      acc[key] = { value: true, key };
+      return acc;
+    }, {} as Flags);
+
     try {
-      return await getFlags(getUrl(), mergedContext, timeoutMs);
+      return await getFlags({
+        apiBaseUrl: getUrl(),
+        context: mergedContext,
+        timeoutMs,
+        forceFlags: forceFlagsObj,
+      });
     } catch (e) {
       warn(`failed to fetch feature flags, using fall back flags`, e);
-      return fallbackFeatures.reduce((acc, key) => {
-        acc[key] = { value: true, identifier: key };
+      return fallbackFlags.reduce((acc, key) => {
+        acc[key] = { value: true, key };
         return acc;
       }, {} as Flags);
     }

@@ -50,7 +50,7 @@ async function getRequest(
 
 export interface Flag {
   value: boolean;
-  identifier: string;
+  key: string;
   reason?: string;
   missingContextFields?: string[];
 }
@@ -81,27 +81,19 @@ function flattenJSON(obj: Record<string, any>): Record<string, any> {
 
 const dedupeFetch: Record<string, Promise<Flags>> = {};
 
-function wrapWithFlagAccessorInterceptor(flags: Flags) {
-  const handler = (flagKey: string) => {
-    console.log("Flag accessed: ", flagKey);
-  };
-
-  const interceptedFlags = new Proxy(flags, {
-    get(target, prop, receiver) {
-      handler(prop.toString());
-      return Reflect.get(target, prop, receiver);
-    },
-  });
-  return interceptedFlags;
-}
-
 // fetch feature flags
 // take care to avoid sending duplicate simultaneous requests
-export async function getFlags(
-  apiBaseUrl: string,
-  context: object,
-  timeoutMs?: number,
-): Promise<Flags> {
+export async function getFlags({
+  apiBaseUrl,
+  context,
+  timeoutMs,
+  forceFlags,
+}: {
+  apiBaseUrl: string;
+  context: object;
+  timeoutMs?: number;
+  forceFlags?: Flags;
+}): Promise<Flags> {
   const flattenedContext = flattenJSON({ context });
 
   const params = new URLSearchParams(flattenedContext);
@@ -118,7 +110,10 @@ export async function getFlags(
           timeoutMs || FLAG_FETCH_DEFAULT_TIMEOUT,
         );
         const typeRes = (await res.json()) as FeatureFlagsResponse;
-        return wrapWithFlagAccessorInterceptor(typeRes.flags);
+        return {
+          ...typeRes.flags,
+          ...forceFlags,
+        };
       } finally {
         delete dedupeFetch[url];
       }
