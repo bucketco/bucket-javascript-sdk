@@ -10,6 +10,7 @@ import {
 } from "./config";
 import { createDefaultFeedbackPromptHandler } from "./default-feedback-prompt-handler";
 import * as feedbackLib from "./feedback";
+import { Flags, getFlags, mergeDeep } from "./flags";
 import { getAuthToken } from "./prompt-storage";
 import {
   FeedbackPromptCompletionHandler,
@@ -31,7 +32,6 @@ import type {
   TrackedEvent,
   User,
 } from "./types";
-import { Flags, getFlags, mergeDeep } from "./flags";
 
 async function postRequest(url: string, body: any) {
   return fetch(url, {
@@ -52,9 +52,7 @@ export default function main() {
   let host: string = TRACKING_HOST;
   let sseHost: string = SSE_REALTIME_HOST;
   let sessionUserId: string | undefined = undefined;
-  let sessionCompanyId: string | undefined = undefined;
   let persistUser: boolean = !isForNode;
-  let persistCompany: boolean = !isForNode;
   let liveSatisfactionActive: boolean = false;
   let sseChannel: AblySSEChannel | undefined = undefined;
   let liveSatisfactionEnabled: boolean = !isForNode;
@@ -109,16 +107,6 @@ export default function main() {
       return getSessionUser();
     } else {
       err("No userId provided and persistUser is disabled");
-    }
-  }
-
-  function resolveCompany(companyId?: string): string | never {
-    if (companyId) return companyId;
-
-    if (sessionCompanyId) {
-      return sessionCompanyId;
-    } else {
-      err("No companyId provided and persistUser is disabled");
     }
   }
 
@@ -229,8 +217,6 @@ export default function main() {
     if (!companyId) err("No companyId provided");
     userId = resolveUser(userId);
 
-    if (persistCompany) sessionCompanyId = companyId;
-
     const payload: Company = {
       userId,
       companyId,
@@ -261,7 +247,6 @@ export default function main() {
     checkKey();
     if (!eventName) err("No eventName provided");
     userId = resolveUser(userId);
-    companyId = resolveCompany(companyId);
 
     const payload: TrackedEvent = {
       userId,
@@ -590,7 +575,6 @@ export default function main() {
   }): Promise<Flags> {
     const baseContext = {
       user: { id: sessionUserId },
-      company: { id: sessionCompanyId },
     };
 
     const mergedContext = mergeDeep(baseContext, context);
