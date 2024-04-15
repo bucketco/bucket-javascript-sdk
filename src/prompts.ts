@@ -2,7 +2,7 @@ import {
   checkPromptMessageCompleted,
   markPromptMessageCompleted,
 } from "./prompt-storage";
-import { FeedbackPrompt, User } from "./types";
+import { FeedbackPrompt } from "./types";
 
 export const parsePromptMessage = (
   message: any,
@@ -31,13 +31,13 @@ export const parsePromptMessage = (
 
 export type FeedbackPromptCompletionHandler = () => void;
 export type FeedbackPromptDisplayHandler = (
-  userId: User["userId"],
+  userId: string,
   prompt: FeedbackPrompt,
   completionHandler: FeedbackPromptCompletionHandler,
 ) => void;
 
 export const processPromptMessage = (
-  userId: User["userId"],
+  userId: string,
   prompt: FeedbackPrompt,
   displayHandler: FeedbackPromptDisplayHandler,
 ) => {
