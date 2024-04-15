@@ -27,22 +27,19 @@ export function mergeDeep(
   return mergeDeep(target, ...sources);
 }
 
-async function getRequest(
-  url: string,
-  queryParams: Record<string, string>,
-  timeoutMs: number,
-) {
+export async function getRequest(url: string, timeoutMs: number) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
-  const params = new URLSearchParams(queryParams);
-  params.sort();
-
   try {
-    return fetch(url + "?" + params.toString(), {
+    const res = await fetch(url, {
       method: "GET",
       signal: controller.signal,
     });
+    if (!res.ok) {
+      throw new Error("Request failed, unexpected status code: " + res.status);
+    }
+    return res.json();
   } finally {
     clearTimeout(timeout);
   }
@@ -57,7 +54,7 @@ export interface Flag {
 
 export type Flags = Record<string, Flag>;
 
-type FeatureFlagsResponse = {
+export type FeatureFlagsResponse = {
   success: boolean;
   flags: Flags;
 };
@@ -87,14 +84,19 @@ export async function getFlags({
   apiBaseUrl,
   context,
   timeoutMs,
-  forceFlags,
+  includeFlags,
 }: {
   apiBaseUrl: string;
   context: object;
   timeoutMs?: number;
-  forceFlags?: Flags;
+  includeFlags?: Flag[];
 }): Promise<Flags> {
   const flattenedContext = flattenJSON({ context });
+
+  const includeFlagsObj = includeFlags?.reduce((acc, flag) => {
+    acc[flag.key] = flag;
+    return acc;
+  }, {} as Flags);
 
   const params = new URLSearchParams(flattenedContext);
   // sort the params to ensure that the URL is the same for the same context
@@ -104,15 +106,14 @@ export async function getFlags({
   if (!(url in dedupeFetch)) {
     dedupeFetch[url] = (async () => {
       try {
-        const res = await getRequest(
+        const res = (await getRequest(
           url,
-          flattenedContext,
           timeoutMs || FLAG_FETCH_DEFAULT_TIMEOUT,
-        );
-        const typeRes = (await res.json()) as FeatureFlagsResponse;
+        )) as FeatureFlagsResponse;
+
         return {
-          ...typeRes.flags,
-          ...forceFlags,
+          ...res.flags,
+          ...includeFlagsObj,
         };
       } finally {
         delete dedupeFetch[url];

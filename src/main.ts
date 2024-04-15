@@ -10,7 +10,7 @@ import {
 } from "./config";
 import { createDefaultFeedbackPromptHandler } from "./default-feedback-prompt-handler";
 import * as feedbackLib from "./feedback";
-import { Flags, getFlags, mergeDeep } from "./flags";
+import { Flag, Flags, getFlags, mergeDeep } from "./flags";
 import { getAuthToken } from "./prompt-storage";
 import {
   FeedbackPromptCompletionHandler,
@@ -565,12 +565,12 @@ export default function main() {
   async function getFeatureFlags({
     context,
     fallbackFlags = [],
-    forceFlags = [],
+    includeFlags = [],
     timeoutMs,
   }: {
     context: Record<string, any>;
-    fallbackFlags?: string[];
-    forceFlags?: string[];
+    fallbackFlags?: Flag[];
+    includeFlags?: Flag[];
     timeoutMs?: number;
   }): Promise<Flags> {
     const baseContext = {
@@ -579,22 +579,17 @@ export default function main() {
 
     const mergedContext = mergeDeep(baseContext, context);
 
-    const forceFlagsObj = forceFlags.reduce((acc, key) => {
-      acc[key] = { value: true, key };
-      return acc;
-    }, {} as Flags);
-
     try {
       return await getFlags({
         apiBaseUrl: getUrl(),
         context: mergedContext,
         timeoutMs,
-        forceFlags: forceFlagsObj,
+        includeFlags,
       });
     } catch (e) {
-      warn(`failed to fetch feature flags, using fall back flags`, e);
-      return fallbackFlags.reduce((acc, key) => {
-        acc[key] = { value: true, key };
+      warn(`failed to fetch feature flags, using fall-back flags: `, e);
+      return fallbackFlags.reduce((acc, flag) => {
+        acc[flag.key] = flag;
         return acc;
       }, {} as Flags);
     }
