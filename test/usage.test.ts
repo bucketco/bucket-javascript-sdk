@@ -875,7 +875,7 @@ describe("feedback state management", () => {
 });
 
 describe("feature flags", () => {
-  beforeAll((tc) => {
+  beforeAll(() => {
     nock(`${TRACKING_HOST}/${KEY}`)
       .get(/.*\/flags\/evaluate\?context.user.id=/)
       .reply(500, {

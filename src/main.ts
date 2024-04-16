@@ -562,6 +562,22 @@ export default function main() {
     }, 1);
   }
 
+  /**
+   * Retrieve feature flags given the specified context.
+   *
+   *
+   * @param context The context to evaluate the feature flags against.
+   *                This should take the form of `{ user: { id }, company: { id } }`
+   *                plus anything additional you want to be able to evaluate flags against.
+   *                In the browser, if a `user` call has been made the `user.id` will be
+   *                used automatically and merged with anything provided in the `context`
+   *                argument.
+   * @param fallbackFlags Optional array of flags to use if the request to Bucket fails
+   * @param includeFlags Optional array of flags to include in the response, regardless of
+   *                     their evaluation. If the request fails, these flags will not be
+   *                     included automatically.
+   * @param timeoutMs Optional the timeout in milliseconds for the request to Bucket before using `fallbackFlags`. Default is 5000ms.
+   */
   async function getFeatureFlags({
     context,
     fallbackFlags = [],

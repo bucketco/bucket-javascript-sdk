@@ -1,16 +1,9 @@
-import {
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  test,
-  vi,
-} from "vitest";
-
-import { FeatureFlagsResponse, getFlags, getRequest } from "../src/flags";
-import fetch from "cross-fetch";
 import { fail } from "assert";
+import fetch from "cross-fetch";
+import { beforeAll, describe, expect, test, vi } from "vitest";
+
+import { FeatureFlagsResponse, getFlags } from "../src/flags";
+
 vi.mock("cross-fetch", () => {
   return {
     default: vi.fn(),
@@ -39,7 +32,7 @@ describe("getFlags unit tests", () => {
     const flags = await getFlags({
       apiBaseUrl: "https://localhost",
       context: { user: { id: "123" } },
-      forceFlags: [{ value: true, key: "featureB" }],
+      includeFlags: [{ value: true, key: "featureB" }],
       timeoutMs: 1000,
     });
 
@@ -57,7 +50,7 @@ describe("getFlags unit tests", () => {
       await getFlags({
         apiBaseUrl: "https://localhost",
         context: { user: { id: "123" } },
-        forceFlags: [{ value: true, key: "featureB" }],
+        includeFlags: [{ value: true, key: "featureB" }],
         timeoutMs: 1000,
       });
       fail("Expected an error");

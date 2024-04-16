@@ -20,15 +20,19 @@
   <body>
     <script>
       window.bucket.init("123", { debug: true });
-    
+
       const fallbackFlags = [{ key: "fallbackFlag1", value: true }];
+      const includeFlags = [{ key: "localhostFlag", value: true }];
 
       window.bucket
-        .getFeatureFlags({ context: { user: { id: "user1" } }, fallbackFlags })
+        .getFeatureFlags({
+          context: { user: { id: "user1" } },
+          fallbackFlags,
+          includeFlags,
+        })
         .then((flags) => {
           console.log("flags", flags);
         });
-    </script>);
     </script>
   </body>
 </html>
