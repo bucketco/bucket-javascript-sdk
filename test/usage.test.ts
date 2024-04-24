@@ -891,12 +891,12 @@ describe("feature flags", () => {
     const bucketInstance = bucket();
     bucketInstance.init(KEY);
 
-    const fallbackFlags = [{ value: true, key: "fallbackFlag1" }];
+    const fallbackFlags = [{ value: true, key: "feature1" }];
 
     const result = await bucketInstance.getFeatureFlags({
       context: { user: { id: "user-id" } },
       fallbackFlags,
     });
-    expect(result).toEqual({ fallbackFlag1: fallbackFlags[0] });
+    expect(result).toEqual({ feature1: fallbackFlags[0] });
   });
 });

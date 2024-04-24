@@ -572,22 +572,23 @@ export default function main() {
    *                In the browser, if a `user` call has been made the `user.id` will be
    *                used automatically and merged with anything provided in the `context`
    *                argument.
-   * @param fallbackFlags Optional array of flags to use if the request to Bucket fails
-   * @param includeFlags Optional array of flags to include in the response, regardless of
-   *                     their evaluation. If the request fails, these flags will not be
-   *                     included automatically.
+   * @param fallbackFlags Optional array of flags to use if the request to Bucket fails.
+   * @param includeFlags Optional array of flags to include in the response automatically.
    * @param timeoutMs Optional the timeout in milliseconds for the request to Bucket before using `fallbackFlags`. Default is 5000ms.
+   * @param staleWhileRevalidate Optional whether to return potentially stale flags while revalidating the flags in the background. Default is true.
    */
   async function getFeatureFlags({
     context,
     fallbackFlags = [],
     includeFlags = [],
     timeoutMs,
+    staleWhileRevalidate = true,
   }: {
     context: Record<string, any>;
     fallbackFlags?: Flag[];
     includeFlags?: Flag[];
     timeoutMs?: number;
+    staleWhileRevalidate?: boolean;
   }): Promise<Flags> {
     const baseContext = {
       user: { id: sessionUserId },
@@ -595,20 +596,28 @@ export default function main() {
 
     const mergedContext = mergeDeep(baseContext, context);
 
-    try {
-      return await getFlags({
-        apiBaseUrl: getUrl(),
-        context: mergedContext,
-        timeoutMs,
-        includeFlags,
-      });
-    } catch (e) {
-      warn(`failed to fetch feature flags, using fall-back flags: `, e);
-      return fallbackFlags.reduce((acc, flag) => {
+    const flags = await getFlags({
+      apiBaseUrl: getUrl(),
+      context: mergedContext,
+      timeoutMs,
+      staleWhileRevalidate,
+    });
+
+    if (!flags) {
+      warn(`failed to fetch feature flags, using fall-back flags`);
+      return [...fallbackFlags, ...includeFlags].reduce((acc, flag) => {
         acc[flag.key] = flag;
         return acc;
       }, {} as Flags);
     }
+
+    return {
+      ...flags,
+      ...includeFlags.reduce((acc, flag) => {
+        acc[flag.key] = flag;
+        return acc;
+      }, {} as Flags),
+    };
   }
 
   /**
