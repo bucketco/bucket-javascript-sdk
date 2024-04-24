@@ -56,6 +56,27 @@ export type FeatureFlagsResponse = {
   flags: Flags;
 };
 
+function validateFeatureFlagsResponse(
+  response: any,
+): FeatureFlagsResponse | undefined {
+  if (!isObject(response)) {
+    return;
+  }
+
+  if (typeof response.success !== "boolean" || !isObject(response.flags)) {
+    return;
+  }
+  const flags = validateFlags(response.flags);
+  if (!flags) {
+    return;
+  }
+
+  return {
+    success: response.success,
+    flags,
+  };
+}
+
 const dedupeFetch: Record<string, Promise<Flags | undefined>> = {};
 export async function fetchFlags(url: string, timeoutMs: number) {
   if (url in dedupeFetch) {
@@ -72,12 +93,12 @@ export async function fetchFlags(url: string, timeoutMs: number) {
         signal: controller.signal,
       });
       clearTimeout(id);
-      const typeRes = (await res.json()) as FeatureFlagsResponse;
-      if (!res.ok || !typeRes.success || !validateFlags(typeRes.flags)) {
+      const typeRes = validateFeatureFlagsResponse(await res.json());
+      if (!res.ok || !typeRes || !typeRes.success) {
         throw new Error("Failed to fetch flags");
       }
-      flags = validateFlags(typeRes.flags);
-      success = typeRes.success ?? false;
+      flags = typeRes.flags;
+      success = true;
     } catch (e) {
       console.error("fetching flags: ", e);
     } finally {
