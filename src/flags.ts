@@ -162,7 +162,9 @@ function setCacheItem(key: string, success: boolean, flags: Flags | undefined) {
     if (cachedResponseRaw) {
       cacheData = validateCacheData(JSON.parse(cachedResponseRaw)) ?? {};
     }
-  } catch (e) {} // ignore errors
+  } catch (e) {
+    // ignore errors
+  }
 
   cacheData[key] = {
     expireAt: Date.now() + FLAGS_EXPIRE_MS,
