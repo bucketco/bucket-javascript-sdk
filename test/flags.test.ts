@@ -113,42 +113,67 @@ describe("getFlags unit tests", () => {
     expect(vi.mocked(fetch).mock.calls.length).toBe(1);
   });
 
-  test("serves stale cache while reevaluating", async () => {
-    expect(vi.mocked(fetch).mock.calls.length).toBe(0);
+  describe("serves stale cache while reevaluating", async () => {
+    async function runTest(response) {
+      expect(vi.mocked(fetch).mock.calls.length).toBe(0);
 
-    const a = await getFlags({
-      apiBaseUrl: "https://localhost",
-      context: { user: { id: "123" } },
-      timeoutMs: 1000,
+      vi.mocked(fetch).mockResolvedValue({
+        status: 200,
+        ok: true,
+        json: function () {
+          return Promise.resolve(response);
+        },
+      } as Response);
+
+      const a = await getFlags({
+        apiBaseUrl: "https://localhost",
+        context: { user: { id: "123" } },
+        timeoutMs: 1000,
+      });
+
+      // change the response so we can validate that we'll serve the stale cache
+      vi.mocked(fetch).mockResolvedValue({
+        status: 200,
+        ok: true,
+        json: function () {
+          return Promise.resolve({
+            success: true,
+            flags: {
+              featureB: { value: true, key: "featureB" },
+            },
+          });
+        },
+      } as Response);
+
+      vi.advanceTimersByTime(FLAGS_STALE_MS + 1);
+
+      const b = await getFlags({
+        apiBaseUrl: "https://localhost",
+        context: { user: { id: "123" } },
+        timeoutMs: 1000,
+        staleWhileRevalidate: true,
+      });
+
+      expect(a).toEqual(b);
+
+      // new fetch was fired
+      expect(vi.mocked(fetch).mock.calls.length).toBe(2);
+    }
+
+    test("with positive result", async () => {
+      await runTest({
+        success: true,
+        flags: {
+          featureB: { value: true, key: "featureB" },
+        },
+      });
     });
 
-    // change the response so we can validate that we'll serve the stale cache
-    vi.mocked(fetch).mockResolvedValue({
-      status: 200,
-      ok: true,
-      json: function () {
-        return Promise.resolve({
-          success: true,
-          flags: {
-            featureB: { value: true, key: "featureB" },
-          },
-        });
-      },
-    } as Response);
-
-    vi.advanceTimersByTime(FLAGS_STALE_MS + 1);
-
-    const b = await getFlags({
-      apiBaseUrl: "https://localhost",
-      context: { user: { id: "123" } },
-      timeoutMs: 1000,
-      staleWhileRevalidate: true,
+    test("with negative result", async () => {
+      await runTest({
+        success: false,
+      });
     });
-
-    expect(a).toEqual(b);
-
-    // new fetch was fired
-    expect(vi.mocked(fetch).mock.calls.length).toBe(2);
   });
 
   test("expires cache eventually", async () => {

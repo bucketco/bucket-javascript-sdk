@@ -225,22 +225,19 @@ export async function getFlags({
   // sort the params to ensure that the URL is the same for the same context
   params.sort();
   const url = `${apiBaseUrl}/flags/evaluate?` + params.toString();
-
   const cachedItem = getCacheItem(url);
   if (cachedItem) {
     if (!cachedItem.stale) {
       return cachedItem.flags;
     }
 
-    if (cachedItem.success) {
-      // if stale, return the cached value and re-fetch in the background
-      if (staleWhileRevalidate) {
-        // re-fetch in the background, return last successful value
-        fetchFlags(url, timeoutMs).catch(() => {
-          // we don't care about the result, we just want to re-fetch
-        });
-        return cachedItem.flags;
-      }
+    // if stale, return the cached value and re-fetch in the background
+    if (staleWhileRevalidate) {
+      // re-fetch in the background, return last successful value
+      fetchFlags(url, timeoutMs).catch(() => {
+        // we don't care about the result, we just want to re-fetch
+      });
+      return cachedItem.flags;
     }
   }
   // if not staleWhileRevalidate or cached failure and stale, refetch synchronously
