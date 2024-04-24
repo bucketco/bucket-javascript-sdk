@@ -46,7 +46,7 @@ export async function fetchFlags(url: string, timeoutMs: number) {
     return dedupeFetch[url];
   }
 
-  const fetchFlagsInner = async (url: string) => {
+  const fetchFlagsInner = async () => {
     let flags: Flags | undefined;
     let success = false;
     try {
@@ -73,7 +73,7 @@ export async function fetchFlags(url: string, timeoutMs: number) {
     return flags;
   };
 
-  dedupeFetch[url] = fetchFlagsInner(url);
+  dedupeFetch[url] = fetchFlagsInner();
   return dedupeFetch[url];
 }
 
@@ -110,11 +110,7 @@ export function clearCache() {
   localStorage.removeItem(localStorageCacheKey);
 }
 
-async function setCacheItem(
-  key: string,
-  success: boolean,
-  flags: Flags | undefined,
-) {
+function setCacheItem(key: string, success: boolean, flags: Flags | undefined) {
   let cacheData: CacheData = {};
 
   const cachedResponseRaw = localStorage.getItem(localStorageCacheKey);
@@ -188,7 +184,9 @@ export async function getFlags({
       // if stale, return the cached value and re-fetch in the background
       if (staleWhileRevalidate) {
         // re-fetch in the background, return last successful value
-        fetchFlags(url, timeoutMs);
+        fetchFlags(url, timeoutMs).catch(() => {
+          // we don't care about the result, we just want to re-fetch
+        });
         return cachedItem.flags;
       }
     }

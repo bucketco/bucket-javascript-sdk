@@ -1,20 +1,11 @@
-import { fail } from "assert";
 import fetch from "cross-fetch";
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  test,
-  vi,
-} from "vitest";
+import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
 
 import {
+  clearCache,
+  FeatureFlagsResponse,
   FLAGS_EXPIRE_MS,
   FLAGS_STALE_MS,
-  FeatureFlagsResponse,
-  clearCache,
   getFlags,
 } from "../src/flags";
 
@@ -70,13 +61,13 @@ describe("getFlags unit tests", () => {
       apiBaseUrl: "https://localhost",
       context: { user: { id: "123" } },
       timeoutMs: 1000,
-    });
+    }).catch(console.error);
 
-    const b = getFlags({
+    getFlags({
       apiBaseUrl: "https://localhost",
       context: { user: { id: "123" } },
       timeoutMs: 1000,
-    });
+    }).catch(console.error);
 
     expect(vi.mocked(fetch).mock.calls.length).toBe(1);
     resolve(flagsResponse);
