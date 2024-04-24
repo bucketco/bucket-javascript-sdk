@@ -30,8 +30,6 @@ export function mergeDeep(
 export interface Flag {
   value: boolean;
   key: string;
-  reason?: string;
-  missingContextFields?: string[];
 }
 export type Flags = Record<string, Flag>;
 
