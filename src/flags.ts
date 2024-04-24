@@ -35,6 +35,24 @@ export interface Flag {
 }
 export type Flags = Record<string, Flag>;
 
+function validateFlags(flagsInput: any): Flags | undefined {
+  if (!isObject(flagsInput)) {
+    return;
+  }
+
+  const flags: Flags = {};
+  for (const key in flagsInput) {
+    const flag = flagsInput[key];
+    if (!isObject(flag)) return;
+
+    if (typeof flag.value !== "boolean" || typeof flag.key !== "string") {
+      return;
+    }
+    flags[key] = { value: flag.value, key: flag.key };
+  }
+  return flags;
+}
+
 export type FeatureFlagsResponse = {
   success: boolean;
   flags: Flags;
@@ -50,17 +68,17 @@ export async function fetchFlags(url: string, timeoutMs: number) {
     let flags: Flags | undefined;
     let success = false;
     try {
-      const id = setTimeout(() => controller.abort(), timeoutMs);
       const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), timeoutMs);
       const res = await fetch(url, {
         signal: controller.signal,
       });
       clearTimeout(id);
       const typeRes = (await res.json()) as FeatureFlagsResponse;
-      if (!res.ok || !typeRes.success) {
+      if (!res.ok || !typeRes.success || !validateFlags(typeRes.flags)) {
         throw new Error("Failed to fetch flags");
       }
-      flags = typeRes.flags;
+      flags = validateFlags(typeRes.flags);
       success = typeRes.success ?? false;
     } catch (e) {
       console.error("fetching flags: ", e);
@@ -101,6 +119,34 @@ interface cacheEntry {
 }
 
 type CacheData = Record<string, cacheEntry>;
+function validateCacheData(cacheDataInput: any) {
+  if (!isObject(cacheDataInput)) {
+    return;
+  }
+
+  const cacheData: CacheData = {};
+  for (const key in cacheDataInput) {
+    const cacheEntry = cacheDataInput[key];
+    if (!isObject(cacheEntry)) return;
+
+    if (
+      typeof cacheEntry.expireAt !== "number" ||
+      typeof cacheEntry.staleAt !== "number" ||
+      typeof cacheEntry.success !== "boolean" ||
+      (cacheEntry.flags && !validateFlags(cacheEntry.flags))
+    ) {
+      return;
+    }
+
+    cacheData[key] = {
+      expireAt: cacheEntry.expireAt,
+      staleAt: cacheEntry.staleAt,
+      success: cacheEntry.success,
+      flags: cacheEntry.flags,
+    };
+  }
+  return cacheData;
+}
 
 const FLAG_FETCH_DEFAULT_TIMEOUT_MS = 5000;
 export const FLAGS_STALE_MS = 60000; // turn stale after 60 seconds, optionally reevaluate in the background
@@ -113,10 +159,12 @@ export function clearCache() {
 function setCacheItem(key: string, success: boolean, flags: Flags | undefined) {
   let cacheData: CacheData = {};
 
-  const cachedResponseRaw = localStorage.getItem(localStorageCacheKey);
-  if (cachedResponseRaw) {
-    cacheData = JSON.parse(cachedResponseRaw);
-  }
+  try {
+    const cachedResponseRaw = localStorage.getItem(localStorageCacheKey);
+    if (cachedResponseRaw) {
+      cacheData = validateCacheData(JSON.parse(cachedResponseRaw)) ?? {};
+    }
+  } catch (e) {} // ignore errors
 
   cacheData[key] = {
     expireAt: Date.now() + FLAGS_EXPIRE_MS,
@@ -140,8 +188,12 @@ function getCacheItem(
   try {
     const cachedResponseRaw = localStorage.getItem(localStorageCacheKey);
     if (cachedResponseRaw) {
-      const cachedResponse = JSON.parse(cachedResponseRaw) as CacheData;
-      if (cachedResponse[key] && cachedResponse[key].expireAt > Date.now()) {
+      const cachedResponse = validateCacheData(JSON.parse(cachedResponseRaw));
+      if (
+        cachedResponse &&
+        cachedResponse[key] &&
+        cachedResponse[key].expireAt > Date.now()
+      ) {
         return {
           flags: cachedResponse[key].flags,
           success: cachedResponse[key].success,
