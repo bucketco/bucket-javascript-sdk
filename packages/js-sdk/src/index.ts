@@ -1,6 +1,6 @@
 import main from "./main";
 
-export type { Flags } from "./flags";
+export { Flags, Flag, queryStringFromContext } from "./flags";
 
 let instance: ReturnType<typeof main> | null = null;
 

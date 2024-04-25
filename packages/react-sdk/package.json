@@ -1,0 +1,22 @@
+{
+  "name": "@bucketco/react-sdk",
+  "version": "0.1.0",
+  "description": "React SDK for Bucket.co",
+  "repository": "https://github.com/bucketco/",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@bucketco/js-sdk": "workspace:^"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.79",
+    "@types/react-dom": "^18.2.25",
+    "@vitejs/plugin-react-swc": "^3.6.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "vite": "^5.2.10"
+  }
+}

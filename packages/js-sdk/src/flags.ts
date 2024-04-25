@@ -228,6 +228,15 @@ function getCacheItem(
   return;
 }
 
+export function queryStringFromContext(context: object): string {
+  const flattenedContext = flattenJSON({ context });
+
+  const params = new URLSearchParams(flattenedContext);
+  // sort the params to ensure that the URL is the same for the same context
+  params.sort();
+  return params.toString();
+}
+
 // fetch feature flags
 export async function getFlags({
   apiBaseUrl,
@@ -240,12 +249,7 @@ export async function getFlags({
   staleWhileRevalidate?: boolean;
   timeoutMs?: number;
 }): Promise<Flags | undefined> {
-  const flattenedContext = flattenJSON({ context });
-
-  const params = new URLSearchParams(flattenedContext);
-  // sort the params to ensure that the URL is the same for the same context
-  params.sort();
-  const url = `${apiBaseUrl}/flags/evaluate?` + params.toString();
+  const url = `${apiBaseUrl}/flags/evaluate?` + queryStringFromContext(context);
   const cachedItem = getCacheItem(url);
   if (cachedItem) {
     if (!cachedItem.stale) {
