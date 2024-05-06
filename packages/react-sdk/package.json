@@ -9,7 +9,7 @@
     "build": "vite build"
   },
   "dependencies": {
-    "@bucketco/js-sdk": "workspace:^"
+    "@bucketco/tracking-sdk": "workspace:^"
   },
   "devDependencies": {
     "@types/react": "^18.2.79",

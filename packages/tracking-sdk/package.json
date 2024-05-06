@@ -1,5 +1,5 @@
 {
-  "name": "@bucketco/js-sdk",
+  "name": "@bucketco/tracking-sdk",
   "version": "2.2.1",
   "description": "Typescript/javascript SDK for Bucket.co",
   "license": "MIT",
@@ -24,8 +24,8 @@
   "files": [
     "dist"
   ],
-  "main": "./dist/bucket-js-sdk.node.js",
-  "browser": "./dist/bucket-js-sdk.browser.js",
+  "main": "./dist/bucket-tracking-sdk.node.js",
+  "browser": "./dist/bucket-tracking-sdk.browser.js",
   "types": "./dist/types/src/index.d.ts",
   "devDependencies": {
     "@babel/core": "^7.23.7",

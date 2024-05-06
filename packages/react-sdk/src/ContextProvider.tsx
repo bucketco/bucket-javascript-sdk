@@ -1,6 +1,8 @@
-import { queryStringFromContext, Flags } from "@bucketco/js-sdk";
-import bucket from "@bucketco/js-sdk";
-import { Flag } from "@bucketco/js-sdk/src/flags";
+import bucket, {
+  queryStringFromContext,
+  Flags,
+  Flag,
+} from "@bucketco/tracking-sdk";
 import React, { createContext, useEffect, useState } from "react";
 
 export default bucket;
