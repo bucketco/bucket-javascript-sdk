@@ -48,7 +48,7 @@ const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
 export default function main() {
   let debug = false;
-  let clientSideKey: string | undefined = undefined;
+  let trackingKey: string | undefined = undefined;
   let host: string = TRACKING_HOST;
   let sseHost: string = SSE_REALTIME_HOST;
   let sessionUserId: string | undefined = undefined;
@@ -65,10 +65,10 @@ export default function main() {
   log("Instance created");
 
   function getUrl() {
-    return `${host}/${clientSideKey}`;
+    return `${host}/${trackingKey}`;
   }
   function checkKey() {
-    if (!clientSideKey) {
+    if (!trackingKey) {
       err("Tracking key is not set, please call init() first");
     }
   }
@@ -115,7 +115,7 @@ export default function main() {
    *
    * Must be called before calling other SDK methods.
    *
-   * @param key Your Bucket client-side key
+   * @param key Your Bucket tracking key
    * @param options
    */
   function init(key: Key, options: Options = {}) {
@@ -124,7 +124,7 @@ export default function main() {
       err("Tracking key was not provided");
     }
 
-    clientSideKey = key;
+    trackingKey = key;
 
     if (options.debug) debug = options.debug;
     if (options.host) host = options.host;
@@ -163,7 +163,7 @@ export default function main() {
       options.feedback?.liveSatisfactionHandler ??
       createDefaultFeedbackPromptHandler(options.feedback?.ui);
 
-    log(`initialized with key "${clientSideKey}" and options`, options);
+    log(`initialized with key "${trackingKey}" and options`, options);
   }
 
   /**
