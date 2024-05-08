@@ -9,7 +9,6 @@ import {
 } from "vitest";
 
 import { CacheResult, FlagCache } from "../src/flags-cache";
-import { e } from "vitest/dist/reporters-qc5Smpt5.js";
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -24,7 +23,7 @@ const TEST_STALE_MS = 1000;
 const TEST_EXPIRE_MS = 2000;
 
 function newCache(): { cache: FlagCache; cacheItem: (string | null)[] } {
-  let cacheItem: (string | null)[] = [null];
+  const cacheItem: (string | null)[] = [null];
   return {
     cache: new FlagCache(
       {

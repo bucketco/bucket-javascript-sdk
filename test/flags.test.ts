@@ -1,10 +1,11 @@
 import fetch from "cross-fetch";
 import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
+
 import {
+  clearCache,
+  FeatureFlagsResponse,
   FLAGS_EXPIRE_MS,
   FLAGS_STALE_MS,
-  FeatureFlagsResponse,
-  clearCache,
   getFlags,
 } from "../src/flags-fetch";
 

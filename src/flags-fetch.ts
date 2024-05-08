@@ -1,6 +1,7 @@
 import fetch from "cross-fetch";
-import { isObject, FlagCache, validateFlags } from "./flags-cache";
+
 import { Flags } from "./flags";
+import { FlagCache, isObject, validateFlags } from "./flags-cache";
 
 // Deep merge two objects.
 export function mergeDeep(
@@ -117,7 +118,7 @@ const cache = new FlagCache(
   FLAGS_EXPIRE_MS,
 );
 
-export async function clearCache() {
+export function clearCache() {
   cache.clear();
 }
 

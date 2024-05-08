@@ -10,6 +10,7 @@ import {
 } from "./config";
 import { createDefaultFeedbackPromptHandler } from "./default-feedback-prompt-handler";
 import * as feedbackLib from "./feedback";
+import { Flag, Flags } from "./flags";
 import { getFlags, mergeDeep } from "./flags-fetch";
 import { getAuthToken } from "./prompt-storage";
 import {
@@ -32,7 +33,6 @@ import type {
   TrackedEvent,
   User,
 } from "./types";
-import { Flag, Flags } from "./flags";
 
 async function postRequest(url: string, body: any) {
   return fetch(url, {
