@@ -2,6 +2,7 @@ import flushPromises from "flush-promises";
 import * as bundling from "is-bundling-for-browser-or-node";
 import nock from "nock";
 import {
+  afterAll,
   afterEach,
   beforeAll,
   beforeEach,
@@ -48,7 +49,7 @@ describe("usage", () => {
     vi.clearAllMocks();
   });
 
-  test("golden path - register user, company, send event, send feedback", async () => {
+  test("golden path - register user, company, send event, send feedback, get feature flags", async () => {
     nock(`${TRACKING_HOST}/${KEY}`)
       .post(/.*\/user/, {
         userId: "foo",
@@ -86,6 +87,14 @@ describe("usage", () => {
         source: "sdk",
       })
       .reply(200);
+    nock(`${TRACKING_HOST}/${KEY}`)
+      .get(/.*\/flags\/evaluate\?context.user.id=/)
+      .reply(200, {
+        success: true,
+        flags: {
+          feature1: { value: true, key: "feature1" },
+        },
+      });
 
     const bucketInstance = bucket();
     bucketInstance.init(KEY, { persistUser: true });
@@ -103,6 +112,11 @@ describe("usage", () => {
       question: "Cum esti?",
       promptedQuestion: "How are you?",
     });
+
+    const flags = await bucketInstance.getFeatureFlags({
+      context: { user: { id: "user-id" } },
+    });
+    expect(flags).toEqual({ feature1: { value: true, key: "feature1" } });
   });
 
   test("re-register user and send event", async () => {
@@ -857,5 +871,32 @@ describe("feedback state management", () => {
     ).rejects.toThrowError();
 
     expect(callback).not.toBeCalled;
+  });
+});
+
+describe("feature flags", () => {
+  beforeAll(() => {
+    nock(`${TRACKING_HOST}/${KEY}`)
+      .get(/.*\/flags\/evaluate\?context.user.id=/)
+      .reply(500, {
+        success: false,
+      });
+  });
+
+  afterAll(() => {
+    nock.cleanAll();
+  });
+
+  test("returns fall back flags on failure", async () => {
+    const bucketInstance = bucket();
+    bucketInstance.init(KEY);
+
+    const fallbackFlags = [{ value: true, key: "feature1" }];
+
+    const result = await bucketInstance.getFeatureFlags({
+      context: { user: { id: "user-id" } },
+      fallbackFlags,
+    });
+    expect(result).toEqual({ feature1: fallbackFlags[0] });
   });
 });

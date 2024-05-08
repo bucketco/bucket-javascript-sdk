@@ -10,6 +10,8 @@ import {
 } from "./config";
 import { createDefaultFeedbackPromptHandler } from "./default-feedback-prompt-handler";
 import * as feedbackLib from "./feedback";
+import { Flag, Flags } from "./flags";
+import { getFlags, mergeDeep } from "./flags-fetch";
 import { getAuthToken } from "./prompt-storage";
 import {
   FeedbackPromptCompletionHandler,
@@ -32,7 +34,7 @@ import type {
   User,
 } from "./types";
 
-async function request(url: string, body: any) {
+async function postRequest(url: string, body: any) {
   return fetch(url, {
     method: "post",
     headers: {
@@ -48,7 +50,7 @@ const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 export default function main() {
   let debug = false;
   let trackingKey: string | undefined = undefined;
-  let trackingHost: string = TRACKING_HOST;
+  let host: string = TRACKING_HOST;
   let sseHost: string = SSE_REALTIME_HOST;
   let sessionUserId: string | undefined = undefined;
   let persistUser: boolean = !isForNode;
@@ -64,7 +66,7 @@ export default function main() {
   log("Instance created");
 
   function getUrl() {
-    return `${trackingHost}/${trackingKey}`;
+    return `${host}/${trackingKey}`;
   }
   function checkKey() {
     if (!trackingKey) {
@@ -126,7 +128,7 @@ export default function main() {
     trackingKey = key;
 
     if (options.debug) debug = options.debug;
-    if (options.host) trackingHost = options.host;
+    if (options.host) host = options.host;
     if (options.sseHost) sseHost = options.sseHost;
 
     if (options.feedback?.ui?.position) {
@@ -193,7 +195,7 @@ export default function main() {
       attributes,
       context,
     };
-    const res = await request(`${getUrl()}/user`, payload);
+    const res = await postRequest(`${getUrl()}/user`, payload);
     log(`sent user`, res);
     return res;
   }
@@ -222,7 +224,7 @@ export default function main() {
       context,
     };
     if (attributes) payload.attributes = attributes;
-    const res = await request(`${getUrl()}/company`, payload);
+    const res = await postRequest(`${getUrl()}/company`, payload);
     log(`sent company`, res);
     return res;
   }
@@ -254,7 +256,7 @@ export default function main() {
       context,
     };
     if (attributes) payload.attributes = attributes;
-    const res = await request(`${getUrl()}/event`, payload);
+    const res = await postRequest(`${getUrl()}/event`, payload);
     log(`sent event`, res);
     return res;
   }
@@ -295,7 +297,7 @@ export default function main() {
       source: source ?? "sdk",
     };
 
-    const res = await request(`${getUrl()}/feedback`, payload);
+    const res = await postRequest(`${getUrl()}/feedback`, payload);
     log(`sent feedback`, res);
     return res;
   }
@@ -337,7 +339,7 @@ export default function main() {
     liveSatisfactionActive = true;
     try {
       if (!channel) {
-        const res = await request(`${getUrl()}/feedback/prompting-init`, {
+        const res = await postRequest(`${getUrl()}/feedback/prompting-init`, {
           userId,
         });
 
@@ -496,7 +498,10 @@ export default function main() {
       promptedQuestion: args.promptedQuestion,
     };
 
-    const res = await request(`${getUrl()}/feedback/prompt-events`, payload);
+    const res = await postRequest(
+      `${getUrl()}/feedback/prompt-events`,
+      payload,
+    );
     log(`sent prompt event`, res);
     return res;
   }
@@ -559,6 +564,56 @@ export default function main() {
   }
 
   /**
+   * Retrieve feature flags given the specified context.
+   *
+   *
+   * @param context The context to evaluate the feature flags against.
+   *                This should take the form of `{ user: { id }, company: { id } }`
+   *                plus anything additional you want to be able to evaluate flags against.
+   *                In the browser, if a `user` call has been made the `user.id` will be
+   *                used automatically and merged with anything provided in the `context`
+   *                argument.
+   * @param fallbackFlags Optional array of flags to use if the request to Bucket fails.
+   * @param includeFlags Optional array of flags to include in the response automatically.
+   * @param timeoutMs Optional the timeout in milliseconds for the request to Bucket before using `fallbackFlags`. Default is 5000ms.
+   * @param staleWhileRevalidate Optional whether to return potentially stale flags while revalidating the flags in the background. Default is true.
+   */
+  async function getFeatureFlags({
+    context,
+    fallbackFlags = [],
+    timeoutMs,
+    staleWhileRevalidate = true,
+  }: {
+    context: Record<string, any>;
+    fallbackFlags?: Flag[];
+    timeoutMs?: number;
+    staleWhileRevalidate?: boolean;
+  }): Promise<Flags> {
+    const baseContext = {
+      user: { id: sessionUserId },
+    };
+
+    const mergedContext = mergeDeep(baseContext, context);
+
+    const flags = await getFlags({
+      apiBaseUrl: getUrl(),
+      context: mergedContext,
+      timeoutMs,
+      staleWhileRevalidate,
+    });
+
+    if (!flags) {
+      warn(`failed to fetch feature flags, using fall-back flags`);
+      return fallbackFlags.reduce((acc, flag) => {
+        acc[flag.key] = flag;
+        return acc;
+      }, {} as Flags);
+    }
+
+    return flags;
+  }
+
+  /**
    * Reset the active user and disconnect from Live Satisfaction events.
    */
   function reset() {
@@ -587,5 +642,7 @@ export default function main() {
     requestFeedback,
     initLiveSatisfaction,
     initLiveFeedback,
+    // feature flags
+    getFeatureFlags,
   };
 }
