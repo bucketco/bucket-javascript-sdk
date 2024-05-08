@@ -1,13 +1,12 @@
 import fetch from "cross-fetch";
 import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
-
 import {
-  clearCache,
-  FeatureFlagsResponse,
   FLAGS_EXPIRE_MS,
   FLAGS_STALE_MS,
+  FeatureFlagsResponse,
+  clearCache,
   getFlags,
-} from "../src/flags";
+} from "../src/flags-fetch";
 
 vi.mock("cross-fetch", () => {
   return {
@@ -23,9 +22,10 @@ const flagsResponse: FeatureFlagsResponse = {
 };
 
 beforeEach(() => {
+  clearCache();
+
   vi.useFakeTimers();
   vi.resetAllMocks();
-  clearCache();
 
   vi.mocked(fetch).mockResolvedValue({
     status: 200,
@@ -37,7 +37,7 @@ beforeEach(() => {
 });
 
 afterAll(() => {
-  vi.useRealTimers;
+  clearCache();
 });
 
 describe("getFlags unit tests", () => {

@@ -10,7 +10,7 @@ import {
 } from "./config";
 import { createDefaultFeedbackPromptHandler } from "./default-feedback-prompt-handler";
 import * as feedbackLib from "./feedback";
-import { Flag, Flags, getFlags, mergeDeep } from "./flags";
+import { getFlags, mergeDeep } from "./flags-fetch";
 import { getAuthToken } from "./prompt-storage";
 import {
   FeedbackPromptCompletionHandler,
@@ -32,6 +32,7 @@ import type {
   TrackedEvent,
   User,
 } from "./types";
+import { Flag, Flags } from "./flags";
 
 async function postRequest(url: string, body: any) {
   return fetch(url, {
@@ -580,13 +581,11 @@ export default function main() {
   async function getFeatureFlags({
     context,
     fallbackFlags = [],
-    includeFlags = [],
     timeoutMs,
     staleWhileRevalidate = true,
   }: {
     context: Record<string, any>;
     fallbackFlags?: Flag[];
-    includeFlags?: Flag[];
     timeoutMs?: number;
     staleWhileRevalidate?: boolean;
   }): Promise<Flags> {
@@ -605,19 +604,13 @@ export default function main() {
 
     if (!flags) {
       warn(`failed to fetch feature flags, using fall-back flags`);
-      return [...fallbackFlags, ...includeFlags].reduce((acc, flag) => {
+      return fallbackFlags.reduce((acc, flag) => {
         acc[flag.key] = flag;
         return acc;
       }, {} as Flags);
     }
 
-    return {
-      ...flags,
-      ...includeFlags.reduce((acc, flag) => {
-        acc[flag.key] = flag;
-        return acc;
-      }, {} as Flags),
-    };
+    return flags;
   }
 
   /**
