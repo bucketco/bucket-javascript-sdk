@@ -1,8 +1,8 @@
 import fetch from "cross-fetch";
 
+import { SDK_VERSION, SDK_VERSION_HEADER_NAME } from "./config";
 import { Flags } from "./flags";
 import { FlagCache, isObject, validateFlags } from "./flags-cache";
-import { SDK_VERSION, SDK_VERSION_HEADER_NAME } from "./config";
 
 // Deep merge two objects.
 export function mergeDeep(
