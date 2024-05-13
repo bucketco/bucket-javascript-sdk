@@ -13,11 +13,7 @@ import {
 } from "vitest";
 
 import { version } from "../package.json";
-import {
-  SDK_VERSION,
-  SDK_VERSION_HEADER_NAME,
-  TRACKING_HOST,
-} from "../src/config";
+import { SDK_VERSION, SDK_VERSION_HEADER_NAME, API_HOST } from "../src/config";
 import bucket from "../src/main";
 import {
   checkPromptMessageCompleted,
@@ -50,7 +46,7 @@ describe("usage", () => {
   });
 
   test("golden path - register user, company, send event, send feedback, get feature flags", async () => {
-    nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${API_HOST}/${KEY}`)
       .post(/.*\/user/, {
         userId: "foo",
         attributes: {
@@ -58,7 +54,7 @@ describe("usage", () => {
         },
       })
       .reply(200);
-    nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${API_HOST}/${KEY}`)
       .post(/.*\/company/, {
         userId: "foo",
         companyId: "bar",
@@ -67,7 +63,7 @@ describe("usage", () => {
         },
       })
       .reply(200);
-    nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${API_HOST}/${KEY}`)
       .post(/.*\/event/, {
         userId: "foo",
         event: "baz",
@@ -76,7 +72,7 @@ describe("usage", () => {
         },
       })
       .reply(200);
-    nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${API_HOST}/${KEY}`)
       .post(/.*\/feedback/, {
         userId: "foo",
         featureId: "featureId1",
@@ -87,7 +83,7 @@ describe("usage", () => {
         source: "sdk",
       })
       .reply(200);
-    nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${API_HOST}/${KEY}`)
       .get(/.*\/flags\/evaluate\?context.user.id=/)
       .reply(200, {
         success: true,
@@ -120,7 +116,7 @@ describe("usage", () => {
   });
 
   test("re-register user and send event", async () => {
-    nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${API_HOST}/${KEY}`)
       .post(/.*\/user/, {
         userId: "foo",
         attributes: {
@@ -129,7 +125,7 @@ describe("usage", () => {
       })
       .reply(200);
 
-    nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${API_HOST}/${KEY}`)
       .post(/.*\/event/, {
         userId: "foo",
         event: "baz",
@@ -139,7 +135,7 @@ describe("usage", () => {
       })
       .reply(200);
 
-    nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${API_HOST}/${KEY}`)
       .post(/.*\/user/, {
         userId: "foo2",
         attributes: {
@@ -148,7 +144,7 @@ describe("usage", () => {
       })
       .reply(200);
 
-    nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${API_HOST}/${KEY}`)
       .post(/.*\/event/, {
         userId: "foo2",
         event: "baz",
@@ -158,7 +154,7 @@ describe("usage", () => {
       })
       .reply(200);
 
-    nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${API_HOST}/${KEY}`)
       .post(/.*\/event/, {
         userId: "foo2",
         event: "baz",
@@ -184,20 +180,20 @@ describe("usage", () => {
   });
 
   test("disable persist user for server-side usage", async () => {
-    nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${API_HOST}/${KEY}`)
       .post(/.*\/user/, {
         userId: "fooUser",
       })
       .reply(200);
 
-    nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${API_HOST}/${KEY}`)
       .post(/.*\/company/, {
         userId: "fooUser",
         companyId: "fooCompany",
       })
       .reply(200);
 
-    nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${API_HOST}/${KEY}`)
       .post(/.*\/event/, {
         userId: "fooUser",
         event: "fooEvent",
@@ -224,7 +220,7 @@ describe("usage", () => {
   });
 
   test("will send sdk version as header", async () => {
-    nock(`${TRACKING_HOST}/${KEY}`, {
+    nock(`${API_HOST}/${KEY}`, {
       reqheaders: {
         [SDK_VERSION_HEADER_NAME]: version,
       },
@@ -246,7 +242,7 @@ describe("usage", () => {
   });
 
   test("can reset user", async () => {
-    nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${API_HOST}/${KEY}`)
       .post(/.*\/user/, {
         userId: "foo",
         attributes: {
@@ -279,7 +275,7 @@ describe("usage", () => {
       });
 
       test("should accept tracking with a known userId", async () => {
-        nock(`${TRACKING_HOST}/${KEY}`)
+        nock(`${API_HOST}/${KEY}`)
           .post(/.*\/user/, {
             userId: "foo",
             attributes: {
@@ -287,7 +283,7 @@ describe("usage", () => {
             },
           })
           .reply(200);
-        nock(`${TRACKING_HOST}/${KEY}`)
+        nock(`${API_HOST}/${KEY}`)
           .post(/.*\/event/, {
             event: "fooEvent",
             userId: "barUser",
@@ -305,7 +301,7 @@ describe("usage", () => {
 
   describe("with persisteence enabled", () => {
     test("should accept tracking with a persisted userId", async () => {
-      nock(`${TRACKING_HOST}/${KEY}`)
+      nock(`${API_HOST}/${KEY}`)
         .post(/.*\/user/, {
           userId: "fooUser",
           attributes: {
@@ -313,7 +309,7 @@ describe("usage", () => {
           },
         })
         .reply(200);
-      nock(`${TRACKING_HOST}/${KEY}`)
+      nock(`${API_HOST}/${KEY}`)
         .post(/.*\/event/, {
           event: "fooEvent",
           userId: "fooUser",
@@ -328,7 +324,7 @@ describe("usage", () => {
     });
 
     test("should accept tracking with an overridden userId", async () => {
-      nock(`${TRACKING_HOST}/${KEY}`)
+      nock(`${API_HOST}/${KEY}`)
         .post(/.*\/user/, {
           userId: "fooUser",
           attributes: {
@@ -336,7 +332,7 @@ describe("usage", () => {
           },
         })
         .reply(200);
-      nock(`${TRACKING_HOST}/${KEY}`)
+      nock(`${API_HOST}/${KEY}`)
         .post(/.*\/event/, {
           event: "fooEvent",
           userId: "barUser",
@@ -383,7 +379,7 @@ describe("feedback prompting", () => {
   });
 
   test("initiates and resets feedback prompting", async () => {
-    nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${API_HOST}/${KEY}`)
       .post(/.*\/feedback\/prompting-init/, {
         userId: "foo",
       })
@@ -399,7 +395,7 @@ describe("feedback prompting", () => {
 
     expect(openAblySSEChannel).toBeCalledTimes(1);
     expect(openAblySSEChannel).toBeCalledWith(
-      `${TRACKING_HOST}/${KEY}/feedback/prompting-auth`,
+      `${API_HOST}/${KEY}/feedback/prompting-auth`,
       "foo",
       "test-channel",
       expect.anything(),
@@ -420,7 +416,7 @@ describe("feedback prompting", () => {
       token: "something",
     });
 
-    const n = nock(`${TRACKING_HOST}/${KEY}`)
+    const n = nock(`${API_HOST}/${KEY}`)
       .post(/.*\/feedback\/prompting-init/, {
         userId: "foo",
       })
@@ -435,7 +431,7 @@ describe("feedback prompting", () => {
     await bucketInstance.initLiveSatisfaction("foo");
 
     expect(openAblySSEChannel).toBeCalledWith(
-      `${TRACKING_HOST}/${KEY}/feedback/prompting-auth`,
+      `${API_HOST}/${KEY}/feedback/prompting-auth`,
       "foo",
       "super-channel",
       expect.anything(),
@@ -446,7 +442,7 @@ describe("feedback prompting", () => {
   });
 
   test("does not initiate feedback prompting if server does not agree", async () => {
-    nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${API_HOST}/${KEY}`)
       .post(/.*\/feedback\/prompting-init/, {
         userId: "foo",
       })
@@ -464,11 +460,11 @@ describe("feedback prompting", () => {
   });
 
   test("initiates feedback prompting automatically on user call if configured", async () => {
-    nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${API_HOST}/${KEY}`)
       .post(/.*\/feedback\/prompting-init/)
       .times(2)
       .reply(200, { success: true, channel: "test-channel" });
-    nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${API_HOST}/${KEY}`)
       .post(/.*\/user/)
       .times(2)
       .reply(200);
@@ -492,7 +488,7 @@ describe("feedback prompting", () => {
   });
 
   test("reset closes previously open feedback prompting connection", async () => {
-    nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${API_HOST}/${KEY}`)
       .post(/.*\/feedback\/prompting-init/)
       .reply(200, { success: true, channel: "test-channel" });
 
@@ -511,7 +507,7 @@ describe("feedback prompting", () => {
   });
 
   test("rejects if feedback prompting already initialized", async () => {
-    nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${API_HOST}/${KEY}`)
       .post(/.*\/feedback\/prompting-init/)
       .reply(200, { success: true, channel: "test-channel" });
 
@@ -530,7 +526,7 @@ describe("feedback prompting", () => {
   });
 
   test("rejects if feedback prompting already initialized (loop)", async () => {
-    nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${API_HOST}/${KEY}`)
       .post(/.*\/feedback\/prompting-init/)
       .reply(200, { success: true, channel: "test-channel" });
 
@@ -556,7 +552,7 @@ describe("feedback prompting", () => {
   });
 
   test("does not think it is connected if the connection fails", async () => {
-    nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${API_HOST}/${KEY}`)
       .post(/.*\/feedback\/prompting-init/)
       .reply(200, { success: false });
 
@@ -568,7 +564,7 @@ describe("feedback prompting", () => {
 
     await bucketInstance.initLiveSatisfaction("foo");
 
-    nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${API_HOST}/${KEY}`)
       .post(/.*\/feedback\/prompting-init/)
       .reply(200, { success: true, channel: "test-channel" });
 
@@ -580,7 +576,7 @@ describe("feedback prompting", () => {
       bucketInstance.initLiveSatisfaction("foo"),
     ).rejects.toThrowError("something bad happened");
 
-    nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${API_HOST}/${KEY}`)
       .post(/.*\/feedback\/prompting-init/)
       .reply(200, { success: true, channel: "test-channel" });
 
@@ -606,7 +602,7 @@ describe("feedback state management", () => {
   };
 
   beforeEach((tc) => {
-    nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${API_HOST}/${KEY}`)
       .post(/.*\/feedback\/prompting-init/)
       .reply(200, { success: true, channel: "test-channel" });
 
@@ -644,7 +640,7 @@ describe("feedback state management", () => {
   };
 
   const setupFeedbackPromptEventNock = (event: string) => {
-    return nock(`${TRACKING_HOST}/${KEY}`)
+    return nock(`${API_HOST}/${KEY}`)
       .post(/.*\/feedback\/prompt-events/, {
         userId: "foo",
         promptId: "123",
@@ -820,7 +816,7 @@ describe("feedback state management", () => {
     const n1 = setupFeedbackPromptEventNock("received");
     const n2 = setupFeedbackPromptEventNock("shown");
 
-    const n3 = nock(`${TRACKING_HOST}/${KEY}`)
+    const n3 = nock(`${API_HOST}/${KEY}`)
       .post(/.*\/feedback/, {
         userId: "foo",
         featureId: "456",
@@ -876,7 +872,7 @@ describe("feedback state management", () => {
 
 describe("feature flags", () => {
   beforeAll(() => {
-    nock(`${TRACKING_HOST}/${KEY}`)
+    nock(`${API_HOST}/${KEY}`)
       .get(/.*\/flags\/evaluate\?context.user.id=/)
       .reply(500, {
         success: false,

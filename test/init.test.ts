@@ -34,14 +34,14 @@ describe("init", () => {
 
   test("will reject setup without key", async () => {
     expect(() => bucket().init("")).toThrowError(
-      "Tracking key was not provided",
+      "Publishable key was not provided",
     );
   });
 
   test("will reject user call without key", async () => {
     const bucketInstance = bucket();
     await expect(() => bucketInstance.user("foo")).rejects.toThrowError(
-      "Tracking key is not set, please call init() first",
+      "Publishable key is not set, please call init() first",
     );
   });
 
