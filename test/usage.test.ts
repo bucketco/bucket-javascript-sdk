@@ -13,7 +13,7 @@ import {
 } from "vitest";
 
 import { version } from "../package.json";
-import { SDK_VERSION, SDK_VERSION_HEADER_NAME, API_HOST } from "../src/config";
+import { API_HOST, SDK_VERSION, SDK_VERSION_HEADER_NAME } from "../src/config";
 import bucket from "../src/main";
 import {
   checkPromptMessageCompleted,

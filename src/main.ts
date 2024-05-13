@@ -3,10 +3,10 @@ import { isForNode } from "is-bundling-for-browser-or-node";
 
 import type { FeedbackPosition, FeedbackTranslations } from "./feedback/types";
 import {
+  API_HOST,
   SDK_VERSION,
   SDK_VERSION_HEADER_NAME,
   SSE_REALTIME_HOST,
-  API_HOST,
 } from "./config";
 import { createDefaultFeedbackPromptHandler } from "./default-feedback-prompt-handler";
 import * as feedbackLib from "./feedback";

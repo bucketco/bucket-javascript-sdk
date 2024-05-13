@@ -17,7 +17,7 @@ export const FeedbackForm = () => {
 
     /*
     // Using the Bucket API
-    fetch("https://tracking.bucket.co/EXAMPLE_TRACKING_KEY/feedback", {
+    fetch("https://tracking.bucket.co/EXAMPLE_PUBLISHABLE_KEY/feedback", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
