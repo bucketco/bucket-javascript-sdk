@@ -81,10 +81,10 @@ export async function fetchFlags(url: string, timeoutMs: number) {
       const id = setTimeout(() => controller.abort(), timeoutMs);
 
       // add SDK version to the query params
-      const separator = url.includes("?") ? "&" : "?";
-      const newUrl = `${url}${separator}${SDK_VERSION_HEADER_NAME}=${SDK_VERSION}`;
+      const urlObj = new URL(url);
+      urlObj.searchParams.append(SDK_VERSION_HEADER_NAME, SDK_VERSION);
 
-      const res = await fetch(newUrl, {
+      const res = await fetch(urlObj, {
         signal: controller.signal,
       });
       clearTimeout(id);
