@@ -11,7 +11,7 @@ The Bucket SDK feedback UI is configured with reasonable defaults, positioning i
 These settings can be overwritten when initializing the Bucket SDK:
 
 ```javascript
-bucket.init("bucket-tracking-key", {
+bucket.init("bucket-publishable-key", {
   feedback: {
     ui: {
       position: POSITION_CONFIG, // See positioning section
@@ -51,7 +51,7 @@ The live connection for automated feedback is established once you have identifi
 You can disable automated collection in the `bucket.init()`-call:
 
 ```javascript
-bucket.init("bucket-tracking-key", {
+bucket.init("bucket-publishable-key", {
   feedback: {
     enableLiveSatisfaction: false,
   },
@@ -63,7 +63,7 @@ bucket.init("bucket-tracking-key", {
 If you are not satisfied with the default UI behavior when an automated prompt event arrives, you can can [override the global defaults](#global-feedback-configuration) or intercept and override settings at runtime like this:
 
 ```javascript
-bucket.init("bucket-tracking-key", {
+bucket.init("bucket-publishable-key", {
   feedback: {
     liveSatisfactionHandler: (promptMessage, handlers) => {
       // Pass your overrides here. Everything is optional
@@ -227,7 +227,7 @@ See [default english localization keys](./src/feedback/config/defaultTranslation
 If you know the language at page load, you can configure your translation keys while initializing the Bucket SDK:
 
 ```javascript
-bucket.init("my-tracking-key", {
+bucket.init("my-publishable-key", {
   feedback: {
     ui: {
       translations: {
@@ -273,7 +273,7 @@ When you are collecting feedback through the Bucket automation, you can intercep
 If you set the prompt question in the Bucket app to be one of your own translation keys, you can even get a translated version of the question you want to ask your customer in the feedback UI.
 
 ```javascript
-bucket.init("bucket-tracking-key", {
+bucket.init("bucket-publishable-key", {
   feedback: {
     liveSatisfactionHandler: (message, handlers) => {
       const translatedQuestion =
@@ -343,7 +343,7 @@ This is the data type you need to collect:
 }
 ```
 
-Either `score` or `comment` must be defined in order to pass validation in the Bucket tracking API.
+Either `score` or `comment` must be defined in order to pass validation in the Bucket API.
 
 ### Manual feedback collection
 
@@ -367,7 +367,7 @@ When using Live Satisfaction, the Bucket service will, when specified, send a fe
 You can intercept this behavior and open your own custom feedback collection form:
 
 ```javascript
-bucket.init("bucket-tracking-key", {
+bucket.init("bucket-publishable-key", {
   feedback: {
     liveSatisfactionHandler: async (promptMessage, handlers) => {
       // This opens your custom UI

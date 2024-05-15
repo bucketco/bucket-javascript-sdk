@@ -3,10 +3,10 @@ import { isForNode } from "is-bundling-for-browser-or-node";
 
 import type { FeedbackPosition, FeedbackTranslations } from "./feedback/types";
 import {
+  API_HOST,
   SDK_VERSION,
   SDK_VERSION_HEADER_NAME,
   SSE_REALTIME_HOST,
-  TRACKING_HOST,
 } from "./config";
 import { createDefaultFeedbackPromptHandler } from "./default-feedback-prompt-handler";
 import * as feedbackLib from "./feedback";
@@ -49,8 +49,8 @@ const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
 export default function main() {
   let debug = false;
-  let trackingKey: string | undefined = undefined;
-  let host: string = TRACKING_HOST;
+  let publishableKey: string | undefined = undefined;
+  let host: string = API_HOST;
   let sseHost: string = SSE_REALTIME_HOST;
   let sessionUserId: string | undefined = undefined;
   let persistUser: boolean = !isForNode;
@@ -66,11 +66,11 @@ export default function main() {
   log("Instance created");
 
   function getUrl() {
-    return `${host}/${trackingKey}`;
+    return `${host}/${publishableKey}`;
   }
   function checkKey() {
-    if (!trackingKey) {
-      err("Tracking key is not set, please call init() first");
+    if (!publishableKey) {
+      err("Publishable key is not set, please call init() first");
     }
   }
   function getSessionUser() {
@@ -116,16 +116,16 @@ export default function main() {
    *
    * Must be called before calling other SDK methods.
    *
-   * @param key Your Bucket tracking key
+   * @param key Your Bucket publishable key
    * @param options
    */
   function init(key: Key, options: Options = {}) {
     reset();
     if (!key) {
-      err("Tracking key was not provided");
+      err("Publishable key was not provided");
     }
 
-    trackingKey = key;
+    publishableKey = key;
 
     if (options.debug) debug = options.debug;
     if (options.host) host = options.host;
@@ -164,7 +164,7 @@ export default function main() {
       options.feedback?.liveSatisfactionHandler ??
       createDefaultFeedbackPromptHandler(options.feedback?.ui);
 
-    log(`initialized with key "${trackingKey}" and options`, options);
+    log(`initialized with key "${publishableKey}" and options`, options);
   }
 
   /**
