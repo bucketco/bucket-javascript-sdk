@@ -1,8 +1,10 @@
 name: Publish updated packages
+
 on:
   push:
     branches:
       - main
+
 jobs:
   release:
     runs-on: ubuntu-latest

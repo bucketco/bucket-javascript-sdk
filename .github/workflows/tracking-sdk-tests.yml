@@ -1,4 +1,4 @@
-name: Typescript CI
+name: "@bucket/tracking-sdk CI"
 
 on: [push]
 
