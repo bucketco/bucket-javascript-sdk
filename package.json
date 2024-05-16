@@ -9,7 +9,12 @@
   "scripts": {
     "dev": "yarn workspaces foreach --all -pt run dev",
     "build": "yarn workspaces foreach --all -pt run build",
-    "test": "yarn workspaces foreach --all -pt run test"
+    "test": "yarn workspaces foreach --all -pt run test",
+    "version": "lerna version --exact --no-git-tag-version --no-push",
+    "publish": "lerna publish from-package"
   },
-  "packageManager": "yarn@4.1.1"
+  "packageManager": "yarn@4.1.1",
+  "devDependencies": {
+    "lerna": "^8.1.3"
+  }
 }
