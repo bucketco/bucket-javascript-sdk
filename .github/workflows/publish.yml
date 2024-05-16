@@ -1,0 +1,26 @@
+name: Publish updated packages
+on:
+  push:
+    branches:
+      - main
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      # Setup .npmrc file to publish to npm
+      - uses: actions/setup-node@v3
+        with:
+          node-version-file: ".nvmrc"
+          cache: "yarn"
+          cache-dependency-path: "**/yarn.lock"
+          registry-url: "https://registry.npmjs.org"
+          scope: "@bucketco"
+      - name: Install dependencies
+        run: yarn install --immutable
+      - name: Build SDK
+        run: yarn build
+      - name: Publish
+        run: yarn publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
