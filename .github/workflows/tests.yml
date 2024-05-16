@@ -11,7 +11,9 @@ jobs:
   build-and-test:
     name: Build & Test
     runs-on: ubuntu-latest
-
+    defaults:
+      run:
+        working-directory: ./packages/tracking-sdk
     steps:
       - name: Checkout source code
         uses: actions/checkout@v3
