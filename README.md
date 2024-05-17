@@ -25,7 +25,7 @@ Other languages than Javascript/Typescript are currently not supported by an SDK
 ## Basic usage
 
 ```js
-// init the script with your Tracking Key
+// init the script with your publishable key
 bucket.init("tk123", {});
 
 // set current user
