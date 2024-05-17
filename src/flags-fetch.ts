@@ -1,5 +1,6 @@
 import fetch from "cross-fetch";
 
+import { SDK_VERSION, SDK_VERSION_HEADER_NAME } from "./config";
 import { Flags } from "./flags";
 import { FlagCache, isObject, validateFlags } from "./flags-cache";
 
@@ -78,7 +79,12 @@ export async function fetchFlags(url: string, timeoutMs: number) {
     try {
       const controller = new AbortController();
       const id = setTimeout(() => controller.abort(), timeoutMs);
-      const res = await fetch(url, {
+
+      // add SDK version to the query params
+      const urlObj = new URL(url);
+      urlObj.searchParams.append(SDK_VERSION_HEADER_NAME, SDK_VERSION);
+
+      const res = await fetch(urlObj, {
         signal: controller.signal,
       });
       clearTimeout(id);
