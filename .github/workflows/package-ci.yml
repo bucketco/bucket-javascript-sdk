@@ -1,6 +1,17 @@
-name: "@bucket/tracking-sdk CI"
+name: "@bucket/react-sdk CI"
 
-on: [push]
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        required: true
+        type: string
+      use-playwright:
+        required: true
+        type: boolean
+    secrets:
+      GITHUB_TOKEN:
+        required: true
 
 permissions:
   statuses: write
@@ -13,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./packages/tracking-sdk
+        working-directory: ${{ inputs.working-directory }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@v3
@@ -27,6 +38,7 @@ jobs:
         run: yarn install --frozen-lockfile
       - name: Install Playwright Browsers
         run: yarn playwright install --with-deps
+        if: ${{ inputs.use-playwright }}
       - id: build
         name: Build the project
         run: yarn build

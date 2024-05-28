@@ -1,0 +1,10 @@
+name: "@bucket/react-sdk CI"
+
+on: [push]
+
+jobs:
+  build-and-test:
+    uses: ./.github/workflows/package-ci.yml
+    with:
+      working-directory: ./packages/react-sdk
+      use-playwright: false
