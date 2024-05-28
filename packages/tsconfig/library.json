@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "lib": ["ESNext", "DOM"],
+    "target": "ES6",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "declaration": true,
+    "declarationDir": "./dist/types",
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "typeRoots": ["./node_modules/@types", "./types"]
+  }
+}
