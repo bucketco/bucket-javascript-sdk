@@ -20,9 +20,9 @@ jobs:
           scope: "@bucketco"
       - name: Install dependencies
         run: yarn install --immutable
-      - name: Build SDK
+      - name: Build packages
         run: yarn build
-      # - name: Publish
-      #   run: yarn publish
-      #   env:
-      #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish
+        run: yarn publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
