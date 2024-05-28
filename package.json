@@ -7,10 +7,10 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "yarn workspaces foreach --all -pt run dev",
-    "build": "yarn workspaces foreach --all -pt run build",
-    "test": "yarn workspaces foreach --all -pt run test",
-    "version": "lerna version --exact --no-git-tag-version --no-push",
+    "dev": "lerna run dev --parallel",
+    "build": "lerna run build",
+    "test:ci": "lerna run test:ci",
+    "version": "lerna version --exact --no-push",
     "publish": "lerna publish from-package"
   },
   "packageManager": "yarn@4.1.1",
