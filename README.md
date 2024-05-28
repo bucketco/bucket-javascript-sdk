@@ -1,12 +1,16 @@
-# bucket.co
+# Bucket
 
-TODO: add bucket description
+Bucket is B2B feature flagging with a built-in feedback loop that lets you roll out features based on customer satisfaction.
+
+[Learn more and get started](https://bucket.co/)
 
 ## SDKs
 
 ### Tracking SDK
 
-Find the [docs here](packages/tracking-sdk/README.md).
+Universal JS SDK for the browser and Node.js
+
+[Read the docs](packages/tracking-sdk/README.md)
 
 ## Development
 
@@ -19,4 +23,3 @@ Find the [docs here](packages/tracking-sdk/README.md).
 ### Publishing
 
 The [Github Action](.github/workflows/publish.yml) will automatically publish any versioned packages when merging to `main`
-
