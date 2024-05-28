@@ -1,0 +1,8 @@
+{
+  "extends": "@bucketco/tsconfig/library",
+  "compilerOptions": {
+    "outDir": "./dist/",
+    "jsx": "react"
+  },
+  "include": ["src", "dev"]
+}

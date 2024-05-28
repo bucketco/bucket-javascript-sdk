@@ -12,6 +12,12 @@ Universal JS SDK for the browser and Node.js
 
 [Read the docs](packages/tracking-sdk/README.md)
 
+### React SDK
+
+Client side React SDK
+
+[Read the docs](packages/react-sdk/README.md)
+
 ## Development
 
 ### Versioning
