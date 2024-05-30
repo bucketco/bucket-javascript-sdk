@@ -1,4 +1,5 @@
 import BucketSingleton from "@bucketco/tracking-sdk";
+import canonicalJSON from "canonical-json";
 import type {
   Flags,
   Options as BucketSDKOptions,
@@ -35,7 +36,7 @@ export default function Bucket({ children, sdk, ...config }: BucketProps) {
   const [flags, setFlags] = useState<Flags>({});
   const [bucket] = useState(() => sdk ?? BucketSingleton);
 
-  const contextKey = JSON.stringify(config);
+  const contextKey = canonicalJSON(config);
   useEffect(() => {
     try {
       const { publishableKey, flags: flagOptions, ...options } = config;

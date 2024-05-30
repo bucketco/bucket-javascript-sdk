@@ -22,7 +22,8 @@
     "dist"
   ],
   "dependencies": {
-    "@bucketco/tracking-sdk": "2.3.0"
+    "@bucketco/tracking-sdk": "2.3.0",
+    "canonical-json": "^0.0.4"
   },
   "peerDependencies": {
     "react": "*",

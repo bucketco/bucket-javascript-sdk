@@ -666,6 +666,7 @@ __metadata:
     "@types/react": "npm:^18.3.2"
     "@types/react-dom": "npm:^18.3.0"
     "@types/webpack": "npm:^5.28.5"
+    canonical-json: "npm:^0.0.4"
     eslint: "npm:^9.3.0"
     jsdom: "npm:^24.1.0"
     prettier: "npm:^3.2.5"
@@ -4311,6 +4312,13 @@ __metadata:
   version: 1.0.30001576
   resolution: "caniuse-lite@npm:1.0.30001576"
   checksum: 10c0/79cf666f9139c542bdf75eab76171534dc638d2f8efacd325649c8ec6be59de400f0e9d6dc02504f12125626b306c0a848fe86904c01722218b2a479be82a9c1
+  languageName: node
+  linkType: hard
+
+"canonical-json@npm:^0.0.4":
+  version: 0.0.4
+  resolution: "canonical-json@npm:0.0.4"
+  checksum: 10c0/bf130f4f6284a84860e16ef43a005544c98b8d334c128d3b3af006a586b4666b228bc2c5ef20ff9bedeaeffa45b2e862ad5e26eb6635dae7237c7c8b50f73096
   languageName: node
   linkType: hard
 
