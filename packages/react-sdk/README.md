@@ -41,14 +41,26 @@ All options which can be passed to `bucket.init` can be passed as props to the B
 
 ### `useBucket()`
 
-Returns the instance of the Bucket Tracking SDK in use. See the [Tracking SDK documentation](../tracking-sdk/README.md) for usage information.
-
-This can be used to make `track` and `feedback` calls, e.g.
+Returns the instance of the Bucket Tracking SDK in use. This can be used to make calls to Bucket, including `track` and `feedback` calls, e.g.
 
 ```ts
 const bucket = useBucket();
 
 bucket.track("sent_message", { foo: "bar" }, "john_doe", "company_id");
+```
+
+See the [Tracking SDK documentation](../tracking-sdk/README.md) for usage information.
+
+### `useFeatureFlag()`
+
+Returns the state of a given feature flag for the current context, e.g.
+
+```ts
+const joinHuddleFlag = useFeatureFlag("join-huddle");
+// {
+//   "isLoading": false,
+//   "value": true,
+// }
 ```
 
 ### `useFeatureFlags()`
@@ -58,26 +70,17 @@ Returns feature flags as an object, e.g.
 ```ts
 const featureFlags = useFeatureFlags();
 // {
-//   "join-huddle": {
-//     "key": "join-huddle",
-//     "value": true
-//   },
-//   "post-message": {
-//     "key": "post-message",
-//     "value": true
+//   "isLoading": false,
+//   "flags: {
+//     "join-huddle": {
+//       "key": "join-huddle",
+//       "value": true
+//     },
+//     "post-message": {
+//       "key": "post-message",
+//       "value": true
+//     }
 //   }
-// }
-```
-
-### `useFeatureFlag()`
-
-Returns the state of a given feature flag for the current context, e.g.
-
-```ts
-const joinHuddleFlag = useFeatureFlag("join-huddle");
-// {
-//   "key": "join-huddle",
-//   "value": true,
 // }
 ```
 
