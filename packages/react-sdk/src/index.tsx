@@ -17,12 +17,18 @@ export type BucketInstance = typeof BucketSingleton;
 
 type BucketContext = {
   bucket: BucketInstance;
-  flags: Flags;
+  flags: {
+    flags: Flags;
+    isLoading: boolean;
+  };
 };
 
 const Context = createContext<BucketContext>({
   bucket: BucketSingleton,
-  flags: {},
+  flags: {
+    flags: {},
+    isLoading: true,
+  },
 });
 
 export type BucketProps = BucketSDKOptions & {
@@ -34,6 +40,7 @@ export type BucketProps = BucketSDKOptions & {
 
 export default function Bucket({ children, sdk, ...config }: BucketProps) {
   const [flags, setFlags] = useState<Flags>({});
+  const [flagsLoading, setFlagsLoading] = useState(true);
   const [bucket] = useState(() => sdk ?? BucketSingleton);
 
   const contextKey = canonicalJSON(config);
@@ -43,15 +50,21 @@ export default function Bucket({ children, sdk, ...config }: BucketProps) {
 
       bucket.reset();
       bucket.init(publishableKey, options);
+
+      setFlagsLoading(true);
       bucket.getFeatureFlags(flagOptions).then((loadedFlags) => {
         setFlags(loadedFlags);
+        setFlagsLoading(false);
       });
     } catch (err) {
       console.error("[Bucket SDK]", err);
     }
   }, [contextKey]);
 
-  const context: BucketContext = { bucket, flags };
+  const context: BucketContext = {
+    bucket,
+    flags: { flags, isLoading: flagsLoading },
+  };
 
   return <Context.Provider children={children} value={context} />;
 }
@@ -61,9 +74,19 @@ export function useBucket() {
 }
 
 export function useFeatureFlags() {
-  return useContext<BucketContext>(Context).flags;
+  const { isLoading, flags } = useContext<BucketContext>(Context).flags;
+  return { isLoading, flags };
 }
 
 export function useFeatureFlag(key: string) {
-  return useContext<BucketContext>(Context).flags[key]?.value ?? false;
+  const flags = useContext<BucketContext>(Context).flags;
+  const flag = flags.flags[key];
+
+  if (!flags.isLoading && flag === undefined) {
+    console.error(`[Bucket SDK] The feature flag "${key}" was not found`);
+  }
+
+  const value = flag?.value ?? null;
+
+  return { isLoading: flags.isLoading, value: value };
 }
