@@ -38,7 +38,7 @@ jobs:
         if: ${{ steps.build.conclusion == 'success' }}
         with:
           name: Build & Test Report
-          path: ./junit.xml
+          path: ./packages/tracking-sdk/junit.xml
           reporter: jest-junit
       - id: prettier
         if: ${{ steps.test.conclusion == 'success' }}
