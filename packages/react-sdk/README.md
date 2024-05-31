@@ -24,6 +24,8 @@ This will initialize Bucket, fetch feature flags and start listening for Live Sa
 
 All options which can be passed to `bucket.init` can be passed as props to the Bucket higher order component.
 
+See the [Tracking SDK documentation](../tracking-sdk/README.md) for more.
+
 ```tsx
 <Bucket
   publishableKey="{YOUR_PUBLISHABLE_KEY}" // The publishable key of your app environment
