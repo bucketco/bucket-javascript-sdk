@@ -30,7 +30,7 @@ All options which can be passed to `bucket.init` can be passed as props to the B
   debug={false} // Enable debug mode to log info and errors
   persistUser={true} // See the Tracking SDK documentation under "Persisting Users"
   host="https://tracking.bucket.co" // Configure the host Bucket calls are made to
-  sseHost="https://livemessaging.bucket.co" // Configure the host Bucket sse calls are made to
+  sseHost="https://livemessaging.bucket.co" // Configure the host Bucket SSE calls are made to
   feedback={{
     // See feedback options here: https://github.com/bucketco/bucket-tracking-sdk/blob/main/packages/tracking-sdk/FEEDBACK.md#global-feedback-configuration
   }}
