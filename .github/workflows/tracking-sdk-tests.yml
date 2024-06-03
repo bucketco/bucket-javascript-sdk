@@ -1,4 +1,4 @@
-name: Typescript CI
+name: "@bucket/tracking-sdk CI"
 
 on: [push]
 
@@ -11,7 +11,9 @@ jobs:
   build-and-test:
     name: Build & Test
     runs-on: ubuntu-latest
-
+    defaults:
+      run:
+        working-directory: ./packages/tracking-sdk
     steps:
       - name: Checkout source code
         uses: actions/checkout@v3
@@ -36,7 +38,7 @@ jobs:
         if: ${{ steps.build.conclusion == 'success' }}
         with:
           name: Build & Test Report
-          path: ./junit.xml
+          path: ./packages/tracking-sdk/junit.xml
           reporter: jest-junit
       - id: prettier
         if: ${{ steps.test.conclusion == 'success' }}

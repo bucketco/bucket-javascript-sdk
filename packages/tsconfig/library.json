@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "strict": true,
-    "outDir": "./dist/",
     "lib": ["ESNext", "DOM"],
     "target": "ES6",
     "module": "commonjs",
@@ -14,10 +13,6 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
-    "typeRoots": ["./node_modules/@types", "./types"],
-    "jsx": "react",
-    "jsxFactory": "h",
-    "jsxFragmentFactory": "Fragment"
-  },
-  "include": ["src", "dev"]
+    "typeRoots": ["./node_modules/@types", "./types"]
+  }
 }

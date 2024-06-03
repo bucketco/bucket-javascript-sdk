@@ -10,10 +10,6 @@ const prettierConfig = require("eslint-config-prettier");
 
 module.exports = [
   {
-    // Blacklisted Folders, including **/node_modules/ and .git/
-    ignores: ["dist/", "example/"],
-  },
-  {
     files: [
       "**/*.js",
       "**/*.cjs",
