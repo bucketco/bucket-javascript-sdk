@@ -1,4 +1,4 @@
-name: "@bucket/react-sdk CI"
+name: "@bucket/tracking-sdk CI"
 
 on: [push]
 
