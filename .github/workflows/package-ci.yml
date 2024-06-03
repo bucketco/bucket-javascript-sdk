@@ -1,19 +1,11 @@
-name: "@bucket/react-sdk CI"
-
-on:
-  workflow_call:
-    inputs:
-      working-directory:
-        required: true
-        type: string
-      use-playwright:
-        required: true
-        type: boolean
+name: "Package CI"
 
 permissions:
   statuses: write
   checks: write
   contents: read
+
+on: [push]
 
 jobs:
   build-and-test:
@@ -32,36 +24,32 @@ jobs:
         run: yarn install --frozen-lockfile
       - name: Install Playwright Browsers
         run: yarn playwright install --with-deps
-        if: ${{ inputs.use-playwright }}
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ./packages/tracking-sdk
       - id: build
         name: Build the project
         run: yarn build
       - id: test
         name: Test the project
         run: yarn test:ci
-        working-directory: ${{ inputs.working-directory }}
       - name: Report test results
         uses: dorny/test-reporter@v1.6.0
         if: ${{ steps.build.conclusion == 'success' }}
         with:
           name: Build & Test Report
-          path: "${{ inputs.working-directory }}/junit.xml"
+          path: ./packages/*/junit.xml
           reporter: jest-junit
       - id: prettier
         if: ${{ steps.test.conclusion == 'success' }}
         name: Check styling
         run: yarn prettier
-        working-directory: ${{ inputs.working-directory }}
       - id: lint
         if: ${{ steps.prettier.conclusion == 'success' }}
         name: Check for linting errors
         run: yarn lint:ci
-        working-directory: ${{ inputs.working-directory }}
       - name: Annotate from ESLint report
         if: ${{ steps.prettier.conclusion == 'success' }}
         uses: ataylorme/eslint-annotate-action@v2
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
-          report-json: "${{ inputs.working-directory }}/eslint-report.json"
+          report-json: ./packages/*/eslint-report.json
           fail-on-warning: true

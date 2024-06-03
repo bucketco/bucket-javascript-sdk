@@ -10,6 +10,8 @@
     "dev": "lerna run dev --parallel",
     "build": "lerna run build --stream",
     "test:ci": "lerna run test:ci --stream",
+    "prettier": "lerna run prettier --stream",
+    "lint": "lerna run lint --stream",
     "version": "lerna version --exact --no-push",
     "publish": "lerna publish from-package"
   },
