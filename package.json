@@ -8,8 +8,8 @@
   ],
   "scripts": {
     "dev": "lerna run dev --parallel",
-    "build": "lerna run build",
-    "test:ci": "lerna run test:ci",
+    "build": "lerna run build --stream",
+    "test:ci": "lerna run test:ci --stream",
     "version": "lerna version --exact --no-push",
     "publish": "lerna publish from-package"
   },
