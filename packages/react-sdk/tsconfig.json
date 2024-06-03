@@ -2,7 +2,9 @@
   "extends": "@bucketco/tsconfig/library",
   "compilerOptions": {
     "outDir": "./dist/",
+    "declarationDir": "./dist/types",
     "jsx": "react"
   },
-  "include": ["src", "dev"]
+  "include": ["src", "dev"],
+  "typeRoots": ["./node_modules/@types"]
 }
