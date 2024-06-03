@@ -52,7 +52,6 @@ function Demos() {
 }
 
 export function App() {
-  // TODO: how to share?
   return (
     <Bucket
       publishableKey="trdwA10Aoant6IaK3Qt45NMI"
@@ -63,11 +62,11 @@ export function App() {
       flags={{
         context: {
           user: {
-            id: "richard",
-            email: "richard@bucket.co",
+            id: "demo-user",
+            email: "demo-user@example.com",
           },
           company: {
-            id: "team-apples",
+            id: "demo-company",
           },
         },
       }}
