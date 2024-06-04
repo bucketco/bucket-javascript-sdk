@@ -77,7 +77,7 @@ describe("useFeatureFlags", () => {
     const publishableKey = Math.random().toString();
     const flagOptions = { context: {} };
 
-    const { result } = renderHook(() => useFeatureFlags(), {
+    const { result, unmount } = renderHook(() => useFeatureFlags(), {
       wrapper: ({ children }) => (
         <Bucket
           sdk={sdk}
@@ -89,6 +89,7 @@ describe("useFeatureFlags", () => {
     });
 
     expect(result.current).toMatchObject({ flags: {}, isLoading: true });
+    unmount();
   });
 
   test("returns the feature flags in context", async () => {
@@ -129,7 +130,7 @@ describe("useFeatureFlag", () => {
     const publishableKey = Math.random().toString();
     const flagOptions = { context: {} };
 
-    const { result } = renderHook(() => useFeatureFlag("test-flag"), {
+    const { result, unmount } = renderHook(() => useFeatureFlag("test-flag"), {
       wrapper: ({ children }) => (
         <Bucket
           sdk={sdk}
@@ -142,6 +143,8 @@ describe("useFeatureFlag", () => {
 
     expect(result.current).toEqual({ isLoading: true, value: null });
     expect(console.error).not.toHaveBeenCalled();
+
+    unmount();
   });
 
   test.each([
@@ -150,10 +153,7 @@ describe("useFeatureFlag", () => {
   ])("returns the feature flag from context", async ({ key, value }) => {
     console.error = vi.fn();
 
-    const flags = {
-      abc: { value: true, key: "abc" },
-      def: { value: false, key: "abc" },
-    };
+    const flags = { [key]: { key, value } };
 
     const sdk = createSpySDK();
     sdk.getFeatureFlags = vi.fn(async () => flags);
