@@ -76,15 +76,57 @@ export default function Bucket({ children, sdk, ...config }: BucketProps) {
   return <Context.Provider children={children} value={context} />;
 }
 
+/**
+ * Returns the instance of the Bucket Tracking SDK in use. This can be used to make calls to Bucket, including `track` and `feedback` calls, e.g.
+ *
+ * ```ts
+ * const bucket = useBucket();
+ *
+ * bucket.track("sent_message", { foo: "bar" }, "john_doe", "company_id");
+ * ```
+ *
+ * See the [Tracking SDK documentation](https://github.com/bucketco/bucket-tracking-sdk/blob/main/packages/tracking-sdk/README.md) for usage information.
+ */
 export function useBucket() {
   return useContext<BucketContext>(Context).bucket;
 }
 
+/**
+ * Returns feature flags as an object, e.g.
+ *
+ * ```ts
+ * const featureFlags = useFeatureFlags();
+ * // {
+ * //   "isLoading": false,
+ * //   "flags: {
+ * //     "join-huddle": {
+ * //       "key": "join-huddle",
+ * //       "value": true
+ * //     },
+ * //     "post-message": {
+ * //       "key": "post-message",
+ * //       "value": true
+ * //     }
+ * //   }
+ * // }
+ * ```
+ */
 export function useFeatureFlags() {
   const { isLoading, flags } = useContext<BucketContext>(Context).flags;
   return { isLoading, flags };
 }
 
+/**
+ * Returns the state of a given feature flag for the current context, e.g.
+ *
+ * ```ts
+ * const joinHuddleFlag = useFeatureFlag("join-huddle");
+ * // {
+ * //   "isLoading": false,
+ * //   "value": true,
+ * // }
+ * ```
+ */
 export function useFeatureFlag(key: string) {
   const flags = useContext<BucketContext>(Context).flags;
   const flag = flags.flags[key];
