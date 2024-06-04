@@ -25,7 +25,6 @@ const config: Configuration[] = [
       library: {
         name: "bucket-react-sdk",
         type: "umd",
-        export: "default",
       },
     },
   },
