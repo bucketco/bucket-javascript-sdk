@@ -9,4 +9,4 @@ export type FeatureFlagsOptions = {
   fallbackFlags?: Flag[];
   timeoutMs?: number;
   staleWhileRevalidate?: boolean;
-}
+};
