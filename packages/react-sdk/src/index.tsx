@@ -1,17 +1,18 @@
-import BucketSingleton from "@bucketco/tracking-sdk";
-import canonicalJSON from "canonical-json";
-import type {
-  Flags,
-  Options as BucketSDKOptions,
-  FeatureFlagsOptions,
-} from "@bucketco/tracking-sdk";
 import React, {
-  ReactNode,
   createContext,
+  ReactNode,
   useContext,
   useEffect,
   useState,
 } from "react";
+import canonicalJSON from "canonical-json";
+
+import type {
+  FeatureFlagsOptions,
+  Flags,
+  Options as BucketSDKOptions,
+} from "@bucketco/tracking-sdk";
+import BucketSingleton from "@bucketco/tracking-sdk";
 
 export type BucketInstance = typeof BucketSingleton;
 
@@ -52,12 +53,18 @@ export default function Bucket({ children, sdk, ...config }: BucketProps) {
       bucket.init(publishableKey, options);
 
       setFlagsLoading(true);
-      bucket.getFeatureFlags(flagOptions).then((loadedFlags) => {
-        setFlags(loadedFlags);
-        setFlagsLoading(false);
-      });
+
+      bucket
+        .getFeatureFlags(flagOptions)
+        .then((loadedFlags) => {
+          setFlags(loadedFlags);
+          setFlagsLoading(false);
+        })
+        .catch((err) => {
+          console.error("[Bucket SDK] Error fetching flags:", err);
+        });
     } catch (err) {
-      console.error("[Bucket SDK]", err);
+      console.error("[Bucket SDK] Unknown error:", err);
     }
   }, [contextKey]);
 

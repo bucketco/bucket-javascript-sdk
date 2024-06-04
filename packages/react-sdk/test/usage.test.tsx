@@ -1,6 +1,7 @@
-import { describe, expect, test, vi, afterEach } from "vitest";
-import { render, renderHook, waitFor } from "@testing-library/react";
 import React from "react";
+import { render, renderHook, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, test, vi } from "vitest";
+
 import Bucket, {
   BucketInstance,
   useBucket,
@@ -212,7 +213,7 @@ describe("useFeatureFlag", () => {
 
 function createSpySDK(): BucketInstance {
   return {
-    getFeatureFlags: vi.fn(async () => {}),
+    getFeatureFlags: vi.fn(async () => ({})),
     init: vi.fn(),
     reset: vi.fn(),
   } as any as BucketInstance;
