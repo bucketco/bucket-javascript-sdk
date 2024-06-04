@@ -18,6 +18,7 @@ const config: Configuration[] = [
       extensions: [".tsx", ".ts", ".js"],
     },
     target: "web",
+    externals: ["react", "react-dom"],
     output: {
       path: path.resolve(__dirname, "dist"),
       filename: "bucket-react-sdk.browser.js",
