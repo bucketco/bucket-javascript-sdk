@@ -57,8 +57,8 @@ export function flattenJSON(data: any) {
     if (Object(cur) !== cur) {
       result[prop] = cur;
     } else if (Array.isArray(cur)) {
-      let l;
-      for (let i = 0, l = cur.length; i < l; i++)
+      const l = cur.length;
+      for (let i = 0; i < l; i++)
         recurse(cur[i], prop ? prop + "." + i : "" + i);
       if (l == 0) result[prop] = [];
     } else {
@@ -102,7 +102,7 @@ export async function evaluateFlag({
   const missingContextFieldsSet = new Set<string>();
   for (const rule of flag.rules) {
     rule.contextFilter
-      ?.map((rule) => rule.field)
+      ?.map((r) => r.field)
       .filter((field) => !(field in flatContext))
       .forEach((field) => missingContextFieldsSet.add(field));
 
