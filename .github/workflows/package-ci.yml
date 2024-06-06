@@ -1,19 +1,16 @@
-name: "@bucket/tracking-sdk CI"
-
-on: [push]
+name: "Package CI"
 
 permissions:
   statuses: write
   checks: write
   contents: read
 
+on: [push]
+
 jobs:
   build-and-test:
     name: Build & Test
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./packages/tracking-sdk
     steps:
       - name: Checkout source code
         uses: actions/checkout@v3
@@ -27,6 +24,7 @@ jobs:
         run: yarn install --frozen-lockfile
       - name: Install Playwright Browsers
         run: yarn playwright install --with-deps
+        working-directory: ./packages/tracking-sdk
       - id: build
         name: Build the project
         run: yarn build
@@ -38,7 +36,7 @@ jobs:
         if: ${{ steps.build.conclusion == 'success' }}
         with:
           name: Build & Test Report
-          path: ./packages/tracking-sdk/junit.xml
+          path: ./packages/*/junit.xml
           reporter: jest-junit
       - id: prettier
         if: ${{ steps.test.conclusion == 'success' }}
@@ -53,5 +51,5 @@ jobs:
         uses: ataylorme/eslint-annotate-action@v2
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
-          report-json: "eslint-report.json"
+          report-json: ./packages/*/eslint-report.json
           fail-on-warning: true

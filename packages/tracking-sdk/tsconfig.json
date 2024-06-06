@@ -4,7 +4,9 @@
     "outDir": "./dist/",
     "jsx": "react",
     "jsxFactory": "h",
-    "jsxFragmentFactory": "Fragment"
+    "jsxFragmentFactory": "Fragment",
+    "declarationDir": "./dist/types"
   },
-  "include": ["src", "dev"]
+  "include": ["src", "dev"],
+  "typeRoots": ["./node_modules/@types", "./types"]
 }

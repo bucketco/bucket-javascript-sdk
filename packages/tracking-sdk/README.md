@@ -47,7 +47,7 @@ Supply these to the `init` call (2nd argument)
 ```ts
 {
   debug?: false, // enable debug mode to log all info and errors
-  persistUser?: true | false // default value depends on environment, see below under "persisting users"
+  persistUser?: true | false // default value depends on environment, see below under "Persisting users"
   host?: "https://tracking.bucket.co",
   sseHost?: "https://livemessaging.bucket.co"
 }
@@ -178,4 +178,4 @@ If you are including the Bucket tracking SDK with a `<script>`-tag from `jsdeliv
 
 MIT License
 
-Copyright (c) 2023 Bucket ApS
+Copyright (c) 2024 Bucket ApS

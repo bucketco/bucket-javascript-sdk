@@ -10,7 +10,7 @@ import {
 } from "./config";
 import { createDefaultFeedbackPromptHandler } from "./default-feedback-prompt-handler";
 import * as feedbackLib from "./feedback";
-import { Flag, Flags } from "./flags";
+import { FeatureFlagsOptions, Flags } from "./flags";
 import { getFlags, mergeDeep } from "./flags-fetch";
 import { getAuthToken } from "./prompt-storage";
 import {
@@ -583,12 +583,7 @@ export default function main() {
     fallbackFlags = [],
     timeoutMs,
     staleWhileRevalidate = true,
-  }: {
-    context: Record<string, any>;
-    fallbackFlags?: Flag[];
-    timeoutMs?: number;
-    staleWhileRevalidate?: boolean;
-  }): Promise<Flags> {
+  }: FeatureFlagsOptions): Promise<Flags> {
     const baseContext = {
       user: { id: sessionUserId },
     };

@@ -1,6 +1,7 @@
 import main from "./main";
 
-export type { Flags } from "./flags";
+export type { FeatureFlagsOptions, Flag, Flags } from "./flags";
+export type { Options } from "./types";
 
 let instance: ReturnType<typeof main> | null = null;
 
