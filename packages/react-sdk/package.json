@@ -1,6 +1,6 @@
 {
   "name": "@bucketco/react-sdk",
-  "version": "0.0.1",
+  "version": "1.0.0-alpha.0",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -24,7 +24,7 @@
   "main": "./dist/bucket-react-sdk.browser.js",
   "types": "./dist/types/src/index.d.ts",
   "dependencies": {
-    "@bucketco/tracking-sdk": "2.3.0",
+    "@bucketco/tracking-sdk": "2.3.1",
     "canonical-json": "^0.0.4"
   },
   "peerDependencies": {
@@ -32,8 +32,8 @@
     "react-dom": "*"
   },
   "devDependencies": {
-    "@bucketco/eslint-config": "0.0.1",
-    "@bucketco/tsconfig": "0.0.1",
+    "@bucketco/eslint-config": "0.0.2",
+    "@bucketco/tsconfig": "0.0.2",
     "@testing-library/react": "^15.0.7",
     "@types/jsdom": "^21.1.6",
     "@types/node": "^20.14.0",
