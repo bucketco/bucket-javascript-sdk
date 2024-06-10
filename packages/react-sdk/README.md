@@ -17,7 +17,17 @@ Wrap your application with the `Bucket` higher order component.
 This will initialize Bucket, fetch feature flags and start listening for Live Satisfaction events.
 
 ```tsx
-<Bucket publishableKey="{YOUR_PUBLISHABLE_KEY}">{/* ... */}</Bucket>
+<Bucket
+  publishableKey="{YOUR_PUBLISHABLE_KEY}"
+  context={{
+    // The context should take the form of { user: { id }, company: { id } }
+    // plus anything additional you want to be able to evaluate flags against.
+    user: { id: "john_doe" },
+    company: { id: "acme_inc" },
+  }}
+>
+  {/* ... */}
+</Bucket>
 ```
 
 ### Props
