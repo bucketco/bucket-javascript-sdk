@@ -1,6 +1,6 @@
 {
   "name": "@bucketco/tracking-sdk",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -28,8 +28,8 @@
   "types": "./dist/types/src/index.d.ts",
   "devDependencies": {
     "@babel/core": "^7.23.7",
-    "@bucketco/eslint-config": "0.0.1",
-    "@bucketco/tsconfig": "0.0.1",
+    "@bucketco/eslint-config": "0.0.2",
+    "@bucketco/tsconfig": "0.0.2",
     "@playwright/test": "^1.40.1",
     "@preact/preset-vite": "^2.8.1",
     "@types/js-cookie": "^3.0.6",
