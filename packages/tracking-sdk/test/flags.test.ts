@@ -141,7 +141,7 @@ describe("getFlags unit tests", () => {
         flags: {
           featureB: { value: true, key: "featureB" },
         },
-      }
+      };
 
       expect(vi.mocked(fetch).mock.calls.length).toBe(0);
 
@@ -191,7 +191,7 @@ describe("getFlags unit tests", () => {
     test("when stale cache is failed response", async () => {
       const response = {
         success: false,
-      }
+      };
 
       expect(vi.mocked(fetch).mock.calls.length).toBe(0);
 
@@ -234,7 +234,7 @@ describe("getFlags unit tests", () => {
 
       expect(b).toEqual({
         featureB: { value: true, key: "featureB" },
-      })
+      });
 
       // new fetch was fired
       expect(vi.mocked(fetch).mock.calls.length).toBe(2);

@@ -100,7 +100,7 @@ export async function fetchFlags(url: string, timeoutMs: number) {
       if (success) {
         cache.set(url, success, flags);
       } else {
-        const current = cache.get(url)
+        const current = cache.get(url);
         if (current) {
           // if there is a previous version, extend it's expireAt time
           cache.set(url, current.success, current.flags);
