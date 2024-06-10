@@ -97,9 +97,20 @@ export async function fetchFlags(url: string, timeoutMs: number) {
     } catch (e) {
       console.error("fetching flags: ", e);
     } finally {
-      // we cache even if the request failed to avoid having the UI
-      // wait and spam the API
-      cache.set(url, success, flags);
+      if (success) {
+        cache.set(url, success, flags);
+      } else {
+        const current = cache.get(url)
+        if (current) {
+          // if there is a previous version, extend it's expireAt time
+          cache.set(url, current.success, current.flags);
+        } else {
+          // otherwise cache if the request failed and there is no previous version to extend
+          // to avoid having the UI wait and spam the API
+          cache.set(url, false, flags);
+        }
+      }
+
       delete dedupeFetch[url];
     }
     return flags;
@@ -145,9 +156,11 @@ export async function getFlags({
   const params = new URLSearchParams(flattenedContext);
   // sort the params to ensure that the URL is the same for the same context
   params.sort();
+
   const url = `${apiBaseUrl}/flags/evaluate?` + params.toString();
   const cachedItem = cache.get(url);
-  if (cachedItem) {
+
+  if (cachedItem && cachedItem.success) {
     if (!cachedItem.stale) {
       return cachedItem.flags;
     }
@@ -161,6 +174,7 @@ export async function getFlags({
       return cachedItem.flags;
     }
   }
-  // if not staleWhileRevalidate or cached failure and stale, refetch synchronously
+
+  // if not cached, OR stale without staleWhileRevalidate, OR a cached failure, refetch synchronously
   return fetchFlags(url, timeoutMs);
 }
