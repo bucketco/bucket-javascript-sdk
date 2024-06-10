@@ -96,6 +96,31 @@ If you are not using the Bucket SDK, you can still submit feedback using the HTT
 
 See details in [Feedback HTTP API](https://docs.bucket.co/reference/http-tracking-api#feedback)
 
+### Feature Flags
+
+Bucket can determine which feature flags are active for a given context.
+
+The context should take the form of `{ user: { id }, company: { id } }` plus anything additional you want to be able to evaluate flags against. In the browser, if a `user` call has been made the `user.id` will be used automatically and merged with anything provided in the `context` argument.
+
+```ts
+const flags = await bucket.getFeatureFlags({
+  context: {
+    user: { id: "user_123" },
+    company: { id: "company_123" },
+  },
+});
+// {
+//   "join-huddle": {
+//     "key": "join-huddle",
+//     "value": true
+//   },
+//   "post-message": {
+//     "key": "post-message",
+//     "value": true
+//   }
+// }
+```
+
 ### Zero PII
 
 The Bucket SDK doesn't collect any metadata and HTTP IP addresses are _not_ being stored.
