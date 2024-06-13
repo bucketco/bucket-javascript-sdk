@@ -20,7 +20,7 @@
     "dist"
   ],
   "main": "./dist/index.js",
-  "types": "./dist/types/src/index.d.ts",
+  "types": "./dist/index.d.ts",
   "devDependencies": {
     "@bucketco/eslint-config": "0.0.1",
     "@bucketco/tsconfig": "0.0.1",
