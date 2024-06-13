@@ -1070,11 +1070,13 @@ __metadata:
     "@bucketco/tracking-sdk": "npm:2.3.0"
     "@bucketco/tsconfig": "npm:0.0.1"
     "@types/jest": "npm:^29.5.12"
+    "@types/nock": "npm:^11.1.0"
     "@types/node": "npm:^20.11.0"
     cross-fetch: "npm:^4.0.0"
     eslint: "npm:^8.56.0"
     jest: "npm:^29.7.0"
     jest-junit: "npm:^16.0.0"
+    nock: "npm:^13.5.4"
     prettier: "npm:^3.1.1"
     ts-jest: "npm:^29.1.4"
     ts-node: "npm:^10.9.2"
@@ -3444,6 +3446,15 @@ __metadata:
   version: 1.2.5
   resolution: "@types/minimist@npm:1.2.5"
   checksum: 10c0/3f791258d8e99a1d7d0ca2bda1ca6ea5a94e5e7b8fc6cde84dd79b0552da6fb68ade750f0e17718f6587783c24254bbca0357648dd59dc3812c150305cabdc46
+  languageName: node
+  linkType: hard
+
+"@types/nock@npm:^11.1.0":
+  version: 11.1.0
+  resolution: "@types/nock@npm:11.1.0"
+  dependencies:
+    nock: "npm:*"
+  checksum: 10c0/d13596983b909b86c03d031220a478a4a4759a006586c02d2b6bbb7751386df04026223ccbe66289d0d4edaf5b66c7a401c62999a5e4ec3c2a242f5ec1a0433b
   languageName: node
   linkType: hard
 
@@ -10199,6 +10210,17 @@ __metadata:
   version: 2.6.2
   resolution: "neo-async@npm:2.6.2"
   checksum: 10c0/c2f5a604a54a8ec5438a342e1f356dff4bc33ccccdb6dc668d94fe8e5eccfc9d2c2eea6064b0967a767ba63b33763f51ccf2cd2441b461a7322656c1f06b3f5d
+  languageName: node
+  linkType: hard
+
+"nock@npm:*, nock@npm:^13.5.4":
+  version: 13.5.4
+  resolution: "nock@npm:13.5.4"
+  dependencies:
+    debug: "npm:^4.1.0"
+    json-stringify-safe: "npm:^5.0.1"
+    propagate: "npm:^2.0.0"
+  checksum: 10c0/9ca47d9d7e4b1f4adf871d7ca12722f8ef1dc7d2b9610b2568f5d9264eae9f424baa24fd9d91da9920b360d641b4243e89de198bd22c061813254a99cc6252af
   languageName: node
   linkType: hard
 

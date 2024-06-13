@@ -1,81 +1,131 @@
-import fetch from "cross-fetch";
-import bucket, { Options } from "@bucketco/tracking-sdk";
-import { FlagData, evaluateFlag } from "@bucketco/flag-evaluation";
+import { evaluateFlag } from "@bucketco/flag-evaluation";
+import { Flag, Flags } from "@bucketco/tracking-sdk";
+import {
+  Context,
+  TrackedEvent,
+  Feedback,
+  FlagContext,
+  FlagConfiguration,
+} from "./types";
 
-import { version } from "../package.json";
-import { Feedback } from "@bucketco/tracking-sdk/dist/types/src/types"; // TODO: fix import
-
-type Key = string;
-type FlagConfiguration = {
-  key: string;
-  flag: FlagData;
+export type BucketOptions = {
+  publishableKey: string;
+  secretKey: string;
+  apiHost?: string;
+  pollInterval?: number;
+  evaluator?: FlagEvaluator; // TODO: always make user construct this themselves?
 };
 
-type Context = {
-  active?: boolean;
+const DEFAULT_OPTIONS: Required<
+  Omit<BucketOptions, "publishableKey" | "secretKey" | "evaluator">
+> = {
+  apiHost: "https://ingest.bucket.co",
+  pollInterval: 10 * 60 * 1000,
 };
 
-export default {
-  /**
-   * Initialize the Bucket SDK.
-   *
-   * Must be called before calling other SDK methods.
-   *
-   * @param key Your Bucket publishable key
-   * @param options
-   */
-  init: (key: Key, options: Options = {}) => bucket.init(key, options),
-  version: version,
-  /**
-   * Track an event in Bucket.
-   *
-   * @param eventName The name of the event
-   * @param attributes Any attributes you want to attach to the event
-   * @param options.userId The ID you use to identify the current user
-   * @param options.companyId The ID you use to identify the current user's company
-   * @param options.context
-   */
-  track: (
+export interface FlagEvaluator {
+  getFlags(context: Record<string, unknown>): Promise<Flags>;
+  getFlag(key: string, context: Record<string, unknown>): Promise<Flag | null>;
+}
+
+export default class Bucket {
+  private options: Required<Omit<BucketOptions, "evaluator">>; // TODO: clean up types
+  private evaluator: FlagEvaluator;
+
+  // TODO: should we use secret key only?
+  constructor(options: BucketOptions) {
+    this.options = Object.assign({}, DEFAULT_OPTIONS, options);
+    this.evaluator =
+      options.evaluator ??
+      new LocalFlagEvaluator({
+        secretKey: this.options.secretKey,
+        apiHost: this.options.apiHost,
+        pollInterval: this.options.pollInterval,
+      });
+  }
+
+  async track(
     eventName: string,
-    attributes: Record<string, any> | null,
     options: {
       userId: string;
       companyId: string;
+      attributes?: Record<string, any>;
       context?: Context;
     },
-  ) =>
-    bucket.track(
-      eventName,
-      attributes,
-      options.userId,
-      options.companyId,
-      options.context,
-    ),
-  /**
-   * Submit user feedback to Bucket. Must include either `score` or `comment`, or both.
-   *
-   * @param options
-   * @returns
-   */
-  feedback: (feedback: Feedback) => bucket.feedback(feedback),
-};
+  ) {
+    if (!eventName) {
+      throw new Error("'eventName' must be provided");
+    }
 
-// TODO: should this be exported, or a key on the `bucket` default export?
-export class Evaluator {
+    if (!options.userId || !options.companyId) {
+      throw new Error("'userId' and 'companyId' must be provided");
+    }
+
+    const payload: TrackedEvent = {
+      event: eventName,
+      ...options,
+    };
+
+    const url = new URL("/event", this.options.apiHost);
+    const res = await fetch(url, {
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    return res.json(); // TODO: improve?
+  }
+
+  async feedback(feedback: Feedback) {
+    if (!feedback.featureId || !feedback.userId || !feedback.companyId) {
+      throw new Error("'featureId', 'userId' and 'companyId' must be provided");
+    }
+
+    if (!feedback.score && !feedback.comment) {
+      throw new Error("Either 'score' or 'comment' must be provided");
+    }
+
+    const payload = { ...feedback, source: "sdk" }; // TODO: node-sdk?
+
+    const url = new URL("/feedback", this.options.apiHost);
+    const res = await fetch(url, {
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    return res.json(); // TODO: improve?
+  }
+
+  async getFeatureFlags(context: FlagContext) {
+    return this.evaluator.getFlags(context);
+  }
+
+  async getFeatureFlag(key: string, context: FlagContext) {
+    return this.evaluator.getFlag(key, context);
+  }
+}
+
+export class LocalFlagEvaluator implements FlagEvaluator {
+  private flagConfigurations: FlagConfiguration[] = [];
+  private readyPromise: Promise<boolean>;
+
   constructor(
     private options: {
-      secretKey: string; // TODO: accept via bucket.init call instead?
-      appId: string; // TODO: needed or secret key enough?
-      envId: string; // TODO: needed or secret key enough?
+      secretKey: string;
+      apiHost: string;
+      pollInterval: number;
     },
-  ) {}
+  ) {
+    this.readyPromise = new Promise(async (resolve) => {
+      await this.loadFlagConfigurations();
+      resolve(true);
+    });
+  }
 
-  async getFlags(context: Record<string, unknown>) {
-    // TODO: consider flag events
+  async getFlags(context: FlagContext) {
+    await this.readyPromise;
 
-    const configurations = await this.flagConfigurations();
     const results = await Promise.all(
-      configurations.map(async (configuration) => {
+      this.flagConfigurations.map(async (configuration) => {
         return await evaluateFlag({ context, flag: configuration.flag });
       }),
     );
@@ -85,56 +135,35 @@ export class Evaluator {
     }, {});
   }
 
-  async getFlag(context: Record<string, unknown>, key: string) {
-    const configurations = await this.flagConfigurations();
-    const configuration = configurations.find((c) => c.key === key);
+  async getFlag(key: string, context: FlagContext) {
+    await this.readyPromise;
+
+    const configuration = this.flagConfigurations.find((c) => c.key === key);
     if (!configuration) {
       // TODO: what?
+      console.error(`Flag '${key}' does not exist, returning null`);
       return null;
     }
 
     return await evaluateFlag({ context, flag: configuration.flag });
   }
 
-  private async flagConfigurations(): Promise<FlagConfiguration[]> {
-    // TODO: cache
+  private async poll() {
+    await this.loadFlagConfigurations();
+    setTimeout(() => {
+      this.poll();
+    }, this.options.pollInterval);
+  }
 
-    const res = await fetch("https://in.bucket.co/flag-configurations", {
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        secretKey: this.options.secretKey,
-        appId: this.options.appId,
-        envId: this.options.envId,
-      }),
+  private async loadFlagConfigurations() {
+    const url = new URL("/flag-configurations", this.options.apiHost);
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${this.options.secretKey}`,
+        "Content-Type": "application/json",
+      },
     });
 
-    return await res.json();
+    this.flagConfigurations = await res.json();
   }
 }
-
-// // TODO: document express middleware
-// // TODO: get context from here?
-// function bucket(evaluator: Evaluator) {
-//   return function bucketMiddleware(req: any, _res: any, next: any) {
-//     req.locals.__bucket = { evaluator };
-//     next();
-//   };
-// }
-
-// function getFlags(req: any) {
-//   const evaluator = req.locals?.__bucket?.evaluator;
-//   if (evaluator === undefined) {
-//     console.error(""); // how best to handle
-//   }
-
-//   return evaluator.getFlags();
-// }
-
-// function getFlag(req: any, key: string) {
-//   const evaluator = req.locals?.__bucket?.evaluator;
-//   if (evaluator === undefined) {
-//     console.error(""); // how best to handle
-//   }
-
-//   return evaluator.getFlag(key);
-// }
