@@ -1,13 +1,64 @@
 import fetch from "cross-fetch";
-import bucket from "@bucketco/tracking-sdk";
+import bucket, { Options } from "@bucketco/tracking-sdk";
 import { FlagData, evaluateFlag } from "@bucketco/flag-evaluation";
 
+import { version } from "../package.json";
+import { Feedback } from "@bucketco/tracking-sdk/dist/types/src/types"; // TODO: fix import
+
+type Key = string;
 type FlagConfiguration = {
   key: string;
   flag: FlagData;
 };
 
-export default bucket;
+type Context = {
+  active?: boolean;
+};
+
+export default {
+  /**
+   * Initialize the Bucket SDK.
+   *
+   * Must be called before calling other SDK methods.
+   *
+   * @param key Your Bucket publishable key
+   * @param options
+   */
+  init: (key: Key, options: Options = {}) => bucket.init(key, options),
+  version: version,
+  /**
+   * Track an event in Bucket.
+   *
+   * @param eventName The name of the event
+   * @param attributes Any attributes you want to attach to the event
+   * @param options.userId The ID you use to identify the current user
+   * @param options.companyId The ID you use to identify the current user's company
+   * @param options.context
+   */
+  track: (
+    eventName: string,
+    attributes: Record<string, any> | null,
+    options: {
+      userId: string;
+      companyId: string;
+      context?: Context;
+    },
+  ) =>
+    bucket.track(
+      eventName,
+      attributes,
+      options.userId,
+      options.companyId,
+      options.context,
+    ),
+  /**
+   * Submit user feedback to Bucket. Must include either `score` or `comment`, or both.
+   *
+   * @param options
+   * @returns
+   */
+  feedback: (feedback: Feedback) => bucket.feedback(feedback),
+};
 
 // TODO: should this be exported, or a key on the `bucket` default export?
 export class Evaluator {
