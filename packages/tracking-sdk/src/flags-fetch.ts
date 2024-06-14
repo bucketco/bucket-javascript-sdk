@@ -95,7 +95,7 @@ export async function fetchFlags(url: string, timeoutMs: number) {
       flags = typeRes.flags;
       success = true;
     } catch (e) {
-      console.error("fetching flags: ", e);
+      console.error("[Bucket] error fetching flags: ", e);
     } finally {
       if (success) {
         cache.set(url, success, flags);
