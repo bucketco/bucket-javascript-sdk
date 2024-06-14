@@ -33,7 +33,6 @@ jobs:
         run: yarn test:ci
       - name: Report test results
         uses: dorny/test-reporter@v1.6.0
-        if: ${{ steps.build.conclusion == 'success' }}
         with:
           name: Build & Test Report
           path: ./packages/*/junit.xml
