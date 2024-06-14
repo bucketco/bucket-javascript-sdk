@@ -94,28 +94,34 @@ describe("getFlags unit tests", () => {
     expect(vi.mocked(fetch).mock.calls.length).toBe(1);
   });
 
-  test("caches negative response", async () => {
-    vi.mocked(fetch).mockRejectedValue(new Error("Failed to fetch flags"));
-
-    expect(vi.mocked(fetch).mock.calls.length).toBe(0);
-
+  test("maintains previously successful flags on negative response", async () => {
     await getFlags({
       apiBaseUrl: "https://localhost",
       context: { user: { id: "123" } },
       timeoutMs: 1000,
     });
 
-    const b = await getFlags({
+    vi.mocked(fetch).mockRejectedValue(new Error("Failed to fetch flags"));
+    vi.advanceTimersByTime(60000);
+
+    const staleFlags = await getFlags({
       apiBaseUrl: "https://localhost",
       context: { user: { id: "123" } },
       timeoutMs: 1000,
     });
-    expect(b).toBeUndefined();
-    expect(vi.mocked(fetch).mock.calls.length).toBe(1);
+
+    expect(staleFlags).toEqual(flagsResponse.flags);
   });
 
-  describe("serves stale cache while reevaluating", async () => {
-    async function runTest(response) {
+  describe("stale cache while reevaluating", async () => {
+    test("when stale cache is success response", async () => {
+      const response = {
+        success: true,
+        flags: {
+          featureB: { value: true, key: "featureB" },
+        },
+      };
+
       expect(vi.mocked(fetch).mock.calls.length).toBe(0);
 
       vi.mocked(fetch).mockResolvedValue({
@@ -159,21 +165,58 @@ describe("getFlags unit tests", () => {
 
       // new fetch was fired
       expect(vi.mocked(fetch).mock.calls.length).toBe(2);
-    }
-
-    test("with positive result", async () => {
-      await runTest({
-        success: true,
-        flags: {
-          featureB: { value: true, key: "featureB" },
-        },
-      });
     });
 
-    test("with negative result", async () => {
-      await runTest({
+    test("when stale cache is failed response", async () => {
+      const response = {
         success: false,
+      };
+
+      expect(vi.mocked(fetch).mock.calls.length).toBe(0);
+
+      vi.mocked(fetch).mockResolvedValue({
+        status: 200,
+        ok: true,
+        json: function () {
+          return Promise.resolve(response);
+        },
+      } as Response);
+
+      await getFlags({
+        apiBaseUrl: "https://localhost",
+        context: { user: { id: "123" } },
+        timeoutMs: 1000,
       });
+
+      // change the response so we can validate that we'll serve the stale cache
+      vi.mocked(fetch).mockResolvedValue({
+        status: 200,
+        ok: true,
+        json: function () {
+          return Promise.resolve({
+            success: true,
+            flags: {
+              featureB: { value: true, key: "featureB" },
+            },
+          });
+        },
+      } as Response);
+
+      vi.advanceTimersByTime(FLAGS_STALE_MS + 1);
+
+      const b = await getFlags({
+        apiBaseUrl: "https://localhost",
+        context: { user: { id: "123" } },
+        timeoutMs: 1000,
+        staleWhileRevalidate: true,
+      });
+
+      expect(b).toEqual({
+        featureB: { value: true, key: "featureB" },
+      });
+
+      // new fetch was fired
+      expect(vi.mocked(fetch).mock.calls.length).toBe(2);
     });
   });
 
