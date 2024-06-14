@@ -23,6 +23,9 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "./dist/bucket-tracking-sdk.node.js",
   "browser": "./dist/bucket-tracking-sdk.browser.js",
   "types": "./dist/types/src/index.d.ts",
