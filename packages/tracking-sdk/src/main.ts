@@ -574,7 +574,6 @@ export default function main() {
    *                used automatically and merged with anything provided in the `context`
    *                argument.
    * @param fallbackFlags Optional array of flags to use if the request to Bucket fails.
-   * @param includeFlags Optional array of flags to include in the response automatically.
    * @param timeoutMs Optional the timeout in milliseconds for the request to Bucket before using `fallbackFlags`. Default is 5000ms.
    * @param staleWhileRevalidate Optional whether to return potentially stale flags while revalidating the flags in the background. Default is true.
    */
