@@ -94,27 +94,6 @@ describe("getFlags unit tests", () => {
     expect(vi.mocked(fetch).mock.calls.length).toBe(1);
   });
 
-  test("refetches on negative response", async () => {
-    vi.mocked(fetch).mockRejectedValue(new Error("Failed to fetch flags"));
-
-    expect(vi.mocked(fetch).mock.calls.length).toBe(0);
-
-    await getFlags({
-      apiBaseUrl: "https://localhost",
-      context: { user: { id: "123" } },
-      timeoutMs: 1000,
-    });
-
-    const b = await getFlags({
-      apiBaseUrl: "https://localhost",
-      context: { user: { id: "123" } },
-      timeoutMs: 1000,
-    });
-
-    expect(b).toBeUndefined();
-    expect(vi.mocked(fetch).mock.calls.length).toBe(2);
-  });
-
   test("maintains previously successful flags on negative response", async () => {
     await getFlags({
       apiBaseUrl: "https://localhost",
