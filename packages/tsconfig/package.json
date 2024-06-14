@@ -1,5 +1,6 @@
 {
   "name": "@bucketco/tsconfig",
   "version": "0.0.2",
-  "license": "MIT"
+  "license": "MIT",
+  "private": true
 }
