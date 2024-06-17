@@ -52,7 +52,7 @@ export type ContextFilter = {
   values?: string[];
 };
 
-export function flattenJSON(data: object): Record<string, string> | {} {
+export function flattenJSON(data: object): Record<string, string> {
   if (Object.keys(data).length === 0) return {};
   const result: Record<string, any> = {};
   function recurse(cur: any, prop: string) {
@@ -103,7 +103,7 @@ export async function evaluateFlag({
   const missingContextFieldsSet = new Set<string>();
   for (const rule of flag.rules) {
     rule.contextFilter
-      ?.map((rule) => rule.field)
+      ?.map((r) => r.field)
       .filter((field) => !(field in flatContext))
       .forEach((field) => missingContextFieldsSet.add(field));
 

@@ -131,7 +131,7 @@ describe("evaluate flag integration ", () => {
   });
 
   it("fails evaluation and includes key in missing keys when rollout attribute is missing from context", async () => {
-    const flag = {
+    const myflag = {
       key: "myflag",
       rules: [
         {
@@ -141,11 +141,11 @@ describe("evaluate flag integration ", () => {
       ],
     };
     const res = await evaluateFlag({
-      flag,
+      flag: myflag,
       context: {},
     });
     expect(res).toEqual({
-      flag,
+      flag: myflag,
       context: {},
       value: false,
       reason: "no matched rules",
