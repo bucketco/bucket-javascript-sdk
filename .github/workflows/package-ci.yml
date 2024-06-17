@@ -38,15 +38,12 @@ jobs:
           path: ./packages/*/junit.xml
           reporter: jest-junit
       - id: prettier
-        if: ${{ steps.test.conclusion == 'success' }}
         name: Check styling
         run: yarn prettier
       - id: lint
-        if: ${{ steps.prettier.conclusion == 'success' }}
         name: Check for linting errors
         run: yarn lint:ci
       - name: Annotate from ESLint report
-        if: ${{ steps.prettier.conclusion == 'success' }}
         uses: ataylorme/eslint-annotate-action@v2
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
