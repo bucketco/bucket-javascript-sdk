@@ -13,8 +13,7 @@
     "prettier": "lerna run prettier --stream",
     "lint": "lerna run lint --stream",
     "lint:ci": "lerna run lint:ci --stream",
-    "version": "lerna version --exact --no-push",
-    "publish": "lerna publish from-package --yes"
+    "version": "lerna version --exact --no-push"
   },
   "packageManager": "yarn@4.1.1",
   "devDependencies": {

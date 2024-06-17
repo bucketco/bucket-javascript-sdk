@@ -131,10 +131,6 @@ export function useFeatureFlag(key: string) {
   const flags = useContext<BucketContext>(Context).flags;
   const flag = flags.flags[key];
 
-  if (!flags.isLoading && flag === undefined) {
-    console.error(`[Bucket SDK] The feature flag "${key}" was not found`);
-  }
-
   const value = flag?.value ?? null;
 
   return { isLoading: flags.isLoading, value: value };

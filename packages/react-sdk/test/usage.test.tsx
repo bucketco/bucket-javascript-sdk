@@ -177,38 +177,6 @@ describe("useFeatureFlag", () => {
     expect(result.current).toEqual({ isLoading: false, value: value });
     expect(console.error).not.toHaveBeenCalled();
   });
-
-  test("fails when given a missing feature flag", async () => {
-    console.error = vi.fn();
-
-    const flags = {
-      abc: { value: true, key: "abc" },
-      def: { value: false, key: "abc" },
-    };
-
-    const sdk = createSpySDK();
-    sdk.getFeatureFlags = vi.fn(async () => flags);
-
-    const publishableKey = Math.random().toString();
-    const flagOptions = { context: {} };
-
-    const { result } = renderHook(() => useFeatureFlag("does-not-exist"), {
-      wrapper: ({ children }) => (
-        <Bucket
-          sdk={sdk}
-          publishableKey={publishableKey}
-          flags={flagOptions}
-          children={children}
-        />
-      ),
-    });
-
-    await waitFor(() => result.current.isLoading === false);
-    expect(result.current).toEqual({ isLoading: false, value: null });
-    expect(console.error).toHaveBeenCalledWith(
-      '[Bucket SDK] The feature flag "does-not-exist" was not found',
-    );
-  });
 });
 
 function createSpySDK(): BucketInstance {
