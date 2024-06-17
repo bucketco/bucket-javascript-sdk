@@ -21,7 +21,10 @@ jobs:
           cache: "yarn"
           cache-dependency-path: "**/yarn.lock"
       - name: Restore Node.js dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install --immutable
+      - name: Restore package.json
+        # This step is necessary because the previous step may have updated package.json
+        run: git checkout -- package.json packages/*/package.json
       - name: Install Playwright Browsers
         run: yarn playwright install --with-deps
         working-directory: ./packages/tracking-sdk
@@ -33,21 +36,17 @@ jobs:
         run: yarn test:ci
       - name: Report test results
         uses: dorny/test-reporter@v1.6.0
-        if: ${{ steps.build.conclusion == 'success' }}
         with:
           name: Build & Test Report
           path: ./packages/*/junit.xml
           reporter: jest-junit
       - id: prettier
-        if: ${{ steps.test.conclusion == 'success' }}
         name: Check styling
         run: yarn prettier
       - id: lint
-        if: ${{ steps.prettier.conclusion == 'success' }}
         name: Check for linting errors
         run: yarn lint:ci
       - name: Annotate from ESLint report
-        if: ${{ steps.prettier.conclusion == 'success' }}
         uses: ataylorme/eslint-annotate-action@v2
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"

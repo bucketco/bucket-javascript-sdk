@@ -95,11 +95,22 @@ export async function fetchFlags(url: string, timeoutMs: number) {
       flags = typeRes.flags;
       success = true;
     } catch (e) {
-      console.error("fetching flags: ", e);
+      console.error("[Bucket] error fetching flags: ", e);
     } finally {
-      // we cache even if the request failed to avoid having the UI
-      // wait and spam the API
-      cache.set(url, success, flags);
+      if (success) {
+        cache.set(url, success, flags);
+      } else {
+        const current = cache.get(url);
+        if (current) {
+          // if there is a previous version, extend it's expireAt time
+          cache.set(url, current.success, current.flags);
+        } else {
+          // otherwise cache if the request failed and there is no previous version to extend
+          // to avoid having the UI wait and spam the API
+          cache.set(url, false, flags);
+        }
+      }
+
       delete dedupeFetch[url];
     }
     return flags;
@@ -145,22 +156,26 @@ export async function getFlags({
   const params = new URLSearchParams(flattenedContext);
   // sort the params to ensure that the URL is the same for the same context
   params.sort();
+
   const url = `${apiBaseUrl}/flags/evaluate?` + params.toString();
   const cachedItem = cache.get(url);
-  if (cachedItem) {
-    if (!cachedItem.stale) {
-      return cachedItem.flags;
-    }
 
-    // if stale, return the cached value and re-fetch in the background
-    if (staleWhileRevalidate) {
+  if (!cachedItem) {
+    return fetchFlags(url, timeoutMs);
+  }
+
+  if (cachedItem.stale) {
+    // serve successful stale cache if `staleWhileRevalidate` is enabled
+    if (staleWhileRevalidate && cachedItem.success) {
       // re-fetch in the background, return last successful value
       fetchFlags(url, timeoutMs).catch(() => {
         // we don't care about the result, we just want to re-fetch
       });
       return cachedItem.flags;
     }
+    return fetchFlags(url, timeoutMs);
   }
-  // if not staleWhileRevalidate or cached failure and stale, refetch synchronously
-  return fetchFlags(url, timeoutMs);
+
+  // serve cached items if not stale and not expired
+  return cachedItem.flags;
 }

@@ -22,7 +22,9 @@ jobs:
         run: yarn install --immutable
       - name: Build packages
         run: yarn build
-      - name: Publish
-        run: yarn publish
+      - name: npm login
+        run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > .npmrc
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish
+        run: yarn lerna publish from-package --no-private --yes
