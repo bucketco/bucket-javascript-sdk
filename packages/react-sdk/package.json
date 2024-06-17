@@ -1,6 +1,6 @@
 {
   "name": "@bucketco/react-sdk",
-  "version": "1.0.0-alpha.0",
+  "version": "1.0.0-alpha.1",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -13,7 +13,7 @@
     "dev": "vite",
     "build": "tsc --project tsconfig.build.json && webpack",
     "test": "vitest -c vite.config.js",
-    "test:ci": "vitest run -c vite.config.js --reporter=junit --outputFile=junit.xml",
+    "test:ci": "vitest run -c vite.config.js --reporter=default --reporter=junit --outputFile=junit.xml",
     "coverage": "vitest run --coverage",
     "lint": "eslint .",
     "lint:ci": "eslint --output-file eslint-report.json --format json .",
@@ -27,7 +27,7 @@
   "main": "./dist/bucket-react-sdk.browser.js",
   "types": "./dist/types/src/index.d.ts",
   "dependencies": {
-    "@bucketco/tracking-sdk": "2.3.1",
+    "@bucketco/tracking-sdk": "2.3.2",
     "canonical-json": "^0.0.4"
   },
   "peerDependencies": {
