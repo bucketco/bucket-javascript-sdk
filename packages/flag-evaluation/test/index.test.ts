@@ -29,40 +29,50 @@ describe("evaluate flag integration ", () => {
     });
     expect(res).toEqual({
       value: false,
-      key: "flag",
+      context: {
+        "company.id": "wrong value",
+      },
+      flag: {
+        key: "flag",
+        rules: [
+          {
+            partialRolloutThreshold: 100000,
+            partialRolloutAttribute: "company.id",
+            contextFilter: [
+              {
+                field: "company.id",
+                operator: "IS",
+                value: "company1",
+              },
+            ],
+          },
+        ],
+      },
+      missingContextFields: [],
+      reason: "no matched rules",
+      ruleEvaluationResults: [false],
     });
   });
 
   it("evaluates flag when there's a matching rule", async () => {
+    const context = {
+      company: {
+        id: "company1",
+      },
+    };
     const res = await evaluateFlag({
       flag,
-      context: {
-        company: {
-          id: "company1",
-        },
-      },
+      context,
     });
     expect(res).toEqual({
       value: true,
-      key: "flag",
-    });
-  });
-
-  it("includes debug info when requested", async () => {
-    const res = await evaluateFlag({
-      flag,
       context: {
-        company: {
-          id: "company1",
-        },
+        "company.id": "company1",
       },
-      includeDebug: true,
-    });
-    expect(res).toEqual({
-      value: true,
-      reason: "rule #0 matched",
-      key: "flag",
+      flag,
       missingContextFields: [],
+      reason: "rule #0 matched",
+      ruleEvaluationResults: [true],
     });
   });
 
@@ -94,42 +104,53 @@ describe("evaluate flag integration ", () => {
       },
     });
     expect(res).toEqual({
+      context: {
+        "company.id": "company1",
+      },
       value: true,
-      key: "flag",
+      flag: flagWithSegmentRule,
+      missingContextFields: [],
+      reason: "rule #0 matched",
+      ruleEvaluationResults: [true],
     });
   });
 
-  it("returns list of missing context keys when includeDebug=true ", async () => {
+  it("returns list of missing context keys ", async () => {
     const res = await evaluateFlag({
       flag,
-      includeDebug: true,
+      context: {},
     });
     expect(res).toEqual({
+      context: {},
       value: false,
       reason: "no matched rules",
-      key: "flag",
+      flag,
       missingContextFields: ["company.id"],
+      ruleEvaluationResults: [false],
     });
   });
 
-  it("fails evaluation and includes key in missing keys when rollout attribute is missing from context when includeDebug=true ", async () => {
+  it("fails evaluation and includes key in missing keys when rollout attribute is missing from context", async () => {
+    const flag = {
+      key: "myflag",
+      rules: [
+        {
+          partialRolloutAttribute: "happening.id",
+          partialRolloutThreshold: 50000,
+        },
+      ],
+    };
     const res = await evaluateFlag({
-      flag: {
-        key: "myflag",
-        rules: [
-          {
-            partialRolloutAttribute: "happening.id",
-            partialRolloutThreshold: 50000,
-          },
-        ],
-      },
-      includeDebug: true,
+      flag,
+      context: {},
     });
     expect(res).toEqual({
+      flag,
+      context: {},
       value: false,
       reason: "no matched rules",
-      key: "myflag",
       missingContextFields: ["happening.id"],
+      ruleEvaluationResults: [false],
     });
   });
 
@@ -150,7 +171,13 @@ describe("evaluate flag integration ", () => {
 
     expect(res).toEqual({
       value: true,
-      key: "flag",
+      flag: confusingFlag,
+      context: {
+        "company.id": "company1",
+      },
+      missingContextFields: [],
+      reason: "rule #0 matched",
+      ruleEvaluationResults: [true],
     });
   });
 });

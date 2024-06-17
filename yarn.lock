@@ -1047,8 +1047,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@bucketco/flag-evaluation@workspace:packages/flag-evaluation"
   dependencies:
-    "@bucketco/eslint-config": "npm:0.0.1"
-    "@bucketco/tsconfig": "npm:0.0.1"
+    "@bucketco/eslint-config": "npm:0.0.2"
+    "@bucketco/tsconfig": "npm:0.0.2"
     "@types/jest": "npm:^29.5.12"
     "@types/node": "npm:^20.11.0"
     eslint: "npm:^8.56.0"

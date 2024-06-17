@@ -16,14 +16,15 @@ export type FlagData = {
 };
 
 export interface EvaluateFlagParams {
-  context?: Record<string, unknown>;
+  context: Record<string, unknown>;
   flag: FlagData;
-  includeDebug?: boolean;
 }
 
 export interface EvaluateFlagResult {
   value: boolean;
-  key: string;
+  flag: FlagData;
+  context: Record<string, any>;
+  ruleEvaluationResults: boolean[];
   reason?: string;
   missingContextFields?: string[];
 }
@@ -51,7 +52,8 @@ export type ContextFilter = {
   values?: string[];
 };
 
-export function flattenJSON(data: any) {
+export function flattenJSON(data: object): Record<string, string> | {} {
+  if (Object.keys(data).length === 0) return {};
   const result: Record<string, any> = {};
   function recurse(cur: any, prop: string) {
     if (Object(cur) !== cur) {
@@ -95,14 +97,13 @@ export function unflattenJSON(data: Record<string, any>) {
 export async function evaluateFlag({
   context,
   flag,
-  includeDebug,
 }: EvaluateFlagParams): Promise<EvaluateFlagResult> {
   const flatContext = flattenJSON(context);
 
   const missingContextFieldsSet = new Set<string>();
   for (const rule of flag.rules) {
     rule.contextFilter
-      ?.map((r) => r.field)
+      ?.map((rule) => rule.field)
       .filter((field) => !(field in flatContext))
       .forEach((field) => missingContextFieldsSet.add(field));
 
@@ -115,34 +116,22 @@ export async function evaluateFlag({
   }
   const missingContextFields = Array.from(missingContextFieldsSet);
 
-  for (let i = 0; i < flag.rules.length; i++) {
-    const res = evaluateRuleWithContext({
+  const ruleEvaluationResults = flag.rules.map((rule) => {
+    return evaluateRuleWithContext({
       context: flatContext,
-      rule: flag.rules[i],
+      rule,
       key: flag.key,
     });
-    if (res)
-      return {
-        value: true,
-        key: flag.key,
-        ...(includeDebug
-          ? {
-              reason: `rule #${i} matched`,
-              missingContextFields,
-            }
-          : {}),
-      };
-  }
+  });
 
+  const firstIdx = ruleEvaluationResults.findIndex(Boolean);
   return {
-    value: false,
-    key: flag.key,
-    ...(includeDebug
-      ? {
-          reason: "no matched rules",
-          missingContextFields,
-        }
-      : {}),
+    value: firstIdx > -1,
+    flag,
+    context: flatContext,
+    ruleEvaluationResults,
+    reason: firstIdx > -1 ? `rule #${firstIdx} matched` : "no matched rules",
+    missingContextFields,
   };
 }
 
