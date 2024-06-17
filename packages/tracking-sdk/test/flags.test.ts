@@ -71,7 +71,13 @@ describe("getFlags unit tests", () => {
     }).catch(console.error);
 
     expect(vi.mocked(fetch).mock.calls.length).toBe(1);
-    resolve(flagsResponse);
+    resolve({
+      status: 200,
+      ok: true,
+      json: function () {
+        return Promise.resolve(flagsResponse);
+      },
+    });
 
     await a;
   });
