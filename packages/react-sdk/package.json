@@ -1,6 +1,6 @@
 {
   "name": "@bucketco/react-sdk",
-  "version": "1.0.0-alpha.0",
+  "version": "1.0.0-alpha.1",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -27,7 +27,7 @@
   "main": "./dist/bucket-react-sdk.browser.js",
   "types": "./dist/types/src/index.d.ts",
   "dependencies": {
-    "@bucketco/tracking-sdk": "2.3.1",
+    "@bucketco/tracking-sdk": "2.3.2",
     "canonical-json": "^0.0.4"
   },
   "peerDependencies": {
