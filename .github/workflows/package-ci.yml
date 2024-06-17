@@ -20,20 +20,11 @@ jobs:
           node-version-file: ".nvmrc"
           cache: "yarn"
           cache-dependency-path: "**/yarn.lock"
-      - id: prettier
-        name: Check styling
-        run: yarn prettier
-      - id: lint
-        name: Check for linting errors
-        run: yarn lint:ci
-      - name: Annotate from ESLint report
-        uses: ataylorme/eslint-annotate-action@v2
-        with:
-          repo-token: "${{ secrets.GITHUB_TOKEN }}"
-          report-json: ./packages/*/eslint-report.json
-          fail-on-warning: true
       - name: Restore Node.js dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install --immutable
+      - name: Restore package.json
+        # This step is necessary because the previous step may have updated package.json
+        run: git checkout -- package.json packages/*/package.json
       - name: Install Playwright Browsers
         run: yarn playwright install --with-deps
         working-directory: ./packages/tracking-sdk
@@ -49,3 +40,15 @@ jobs:
           name: Build & Test Report
           path: ./packages/*/junit.xml
           reporter: jest-junit
+      - id: prettier
+        name: Check styling
+        run: yarn prettier
+      - id: lint
+        name: Check for linting errors
+        run: yarn lint:ci
+      - name: Annotate from ESLint report
+        uses: ataylorme/eslint-annotate-action@v2
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          report-json: ./packages/*/eslint-report.json
+          fail-on-warning: true
