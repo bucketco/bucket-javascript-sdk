@@ -20,6 +20,18 @@ jobs:
           node-version-file: ".nvmrc"
           cache: "yarn"
           cache-dependency-path: "**/yarn.lock"
+      - id: prettier
+        name: Check styling
+        run: yarn prettier
+      - id: lint
+        name: Check for linting errors
+        run: yarn lint:ci
+      - name: Annotate from ESLint report
+        uses: ataylorme/eslint-annotate-action@v2
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          report-json: ./packages/*/eslint-report.json
+          fail-on-warning: true
       - name: Restore Node.js dependencies
         run: yarn install --frozen-lockfile
       - name: Install Playwright Browsers
@@ -37,15 +49,3 @@ jobs:
           name: Build & Test Report
           path: ./packages/*/junit.xml
           reporter: jest-junit
-      - id: prettier
-        name: Check styling
-        run: yarn prettier
-      - id: lint
-        name: Check for linting errors
-        run: yarn lint:ci
-      - name: Annotate from ESLint report
-        uses: ataylorme/eslint-annotate-action@v2
-        with:
-          repo-token: "${{ secrets.GITHUB_TOKEN }}"
-          report-json: ./packages/*/eslint-report.json
-          fail-on-warning: true
