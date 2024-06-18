@@ -29,7 +29,7 @@ import BucketProvider from "@bucketco/react-sdk";
   }}
 >
   {/* ... */}
-</BucketProvider>
+</BucketProvider>;
 ```
 
 ### Props
@@ -47,12 +47,14 @@ import BucketProvider from "@bucketco/react-sdk";
   persistUser={true} // See the Tracking SDK documentation under "Persisting Users"
   host="https://tracking.bucket.co" // Configure the host Bucket calls are made to
   sseHost="https://livemessaging.bucket.co" // Configure the host Bucket SSE calls are made to
-  feedback={{
-    // See feedback options here: https://github.com/bucketco/bucket-tracking-sdk/blob/main/packages/tracking-sdk/FEEDBACK.md#global-feedback-configuration
-  }}
+  feedback={
+    {
+      // See feedback options here: https://github.com/bucketco/bucket-tracking-sdk/blob/main/packages/tracking-sdk/FEEDBACK.md#global-feedback-configuration
+    }
+  }
 >
   {/* ... */}
-</BucketProvider>
+</BucketProvider>;
 ```
 
 ## Hooks
