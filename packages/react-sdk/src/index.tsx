@@ -21,6 +21,8 @@ type BucketContext = {
   flags: {
     flags: Flags;
     isLoading: boolean;
+    isError: boolean;
+    error?: any;
   };
 };
 
@@ -42,6 +44,7 @@ export type BucketProps = BucketSDKOptions & {
 export default function Bucket({ children, sdk, ...config }: BucketProps) {
   const [flags, setFlags] = useState<Flags>({});
   const [flagsLoading, setFlagsLoading] = useState(true);
+  const [errorLoading, setErrorLoading] = useState(undefined);
   const [bucket] = useState(() => sdk ?? BucketSingleton);
 
   const contextKey = canonicalJSON(config);
@@ -61,7 +64,11 @@ export default function Bucket({ children, sdk, ...config }: BucketProps) {
           setFlagsLoading(false);
         })
         .catch((err) => {
+          setErrorLoading(err);
           console.error("[Bucket SDK] Error fetching flags:", err);
+        })
+        .finally(() => {
+          setFlagsLoading(false);
         });
     } catch (err) {
       console.error("[Bucket SDK] Unknown error:", err);
@@ -70,7 +77,12 @@ export default function Bucket({ children, sdk, ...config }: BucketProps) {
 
   const context: BucketContext = {
     bucket,
-    flags: { flags, isLoading: flagsLoading },
+    flags: {
+      flags,
+      isLoading: flagsLoading,
+      isError: errorLoading == null,
+      error: errorLoading,
+    },
   };
 
   return <Context.Provider children={children} value={context} />;
