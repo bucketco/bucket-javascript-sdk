@@ -17,7 +17,9 @@ Wrap your application with the `Bucket` higher order component.
 This will initialize Bucket, fetch feature flags and start listening for Live Satisfaction events.
 
 ```tsx
-<Bucket
+import BucketProvider from "@bucketco/react-sdk";
+
+<BucketProvider
   publishableKey="{YOUR_PUBLISHABLE_KEY}"
   context={{
     // The context should take the form of { user: { id }, company: { id } }
@@ -27,7 +29,7 @@ This will initialize Bucket, fetch feature flags and start listening for Live Sa
   }}
 >
   {/* ... */}
-</Bucket>
+</BucketProvider>;
 ```
 
 ### Props
@@ -37,16 +39,22 @@ All options which can be passed to `bucket.init` can be passed as props to the B
 See the [Tracking SDK documentation](../tracking-sdk/README.md) for more.
 
 ```tsx
-<Bucket
+import BucketProvider from "@bucketco/react-sdk";
+
+<BucketProvider
   publishableKey="{YOUR_PUBLISHABLE_KEY}" // The publishable key of your app environment
   debug={false} // Enable debug mode to log info and errors
   persistUser={true} // See the Tracking SDK documentation under "Persisting Users"
   host="https://tracking.bucket.co" // Configure the host Bucket calls are made to
   sseHost="https://livemessaging.bucket.co" // Configure the host Bucket SSE calls are made to
-  feedback={{
-    // See feedback options here: https://github.com/bucketco/bucket-tracking-sdk/blob/main/packages/tracking-sdk/FEEDBACK.md#global-feedback-configuration
-  }}
+  feedback={
+    {
+      // See feedback options here: https://github.com/bucketco/bucket-tracking-sdk/blob/main/packages/tracking-sdk/FEEDBACK.md#global-feedback-configuration
+    }
+  }
 >
+  {/* ... */}
+</BucketProvider>;
 ```
 
 ## Hooks
@@ -56,6 +64,8 @@ See the [Tracking SDK documentation](../tracking-sdk/README.md) for more.
 Returns the instance of the Bucket Tracking SDK in use. This can be used to make calls to Bucket, including `track` and `feedback` calls, e.g.
 
 ```ts
+import { useBucket } from "@bucketco/react-sdk";
+
 const bucket = useBucket();
 
 bucket.track("sent_message", { foo: "bar" }, "john_doe", "company_id");
@@ -68,6 +78,8 @@ See the [Tracking SDK documentation](../tracking-sdk/README.md) for usage inform
 Returns the state of a given feature flag for the current context, e.g.
 
 ```ts
+import { useFeatureFlag } from "@bucketco/react-sdk";
+
 const joinHuddleFlag = useFeatureFlag("join-huddle");
 // {
 //   "isLoading": false,
@@ -80,6 +92,8 @@ const joinHuddleFlag = useFeatureFlag("join-huddle");
 Returns feature flags as an object, e.g.
 
 ```ts
+import { useFeatureFlags } from "@bucketco/react-sdk";
+
 const featureFlags = useFeatureFlags();
 // {
 //   "isLoading": false,
