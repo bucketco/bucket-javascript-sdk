@@ -31,6 +31,7 @@ const Context = createContext<BucketContext>({
   flags: {
     flags: {},
     isLoading: true,
+    isError: false,
   },
 });
 
