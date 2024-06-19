@@ -98,16 +98,20 @@ export async function fetchFlags(url: string, timeoutMs: number) {
       console.error("[Bucket] error fetching flags: ", e);
     } finally {
       if (success) {
-        cache.set(url, success, flags);
+        cache.set(url, { success, flags, attemptCount: 0 });
       } else {
         const current = cache.get(url);
         if (current) {
-          // if there is a previous version, extend it's expireAt time
-          cache.set(url, current.success, current.flags);
+          // if there is a previous failure cached, increase the attempt count
+          cache.set(url, {
+            success: current.success,
+            flags: current.flags,
+            attemptCount: current.attemptCount + 1,
+          });
         } else {
           // otherwise cache if the request failed and there is no previous version to extend
           // to avoid having the UI wait and spam the API
-          cache.set(url, false, flags);
+          cache.set(url, { success: false, flags, attemptCount: 1 });
         }
       }
 
@@ -123,6 +127,7 @@ export async function fetchFlags(url: string, timeoutMs: number) {
 const FLAG_FETCH_DEFAULT_TIMEOUT_MS = 5000;
 export const FLAGS_STALE_MS = 60000; // turn stale after 60 seconds, optionally reevaluate in the background
 export const FLAGS_EXPIRE_MS = 7 * 24 * 60 * 60 * 1000; // expire entirely after 7 days
+const FAILURE_RETRY_ATTEMPTS = 3;
 const localStorageCacheKey = `__bucket_flags`;
 
 const cache = new FlagCache(
@@ -160,10 +165,16 @@ export async function getFlags({
   const url = `${apiBaseUrl}/flags/evaluate?` + params.toString();
   const cachedItem = cache.get(url);
 
-  if (!cachedItem) {
+  // if there's no cached item OR the cached item is a failure and we haven't retried
+  // too many times yet - fetch now
+  if (
+    !cachedItem ||
+    (!cachedItem.success && cachedItem.attemptCount <= FAILURE_RETRY_ATTEMPTS)
+  ) {
     return fetchFlags(url, timeoutMs);
   }
 
+  // cachedItem is a success or a failed attempt that we've retried too many times
   if (cachedItem.stale) {
     // serve successful stale cache if `staleWhileRevalidate` is enabled
     if (staleWhileRevalidate && cachedItem.success) {
