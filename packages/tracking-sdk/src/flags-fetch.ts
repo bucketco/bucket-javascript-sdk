@@ -150,11 +150,13 @@ export async function getFlags({
   context,
   staleWhileRevalidate = true,
   timeoutMs = FLAG_FETCH_DEFAULT_TIMEOUT_MS,
+  cacheNegativeAttempts = FAILURE_RETRY_ATTEMPTS,
 }: {
   apiBaseUrl: string;
   context: object;
   staleWhileRevalidate?: boolean;
   timeoutMs?: number;
+  cacheNegativeAttempts?: number | false;
 }): Promise<Flags | undefined> {
   const flattenedContext = flattenJSON({ context });
 
@@ -169,7 +171,9 @@ export async function getFlags({
   // too many times yet - fetch now
   if (
     !cachedItem ||
-    (!cachedItem.success && cachedItem.attemptCount <= FAILURE_RETRY_ATTEMPTS)
+    (!cachedItem.success &&
+      (cacheNegativeAttempts === false ||
+        cachedItem.attemptCount < cacheNegativeAttempts))
   ) {
     return fetchFlags(url, timeoutMs);
   }
