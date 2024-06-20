@@ -11,6 +11,7 @@ interface cacheEntry {
   staleAt: number;
   success: boolean; // we also want to cache failures to avoid the UI waiting and spamming the API
   flags: Flags | undefined;
+  attemptCount: number;
 }
 
 export function validateFlags(flagsInput: any): Flags | undefined {
@@ -35,6 +36,7 @@ export interface CacheResult {
   flags: Flags | undefined;
   stale: boolean;
   success: boolean;
+  attemptCount: number;
 }
 
 export class FlagCache {
@@ -48,7 +50,14 @@ export class FlagCache {
     this.expireTimeMs = expireTimeMs;
   }
 
-  set(key: string, success: boolean, flags?: Flags) {
+  set(
+    key: string,
+    {
+      success,
+      flags,
+      attemptCount,
+    }: { success: boolean; flags?: Flags; attemptCount: number },
+  ) {
     let cacheData: CacheData = {};
 
     try {
@@ -65,6 +74,7 @@ export class FlagCache {
       staleAt: Date.now() + this.staleTimeMs,
       flags,
       success,
+      attemptCount,
     } satisfies cacheEntry;
 
     cacheData = Object.fromEntries(
@@ -90,6 +100,7 @@ export class FlagCache {
             flags: cachedResponse[key].flags,
             success: cachedResponse[key].success,
             stale: cachedResponse[key].staleAt < Date.now(),
+            attemptCount: cachedResponse[key].attemptCount,
           };
         }
       }
@@ -119,6 +130,7 @@ function validateCacheData(cacheDataInput: any) {
       typeof cacheEntry.expireAt !== "number" ||
       typeof cacheEntry.staleAt !== "number" ||
       typeof cacheEntry.success !== "boolean" ||
+      typeof cacheEntry.attemptCount !== "number" ||
       (cacheEntry.flags && !validateFlags(cacheEntry.flags))
     ) {
       return;
@@ -129,6 +141,7 @@ function validateCacheData(cacheDataInput: any) {
       staleAt: cacheEntry.staleAt,
       success: cacheEntry.success,
       flags: cacheEntry.flags,
+      attemptCount: cacheEntry.attemptCount,
     };
   }
   return cacheData;

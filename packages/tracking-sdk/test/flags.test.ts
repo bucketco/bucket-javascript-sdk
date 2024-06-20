@@ -119,6 +119,42 @@ describe("getFlags unit tests", () => {
     expect(staleFlags).toEqual(flagsResponse.flags);
   });
 
+  test("attempts multiple tries before caching negative response", async () => {
+    vi.mocked(fetch).mockRejectedValue(new Error("Failed to fetch flags"));
+
+    for (let i = 0; i < 3; i++) {
+      await getFlags({
+        apiBaseUrl: "https://localhost",
+        context: { user: { id: "123" } },
+        timeoutMs: 1000,
+      });
+      expect(vi.mocked(fetch)).toHaveBeenCalledTimes(i + 1);
+    }
+
+    await getFlags({
+      apiBaseUrl: "https://localhost",
+      context: { user: { id: "123" } },
+      timeoutMs: 1000,
+      staleWhileRevalidate: false,
+    });
+    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(3);
+  });
+
+  test("disable caching negative response", async () => {
+    vi.mocked(fetch).mockRejectedValue(new Error("Failed to fetch flags"));
+
+    for (let i = 0; i < 5; i++) {
+      await getFlags({
+        apiBaseUrl: "https://localhost",
+        context: { user: { id: "123" } },
+        timeoutMs: 1000,
+        cacheNegativeAttempts: false,
+        staleWhileRevalidate: false,
+      });
+      expect(vi.mocked(fetch)).toHaveBeenCalledTimes(i + 1);
+    }
+  });
+
   describe("stale cache while reevaluating", async () => {
     test("when stale cache is success response", async () => {
       const response = {
