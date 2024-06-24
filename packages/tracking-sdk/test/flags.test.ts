@@ -8,6 +8,7 @@ import {
   FLAGS_STALE_MS,
   getFlags,
 } from "../src/flags-fetch";
+import { ok } from "assert";
 
 vi.mock("cross-fetch", () => {
   return {
@@ -18,7 +19,7 @@ vi.mock("cross-fetch", () => {
 const flagsResponse: FeatureFlagsResponse = {
   success: true,
   flags: {
-    featureA: { value: true, key: "featureA" },
+    featureA: { value: true, version: 1, key: "featureA" },
   },
 };
 
@@ -53,7 +54,9 @@ describe("getFlags unit tests", () => {
   });
 
   test("deduplicates inflight requests", async () => {
-    let resolve;
+    let resolve:
+      | ((value: Response | PromiseLike<Response>) => void)
+      | undefined;
     const p = new Promise<Response>((r) => (resolve = r));
     vi.mocked(fetch).mockReturnValue(p);
 
@@ -71,13 +74,15 @@ describe("getFlags unit tests", () => {
     }).catch(console.error);
 
     expect(vi.mocked(fetch).mock.calls.length).toBe(1);
+
+    ok(resolve);
     resolve({
       status: 200,
       ok: true,
       json: function () {
         return Promise.resolve(flagsResponse);
       },
-    });
+    } as Response);
 
     await a;
   });

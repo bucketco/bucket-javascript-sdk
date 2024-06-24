@@ -10,7 +10,7 @@ import {
 } from "./config";
 import { createDefaultFeedbackPromptHandler } from "./default-feedback-prompt-handler";
 import * as feedbackLib from "./feedback";
-import { FeatureFlagsOptions, Flags } from "./flags";
+import { FeatureFlagsOptions, Flag, Flags } from "./flags";
 import { getFlags, mergeDeep } from "./flags-fetch";
 import { getAuthToken } from "./prompt-storage";
 import {
@@ -604,7 +604,59 @@ export default function main() {
       }, {} as Flags);
     }
 
-    return flags;
+    const proxified = Object.entries(flags).reduce((acc, [key, flag]) => {
+      acc[key] = proxifyFlag(flag);
+      return acc;
+    }, {} as Flags);
+
+    return proxified;
+  }
+
+  function proxifyFlag(flag: Flag): Flag {
+    return new Proxy(flag, {
+      get(target: Flag, property: keyof Flag) {
+        if (property === "value") {
+          void featureFlagAction({
+            action: "check",
+            flagKey: target.key,
+            flagVersion: target.version,
+            evalResult: target.value,
+          });
+        }
+        return target[property as keyof Flag];
+      },
+      set(_target, property, _value) {
+        err(`Cannot modify property ${String(property)} of the flag object`);
+      },
+    });
+  }
+
+  async function featureFlagAction(args: {
+    action: "evaluate" | "check";
+    flagKey: string;
+    flagVersion: number;
+    evalResult: boolean;
+    evalContext?: Record<string, any>;
+    evalRuleResults?: boolean[];
+    evalMissingFields?: string[];
+  }) {
+    checkKey();
+
+    const payload = {
+      action: args.action,
+      flagKey: args.flagKey,
+      flagVersion: args.flagVersion,
+      evalContext: args.evalContext,
+      evalResult: args.evalResult,
+      evalRuleResults: args.evalRuleResults,
+      evalMissingFields: args.evalMissingFields,
+    };
+
+    const res = await postRequest(`${getUrl()}/flags/actions`, payload);
+
+    log(`sent flag action`, res);
+
+    return res;
   }
 
   /**
