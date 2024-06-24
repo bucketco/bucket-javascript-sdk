@@ -28,7 +28,7 @@ const Context = createContext<BucketContext>({
   bucket: BucketSingleton,
   flags: {
     flags: {},
-    isLoading: true,
+    isLoading: false,
   },
 });
 
