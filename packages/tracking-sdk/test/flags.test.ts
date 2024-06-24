@@ -1,3 +1,4 @@
+import { ok } from "assert";
 import fetch from "cross-fetch";
 import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
 
@@ -8,7 +9,6 @@ import {
   FLAGS_STALE_MS,
   getFlags,
 } from "../src/flags-fetch";
-import { ok } from "assert";
 
 vi.mock("cross-fetch", () => {
   return {

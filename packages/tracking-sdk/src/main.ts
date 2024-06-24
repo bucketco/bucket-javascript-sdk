@@ -4,6 +4,7 @@ import { isForNode } from "is-bundling-for-browser-or-node";
 import type { FeedbackPosition, FeedbackTranslations } from "./feedback/types";
 import {
   API_HOST,
+  FLAG_EVENTS_PER_MIN,
   SDK_VERSION,
   SDK_VERSION_HEADER_NAME,
   SSE_REALTIME_HOST,
@@ -18,6 +19,8 @@ import {
   parsePromptMessage,
   processPromptMessage,
 } from "./prompts";
+import { readonly as proxify } from "./proxy";
+import rateLimited from "./rate-limiter";
 import { AblySSEChannel, closeAblySSEChannel, openAblySSEChannel } from "./sse";
 import type {
   Company,
@@ -589,7 +592,7 @@ export default function main() {
 
     const mergedContext = mergeDeep(baseContext, context);
 
-    const flags = await getFlags({
+    let flags = await getFlags({
       apiBaseUrl: getUrl(),
       context: mergedContext,
       timeoutMs,
@@ -598,43 +601,40 @@ export default function main() {
 
     if (!flags) {
       warn(`failed to fetch feature flags, using fall-back flags`);
-      return fallbackFlags.reduce((acc, flag) => {
+      flags = fallbackFlags.reduce((acc, flag) => {
         acc[flag.key] = flag;
         return acc;
       }, {} as Flags);
     }
 
     const proxified = Object.entries(flags).reduce((acc, [key, flag]) => {
-      acc[key] = proxifyFlag(flag);
+      acc[key] = proxify(
+        flag,
+        ["value"],
+        rateLimited(FLAG_EVENTS_PER_MIN, sendCheckEvent),
+      );
       return acc;
     }, {} as Flags);
 
     return proxified;
   }
 
-  function proxifyFlag(flag: Flag): Flag {
-    return new Proxy(flag, {
-      get(target: Flag, property: keyof Flag) {
-        if (property === "value") {
-          void featureFlagAction({
-            action: "check",
-            flagKey: target.key,
-            flagVersion: target.version,
-            evalResult: target.value,
-          });
-        }
-        return target[property as keyof Flag];
-      },
-      set(_target, property, _value) {
-        err(`Cannot modify property ${String(property)} of the flag object`);
-      },
+  function sendCheckEvent(flag: Flag) {
+    // get the stack trace to help debugging
+    const stack = new Error().stack;
+    console.log("sending check event", flag, stack);
+    void featureFlagEvent({
+      action: "check",
+      flagKey: flag.key,
+      flagVersion: flag.version,
+      evalResult: flag.value,
     });
   }
 
-  async function featureFlagAction(args: {
+  async function featureFlagEvent(args: {
     action: "evaluate" | "check";
     flagKey: string;
-    flagVersion: number;
+    flagVersion: number | undefined;
     evalResult: boolean;
     evalContext?: Record<string, any>;
     evalRuleResults?: boolean[];
@@ -652,9 +652,9 @@ export default function main() {
       evalMissingFields: args.evalMissingFields,
     };
 
-    const res = await postRequest(`${getUrl()}/flags/actions`, payload);
+    const res = await postRequest(`${getUrl()}/flags/events`, payload);
 
-    log(`sent flag action`, res);
+    log(`sent flag event`, res);
 
     return res;
   }

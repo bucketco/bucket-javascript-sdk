@@ -87,6 +87,7 @@ export async function fetchFlags(url: string, timeoutMs: number) {
       const res = await fetch(urlObj, {
         signal: controller.signal,
       });
+
       clearTimeout(id);
       const typeRes = validateFeatureFlagsResponse(await res.json());
       if (!res.ok || !typeRes || !typeRes.success) {

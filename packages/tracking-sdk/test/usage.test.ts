@@ -2,7 +2,6 @@ import flushPromises from "flush-promises";
 import * as bundling from "is-bundling-for-browser-or-node";
 import nock from "nock";
 import {
-  afterAll,
   afterEach,
   beforeAll,
   beforeEach,
@@ -14,6 +13,7 @@ import {
 
 import { version } from "../package.json";
 import { API_HOST, SDK_VERSION, SDK_VERSION_HEADER_NAME } from "../src/config";
+import { clearCache } from "../src/flags-fetch";
 import bucket from "../src/main";
 import {
   checkPromptMessageCompleted,
@@ -39,9 +39,26 @@ vi.mock("../src/prompt-storage", () => {
 // Treat test environment as desktop
 window.innerWidth = 1024;
 
+function nockAssertAndClear(task: { name: string }) {
+  expect(
+    nock.isDone(),
+    `${task.name}:\n${nock.pendingMocks().join("\n")}`,
+  ).toBe(true);
+
+  nock.cleanAll();
+}
+
+const nockWait = (n: nock.Scope) => {
+  return new Promise((resolve) => {
+    n.on("replied", () => {
+      resolve(undefined);
+    });
+  });
+};
+
 describe("usage", () => {
-  afterEach(() => {
-    nock.cleanAll();
+  afterEach((t) => {
+    nockAssertAndClear(t.task);
     vi.clearAllMocks();
   });
 
@@ -83,14 +100,25 @@ describe("usage", () => {
         source: "sdk",
       })
       .reply(200);
+
     nock(`${API_HOST}/${KEY}`)
       .get(/.*\/flags\/evaluate\?context.user.id=/)
       .reply(200, {
         success: true,
         flags: {
-          feature1: { value: true, key: "feature1" },
+          feature1: { value: true, key: "feature1", version: 2 },
         },
       });
+
+    const asyncNock = nock(`${API_HOST}/${KEY}`)
+      .post(/.*\/flags\/events/, {
+        action: "check",
+        flagKey: "feature1",
+        flagVersion: 2,
+        evalResult: true,
+      })
+      .times(2)
+      .reply(200);
 
     const bucketInstance = bucket();
     bucketInstance.init(KEY, { persistUser: true });
@@ -112,7 +140,14 @@ describe("usage", () => {
     const flags = await bucketInstance.getFeatureFlags({
       context: { user: { id: "user-id" } },
     });
-    expect(flags).toEqual({ feature1: { value: true, key: "feature1" } });
+
+    expect(flags["feature1"]).toEqual({
+      value: true,
+      key: "feature1",
+      version: 2,
+    });
+
+    await nockWait(asyncNock);
   });
 
   test("re-register user and send event", async () => {
@@ -276,14 +311,6 @@ describe("usage", () => {
 
       test("should accept tracking with a known userId", async () => {
         nock(`${API_HOST}/${KEY}`)
-          .post(/.*\/user/, {
-            userId: "foo",
-            attributes: {
-              name: "john doe",
-            },
-          })
-          .reply(200);
-        nock(`${API_HOST}/${KEY}`)
           .post(/.*\/event/, {
             event: "fooEvent",
             userId: "barUser",
@@ -293,8 +320,9 @@ describe("usage", () => {
         const bucketInstance = bucket();
         bucketInstance.init(KEY, { persistUser: false });
 
-        await expect(bucketInstance.track("fooEvent", undefined, "barUser"))
-          .resolves;
+        expect(
+          await bucketInstance.track("fooEvent", undefined, "barUser"),
+        ).toBeDefined();
       });
     });
   });
@@ -318,9 +346,10 @@ describe("usage", () => {
 
       const bucketInstance = bucket();
       bucketInstance.init(KEY, { persistUser: true });
-      await bucketInstance.user("fooUser", { name: "john doe" });
-
-      await expect(bucketInstance.track("fooEvent")).resolves;
+      expect(
+        await bucketInstance.user("fooUser", { name: "john doe" }),
+      ).toBeDefined();
+      expect(await bucketInstance.track("fooEvent")).toBeDefined();
     });
 
     test("should accept tracking with an overridden userId", async () => {
@@ -332,6 +361,7 @@ describe("usage", () => {
           },
         })
         .reply(200);
+
       nock(`${API_HOST}/${KEY}`)
         .post(/.*\/event/, {
           event: "fooEvent",
@@ -341,10 +371,12 @@ describe("usage", () => {
 
       const bucketInstance = bucket();
       bucketInstance.init(KEY, { persistUser: true });
-      await bucketInstance.user("fooUser", { name: "john doe" });
-
-      await expect(bucketInstance.track("fooEvent", undefined, "barUser"))
-        .resolves;
+      expect(
+        await bucketInstance.user("fooUser", { name: "john doe" }),
+      ).toBeDefined();
+      expect(
+        await bucketInstance.track("fooEvent", undefined, "barUser"),
+      ).toBeDefined();
     });
   });
 });
@@ -359,8 +391,8 @@ describe("feedback prompting", () => {
     vi.spyOn(bundling, "isForNode", "get").mockReturnValue(false);
   });
 
-  afterEach(() => {
-    nock.cleanAll();
+  afterEach((t) => {
+    nockAssertAndClear(t.task);
     vi.clearAllMocks();
     vi.mocked(getAuthToken).mockReturnValue(undefined);
   });
@@ -439,6 +471,7 @@ describe("feedback prompting", () => {
     );
 
     expect(n.isDone()).toBe(false);
+    nock.cleanAll();
   });
 
   test("does not initiate feedback prompting if server does not agree", async () => {
@@ -626,18 +659,12 @@ describe("feedback state management", () => {
     }
   });
 
-  afterEach(() => {
-    vi.resetAllMocks();
+  afterEach((t) => {
+    nockAssertAndClear(t.task);
     nock.cleanAll();
-  });
 
-  const nockWait = (n: nock.Scope) => {
-    return new Promise((resolve) => {
-      n.on("replied", () => {
-        resolve(undefined);
-      });
-    });
-  };
+    vi.resetAllMocks();
+  });
 
   const setupFeedbackPromptEventNock = (event: string) => {
     return nock(`${API_HOST}/${KEY}`)
@@ -679,6 +706,7 @@ describe("feedback state management", () => {
     expect(callback).not.toBeCalled;
 
     expect(n1.isDone()).toBe(false);
+    nock.cleanAll();
 
     expect(markPromptMessageCompleted).not.toHaveBeenCalledOnce();
 
@@ -871,7 +899,9 @@ describe("feedback state management", () => {
 });
 
 describe("feature flags", () => {
-  beforeAll(() => {
+  beforeEach(() => {
+    clearCache();
+
     nock(`${API_HOST}/${KEY}`)
       .get(/.*\/flags\/evaluate\?context.user.id=/)
       .reply(500, {
@@ -879,8 +909,8 @@ describe("feature flags", () => {
       });
   });
 
-  afterAll(() => {
-    nock.cleanAll();
+  afterEach((t) => {
+    nockAssertAndClear(t.task);
   });
 
   test("returns fall back flags on failure", async () => {
@@ -889,10 +919,22 @@ describe("feature flags", () => {
 
     const fallbackFlags = [{ value: true, key: "feature1" }];
 
+    const asyncNock = nock(`${API_HOST}/${KEY}`)
+      .post(/.*\/flags\/events/, {
+        action: "check",
+        flagKey: "feature1",
+        evalResult: true,
+      })
+      .times(2)
+      .reply(200);
+
     const result = await bucketInstance.getFeatureFlags({
       context: { user: { id: "user-id" } },
       fallbackFlags,
     });
-    expect(result).toEqual({ feature1: fallbackFlags[0] });
+
+    expect(result["feature1"]).toEqual(fallbackFlags[0]);
+
+    await nockWait(asyncNock);
   });
 });

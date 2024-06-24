@@ -14,7 +14,7 @@ export interface Flag {
   /**
    * The version of the flag
    */
-  version: number;
+  version?: number;
 }
 
 /**
