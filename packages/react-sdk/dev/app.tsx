@@ -1,12 +1,16 @@
 import React, { useState } from "react";
 
-import Bucket, { useBucket, useFeatureFlag, useFeatureFlags } from "../src";
+import { BucketProvider, useFlag, useFlags, useRequestFeedback } from "../src";
+
+interface flags {
+  HUDDLE: "huddle";
+}
 
 function Demos() {
   const [flagName, setFlagName] = useState("");
-  const bucket = useBucket();
-  const flags = useFeatureFlags();
-  const flag = useFeatureFlag(flagName);
+  const requestFeedback = useRequestFeedback();
+  const flags = useFlags();
+  const flag = useFlag(flagName);
 
   return (
     <main>
@@ -40,9 +44,8 @@ function Demos() {
       <h2>Feedback</h2>
       <button
         onClick={() => {
-          bucket.requestFeedback({
+          requestFeedback({
             featureId: "fe123",
-            userId: "user123",
           });
         }}
       >
@@ -52,9 +55,11 @@ function Demos() {
   );
 }
 
+type MyBucketProvider = BucketProvider(flags);
+
 export function App() {
   return (
-    <Bucket
+    <MyBucketProvider
       publishableKey="trdwA10Aoant6IaK3Qt45NMI"
       persistUser={false}
       feedback={{
@@ -73,6 +78,6 @@ export function App() {
       }}
     >
       <Demos />
-    </Bucket>
+    </MyBucketProvider>
   );
 }
