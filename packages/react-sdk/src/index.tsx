@@ -35,6 +35,30 @@ type FlagContext = {
   otherContext?: OtherContext;
 };
 
+export function TypedBucket<T extends Record<string, boolean>>(flags: T) {
+  return {
+    useFlag(key: Extract<keyof T, string>) {
+      return useFlag(key);
+    },
+    useFlags: useFlags,
+    useFlagIsEnabled: (key: Extract<keyof T, string>) => useFlagIsEnabled(key),
+    useUpdateCompany: () => useUpdateCompany(),
+    useUpdateUser: () => useUpdateUser(),
+    useUpdateOtherContext: () => useUpdateOtherContext(),
+    useTrack: () => useTrack(),
+    useSendFeedback: () => useSendFeedback(),
+    useRequestFeedback: () => useRequestFeedback(),
+    Provider: (props: BucketProps) =>
+      BucketProvider({
+        ...props,
+        flagOptions: {
+          ...props.flagOptions,
+          fallbackFlags: Object.keys(flags),
+        },
+      }),
+  };
+}
+
 type BucketContext<T = Record<string, string>> = {
   bucket: BucketInstance;
   flags: {
@@ -62,14 +86,16 @@ const Context = createContext<BucketContext>({
 export type BucketProps = BucketSDKOptions &
   FlagContext & {
     publishableKey: string;
-    flags: FeatureFlagsOptions;
+    flagOptions?: Omit<FeatureFlagsOptions, "context" | "fallbackFlags"> & {
+      fallbackFlags?: string[];
+    };
     children?: ReactNode;
     sdk?: BucketInstance;
   };
 
-export type Flags<T> = { [k in keyof T]?: Flag };
+export type Flags<T = Record<string, string>> = { [k in keyof T]?: Flag };
 
-export function BucketProvider<T = Record<string, string>>({
+export function BucketProvider({
   children,
   sdk,
   user: initialUser,
@@ -77,7 +103,7 @@ export function BucketProvider<T = Record<string, string>>({
   otherContext: initialOtherContext,
   ...config
 }: BucketProps) {
-  const [flags, setFlags] = useState<Flags<T>>({});
+  const [flags, setFlags] = useState<Flags>({});
   const [flagsLoading, setFlagsLoading] = useState(true);
   const [bucket] = useState(() => sdk ?? BucketSingleton);
 
@@ -112,14 +138,24 @@ export function BucketProvider<T = Record<string, string>>({
 
   useEffect(() => {
     try {
-      const { publishableKey, flags: flagOptions, ...options } = config;
+      const { publishableKey, flagOptions, ...options } = config;
+
+      const { fallbackFlags, ...flagOptionsRest } = flagOptions || {};
 
       bucket.reset();
       bucket.init(publishableKey, options);
 
       setFlagsLoading(true);
+      // TODO: otherContext...
       bucket
-        .getFeatureFlags(flagOptions)
+        .getFeatureFlags({
+          ...flagOptionsRest,
+          fallbackFlags: fallbackFlags?.map((key) => ({
+            value: true,
+            key,
+          })),
+          context: flagContext,
+        })
         .then((loadedFlags) => {
           setFlags(loadedFlags);
           setFlagsLoading(false);
@@ -132,7 +168,7 @@ export function BucketProvider<T = Record<string, string>>({
     }
   }, [contextKey]);
 
-  const context: BucketContext<T> = {
+  const context: BucketContext = {
     bucket,
     flags: {
       flags,
@@ -179,13 +215,15 @@ export function useFlag(key: string) {
   const flags = useContext<BucketContext>(Context).flags;
   const flag = flags.flags[key];
 
-  const value = flag?.value ?? null;
+  const value = flag?.value ?? false;
 
   return { isLoading: flags.isLoading, isEnabled: value };
 }
 
 /**
  * Returns feature flags as an object, e.g.
+ * Note: this returns the raw flag keys, and does not use the
+ * mapping provided in the `BucketProvider`.
  *
  * ```ts
  * const flags = useFlags();
@@ -198,8 +236,14 @@ export function useFlag(key: string) {
  * // }
  * ```
  */
-export function useFlags() {
-  const { isLoading, flags } = useContext<BucketContext>(Context).flags;
+export function useFlags(): {
+  isLoading: boolean;
+  flags: { [key: string]: boolean };
+} {
+  const {
+    flags: { flags, isLoading },
+  } = useContext<BucketContext>(Context);
+
   return {
     isLoading,
     flags: Object.fromEntries(Object.keys(flags).map((f) => [f, true])),

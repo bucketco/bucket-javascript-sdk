@@ -1,16 +1,19 @@
 import React, { useState } from "react";
 
-import { BucketProvider, useFlag, useFlags, useRequestFeedback } from "../src";
+import { TypedBucket } from "../src";
 
-interface flags {
-  HUDDLE: "huddle";
-}
+const flags = {
+  huddle: false,
+};
+
+const MyBucket = TypedBucket(flags);
+export const { useFlag, useFlags, useRequestFeedback } = MyBucket;
 
 function Demos() {
   const [flagName, setFlagName] = useState("");
   const requestFeedback = useRequestFeedback();
   const flags = useFlags();
-  const flag = useFlag(flagName);
+  const flag = useFlag("huddle");
 
   return (
     <main>
@@ -55,29 +58,24 @@ function Demos() {
   );
 }
 
-type MyBucketProvider = BucketProvider(flags);
-
 export function App() {
   return (
-    <MyBucketProvider
+    <MyBucket.Provider
       publishableKey="trdwA10Aoant6IaK3Qt45NMI"
       persistUser={false}
       feedback={{
         enableLiveSatisfaction: false,
       }}
-      flags={{
-        context: {
-          user: {
-            id: "demo-user",
-            email: "demo-user@example.com",
-          },
-          company: {
-            id: "demo-company",
-          },
-        },
+      user={{
+        id: "demo-user",
+        email: "demo-user@example.com",
+      }}
+      company={{
+        id: "demo-company",
       }}
     >
       <Demos />
-    </MyBucketProvider>
+      {}
+    </MyBucket.Provider>
   );
 }
