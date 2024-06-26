@@ -4,7 +4,7 @@ const flags = {
   huddle: false,
 };
 
-const MyBucket = TypedBucket(flags);
+export const MyBucket = TypedBucket(flags);
 
 // must manually export each hook unfortunately
 export const {

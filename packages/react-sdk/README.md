@@ -24,7 +24,7 @@ See `useFeatureFlag()` below for more fine-grained control over loading indicato
 
 **Example:**
 
-Create a file called `flags.ts`:
+Create a file called `bucket.ts`:
 
 ```tsx
 import { TypedBucket } from "@bucketco/react-sdk";
@@ -38,7 +38,15 @@ const flags = {
 };
 
 export const MyBucket = TypedBucket(flags);
-export const { useFlag, useFlags, useRequestFeedback } = MyBucket;
+export const {
+  useFlag,
+  useFlags,
+  useRequestFeedback,
+  useCompany,
+  useUser,
+  useOtherContext,
+  useTrack,
+} = MyBucket;
 ```
 
 And update your `App.tsx` to insert the `<MyBucket.Provider />` so it looks something like the following:
@@ -184,32 +192,76 @@ function DebugFlags() {
 }
 ```
 
-### `useUpdateContext()`
+### `useCompany()`
 
-`useUpdateContext` returns a set of functions that can be used to update the stored Bucket context.
-This causes the Bucket client to refetch feature flags.
+`useCompany` returns `[company, setCompany()]`, similar to `useState`. Company is the current `company` object, while `setCompany` lets you update it.
+Updates causes the Bucket client to refetch feature flags.
 
-TODO: Do you sometimes need to use `useUpdateContext` outside of the context provider? How'll that work?
+```tsx
+import { useCompany } from "@bucketco/react-sdk";
 
-```ts
-import { useUpdateContext } from "@bucketco/react-sdk";
+function Company() {
+  const [company, setCompany] = useCompany();
 
-const { updateUser, updateCompany, updateOtherContext } =
-  useUpdateContext();
+  const [name, setName] = useState(company.name);
+  return (
+    <div>
+      <input value={name} onChange={(e) => setName(e.target.value)} />
+      <button onClick={() => setCompany({ ...company, name })}>
+        Update company name
+      </button>
+    </div>
+  );
+}
+```
 
-updateUser({
-  id: "jane_doe",
-  role: "manager",
-});
+### `useUser()`
 
-updateCompany({
-  id: "jane_doe",
-  role: "manager",
-});
+`useUser` returns `[user, setUser()]`, similar to `useState`. Company is the current `user` object, while `setUser` lets you update it.
+Updates causes the Bucket client to refetch feature flags.
 
-updateOtherContext({
-  happeningId: "bigConference,
-});
+```tsx
+import { useUser } from "@bucketco/react-sdk";
+
+function User() {
+  const [user, setUser] = useUser();
+
+  const [name, setName] = useState(user.name);
+  return (
+    <div>
+      <input value={name} onChange={(e) => setName(e.target.value)} />
+      <button onClick={() => setUser({ ...user, name })}>
+        Update user name
+      </button>
+    </div>
+  );
+}
+```
+
+### `useOtherContext()`
+
+`useOtherContext` returns `[otherContext, setOtherContext()]`, similar to `useState`. Company is the current `otherContext` object, while `setOtherContext` lets you update it.
+Updates causes the Bucket client to refetch feature flags.
+
+```tsx
+import { useOtherContext } from "@bucketco/react-sdk";
+
+function User() {
+  const [otherContext, setOtherContext] = useOtherContext();
+
+  const [happeningId, setHappeningId] = useState(otherContext.happeningId);
+  return (
+    <div>
+      <input
+        value={happeningId}
+        onChange={(e) => setHappeningId(e.target.value)}
+      />
+      <button onClick={() => setOtherContext({ happeningId })}>
+        Update happening ID
+      </button>
+    </div>
+  );
+}
 ```
 
 ### `useTrack()`
