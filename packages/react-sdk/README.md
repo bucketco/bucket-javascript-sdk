@@ -18,10 +18,6 @@ and create a new `BucketProvider` context provider type using your flags object
 Then wrap your application with the `BucketProvider` context provider.
 This will initialize the Bucket SDK, fetch feature flags and start listening for Live Satisfaction events.
 
-The `BucketProvider` will [suspense](https://react.dev/reference/react/Suspense) while loading so any subsequent uses of feature flags are instant.
-
-See `useFlag()` below for more fine-grained control over loading indicators.
-
 **Example:**
 
 Create a file called `bucket.ts`:
@@ -55,22 +51,21 @@ And update your `App.tsx` to insert the `<MyBucket.Provider />` so it looks some
 import { MyBucket} from 'flags'
 
 // Initialize the BucketProvider
-<Suspense fallback={<Loading />}>
-  <MyBucket.Provider
-    publishableKey="{YOUR_PUBLISHABLE_KEY}" // The publishable key of your app environment
-    // `company` and `user` should have at least the `id` property plus anything additional you want to be able to evaluate flags against.
-    // See "Managing Bucket context" below.
-    company={ id: "acme_inc" }
-    user={ id: "john doe" }
-  >
-  {/* ... */}
-  </MyBucket.Provider>
-</Suspense>
+<MyBucket.Provider
+  publishableKey="{YOUR_PUBLISHABLE_KEY}" // The publishable key of your app environment
+  // `company` and `user` should have at least the `id` property plus anything additional you want to be able to evaluate flags against.
+  // See "Managing Bucket context" below.
+  company={ id: "acme_inc" }
+  user={ id: "john doe" }
+  loading={<Loading />}
+>
+{/* ... */}
+</MyBucket.Provider>
 ```
 
-The context you provide is automatically transmitted to Bucket servers so the Bucket app can show you which companies have access to which flags etc.
-
-If you're not yet using `<Suspense>` you can achieve a similar thing by doing:
+- `publishableKey` is used to connect the provider to an _environment_ on Bucket. Find your `publishableKey` under `Activity` on https://app.bucket.co.
+- `company`, `user` and `otherContext` make up the _context_ that is used to determine if a feature flag is enabled or not. `company` and `user` contexts are automatically transmitted to Bucket servers so the Bucket app can show you which companies have access to which flags etc.
+- `loading` lets you specify an alternative React component to be rendered while the Bucket provider is initializing. If you want more control over loading screens, `useFlags()` returns `isLoading` which you can use to customize the loading experience:
 
 ```tsx
 function LoadingBucket({ children }) {
@@ -99,12 +94,12 @@ TODO: Describe options to `BucketProvider`
 ### `useFlagIsEnabled()`
 
 Returns a boolean indicating if the given feature flag is enabled for the current context.
-If not using a <Suspense> barrier, `useFlagIsEnabled` returns false while flags are being loaded.
+`useFlagIsEnabled` returns false while flags are being loaded.
 
 Use `useFlag()` for fine-grained control over loading and rendering.
 
 ```tsx
-import { useFlag } from "@bucketco/react-sdk";
+import { useFlagIsEnabled } from "@bucketco/react-sdk";
 
 function StartHuddleButton() {
   const joinHuddleFlagEnabled = useFlagIsEnabled("huddle");
@@ -165,73 +160,37 @@ function DebugFlags() {
 }
 ```
 
-### `useCompany()`
+### `useUpdateContext()`
 
-`useCompany` returns `[company, setCompany()]`, similar to `useState`. Company is the current `company` object, while `setCompany` lets you update it.
-Updates causes the Bucket client to refetch feature flags.
+`useUpdateContext` returns functions `updateCompany`, `updateUser` and `updateOtherContext`. The functions lets you update the _context_ that is used to determine if a feature flag is enabled or not. For example, if the user logs out, changes company or similar or a specific property changes on the company as in the example below:
 
 ```tsx
-import { useCompany } from "@bucketco/react-sdk";
+import { useUpdateContext } from "@bucketco/react-sdk";
 
 function Company() {
-  const [company, setCompany] = useCompany();
-
-  const [name, setName] = useState(company.name);
+  const { updateCompany } = useUpdateContext();
   return (
     <div>
-      <input value={name} onChange={(e) => setName(e.target.value)} />
-      <button onClick={() => setCompany({ ...company, name })}>
-        Update company name
+      <button onClick={() => updateCompany({ ...company, plan: "enterprise" })}>
+        Upgrade to enterprise
       </button>
     </div>
   );
 }
 ```
 
-### `useUser()`
+### `useContext()`
 
-`useUser` returns `[user, setUser()]`, similar to `useState`. Company is the current `user` object, while `setUser` lets you update it.
-Updates causes the Bucket client to refetch feature flags.
-
-```tsx
-import { useUser } from "@bucketco/react-sdk";
-
-function User() {
-  const [user, setUser] = useUser();
-
-  const [name, setName] = useState(user.name);
-  return (
-    <div>
-      <input value={name} onChange={(e) => setName(e.target.value)} />
-      <button onClick={() => setUser({ ...user, name })}>
-        Update user name
-      </button>
-    </div>
-  );
-}
-```
-
-### `useOtherContext()`
-
-`useOtherContext` returns `[otherContext, setOtherContext()]`, similar to `useState`. Company is the current `otherContext` object, while `setOtherContext` lets you update it.
-Updates causes the Bucket client to refetch feature flags.
+`useContext` returns the `company`, `user` and `otherContext` currently set. This is mostly useful for debugging.
 
 ```tsx
-import { useOtherContext } from "@bucketco/react-sdk";
+import { useContext } from "@bucketco/react-sdk";
 
-function User() {
-  const [otherContext, setOtherContext] = useOtherContext();
-
-  const [happeningId, setHappeningId] = useState(otherContext.happeningId);
+function FlagsContext() {
+  const context = useContext();
   return (
     <div>
-      <input
-        value={happeningId}
-        onChange={(e) => setHappeningId(e.target.value)}
-      />
-      <button onClick={() => setOtherContext({ happeningId })}>
-        Update happening ID
-      </button>
+      <pre>{JSON.stringify(context)}</pre>
     </div>
   );
 }
@@ -239,14 +198,21 @@ function User() {
 
 ### `useTrack()`
 
-`useTrack()` lets you send events to Bucket. Use this whenever a user _uses_ a feature. Create [features](https://docs.bucket.co/introduction/concepts/feature) in Bucket based off of these events to analyse feature usage.
+`useTrack()` lets you send events to Bucket. Use this whenever a user _uses_ a feature. Create [features](https://docs.bucket.co/introduction/concepts/feature) in Bucket based off of these events to analyze feature usage.
 
-```ts
+```tsx
 import { useTrack } from "@bucketco/react-sdk";
 
-const track = useTrack();
-
-track("Huddle Started", { huddleType: "voice" });
+function StartHuddle() {
+  const track = useTrack();
+  return (
+    <div>
+      <button onClick={() => track("Huddle Started", { huddleType: "voice" })}>
+        Start voice huddle!
+      </button>
+    </div>
+  );
+}
 ```
 
 <!-- ### `useRequestFeedback()`

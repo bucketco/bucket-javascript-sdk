@@ -143,15 +143,14 @@ export function BucketProvider({
       }
 
       setFlagsLoading(true);
-      use(
-        bucket.getFeatureFlags({
+      bucket
+        .getFeatureFlags({
           ...flagOptionsRest,
           fallbackFlags: Object.entries(fallbackFlags ?? {}).map(
             ([key, value]) => ({ key, value }),
           ),
           context: flagContext,
-        }),
-      )
+        })
         .then((loadedFlags) => {
           setFlags(loadedFlags);
         })
