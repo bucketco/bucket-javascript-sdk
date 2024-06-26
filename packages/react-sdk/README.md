@@ -20,7 +20,7 @@ This will initialize the Bucket SDK, fetch feature flags and start listening for
 
 The `BucketProvider` will [suspense](https://react.dev/reference/react/Suspense) while loading so any subsequent uses of feature flags are instant.
 
-See `useFeatureFlag()` below for more fine-grained control over loading indicators.
+See `useFlag()` below for more fine-grained control over loading indicators.
 
 **Example:**
 
@@ -74,7 +74,7 @@ If you're not yet using `<Suspense>` you can achieve a similar thing by doing:
 
 ```tsx
 function LoadingBucket({ children }) {
-  const {isLoading} = useFeatureFlags()
+  const {isLoading} = useFlags()
   if (isLoading) {
     return <Spinner />
   }
@@ -101,10 +101,10 @@ TODO: Describe options to `BucketProvider`
 Returns a boolean indicating if the given feature flag is enabled for the current context.
 If not using a <Suspense> barrier, `useFlagIsEnabled` returns false while flags are being loaded.
 
-Use `useFeatureFlag()` for fine-grained control over loading and rendering.
+Use `useFlag()` for fine-grained control over loading and rendering.
 
 ```tsx
-import { useFeatureFlag } from "@bucketco/react-sdk";
+import { useFlag } from "@bucketco/react-sdk";
 
 function StartHuddleButton() {
   const joinHuddleFlagEnabled = useFlagIsEnabled("huddle");
@@ -118,15 +118,15 @@ function StartHuddleButton() {
 }
 ```
 
-### `useFeatureFlag()`
+### `useFlag()`
 
 Returns the state of a given feature flag for the current context.
 
 ```tsx
-import { useFeatureFlag } from "@bucketco/react-sdk";
+import { useFlag } from "@bucketco/react-sdk";
 
 function StartHuddleButton() {
-  const { isLoading, isEnabled } = useFeatureFlag("huddle");
+  const { isLoading, isEnabled } = useFlag("huddle");
 
   if (isLoading) {
     return <Loading />;
@@ -140,15 +140,15 @@ function StartHuddleButton() {
 }
 ```
 
-### `useFeatureFlags()`
+### `useFlags()`
 
 Returns all enabled feature flags as an object. Useful for debugging or checking many flags at the same time.
 
 ```tsx
-import { useFeatureFlags } from "@bucketco/react-sdk";
+import { useFlags } from "@bucketco/react-sdk";
 
 function DebugFlags() {
-  const featureFlags = useFeatureFlags();
+  const featureFlags = useFlags();
   // {
   //   "isLoading": false,
   //   "flags: {

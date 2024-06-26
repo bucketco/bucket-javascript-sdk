@@ -53,7 +53,7 @@ export function TypedBucket<T extends Record<string, boolean>>(flags: T) {
         ...props,
         flagOptions: {
           ...props.flagOptions,
-          fallbackFlags: Object.keys(flags),
+          fallbackFlags: flags,
         },
       }),
   };
@@ -87,7 +87,7 @@ export type BucketProps = BucketSDKOptions &
   FlagContext & {
     publishableKey: string;
     flagOptions?: Omit<FeatureFlagsOptions, "context" | "fallbackFlags"> & {
-      fallbackFlags?: string[];
+      fallbackFlags?: Record<string, boolean>;
     };
     children?: ReactNode;
     sdk?: BucketInstance;
@@ -117,25 +117,6 @@ export function BucketProvider({
 
   const contextKey = canonicalJSON({ config, flagContext });
 
-  // update the user and company on the Bucket servers
-  useEffect(() => {
-    if (user?.id) {
-      const { id: _, ...attributes } = user;
-      bucket.user(String(user.id), attributes);
-    }
-  }, [canonicalJSON(user)]);
-
-  useEffect(() => {
-    if (company?.id) {
-      const { id: _, ...attributes } = company;
-      bucket.company(
-        String(company.id),
-        attributes,
-        user?.id !== undefined ? String(user?.id) : undefined,
-      );
-    }
-  }, [canonicalJSON(company), user?.id]);
-
   useEffect(() => {
     try {
       const { publishableKey, flagOptions, ...options } = config;
@@ -145,23 +126,40 @@ export function BucketProvider({
       bucket.reset();
       bucket.init(publishableKey, options);
 
+      // update the user and company on the Bucket servers
+
+      if (user?.id) {
+        const { id: _, ...attributes } = user;
+        bucket.user(String(user.id), attributes);
+      }
+
+      if (company?.id) {
+        const { id: _, ...attributes } = company;
+        bucket.company(
+          String(company.id),
+          attributes,
+          user?.id !== undefined ? String(user?.id) : undefined,
+        );
+      }
+
       setFlagsLoading(true);
-      // TODO: otherContext...
-      bucket
-        .getFeatureFlags({
+      use(
+        bucket.getFeatureFlags({
           ...flagOptionsRest,
-          fallbackFlags: fallbackFlags?.map((key) => ({
-            value: true,
-            key,
-          })),
+          fallbackFlags: Object.entries(fallbackFlags ?? {}).map(
+            ([key, value]) => ({ key, value }),
+          ),
           context: flagContext,
-        })
+        }),
+      )
         .then((loadedFlags) => {
           setFlags(loadedFlags);
-          setFlagsLoading(false);
         })
         .catch((err) => {
           console.error("[Bucket SDK] Error fetching flags:", err);
+        })
+        .finally(() => {
+          setFlagsLoading(false);
         });
     } catch (err) {
       console.error("[Bucket SDK] Unknown error:", err);

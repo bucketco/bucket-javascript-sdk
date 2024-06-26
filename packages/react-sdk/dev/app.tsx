@@ -8,6 +8,7 @@ import {
   useRequestFeedback,
   useTrack,
   useUser,
+  MyBucket,
 } from "./bucket";
 
 // App.tsx
@@ -64,55 +65,59 @@ function Demos() {
       <h2>Update context</h2>
 
       <table>
-        <tr>
-          <td>
-            <textarea
-              value={newCompany}
-              onChange={(e) => setNewCompany(e.target.value)}
-            ></textarea>
-          </td>
-          <button
-            onClick={() => {
-              setCompany(JSON.parse(newCompany));
-            }}
-          >
-            Update company
-          </button>
-        </tr>
-        <tr>
-          <td>
-            <textarea
-              value={newUser}
-              onChange={(e) => setNewUser(e.target.value)}
-            ></textarea>
-          </td>
-          <td>
-            <button
-              onClick={() => {
-                setUser(JSON.parse(newUser));
-              }}
-            >
-              Update user
-            </button>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <textarea
-              value={newOtherContext}
-              onChange={(e) => setNewOtherContext(e.target.value)}
-            ></textarea>
-          </td>
-          <td>
-            <button
-              onClick={() => {
-                setOtherContext(JSON.parse(newOtherContext));
-              }}
-            >
-              Update other context
-            </button>
-          </td>
-        </tr>
+        <tbody>
+          <tr>
+            <td>
+              <textarea
+                value={newCompany}
+                onChange={(e) => setNewCompany(e.target.value)}
+              ></textarea>
+            </td>
+            <td>
+              <button
+                onClick={() => {
+                  setCompany(JSON.parse(newCompany));
+                }}
+              >
+                Update company
+              </button>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <textarea
+                value={newUser}
+                onChange={(e) => setNewUser(e.target.value)}
+              ></textarea>
+            </td>
+            <td>
+              <button
+                onClick={() => {
+                  setUser(JSON.parse(newUser));
+                }}
+              >
+                Update user
+              </button>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <textarea
+                value={newOtherContext}
+                onChange={(e) => setNewOtherContext(e.target.value)}
+              ></textarea>
+            </td>
+            <td>
+              <button
+                onClick={() => {
+                  setOtherContext(JSON.parse(newOtherContext));
+                }}
+              >
+                Update other context
+              </button>
+            </td>
+          </tr>
+        </tbody>
       </table>
 
       <h2>Feedback</h2>
