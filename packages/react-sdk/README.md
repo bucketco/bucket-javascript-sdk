@@ -94,33 +94,6 @@ function LoadingBucket({ children }) {
 
 TODO: Describe options to `BucketProvider`
 
-<!-- All options which can be passed to `bucket.init` can be passed as props to the Bucket higher order component.
-
-See the [Tracking SDK documentation](../tracking-sdk/README.md) for more.
-
-```tsx
-import { BucketProvider } from "@bucketco/react-sdk";
-
-<BucketProvider
-  publishableKey="{YOUR_PUBLISHABLE_KEY}" // The publishable key of your app environment
-  debug={false} // Enable debug mode to log info and errors
-  host="https://tracking.bucket.co" // Configure the host Bucket calls are made to
-  sseHost="https://livemessaging.bucket.co" // Configure the host Bucket SSE calls are made to
-  feedback={
-    {
-      // See feedback options here: https://github.com/bucketco/bucket-tracking-sdk/blob/main/packages/tracking-sdk/FEEDBACK.md#global-feedback-configuration
-    }
-  }
->
-  {/* ... */}
-</BucketProvider>;
-``` -->
-
-# Managing Bucket context
-
-It's often then case that you don't want to carry around _all_ the Bucket context required to evaluate feature flags everywhere. You might only have this context at log-in time or similar.
-You can manage that by calling the functions returned from `useUpdateContext()` which returns functions to update `user`, `company` and the `other` context.
-
 ## Hooks
 
 ### `useFlagIsEnabled()`
