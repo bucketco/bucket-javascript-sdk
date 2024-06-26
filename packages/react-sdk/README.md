@@ -48,7 +48,7 @@ export const {
 And update your `App.tsx` to insert the `<MyBucket.Provider />` so it looks something like the following:
 
 ```tsx
-import { MyBucket} from 'flags'
+import { MyBucket } from 'flags'
 
 // Initialize the BucketProvider
 <MyBucket.Provider
