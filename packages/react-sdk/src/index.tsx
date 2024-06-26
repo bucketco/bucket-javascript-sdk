@@ -42,10 +42,10 @@ export function TypedBucket<T extends Record<string, boolean>>(flags: T) {
     },
     useFlags: useFlags,
     useFlagIsEnabled: (key: Extract<keyof T, string>) => useFlagIsEnabled(key),
-    useUpdateCompany: () => useUpdateCompany(),
-    useUpdateUser: () => useUpdateUser(),
-    useUpdateOtherContext: () => useUpdateOtherContext(),
-    useTrack: () => useTrack(),
+    useCompany: useCompany,
+    useUser: useUser,
+    useOtherContext: useOtherContext,
+    useTrack: useTrack,
     useSendFeedback: () => useSendFeedback(),
     useRequestFeedback: () => useRequestFeedback(),
     Provider: (props: BucketProps) =>
@@ -64,7 +64,7 @@ type BucketContext<T = Record<string, string>> = {
   flags: {
     flags: Flags<T>;
     isLoading: boolean;
-    setFlagContext: (context: FlagContext) => void;
+    setContext: (context: FlagContext) => void;
     context: {
       user?: UserContext;
       company?: CompanyContext;
@@ -78,7 +78,7 @@ const Context = createContext<BucketContext>({
   flags: {
     flags: {},
     isLoading: true,
-    setFlagContext: () => {},
+    setContext: () => {},
     context: {},
   },
 });
@@ -174,7 +174,7 @@ export function BucketProvider({
       flags,
       isLoading: flagsLoading,
       context: { user, company, otherContext },
-      setFlagContext: (context: FlagContext) => {
+      setContext: (context: FlagContext) => {
         setFlagContext({
           ...flagContext,
           ...context,
@@ -254,50 +254,62 @@ export function useFlags(): {
  * Returns a function to update the current company
  *
  * ```ts
- * const updateCompany = useUpdateCompany();
- * updateCompany({
- *   id: "company1",
+ * const [company, setCompany] = useCompany();
+ * setCompany({
+ *   ...company,
  *   plan: "enterprise",
  * });
  * ```
  */
-export function useUpdateCompany() {
-  return (company: CompanyContext) => {
-    useContext<BucketContext>(Context).flags.setFlagContext({ company });
-  };
+export function useCompany() {
+  const { context, setContext } = useContext<BucketContext>(Context).flags;
+  return [
+    context.company,
+    (company: CompanyContext) => {
+      setContext({ ...context, company });
+    },
+  ] as const;
 }
 
 /**
  * Returns a function to update the current user
  *
  * ```ts
- * const updateUser = useUpdateUser();
- * updateUser({
- *   id: "user1",
- *   plan: "enterprise",
+ * const [user, setUser] = useUser();
+ * setUser({
+ *   ...user,
+ *   role: "manager",
  * });
  * ```
  */
-export function useUpdateUser() {
-  return (user: UserContext) => {
-    useContext<BucketContext>(Context).flags.setFlagContext({ user });
-  };
+export function useUser() {
+  const { context, setContext } = useContext<BucketContext>(Context).flags;
+  return [
+    context.user,
+    (user: UserContext) => {
+      setContext({ ...context, user });
+    },
+  ] as const;
 }
 
 /**
  * Returns a function to update the "other" context
  *
  * ```ts
- * const updateUser = useUpdateOtherContext();
- * updateOtherContext({
+ * const otherContext = useOtherContext();
+ * setOtherContext({
  *   happeningId: "big-conf1",
  * });
  * ```
  */
-export function useUpdateOtherContext() {
-  return (otherContext: OtherContext) => {
-    useContext<BucketContext>(Context).flags.setFlagContext({ otherContext });
-  };
+export function useOtherContext() {
+  const { context, setContext } = useContext<BucketContext>(Context).flags;
+  return [
+    context.otherContext,
+    (otherContext: OtherContext) => {
+      setContext({ ...context, otherContext });
+    },
+  ] as const;
 }
 
 /**
@@ -311,7 +323,7 @@ export function useUpdateOtherContext() {
 export function useTrack() {
   const ctx = useContext<BucketContext>(Context);
 
-  return (eventName: string, attributes: Record<string, any>) => {
+  return (eventName: string, attributes?: Record<string, any>) => {
     const { user, company } = ctx.flags.context;
 
     if (user?.id === undefined)
@@ -351,8 +363,8 @@ export function useSendFeedback() {
  * Returns a function to open up the feedback form
  *
  * ```ts
- * const track = useRequestFeedback();
- * track("Started Huddle", { button: "cta" });
+ * const requestFeedback = useRequestFeedback();
+ * requestFeedback("Started Huddle", { button: "cta" });
  * ```
  */
 export function useRequestFeedback() {

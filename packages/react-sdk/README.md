@@ -24,6 +24,8 @@ See `useFeatureFlag()` below for more fine-grained control over loading indicato
 
 **Example:**
 
+Create a file called `flags.ts`:
+
 ```tsx
 import { TypedBucket } from "@bucketco/react-sdk";
 
@@ -35,25 +37,26 @@ const flags = {
   recordVideo: false,
 };
 
-const MyBucket = TypedBucket(flags);
+export const MyBucket = TypedBucket(flags);
 export const { useFlag, useFlags, useRequestFeedback } = MyBucket;
+```
 
-// create a typed provider
-type MyBucket = BucketProvider<flags>;
+And update your `App.tsx` to insert the `<MyBucket.Provider />` so it looks something like the following:
 
-//--- Initialize the BucketProvider
+```tsx
+import { MyBucket} from 'flags'
+
+// Initialize the BucketProvider
 <Suspense fallback={<Loading />}>
   <MyBucket.Provider
     publishableKey="{YOUR_PUBLISHABLE_KEY}" // The publishable key of your app environment
     // `company` and `user` should have at least the `id` property plus anything additional you want to be able to evaluate flags against.
-    // if `company` or `user` isn't given, BucketProvider will pull it from `localstorage`.
-    // see "Managing Bucket context" below.
+    // See "Managing Bucket context" below.
     company={ id: "acme_inc" }
     user={ id: "john doe" }
-    // TODO: should you be able to initialize without giving a context? In that case you must `useUpdateContext` later.
-    // situationalContext={....}
-    {/* ... */}
-  </MyBucket.Provider>;
+  >
+  {/* ... */}
+  </MyBucket.Provider>
 </Suspense>
 ```
 
@@ -108,28 +111,7 @@ import { BucketProvider } from "@bucketco/react-sdk";
 # Managing Bucket context
 
 It's often then case that you don't want to carry around _all_ the Bucket context required to evaluate feature flags everywhere. You might only have this context at log-in time or similar.
-
-You can manage that by calling the functions returned from `useUpdateContext()` to update `user` or `company` objects. These are saved in localstorage and the new flags will be fetched immediately.
-
-TODO: How can we work with context better?
-
-## Components
-
-### `<FlagEnabled>`
-
-> TODO: Alternative naming: `FlagGate`
-
-Simple gate that only renders the children if the feature flag is enabled. See `hooks` below for use cases beyond the very basic stuff.
-
-If you used a typed provider as described in [Setup](#setup), your flag will be type checked.
-
-```typescript
-import { FlagEnabled } from "@bucketco/react-sdk";
-
-<FlagEnabled flag={"HUDDLE"}>
-  <Button>Huddle time!</Button>
-</FlagEnabled>
-```
+You can manage that by calling the functions returned from `useUpdateContext()` which returns functions to update `user`, `company` and the `other` context.
 
 ## Hooks
 
@@ -140,39 +122,66 @@ If not using a <Suspense> barrier, `useFlagIsEnabled` returns false while flags 
 
 Use `useFeatureFlag()` for fine-grained control over loading and rendering.
 
-```ts
+```tsx
 import { useFeatureFlag } from "@bucketco/react-sdk";
 
-const joinHuddleFlagEnabled = useFlagIsEnabled("huddle");
-// true
+function StartHuddleButton() {
+  const joinHuddleFlagEnabled = useFlagIsEnabled("huddle");
+  // true / false
+
+  if (!joinHuddleFlagEnabled) {
+    return null;
+  }
+
+  return <Button />;
+}
 ```
 
 ### `useFeatureFlag()`
 
 Returns the state of a given feature flag for the current context.
 
-```ts
+```tsx
 import { useFeatureFlag } from "@bucketco/react-sdk";
 
-const { isLoading, isEnabled } = useFeatureFlag("huddle");
+function StartHuddleButton() {
+  const { isLoading, isEnabled } = useFeatureFlag("huddle");
+
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  if (!isEnabled) {
+    return null;
+  }
+
+  return <Button />;
+}
 ```
 
 ### `useFeatureFlags()`
 
-TODO: remove? when do you need this?
-Returns feature flags as an object, e.g.
+Returns all enabled feature flags as an object. Useful for debugging or checking many flags at the same time.
 
-```ts
+```tsx
 import { useFeatureFlags } from "@bucketco/react-sdk";
 
-const featureFlags = useFeatureFlags();
-// {
-//   "isLoading": false,
-//   "flags: {
-//     "join-huddle": true
-//     "post-message": false
-//   }
-// }
+function DebugFlags() {
+  const featureFlags = useFeatureFlags();
+  // {
+  //   "isLoading": false,
+  //   "flags: {
+  //     "join-huddle": true
+  //     "post-message": false
+  //   }
+  // }
+
+  if (featureFlags.isLoading) {
+    return <Loading />;
+  }
+
+  return <pre>{JSON.stringify(featureFlags.flags)}</pre>;
+}
 ```
 
 ### `useUpdateContext()`
@@ -185,7 +194,7 @@ TODO: Do you sometimes need to use `useUpdateContext` outside of the context pro
 ```ts
 import { useUpdateContext } from "@bucketco/react-sdk";
 
-const { updateUser, updateCompany, updateSituationalContext } =
+const { updateUser, updateCompany, updateOtherContext } =
   useUpdateContext();
 
 updateUser({
@@ -198,36 +207,50 @@ updateCompany({
   role: "manager",
 });
 
-updateSituationalContext({
+updateOtherContext({
   happeningId: "bigConference,
 });
 ```
 
-### `useTrackFeature()`
-
-`useTrackFeature()` returns a function you can use to track feature usage.
-
-```ts
-import { useTrackFeature } from "@bucketco/react-sdk";
-
-const trackFeature = useTrackFeature();
-
-trackFeature("feature_key");
-```
-
 ### `useTrack()`
 
-`useTrack()` lets you send events to Bucket.
+`useTrack()` lets you send events to Bucket. Use this whenever a user _uses_ a feature. Create [features](https://docs.bucket.co/introduction/concepts/feature) in Bucket based off of these events to analyse feature usage.
+
+```ts
+import { useTrack } from "@bucketco/react-sdk";
+
+const track = useTrack();
+
+track("Huddle Started", { huddleType: "voice" });
+```
+
+<!-- ### `useRequestFeedback()`
+
+`useRequestFeedback()` returns a function that lets you open up a dialog to ask for feedback on a specific feature.
+See [Live Satisfaction](https://docs.bucket.co/product-handbook/live-satisfaction) for how to do this automatically, without code.
 
 ```ts
 import { useTrackEvent } from "@bucketco/react-sdk";
 
-const trackEvent = useTrackEvent();
+const requestFeedback = useRequestFeedback();
+
+useRequestFeedback....("sent_message", { foo: "bar" });
+```
+
+### `useSendFeedback()`
+
+`useSendFeedback()` returns a function that lets you send feedback to Bucket.
+This is useful if you've manually collected feedback and want to send it to Bucket.
+
+```ts
+import { useTrackEvent } from "@bucketco/react-sdk";
+
+const trackEvent = useTrack();
 
 track("sent_message", { foo: "bar" });
 ```
 
-See the [Tracking SDK documentation](../tracking-sdk/README.md) for usage information.
+See the [Tracking SDK documentation](../tracking-sdk/README.md) for usage information. -->
 
 # License
 
