@@ -1,22 +1,14 @@
 import React, { useState } from "react";
 
-import { TypedBucket } from "../src";
-
-// flags.ts
-const flags = {
-  huddle: false,
-};
-
-const MyBucket = TypedBucket(flags);
-export const {
+import {
+  useCompany,
   useFlag,
   useFlags,
-  useRequestFeedback,
-  useCompany,
-  useUser,
   useOtherContext,
+  useRequestFeedback,
   useTrack,
-} = MyBucket;
+  useUser,
+} from "./bucket";
 
 // App.tsx
 function Demos() {
