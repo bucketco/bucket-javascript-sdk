@@ -1,12 +1,13 @@
 export function readonly<T extends object, K extends keyof T>(
   obj: T,
-  properties?: K[],
-  callback?: (target: T, property: K) => void,
+  callback?: (key: K, value: T[K]) => void,
 ): T {
   return new Proxy(obj, {
     get(target: T, prop) {
-      if (!properties || properties.includes(prop as K)) {
-        callback?.(target, prop as K);
+      const val = target[prop as K];
+
+      if (val !== undefined) {
+        callback?.(prop as K, val);
       }
 
       return target[prop as K];

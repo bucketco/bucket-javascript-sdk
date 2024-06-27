@@ -110,14 +110,13 @@ describe("usage", () => {
         },
       });
 
-    const asyncNock = nock(`${API_HOST}/${KEY}`)
+    const asyncNock = nock(`${API_HOST}`)
       .post(/.*\/flags\/events/, {
         action: "check",
         flagKey: "feature1",
         flagVersion: 2,
         evalResult: true,
       })
-      .times(2)
       .reply(200);
 
     const bucketInstance = bucket();
@@ -919,13 +918,12 @@ describe("feature flags", () => {
 
     const fallbackFlags = [{ value: true, key: "feature1" }];
 
-    const asyncNock = nock(`${API_HOST}/${KEY}`)
+    const asyncNock = nock(`${API_HOST}`)
       .post(/.*\/flags\/events/, {
         action: "check",
         flagKey: "feature1",
         evalResult: true,
       })
-      .times(2)
       .reply(200);
 
     const result = await bucketInstance.getFeatureFlags({

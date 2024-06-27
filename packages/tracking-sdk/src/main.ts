@@ -71,11 +71,20 @@ export default function main() {
   function getUrl() {
     return `${host}/${publishableKey}`;
   }
+
+  function makeUrl(part: string, params?: URLSearchParams) {
+    params = params || new URLSearchParams();
+    params.set("publishableKey", publishableKey!);
+
+    return `${host}/${part}?${params}`;
+  }
+
   function checkKey() {
     if (!publishableKey) {
       err("Publishable key is not set, please call init() first");
     }
   }
+
   function getSessionUser() {
     if (!sessionUserId) {
       err(
@@ -607,22 +616,10 @@ export default function main() {
       }, {} as Flags);
     }
 
-    const proxified = Object.entries(flags).reduce((acc, [key, flag]) => {
-      acc[key] = proxify(
-        flag,
-        ["value"],
-        rateLimited(FLAG_EVENTS_PER_MIN, sendCheckEvent),
-      );
-      return acc;
-    }, {} as Flags);
-
-    return proxified;
+    return proxify(flags, rateLimited(FLAG_EVENTS_PER_MIN, sendCheckEvent));
   }
 
-  function sendCheckEvent(flag: Flag) {
-    // get the stack trace to help debugging
-    const stack = new Error().stack;
-    console.log("sending check event", flag, stack);
+  function sendCheckEvent(_: keyof Flag, flag: Flag) {
     void featureFlagEvent({
       action: "check",
       flagKey: flag.key,
@@ -630,6 +627,21 @@ export default function main() {
       evalResult: flag.value,
     });
   }
+
+  /**
+   * Send a feature flags event.
+   *
+   *
+   * @param action The saction that was taken, either "evaluate" or "check".
+   *        "evaluate" is used when the flag is evaluated, and "check" is used when the flag is checked (after it has been evaluated).
+   * @param flagKey The key of the flag that was evaluated or checked.
+   * @param flagVersion The version of the flag that was evaluated or checked. Can be undefined if the flag is a fallback flag and version
+   *        is not known.
+   * @param evalResult The result of the flag evaluation.
+   * @param evalContext Optional context that was used to evaluate the flag.
+   * @param evalRuleResults Optional results of each rule that was evaluated.
+   * @param evalMissingFields Optional list of missing fields that were required to evaluate the flag.
+   */
 
   async function featureFlagEvent(args: {
     action: "evaluate" | "check";
@@ -652,7 +664,7 @@ export default function main() {
       evalMissingFields: args.evalMissingFields,
     };
 
-    const res = await postRequest(`${getUrl()}/flags/events`, payload);
+    const res = await postRequest(makeUrl("flags/events"), payload);
 
     log(`sent flag event`, res);
 
@@ -690,5 +702,6 @@ export default function main() {
     initLiveFeedback,
     // feature flags
     getFeatureFlags,
+    featureFlagEvent,
   };
 }

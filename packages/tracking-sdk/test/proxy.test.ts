@@ -12,25 +12,25 @@ describe("readonly", () => {
     }).toThrow(new Error("Cannot modify property 'a' of the object."));
   });
 
-  it("should call the callback when accessing specified properties", () => {
+  it("should call the callback when any property", () => {
     const obj = { a: 1, b: 2 };
     const callback = vi.fn();
-    const proxy = readonly(obj, ["a"], callback);
+    const proxy = readonly(obj, callback);
 
     const value = proxy.a;
 
-    expect(callback).toHaveBeenCalledWith(obj, "a");
+    expect(callback).toHaveBeenCalledWith("a", 1);
     expect(value).toBe(1);
   });
 
-  it("should not call the callback when accessing unspecified properties", () => {
+  it("should not call the callback when accessing unknown property", () => {
     const obj = { a: 1, b: 2 };
     const callback = vi.fn();
-    const proxy = readonly(obj, ["a"], callback);
+    const proxy = readonly(obj, callback);
 
-    const value = proxy.b;
+    const value = (proxy as any).z;
 
     expect(callback).not.toHaveBeenCalled();
-    expect(value).toBe(2);
+    expect(value).toBeUndefined();
   });
 });
