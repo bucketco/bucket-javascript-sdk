@@ -702,6 +702,5 @@ export default function main() {
     initLiveFeedback,
     // feature flags
     getFeatureFlags,
-    featureFlagEvent,
   };
 }
