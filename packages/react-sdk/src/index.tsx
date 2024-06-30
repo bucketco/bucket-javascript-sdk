@@ -10,7 +10,6 @@ import canonicalJSON from "canonical-json";
 import type {
   FeatureFlagsOptions,
   Options as BucketSDKOptions,
-  Flag,
 } from "@bucketco/tracking-sdk";
 import BucketSingleton from "@bucketco/tracking-sdk";
 import { Feedback } from "@bucketco/tracking-sdk/dist/types/src/types";
@@ -93,7 +92,7 @@ export type BucketProps = BucketSDKOptions &
     sdk?: BucketInstance;
   };
 
-export type Flags<T = Record<string, string>> = { [k in keyof T]?: Flag };
+export type Flags<T = Record<string, string>> = { [k in keyof T]?: boolean };
 
 export function BucketProvider({
   children,
@@ -152,7 +151,14 @@ export function BucketProvider({
           context: flagContext,
         })
         .then((loadedFlags) => {
-          setFlags(loadedFlags);
+          setFlags(
+            Object.fromEntries(
+              Object.entries(loadedFlags).map(([key, { value }]) => [
+                key,
+                value,
+              ]),
+            ),
+          );
         })
         .catch((err) => {
           console.error("[Bucket SDK] Error fetching flags:", err);
@@ -194,7 +200,7 @@ export function BucketProvider({
  */
 export function useFlagIsEnabled(flagKey: string) {
   const { flags } = useContext<BucketContext>(Context).flags;
-  return flags[flagKey]?.value ?? false;
+  return flags[flagKey] ?? false;
 }
 
 /**
@@ -210,11 +216,10 @@ export function useFlagIsEnabled(flagKey: string) {
  */
 export function useFlag(key: string) {
   const flags = useContext<BucketContext>(Context).flags;
-  const flag = flags.flags[key];
+  debugger;
+  const isEnabled = flags.flags[key] ?? false;
 
-  const value = flag?.value ?? false;
-
-  return { isLoading: flags.isLoading, isEnabled: value };
+  return { isLoading: flags.isLoading, isEnabled };
 }
 
 /**

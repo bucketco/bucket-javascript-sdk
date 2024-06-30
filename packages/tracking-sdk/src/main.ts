@@ -10,7 +10,7 @@ import {
 } from "./config";
 import { createDefaultFeedbackPromptHandler } from "./default-feedback-prompt-handler";
 import * as feedbackLib from "./feedback";
-import { FeatureFlagsOptions, Flags } from "./flags";
+import { FeatureFlagsOptions, FlagsResponse } from "./flags";
 import { getFlags, mergeDeep } from "./flags-fetch";
 import { getAuthToken } from "./prompt-storage";
 import {
@@ -582,7 +582,7 @@ export default function main() {
     fallbackFlags = [],
     timeoutMs,
     staleWhileRevalidate = true,
-  }: FeatureFlagsOptions): Promise<Flags> {
+  }: FeatureFlagsOptions): Promise<Record<string, boolean>> {
     const baseContext = {
       user: { id: sessionUserId },
     };
@@ -598,13 +598,15 @@ export default function main() {
 
     if (!flags) {
       warn(`failed to fetch feature flags, using fall-back flags`);
-      return fallbackFlags.reduce((acc, flag) => {
-        acc[flag.key] = flag;
-        return acc;
-      }, {} as Flags);
+      return fallbackFlags.reduce(
+        (acc, flag) => {
+          acc[flag.key] = true;
+          return acc;
+        },
+        {} as Record<string, boolean>,
+      );
     }
-
-    return flags;
+    return Object.fromEntries(Object.keys(flags).map((key) => [key, true]));
   }
 
   /**
