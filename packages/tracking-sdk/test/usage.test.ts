@@ -927,7 +927,7 @@ describe("feature flags", () => {
       .reply(200);
 
     const result = await bucketInstance.getFeatureFlags({
-      context: { user: { id: "user-id" } },
+      context: { user: { id: "user-id-2" } },
       fallbackFlags,
     });
 

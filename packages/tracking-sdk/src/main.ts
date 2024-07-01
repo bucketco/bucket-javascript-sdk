@@ -610,7 +610,7 @@ export default function main() {
 
     let flags = res?.flags;
 
-    if (!res) {
+    if (!flags) {
       warn(`failed to fetch feature flags, using fall-back flags`);
       flags = fallbackFlags.reduce((acc, flag) => {
         acc[flag.key] = flag;
