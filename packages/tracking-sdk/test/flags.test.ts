@@ -1,3 +1,4 @@
+import { ok } from "assert";
 import fetch from "cross-fetch";
 import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
 
@@ -18,7 +19,7 @@ vi.mock("cross-fetch", () => {
 const flagsResponse: FeatureFlagsResponse = {
   success: true,
   flags: {
-    featureA: { value: true, key: "featureA" },
+    featureA: { value: true, version: 1, key: "featureA" },
   },
 };
 
@@ -49,11 +50,16 @@ describe("getFlags unit tests", () => {
       timeoutMs: 1000,
     });
 
-    expect(flags).toEqual(flagsResponse.flags);
+    expect(flags).toEqual({
+      flags: flagsResponse.flags,
+      url: "https://localhost/flags/evaluate?context.user.id=123",
+    });
   });
 
   test("deduplicates inflight requests", async () => {
-    let resolve;
+    let resolve:
+      | ((value: Response | PromiseLike<Response>) => void)
+      | undefined;
     const p = new Promise<Response>((r) => (resolve = r));
     vi.mocked(fetch).mockReturnValue(p);
 
@@ -71,13 +77,15 @@ describe("getFlags unit tests", () => {
     }).catch(console.error);
 
     expect(vi.mocked(fetch).mock.calls.length).toBe(1);
+
+    ok(resolve);
     resolve({
       status: 200,
       ok: true,
       json: function () {
         return Promise.resolve(flagsResponse);
       },
-    });
+    } as Response);
 
     await a;
   });
@@ -96,7 +104,10 @@ describe("getFlags unit tests", () => {
       context: { user: { id: "123" } },
       timeoutMs: 1000,
     });
-    expect(flags).toEqual(flagsResponse.flags);
+    expect(flags).toEqual({
+      flags: flagsResponse.flags,
+      url: "https://localhost/flags/evaluate?context.user.id=123",
+    });
     expect(vi.mocked(fetch).mock.calls.length).toBe(1);
   });
 
@@ -116,7 +127,10 @@ describe("getFlags unit tests", () => {
       timeoutMs: 1000,
     });
 
-    expect(staleFlags).toEqual(flagsResponse.flags);
+    expect(staleFlags).toEqual({
+      flags: flagsResponse.flags,
+      url: "https://localhost/flags/evaluate?context.user.id=123",
+    });
   });
 
   test("attempts multiple tries before caching negative response", async () => {
@@ -253,7 +267,7 @@ describe("getFlags unit tests", () => {
         staleWhileRevalidate: true,
       });
 
-      expect(b).toEqual({
+      expect(b.flags).toEqual({
         featureB: { value: true, key: "featureB" },
       });
 

@@ -27,7 +27,7 @@ export function validateFlags(flagsInput: any): Flags | undefined {
     if (typeof flag.value !== "boolean" || typeof flag.key !== "string") {
       return;
     }
-    flags[key] = { value: flag.value, key: flag.key };
+    flags[key] = { value: flag.value, key: flag.key, version: flag.version };
   }
   return flags;
 }

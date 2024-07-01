@@ -4,13 +4,14 @@ import { isForNode } from "is-bundling-for-browser-or-node";
 import type { FeedbackPosition, FeedbackTranslations } from "./feedback/types";
 import {
   API_HOST,
+  FLAG_EVENTS_PER_MIN,
   SDK_VERSION,
   SDK_VERSION_HEADER_NAME,
   SSE_REALTIME_HOST,
 } from "./config";
 import { createDefaultFeedbackPromptHandler } from "./default-feedback-prompt-handler";
 import * as feedbackLib from "./feedback";
-import { FeatureFlagsOptions, Flags } from "./flags";
+import { FeatureFlagsOptions, Flag, Flags } from "./flags";
 import { getFlags, mergeDeep } from "./flags-fetch";
 import { getAuthToken } from "./prompt-storage";
 import {
@@ -18,6 +19,8 @@ import {
   parsePromptMessage,
   processPromptMessage,
 } from "./prompts";
+import { readonly as proxify } from "./proxy";
+import rateLimited from "./rate-limiter";
 import { AblySSEChannel, closeAblySSEChannel, openAblySSEChannel } from "./sse";
 import type {
   Company,
@@ -68,11 +71,20 @@ export default function main() {
   function getUrl() {
     return `${host}/${publishableKey}`;
   }
+
+  function makeUrl(part: string, params?: URLSearchParams) {
+    params = params || new URLSearchParams();
+    params.set("publishableKey", publishableKey!);
+
+    return `${host}/${part}?${params}`;
+  }
+
   function checkKey() {
     if (!publishableKey) {
       err("Publishable key is not set, please call init() first");
     }
   }
+
   function getSessionUser() {
     if (!sessionUserId) {
       err(
@@ -589,22 +601,81 @@ export default function main() {
 
     const mergedContext = mergeDeep(baseContext, context);
 
-    const flags = await getFlags({
+    const res = await getFlags({
       apiBaseUrl: getUrl(),
       context: mergedContext,
       timeoutMs,
       staleWhileRevalidate,
     });
 
+    let flags = res?.flags;
+
     if (!flags) {
       warn(`failed to fetch feature flags, using fall-back flags`);
-      return fallbackFlags.reduce((acc, flag) => {
+      flags = fallbackFlags.reduce((acc, flag) => {
         acc[flag.key] = flag;
         return acc;
       }, {} as Flags);
     }
 
-    return flags;
+    return proxify(
+      flags!,
+      rateLimited(FLAG_EVENTS_PER_MIN, res.url, sendCheckEvent),
+    );
+  }
+
+  function sendCheckEvent(_: keyof Flag, flag: Flag) {
+    void featureFlagEvent({
+      action: "check",
+      flagKey: flag.key,
+      flagVersion: flag.version,
+      evalResult: flag.value,
+    }).catch((e) => {
+      warn(`failed to send flag check event`, e);
+    });
+  }
+
+  /**
+   * Send a feature flags event.
+   *
+   *
+   * @param action The saction that was taken, either "evaluate" or "check".
+   *        "evaluate" is used when the flag is evaluated, and "check" is used when the flag is checked (after it has been evaluated).
+   * @param flagKey The key of the flag that was evaluated or checked.
+   * @param flagVersion The version of the flag that was evaluated or checked. Can be undefined if the flag is a fallback flag and version
+   *        is not known.
+   * @param evalResult The result of the flag evaluation.
+   * @param evalContext Optional context that was used to evaluate the flag.
+   * @param evalRuleResults Optional results of each rule that was evaluated.
+   * @param evalMissingFields Optional list of missing fields that were required to evaluate the flag.
+   */
+
+  async function featureFlagEvent(args: {
+    action: "evaluate" | "check";
+    flagKey: string;
+    flagVersion: number | undefined;
+    evalResult: boolean;
+    evalContext?: Record<string, any>;
+    evalRuleResults?: boolean[];
+    evalMissingFields?: string[];
+  }) {
+    checkKey();
+
+    const payload = {
+      action: args.action,
+      flagKey: args.flagKey,
+      flagVersion: args.flagVersion,
+      evalContext: args.evalContext,
+      evalResult: args.evalResult,
+      evalRuleResults: args.evalRuleResults,
+      evalMissingFields: args.evalMissingFields,
+    };
+
+    const res = await postRequest(makeUrl("flags/events"), payload);
+
+    log(`sent flag event`, res);
+
+    return res;
   }
 
   /**

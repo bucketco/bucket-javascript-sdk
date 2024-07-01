@@ -87,6 +87,7 @@ export async function fetchFlags(url: string, timeoutMs: number) {
       const res = await fetch(urlObj, {
         signal: controller.signal,
       });
+
       clearTimeout(id);
       const typeRes = validateFeatureFlagsResponse(await res.json());
       if (!res.ok || !typeRes || !typeRes.success) {
@@ -144,6 +145,11 @@ export function clearCache() {
   cache.clear();
 }
 
+type GetFlagsResult = {
+  flags: Flags | undefined;
+  url: string;
+};
+
 // fetch feature flags
 export async function getFlags({
   apiBaseUrl,
@@ -157,7 +163,7 @@ export async function getFlags({
   staleWhileRevalidate?: boolean;
   timeoutMs?: number;
   cacheNegativeAttempts?: number | false;
-}): Promise<Flags | undefined> {
+}): Promise<GetFlagsResult> {
   const flattenedContext = flattenJSON({ context });
 
   const params = new URLSearchParams(flattenedContext);
@@ -175,7 +181,7 @@ export async function getFlags({
       (cacheNegativeAttempts === false ||
         cachedItem.attemptCount < cacheNegativeAttempts))
   ) {
-    return fetchFlags(url, timeoutMs);
+    return { flags: await fetchFlags(url, timeoutMs), url };
   }
 
   // cachedItem is a success or a failed attempt that we've retried too many times
@@ -186,11 +192,11 @@ export async function getFlags({
       fetchFlags(url, timeoutMs).catch(() => {
         // we don't care about the result, we just want to re-fetch
       });
-      return cachedItem.flags;
+      return { flags: cachedItem.flags, url };
     }
-    return fetchFlags(url, timeoutMs);
+    return { flags: await fetchFlags(url, timeoutMs), url };
   }
 
   // serve cached items if not stale and not expired
-  return cachedItem.flags;
+  return { flags: cachedItem.flags, url };
 }

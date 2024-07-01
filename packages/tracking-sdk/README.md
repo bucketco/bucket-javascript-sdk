@@ -20,12 +20,12 @@ import bucket from "@bucketco/tracking-sdk";
 var bucket = require("@bucketco/tracking-sdk");
 ```
 
-Other languages than Javascript/Typescript are currently not supported by an SDK. You can [use the HTTP API directly](https://docs.bucket.co/reference/http-tracking-api)
+Other languages than JavaScript/Typescript are currently not supported by an SDK. You can [use the HTTP API directly](https://docs.bucket.co/reference/http-tracking-api)
 
 ## Basic usage
 
 ```js
-// init the script with your publishable key
+// initialize the script with your publishable key
 bucket.init("tk123", {});
 
 // set current user
@@ -40,7 +40,7 @@ bucket.track("sent_message", { foo: "bar" }, "john_doe", "company_id");
 
 **NOTE**: When used in the browser, you can omit the 3rd argument (userId) to the `company` and `track` methods. See [persisting users](#persisting-users) for more details.
 
-### Init options
+### Initialization options
 
 Supply these to the `init` call (2nd argument)
 
@@ -120,6 +120,8 @@ const flags = await bucket.getFeatureFlags({
 //   }
 // }
 ```
+
+Each time a specific flag from `flags` is checked, a `track` event is emitted to Bucket. This helps track all the uses of the flag throughout the application. The events can be manually invoked by using the `bucket.featureFlagEvent` method, though it is recommended that developers always pass around the instance of `flags` and always check the individual flags using that instance.
 
 ### Zero PII
 
