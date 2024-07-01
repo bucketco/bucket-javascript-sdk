@@ -19,7 +19,7 @@ const flag: FlagData = {
 
 describe("evaluate flag integration ", () => {
   it("evaluates flag when there's no matching rule", async () => {
-    const res = await evaluateFlag({
+    const res = evaluateFlag({
       flag,
       context: {
         company: {
@@ -60,7 +60,7 @@ describe("evaluate flag integration ", () => {
         id: "company1",
       },
     };
-    const res = await evaluateFlag({
+    const res = evaluateFlag({
       flag,
       context,
     });
@@ -95,7 +95,7 @@ describe("evaluate flag integration ", () => {
         },
       ],
     };
-    const res = await evaluateFlag({
+    const res = evaluateFlag({
       flag: flagWithSegmentRule,
       context: {
         company: {
@@ -116,7 +116,7 @@ describe("evaluate flag integration ", () => {
   });
 
   it("returns list of missing context keys ", async () => {
-    const res = await evaluateFlag({
+    const res = evaluateFlag({
       flag,
       context: {},
     });
@@ -140,7 +140,7 @@ describe("evaluate flag integration ", () => {
         },
       ],
     };
-    const res = await evaluateFlag({
+    const res = evaluateFlag({
       flag: myflag,
       context: {},
     });
@@ -160,7 +160,7 @@ describe("evaluate flag integration ", () => {
     confusingFlag.rules[0].contextFilter![0].value = "nothing";
     confusingFlag.rules[0].contextFilter![0].values = ["company1"];
 
-    const res = await evaluateFlag({
+    const res = evaluateFlag({
       flag: confusingFlag,
       context: {
         company: {

@@ -94,10 +94,10 @@ export function unflattenJSON(data: Record<string, any>) {
   return result;
 }
 
-export async function evaluateFlag({
+export function evaluateFlag({
   context,
   flag,
-}: EvaluateFlagParams): Promise<EvaluateFlagResult> {
+}: EvaluateFlagParams): EvaluateFlagResult {
   const flatContext = flattenJSON(context);
 
   const missingContextFieldsSet = new Set<string>();
