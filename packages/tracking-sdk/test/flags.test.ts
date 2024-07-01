@@ -50,7 +50,10 @@ describe("getFlags unit tests", () => {
       timeoutMs: 1000,
     });
 
-    expect(flags).toEqual(flagsResponse.flags);
+    expect(flags).toEqual({
+      flags: flagsResponse.flags,
+      url: "https://localhost/flags/evaluate?context.user.id=123",
+    });
   });
 
   test("deduplicates inflight requests", async () => {
@@ -101,7 +104,10 @@ describe("getFlags unit tests", () => {
       context: { user: { id: "123" } },
       timeoutMs: 1000,
     });
-    expect(flags).toEqual(flagsResponse.flags);
+    expect(flags).toEqual({
+      flags: flagsResponse.flags,
+      url: "https://localhost/flags/evaluate?context.user.id=123",
+    });
     expect(vi.mocked(fetch).mock.calls.length).toBe(1);
   });
 
@@ -121,7 +127,10 @@ describe("getFlags unit tests", () => {
       timeoutMs: 1000,
     });
 
-    expect(staleFlags).toEqual(flagsResponse.flags);
+    expect(staleFlags).toEqual({
+      flags: flagsResponse.flags,
+      url: "https://localhost/flags/evaluate?context.user.id=123",
+    });
   });
 
   test("attempts multiple tries before caching negative response", async () => {
@@ -258,7 +267,7 @@ describe("getFlags unit tests", () => {
         staleWhileRevalidate: true,
       });
 
-      expect(b).toEqual({
+      expect(b.flags).toEqual({
         featureB: { value: true, key: "featureB" },
       });
 

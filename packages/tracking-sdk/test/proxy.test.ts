@@ -7,9 +7,9 @@ describe("readonly", () => {
     const obj = { a: 1, b: 2 };
     const proxy = readonly(obj);
 
-    expect(() => {
-      proxy.a = 3;
-    }).toThrow(new Error("Cannot modify property 'a' of the object."));
+    proxy.a = 3;
+
+    expect(proxy.a).toBe(1);
   });
 
   it("should call the callback when any property", () => {

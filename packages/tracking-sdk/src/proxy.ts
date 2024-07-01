@@ -13,9 +13,8 @@ export function readonly<T extends object, K extends keyof T>(
       return target[prop as K];
     },
     set(_target, prop, _value) {
-      throw new Error(
-        `Cannot modify property '${String(prop)}' of the object.`,
-      );
+      console.error(`Cannot modify property '${String(prop)}' of the object.`);
+      return true;
     },
   });
 }

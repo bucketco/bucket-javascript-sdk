@@ -601,14 +601,16 @@ export default function main() {
 
     const mergedContext = mergeDeep(baseContext, context);
 
-    let flags = await getFlags({
+    const res = await getFlags({
       apiBaseUrl: getUrl(),
       context: mergedContext,
       timeoutMs,
       staleWhileRevalidate,
     });
 
-    if (!flags) {
+    let flags = res?.flags;
+
+    if (!res) {
       warn(`failed to fetch feature flags, using fall-back flags`);
       flags = fallbackFlags.reduce((acc, flag) => {
         acc[flag.key] = flag;
@@ -616,7 +618,10 @@ export default function main() {
       }, {} as Flags);
     }
 
-    return proxify(flags, rateLimited(FLAG_EVENTS_PER_MIN, sendCheckEvent));
+    return proxify(
+      flags!,
+      rateLimited(FLAG_EVENTS_PER_MIN, res.url, sendCheckEvent),
+    );
   }
 
   function sendCheckEvent(_: keyof Flag, flag: Flag) {
@@ -625,6 +630,8 @@ export default function main() {
       flagKey: flag.key,
       flagVersion: flag.version,
       evalResult: flag.value,
+    }).catch((e) => {
+      warn(`failed to send flag check event`, e);
     });
   }
 

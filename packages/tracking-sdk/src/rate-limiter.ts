@@ -1,12 +1,20 @@
 const oneMinute = 60 * 1000;
 
+const eventsByKey: Record<string, number[]> = {};
+
 export default function rateLimited<T extends any[], R>(
   eventsPerMinute: number,
+  key: string,
   func: (...args: T) => R,
 ): (...funcArgs: T) => R | void {
-  const events: number[] = [];
   return function (...funcArgs: T): R | void {
     const now = Date.now();
+
+    if (!eventsByKey[key]) {
+      eventsByKey[key] = [];
+    }
+
+    const events = eventsByKey[key];
 
     while (events.length && now - events[0] > oneMinute) {
       events.shift();
