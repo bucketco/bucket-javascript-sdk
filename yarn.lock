@@ -1102,6 +1102,7 @@ __metadata:
     prettier: "npm:^3.2.5"
     react: "npm:*"
     react-dom: "npm:*"
+    ts-node: "npm:^10.9.2"
     typescript: "npm:^5.4.5"
     vite: "npm:^5.0.13"
     vitest: "npm:^1.6.0"
