@@ -1,0 +1,52 @@
+{
+  "name": "@bucketco/node-sdk",
+  "version": "0.1.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bucketco/bucket-javascript-sdk.git"
+  },
+  "scripts": {
+    "dev": "vite",
+    "start": "vite",
+    "build": "tsc --project tsconfig.build.json",
+    "test": "vitest -c vite.config.js",
+    "test:ci": "vitest run -c vite.config.js --reporter=junit --outputFile=junit.xml",
+    "coverage": "vitest run --coverage",
+    "lint": "eslint .",
+    "lint:ci": "eslint --output-file eslint-report.json --format json .",
+    "prettier": "prettier --check .",
+    "format": "yarn lint --fix && yarn prettier --write",
+    "preversion": "yarn lint && yarn prettier && yarn vitest run -c vite.config.js && yarn build"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "devDependencies": {
+    "@babel/core": "^7.23.7",
+    "@bucketco/eslint-config": "0.0.2",
+    "@bucketco/tsconfig": "0.0.2",
+    "@types/node": "^20.11.0",
+    "@vitest/coverage-v8": "^1.1.3",
+    "c8": "^9.1.0",
+    "eslint": "^8.56.0",
+    "flush-promises": "^1.0.2",
+    "globals": "^13.24.0",
+    "http-server": "^14.1.1",
+    "nock": "^13.4.0",
+    "prettier": "^3.1.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.13",
+    "vite-plugin-dts": "^3.7.0",
+    "vitest": "^1.1.3"
+  },
+  "dependencies": {
+    "@bucketco/flag-evaluation": "0.0.2"
+  }
+}
