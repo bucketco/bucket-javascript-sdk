@@ -1074,7 +1074,6 @@ __metadata:
     c8: "npm:~10.1.0"
     eslint: "npm:~8.56.0"
     flush-promises: "npm:~1.0.2"
-    globals: "npm:~13.24.0"
     prettier: "npm:~3.3.2"
     ts-node: "npm:~10.9.2"
     typescript: "npm:~5.5.3"
@@ -8054,7 +8053,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"globals@npm:^13.24.0, globals@npm:~13.24.0":
+"globals@npm:^13.24.0":
   version: 13.24.0
   resolution: "globals@npm:13.24.0"
   dependencies:
