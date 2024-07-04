@@ -125,7 +125,7 @@ You can pass attributes as part of the object literal passed to the `withUser()`
 `withCompany()` and `trackFeatureUsage()` methods. Attributes cannot be nested
 (multiple levels) and must be either strings, integers or booleans.
 
-Some attributes are used by Bucket.co and manged separately, such as:
+Some attributes are used by Bucket.co to improve the UI, and are recommended to provide for easier navigation:
 
 - `name` or `$name` -- display name for `user`/`company`,
 - `email` or `$email` -- the email of the user.
