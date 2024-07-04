@@ -37,7 +37,7 @@ import {
  * The client is used to interact with the Bucket API.
  * Use the client to track users, companies, events, and feature flag usage.
  **/
-export class Client {
+export class BucketClient {
   private _shared: {
     logger?: Logger;
     host: string;
@@ -58,8 +58,8 @@ export class Client {
    *
    * @param options - The options for the client or an existing client to clone.
    **/
-  constructor(options: ClientOptions | Client) {
-    if (options instanceof Client) {
+  constructor(options: ClientOptions | BucketClient) {
+    if (options instanceof BucketClient) {
       this._shared = options._shared;
       this._customContext = options._customContext;
       this._company = options._company;
@@ -258,14 +258,14 @@ export class Client {
    * If the user ID is the same as the current company, the attributes will be merged, and
    * the new attributes will take precedence.
    **/
-  public withUser(userId: string, attrs?: Attributes): Client {
+  public withUser(userId: string, attrs?: Attributes): BucketClient {
     ok(
       typeof userId === "string" && userId.length > 0,
       "userId must be a string",
     );
     ok(attrs === undefined || isObject(attrs), "attrs must be an object");
 
-    const client = new Client(this);
+    const client = new BucketClient(this);
     if (userId !== this._user?.userId) {
       client._user = { userId, attrs };
     } else {
@@ -290,14 +290,14 @@ export class Client {
    * If the company ID is the same as the current company, the attributes will be merged, and
    * the new attributes will take precedence.
    **/
-  public withCompany(companyId: string, attrs?: Attributes): Client {
+  public withCompany(companyId: string, attrs?: Attributes): BucketClient {
     ok(
       typeof companyId === "string" && companyId.length > 0,
       "companyId must be a string",
     );
     ok(attrs === undefined || isObject(attrs), "attrs must be an object");
 
-    const client = new Client(this);
+    const client = new BucketClient(this);
     if (companyId !== this._company?.companyId) {
       client._company = { companyId, attrs };
     } else {
@@ -324,11 +324,11 @@ export class Client {
   public withCustomContext(
     context: Record<string, any>,
     replace: boolean = false,
-  ): Client {
+  ): BucketClient {
     ok(isObject(context), "context must be an object");
     ok(typeof replace === "boolean", "replace must be a boolean");
 
-    const client = new Client(this);
+    const client = new BucketClient(this);
 
     if (!replace) {
       client._customContext = { ...this._customContext, ...context };
