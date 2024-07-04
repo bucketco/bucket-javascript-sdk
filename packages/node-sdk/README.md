@@ -17,7 +17,8 @@ Before the library can be used, you need to obtain a secret key from
 [Environment setting view](https://app.bucket.co/envs/{environment}/settings/app-environments)
 in **Bucket.co**.
 
-> Note that secret keys should only be used by the `node-sdk` and not any other
+> [!CAUTION] 
+> Ssecret keys should only be used by the `node-sdk` and not any other
 > SDKs provided by Bucket. Secret keys offer the users the ability to obtain
 > information that is often sensitive and thus should not be used in any
 > front-end application.
