@@ -73,7 +73,7 @@ await boundClient.updateCompany();
 const flags = boundClient.getFlags();
 if (flags.enable_custom_login) {
   // this is your flag-protected code ...
-  // send an event whet the feature is used:
+  // send an event when the feature is used:
   boundClient.trackFeatureUsage({
     event: "custom_login_used",
     attributtes: { some: "attribute" },
