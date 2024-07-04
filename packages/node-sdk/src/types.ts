@@ -1,9 +1,9 @@
 import { FlagData } from "@bucketco/flag-evaluation";
 
 /**
- * Describes the context of an user or company.
+ * Describes the meta context associated with tracking.
  **/
-type Context = {
+export type TrackingMeta = {
   /**
    * Whether the user or company is active.
    **/
@@ -14,51 +14,6 @@ type Context = {
  * Describes the attributes of an user, company or event.
  **/
 export type Attributes = Record<string, any>;
-
-/**
- * Describes the payload of an user, company or event.
- **/
-interface Payload {
-  /**
-   * The attributes of the user, company or event (optional).
-   **/
-  attributes?: Attributes;
-
-  /**
-   * The context of the user or company (optional).
-   **/
-  context?: Context;
-}
-
-/**
- * Describes an user.
- **/
-export type User = Payload & {
-  /**
-   * The user ID.
-   **/
-  userId: string;
-};
-
-/**
- * Describes a company.
- **/
-export type Company = Payload & {
-  /**
-   * The company ID.
-   **/
-  companyId: string;
-};
-
-/**
- * Describes an event.
- **/
-export type Event = Payload & {
-  /**
-   * The event name.
-   **/
-  event: string;
-};
 
 /**
  * Describes a feature flag evaluation event.
@@ -122,8 +77,12 @@ export interface Flag {
 
 /**
  * Describes a collection of evaluated feature flags.
+ *
+ * @typeParam TFlagKey - The type of the flag keys.
  */
-export type Flags = Record<string, Flag>;
+export type Flags<TFlagKey extends string = string> = Readonly<
+  Record<TFlagKey, Flag>
+>;
 
 /**
  * Describes the response of the feature flags endpoint

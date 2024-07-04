@@ -1,3 +1,5 @@
+import { Logger } from "./types";
+
 const oneMinute = 60 * 1000;
 
 /**
@@ -44,7 +46,7 @@ export function rateLimited<T extends any[], R>(
 export function readNotifyProxy<T extends object, K extends keyof T>(
   obj: T,
   callback?: (key: K, value: T[K]) => void,
-): T {
+): Readonly<T> {
   return new Proxy(obj, {
     get(target: T, prop) {
       const val = target[prop as K];
@@ -55,10 +57,8 @@ export function readNotifyProxy<T extends object, K extends keyof T>(
 
       return target[prop as K];
     },
-    set(_target, prop, _value) {
-      throw new Error(
-        `Cannot modify property '${String(prop)}' of the object.`,
-      );
+    set() {
+      return false;
     },
   });
 }
@@ -71,7 +71,7 @@ export function readNotifyProxy<T extends object, K extends keyof T>(
  **/
 export function ok(condition: boolean, message: string): asserts condition {
   if (!condition) {
-    throw new Error(message);
+    throw new Error(`validation failed: ${message}`);
   }
 }
 
@@ -86,29 +86,28 @@ export function isObject(item: any) {
 }
 
 /**
- * Deep merge two objects.
+ * Decorate the messages of a given logger with the given prefix.
  *
- * @param target - The target object.
- * @param sources - The source objects.
- * @returns The merged object.
+ * @param prefix - The prefix to add to log messages.
+ * @param logger - The logger to decorate.
+ * @returns The decorated logger.
  **/
-export function mergeDeep(
-  target: Record<string, any>,
-  ...sources: Record<string, any>[]
-): Record<string, any> {
-  if (!sources.length) return target;
-  const source = sources.shift();
+export function decorateLogger(prefix: string, logger: Logger): Logger {
+  ok(typeof prefix === "string", "prefix must be a string");
+  ok(typeof logger === "object", "logger must be an object");
 
-  if (isObject(target) && isObject(source)) {
-    for (const key in source) {
-      if (isObject(source[key])) {
-        if (!target[key]) Object.assign(target, { [key]: {} });
-        mergeDeep(target[key], source[key]);
-      } else {
-        Object.assign(target, { [key]: source[key] });
-      }
-    }
-  }
-
-  return mergeDeep(target, ...sources);
+  return {
+    debug: (message: string, ...args: any[]) => {
+      logger.debug(`${prefix} ${message}`, ...args);
+    },
+    info: (message: string, ...args: any[]) => {
+      logger.info(`${prefix} ${message}`, ...args);
+    },
+    warn: (message: string, ...args: any[]) => {
+      logger.warn(`${prefix} ${message}`, ...args);
+    },
+    error: (message: string, ...args: any[]) => {
+      logger.error(`${prefix} ${message}`, ...args);
+    },
+  };
 }

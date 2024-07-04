@@ -1,15 +1,17 @@
 import { Cache, Logger } from "./types";
 
 /**
- * Create a memoized function that updates the value asynchronously.
+ * Create a cached function that updates the value asynchronously.
+ *
  * The value is updated every `ttl` milliseconds.
  * If the value is older than `staleTtl` milliseconds, a warning is logged.
  *
+ * @typeParam T - The type of the value.
  * @param ttl - The time-to-live in milliseconds.
  * @param staleTtl - The time-to-live after which a warning is logged.
  * @param logger - The logger to use.
  * @param fn - The function to call to get the value.
- * @returns The memoized function.
+ * @returns The cache object.
  **/
 export default function cache<T>(
   ttl: number,

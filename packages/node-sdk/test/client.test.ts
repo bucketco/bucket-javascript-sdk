@@ -6,14 +6,7 @@ import { evaluateFlag } from "@bucketco/flag-evaluation";
 import { Client } from "../src/client";
 import { API_HOST, FLAGS_REFETCH_MS } from "../src/config";
 import fetchClient from "../src/fetch-http-client";
-import {
-  ClientOptions,
-  Company,
-  Event,
-  FlagDefinitions,
-  Flags,
-  User,
-} from "../src/types";
+import { ClientOptions, FlagDefinitions, Flags } from "../src/types";
 
 vi.mock("@bucketco/flag-evaluation", () => ({
   evaluateFlag: vi.fn(),
@@ -37,36 +30,56 @@ describe("Client", () => {
     staleWarningInterval: 310000,
   };
 
-  const user: User = {
+  const user = {
     userId: "user123",
-    attributes: { attributeKey: "attributeValue" },
-    context: { active: true },
+    attrs: { age: 1, name: "John" },
   };
 
-  const company: Company = {
+  const company = {
     companyId: "company123",
-    attributes: { attributeKey: "attributeValue" },
-    context: { active: true },
+    attrs: { employees: 100, name: "Acme Inc." },
   };
 
-  const event: Event = {
+  const event = {
     event: "testEvent",
-    attributes: { key: "value" },
-    context: { active: true },
+    attrs: { key: "value" },
   };
 
-  const customContext = { custom: "context" };
+  const customContext = { custom: "context", key: "value" };
 
   describe("constructor (with options)", () => {
     it("should create a client instance with valid options", () => {
       const client = new Client(validOptions);
 
       expect(client).toBeInstanceOf(Client);
-      expect(client["shared"].host).toBe("https://api.example.com");
-      expect(client["shared"].refetchInterval).toBe(61000);
-      expect(client["shared"].staleWarningInterval).toBe(310000);
-      expect(client["shared"].logger).toBe(validOptions.logger);
-      expect(client["shared"].httpClient).toBe(validOptions.httpClient);
+      expect(client["_shared"].host).toBe("https://api.example.com");
+      expect(client["_shared"].refetchInterval).toBe(61000);
+      expect(client["_shared"].staleWarningInterval).toBe(310000);
+      expect(client["_shared"].logger).toBeDefined();
+      expect(client["_shared"].httpClient).toBe(validOptions.httpClient);
+    });
+
+    it("should route messages to the supplied logger", () => {
+      const client = new Client(validOptions);
+
+      const actualLogger = client["_shared"].logger!;
+      actualLogger.debug("debug message");
+      actualLogger.info("info message");
+      actualLogger.warn("warn message");
+      actualLogger.error("error message");
+
+      expect(logger.debug).toHaveBeenCalledWith(
+        expect.stringMatching("debug message"),
+      );
+      expect(logger.info).toHaveBeenCalledWith(
+        expect.stringMatching("info message"),
+      );
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringMatching("warn message"),
+      );
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.stringMatching("error message"),
+      );
     });
 
     it("should create a client instance with default values for optional fields", () => {
@@ -75,11 +88,11 @@ describe("Client", () => {
       });
 
       expect(client).toBeInstanceOf(Client);
-      expect(client["shared"].host).toBe(API_HOST);
-      expect(client["shared"].refetchInterval).toBe(FLAGS_REFETCH_MS);
-      expect(client["shared"].staleWarningInterval).toBe(FLAGS_REFETCH_MS * 5);
-      expect(client["shared"].logger).toBeUndefined();
-      expect(client["shared"].httpClient).toBe(fetchClient);
+      expect(client["_shared"].host).toBe(API_HOST);
+      expect(client["_shared"].refetchInterval).toBe(FLAGS_REFETCH_MS);
+      expect(client["_shared"].staleWarningInterval).toBe(FLAGS_REFETCH_MS * 5);
+      expect(client["_shared"].logger).toBeUndefined();
+      expect(client["_shared"].httpClient).toBe(fetchClient);
     });
 
     it("should throw an error if options are invalid", () => {
@@ -133,14 +146,13 @@ describe("Client", () => {
   describe("constructor (with existing client)", () => {
     const initialClient = new Client(validOptions);
 
-    initialClient["context"] = { key: "value" };
-    initialClient["company"] = {
+    initialClient["_customContext"] = { key: "value" };
+    initialClient["_company"] = {
       companyId: "123",
-      attributes: {},
-      context: {},
+      attrs: {},
     };
-    initialClient["user"] = { userId: "abc", attributes: {}, context: {} };
-    initialClient["fallbackFlags"] = {
+    initialClient["_user"] = { userId: "abc", attrs: {} };
+    initialClient["_fallbackFlags"] = {
       flagKey: { key: "flagKey", value: true, version: 1 },
     };
 
@@ -148,57 +160,57 @@ describe("Client", () => {
       const newClient = new Client(initialClient);
 
       expect(newClient).toBeInstanceOf(Client);
-      expect(newClient["shared"]).toBe(initialClient["shared"]);
-      expect(newClient["context"]).toEqual(initialClient["context"]);
-      expect(newClient["company"]).toEqual(initialClient["company"]);
-      expect(newClient["user"]).toEqual(initialClient["user"]);
-      expect(newClient["fallbackFlags"]).toEqual(
-        initialClient["fallbackFlags"],
+      expect(newClient["_shared"]).toBe(initialClient["_shared"]);
+      expect(newClient["_context"]).toEqual(initialClient["_context"]);
+      expect(newClient["_company"]).toEqual(initialClient["_company"]);
+      expect(newClient["_user"]).toEqual(initialClient["_user"]);
+      expect(newClient["_fallbackFlags"]).toEqual(
+        initialClient["_fallbackFlags"],
       );
     });
 
     it("should create a new client instance and allow modifying context independently", () => {
       const newClient = new Client(initialClient);
-      newClient["context"] = { key: "newValue" };
+      newClient["_customContext"] = { key: "newValue" };
 
-      expect(newClient["context"]).not.toEqual(initialClient["context"]);
-      expect(initialClient["context"]).toEqual({ key: "value" });
+      expect(newClient["_customContext"]).not.toEqual(
+        initialClient["_customContext"],
+      );
+      expect(initialClient["_customContext"]).toEqual({ key: "value" });
     });
 
     it("should create a new client instance and allow modifying company independently", () => {
       const newClient = new Client(initialClient);
-      newClient["company"] = { companyId: "456", attributes: {}, context: {} };
+      newClient["_company"] = { companyId: "456", attrs: {} };
 
-      expect(newClient["company"]).not.toEqual(initialClient["company"]);
-      expect(initialClient["company"]).toEqual({
+      expect(newClient["_company"]).not.toEqual(initialClient["_company"]);
+      expect(initialClient["_company"]).toEqual({
         companyId: "123",
-        attributes: {},
-        context: {},
+        attrs: {},
       });
     });
 
     it("should create a new client instance and allow modifying user independently", () => {
       const newClient = new Client(initialClient);
-      newClient["user"] = { userId: "def", attributes: {}, context: {} };
+      newClient["_user"] = { userId: "def", attrs: {} };
 
-      expect(newClient["user"]).not.toEqual(initialClient["user"]);
-      expect(initialClient["user"]).toEqual({
+      expect(newClient["_user"]).not.toEqual(initialClient["_user"]);
+      expect(initialClient["_user"]).toEqual({
         userId: "abc",
-        attributes: {},
-        context: {},
+        attrs: {},
       });
     });
 
     it("should create a new client instance and allow modifying fallbackFlags independently", () => {
       const newClient = new Client(initialClient);
-      newClient["fallbackFlags"] = {
+      newClient["_fallbackFlags"] = {
         flagKey: { key: "flagKey", value: false, version: 2 },
       };
 
-      expect(newClient["fallbackFlags"]).not.toEqual(
-        initialClient["fallbackFlags"],
+      expect(newClient["_fallbackFlags"]).not.toEqual(
+        initialClient["_fallbackFlags"],
       );
-      expect(initialClient["fallbackFlags"]).toEqual({
+      expect(initialClient["_fallbackFlags"]).toEqual({
         flagKey: { key: "flagKey", value: true, version: 1 },
       });
     });
@@ -208,34 +220,48 @@ describe("Client", () => {
     const client = new Client(validOptions);
 
     it("should return a new client instance with the user set", () => {
-      const newClient = client.withUser(user);
+      const newClient = client.withUser(user.userId, user.attrs);
 
       expect(newClient).toBeInstanceOf(Client);
       expect(newClient).not.toBe(client); // Ensure a new instance is returned
-      expect(newClient["user"]).toEqual(user);
+      expect(newClient["_user"]).toEqual(user);
+    });
+
+    it("should return a new client instance with merged user attributes", () => {
+      const override = { sex: "male", age: 30 };
+      const newClient = client
+        .withUser(user.userId, user.attrs)
+        .withUser(user.userId, override);
+
+      expect(newClient["_user"]).toEqual({
+        userId: user.userId,
+        attrs: { ...user.attrs, ...override },
+      });
+    });
+
+    it("should return a new client instance with reset user", () => {
+      const newClient = client
+        .withUser(user.userId, user.attrs)
+        .withUser("anotherUser", { another: "value" });
+
+      expect(newClient["_user"]).toEqual({
+        userId: "anotherUser",
+        attrs: { another: "value" },
+      });
     });
 
     it("should throw an error if user is invalid", () => {
-      let invalidUser: any = null;
-
-      expect(() => client.withUser(invalidUser)).toThrow(
-        "user must be an object",
+      expect(() => client.withUser(undefined as any)).toThrow(
+        "userId must be a string",
       );
 
-      invalidUser = { ...user, userId: "" };
-      expect(() => client.withUser(invalidUser)).toThrow(
-        "user must have a userId",
+      expect(() => client.withUser(1 as any)).toThrow(
+        "userId must be a string",
       );
 
-      invalidUser = { ...user, attributes: "invalidAttributes" };
-      expect(() => client.withUser(invalidUser)).toThrow(
-        "user attributes must be an object",
-      );
-
-      invalidUser = { ...user, context: "invalidContext" };
-      expect(() => client.withUser(invalidUser)).toThrow(
-        "user context must be an object",
-      );
+      expect(() =>
+        client.withUser(user.userId, "bad_attributes" as any),
+      ).toThrow("attrs must be an object");
     });
   });
 
@@ -243,34 +269,48 @@ describe("Client", () => {
     const client = new Client(validOptions);
 
     it("should return a new client instance with the company set", () => {
-      const newClient = client.withCompany(company);
+      const newClient = client.withCompany(company.companyId, company.attrs);
 
       expect(newClient).toBeInstanceOf(Client);
       expect(newClient).not.toBe(client); // Ensure a new instance is returned
       expect(newClient["company"]).toEqual(company);
     });
 
-    it("should throw an error if user is invalid", () => {
-      let invalidCompany: any = null;
+    it("should return a new client instance with merged company attributes", () => {
+      const override = { age: 30, name: "not acme" };
+      const newClient = client
+        .withCompany(company.companyId, company.attrs)
+        .withCompany(company.companyId, override);
 
-      expect(() => client.withCompany(invalidCompany)).toThrow(
-        "company must be an object",
+      expect(newClient["_company"]).toEqual({
+        companyId: company.companyId,
+        attrs: { ...company.attrs, ...override },
+      });
+    });
+
+    it("should return a new client instance with reset company", () => {
+      const newClient = client
+        .withCompany(company.companyId, company.attrs)
+        .withCompany("anotherCompany", { another: "value" });
+
+      expect(newClient["_company"]).toEqual({
+        companyId: "anotherCompany",
+        attrs: { another: "value" },
+      });
+    });
+
+    it("should throw an error if company is invalid", () => {
+      expect(() => client.withCompany(undefined as any)).toThrow(
+        "companyId must be a string",
       );
 
-      invalidCompany = { ...company, companyId: "" };
-      expect(() => client.withCompany(invalidCompany)).toThrow(
-        "company must have a companyId",
+      expect(() => client.withCompany(1 as any)).toThrow(
+        "companyId must be a string",
       );
 
-      invalidCompany = { ...company, attributes: "invalidAttributes" };
-      expect(() => client.withCompany(invalidCompany)).toThrow(
-        "company attributes must be an object",
-      );
-
-      invalidCompany = { ...company, context: "invalidContext" };
-      expect(() => client.withCompany(invalidCompany)).toThrow(
-        "company context must be an object",
-      );
+      expect(() =>
+        client.withCompany(company.companyId, "bad_attributes" as any),
+      ).toThrow("attrs must be an object");
     });
   });
 
@@ -282,7 +322,27 @@ describe("Client", () => {
 
       expect(newClient).toBeInstanceOf(Client);
       expect(newClient).not.toBe(client); // Ensure a new instance is returned
-      expect(newClient["context"]).toEqual(customContext);
+      expect(newClient["_customContext"]).toEqual(customContext);
+    });
+
+    it("should return a new client instance with replaced custom context", () => {
+      const newClient = client
+        .withCustomContext(customContext)
+        .withCustomContext({ replaced: true }, true);
+
+      expect(newClient["_customContext"]).toEqual({ replaced: true });
+    });
+
+    it("should return a new client instance with merged custom context", () => {
+      const override = { merged: true, key: "not value" };
+      const newClient = client
+        .withCustomContext(customContext)
+        .withCustomContext(override);
+
+      expect(newClient["_customContext"]).toEqual({
+        ...customContext,
+        ...override,
+      });
     });
 
     it("should throw an error if custom context is not an object", () => {
@@ -301,37 +361,41 @@ describe("Client", () => {
     });
   });
 
-  describe("updateUser", () => {
+  describe("trackUser", () => {
+    const client = new Client(validOptions);
+
     it("should successfully update the user when user is defined", async () => {
       httpClient.post.mockResolvedValue({ success: true });
 
-      const client = new Client(validOptions).withUser(user);
-      const result = await client.updateUser();
+      const result = await client.trackUser(user.userId, user.attrs, {
+        active: true,
+      });
 
       expect(result).toBe(true);
       expect(httpClient.post).toHaveBeenCalledWith(
         "https://api.example.com/user",
-        client["shared"].headers,
-        user,
+        client["_shared"].headers,
+        {
+          userId: user.userId,
+          attributes: user.attrs,
+          context: { active: true },
+        },
       );
-      expect(logger.debug).toHaveBeenCalledWith('post request to "user"', true);
+      expect(logger.debug).toHaveBeenCalledWith(
+        expect.stringMatching('post request to "user"'),
+        true,
+      );
     });
 
     it("should return false and log an error if the post request throws", async () => {
       const error = new Error("Network error");
       httpClient.post.mockRejectedValue(error);
 
-      const client = new Client(validOptions).withUser(user);
-      const result = await client.updateUser();
+      const result = await client.trackUser(user.userId);
 
       expect(result).toBe(false);
-      expect(httpClient.post).toHaveBeenCalledWith(
-        "https://api.example.com/user",
-        client["shared"].headers,
-        user,
-      );
       expect(logger.error).toHaveBeenCalledWith(
-        'post request to "user" failed with error',
+        expect.stringMatching('post request to "user" failed with error'),
         error,
       );
     });
@@ -339,42 +403,60 @@ describe("Client", () => {
     it("should return false if the API responds with success: false", async () => {
       httpClient.post.mockResolvedValue({ success: false });
 
-      const client = new Client(validOptions).withUser(user);
-      const result = await client.updateUser();
+      const result = await client.trackUser(user.userId);
 
       expect(result).toBe(false);
-      expect(httpClient.post).toHaveBeenCalledWith(
-        "https://api.example.com/user",
-        client["shared"].headers,
-        user,
-      );
       expect(logger.debug).toHaveBeenCalledWith(
-        'post request to "user"',
+        expect.stringMatching('post request to "user"'),
         false,
       );
     });
 
-    it("should throw an error if user is not defined", async () => {
-      const client = new Client(validOptions);
-      await expect(client.updateUser()).rejects.toThrow("user is not defined");
+    it("should throw an error if user is not valid", async () => {
+      await expect(client.trackUser(undefined as any)).rejects.toThrow(
+        "userId must be a string",
+      );
+
+      await expect(client.trackUser(1 as any)).rejects.toThrow(
+        "userId must be a string",
+      );
+
+      await expect(
+        client.trackUser(user.userId, "bad_attributes" as any),
+      ).rejects.toThrow("attrs must be an object");
+
+      await expect(
+        client.trackUser(user.userId, undefined, "bad_meta" as any),
+      ).rejects.toThrow("meta must be an object");
     });
   });
 
-  describe("updateCompany", () => {
+  describe("trackCompany", () => {
+    const client = new Client(validOptions);
+
     it("should successfully update the company when company is defined", async () => {
       httpClient.post.mockResolvedValue({ success: true });
 
-      const client = new Client(validOptions).withCompany(company);
-      const result = await client.updateCompany();
+      const result = await client.trackCompany(
+        company.companyId,
+        undefined,
+        company.attrs,
+        { active: true },
+      );
 
       expect(result).toBe(true);
       expect(httpClient.post).toHaveBeenCalledWith(
         "https://api.example.com/company",
-        client["shared"].headers,
-        company,
+        client["_shared"].headers,
+        {
+          companyId: company.companyId,
+          attributes: company.attrs,
+          context: { active: true },
+        },
       );
+
       expect(logger.debug).toHaveBeenCalledWith(
-        'post request to "company"',
+        expect.stringMatching('post request to "company"'),
         true,
       );
     });
@@ -382,19 +464,17 @@ describe("Client", () => {
     it("should include the user ID as well, if user was defined", async () => {
       httpClient.post.mockResolvedValue({ success: true });
 
-      const client = new Client(validOptions)
-        .withCompany(company)
-        .withUser(user);
-      const result = await client.updateCompany();
+      const result = await client.trackCompany(company.companyId, user.userId);
 
       expect(result).toBe(true);
       expect(httpClient.post).toHaveBeenCalledWith(
         "https://api.example.com/company",
-        client["shared"].headers,
-        { ...company, userId: user.userId },
+        client["_shared"].headers,
+        { companyId: company.companyId, userId: user.userId },
       );
+
       expect(logger.debug).toHaveBeenCalledWith(
-        'post request to "company"',
+        expect.stringMatching('post request to "company"'),
         true,
       );
     });
@@ -403,17 +483,11 @@ describe("Client", () => {
       const error = new Error("Network error");
       httpClient.post.mockRejectedValue(error);
 
-      const client = new Client(validOptions).withCompany(company);
-      const result = await client.updateCompany();
+      const result = await client.trackCompany(company.companyId);
 
       expect(result).toBe(false);
-      expect(httpClient.post).toHaveBeenCalledWith(
-        "https://api.example.com/company",
-        client["shared"].headers,
-        company,
-      );
       expect(logger.error).toHaveBeenCalledWith(
-        'post request to "company" failed with error',
+        expect.stringMatching('post request to "company" failed with error'),
         error,
       );
     });
@@ -421,26 +495,44 @@ describe("Client", () => {
     it("should return false if the API responds with success: false", async () => {
       httpClient.post.mockResolvedValue({ success: false });
 
-      const client = new Client(validOptions).withCompany(company);
-      const result = await client.updateCompany();
+      const result = await client.trackCompany(company.companyId);
 
       expect(result).toBe(false);
-      expect(httpClient.post).toHaveBeenCalledWith(
-        "https://api.example.com/company",
-        client["shared"].headers,
-        company,
-      );
       expect(logger.debug).toHaveBeenCalledWith(
-        'post request to "user"',
+        expect.stringMatching('post request to "company"'),
         false,
       );
     });
 
-    it("should throw an error if user is not defined", async () => {
-      const client = new Client(validOptions);
-      await expect(client.updateCompany()).rejects.toThrow(
-        "company is not defined",
+    it("should throw an error if user is not valid", async () => {
+      await expect(client.trackCompany(undefined as any)).rejects.toThrow(
+        "companyId must be a string",
       );
+
+      await expect(client.trackCompany(1 as any)).rejects.toThrow(
+        "companyId must be a string",
+      );
+
+      await expect(
+        client.trackCompany(company.companyId, 1 as any),
+      ).rejects.toThrow("userId must be a string");
+
+      await expect(
+        client.trackCompany(
+          company.companyId,
+          undefined,
+          "bad_attributes" as any,
+        ),
+      ).rejects.toThrow("attrs must be an object");
+
+      await expect(
+        client.trackCompany(
+          company.companyId,
+          undefined,
+          undefined,
+          "bad_meta" as any,
+        ),
+      ).rejects.toThrow("meta must be an object");
     });
   });
 
@@ -450,16 +542,53 @@ describe("Client", () => {
     it("should successfully track the feature usage", async () => {
       httpClient.post.mockResolvedValue({ success: true });
 
-      const result = await client.trackFeatureUsage(event);
+      const result = await client.trackFeatureUsage(
+        event.event,
+        undefined,
+        undefined,
+        event.attrs,
+        { active: true },
+      );
 
       expect(result).toBe(true);
       expect(httpClient.post).toHaveBeenCalledWith(
         "https://api.example.com/event",
-        client["shared"].headers,
-        event,
+        client["_shared"].headers,
+        {
+          event: event.event,
+          attributes: event.attrs,
+          context: { active: true },
+        },
       );
+
       expect(logger.debug).toHaveBeenCalledWith(
-        'post request to "event"',
+        expect.stringMatching('post request to "event"'),
+        true,
+      );
+    });
+
+    it("should successfully track the feature usage including user and company", async () => {
+      httpClient.post.mockResolvedValue({ success: true });
+
+      const result = await client.trackFeatureUsage(
+        event.event,
+        company.companyId,
+        user.userId,
+      );
+
+      expect(result).toBe(true);
+      expect(httpClient.post).toHaveBeenCalledWith(
+        "https://api.example.com/event",
+        client["_shared"].headers,
+        {
+          event: event.event,
+          companyId: company.companyId,
+          userId: user.userId,
+        },
+      );
+
+      expect(logger.debug).toHaveBeenCalledWith(
+        expect.stringMatching('post request to "event"'),
         true,
       );
     });
@@ -468,16 +597,11 @@ describe("Client", () => {
       const error = new Error("Network error");
       httpClient.post.mockRejectedValue(error);
 
-      const result = await client.trackFeatureUsage(event);
+      const result = await client.trackFeatureUsage(event.event);
 
       expect(result).toBe(false);
-      expect(httpClient.post).toHaveBeenCalledWith(
-        "https://api.example.com/event",
-        client["shared"].headers,
-        event,
-      );
       expect(logger.error).toHaveBeenCalledWith(
-        'post request to "event" failed with error',
+        expect.stringMatching('post request to "event" failed with error'),
         error,
       );
     });
@@ -485,40 +609,91 @@ describe("Client", () => {
     it("should return false if the API responds with success: false", async () => {
       httpClient.post.mockResolvedValue({ success: false });
 
-      const result = await client.trackFeatureUsage(event);
+      const result = await client.trackFeatureUsage(event.event);
 
       expect(result).toBe(false);
-      expect(httpClient.post).toHaveBeenCalledWith(
-        "https://api.example.com/event",
-        client["shared"].headers,
-        event,
-      );
       expect(logger.debug).toHaveBeenCalledWith(
-        'post request to "event"',
+        expect.stringMatching('post request to "event"'),
         false,
       );
     });
 
     it("should throw an error if event is not an object", async () => {
-      let invalidEvent: any = null;
-      await expect(client.trackFeatureUsage(invalidEvent)).rejects.toThrow(
-        "event must be an object",
+      await expect(client.trackFeatureUsage(undefined as any)).rejects.toThrow(
+        "event must be a string",
+      );
+      await expect(client.trackFeatureUsage(1 as any)).rejects.toThrow(
+        "event must be a string",
       );
 
-      invalidEvent = { ...event, event: "" };
-      await expect(client.trackFeatureUsage(invalidEvent)).rejects.toThrow(
-        "event must have a name",
+      await expect(
+        client.trackFeatureUsage(event.event, 1 as any),
+      ).rejects.toThrow("companyId must be a string");
+
+      await expect(
+        client.trackFeatureUsage(event.event, undefined, 1 as any),
+      ).rejects.toThrow("userId must be a string");
+
+      await expect(
+        client.trackFeatureUsage(
+          event.event,
+          undefined,
+          undefined,
+          "bad_attributes" as any,
+        ),
+      ).rejects.toThrow("attrs must be an object");
+
+      await expect(
+        client.trackFeatureUsage(
+          event.event,
+          undefined,
+          undefined,
+          undefined,
+          "bad_meta" as any,
+        ),
+      ).rejects.toThrow("meta must be an object");
+    });
+  });
+
+  describe("user", () => {
+    it("should return the undefined if user was not set", () => {
+      const client = new Client(validOptions);
+      expect(client.user).toBeUndefined();
+    });
+
+    it("should return the user if user was associated", () => {
+      const client = new Client(validOptions).withUser(user.userId, user.attrs);
+
+      expect(client.user).toEqual(user);
+    });
+  });
+
+  describe("company", () => {
+    it("should return the undefined if company was not set", () => {
+      const client = new Client(validOptions);
+      expect(client.company).toBeUndefined();
+    });
+
+    it("should return the user if company was associated", () => {
+      const client = new Client(validOptions).withCompany(
+        company.companyId,
+        company.attrs,
       );
 
-      invalidEvent = { ...event, attributes: "invalidAttributes" };
-      await expect(client.trackFeatureUsage(invalidEvent)).rejects.toThrow(
-        "event attributes must be an object",
-      );
+      expect(client.company).toEqual(company);
+    });
+  });
 
-      invalidEvent = { ...event, context: "invalidContext" };
-      await expect(client.trackFeatureUsage(invalidEvent)).rejects.toThrow(
-        "event context must be an object",
-      );
+  describe("customContext", () => {
+    it("should return the undefined if custom context was not set", () => {
+      const client = new Client(validOptions);
+      expect(client.customContext).toBeUndefined();
+    });
+
+    it("should return the user if custom context was associated", () => {
+      const client = new Client(validOptions).withCustomContext(customContext);
+
+      expect(client.customContext).toEqual(customContext);
     });
   });
 
@@ -540,7 +715,7 @@ describe("Client", () => {
 
       await client.initialize(fallbackFlags);
 
-      expect(client["fallbackFlags"]).toEqual(fallbackFlags);
+      expect(client["_fallbackFlags"]).toEqual(fallbackFlags);
       expect(cache.refresh).toHaveBeenCalledTimes(1);
       expect(cache.get).not.toHaveBeenCalled();
     });
@@ -559,17 +734,17 @@ describe("Client", () => {
 
       await client.initialize();
 
-      expect(client["fallbackFlags"]).toBeUndefined();
+      expect(client["_fallbackFlags"]).toBeUndefined();
       expect(cache.refresh).toHaveBeenCalledTimes(1);
       expect(cache.get).not.toHaveBeenCalled();
     });
 
     it("should set up the getFeatureFlagDefinitionsFn function", async () => {
       const client = new Client(validOptions);
-      expect(client["shared"].featureFlagDefinitionCache).toBeUndefined();
+      expect(client["_shared"].featureFlagDefinitionCache).toBeUndefined();
 
       await client.initialize();
-      expect(client["shared"].featureFlagDefinitionCache).toBeTypeOf("object");
+      expect(client["_shared"].featureFlagDefinitionCache).toBeTypeOf("object");
     });
 
     it("should throw an error if fallbackFlags is not an object", async () => {
@@ -673,8 +848,8 @@ describe("Client", () => {
 
     it("should return evaluated flags when user, company, and custom context are defined", async () => {
       client = client
-        .withUser(user)
-        .withCompany(company)
+        .withUser(user.userId, user.attrs)
+        .withCompany(company.companyId, company.attrs)
         .withCustomContext(customContext);
 
       await client.initialize();
@@ -690,21 +865,21 @@ describe("Client", () => {
       expect(httpClient.post).toHaveBeenNthCalledWith(
         1,
         "https://api.example.com/flags/events",
-        client["shared"].headers,
+        client["_shared"].headers,
         {
           action: "evaluate",
           flagKey: "flag1",
           flagVersion: 1,
           evalContext: {
             company: {
-              attributeKey: "attributeValue",
               id: "company123",
+              ...company.attrs,
             },
-            custom: "context",
             user: {
-              attributeKey: "attributeValue",
               id: "user123",
+              ...user.attrs,
             },
+            ...customContext,
           },
           evalResult: true,
           evalRuleResults: [true],
@@ -715,21 +890,21 @@ describe("Client", () => {
       expect(httpClient.post).toHaveBeenNthCalledWith(
         2,
         "https://api.example.com/flags/events",
-        client["shared"].headers,
+        client["_shared"].headers,
         {
           action: "evaluate",
           flagKey: "flag2",
           flagVersion: 2,
           evalContext: {
             company: {
-              attributeKey: "attributeValue",
               id: "company123",
+              ...company.attrs,
             },
-            custom: "context",
             user: {
-              attributeKey: "attributeValue",
               id: "user123",
+              ...user.attrs,
             },
+            ...customContext,
           },
           evalResult: false,
           evalRuleResults: [false],
@@ -740,7 +915,7 @@ describe("Client", () => {
       expect(httpClient.post).toHaveBeenNthCalledWith(
         3,
         "https://api.example.com/flags/events",
-        client["shared"].headers,
+        client["_shared"].headers,
         {
           action: "check",
           flagKey: "flag1",
@@ -751,7 +926,7 @@ describe("Client", () => {
     });
 
     it("should return evaluated flags when only user is defined", async () => {
-      client = client.withUser(user);
+      client = client.withUser(user.userId, user.attrs);
 
       await client.initialize();
       client.getFlags();
@@ -762,15 +937,15 @@ describe("Client", () => {
       expect(httpClient.post).toHaveBeenNthCalledWith(
         1,
         "https://api.example.com/flags/events",
-        client["shared"].headers,
+        client["_shared"].headers,
         {
           action: "evaluate",
           flagKey: "flag1",
           flagVersion: 1,
           evalContext: {
             user: {
-              attributeKey: "attributeValue",
               id: "user123",
+              ...user.attrs,
             },
           },
           evalResult: true,
@@ -782,15 +957,15 @@ describe("Client", () => {
       expect(httpClient.post).toHaveBeenNthCalledWith(
         2,
         "https://api.example.com/flags/events",
-        client["shared"].headers,
+        client["_shared"].headers,
         {
           action: "evaluate",
           flagKey: "flag2",
           flagVersion: 2,
           evalContext: {
             user: {
-              attributeKey: "attributeValue",
               id: "user123",
+              ...user.attrs,
             },
           },
           evalResult: false,
@@ -801,7 +976,7 @@ describe("Client", () => {
     });
 
     it("should return evaluated flags when only company is defined", async () => {
-      client = client.withCompany(company);
+      client = client.withCompany(company.companyId, company.attrs);
 
       await client.initialize();
       client.getFlags();
@@ -812,15 +987,15 @@ describe("Client", () => {
       expect(httpClient.post).toHaveBeenNthCalledWith(
         1,
         "https://api.example.com/flags/events",
-        client["shared"].headers,
+        client["_shared"].headers,
         {
           action: "evaluate",
           flagKey: "flag1",
           flagVersion: 1,
           evalContext: {
             company: {
-              attributeKey: "attributeValue",
               id: "company123",
+              ...company.attrs,
             },
           },
           evalResult: true,
@@ -832,15 +1007,15 @@ describe("Client", () => {
       expect(httpClient.post).toHaveBeenNthCalledWith(
         2,
         "https://api.example.com/flags/events",
-        client["shared"].headers,
+        client["_shared"].headers,
         {
           action: "evaluate",
           flagKey: "flag2",
           flagVersion: 2,
           evalContext: {
             company: {
-              attributeKey: "attributeValue",
               id: "company123",
+              ...company.attrs,
             },
           },
           evalResult: false,
@@ -862,13 +1037,13 @@ describe("Client", () => {
       expect(httpClient.post).toHaveBeenNthCalledWith(
         1,
         "https://api.example.com/flags/events",
-        client["shared"].headers,
+        client["_shared"].headers,
         {
           action: "evaluate",
           flagKey: "flag1",
           flagVersion: 1,
           evalContext: {
-            custom: "context",
+            ...customContext,
           },
           evalResult: true,
           evalRuleResults: [true],
@@ -879,13 +1054,13 @@ describe("Client", () => {
       expect(httpClient.post).toHaveBeenNthCalledWith(
         2,
         "https://api.example.com/flags/events",
-        client["shared"].headers,
+        client["_shared"].headers,
         {
           action: "evaluate",
           flagKey: "flag2",
           flagVersion: 2,
           evalContext: {
-            custom: "context",
+            ...customContext,
           },
           evalResult: false,
           evalRuleResults: [false],
@@ -904,13 +1079,15 @@ describe("Client", () => {
 
       expect(result).toEqual(fallbackFlags);
       expect(logger.warn).toHaveBeenCalledWith(
-        "failed to use feature flag definitions, there are none cached yet. using fallback flags.",
+        expect.stringMatching(
+          "failed to use feature flag definitions, there are none cached yet. using fallback flags.",
+        ),
       );
       expect(httpClient.post).toHaveBeenCalledTimes(1); // For "evaluate" events
 
       expect(httpClient.post).toHaveBeenCalledWith(
         "https://api.example.com/flags/events",
-        client["shared"].headers,
+        client["_shared"].headers,
         {
           action: "check",
           flagKey: "flagKey",
@@ -923,8 +1100,8 @@ describe("Client", () => {
       httpClient.post.mockRejectedValueOnce(new Error("Network error"));
 
       client = client
-        .withUser(user)
-        .withCompany(company)
+        .withUser(user.userId, user.attrs)
+        .withCompany(company.companyId, company.attrs)
         .withCustomContext(customContext);
 
       await client.initialize(fallbackFlags);
@@ -933,7 +1110,9 @@ describe("Client", () => {
       await flushPromises();
 
       expect(logger.error).toHaveBeenCalledWith(
-        'post request to "flags/events" failed with error',
+        expect.stringMatching(
+          'post request to "flags/events" failed with error',
+        ),
         expect.any(Error),
       );
     });
@@ -942,8 +1121,8 @@ describe("Client", () => {
       httpClient.post.mockResolvedValue({ success: true });
 
       client = client
-        .withUser(user)
-        .withCompany(company)
+        .withUser(user.userId, user.attrs)
+        .withCompany(company.companyId, company.attrs)
         .withCustomContext(customContext);
 
       await client.initialize(fallbackFlags);
@@ -957,7 +1136,9 @@ describe("Client", () => {
       await flushPromises();
 
       expect(logger.error).toHaveBeenCalledWith(
-        'post request to "flags/events" failed with error',
+        expect.stringMatching(
+          'post request to "flags/events" failed with error',
+        ),
         expect.any(Error),
       );
     });

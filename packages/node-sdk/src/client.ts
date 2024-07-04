@@ -3,6 +3,7 @@ import { evaluateFlag } from "@bucketco/flag-evaluation";
 import cache from "./cache";
 import {
   API_HOST,
+  BUCKET_LOG_PREFIX,
   FLAG_EVENTS_PER_MIN,
   FLAGS_REFETCH_MS,
   SDK_VERSION,
@@ -10,19 +11,24 @@ import {
 } from "./config";
 import fetchClient from "./fetch-http-client";
 import {
+  Attributes,
   Cache,
   ClientOptions,
-  Company,
-  Event,
   FeatureFlagEvent,
   Flag,
   FlagDefinitions,
   Flags,
   HttpClient,
   Logger,
-  User,
+  TrackingMeta,
 } from "./types";
-import { isObject, mergeDeep, ok, rateLimited, readNotifyProxy } from "./utils";
+import {
+  decorateLogger,
+  isObject,
+  ok,
+  rateLimited,
+  readNotifyProxy,
+} from "./utils";
 
 /**
  * The SDK client.
@@ -32,7 +38,7 @@ import { isObject, mergeDeep, ok, rateLimited, readNotifyProxy } from "./utils";
  * Use the client to track users, companies, events, and feature flag usage.
  **/
 export class Client {
-  private shared: {
+  private _shared: {
     logger?: Logger;
     host: string;
     httpClient: HttpClient;
@@ -42,10 +48,10 @@ export class Client {
     featureFlagDefinitionCache?: Cache<FlagDefinitions>;
   };
 
-  private context: Record<string, any> | undefined;
-  private company: Company | undefined;
-  private user: User | undefined;
-  private fallbackFlags: Flags | undefined;
+  private _customContext: Record<string, any> | undefined;
+  private _company: { companyId: string; attrs?: Attributes } | undefined;
+  private _user: { userId: string; attrs?: Attributes } | undefined;
+  private _fallbackFlags: Flags | undefined;
 
   /**
    * Creates a new SDK client.
@@ -54,11 +60,11 @@ export class Client {
    **/
   constructor(options: ClientOptions | Client) {
     if (options instanceof Client) {
-      this.shared = options.shared;
-      this.context = options.context;
-      this.company = options.company;
-      this.user = options.user;
-      this.fallbackFlags = options.fallbackFlags;
+      this._shared = options._shared;
+      this._customContext = options._customContext;
+      this._company = options._company;
+      this._user = options._user;
+      this._fallbackFlags = options._fallbackFlags;
 
       return;
     }
@@ -93,8 +99,9 @@ export class Client {
     );
 
     const refetchInterval = options.refetchInterval || FLAGS_REFETCH_MS;
-    this.shared = {
-      logger: options.logger,
+    this._shared = {
+      logger:
+        options.logger && decorateLogger(BUCKET_LOG_PREFIX, options.logger),
       host: options.host || API_HOST,
       headers: {
         "Content-Type": "application/json",
@@ -120,15 +127,15 @@ export class Client {
     ok(typeof body === "object", "body must be an object");
 
     try {
-      const response = await this.shared.httpClient.post<
+      const response = await this._shared.httpClient.post<
         TBody,
         { success: boolean }
-      >(`${this.shared.host}/${path}`, this.shared.headers, body);
+      >(`${this._shared.host}/${path}`, this._shared.headers, body);
 
-      this.shared.logger?.debug(`post request to "${path}"`, response.success);
+      this._shared.logger?.debug(`post request to "${path}"`, response.success);
       return response.success;
     } catch (error) {
-      this.shared.logger?.error(
+      this._shared.logger?.error(
         `post request to "${path}" failed with error`,
         error,
       );
@@ -146,11 +153,11 @@ export class Client {
     ok(typeof path === "string" && path.length > 0, "path must be a string");
 
     try {
-      const response = await this.shared.httpClient.get<
+      const response = await this._shared.httpClient.get<
         TResponse & { success: boolean }
-      >(`${this.shared.host}/${path}`, this.shared.headers);
+      >(`${this._shared.host}/${path}`, this._shared.headers);
 
-      this.shared.logger?.debug(`get request to "${path}"`, response.success);
+      this._shared.logger?.debug(`get request to "${path}"`, response.success);
 
       if (!isObject(response) || response.success !== true) {
         return undefined;
@@ -159,7 +166,7 @@ export class Client {
       const { success: _, ...result } = response;
       return result as TResponse;
     } catch (error) {
-      this.shared.logger?.error(
+      this._shared.logger?.error(
         `get request to "${path}" failed with error`,
         error,
       );
@@ -219,11 +226,11 @@ export class Client {
   }
 
   private getFeatureFlagDefinitionCache() {
-    if (!this.shared.featureFlagDefinitionCache) {
-      this.shared.featureFlagDefinitionCache = cache<FlagDefinitions>(
-        this.shared.refetchInterval,
-        this.shared.staleWarningInterval,
-        this.shared.logger,
+    if (!this._shared.featureFlagDefinitionCache) {
+      this._shared.featureFlagDefinitionCache = cache<FlagDefinitions>(
+        this._shared.refetchInterval,
+        this._shared.staleWarningInterval,
+        this._shared.logger,
         async () => {
           const res = await this.get<FlagDefinitions>("flags");
 
@@ -234,63 +241,71 @@ export class Client {
           return res;
         },
       );
-
-      void this.shared.featureFlagDefinitionCache.refresh();
     }
 
-    return this.shared.featureFlagDefinitionCache;
+    return this._shared.featureFlagDefinitionCache;
   }
 
   /**
-   * Sets the user for the client.
+   * Sets the user that is used for feature flag evaluation.
    *
-   * @param user - The user to set.
+   * @param userId - The user ID to set.
+   * @param attrs - The attributes of the user (optional).
+   *
    * @returns A new client with the user set.
+   *
+   * @remarks
+   * If the user ID is the same as the current company, the attributes will be merged, and
+   * the new attributes will take precedence.
    **/
-  public withUser(user: User): Client {
-    ok(isObject(user), "user must be an object");
+  public withUser(userId: string, attrs?: Attributes): Client {
     ok(
-      typeof user.userId === "string" && user.userId.length > 0,
-      "user must have a userId",
+      typeof userId === "string" && userId.length > 0,
+      "userId must be a string",
     );
-    ok(
-      user.attributes === undefined || isObject(user.attributes),
-      "user attributes must be an object",
-    );
-    ok(
-      user.context === undefined || isObject(user.context),
-      "user context must be an object",
-    );
+    ok(attrs === undefined || isObject(attrs), "attrs must be an object");
 
     const client = new Client(this);
-    client.user = user;
+    if (userId !== this._user?.userId) {
+      client._user = { userId, attrs };
+    } else {
+      client._user = {
+        userId: this._user.userId,
+        attrs: { ...this._user.attrs, ...attrs },
+      };
+    }
 
     return client;
   }
 
   /**
-   * Sets the company for the client.
+   * Sets the company that is used for feature flag evaluation.
    *
-   * @param company - The company to set.
+   * @param companyId - The company ID to set.
+   * @param attrs - The attributes of the company (optional).
+   *
    * @returns A new client with the company set.
+   *
+   * @remarks
+   * If the company ID is the same as the current company, the attributes will be merged, and
+   * the new attributes will take precedence.
    **/
-  public withCompany(company: Company): Client {
-    ok(isObject(company), "company must be an object");
+  public withCompany(companyId: string, attrs?: Attributes): Client {
     ok(
-      typeof company.companyId === "string" && company.companyId.length > 0,
-      "company must have a companyId",
+      typeof companyId === "string" && companyId.length > 0,
+      "companyId must be a string",
     );
-    ok(
-      company.attributes === undefined || isObject(company.attributes),
-      "company attributes must be an object",
-    );
-    ok(
-      company.context === undefined || isObject(company.context),
-      "company context must be an object",
-    );
+    ok(attrs === undefined || isObject(attrs), "attrs must be an object");
 
     const client = new Client(this);
-    client.company = company;
+    if (companyId !== this._company?.companyId) {
+      client._company = { companyId, attrs };
+    } else {
+      client._company = {
+        companyId: this._company.companyId,
+        attrs: { ...this._company.attrs, ...attrs },
+      };
+    }
 
     return client;
   }
@@ -299,105 +314,210 @@ export class Client {
    * Sets the custom context for the client.
    *
    * @param context - The context to set.
+   *
    * @returns A new client with the context set.
+   *
+   * @remarks
+   * If replace is true, the context will replace the current context, otherwise it will be merged.
+   * The new context will take precedence over the old context.
    **/
-  public withCustomContext(context: Record<string, any>): Client {
+  public withCustomContext(
+    context: Record<string, any>,
+    replace: boolean = false,
+  ): Client {
     ok(isObject(context), "context must be an object");
+    ok(typeof replace === "boolean", "replace must be a boolean");
 
     const client = new Client(this);
-    client.context = context;
+
+    if (!replace) {
+      client._customContext = { ...this._customContext, ...context };
+    } else {
+      client._customContext = context;
+    }
 
     return client;
   }
 
   /**
-   * Updates the user in Bucket.
+   * Gets the custom context associated with the client.
    *
-   * @returns A boolean indicating if the request was successful.
-   * @remarks
-   * The user must be set before calling this method.
+   * @returns The custom context or `undefined` if it is not set.
    **/
-  public async updateUser() {
-    ok(this.user !== undefined, "user is not defined");
-    return await this.post("user", this.user);
+  public get customContext() {
+    return this._customContext;
   }
 
   /**
-   * Updates the company in Bucket.
+   * Gets the user associated with the client.
+   *
+   * @returns The user or `undefined` if it is not set.
+   **/
+  public get user() {
+    return this._user;
+  }
+
+  /**
+   * Gets the company associated with the client.
+   *
+   * @returns The company or `undefined` if it is not set.
+   **/
+  public get company() {
+    return this._company;
+  }
+
+  /**
+   * Tracks a user in Bucket.
+   *
+   * @param userId - The user ID to track.
+   * @param attrs - The attributes of the user (optional).
+   * @param meta - The meta context associated with tracking (optional).
    *
    * @returns A boolean indicating if the request was successful.
-   * @remarks
-   * The company must be set before calling this method.
    **/
-  public async updateCompany() {
-    ok(this.company !== undefined, "company is not defined");
+  public async trackUser(
+    userId: string,
+    attrs?: Attributes,
+    meta?: TrackingMeta,
+  ) {
+    ok(
+      typeof userId === "string" && userId.length > 0,
+      "userId must be a string",
+    );
+    ok(attrs === undefined || isObject(attrs), "attrs must be an object");
+    ok(meta === undefined || isObject(meta), "meta must be an object");
 
-    const company = this.user
-      ? { ...this.company, userId: this.user.userId }
-      : this.company;
+    return await this.post("user", {
+      userId,
+      attributes: attrs,
+      context: meta,
+    });
+  }
 
-    return await this.post("company", company);
+  /**
+   * Tracks a company in Bucket.
+   *
+   * @param companyId - The company ID to track.
+   * @param userId - The user ID associated with the company (optional).
+   * @param attrs - The attributes of the company (optional).
+   * @param meta - The meta context associated with tracking (optional).
+   *
+   * @returns A boolean indicating if the request was successful.
+   **/
+  public async trackCompany(
+    companyId: string,
+    userId?: string,
+    attrs?: Attributes,
+    meta?: TrackingMeta,
+  ) {
+    ok(
+      typeof companyId === "string" && companyId.length > 0,
+      "companyId must be a string",
+    );
+    ok(
+      userId === undefined || (typeof userId === "string" && userId.length > 0),
+      "userId must be a string",
+    );
+    ok(attrs === undefined || isObject(attrs), "attrs must be an object");
+    ok(meta === undefined || isObject(meta), "meta must be an object");
+
+    return await this.post("company", {
+      companyId,
+      userId,
+      attributes: attrs,
+      context: meta,
+    });
   }
 
   /**
    * Tracks an event in Bucket.
    *
    * @param event - The event to track.
+   * @param companyId - The company ID associated with the event (optional).
+   * @param userId - The user ID associated with the event (optional).
+   * @param attrs - The attributes of the event (optional).
+   * @param context - The meta context associated with tracking (optional).
+   *
    * @returns A boolean indicating if the request was successful.
    **/
-  public async trackFeatureUsage(event: Event) {
-    ok(isObject(event), "event must be an object");
+  public async trackFeatureUsage(
+    event: string,
+    companyId?: string,
+    userId?: string,
+    attrs?: Attributes,
+    meta?: TrackingMeta,
+  ) {
+    ok(typeof event === "string" && event.length > 0, "event must be a string");
+
     ok(
-      typeof event.event === "string" && event.event.length > 0,
-      "event must have a name",
+      userId === undefined || (typeof userId === "string" && userId.length > 0),
+      "userId must be a string",
     );
     ok(
-      event.attributes === undefined || isObject(event.attributes),
-      "event attributes must be an object",
-    );
-    ok(
-      event.context === undefined || isObject(event.context),
-      "event context must be an object",
+      companyId === undefined ||
+        (typeof companyId === "string" && companyId.length > 0),
+      "companyId must be a string",
     );
 
-    return await this.post("event", event);
+    ok(attrs === undefined || isObject(attrs), "attrs must be an object");
+    ok(meta === undefined || isObject(meta), "meta must be an object");
+
+    return await this.post("event", {
+      event,
+      companyId,
+      userId,
+      attributes: attrs,
+      context: meta,
+    });
   }
 
   /**
-   * Initializes the client. this call is optional, but it will fetch the feature flag definitions and warm up the cache.
+   * Initializes the client by caching the feature flag definitions.
+   *
+   * @typeparam TFlagKey - The type of the feature flag keys, `string` by default.
    *
    * @returns void
+   *
+   * @remarks
+   * Call this method before calling `getFlags` to ensure the feature flag definitions are cached or at least the fallback flags are set.
    **/
-  public async initialize(fallbackFlags?: Flags) {
+  public async initialize<TFlagKey extends string = string>(
+    fallbackFlags?: Flags<TFlagKey>,
+  ) {
     ok(
       fallbackFlags === undefined || typeof fallbackFlags === "object",
       "fallbackFlags must be an object",
     );
 
-    this.fallbackFlags = fallbackFlags;
+    this._fallbackFlags = fallbackFlags;
     await this.getFeatureFlagDefinitionCache().refresh();
   }
 
   /**
    * Gets the evaluated feature flags for the current context which includes the user, company, and custom context.
    *
+   * @typeparam TFlagKey - The type of the feature flag keys, `string` by default.
+   *
    * @returns The evaluated feature flags.
+   *
+   * @remarks
+   * Call `initialize` before calling this method to ensure the feature flag definitions are cached, empty flags will be returned otherwise.
    **/
-  public getFlags() {
-    const baseContext = {
-      user: this.user && {
-        id: this.user.userId,
-        ...this.user.attributes,
+  public getFlags<TFlagKey extends string = string>() {
+    const mergedContext = {
+      user: this._user && {
+        id: this._user.userId,
+        ...this._user.attrs,
       },
-      company: this.company && {
-        id: this.company.companyId,
-        ...this.company.attributes,
+      company: this._company && {
+        id: this._company.companyId,
+        ...this._company.attrs,
       },
+      ...this._customContext,
     };
 
-    const mergedContext = mergeDeep(baseContext, this.context || {});
     const flagDefinitions = this.getFeatureFlagDefinitionCache().get();
-    let evaluatedFlags: Flags | undefined = this.fallbackFlags || {};
+    let evaluatedFlags: Flags<TFlagKey> = this._fallbackFlags || {};
 
     if (flagDefinitions) {
       const keyToVersionMap = new Map<string, number>(
@@ -422,18 +542,21 @@ export class Client {
 
       evaluatedFlags = evaluated
         .filter((e) => e.value)
-        .reduce((acc, res) => {
-          acc[res.flag.key] = {
-            key: res.flag.key,
-            value: res.value,
-            version: keyToVersionMap.get(res.flag.key),
-          };
-          return acc;
-        }, {} as Flags);
+        .reduce(
+          (acc, res) => {
+            acc[res.flag.key as TFlagKey] = {
+              key: res.flag.key,
+              value: res.value,
+              version: keyToVersionMap.get(res.flag.key),
+            };
+            return acc;
+          },
+          {} as Record<TFlagKey, Flag>,
+        );
 
-      this.shared.logger?.debug("evaluated flags", evaluatedFlags);
+      this._shared.logger?.debug("evaluated flags", evaluatedFlags);
     } else {
-      this.shared.logger?.warn(
+      this._shared.logger?.warn(
         "failed to use feature flag definitions, there are none cached yet. using fallback flags.",
       );
     }

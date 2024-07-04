@@ -1,10 +1,9 @@
-export type { Client } from "./client";
+export { Client } from "./client";
 export type {
+  Attributes,
   ClientOptions,
-  Company,
-  Event,
   Flags,
   HttpClient,
   Logger,
-  User,
+  TrackingMeta,
 } from "./types";

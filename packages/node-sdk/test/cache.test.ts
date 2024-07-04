@@ -40,7 +40,10 @@ describe("cache", () => {
     const result = await cached.refresh();
 
     expect(result).toBe(42);
-    expect(logger.debug).toHaveBeenCalledWith("updated cached value", 42);
+    expect(logger.debug).toHaveBeenCalledWith(
+      expect.stringMatching("updated cached value"),
+      42,
+    );
   });
 
   it("should not allow multiple refreses at the same time", async () => {
@@ -52,13 +55,21 @@ describe("cache", () => {
     await cached.refresh();
 
     expect(fn).toHaveBeenCalledTimes(1);
-    expect(logger.debug).toHaveBeenNthCalledWith(1, "updated cached value", 42);
+    expect(logger.debug).toHaveBeenNthCalledWith(
+      1,
+      expect.stringMatching("updated cached value"),
+      42,
+    );
 
     void cached.refresh();
     await cached.refresh();
 
     expect(fn).toHaveBeenCalledTimes(2);
-    expect(logger.debug).toHaveBeenNthCalledWith(2, "updated cached value", 42);
+    expect(logger.debug).toHaveBeenNthCalledWith(
+      2,
+      expect.stringMatching("updated cached value"),
+      42,
+    );
   });
 
   it("should update the cached value when refreshing", async () => {
@@ -67,7 +78,10 @@ describe("cache", () => {
     const result = await cached.refresh();
 
     expect(result).toBe(42);
-    expect(logger.debug).toHaveBeenCalledWith("updated cached value", 42);
+    expect(logger.debug).toHaveBeenCalledWith(
+      expect.stringMatching("updated cached value"),
+      42,
+    );
   });
 
   it("should warn if the cached value is stale", async () => {
@@ -80,10 +94,13 @@ describe("cache", () => {
     const result = cached.get();
 
     expect(result).toBe(42);
-    expect(logger.warn).toHaveBeenCalledWith("cached value is stale", {
-      age: expect.any(Number),
-      cachedValue: 42,
-    });
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringMatching("cached value is stale"),
+      {
+        age: expect.any(Number),
+        cachedValue: 42,
+      },
+    );
   });
 
   it("should update the cached value after ttl", async () => {
@@ -104,7 +121,10 @@ describe("cache", () => {
     expect(second).toBe(newValue);
     expect(fn).toHaveBeenCalledTimes(2);
 
-    expect(logger.debug).toHaveBeenCalledWith("updated cached value", newValue);
+    expect(logger.debug).toHaveBeenCalledWith(
+      expect.stringMatching("updated cached value"),
+      newValue,
+    );
   });
 
   it("should handle update failures gracefully", async () => {
@@ -117,7 +137,7 @@ describe("cache", () => {
 
     expect(first).toBeUndefined();
     expect(logger.error).toHaveBeenCalledWith(
-      "failed to update cached value",
+      expect.stringMatching("failed to update cached value"),
       error,
     );
     expect(fn).toHaveBeenCalledTimes(1);
@@ -125,7 +145,10 @@ describe("cache", () => {
     await vi.advanceTimersToNextTimerAsync();
 
     expect(fn).toHaveBeenCalledTimes(2);
-    expect(logger.debug).toHaveBeenCalledWith("updated cached value", 42);
+    expect(logger.debug).toHaveBeenCalledWith(
+      expect.stringMatching("updated cached value"),
+      42,
+    );
 
     const second = cached.get();
     expect(second).toBe(42);
@@ -140,7 +163,7 @@ describe("cache", () => {
     await vi.advanceTimersToNextTimerAsync();
 
     expect(logger.warn).toHaveBeenCalledWith(
-      "received undefined value from function",
+      expect.stringMatching("received undefined value from function"),
     );
 
     const second = cached.get();
@@ -151,10 +174,13 @@ describe("cache", () => {
     const result = cached.get();
 
     expect(result).toBe(42);
-    expect(logger.warn).toHaveBeenCalledWith("cached value is stale", {
-      age: expect.any(Number),
-      cachedValue: 42,
-    });
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringMatching("cached value is stale"),
+      {
+        age: expect.any(Number),
+        cachedValue: 42,
+      },
+    );
   });
 
   it("should not update if cached value is still valid", async () => {

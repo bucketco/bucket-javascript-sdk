@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import {
+  decorateLogger,
   isObject,
-  mergeDeep,
   ok,
   rateLimited,
   readNotifyProxy,
@@ -38,49 +38,6 @@ describe("isObject", () => {
   });
 });
 
-describe("mergeDeep", () => {
-  it("should merge two objects", () => {
-    const obj1 = { a: 1, b: { c: 2, d: 3 } };
-    const obj2 = { b: { c: 4, e: 5 }, f: 6 };
-    const result = mergeDeep(obj1, obj2);
-
-    expect(result).toEqual({ a: 1, b: { c: 4, d: 3, e: 5 }, f: 6 });
-  });
-
-  it("should merge three objects", () => {
-    const obj1 = { a: 1, b: { c: 2, d: 3 } };
-    const obj2 = { b: { c: 4, e: 5 }, f: 6 };
-    const obj3 = { a: 7, b: { d: 8, e: 9 }, g: 10 };
-    const result = mergeDeep(obj1, obj2, obj3);
-
-    expect(result).toEqual({ a: 7, b: { c: 4, d: 8, e: 9 }, f: 6, g: 10 });
-  });
-
-  it("should merge four objects", () => {
-    const obj1 = { a: 1, b: { c: 2, d: 3 } };
-    const obj2 = { b: { c: 4, e: 5 }, f: 6 };
-    const obj3 = { a: 7, b: { d: 8, e: 9 }, g: 10 };
-    const obj4 = { a: 11, b: { c: 12, e: 13 }, g: 14, h: 15 };
-    const result = mergeDeep(obj1, obj2, obj3, obj4);
-
-    expect(result).toEqual({
-      a: 11,
-      b: { c: 12, d: 8, e: 13 },
-      f: 6,
-      g: 14,
-      h: 15,
-    });
-  });
-
-  it("should merge arrays", () => {
-    const obj1 = { a: [1, 2, 3] };
-    const obj2 = { a: [4, 5, 6] };
-    const result = mergeDeep(obj1, obj2);
-
-    expect(result).toEqual({ a: [4, 5, 6] });
-  });
-});
-
 describe("ok", () => {
   it("should throw an error if the condition is false", () => {
     expect(() => ok(false, "error")).toThrowError("error");
@@ -112,8 +69,8 @@ describe("readNotifyProxy", () => {
     const proxy = readNotifyProxy(target, callback);
 
     expect(() => {
-      proxy.a = 3;
-    }).toThrowError("Cannot modify property 'a' of the object.");
+      (proxy as any).a = 3;
+    }).toThrowError();
   });
 });
 
@@ -158,5 +115,39 @@ describe("rateLimited", () => {
     }
 
     expect(callback).toHaveBeenCalledTimes(6);
+  });
+});
+
+describe("decorateLogger", () => {
+  it("should decorate the logger", () => {
+    const logger = {
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    };
+    const decorated = decorateLogger("prefix", logger);
+
+    decorated.debug("message");
+    decorated.info("message");
+    decorated.warn("message");
+    decorated.error("message");
+
+    expect(logger.debug).toHaveBeenCalledWith("prefix message");
+    expect(logger.info).toHaveBeenCalledWith("prefix message");
+    expect(logger.warn).toHaveBeenCalledWith("prefix message");
+    expect(logger.error).toHaveBeenCalledWith("prefix message");
+  });
+
+  it("should throw an error if the prefix is not a string", () => {
+    expect(() => decorateLogger(0 as any, {} as any)).toThrowError(
+      "prefix must be a string",
+    );
+  });
+
+  it("should throw an error if the logger is not an object", () => {
+    expect(() => decorateLogger("", 0 as any)).toThrowError(
+      "logger must be an object",
+    );
   });
 });
