@@ -222,7 +222,9 @@ describe("Client", () => {
     const client = new BucketClient(validOptions);
 
     it("should return a new client instance with the user set", () => {
-      const newClient = client.withUser(user.userId, user.attrs);
+      const newClient = client.withUser(user.userId, {
+        attributes: user.attrs,
+      });
 
       expect(newClient).toBeInstanceOf(BucketClient);
       expect(newClient).not.toBe(client); // Ensure a new instance is returned
@@ -232,8 +234,8 @@ describe("Client", () => {
     it("should return a new client instance with merged user attributes", () => {
       const override = { sex: "male", age: 30 };
       const newClient = client
-        .withUser(user.userId, user.attrs)
-        .withUser(user.userId, override);
+        .withUser(user.userId, { attributes: user.attrs })
+        .withUser(user.userId, { attributes: override });
 
       expect(newClient["_user"]).toEqual({
         userId: user.userId,
@@ -243,8 +245,8 @@ describe("Client", () => {
 
     it("should return a new client instance with reset user", () => {
       const newClient = client
-        .withUser(user.userId, user.attrs)
-        .withUser("anotherUser", { another: "value" });
+        .withUser(user.userId, { attributes: user.attrs })
+        .withUser("anotherUser", { attributes: { another: "value" } });
 
       expect(newClient["_user"]).toEqual({
         userId: "anotherUser",
@@ -261,9 +263,13 @@ describe("Client", () => {
         "userId must be a string",
       );
 
+      expect(() => client.withUser(user.userId, "bad_opts" as any)).toThrow(
+        "opts must be an object",
+      );
+
       expect(() =>
-        client.withUser(user.userId, "bad_attributes" as any),
-      ).toThrow("attrs must be an object");
+        client.withUser(user.userId, { attributes: "bad_attributes" as any }),
+      ).toThrow("attributes must be an object");
     });
   });
 
@@ -271,7 +277,9 @@ describe("Client", () => {
     const client = new BucketClient(validOptions);
 
     it("should return a new client instance with the company set", () => {
-      const newClient = client.withCompany(company.companyId, company.attrs);
+      const newClient = client.withCompany(company.companyId, {
+        attributes: company.attrs,
+      });
 
       expect(newClient).toBeInstanceOf(BucketClient);
       expect(newClient).not.toBe(client); // Ensure a new instance is returned
@@ -281,8 +289,8 @@ describe("Client", () => {
     it("should return a new client instance with merged company attributes", () => {
       const override = { age: 30, name: "not acme" };
       const newClient = client
-        .withCompany(company.companyId, company.attrs)
-        .withCompany(company.companyId, override);
+        .withCompany(company.companyId, { attributes: company.attrs })
+        .withCompany(company.companyId, { attributes: override });
 
       expect(newClient["_company"]).toEqual({
         companyId: company.companyId,
@@ -292,8 +300,8 @@ describe("Client", () => {
 
     it("should return a new client instance with reset company", () => {
       const newClient = client
-        .withCompany(company.companyId, company.attrs)
-        .withCompany("anotherCompany", { another: "value" });
+        .withCompany(company.companyId, { attributes: company.attrs })
+        .withCompany("anotherCompany", { attributes: { another: "value" } });
 
       expect(newClient["_company"]).toEqual({
         companyId: "anotherCompany",
@@ -311,8 +319,14 @@ describe("Client", () => {
       );
 
       expect(() =>
-        client.withCompany(company.companyId, "bad_attributes" as any),
-      ).toThrow("attrs must be an object");
+        client.withCompany(company.companyId, "bad_opts" as any),
+      ).toThrow("opts must be an object");
+
+      expect(() =>
+        client.withCompany(company.companyId, {
+          attributes: "bad_attributes" as any,
+        }),
+      ).toThrow("attributes must be an object");
     });
   });
 
@@ -330,7 +344,7 @@ describe("Client", () => {
     it("should return a new client instance with replaced custom context", () => {
       const newClient = client
         .withCustomContext(customContext)
-        .withCustomContext({ replaced: true }, true);
+        .withCustomContext({ replaced: true }, { replace: true });
 
       expect(newClient["_customContext"]).toEqual({ replaced: true });
     });
@@ -369,8 +383,11 @@ describe("Client", () => {
     it("should successfully update the user when user is defined", async () => {
       httpClient.post.mockResolvedValue({ success: true });
 
-      const result = await client.trackUser(user.userId, user.attrs, {
-        active: true,
+      const result = await client.trackUser(user.userId, {
+        attributes: user.attrs,
+        meta: {
+          active: true,
+        },
       });
 
       expect(result).toBe(true);
@@ -424,11 +441,15 @@ describe("Client", () => {
       );
 
       await expect(
-        client.trackUser(user.userId, "bad_attributes" as any),
-      ).rejects.toThrow("attrs must be an object");
+        client.trackUser(user.userId, "bad_opts" as any),
+      ).rejects.toThrow("opts must be an object");
 
       await expect(
-        client.trackUser(user.userId, undefined, "bad_meta" as any),
+        client.trackUser(user.userId, { attributes: "bad_attributes" as any }),
+      ).rejects.toThrow("attributes must be an object");
+
+      await expect(
+        client.trackUser(user.userId, { meta: "bad_meta" as any }),
       ).rejects.toThrow("meta must be an object");
     });
   });
@@ -439,12 +460,10 @@ describe("Client", () => {
     it("should successfully update the company when company is defined", async () => {
       httpClient.post.mockResolvedValue({ success: true });
 
-      const result = await client.trackCompany(
-        company.companyId,
-        undefined,
-        company.attrs,
-        { active: true },
-      );
+      const result = await client.trackCompany(company.companyId, {
+        attributes: company.attrs,
+        meta: { active: true },
+      });
 
       expect(result).toBe(true);
       expect(httpClient.post).toHaveBeenCalledWith(
@@ -466,7 +485,9 @@ describe("Client", () => {
     it("should include the user ID as well, if user was defined", async () => {
       httpClient.post.mockResolvedValue({ success: true });
 
-      const result = await client.trackCompany(company.companyId, user.userId);
+      const result = await client.trackCompany(company.companyId, {
+        userId: user.userId,
+      });
 
       expect(result).toBe(true);
       expect(httpClient.post).toHaveBeenCalledWith(
@@ -506,7 +527,7 @@ describe("Client", () => {
       );
     });
 
-    it("should throw an error if user is not valid", async () => {
+    it("should throw an error if company is not valid", async () => {
       await expect(client.trackCompany(undefined as any)).rejects.toThrow(
         "companyId must be a string",
       );
@@ -516,24 +537,23 @@ describe("Client", () => {
       );
 
       await expect(
-        client.trackCompany(company.companyId, 1 as any),
+        client.trackCompany(company.companyId, "bad_opts" as any),
+      ).rejects.toThrow("opts must be an object");
+
+      await expect(
+        client.trackCompany(company.companyId, { userId: 1 as any }),
       ).rejects.toThrow("userId must be a string");
 
       await expect(
-        client.trackCompany(
-          company.companyId,
-          undefined,
-          "bad_attributes" as any,
-        ),
-      ).rejects.toThrow("attrs must be an object");
+        client.trackCompany(company.companyId, {
+          attributes: "bad_attributes" as any,
+        }),
+      ).rejects.toThrow("attributes must be an object");
 
       await expect(
-        client.trackCompany(
-          company.companyId,
-          undefined,
-          undefined,
-          "bad_meta" as any,
-        ),
+        client.trackCompany(company.companyId, {
+          meta: "bad_meta" as any,
+        }),
       ).rejects.toThrow("meta must be an object");
     });
   });
@@ -544,13 +564,10 @@ describe("Client", () => {
     it("should successfully track the feature usage", async () => {
       httpClient.post.mockResolvedValue({ success: true });
 
-      const result = await client.trackFeatureUsage(
-        event.event,
-        undefined,
-        undefined,
-        event.attrs,
-        { active: true },
-      );
+      const result = await client.trackFeatureUsage(event.event, {
+        attributes: event.attrs,
+        meta: { active: true },
+      });
 
       expect(result).toBe(true);
       expect(httpClient.post).toHaveBeenCalledWith(
@@ -572,11 +589,10 @@ describe("Client", () => {
     it("should successfully track the feature usage including user and company", async () => {
       httpClient.post.mockResolvedValue({ success: true });
 
-      const result = await client.trackFeatureUsage(
-        event.event,
-        company.companyId,
-        user.userId,
-      );
+      const result = await client.trackFeatureUsage(event.event, {
+        companyId: company.companyId,
+        userId: user.userId,
+      });
 
       expect(result).toBe(true);
       expect(httpClient.post).toHaveBeenCalledWith(
@@ -620,7 +636,7 @@ describe("Client", () => {
       );
     });
 
-    it("should throw an error if event is not an object", async () => {
+    it("should throw an error if event is invalid", async () => {
       await expect(client.trackFeatureUsage(undefined as any)).rejects.toThrow(
         "event must be a string",
       );
@@ -629,30 +645,25 @@ describe("Client", () => {
       );
 
       await expect(
-        client.trackFeatureUsage(event.event, 1 as any),
+        client.trackFeatureUsage(event.event, "bad_opts" as any),
+      ).rejects.toThrow("opts must be an object");
+
+      await expect(
+        client.trackFeatureUsage(event.event, { companyId: 1 as any }),
       ).rejects.toThrow("companyId must be a string");
 
       await expect(
-        client.trackFeatureUsage(event.event, undefined, 1 as any),
+        client.trackFeatureUsage(event.event, { userId: 1 as any }),
       ).rejects.toThrow("userId must be a string");
 
       await expect(
-        client.trackFeatureUsage(
-          event.event,
-          undefined,
-          undefined,
-          "bad_attributes" as any,
-        ),
-      ).rejects.toThrow("attrs must be an object");
+        client.trackFeatureUsage(event.event, {
+          attributes: "bad_attributes" as any,
+        }),
+      ).rejects.toThrow("attributes must be an object");
 
       await expect(
-        client.trackFeatureUsage(
-          event.event,
-          undefined,
-          undefined,
-          undefined,
-          "bad_meta" as any,
-        ),
+        client.trackFeatureUsage(event.event, { meta: "bad_meta" as any }),
       ).rejects.toThrow("meta must be an object");
     });
   });
@@ -664,10 +675,9 @@ describe("Client", () => {
     });
 
     it("should return the user if user was associated", () => {
-      const client = new BucketClient(validOptions).withUser(
-        user.userId,
-        user.attrs,
-      );
+      const client = new BucketClient(validOptions).withUser(user.userId, {
+        attributes: user.attrs,
+      });
 
       expect(client.user).toEqual(user);
     });
@@ -682,7 +692,7 @@ describe("Client", () => {
     it("should return the user if company was associated", () => {
       const client = new BucketClient(validOptions).withCompany(
         company.companyId,
-        company.attrs,
+        { attributes: company.attrs },
       );
 
       expect(client.company).toEqual(company);
@@ -764,7 +774,7 @@ describe("Client", () => {
   });
 
   describe("getFlags", () => {
-    let client: Client;
+    let client: BucketClient;
 
     const fallbackFlags: Flags = {
       flagKey: { key: "flagKey", value: true },
@@ -855,8 +865,8 @@ describe("Client", () => {
 
     it("should return evaluated flags when user, company, and custom context are defined", async () => {
       client = client
-        .withUser(user.userId, user.attrs)
-        .withCompany(company.companyId, company.attrs)
+        .withUser(user.userId, { attributes: user.attrs })
+        .withCompany(company.companyId, { attributes: company.attrs })
         .withCustomContext(customContext);
 
       await client.initialize();
@@ -933,7 +943,7 @@ describe("Client", () => {
     });
 
     it("should return evaluated flags when only user is defined", async () => {
-      client = client.withUser(user.userId, user.attrs);
+      client = client.withUser(user.userId, { attributes: user.attrs });
 
       await client.initialize();
       client.getFlags();
@@ -983,7 +993,9 @@ describe("Client", () => {
     });
 
     it("should return evaluated flags when only company is defined", async () => {
-      client = client.withCompany(company.companyId, company.attrs);
+      client = client.withCompany(company.companyId, {
+        attributes: company.attrs,
+      });
 
       await client.initialize();
       client.getFlags();
@@ -1107,8 +1119,8 @@ describe("Client", () => {
       httpClient.post.mockRejectedValueOnce(new Error("Network error"));
 
       client = client
-        .withUser(user.userId, user.attrs)
-        .withCompany(company.companyId, company.attrs)
+        .withUser(user.userId, { attributes: user.attrs })
+        .withCompany(company.companyId, { attributes: company.attrs })
         .withCustomContext(customContext);
 
       await client.initialize(fallbackFlags);
@@ -1128,8 +1140,8 @@ describe("Client", () => {
       httpClient.post.mockResolvedValue({ success: true });
 
       client = client
-        .withUser(user.userId, user.attrs)
-        .withCompany(company.companyId, company.attrs)
+        .withUser(user.userId, { attributes: user.attrs })
+        .withCompany(company.companyId, { attributes: company.attrs })
         .withCustomContext(customContext);
 
       await client.initialize(fallbackFlags);

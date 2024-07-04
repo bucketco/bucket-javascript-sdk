@@ -51,7 +51,7 @@ export class BucketClient {
   private _customContext: Record<string, any> | undefined;
   private _company: { companyId: string; attrs?: Attributes } | undefined;
   private _user: { userId: string; attrs?: Attributes } | undefined;
-  private _fallbackFlags: Flags | undefined;
+  private _fallbackFlags: Record<string, Flag> | undefined;
 
   /**
    * Creates a new SDK client.
@@ -250,7 +250,7 @@ export class BucketClient {
    * Sets the user that is used for feature flag evaluation.
    *
    * @param userId - The user ID to set.
-   * @param attrs - The attributes of the user (optional).
+   * @param opts.attrs - The attributes of the user (optional).
    *
    * @returns A new client with the user set.
    *
@@ -258,20 +258,27 @@ export class BucketClient {
    * If the user ID is the same as the current company, the attributes will be merged, and
    * the new attributes will take precedence.
    **/
-  public withUser(userId: string, attrs?: Attributes): BucketClient {
+  public withUser(
+    userId: string,
+    opts?: { attributes?: Attributes },
+  ): BucketClient {
     ok(
       typeof userId === "string" && userId.length > 0,
       "userId must be a string",
     );
-    ok(attrs === undefined || isObject(attrs), "attrs must be an object");
+    ok(opts === undefined || isObject(opts), "opts must be an object");
+    ok(
+      opts?.attributes === undefined || isObject(opts.attributes),
+      "attributes must be an object",
+    );
 
     const client = new BucketClient(this);
     if (userId !== this._user?.userId) {
-      client._user = { userId, attrs };
+      client._user = { userId, attrs: opts?.attributes };
     } else {
       client._user = {
         userId: this._user.userId,
-        attrs: { ...this._user.attrs, ...attrs },
+        attrs: { ...this._user.attrs, ...opts?.attributes },
       };
     }
 
@@ -282,7 +289,7 @@ export class BucketClient {
    * Sets the company that is used for feature flag evaluation.
    *
    * @param companyId - The company ID to set.
-   * @param attrs - The attributes of the company (optional).
+   * @param opts.attrs - The attributes of the user (optional).
    *
    * @returns A new client with the company set.
    *
@@ -290,20 +297,27 @@ export class BucketClient {
    * If the company ID is the same as the current company, the attributes will be merged, and
    * the new attributes will take precedence.
    **/
-  public withCompany(companyId: string, attrs?: Attributes): BucketClient {
+  public withCompany(
+    companyId: string,
+    opts?: { attributes?: Attributes },
+  ): BucketClient {
     ok(
       typeof companyId === "string" && companyId.length > 0,
       "companyId must be a string",
     );
-    ok(attrs === undefined || isObject(attrs), "attrs must be an object");
+    ok(opts === undefined || isObject(opts), "opts must be an object");
+    ok(
+      opts?.attributes === undefined || isObject(opts.attributes),
+      "attributes must be an object",
+    );
 
     const client = new BucketClient(this);
     if (companyId !== this._company?.companyId) {
-      client._company = { companyId, attrs };
+      client._company = { companyId, attrs: opts?.attributes };
     } else {
       client._company = {
         companyId: this._company.companyId,
-        attrs: { ...this._company.attrs, ...attrs },
+        attrs: { ...this._company.attrs, ...opts?.attributes },
       };
     }
 
@@ -314,6 +328,7 @@ export class BucketClient {
    * Sets the custom context for the client.
    *
    * @param context - The context to set.
+   * @param opts.replace - A boolean indicating if the context should replace the current context or be merged (optional).
    *
    * @returns A new client with the context set.
    *
@@ -323,14 +338,19 @@ export class BucketClient {
    **/
   public withCustomContext(
     context: Record<string, any>,
-    replace: boolean = false,
+    opts?: { replace?: boolean },
   ): BucketClient {
     ok(isObject(context), "context must be an object");
-    ok(typeof replace === "boolean", "replace must be a boolean");
+
+    ok(opts === undefined || isObject(opts), "opts must be an object");
+    ok(
+      opts?.replace === undefined || typeof opts.replace === "boolean",
+      "replace must be a boolean",
+    );
 
     const client = new BucketClient(this);
 
-    if (!replace) {
+    if (!opts?.replace) {
       client._customContext = { ...this._customContext, ...context };
     } else {
       client._customContext = context;
@@ -370,27 +390,36 @@ export class BucketClient {
    * Tracks a user in Bucket.
    *
    * @param userId - The user ID to track.
-   * @param attrs - The attributes of the user (optional).
-   * @param meta - The meta context associated with tracking (optional).
+   * @param opts.attrs - The attributes of the user (optional).
+   * @param opts.meta - The meta context associated with tracking (optional).
    *
    * @returns A boolean indicating if the request was successful.
    **/
   public async trackUser(
     userId: string,
-    attrs?: Attributes,
-    meta?: TrackingMeta,
+    opts?: {
+      attributes?: Attributes;
+      meta?: TrackingMeta;
+    },
   ) {
     ok(
       typeof userId === "string" && userId.length > 0,
       "userId must be a string",
     );
-    ok(attrs === undefined || isObject(attrs), "attrs must be an object");
-    ok(meta === undefined || isObject(meta), "meta must be an object");
+    ok(opts === undefined || isObject(opts), "opts must be an object");
+    ok(
+      opts?.attributes === undefined || isObject(opts.attributes),
+      "attributes must be an object",
+    );
+    ok(
+      opts?.meta === undefined || isObject(opts.meta),
+      "meta must be an object",
+    );
 
     return await this.post("user", {
       userId,
-      attributes: attrs,
-      context: meta,
+      attributes: opts?.attributes,
+      context: opts?.meta,
     });
   }
 
@@ -398,34 +427,44 @@ export class BucketClient {
    * Tracks a company in Bucket.
    *
    * @param companyId - The company ID to track.
-   * @param userId - The user ID associated with the company (optional).
-   * @param attrs - The attributes of the company (optional).
-   * @param meta - The meta context associated with tracking (optional).
+   * @param opts.userId - The user ID associated with the company (optional).
+   * @param opts.attrs - The attributes of the company (optional).
+   * @param opts.meta - The meta context associated with tracking (optional).
    *
    * @returns A boolean indicating if the request was successful.
    **/
   public async trackCompany(
     companyId: string,
-    userId?: string,
-    attrs?: Attributes,
-    meta?: TrackingMeta,
+    opts?: {
+      userId?: string;
+      attributes?: Attributes;
+      meta?: TrackingMeta;
+    },
   ) {
     ok(
       typeof companyId === "string" && companyId.length > 0,
       "companyId must be a string",
     );
+    ok(opts === undefined || isObject(opts), "opts must be an object");
     ok(
-      userId === undefined || (typeof userId === "string" && userId.length > 0),
+      opts?.userId === undefined ||
+        (typeof opts.userId === "string" && opts.userId.length > 0),
       "userId must be a string",
     );
-    ok(attrs === undefined || isObject(attrs), "attrs must be an object");
-    ok(meta === undefined || isObject(meta), "meta must be an object");
+    ok(
+      opts?.attributes === undefined || isObject(opts.attributes),
+      "attributes must be an object",
+    );
+    ok(
+      opts?.meta === undefined || isObject(opts.meta),
+      "meta must be an object",
+    );
 
     return await this.post("company", {
       companyId,
-      userId,
-      attributes: attrs,
-      context: meta,
+      userId: opts?.userId,
+      attributes: opts?.attributes,
+      context: opts?.meta,
     });
   }
 
@@ -433,41 +472,50 @@ export class BucketClient {
    * Tracks an event in Bucket.
    *
    * @param event - The event to track.
-   * @param companyId - The company ID associated with the event (optional).
-   * @param userId - The user ID associated with the event (optional).
-   * @param attrs - The attributes of the event (optional).
-   * @param context - The meta context associated with tracking (optional).
+   * @param opts.companyId - The company ID associated with the event (optional).
+   * @param opts.userId - The user ID associated with the event (optional).
+   * @param opts.attrs - The attributes of the event (optional).
+   * @param opts.meta - The meta context associated with tracking (optional).
    *
    * @returns A boolean indicating if the request was successful.
    **/
   public async trackFeatureUsage(
     event: string,
-    companyId?: string,
-    userId?: string,
-    attrs?: Attributes,
-    meta?: TrackingMeta,
+    opts?: {
+      companyId?: string;
+      userId?: string;
+      attributes?: Attributes;
+      meta?: TrackingMeta;
+    },
   ) {
     ok(typeof event === "string" && event.length > 0, "event must be a string");
 
+    ok(opts === undefined || isObject(opts), "opts must be an object");
     ok(
-      userId === undefined || (typeof userId === "string" && userId.length > 0),
+      opts?.userId === undefined ||
+        (typeof opts.userId === "string" && opts.userId.length > 0),
       "userId must be a string",
     );
     ok(
-      companyId === undefined ||
-        (typeof companyId === "string" && companyId.length > 0),
+      opts?.companyId === undefined ||
+        (typeof opts.companyId === "string" && opts.companyId.length > 0),
       "companyId must be a string",
     );
-
-    ok(attrs === undefined || isObject(attrs), "attrs must be an object");
-    ok(meta === undefined || isObject(meta), "meta must be an object");
+    ok(
+      opts?.attributes === undefined || isObject(opts.attributes),
+      "attributes must be an object",
+    );
+    ok(
+      opts?.meta === undefined || isObject(opts.meta),
+      "meta must be an object",
+    );
 
     return await this.post("event", {
       event,
-      companyId,
-      userId,
-      attributes: attrs,
-      context: meta,
+      companyId: opts?.companyId,
+      userId: opts?.userId,
+      attributes: opts?.attributes,
+      context: opts?.meta,
     });
   }
 
@@ -476,20 +524,33 @@ export class BucketClient {
    *
    * @typeparam TFlagKey - The type of the feature flag keys, `string` by default.
    *
+   * @param fallbackFlags - The fallback flags to use if the feature flag definitions are not available.
    * @returns void
    *
    * @remarks
    * Call this method before calling `getFlags` to ensure the feature flag definitions are cached or at least the fallback flags are set.
    **/
   public async initialize<TFlagKey extends string = string>(
-    fallbackFlags?: Flags<TFlagKey>,
+    fallbackFlags?: Record<TFlagKey, Omit<Flag, "key" | "version">>,
   ) {
     ok(
       fallbackFlags === undefined || typeof fallbackFlags === "object",
       "fallbackFlags must be an object",
     );
 
-    this._fallbackFlags = fallbackFlags;
+    this._fallbackFlags =
+      fallbackFlags &&
+      Object.entries(fallbackFlags).reduce(
+        (acc, [key, value]) => {
+          acc[key as TFlagKey] = {
+            key,
+            ...(value as Omit<Flag, "key" | "version">),
+          };
+          return acc;
+        },
+        {} as Record<TFlagKey, Flag>,
+      );
+
     await this.getFeatureFlagDefinitionCache().refresh();
   }
 
@@ -517,7 +578,8 @@ export class BucketClient {
     };
 
     const flagDefinitions = this.getFeatureFlagDefinitionCache().get();
-    let evaluatedFlags: Flags<TFlagKey> = this._fallbackFlags || {};
+    let evaluatedFlags: Flags<TFlagKey> =
+      (this._fallbackFlags as Flags<TFlagKey>) || {};
 
     if (flagDefinitions) {
       const keyToVersionMap = new Map<string, number>(
