@@ -18,7 +18,7 @@ Before the library can be used, you need to obtain a secret key from
 in **Bucket.co**.
 
 > Note that secret keys should only be used by the `node-sdk` and not any other
-> SDKs provided by Bucket.Secret keys offer the users the ability to obtain
+> SDKs provided by Bucket. Secret keys offer the users the ability to obtain
 > information that is often sensitive and thus should not be used in any
 > front-end application.
 
