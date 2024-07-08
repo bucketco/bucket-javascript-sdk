@@ -188,11 +188,12 @@ export function evaluateRuleWithContext({
   let contextFilter = rule.contextFilter || [];
   if (rule.segment) {
     contextFilter = rule.segment.attributeFilter.map(
-      ({ field, operator, value }) => {
+      ({ field, operator, value, values }) => {
         if (field === "$company_id") {
           field = "id";
         }
-        return { field: `company.${field}`, operator, value };
+        const valuesOut = values?.length ? values : [value || ""];
+        return { field: `company.${field}`, operator, values: valuesOut };
       },
     );
   }

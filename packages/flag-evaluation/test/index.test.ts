@@ -180,6 +180,48 @@ describe("evaluate flag integration ", () => {
       ruleEvaluationResults: [true],
     });
   });
+
+  it("also prioritizes values of value for the `$company.id` field", async () => {
+    const flag = {
+      key: "flag",
+      rules: [
+        {
+          partialRolloutThreshold: 100000,
+          partialRolloutAttribute: "company.id",
+          segment: {
+            id: "segment1",
+            attributeFilter: [
+              {
+                field: "$company_id",
+                operator: "ANY_OF" as const,
+                values: ["company1"],
+              },
+            ],
+          },
+        },
+      ],
+    };
+
+    const res = await evaluateFlag({
+      flag,
+      context: {
+        company: {
+          id: "company1",
+        },
+      },
+    });
+
+    expect(res).toEqual({
+      value: true,
+      flag,
+      context: {
+        "company.id": "company1",
+      },
+      missingContextFields: [],
+      reason: "rule #0 matched",
+      ruleEvaluationResults: [true],
+    });
+  });
 });
 
 describe("operator evaluation", () => {
