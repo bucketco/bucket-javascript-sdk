@@ -182,7 +182,7 @@ describe("evaluate flag integration ", () => {
   });
 
   it("also prioritizes values of value for the `$company.id` field", async () => {
-    const flag = {
+    const companyIdWithAnyOf = {
       key: "flag",
       rules: [
         {
@@ -203,7 +203,7 @@ describe("evaluate flag integration ", () => {
     };
 
     const res = await evaluateFlag({
-      flag,
+      flag: companyIdWithAnyOf,
       context: {
         company: {
           id: "company1",
@@ -213,7 +213,7 @@ describe("evaluate flag integration ", () => {
 
     expect(res).toEqual({
       value: true,
-      flag,
+      flag: companyIdWithAnyOf,
       context: {
         "company.id": "company1",
       },
