@@ -128,7 +128,7 @@ describe("usage", () => {
       .reply(200);
 
     nock(API_HOST)
-      .get(/.*\/flags\/evaluate\?key=123&context.user.id=/)
+      .get(/.*\/flags\/evaluate\?publishableKey=123&context.user.id=/)
       .reply(200, {
         success: true,
         flags: {
@@ -495,7 +495,7 @@ describe("feedback prompting", () => {
 
     expect(openAblySSEChannel).toBeCalledTimes(1);
     expect(openAblySSEChannel).toBeCalledWith(
-      `${API_HOST}/feedback/prompting-auth?key=${KEY}`,
+      `${API_HOST}/feedback/prompting-auth?publishableKey=${KEY}`,
       "foo",
       "test-channel",
       expect.anything(),
@@ -531,7 +531,7 @@ describe("feedback prompting", () => {
     await bucketInstance.initLiveSatisfaction("foo");
 
     expect(openAblySSEChannel).toBeCalledWith(
-      `${API_HOST}/feedback/prompting-auth?key=${KEY}`,
+      `${API_HOST}/feedback/prompting-auth?publishableKey=${KEY}`,
       "foo",
       "super-channel",
       expect.anything(),
@@ -984,7 +984,7 @@ describe("feature flags", () => {
     clearCache();
 
     nock(API_HOST)
-      .get(/.*\/flags\/evaluate\?key=123&context.user.id=/)
+      .get(/.*\/flags\/evaluate\?publishableKey=123&context.user.id=/)
       .reply(500, {
         success: false,
       });

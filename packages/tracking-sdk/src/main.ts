@@ -363,7 +363,7 @@ export default function main() {
       log(`feedback prompting enabled`, channel);
 
       sseChannel = openAblySSEChannel(
-        `${host}/feedback/prompting-auth?key=${publishableKey}`,
+        `${host}/feedback/prompting-auth?publishableKey=${publishableKey}`,
         userId,
         channel,
         (message) => handleFeedbackPromptRequest(userId!, message),
@@ -594,7 +594,7 @@ export default function main() {
     const mergedContext = mergeDeep(baseContext, context);
 
     const res = await getFlags({
-      apiBaseUrl: `${host}/flags/evaluate?key=${publishableKey}`,
+      apiBaseUrl: `${host}/flags/evaluate?publishableKey=${publishableKey}`,
       context: mergedContext,
       timeoutMs,
       staleWhileRevalidate,
