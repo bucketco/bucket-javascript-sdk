@@ -1091,7 +1091,20 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@bucketco/tracking-sdk@npm:2.3.3, @bucketco/tracking-sdk@workspace:packages/tracking-sdk":
+"@bucketco/tracking-sdk@npm:2.3.3":
+  version: 2.3.3
+  resolution: "@bucketco/tracking-sdk@npm:2.3.3"
+  dependencies:
+    "@floating-ui/dom": "npm:^1.4.5"
+    cross-fetch: "npm:^4.0.0"
+    is-bundling-for-browser-or-node: "npm:^1.1.1"
+    js-cookie: "npm:^3.0.5"
+    preact: "npm:^10.16.0"
+  checksum: 10c0/06fb4451c3a2dc64ca978ab5dd82116b7d83f3cb1776614135ce52c824a9f8c0ef6a0fd6413d4edae723c6881e8f187a8354291947299e59df721fcee971422c
+  languageName: node
+  linkType: hard
+
+"@bucketco/tracking-sdk@workspace:packages/tracking-sdk":
   version: 0.0.0-use.local
   resolution: "@bucketco/tracking-sdk@workspace:packages/tracking-sdk"
   dependencies:
