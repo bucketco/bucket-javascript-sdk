@@ -6,11 +6,11 @@ const flag: FlagData = {
     {
       partialRolloutThreshold: 100000,
       partialRolloutAttribute: "company.id",
-      contextFilter: [
+      filter: [
         {
           field: "company.id",
           operator: "IS",
-          value: "company1",
+          values: ["company1"],
         },
       ],
     },
@@ -19,7 +19,7 @@ const flag: FlagData = {
 
 describe("evaluate flag integration ", () => {
   it("evaluates flag when there's no matching rule", async () => {
-    const res = await evaluateFlag({
+    const res = evaluateFlag({
       flag,
       context: {
         company: {
@@ -27,6 +27,7 @@ describe("evaluate flag integration ", () => {
         },
       },
     });
+
     expect(res).toEqual({
       value: false,
       context: {
@@ -38,11 +39,11 @@ describe("evaluate flag integration ", () => {
           {
             partialRolloutThreshold: 100000,
             partialRolloutAttribute: "company.id",
-            contextFilter: [
+            filter: [
               {
                 field: "company.id",
                 operator: "IS",
-                value: "company1",
+                values: ["company1"],
               },
             ],
           },
@@ -60,7 +61,7 @@ describe("evaluate flag integration ", () => {
         id: "company1",
       },
     };
-    const res = await evaluateFlag({
+    const res = evaluateFlag({
       flag,
       context,
     });
@@ -76,36 +77,32 @@ describe("evaluate flag integration ", () => {
     });
   });
 
-  it("evaluates flag with segment rule", async () => {
+  it("evaluates flag with missing values", async () => {
     const flagWithSegmentRule: FlagData = {
       key: "flag",
       rules: [
         {
-          segment: {
-            id: "segment1",
-            attributeFilter: [
-              {
-                field: "$company_id",
-                operator: "IS",
-                value: "company1",
-              },
-            ],
-          },
+          filter: [
+            {
+              field: "some_field",
+              operator: "IS",
+            },
+          ],
           partialRolloutThreshold: 100000,
         },
       ],
     };
-    const res = await evaluateFlag({
+
+    const res = evaluateFlag({
       flag: flagWithSegmentRule,
       context: {
-        company: {
-          id: "company1",
-        },
+        some_field: "",
       },
     });
+
     expect(res).toEqual({
       context: {
-        "company.id": "company1",
+        some_field: "",
       },
       value: true,
       flag: flagWithSegmentRule,
@@ -116,7 +113,7 @@ describe("evaluate flag integration ", () => {
   });
 
   it("returns list of missing context keys ", async () => {
-    const res = await evaluateFlag({
+    const res = evaluateFlag({
       flag,
       context: {},
     });
@@ -140,7 +137,7 @@ describe("evaluate flag integration ", () => {
         },
       ],
     };
-    const res = await evaluateFlag({
+    const res = evaluateFlag({
       flag: myflag,
       context: {},
     });
@@ -151,33 +148,6 @@ describe("evaluate flag integration ", () => {
       reason: "no matched rules",
       missingContextFields: ["happening.id"],
       ruleEvaluationResults: [false],
-    });
-  });
-
-  it("prioritizes values vs value", async () => {
-    const confusingFlag = structuredClone(flag);
-
-    confusingFlag.rules[0].contextFilter![0].value = "nothing";
-    confusingFlag.rules[0].contextFilter![0].values = ["company1"];
-
-    const res = await evaluateFlag({
-      flag: confusingFlag,
-      context: {
-        company: {
-          id: "company1",
-        },
-      },
-    });
-
-    expect(res).toEqual({
-      value: true,
-      flag: confusingFlag,
-      context: {
-        "company.id": "company1",
-      },
-      missingContextFields: [],
-      reason: "rule #0 matched",
-      ruleEvaluationResults: [true],
     });
   });
 });
