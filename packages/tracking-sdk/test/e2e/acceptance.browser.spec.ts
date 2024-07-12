@@ -1,6 +1,8 @@
 import { randomUUID } from "crypto";
 import { expect, test } from "@playwright/test";
 
+import { SDK_VERSION, SDK_VERSION_HEADER_NAME } from "../../src/config";
+
 const KEY = randomUUID();
 
 test("Acceptance", async ({ page }) => {
@@ -8,8 +10,15 @@ test("Acceptance", async ({ page }) => {
 
   const successfulRequests: string[] = [];
 
+  const headers = {
+    [SDK_VERSION_HEADER_NAME]: SDK_VERSION,
+    "content-type": "application/json",
+    authorization: `Bearer ${KEY}`,
+  };
+
   // Mock API calls with assertions
-  await page.route(`https://tracking.bucket.co/${KEY}/user`, async (route) => {
+  await page.route(`https://tracking.bucket.co/user`, async (route) => {
+    expect(route.request().headers()).toMatchObject(headers);
     expect(route.request().method()).toEqual("POST");
     expect(route.request().postDataJSON()).toMatchObject({
       userId: "foo",
@@ -22,25 +31,26 @@ test("Acceptance", async ({ page }) => {
     await route.fulfill({ status: 200 });
   });
 
-  await page.route(
-    `https://tracking.bucket.co/${KEY}/company`,
-    async (route) => {
-      expect(route.request().method()).toEqual("POST");
-      expect(route.request().postDataJSON()).toMatchObject({
-        userId: "foo",
-        companyId: "bar",
-        attributes: {
-          name: "bar corp",
-        },
-      });
-
-      successfulRequests.push("COMPANY");
-      await route.fulfill({ status: 200 });
-    },
-  );
-
-  await page.route(`https://tracking.bucket.co/${KEY}/event`, async (route) => {
+  await page.route(`https://tracking.bucket.co/company`, async (route) => {
     expect(route.request().method()).toEqual("POST");
+    expect(route.request().headers()).toMatchObject(headers);
+
+    expect(route.request().postDataJSON()).toMatchObject({
+      userId: "foo",
+      companyId: "bar",
+      attributes: {
+        name: "bar corp",
+      },
+    });
+
+    successfulRequests.push("COMPANY");
+    await route.fulfill({ status: 200 });
+  });
+
+  await page.route(`https://tracking.bucket.co/event`, async (route) => {
+    expect(route.request().method()).toEqual("POST");
+    expect(route.request().headers()).toMatchObject(headers);
+
     expect(route.request().postDataJSON()).toMatchObject({
       userId: "foo",
       companyId: "bar",
@@ -54,24 +64,22 @@ test("Acceptance", async ({ page }) => {
     await route.fulfill({ status: 200 });
   });
 
-  await page.route(
-    `https://tracking.bucket.co/${KEY}/feedback`,
-    async (route) => {
-      expect(route.request().method()).toEqual("POST");
-      expect(route.request().postDataJSON()).toMatchObject({
-        userId: "foo",
-        companyId: "bar",
-        featureId: "featureId1",
-        score: 5,
-        comment: "test!",
-        question: "actual question",
-        promptedQuestion: "prompted question",
-      });
+  await page.route(`https://tracking.bucket.co/feedback`, async (route) => {
+    expect(route.request().method()).toEqual("POST");
+    expect(route.request().headers()).toMatchObject(headers);
+    expect(route.request().postDataJSON()).toMatchObject({
+      userId: "foo",
+      companyId: "bar",
+      featureId: "featureId1",
+      score: 5,
+      comment: "test!",
+      question: "actual question",
+      promptedQuestion: "prompted question",
+    });
 
-      successfulRequests.push("FEEDBACK");
-      await route.fulfill({ status: 200 });
-    },
-  );
+    successfulRequests.push("FEEDBACK");
+    await route.fulfill({ status: 200 });
+  });
 
   // Load the built Bucket SDK
   await page.addScriptTag({

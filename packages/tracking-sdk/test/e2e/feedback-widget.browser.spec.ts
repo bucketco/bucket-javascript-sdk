@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { expect, Locator, Page, test } from "@playwright/test";
 
+import { SDK_VERSION, SDK_VERSION_HEADER_NAME } from "../../src/config";
 import { DEFAULT_TRANSLATIONS } from "../../src/feedback/config/defaultTranslations";
 import {
   feedbackContainerId,
@@ -10,6 +11,13 @@ import { FeedbackTranslations } from "../../src/feedback/types";
 import type { Options } from "../../src/types";
 
 const KEY = randomUUID();
+
+const headers = {
+  [SDK_VERSION_HEADER_NAME]: SDK_VERSION,
+  "content-type": "application/json",
+  authorization: `Bearer ${KEY}`,
+};
+
 const API_HOST = `https://tracking.bucket.co`;
 
 const WINDOW_WIDTH = 1280;
@@ -29,7 +37,8 @@ async function getOpenedWidgetContainer(page: Page, initOptions: Options = {}) {
   await page.goto("http://localhost:8000/example/empty.html");
 
   // Mock API calls
-  await page.route(`${API_HOST}/${KEY}/user`, async (route) => {
+  await page.route(`${API_HOST}/user`, async (route) => {
+    expect(route.request().headers()).toMatchObject(headers);
     await route.fulfill({ status: 200 });
   });
 
@@ -85,15 +94,14 @@ test.beforeEach(async ({ page, browserName }) => {
   });
 
   // Mock prompting-init as if prompting is `disabled` for all tests.
-  await page.route(
-    `${API_HOST}/${KEY}/feedback/prompting-init`,
-    async (route) => {
-      await route.fulfill({
-        status: 200,
-        body: JSON.stringify({ success: false }),
-      });
-    },
-  );
+  await page.route(`${API_HOST}/feedback/prompting-init`, async (route) => {
+    expect(route.request().headers()).toMatchObject(headers);
+
+    await route.fulfill({
+      status: 200,
+      body: JSON.stringify({ success: false }),
+    });
+  });
 });
 
 test("Opens a feedback widget", async ({ page }) => {
@@ -175,8 +183,10 @@ test("Sends a request when choosing a score immediately", async ({ page }) => {
   const expectedScore = pick([1, 2, 3, 4, 5]);
   let sentJSON: object | null = null;
 
-  await page.route(`${API_HOST}/${KEY}/feedback`, async (route) => {
+  await page.route(`${API_HOST}/feedback`, async (route) => {
     sentJSON = route.request().postDataJSON();
+    expect(route.request().headers()).toMatchObject(headers);
+
     await route.fulfill({
       status: 200,
       body: JSON.stringify({ feedbackId: "123" }),
@@ -201,6 +211,8 @@ test("Sends a request when choosing a score immediately", async ({ page }) => {
 
 test("Shows a success message after submitting a score", async ({ page }) => {
   await page.route(`${API_HOST}/${KEY}/feedback`, async (route) => {
+    expect(route.request().headers()).toMatchObject(headers);
+
     await route.fulfill({
       status: 200,
       body: JSON.stringify({ feedbackId: "123" }),
@@ -230,8 +242,10 @@ test("Shows a success message after submitting a score", async ({ page }) => {
 test("Updates the score on every change", async ({ page }) => {
   let lastSentJSON: object | null = null;
 
-  await page.route(`${API_HOST}/${KEY}/feedback`, async (route) => {
+  await page.route(`${API_HOST}/feedback`, async (route) => {
     lastSentJSON = route.request().postDataJSON();
+    expect(route.request().headers()).toMatchObject(headers);
+
     await route.fulfill({
       status: 200,
       body: JSON.stringify({ feedbackId: "123" }),
@@ -259,7 +273,9 @@ test("Updates the score on every change", async ({ page }) => {
 });
 
 test("Shows the comment field after submitting a score", async ({ page }) => {
-  await page.route(`${API_HOST}/${KEY}/feedback`, async (route) => {
+  await page.route(`${API_HOST}/feedback`, async (route) => {
+    expect(route.request().headers()).toMatchObject(headers);
+
     await route.fulfill({
       status: 200,
       body: JSON.stringify({ feedbackId: "123" }),
@@ -290,8 +306,10 @@ test("Sends a request with both the score and comment when submitting", async ({
 
   let sentJSON: object | null = null;
 
-  await page.route(`${API_HOST}/${KEY}/feedback`, async (route) => {
+  await page.route(`${API_HOST}/feedback`, async (route) => {
     sentJSON = route.request().postDataJSON();
+    expect(route.request().headers()).toMatchObject(headers);
+
     await route.fulfill({
       status: 200,
       body: JSON.stringify({ feedbackId: "123" }),
@@ -318,7 +336,9 @@ test("Sends a request with both the score and comment when submitting", async ({
 });
 
 test("Shows a success message after submitting", async ({ page }) => {
-  await page.route(`${API_HOST}/${KEY}/feedback`, async (route) => {
+  await page.route(`${API_HOST}/feedback`, async (route) => {
+    expect(route.request().headers()).toMatchObject(headers);
+
     await route.fulfill({
       status: 200,
       body: JSON.stringify({ feedbackId: "123" }),
@@ -338,7 +358,9 @@ test("Shows a success message after submitting", async ({ page }) => {
 });
 
 test("Closes the dialog shortly after submitting", async ({ page }) => {
-  await page.route(`${API_HOST}/${KEY}/feedback`, async (route) => {
+  await page.route(`${API_HOST}/feedback`, async (route) => {
+    expect(route.request().headers()).toMatchObject(headers);
+
     await route.fulfill({
       status: 200,
       body: JSON.stringify({ feedbackId: "123" }),
