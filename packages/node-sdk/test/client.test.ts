@@ -4,7 +4,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { evaluateFlag } from "@bucketco/flag-evaluation";
 
 import { BucketClient } from "../src/client";
-import { API_HOST, FLAGS_REFETCH_MS } from "../src/config";
+import {
+  API_HOST,
+  FLAGS_REFETCH_MS,
+  SDK_VERSION,
+  SDK_VERSION_HEADER_NAME,
+} from "../src/config";
 import fetchClient from "../src/fetch-http-client";
 import { ClientOptions, FlagDefinitions, Flags } from "../src/types";
 
@@ -47,6 +52,16 @@ describe("Client", () => {
 
   const customContext = { custom: "context", key: "value" };
 
+  const expectedGetHeaders = {
+    [SDK_VERSION_HEADER_NAME]: SDK_VERSION,
+    "Content-Type": "application/json",
+  };
+
+  const expectedPostHeaders = {
+    ...expectedGetHeaders,
+    Authorization: `Bearer ${validOptions.secretKey}`,
+  };
+
   describe("constructor (with options)", () => {
     it("should create a client instance with valid options", () => {
       const client = new BucketClient(validOptions);
@@ -57,6 +72,8 @@ describe("Client", () => {
       expect(client["_shared"].staleWarningInterval).toBe(310000);
       expect(client["_shared"].logger).toBeDefined();
       expect(client["_shared"].httpClient).toBe(validOptions.httpClient);
+      expect(client["_shared"].secretKey).toBe(validOptions.secretKey);
+      expect(client["_shared"].headers).toEqual(expectedGetHeaders);
     });
 
     it("should route messages to the supplied logger", () => {
@@ -89,10 +106,12 @@ describe("Client", () => {
 
       expect(client).toBeInstanceOf(BucketClient);
       expect(client["_shared"].host).toBe(API_HOST);
+      expect(client["_shared"].secretKey).toBe(validOptions.secretKey);
       expect(client["_shared"].refetchInterval).toBe(FLAGS_REFETCH_MS);
       expect(client["_shared"].staleWarningInterval).toBe(FLAGS_REFETCH_MS * 5);
       expect(client["_shared"].logger).toBeUndefined();
       expect(client["_shared"].httpClient).toBe(fetchClient);
+      expect(client["_shared"].headers).toEqual(expectedGetHeaders);
     });
 
     it("should throw an error if options are invalid", () => {
@@ -393,7 +412,7 @@ describe("Client", () => {
       expect(result).toBe(true);
       expect(httpClient.post).toHaveBeenCalledWith(
         "https://api.example.com/user",
-        client["_shared"].headers,
+        expectedPostHeaders,
         {
           userId: user.userId,
           attributes: user.attrs,
@@ -468,7 +487,7 @@ describe("Client", () => {
       expect(result).toBe(true);
       expect(httpClient.post).toHaveBeenCalledWith(
         "https://api.example.com/company",
-        client["_shared"].headers,
+        expectedPostHeaders,
         {
           companyId: company.companyId,
           attributes: company.attrs,
@@ -492,7 +511,7 @@ describe("Client", () => {
       expect(result).toBe(true);
       expect(httpClient.post).toHaveBeenCalledWith(
         "https://api.example.com/company",
-        client["_shared"].headers,
+        expectedPostHeaders,
         { companyId: company.companyId, userId: user.userId },
       );
 
@@ -572,7 +591,7 @@ describe("Client", () => {
       expect(result).toBe(true);
       expect(httpClient.post).toHaveBeenCalledWith(
         "https://api.example.com/event",
-        client["_shared"].headers,
+        expectedPostHeaders,
         {
           event: event.event,
           attributes: event.attrs,
@@ -597,7 +616,7 @@ describe("Client", () => {
       expect(result).toBe(true);
       expect(httpClient.post).toHaveBeenCalledWith(
         "https://api.example.com/event",
-        client["_shared"].headers,
+        expectedPostHeaders,
         {
           event: event.event,
           companyId: company.companyId,
@@ -756,7 +775,7 @@ describe("Client", () => {
       expect(cache.get).not.toHaveBeenCalled();
     });
 
-    it("should set up the getFeatureFlagDefinitionsFn function", async () => {
+    it("should set up the cache object", async () => {
       const client = new BucketClient(validOptions);
       expect(client["_shared"].featureFlagDefinitionCache).toBeUndefined();
 
@@ -769,6 +788,16 @@ describe("Client", () => {
 
       await expect(client.initialize("invalidFlags" as any)).rejects.toThrow(
         "fallbackFlags must be an object",
+      );
+    });
+
+    it("should call the backend to obtain flags", async () => {
+      const client = new BucketClient(validOptions);
+      await client.initialize();
+
+      expect(httpClient.get).toHaveBeenCalledWith(
+        `https://api.example.com/flags&key=${validOptions.secretKey}`,
+        expectedGetHeaders,
       );
     });
   });
@@ -787,7 +816,7 @@ describe("Client", () => {
           version: 1,
           rules: [
             {
-              contextFilter: [
+              filter: [
                 {
                   field: "attributeKey",
                   operator: "IS",
@@ -804,16 +833,13 @@ describe("Client", () => {
             {
               partialRolloutThreshold: 0.5,
               partialRolloutAttribute: "attributeKey",
-              segment: {
-                id: "segmentId",
-                attributeFilter: [
-                  {
-                    field: "attributeKey",
-                    operator: "IS",
-                    values: ["attributeValue"],
-                  },
-                ],
-              },
+              filter: [
+                {
+                  field: "attributeKey",
+                  operator: "IS",
+                  values: ["attributeValue"],
+                },
+              ],
             },
           ],
         },
@@ -882,7 +908,7 @@ describe("Client", () => {
       expect(httpClient.post).toHaveBeenNthCalledWith(
         1,
         "https://api.example.com/flags/events",
-        client["_shared"].headers,
+        expectedPostHeaders,
         {
           action: "evaluate",
           flagKey: "flag1",
@@ -907,7 +933,7 @@ describe("Client", () => {
       expect(httpClient.post).toHaveBeenNthCalledWith(
         2,
         "https://api.example.com/flags/events",
-        client["_shared"].headers,
+        expectedPostHeaders,
         {
           action: "evaluate",
           flagKey: "flag2",
@@ -932,7 +958,7 @@ describe("Client", () => {
       expect(httpClient.post).toHaveBeenNthCalledWith(
         3,
         "https://api.example.com/flags/events",
-        client["_shared"].headers,
+        expectedPostHeaders,
         {
           action: "check",
           flagKey: "flag1",
@@ -954,7 +980,7 @@ describe("Client", () => {
       expect(httpClient.post).toHaveBeenNthCalledWith(
         1,
         "https://api.example.com/flags/events",
-        client["_shared"].headers,
+        expectedPostHeaders,
         {
           action: "evaluate",
           flagKey: "flag1",
@@ -974,7 +1000,7 @@ describe("Client", () => {
       expect(httpClient.post).toHaveBeenNthCalledWith(
         2,
         "https://api.example.com/flags/events",
-        client["_shared"].headers,
+        expectedPostHeaders,
         {
           action: "evaluate",
           flagKey: "flag2",
@@ -1006,7 +1032,7 @@ describe("Client", () => {
       expect(httpClient.post).toHaveBeenNthCalledWith(
         1,
         "https://api.example.com/flags/events",
-        client["_shared"].headers,
+        expectedPostHeaders,
         {
           action: "evaluate",
           flagKey: "flag1",
@@ -1026,7 +1052,7 @@ describe("Client", () => {
       expect(httpClient.post).toHaveBeenNthCalledWith(
         2,
         "https://api.example.com/flags/events",
-        client["_shared"].headers,
+        expectedPostHeaders,
         {
           action: "evaluate",
           flagKey: "flag2",
@@ -1056,7 +1082,7 @@ describe("Client", () => {
       expect(httpClient.post).toHaveBeenNthCalledWith(
         1,
         "https://api.example.com/flags/events",
-        client["_shared"].headers,
+        expectedPostHeaders,
         {
           action: "evaluate",
           flagKey: "flag1",
@@ -1073,7 +1099,7 @@ describe("Client", () => {
       expect(httpClient.post).toHaveBeenNthCalledWith(
         2,
         "https://api.example.com/flags/events",
-        client["_shared"].headers,
+        expectedPostHeaders,
         {
           action: "evaluate",
           flagKey: "flag2",
@@ -1106,7 +1132,7 @@ describe("Client", () => {
 
       expect(httpClient.post).toHaveBeenCalledWith(
         "https://api.example.com/flags/events",
-        client["_shared"].headers,
+        expectedPostHeaders,
         {
           action: "check",
           flagKey: "flagKey",

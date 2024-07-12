@@ -41,6 +41,7 @@ export class BucketClient {
   private _shared: {
     logger?: Logger;
     host: string;
+    secretKey: string;
     httpClient: HttpClient;
     refetchInterval: number;
     staleWarningInterval: number;
@@ -103,11 +104,10 @@ export class BucketClient {
       logger:
         options.logger && decorateLogger(BUCKET_LOG_PREFIX, options.logger),
       host: options.host || API_HOST,
+      secretKey: options.secretKey,
       headers: {
         "Content-Type": "application/json",
         [SDK_VERSION_HEADER_NAME]: SDK_VERSION,
-
-        ["Authorization"]: `Bearer ${options.secretKey}`,
       },
       httpClient: options.httpClient || fetchClient,
       refetchInterval,
@@ -130,7 +130,14 @@ export class BucketClient {
       const response = await this._shared.httpClient.post<
         TBody,
         { success: boolean }
-      >(`${this._shared.host}/${path}`, this._shared.headers, body);
+      >(
+        `${this._shared.host}/${path}`,
+        {
+          ...this._shared.headers,
+          ["Authorization"]: `Bearer ${this._shared.secretKey}`,
+        },
+        body,
+      );
 
       this._shared.logger?.debug(`post request to "${path}"`, response.success);
       return response.success;
@@ -155,7 +162,10 @@ export class BucketClient {
     try {
       const response = await this._shared.httpClient.get<
         TResponse & { success: boolean }
-      >(`${this._shared.host}/${path}`, this._shared.headers);
+      >(
+        `${this._shared.host}/${path}&key=${this._shared.secretKey}`,
+        this._shared.headers,
+      );
 
       this._shared.logger?.debug(`get request to "${path}"`, response.success);
 
