@@ -12,60 +12,48 @@ npm i @bucketco/react-sdk
 
 ## Setup
 
-To get type safe feature flags, create a `const` object that defines which flags you have
-and create a new `BucketProvider` context provider type using your flags object.
+To get type safe feature flags, extend the definition of `Bucket.Flags` and defines which flags you have.
+See the example below for the details.
+If no explicit flag definitions are provided, there will be no types checked flag lookups.
 
-Then wrap your application with the `BucketProvider` context provider.
+To get started, add the `BucketProvider` context provider to your application.
 This will initialize the Bucket SDK, fetch feature flags and start listening for Live Satisfaction events.
 
 **Example:**
 
-Create a file called `bucket.ts`:
-
 ```tsx
-import { TypedBucket } from "@bucketco/react-sdk";
-
-// Define your flags like so.
-// The boolean value indicates if flags should default to on or off in case
-// we can't reach bucket.co or if they don't exist on bucket.co
-const flags = {
-  huddle: true,
-  recordVideo: false,
-};
-
-export const MyBucket = TypedBucket(flags);
-export const {
-  useFlag,
-  useFlags,
-  useRequestFeedback,
-  useCompany,
-  useUser,
-  useOtherContext,
-  useTrack,
-} = MyBucket;
+// Define your flags like so in an appropriate file
+declare global {
+  namespace Bucket {
+    interface Flags {
+      huddle: boolean;
+      recordVideo: boolean;
+    }
+  }
+}
 ```
 
-And update your `App.tsx` to insert the `<MyBucket.Provider />` so it looks something like the following:
+And update your `App.tsx` to insert the `<BucketProvider />` so it looks something like the following:
 
 ```tsx
-import { MyBucket } from 'flags'
-
 // Initialize the BucketProvider
-<MyBucket.Provider
+<BucketProvider
   publishableKey="{YOUR_PUBLISHABLE_KEY}" // The publishable key of your app environment
   // `company` and `user` should have at least the `id` property plus anything additional you want to be able to evaluate flags against.
   // See "Managing Bucket context" below.
   company={ id: "acme_inc" }
   user={ id: "john doe" }
   loading={<Loading />}
+  fallbackFlags={["huddle"]} // if we're unable to fetch flags, these flags will be enabled.
 >
-{/* ... */}
-</MyBucket.Provider>
+{/* children here are shown when loading finishes */}
+</BucketProvider>
 ```
 
 - `publishableKey` is used to connect the provider to an _environment_ on Bucket. Find your `publishableKey` under `Activity` on https://app.bucket.co.
 - `company`, `user` and `otherContext` make up the _context_ that is used to determine if a feature flag is enabled or not. `company` and `user` contexts are automatically transmitted to Bucket servers so the Bucket app can show you which companies have access to which flags etc.
-- `loading` lets you specify an alternative React component to be rendered while the Bucket provider is initializing. If you want more control over loading screens, `useFlags()` returns `isLoading` which you can use to customize the loading experience:
+- `fallbackFlags` is a list of strings which specify which flags to consider enabled if the SDK is unable to fetch flags.
+- `loading` lets you specify an React component to be rendered instead of the children while the Bucket provider is initializing. If you want more control over loading screens, `useFlags()` returns `isLoading` which you can use to customize the loading experience:
 
 ```tsx
 function LoadingBucket({ children }) {
@@ -78,11 +66,11 @@ function LoadingBucket({ children }) {
 }
 
 //-- Initialize the Bucket provider
-<MyBucket.Provider publishableKey={YOUR_PUBLISHABLE_KEY} /*...*/>
+<BucketProvider publishableKey={YOUR_PUBLISHABLE_KEY} /*...*/>
   <LoadingBucket>
-   {/* ... */}
+   {/* children here are shown when loading finishes */}
    </LoadingBucket>
-<MyBucket.Provider>
+<BucketProvider>
 ```
 
 ### Options
@@ -137,7 +125,7 @@ function StartHuddleButton() {
 
 ### `useFlags()`
 
-Returns all enabled feature flags as an object. Useful for debugging or checking many flags at the same time.
+Returns all enabled feature flags as an object. Mostly useful for debugging and getting the current loading state.
 
 ```tsx
 import { useFlags } from "@bucketco/react-sdk";
@@ -215,7 +203,7 @@ function StartHuddle() {
 }
 ```
 
-<!-- ### `useRequestFeedback()`
+### `useRequestFeedback()`
 
 `useRequestFeedback()` returns a function that lets you open up a dialog to ask for feedback on a specific feature.
 See [Live Satisfaction](https://docs.bucket.co/product-handbook/live-satisfaction) for how to do this automatically, without code.
@@ -225,7 +213,7 @@ import { useTrackEvent } from "@bucketco/react-sdk";
 
 const requestFeedback = useRequestFeedback();
 
-useRequestFeedback....("sent_message", { foo: "bar" });
+useRequestFeedback("sent_message", { foo: "bar" });
 ```
 
 ### `useSendFeedback()`
@@ -240,8 +228,6 @@ const trackEvent = useTrack();
 
 track("sent_message", { foo: "bar" });
 ```
-
-See the [Tracking SDK documentation](../tracking-sdk/README.md) for usage information. -->
 
 # License
 

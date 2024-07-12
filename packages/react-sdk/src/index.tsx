@@ -12,7 +12,10 @@ import type {
   Options as BucketSDKOptions,
 } from "@bucketco/tracking-sdk";
 import BucketSingleton from "@bucketco/tracking-sdk";
-import { Feedback } from "@bucketco/tracking-sdk/dist/types/src/types";
+import {
+  Feedback,
+  RequestFeedbackOptions,
+} from "@bucketco/tracking-sdk/dist/types/src/types";
 
 export type BucketInstance = typeof BucketSingleton;
 
@@ -34,34 +37,20 @@ type FlagContext = {
   otherContext?: OtherContext;
 };
 
-export function TypedBucket<T extends Record<string, boolean>>(flags: T) {
-  return {
-    useFlag(key: Extract<keyof T, string>) {
-      return useFlag(key);
-    },
-    useFlags: useFlags,
-    useFlagIsEnabled: (key: Extract<keyof T, string>) => useFlagIsEnabled(key),
-    useCompany: useCompany,
-    useUser: useUser,
-    useOtherContext: useOtherContext,
-    useTrack: useTrack,
-    useSendFeedback: () => useSendFeedback(),
-    useRequestFeedback: () => useRequestFeedback(),
-    Provider: (props: BucketProps) =>
-      BucketProvider({
-        ...props,
-        flagOptions: {
-          ...props.flagOptions,
-          fallbackFlags: flags,
-        },
-      }),
-  };
+declare global {
+  module Bucket {
+    interface Flags {}
+  }
 }
 
-type BucketContext<T = Record<string, string>> = {
+type BucketFlags = keyof (keyof Bucket.Flags extends never
+  ? Record<string, boolean>
+  : Bucket.Flags);
+
+type BucketContext = {
   bucket: BucketInstance;
   flags: {
-    flags: Flags<T>;
+    flags: Flags;
     isLoading: boolean;
     setContext: (context: FlagContext) => void;
     context: {
@@ -86,13 +75,13 @@ export type BucketProps = BucketSDKOptions &
   FlagContext & {
     publishableKey: string;
     flagOptions?: Omit<FeatureFlagsOptions, "context" | "fallbackFlags"> & {
-      fallbackFlags?: Record<string, boolean>;
+      fallbackFlags?: Record<BucketFlags, boolean>;
     };
     children?: ReactNode;
     sdk?: BucketInstance;
   };
 
-export type Flags<T = Record<string, string>> = { [k in keyof T]?: boolean };
+export type Flags = { [k in BucketFlags]?: boolean };
 
 export function BucketProvider({
   children,
@@ -198,7 +187,7 @@ export function BucketProvider({
  * // true / false
  * ```
  */
-export function useFlagIsEnabled(flagKey: string) {
+export function useFlagIsEnabled(flagKey: BucketFlags) {
   const { flags } = useContext<BucketContext>(Context).flags;
   return flags[flagKey] ?? false;
 }
@@ -214,9 +203,8 @@ export function useFlagIsEnabled(flagKey: string) {
  * // }
  * ```
  */
-export function useFlag(key: string) {
+export function useFlag(key: BucketFlags) {
   const flags = useContext<BucketContext>(Context).flags;
-  debugger;
   const isEnabled = flags.flags[key] ?? false;
 
   return { isLoading: flags.isLoading, isEnabled };
@@ -225,7 +213,7 @@ export function useFlag(key: string) {
 /**
  * Returns feature flags as an object, e.g.
  * Note: this returns the raw flag keys, and does not use the
- * mapping provided in the `BucketProvider`.
+ * optional typing provided through `Bucket.Flags`.
  *
  * ```ts
  * const flags = useFlags();
@@ -240,7 +228,7 @@ export function useFlag(key: string) {
  */
 export function useFlags(): {
   isLoading: boolean;
-  flags: { [key: string]: boolean };
+  flags: Record<string, boolean>;
 } {
   const {
     flags: { flags, isLoading },
@@ -316,6 +304,7 @@ export function useOtherContext() {
 
 /**
  * Returns a function to send an event when a user performs an action
+ * Note: When calling `useSendFeedback`, user/company must already be set.
  *
  * ```ts
  * const track = useTrack();
@@ -343,26 +332,40 @@ export function useTrack() {
 }
 
 /**
- * Returns a function to send feedback collected from a user
+ * Returns a function to send feedback collected from a user.
+ * Note: When calling `useSendFeedback`, user/company must already be set.
  *
  * ```ts
- * const track = useSendFeedback();
- * track("Started Huddle", { button: "cta" });
+ * const sendFeedback = useSendFeedback();
+ * sendFeedback({
+ *   featureId: "fe2323223";;
+ *   question: "How did you like the new huddle feature?";
+ *   score: 5;
+ *   comment: "I loved it!";
+ * });
  * ```
  */
 export function useSendFeedback() {
   const ctx = useContext<BucketContext>(Context);
-  const { user } = ctx.flags.context;
+
+  const { user, company } = ctx.flags.context;
   if (user?.id === undefined)
     return () => {
       console.error("User is required to send feedback");
     };
-  return (opts: Omit<Feedback, "userId">) =>
-    ctx.bucket.feedback({ ...opts, userId: String(user.id) });
+
+  return (opts: Omit<Feedback, "userId">) => {
+    return ctx.bucket.feedback({
+      ...opts,
+      companyId: company?.id !== undefined ? String(company.id) : undefined,
+      userId: String(user.id),
+    });
+  };
 }
 
 /**
  * Returns a function to open up the feedback form
+ * Note: When calling `useRequestFeedback`, user/company must already be set.
  *
  * ```ts
  * const requestFeedback = useRequestFeedback();
@@ -371,11 +374,16 @@ export function useSendFeedback() {
  */
 export function useRequestFeedback() {
   const ctx = useContext<BucketContext>(Context);
-  const { user } = ctx.flags.context;
+  const { user, company } = ctx.flags.context;
   if (user?.id === undefined)
     return () => {
       console.error("User is required to request feedback");
     };
-  return (opts: Omit<Feedback, "userId">) =>
-    ctx.bucket.requestFeedback({ ...opts, userId: String(user.id) });
+
+  return (opts: Omit<RequestFeedbackOptions, "userId" | "companyId">) =>
+    ctx.bucket.requestFeedback({
+      ...opts,
+      userId: String(user.id),
+      companyId: company?.id !== undefined ? String(company.id) : undefined,
+    });
 }

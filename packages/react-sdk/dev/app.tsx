@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-
 import {
   useCompany,
   useFlag,
@@ -8,8 +7,17 @@ import {
   useRequestFeedback,
   useTrack,
   useUser,
-  MyBucket,
-} from "./bucket";
+  BucketProvider,
+} from "../src";
+
+// Extending the Bucket.Flags interface to define the available flags
+declare global {
+  namespace Bucket {
+    interface Flags {
+      huddle: boolean;
+    }
+  }
+}
 
 function HuddleFlag() {
   // Type safe flag
@@ -143,7 +151,7 @@ function Feedback() {
 
 // App.tsx
 function Demos() {
-  const flags = useFlags();
+  const { flags } = useFlags();
 
   return (
     <main>
@@ -165,7 +173,7 @@ function Demos() {
 
 export function App() {
   return (
-    <MyBucket.Provider
+    <BucketProvider
       publishableKey="trdwA10Aoant6IaK3Qt45NMI"
       persistUser={false}
       feedback={{
@@ -178,9 +186,14 @@ export function App() {
       company={{
         id: "demo-company",
       }}
+      flagOptions={{
+        fallbackFlags: {
+          huddle: true,
+        },
+      }}
     >
       <Demos />
       {}
-    </MyBucket.Provider>
+    </BucketProvider>
   );
 }
