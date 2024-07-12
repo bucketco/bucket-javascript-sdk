@@ -140,17 +140,7 @@ export function BucketProvider({
           context: flagContext,
         })
         .then((loadedFlags) => {
-          setFlags(
-            Object.fromEntries(
-              Object.entries(loadedFlags).map(([key, { value }]) => [
-                key,
-                value,
-              ]),
-            ),
-          );
-        })
-        .catch((err) => {
-          console.error("[Bucket SDK] Error fetching flags:", err);
+          setFlags(loadedFlags);
         })
         .finally(() => {
           setFlagsLoading(false);

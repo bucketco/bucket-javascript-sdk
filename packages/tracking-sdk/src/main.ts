@@ -10,7 +10,7 @@ import {
 } from "./config";
 import { createDefaultFeedbackPromptHandler } from "./default-feedback-prompt-handler";
 import * as feedbackLib from "./feedback";
-import { FeatureFlagsOptions, FlagsResponse } from "./flags";
+import { FeatureFlagsOptions } from "./flags";
 import { getFlags, mergeDeep } from "./flags-fetch";
 import { getAuthToken } from "./prompt-storage";
 import {

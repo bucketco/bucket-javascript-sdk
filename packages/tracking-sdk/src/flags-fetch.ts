@@ -88,9 +88,12 @@ export async function fetchFlags(url: string, timeoutMs: number) {
         signal: controller.signal,
       });
       clearTimeout(id);
+      if (!res.ok) {
+        throw new Error("unexpected response code: " + res.status);
+      }
       const typeRes = validateFeatureFlagsResponse(await res.json());
-      if (!res.ok || !typeRes || !typeRes.success) {
-        throw new Error("Failed to fetch flags");
+      if (!typeRes || !typeRes.success) {
+        throw new Error("unable to validate response");
       }
       flags = typeRes.flags;
       success = true;
