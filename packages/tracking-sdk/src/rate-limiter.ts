@@ -4,11 +4,13 @@ const eventsByKey: Record<string, number[]> = {};
 
 export default function rateLimited<T extends any[], R>(
   eventsPerMinute: number,
-  key: string,
+  keyFunc: (...args: T) => string,
   func: (...args: T) => R,
 ): (...funcArgs: T) => R | void {
   return function (...funcArgs: T): R | void {
     const now = Date.now();
+
+    const key = keyFunc(...funcArgs);
 
     if (!eventsByKey[key]) {
       eventsByKey[key] = [];

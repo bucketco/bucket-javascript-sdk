@@ -23,9 +23,29 @@ describe("rateLimit", () => {
     vi.useRealTimers();
   });
 
+  it("should call the key generator", () => {
+    const callback = vi.fn();
+    const keyFunc = vi
+      .fn()
+      .mockReturnValue("key1")
+      .mockReturnValueOnce("key2")
+      .mockReturnValueOnce("key3")
+      .mockReturnValueOnce("key4")
+      .mockReturnValueOnce("key5");
+
+    const limited = rateLimited(1, keyFunc, callback);
+
+    for (let i = 0; i < 5; i++) {
+      limited();
+    }
+
+    expect(keyFunc).toHaveBeenCalledTimes(5);
+    expect(callback).toHaveBeenCalledTimes(5);
+  });
+
   it("should not call the callback when the limit is exceeded", () => {
     const callback = vi.fn();
-    const limited = rateLimited(5, "key", callback);
+    const limited = rateLimited(5, () => "key", callback);
 
     for (let i = 0; i < 10; i++) {
       limited();
@@ -36,7 +56,7 @@ describe("rateLimit", () => {
 
   it("should call the callback when the limit is not exceeded", () => {
     const callback = vi.fn();
-    const limited = rateLimited(5, "key", callback);
+    const limited = rateLimited(5, () => "key", callback);
 
     for (let i = 0; i < 5; i++) {
       limited();
@@ -47,7 +67,7 @@ describe("rateLimit", () => {
 
   it("should reset the limit after a minute", () => {
     const callback = vi.fn();
-    const limited = rateLimited(5, "key", callback);
+    const limited = rateLimited(5, () => "key", callback);
 
     for (let i = 0; i < 12; i++) {
       limited();
@@ -59,8 +79,8 @@ describe("rateLimit", () => {
 
   it("should measure events separately by key", () => {
     const callback = vi.fn();
-    const limited1 = rateLimited(5, "key1", callback);
-    const limited2 = rateLimited(5, "key2", callback);
+    const limited1 = rateLimited(5, () => "key1", callback);
+    const limited2 = rateLimited(5, () => "key2", callback);
 
     for (let i = 0; i < 10; i++) {
       limited1();

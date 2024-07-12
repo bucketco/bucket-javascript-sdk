@@ -610,9 +610,12 @@ export default function main() {
       }, {} as Flags);
     }
 
+    const keyFunc = (_: keyof Flags, flag: Flag) =>
+      `${res.url}:${flag.key}:${flag.version}:${flag.value}`;
+
     return proxify(
       flags!,
-      rateLimited(FLAG_EVENTS_PER_MIN, res.url, sendCheckEvent),
+      rateLimited(FLAG_EVENTS_PER_MIN, keyFunc, sendCheckEvent),
     );
   }
 
