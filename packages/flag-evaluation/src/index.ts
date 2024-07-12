@@ -1,13 +1,9 @@
 import { createHash } from "node:crypto";
 
 export interface Rule {
-  contextFilter?: ContextFilter[];
+  filter?: ContextFilter[];
   partialRolloutThreshold?: number;
   partialRolloutAttribute?: string;
-  segment?: {
-    id: string;
-    attributeFilter: ContextFilter[];
-  };
 }
 
 export type FlagData = {
@@ -48,7 +44,6 @@ type ContextFilterOp =
 export type ContextFilter = {
   field: string;
   operator: ContextFilterOp;
-  value?: string;
   values?: string[];
 };
 
@@ -102,7 +97,7 @@ export function evaluateFlag({
 
   const missingContextFieldsSet = new Set<string>();
   for (const rule of flag.rules) {
-    rule.contextFilter
+    rule.filter
       ?.map((r) => r.field)
       .filter((field) => !(field in flatContext))
       .forEach((field) => missingContextFieldsSet.add(field));
@@ -184,26 +179,14 @@ export function evaluateRuleWithContext({
   context: Record<string, string>;
   rule: Rule;
 }) {
-  // transform segment attribute filter to context filter
-  let contextFilter = rule.contextFilter || [];
-  if (rule.segment) {
-    contextFilter = rule.segment.attributeFilter.map(
-      ({ field, operator, value }) => {
-        if (field === "$company_id") {
-          field = "id";
-        }
-        return { field: `company.${field}`, operator, value };
-      },
-    );
-  }
-  const match = contextFilter.every((filter) => {
+  const match = (rule.filter || []).every((filter) => {
     if (!(filter.field in context)) {
       return false;
     }
     return evaluate(
       context[filter.field] as string,
       filter.operator,
-      filter?.values?.length ? filter.values : [filter.value || ""],
+      filter?.values?.length ? filter.values : [""],
     );
   });
 
