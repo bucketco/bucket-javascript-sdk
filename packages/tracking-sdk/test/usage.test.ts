@@ -11,7 +11,6 @@ import {
   vi,
 } from "vitest";
 
-import { version } from "../package.json";
 import { API_HOST, SDK_VERSION, SDK_VERSION_HEADER_NAME } from "../src/config";
 import { clearCache } from "../src/flags-fetch";
 import bucket from "../src/main";
@@ -56,6 +55,14 @@ const nockWait = (n: nock.Scope) => {
   });
 };
 
+const nockOpts = {
+  reqheaders: {
+    [SDK_VERSION_HEADER_NAME]: SDK_VERSION,
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${KEY}`,
+  },
+};
+
 describe("usage", () => {
   afterEach((t) => {
     nockAssertAndClear(t.task);
@@ -63,46 +70,65 @@ describe("usage", () => {
   });
 
   test("golden path - register user, company, send event, send feedback, get feature flags", async () => {
-    nock(`${API_HOST}/${KEY}`)
-      .post(/.*\/user/, {
-        userId: "foo",
-        attributes: {
-          name: "john doe",
+    nock(API_HOST)
+      .post(
+        /.*\/user/,
+        {
+          userId: "foo",
+          attributes: {
+            name: "john doe",
+          },
         },
-      })
-      .reply(200);
-    nock(`${API_HOST}/${KEY}`)
-      .post(/.*\/company/, {
-        userId: "foo",
-        companyId: "bar",
-        attributes: {
-          name: "bar corp",
-        },
-      })
-      .reply(200);
-    nock(`${API_HOST}/${KEY}`)
-      .post(/.*\/event/, {
-        userId: "foo",
-        event: "baz",
-        attributes: {
-          baz: true,
-        },
-      })
-      .reply(200);
-    nock(`${API_HOST}/${KEY}`)
-      .post(/.*\/feedback/, {
-        userId: "foo",
-        featureId: "featureId1",
-        score: 5,
-        comment: "Sunt bine!",
-        question: "Cum esti?",
-        promptedQuestion: "How are you?",
-        source: "sdk",
-      })
+        nockOpts,
+      )
       .reply(200);
 
-    nock(`${API_HOST}/${KEY}`)
-      .get(/.*\/flags\/evaluate\?context.user.id=/)
+    nock(API_HOST)
+      .post(
+        /.*\/company/,
+        {
+          userId: "foo",
+          companyId: "bar",
+          attributes: {
+            name: "bar corp",
+          },
+        },
+        nockOpts,
+      )
+      .reply(200);
+
+    nock(API_HOST)
+      .post(
+        /.*\/event/,
+        {
+          userId: "foo",
+          event: "baz",
+          attributes: {
+            baz: true,
+          },
+        },
+        nockOpts,
+      )
+      .reply(200);
+
+    nock(API_HOST)
+      .post(
+        /.*\/feedback/,
+        {
+          userId: "foo",
+          featureId: "featureId1",
+          score: 5,
+          comment: "Sunt bine!",
+          question: "Cum esti?",
+          promptedQuestion: "How are you?",
+          source: "sdk",
+        },
+        nockOpts,
+      )
+      .reply(200);
+
+    nock(API_HOST)
+      .get(/.*\/flags\/evaluate\?key=123&context.user.id=/)
       .reply(200, {
         success: true,
         flags: {
@@ -110,13 +136,17 @@ describe("usage", () => {
         },
       });
 
-    const asyncNock = nock(`${API_HOST}`)
-      .post(/.*\/flags\/events/, {
-        action: "check",
-        flagKey: "feature1",
-        flagVersion: 2,
-        evalResult: true,
-      })
+    const asyncNock = nock(API_HOST)
+      .post(
+        /.*\/flags\/events/,
+        {
+          action: "check",
+          flagKey: "feature1",
+          flagVersion: 2,
+          evalResult: true,
+        },
+        nockOpts,
+      )
       .reply(200);
 
     const bucketInstance = bucket();
@@ -150,53 +180,73 @@ describe("usage", () => {
   });
 
   test("re-register user and send event", async () => {
-    nock(`${API_HOST}/${KEY}`)
-      .post(/.*\/user/, {
-        userId: "foo",
-        attributes: {
-          name: "john doe",
+    nock(API_HOST)
+      .post(
+        /.*\/user/,
+        {
+          userId: "foo",
+          attributes: {
+            name: "john doe",
+          },
         },
-      })
+        nockOpts,
+      )
       .reply(200);
 
-    nock(`${API_HOST}/${KEY}`)
-      .post(/.*\/event/, {
-        userId: "foo",
-        event: "baz",
-        attributes: {
-          baz: true,
+    nock(API_HOST)
+      .post(
+        /.*\/event/,
+        {
+          userId: "foo",
+          event: "baz",
+          attributes: {
+            baz: true,
+          },
         },
-      })
+        nockOpts,
+      )
       .reply(200);
 
-    nock(`${API_HOST}/${KEY}`)
-      .post(/.*\/user/, {
-        userId: "foo2",
-        attributes: {
-          name: "john doe 2",
+    nock(API_HOST)
+      .post(
+        /.*\/user/,
+        {
+          userId: "foo2",
+          attributes: {
+            name: "john doe 2",
+          },
         },
-      })
+        nockOpts,
+      )
       .reply(200);
 
-    nock(`${API_HOST}/${KEY}`)
-      .post(/.*\/event/, {
-        userId: "foo2",
-        event: "baz",
-        attributes: {
-          baz: true,
+    nock(API_HOST)
+      .post(
+        /.*\/event/,
+        {
+          userId: "foo2",
+          event: "baz",
+          attributes: {
+            baz: true,
+          },
         },
-      })
+        nockOpts,
+      )
       .reply(200);
 
-    nock(`${API_HOST}/${KEY}`)
-      .post(/.*\/event/, {
-        userId: "foo2",
-        event: "baz",
-        companyId: "company1",
-        attributes: {
-          baz: true,
+    nock(API_HOST)
+      .post(
+        /.*\/event/,
+        {
+          userId: "foo2",
+          event: "baz",
+          companyId: "company1",
+          attributes: {
+            baz: true,
+          },
         },
-      })
+        nockOpts,
+      )
       .reply(200);
 
     const bucketInstance = bucket();
@@ -214,24 +264,36 @@ describe("usage", () => {
   });
 
   test("disable persist user for server-side usage", async () => {
-    nock(`${API_HOST}/${KEY}`)
-      .post(/.*\/user/, {
-        userId: "fooUser",
-      })
+    nock(API_HOST)
+      .post(
+        /.*\/user/,
+        {
+          userId: "fooUser",
+        },
+        nockOpts,
+      )
       .reply(200);
 
-    nock(`${API_HOST}/${KEY}`)
-      .post(/.*\/company/, {
-        userId: "fooUser",
-        companyId: "fooCompany",
-      })
+    nock(API_HOST)
+      .post(
+        /.*\/company/,
+        {
+          userId: "fooUser",
+          companyId: "fooCompany",
+        },
+        nockOpts,
+      )
       .reply(200);
 
-    nock(`${API_HOST}/${KEY}`)
-      .post(/.*\/event/, {
-        userId: "fooUser",
-        event: "fooEvent",
-      })
+    nock(API_HOST)
+      .post(
+        /.*\/event/,
+        {
+          userId: "fooUser",
+          event: "fooEvent",
+        },
+        nockOpts,
+      )
       .reply(200);
 
     const bucketInstance = bucket();
@@ -253,36 +315,18 @@ describe("usage", () => {
     await bucketInstance.track("fooEvent", null, "fooUser");
   });
 
-  test("will send sdk version as header", async () => {
-    nock(`${API_HOST}/${KEY}`, {
-      reqheaders: {
-        [SDK_VERSION_HEADER_NAME]: version,
-      },
-    })
-      .post(/.*\/user/, {
-        userId: "foo",
-      })
-      .reply(200);
-
-    const bucketInstance = bucket();
-    bucketInstance.init(KEY);
-    await bucketInstance.user("foo");
-  });
-
-  test("will send sdk version as header", async () => {
-    const bucketInstance = bucket();
-
-    expect(bucketInstance.version).toBe(SDK_VERSION);
-  });
-
   test("can reset user", async () => {
-    nock(`${API_HOST}/${KEY}`)
-      .post(/.*\/user/, {
-        userId: "foo",
-        attributes: {
-          name: "john doe",
+    nock(API_HOST)
+      .post(
+        /.*\/user/,
+        {
+          userId: "foo",
+          attributes: {
+            name: "john doe",
+          },
         },
-      })
+        nockOpts,
+      )
       .reply(200);
 
     const bucketInstance = bucket();
@@ -309,11 +353,15 @@ describe("usage", () => {
       });
 
       test("should accept tracking with a known userId", async () => {
-        nock(`${API_HOST}/${KEY}`)
-          .post(/.*\/event/, {
-            event: "fooEvent",
-            userId: "barUser",
-          })
+        nock(API_HOST)
+          .post(
+            /.*\/event/,
+            {
+              event: "fooEvent",
+              userId: "barUser",
+            },
+            nockOpts,
+          )
           .reply(200);
 
         const bucketInstance = bucket();
@@ -328,19 +376,28 @@ describe("usage", () => {
 
   describe("with persisteence enabled", () => {
     test("should accept tracking with a persisted userId", async () => {
-      nock(`${API_HOST}/${KEY}`)
-        .post(/.*\/user/, {
-          userId: "fooUser",
-          attributes: {
-            name: "john doe",
+      nock(API_HOST)
+        .post(
+          /.*\/user/,
+          {
+            userId: "fooUser",
+            attributes: {
+              name: "john doe",
+            },
           },
-        })
+          nockOpts,
+        )
         .reply(200);
-      nock(`${API_HOST}/${KEY}`)
-        .post(/.*\/event/, {
-          event: "fooEvent",
-          userId: "fooUser",
-        })
+
+      nock(API_HOST)
+        .post(
+          /.*\/event/,
+          {
+            event: "fooEvent",
+            userId: "fooUser",
+          },
+          nockOpts,
+        )
         .reply(200);
 
       const bucketInstance = bucket();
@@ -352,20 +409,28 @@ describe("usage", () => {
     });
 
     test("should accept tracking with an overridden userId", async () => {
-      nock(`${API_HOST}/${KEY}`)
-        .post(/.*\/user/, {
-          userId: "fooUser",
-          attributes: {
-            name: "john doe",
+      nock(API_HOST)
+        .post(
+          /.*\/user/,
+          {
+            userId: "fooUser",
+            attributes: {
+              name: "john doe",
+            },
           },
-        })
+          nockOpts,
+        )
         .reply(200);
 
-      nock(`${API_HOST}/${KEY}`)
-        .post(/.*\/event/, {
-          event: "fooEvent",
-          userId: "barUser",
-        })
+      nock(API_HOST)
+        .post(
+          /.*\/event/,
+          {
+            event: "fooEvent",
+            userId: "barUser",
+          },
+          nockOpts,
+        )
         .reply(200);
 
       const bucketInstance = bucket();
@@ -410,10 +475,14 @@ describe("feedback prompting", () => {
   });
 
   test("initiates and resets feedback prompting", async () => {
-    nock(`${API_HOST}/${KEY}`)
-      .post(/.*\/feedback\/prompting-init/, {
-        userId: "foo",
-      })
+    nock(API_HOST)
+      .post(
+        /.*\/feedback\/prompting-init/,
+        {
+          userId: "foo",
+        },
+        nockOpts,
+      )
       .reply(200, { success: true, channel: "test-channel" });
 
     const bucketInstance = bucket();
@@ -426,7 +495,7 @@ describe("feedback prompting", () => {
 
     expect(openAblySSEChannel).toBeCalledTimes(1);
     expect(openAblySSEChannel).toBeCalledWith(
-      `${API_HOST}/${KEY}/feedback/prompting-auth`,
+      `${API_HOST}/feedback/prompting-auth?key=${KEY}`,
       "foo",
       "test-channel",
       expect.anything(),
@@ -462,7 +531,7 @@ describe("feedback prompting", () => {
     await bucketInstance.initLiveSatisfaction("foo");
 
     expect(openAblySSEChannel).toBeCalledWith(
-      `${API_HOST}/${KEY}/feedback/prompting-auth`,
+      `${API_HOST}/feedback/prompting-auth?key=${KEY}`,
       "foo",
       "super-channel",
       expect.anything(),
@@ -474,10 +543,14 @@ describe("feedback prompting", () => {
   });
 
   test("does not initiate feedback prompting if server does not agree", async () => {
-    nock(`${API_HOST}/${KEY}`)
-      .post(/.*\/feedback\/prompting-init/, {
-        userId: "foo",
-      })
+    nock(API_HOST)
+      .post(
+        /.*\/feedback\/prompting-init/,
+        {
+          userId: "foo",
+        },
+        nockOpts,
+      )
       .reply(200, { success: false });
 
     const bucketInstance = bucket();
@@ -492,12 +565,13 @@ describe("feedback prompting", () => {
   });
 
   test("initiates feedback prompting automatically on user call if configured", async () => {
-    nock(`${API_HOST}/${KEY}`)
-      .post(/.*\/feedback\/prompting-init/)
+    nock(API_HOST)
+      .post(/.*\/feedback\/prompting-init/, undefined, nockOpts)
       .times(2)
       .reply(200, { success: true, channel: "test-channel" });
-    nock(`${API_HOST}/${KEY}`)
-      .post(/.*\/user/)
+
+    nock(API_HOST)
+      .post(/.*\/user/, undefined, nockOpts)
       .times(2)
       .reply(200);
 
@@ -520,8 +594,8 @@ describe("feedback prompting", () => {
   });
 
   test("reset closes previously open feedback prompting connection", async () => {
-    nock(`${API_HOST}/${KEY}`)
-      .post(/.*\/feedback\/prompting-init/)
+    nock(API_HOST)
+      .post(/.*\/feedback\/prompting-init/, undefined, nockOpts)
       .reply(200, { success: true, channel: "test-channel" });
 
     const bucketInstance = bucket();
@@ -539,8 +613,8 @@ describe("feedback prompting", () => {
   });
 
   test("rejects if feedback prompting already initialized", async () => {
-    nock(`${API_HOST}/${KEY}`)
-      .post(/.*\/feedback\/prompting-init/)
+    nock(API_HOST)
+      .post(/.*\/feedback\/prompting-init/, undefined, nockOpts)
       .reply(200, { success: true, channel: "test-channel" });
 
     const bucketInstance = bucket();
@@ -558,8 +632,8 @@ describe("feedback prompting", () => {
   });
 
   test("rejects if feedback prompting already initialized (loop)", async () => {
-    nock(`${API_HOST}/${KEY}`)
-      .post(/.*\/feedback\/prompting-init/)
+    nock(API_HOST)
+      .post(/.*\/feedback\/prompting-init/, undefined, nockOpts)
       .reply(200, { success: true, channel: "test-channel" });
 
     const bucketInstance = bucket();
@@ -584,8 +658,8 @@ describe("feedback prompting", () => {
   });
 
   test("does not think it is connected if the connection fails", async () => {
-    nock(`${API_HOST}/${KEY}`)
-      .post(/.*\/feedback\/prompting-init/)
+    nock(API_HOST)
+      .post(/.*\/feedback\/prompting-init/, undefined, nockOpts)
       .reply(200, { success: false });
 
     const bucketInstance = bucket();
@@ -596,8 +670,8 @@ describe("feedback prompting", () => {
 
     await bucketInstance.initLiveSatisfaction("foo");
 
-    nock(`${API_HOST}/${KEY}`)
-      .post(/.*\/feedback\/prompting-init/)
+    nock(API_HOST)
+      .post(/.*\/feedback\/prompting-init/, undefined, nockOpts)
       .reply(200, { success: true, channel: "test-channel" });
 
     vi.mocked(openAblySSEChannel).mockImplementation(() => {
@@ -608,8 +682,8 @@ describe("feedback prompting", () => {
       bucketInstance.initLiveSatisfaction("foo"),
     ).rejects.toThrowError("something bad happened");
 
-    nock(`${API_HOST}/${KEY}`)
-      .post(/.*\/feedback\/prompting-init/)
+    nock(API_HOST)
+      .post(/.*\/feedback\/prompting-init/, undefined, nockOpts)
       .reply(200, { success: true, channel: "test-channel" });
 
     vi.mocked(openAblySSEChannel).mockImplementation(() => {
@@ -634,8 +708,8 @@ describe("feedback state management", () => {
   };
 
   beforeEach((tc) => {
-    nock(`${API_HOST}/${KEY}`)
-      .post(/.*\/feedback\/prompting-init/)
+    nock(API_HOST)
+      .post(/.*\/feedback\/prompting-init/, undefined, nockOpts)
       .reply(200, { success: true, channel: "test-channel" });
 
     if (
@@ -666,14 +740,18 @@ describe("feedback state management", () => {
   });
 
   const setupFeedbackPromptEventNock = (event: string) => {
-    return nock(`${API_HOST}/${KEY}`)
-      .post(/.*\/feedback\/prompt-events/, {
-        userId: "foo",
-        promptId: "123",
-        featureId: "456",
-        action: event,
-        promptedQuestion: "How are you?",
-      })
+    return nock(API_HOST)
+      .post(
+        /.*\/feedback\/prompt-events/,
+        {
+          userId: "foo",
+          promptId: "123",
+          featureId: "456",
+          action: event,
+          promptedQuestion: "How are you?",
+        },
+        nockOpts,
+      )
       .reply(200, { success: true });
   };
 
@@ -843,18 +921,22 @@ describe("feedback state management", () => {
     const n1 = setupFeedbackPromptEventNock("received");
     const n2 = setupFeedbackPromptEventNock("shown");
 
-    const n3 = nock(`${API_HOST}/${KEY}`)
-      .post(/.*\/feedback/, {
-        userId: "foo",
-        featureId: "456",
-        promptId: "123",
-        companyId: "bar",
-        comment: "hello",
-        score: 5,
-        question: "Cum esti?",
-        promptedQuestion: "How are you?",
-        source: "prompt",
-      })
+    const n3 = nock(API_HOST)
+      .post(
+        /.*\/feedback/,
+        {
+          userId: "foo",
+          featureId: "456",
+          promptId: "123",
+          companyId: "bar",
+          comment: "hello",
+          score: 5,
+          question: "Cum esti?",
+          promptedQuestion: "How are you?",
+          source: "prompt",
+        },
+        nockOpts,
+      )
       .reply(200, {
         feedbackId: "feedback123",
       });
@@ -901,8 +983,8 @@ describe("feature flags", () => {
   beforeEach(() => {
     clearCache();
 
-    nock(`${API_HOST}/${KEY}`)
-      .get(/.*\/flags\/evaluate\?context.user.id=/)
+    nock(API_HOST)
+      .get(/.*\/flags\/evaluate\?key=123&context.user.id=/)
       .reply(500, {
         success: false,
       });
@@ -918,12 +1000,16 @@ describe("feature flags", () => {
 
     const fallbackFlags = [{ value: true, key: "feature1" }];
 
-    const asyncNock = nock(`${API_HOST}`)
-      .post(/.*\/flags\/events/, {
-        action: "check",
-        flagKey: "feature1",
-        evalResult: true,
-      })
+    const asyncNock = nock(API_HOST)
+      .post(
+        /.*\/flags\/events/,
+        {
+          action: "check",
+          flagKey: "feature1",
+          evalResult: true,
+        },
+        nockOpts,
+      )
       .reply(200);
 
     const result = await bucketInstance.getFeatureFlags({

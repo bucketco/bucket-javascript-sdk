@@ -42,17 +42,19 @@ afterAll(() => {
   clearCache();
 });
 
+const apiBaseUrl = "https://localhost/flags/evaluate?key=pubKey";
+
 describe("getFlags unit tests", () => {
   test("fetches flags", async () => {
     const flags = await getFlags({
-      apiBaseUrl: "https://localhost",
+      apiBaseUrl,
       context: { user: { id: "123" } },
       timeoutMs: 1000,
     });
 
     expect(flags).toEqual({
       flags: flagsResponse.flags,
-      url: "https://localhost/flags/evaluate?context.user.id=123",
+      url: `${apiBaseUrl}&context.user.id=123`,
     });
   });
 
@@ -65,13 +67,13 @@ describe("getFlags unit tests", () => {
 
     expect(vi.mocked(fetch).mock.calls.length).toBe(0);
     const a = getFlags({
-      apiBaseUrl: "https://localhost",
+      apiBaseUrl,
       context: { user: { id: "123" } },
       timeoutMs: 1000,
     }).catch(console.error);
 
     getFlags({
-      apiBaseUrl: "https://localhost",
+      apiBaseUrl,
       context: { user: { id: "123" } },
       timeoutMs: 1000,
     }).catch(console.error);
@@ -94,26 +96,26 @@ describe("getFlags unit tests", () => {
     expect(vi.mocked(fetch).mock.calls.length).toBe(0);
 
     await getFlags({
-      apiBaseUrl: "https://localhost",
+      apiBaseUrl,
       context: { user: { id: "123" } },
       timeoutMs: 1000,
     });
 
     const flags = await getFlags({
-      apiBaseUrl: "https://localhost",
+      apiBaseUrl,
       context: { user: { id: "123" } },
       timeoutMs: 1000,
     });
     expect(flags).toEqual({
       flags: flagsResponse.flags,
-      url: "https://localhost/flags/evaluate?context.user.id=123",
+      url: `${apiBaseUrl}&context.user.id=123`,
     });
     expect(vi.mocked(fetch).mock.calls.length).toBe(1);
   });
 
   test("maintains previously successful flags on negative response", async () => {
     await getFlags({
-      apiBaseUrl: "https://localhost",
+      apiBaseUrl,
       context: { user: { id: "123" } },
       timeoutMs: 1000,
     });
@@ -122,14 +124,14 @@ describe("getFlags unit tests", () => {
     vi.advanceTimersByTime(60000);
 
     const staleFlags = await getFlags({
-      apiBaseUrl: "https://localhost",
+      apiBaseUrl,
       context: { user: { id: "123" } },
       timeoutMs: 1000,
     });
 
     expect(staleFlags).toEqual({
       flags: flagsResponse.flags,
-      url: "https://localhost/flags/evaluate?context.user.id=123",
+      url: `${apiBaseUrl}&context.user.id=123`,
     });
   });
 
@@ -138,7 +140,7 @@ describe("getFlags unit tests", () => {
 
     for (let i = 0; i < 3; i++) {
       await getFlags({
-        apiBaseUrl: "https://localhost",
+        apiBaseUrl,
         context: { user: { id: "123" } },
         timeoutMs: 1000,
       });
@@ -146,7 +148,7 @@ describe("getFlags unit tests", () => {
     }
 
     await getFlags({
-      apiBaseUrl: "https://localhost",
+      apiBaseUrl,
       context: { user: { id: "123" } },
       timeoutMs: 1000,
       staleWhileRevalidate: false,
@@ -159,7 +161,7 @@ describe("getFlags unit tests", () => {
 
     for (let i = 0; i < 5; i++) {
       await getFlags({
-        apiBaseUrl: "https://localhost",
+        apiBaseUrl,
         context: { user: { id: "123" } },
         timeoutMs: 1000,
         cacheNegativeAttempts: false,
@@ -189,7 +191,7 @@ describe("getFlags unit tests", () => {
       } as Response);
 
       const a = await getFlags({
-        apiBaseUrl: "https://localhost",
+        apiBaseUrl,
         context: { user: { id: "123" } },
         timeoutMs: 1000,
       });
@@ -211,7 +213,7 @@ describe("getFlags unit tests", () => {
       vi.advanceTimersByTime(FLAGS_STALE_MS + 1);
 
       const b = await getFlags({
-        apiBaseUrl: "https://localhost",
+        apiBaseUrl,
         context: { user: { id: "123" } },
         timeoutMs: 1000,
         staleWhileRevalidate: true,
@@ -239,7 +241,7 @@ describe("getFlags unit tests", () => {
       } as Response);
 
       await getFlags({
-        apiBaseUrl: "https://localhost",
+        apiBaseUrl,
         context: { user: { id: "123" } },
         timeoutMs: 1000,
       });
@@ -261,7 +263,7 @@ describe("getFlags unit tests", () => {
       vi.advanceTimersByTime(FLAGS_STALE_MS + 1);
 
       const b = await getFlags({
-        apiBaseUrl: "https://localhost",
+        apiBaseUrl,
         context: { user: { id: "123" } },
         timeoutMs: 1000,
         staleWhileRevalidate: true,
@@ -280,7 +282,7 @@ describe("getFlags unit tests", () => {
     expect(vi.mocked(fetch).mock.calls.length).toBe(0);
 
     const a = await getFlags({
-      apiBaseUrl: "https://localhost",
+      apiBaseUrl,
       context: { user: { id: "123" } },
       timeoutMs: 1000,
     });
@@ -304,7 +306,7 @@ describe("getFlags unit tests", () => {
     vi.advanceTimersByTime(FLAGS_EXPIRE_MS + 1);
 
     const b = await getFlags({
-      apiBaseUrl: "https://localhost",
+      apiBaseUrl,
       context: { user: { id: "123" } },
       timeoutMs: 1000,
       staleWhileRevalidate: true,

@@ -61,7 +61,7 @@ export class AblySSEChannel {
 
   private async refreshTokenRequest() {
     const res = await fetch(
-      `${this.ablyAuthUrl}?userId=${encodeURIComponent(this.userId)}`,
+      `${this.ablyAuthUrl}&userId=${encodeURIComponent(this.userId)}`,
       {
         method: "get",
         headers: {

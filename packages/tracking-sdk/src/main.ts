@@ -37,17 +37,6 @@ import type {
   User,
 } from "./types";
 
-async function postRequest(url: string, body: any) {
-  return fetch(url, {
-    method: "post",
-    headers: {
-      "Content-Type": "application/json",
-      [SDK_VERSION_HEADER_NAME]: SDK_VERSION,
-    },
-    body: JSON.stringify(body),
-  });
-}
-
 const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
 export default function main() {
@@ -68,15 +57,16 @@ export default function main() {
 
   log("Instance created");
 
-  function getUrl() {
-    return `${host}/${publishableKey}`;
-  }
-
-  function makeUrl(part: string, params?: URLSearchParams) {
-    params = params || new URLSearchParams();
-    params.set("publishableKey", publishableKey!);
-
-    return `${host}/${part}?${params}`;
+  async function postRequest(url: string, body: any) {
+    return fetch(`${host}/${url}`, {
+      method: "post",
+      headers: {
+        "Content-Type": "application/json",
+        [SDK_VERSION_HEADER_NAME]: SDK_VERSION,
+        Authorization: `Bearer ${publishableKey}`,
+      },
+      body: JSON.stringify(body),
+    });
   }
 
   function checkKey() {
@@ -207,7 +197,9 @@ export default function main() {
       attributes,
       context,
     };
-    const res = await postRequest(`${getUrl()}/user`, payload);
+
+    const res = await postRequest("user", payload);
+
     log(`sent user`, res);
     return res;
   }
@@ -236,7 +228,9 @@ export default function main() {
       context,
     };
     if (attributes) payload.attributes = attributes;
-    const res = await postRequest(`${getUrl()}/company`, payload);
+
+    const res = await postRequest("company", payload);
+
     log(`sent company`, res);
     return res;
   }
@@ -268,7 +262,7 @@ export default function main() {
       context,
     };
     if (attributes) payload.attributes = attributes;
-    const res = await postRequest(`${getUrl()}/event`, payload);
+    const res = await postRequest("event", payload);
     log(`sent event`, res);
     return res;
   }
@@ -309,7 +303,8 @@ export default function main() {
       source: source ?? "sdk",
     };
 
-    const res = await postRequest(`${getUrl()}/feedback`, payload);
+    const res = await postRequest("feedback", payload);
+
     log(`sent feedback`, res);
     return res;
   }
@@ -351,7 +346,7 @@ export default function main() {
     liveSatisfactionActive = true;
     try {
       if (!channel) {
-        const res = await postRequest(`${getUrl()}/feedback/prompting-init`, {
+        const res = await postRequest("feedback/prompting-init", {
           userId,
         });
 
@@ -368,7 +363,7 @@ export default function main() {
       log(`feedback prompting enabled`, channel);
 
       sseChannel = openAblySSEChannel(
-        `${getUrl()}/feedback/prompting-auth`,
+        `${host}/feedback/prompting-auth?key=${publishableKey}`,
         userId,
         channel,
         (message) => handleFeedbackPromptRequest(userId!, message),
@@ -510,10 +505,7 @@ export default function main() {
       promptedQuestion: args.promptedQuestion,
     };
 
-    const res = await postRequest(
-      `${getUrl()}/feedback/prompt-events`,
-      payload,
-    );
+    const res = await postRequest("feedback/prompt-events", payload);
     log(`sent prompt event`, res);
     return res;
   }
@@ -602,7 +594,7 @@ export default function main() {
     const mergedContext = mergeDeep(baseContext, context);
 
     const res = await getFlags({
-      apiBaseUrl: getUrl(),
+      apiBaseUrl: `${host}/flags/evaluate?key=${publishableKey}`,
       context: mergedContext,
       timeoutMs,
       staleWhileRevalidate,
@@ -671,7 +663,7 @@ export default function main() {
       evalMissingFields: args.evalMissingFields,
     };
 
-    const res = await postRequest(makeUrl("flags/events"), payload);
+    const res = await postRequest("flags/events", payload);
 
     log(`sent flag event`, res);
 

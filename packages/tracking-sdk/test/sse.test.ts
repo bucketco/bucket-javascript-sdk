@@ -13,7 +13,7 @@ import {
   openAblySSEChannel,
 } from "../src/sse";
 
-const ablyAuthUrl = "https://example.com/123/feedback/prompting-auth";
+const ablyAuthUrl = "https://example.com/feedback/prompting-auth?key=pubKey";
 const sseHost = "https://ssehost.com";
 const tokenRequest = {
   keyName: "key-name",
