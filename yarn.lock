@@ -1066,7 +1066,7 @@ __metadata:
   resolution: "@bucketco/react-sdk@workspace:packages/react-sdk"
   dependencies:
     "@bucketco/eslint-config": "npm:0.0.2"
-    "@bucketco/tracking-sdk": "npm:2.3.3"
+    "@bucketco/tracking-sdk": "npm:2.3.4"
     "@bucketco/tsconfig": "npm:0.0.2"
     "@testing-library/react": "npm:^15.0.7"
     "@types/jsdom": "npm:^21.1.6"
@@ -1091,7 +1091,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@bucketco/tracking-sdk@npm:2.3.3, @bucketco/tracking-sdk@workspace:packages/tracking-sdk":
+"@bucketco/tracking-sdk@npm:2.3.4, @bucketco/tracking-sdk@workspace:packages/tracking-sdk":
   version: 0.0.0-use.local
   resolution: "@bucketco/tracking-sdk@workspace:packages/tracking-sdk"
   dependencies:

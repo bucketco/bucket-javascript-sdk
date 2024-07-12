@@ -27,7 +27,7 @@
   "main": "./dist/bucket-react-sdk.browser.js",
   "types": "./dist/types/src/index.d.ts",
   "dependencies": {
-    "@bucketco/tracking-sdk": "file:../tracking-sdk",
+    "@bucketco/tracking-sdk": "2.3.4",
     "canonical-json": "^0.0.4"
   },
   "peerDependencies": {
