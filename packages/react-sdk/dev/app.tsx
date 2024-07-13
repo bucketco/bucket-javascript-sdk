@@ -187,9 +187,7 @@ export function App() {
         id: "demo-company",
       }}
       flagOptions={{
-        fallbackFlags: {
-          huddle: true,
-        },
+        fallbackFlags: ["huddle"],
       }}
     >
       <Demos />

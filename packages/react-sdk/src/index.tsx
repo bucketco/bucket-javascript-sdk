@@ -75,7 +75,7 @@ export type BucketProps = BucketSDKOptions &
   FlagContext & {
     publishableKey: string;
     flagOptions?: Omit<FeatureFlagsOptions, "context" | "fallbackFlags"> & {
-      fallbackFlags?: Record<BucketFlags, boolean>;
+      fallbackFlags?: BucketFlags[];
     };
     children?: ReactNode;
     sdk?: BucketInstance;
@@ -92,7 +92,10 @@ export function BucketProvider({
   ...config
 }: BucketProps) {
   const [flags, setFlags] = useState<Flags>(
-    config.flagOptions?.fallbackFlags ?? {},
+    (config.flagOptions?.fallbackFlags ?? []).reduce((acc, key) => {
+      acc[key] = true;
+      return acc;
+    }, {} as Flags),
   );
   const [flagsLoading, setFlagsLoading] = useState(true);
   const [bucket] = useState(() => sdk ?? BucketSingleton);
@@ -142,9 +145,7 @@ export function BucketProvider({
       bucket
         .getFeatureFlags({
           ...flagOptionsRest,
-          fallbackFlags: Object.entries(fallbackFlags ?? {}).map(
-            ([key, value]) => ({ key, value }),
-          ),
+          fallbackFlags,
           context: flagContext,
         })
         .then((loadedFlags) => {
