@@ -7,7 +7,7 @@ export type FlagsResponse = Record<string, Flag>;
 
 export type FeatureFlagsOptions = {
   context: Record<string, any>;
-  fallbackFlags?: Flag[];
+  fallbackFlags?: string[];
   timeoutMs?: number;
   staleWhileRevalidate?: boolean;
 };

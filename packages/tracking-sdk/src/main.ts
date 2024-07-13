@@ -600,7 +600,7 @@ export default function main() {
       warn(`failed to fetch feature flags, using fall-back flags`);
       return fallbackFlags.reduce(
         (acc, flag) => {
-          acc[flag.key] = true;
+          acc[flag] = true;
           return acc;
         },
         {} as Record<string, boolean>,
