@@ -136,7 +136,7 @@ function DebugFlags() {
   //   "isLoading": false,
   //   "flags: {
   //     "join-huddle": true
-  //     "post-message": false
+  //     "post-message": true
   //   }
   // }
 

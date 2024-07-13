@@ -91,7 +91,9 @@ export function BucketProvider({
   otherContext: initialOtherContext,
   ...config
 }: BucketProps) {
-  const [flags, setFlags] = useState<Flags>({});
+  const [flags, setFlags] = useState<Flags>(
+    config.flagOptions?.fallbackFlags ?? {},
+  );
   const [flagsLoading, setFlagsLoading] = useState(true);
   const [bucket] = useState(() => sdk ?? BucketSingleton);
 
@@ -103,34 +105,40 @@ export function BucketProvider({
 
   const { user, company, otherContext } = flagContext;
 
-  const contextKey = canonicalJSON({ config, flagContext });
+  // on mount
+  useEffect(() => () => bucket.init(config.publishableKey, config), []);
+  // on umount
+  useEffect(() => () => bucket.reset());
+
+  // if user.id or attributes change, send new attributes to the servers
+  useEffect(() => {
+    if (user?.id) {
+      const { id, ...attributes } = user;
+      // `user` calls bucket.reset() automatically when needed
+      bucket.user(String(id), attributes);
+    }
+  }, [canonicalJSON({ user })]);
 
   useEffect(() => {
-    try {
-      const { publishableKey, flagOptions, ...options } = config;
+    if (company?.id) {
+      const { id, ...attributes } = company;
+      bucket.company(
+        String(id),
+        attributes,
+        user?.id !== undefined ? String(user?.id) : undefined,
+      );
+    }
+  }, [canonicalJSON({ company })]);
 
+  // fetch flags
+  const contextKey = canonicalJSON({ config, flagContext });
+  useEffect(() => {
+    try {
+      const { flagOptions } = config;
       const { fallbackFlags, ...flagOptionsRest } = flagOptions || {};
 
-      bucket.reset();
-      bucket.init(publishableKey, options);
-
-      // update the user and company on the Bucket servers
-
-      if (user?.id) {
-        const { id: _, ...attributes } = user;
-        bucket.user(String(user.id), attributes);
-      }
-
-      if (company?.id) {
-        const { id: _, ...attributes } = company;
-        bucket.company(
-          String(company.id),
-          attributes,
-          user?.id !== undefined ? String(user?.id) : undefined,
-        );
-      }
-
       setFlagsLoading(true);
+
       bucket
         .getFeatureFlags({
           ...flagOptionsRest,
