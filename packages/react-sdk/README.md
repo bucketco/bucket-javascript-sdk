@@ -152,29 +152,13 @@ function DebugFlags() {
 import { useUpdateContext } from "@bucketco/react-sdk";
 
 function Company() {
+  const [company, _] = useState(initialCompany);
   const { updateCompany } = useUpdateContext();
   return (
     <div>
       <button onClick={() => updateCompany({ ...company, plan: "enterprise" })}>
         Upgrade to enterprise
       </button>
-    </div>
-  );
-}
-```
-
-### `useContext()`
-
-`useContext` returns the `company`, `user` and `otherContext` currently set. This is mostly useful for debugging.
-
-```tsx
-import { useContext } from "@bucketco/react-sdk";
-
-function FlagsContext() {
-  const context = useContext();
-  return (
-    <div>
-      <pre>{JSON.stringify(context)}</pre>
     </div>
   );
 }

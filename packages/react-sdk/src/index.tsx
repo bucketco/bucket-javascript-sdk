@@ -302,7 +302,7 @@ export function useFlags(): {
 
   return {
     isLoading,
-    flags: Object.fromEntries(Object.keys(flags).map((f) => [f, true])),
+    flags,
   };
 }
 
@@ -310,18 +310,18 @@ export function useFlags(): {
  * Returns a function to update the current company
  *
  * ```ts
- * const {updateUser, updateCompany, updateOtherContext} = useUpdateContext();
- * updateCompany({
- *   id: "company-123",
- *   plan: "enterprise",
- * });
- * updateUser({
- *   id: "user-123",
- *   role: "manager",
- * });
- * updateOtherContext({
- *   happeningId: "big-conf1",
- * });
+ *  import { useUpdateContext } from "@bucketco/react-sdk";
+ *  function Company() {
+ *  const [company, _] = useState(initialCompany);
+ *  const { updateCompany } = useUpdateContext();
+ *  return (
+ *    <div>
+ *      <button onClick={() => updateCompany({ ...company, plan: "enterprise" })}>
+ *        Upgrade to enterprise
+ *      </button>
+ *    </div>
+ *  );
+ * }
  * ```
  */
 export function useUpdateContext() {
