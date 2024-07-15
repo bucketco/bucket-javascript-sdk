@@ -89,10 +89,12 @@ export function BucketProvider({
   user: initialUser,
   company: initialCompany,
   otherContext: initialOtherContext,
+  publishableKey,
+  flagOptions,
   ...config
 }: BucketProps) {
   const [flags, setFlags] = useState<Flags>(
-    (config.flagOptions?.fallbackFlags ?? []).reduce((acc, key) => {
+    (flagOptions?.fallbackFlags ?? []).reduce((acc, key) => {
       acc[key] = true;
       return acc;
     }, {} as Flags),
@@ -108,10 +110,12 @@ export function BucketProvider({
 
   const { user, company, otherContext } = flagContext;
 
-  // on mount
-  useEffect(() => () => bucket.init(config.publishableKey, config), []);
-  // on umount
-  useEffect(() => () => bucket.reset());
+  useEffect(() => {
+    // on mount
+    bucket.init(publishableKey, config);
+    // on umount
+    return () => bucket.reset();
+  }, []);
 
   // if user.id or attributes change, send new attributes to the servers
   useEffect(() => {
@@ -137,7 +141,6 @@ export function BucketProvider({
   const contextKey = canonicalJSON({ config, flagContext });
   useEffect(() => {
     try {
-      const { flagOptions } = config;
       const { fallbackFlags, ...flagOptionsRest } = flagOptions || {};
 
       setFlagsLoading(true);

@@ -2,11 +2,12 @@ import React from "react";
 import { render, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 
-import Bucket, {
+import {
+  BucketProvider,
   BucketInstance,
-  useBucket,
-  useFeatureFlag,
-  useFeatureFlags,
+  useFlag,
+  useFlags,
+  BucketProps,
 } from "../src";
 
 const originalConsoleError = console.error.bind(console);
@@ -14,30 +15,41 @@ afterEach(() => {
   console.error = originalConsoleError;
 });
 
-describe("<Bucket />", () => {
+const publishableKey = Math.random().toString();
+const company = { id: "123", name: "test" };
+const user = { id: "456", name: "test" };
+const otherContext = { test: "test" };
+
+function getProvider(props: Partial<BucketProps>) {
+  return (
+    <BucketProvider
+      {...props}
+      publishableKey={publishableKey}
+      company={company}
+      user={user}
+      otherContext={otherContext}
+    />
+  );
+}
+
+describe("<BucketProvider />", () => {
   test("calls init and getFeatureFlags", () => {
     const sdk = createSpySDK();
-    const publishableKey = Math.random().toString();
-    const flagOptions = { context: {} };
+    const provider = getProvider({ sdk });
 
-    render(
-      <Bucket sdk={sdk} publishableKey={publishableKey} flags={flagOptions} />,
-    );
+    render(provider);
 
     expect(sdk.init).toHaveBeenCalledOnce();
     expect(sdk.init).toHaveBeenCalledWith(publishableKey, {});
     expect(sdk.getFeatureFlags).toHaveBeenCalledOnce();
-    expect(sdk.getFeatureFlags).toHaveBeenCalledWith(flagOptions);
+    expect(sdk.getFeatureFlags).toHaveBeenCalledWith({
+      context: { company, user, otherContext },
+    });
   });
 
   test("only calls init once with the same args", () => {
     const sdk = createSpySDK();
-    const publishableKey = Math.random().toString();
-    const flagOptions = { context: {} };
-
-    const node = (
-      <Bucket sdk={sdk} publishableKey={publishableKey} flags={flagOptions} />
-    );
+    const node = getProvider({ sdk });
 
     const x = render(node);
     x.rerender(node);
@@ -46,27 +58,9 @@ describe("<Bucket />", () => {
 
     expect(sdk.init).toHaveBeenCalledOnce();
     expect(sdk.getFeatureFlags).toHaveBeenCalledOnce();
-  });
-});
-
-describe("useBucket", () => {
-  test("returns the bucket instance", () => {
-    const sdk = createSpySDK();
-    const publishableKey = Math.random().toString();
-    const flagOptions = { context: {} };
-
-    const { result } = renderHook(() => useBucket(), {
-      wrapper: ({ children }) => (
-        <Bucket
-          sdk={sdk}
-          publishableKey={publishableKey}
-          flags={flagOptions}
-          children={children}
-        />
-      ),
+    expect(sdk.getFeatureFlags).toHaveBeenCalledWith({
+      context: { company, user, otherContext },
     });
-
-    expect(result.current).toEqual(sdk);
   });
 });
 
@@ -75,18 +69,8 @@ describe("useFeatureFlags", () => {
     const sdk = createSpySDK();
     sdk.getFeatureFlags = vi.fn(async () => ({}) as any);
 
-    const publishableKey = Math.random().toString();
-    const flagOptions = { context: {} };
-
-    const { result, unmount } = renderHook(() => useFeatureFlags(), {
-      wrapper: ({ children }) => (
-        <Bucket
-          sdk={sdk}
-          publishableKey={publishableKey}
-          flags={flagOptions}
-          children={children}
-        />
-      ),
+    const { result, unmount } = renderHook(() => useFlags(), {
+      wrapper: ({ children }) => getProvider({ sdk, children }),
     });
 
     expect(result.current).toMatchObject({ flags: {}, isLoading: true });
@@ -95,25 +79,15 @@ describe("useFeatureFlags", () => {
 
   test("returns the feature flags in context", async () => {
     const flags = {
-      abc: { value: true, key: "abc" },
-      def: { value: false, key: "abc" },
+      abc: true,
+      def: true,
     };
 
     const sdk = createSpySDK();
-    sdk.getFeatureFlags = vi.fn(async () => flags);
+    sdk.getFeatureFlags = vi.fn(async () => Promise.resolve(flags));
 
-    const publishableKey = Math.random().toString();
-    const flagOptions = { context: {} };
-
-    const { result } = renderHook(() => useFeatureFlags(), {
-      wrapper: ({ children }) => (
-        <Bucket
-          sdk={sdk}
-          publishableKey={publishableKey}
-          flags={flagOptions}
-          children={children}
-        />
-      ),
+    const { result } = renderHook(() => useFlags(), {
+      wrapper: ({ children }) => getProvider({ sdk, children }),
     });
 
     await waitFor(() => result.current.isLoading === false);
@@ -131,18 +105,11 @@ describe("useFeatureFlag", () => {
     const publishableKey = Math.random().toString();
     const flagOptions = { context: {} };
 
-    const { result, unmount } = renderHook(() => useFeatureFlag("test-flag"), {
-      wrapper: ({ children }) => (
-        <Bucket
-          sdk={sdk}
-          publishableKey={publishableKey}
-          flags={flagOptions}
-          children={children}
-        />
-      ),
+    const { result, unmount } = renderHook(() => useFlag("test-flag"), {
+      wrapper: ({ children }) => getProvider({ sdk, children }),
     });
 
-    expect(result.current).toEqual({ isLoading: true, value: null });
+    expect(result.current).toEqual({ isLoading: true, isEnabled: false });
     expect(console.error).not.toHaveBeenCalled();
 
     unmount();
@@ -154,27 +121,17 @@ describe("useFeatureFlag", () => {
   ])("returns the feature flag from context", async ({ key, value }) => {
     console.error = vi.fn();
 
-    const flags = { [key]: { key, value } };
+    const flags = { [key]: value };
 
     const sdk = createSpySDK();
     sdk.getFeatureFlags = vi.fn(async () => flags);
 
-    const publishableKey = Math.random().toString();
-    const flagOptions = { context: {} };
-
-    const { result } = renderHook(() => useFeatureFlag(key), {
-      wrapper: ({ children }) => (
-        <Bucket
-          sdk={sdk}
-          publishableKey={publishableKey}
-          flags={flagOptions}
-          children={children}
-        />
-      ),
+    const { result } = renderHook(() => useFlag(key), {
+      wrapper: ({ children }) => getProvider({ sdk, children }),
     });
 
     await waitFor(() => result.current.isLoading === false);
-    expect(result.current).toEqual({ isLoading: false, value: value });
+    expect(result.current).toEqual({ isLoading: false, isEnabled: value });
     expect(console.error).not.toHaveBeenCalled();
   });
 });
@@ -184,5 +141,8 @@ function createSpySDK(): BucketInstance {
     getFeatureFlags: vi.fn(async () => ({})),
     init: vi.fn(),
     reset: vi.fn(),
+    user: vi.fn(),
+    company: vi.fn(),
+    track: vi.fn(),
   } as any as BucketInstance;
 }
