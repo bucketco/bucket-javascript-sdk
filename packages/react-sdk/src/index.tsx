@@ -1,6 +1,7 @@
 import React, {
   createContext,
   ReactNode,
+  useCallback,
   useContext,
   useEffect,
   useState,
@@ -52,13 +53,17 @@ type BucketContext = {
   flags: {
     flags: Flags;
     isLoading: boolean;
-    setContext: (context: FlagContext) => void;
-    context: {
-      user?: UserContext;
-      company?: CompanyContext;
-      otherContext?: OtherContext;
-    };
   };
+  updateUser: (user: UserContext) => void;
+  updateCompany: (company: CompanyContext) => void;
+  updateOtherContext: (otherContext: OtherContext) => void;
+
+  sendFeedback: (opts: Omit<Feedback, "userId" | "companyId">) => void;
+  requestFeedback: (
+    opts: Omit<RequestFeedbackOptions, "userId" | "companyId">,
+  ) => void;
+
+  track: (eventName: string, attributes?: Record<string, any>) => void;
 };
 
 const Context = createContext<BucketContext>({
@@ -66,12 +71,16 @@ const Context = createContext<BucketContext>({
   flags: {
     flags: {},
     isLoading: false,
-    setContext: () => {},
-    context: {},
   },
+  updateUser: () => {},
+  updateCompany: () => {},
+  updateOtherContext: () => {},
+  track: () => {},
+  sendFeedback: () => {},
+  requestFeedback: () => {},
 });
 
-export type BucketProps = BucketSDKOptions &
+export type BucketProps = Omit<BucketSDKOptions, "persistUser"> &
   FlagContext & {
     publishableKey: string;
     flagOptions?: Omit<FeatureFlagsOptions, "context" | "fallbackFlags"> & {
@@ -79,6 +88,7 @@ export type BucketProps = BucketSDKOptions &
     };
     children?: ReactNode;
     sdk?: BucketInstance;
+    loadingComponent?: ReactNode;
   };
 
 export type Flags = { [k in BucketFlags]?: boolean };
@@ -91,6 +101,7 @@ export function BucketProvider({
   otherContext: initialOtherContext,
   publishableKey,
   flagOptions,
+  loadingComponent,
   ...config
 }: BucketProps) {
   const [flags, setFlags] = useState<Flags>(
@@ -102,13 +113,9 @@ export function BucketProvider({
   const [flagsLoading, setFlagsLoading] = useState(true);
   const [bucket] = useState(() => sdk ?? BucketSingleton);
 
-  const [flagContext, setFlagContext] = useState({
-    user: initialUser,
-    company: initialCompany,
-    otherContext: initialOtherContext,
-  });
-
-  const { user, company, otherContext } = flagContext;
+  const [user, updateUser] = useState(initialUser);
+  const [company, updateCompany] = useState(initialCompany);
+  const [otherContext, updateOtherContext] = useState(initialOtherContext);
 
   useEffect(() => {
     // on mount
@@ -123,6 +130,9 @@ export function BucketProvider({
       const { id, ...attributes } = user;
       // `user` calls bucket.reset() automatically when needed
       bucket.user(String(id), attributes);
+    } else {
+      // logout
+      bucket.reset();
     }
   }, [canonicalJSON({ user })]);
 
@@ -138,6 +148,7 @@ export function BucketProvider({
   }, [canonicalJSON({ company })]);
 
   // fetch flags
+  const flagContext = { user, company, otherContext };
   const contextKey = canonicalJSON({ config, flagContext });
   useEffect(() => {
     try {
@@ -162,20 +173,73 @@ export function BucketProvider({
     }
   }, [contextKey]);
 
+  const track = useCallback(
+    (eventName: string, attributes?: Record<string, any>) => {
+      if (user?.id === undefined)
+        return () => {
+          console.error("User is required to send events");
+        };
+
+      return bucket.track(
+        eventName,
+        attributes,
+        user?.id !== undefined ? String(user?.id) : undefined,
+        company?.id !== undefined ? String(company?.id) : undefined,
+      );
+    },
+    [user?.id, company?.id],
+  );
+
+  const sendFeedback = useCallback(
+    (opts: Omit<Feedback, "userId" | "companyId">) => {
+      if (user?.id === undefined) {
+        console.error("User is required to request feedback");
+        return;
+      }
+
+      bucket.feedback({
+        ...opts,
+        userId: String(user.id),
+        companyId: company?.id !== undefined ? String(company.id) : undefined,
+      });
+    },
+    [user?.id, company?.id],
+  );
+
+  const requestFeedback = useCallback(
+    (opts: Omit<RequestFeedbackOptions, "userId" | "companyId">) => {
+      if (user?.id === undefined) {
+        console.error("User is required to request feedback");
+        return;
+      }
+
+      bucket.requestFeedback({
+        ...opts,
+        userId: String(user.id),
+        companyId: company?.id !== undefined ? String(company.id) : undefined,
+      });
+    },
+    [user?.id, company?.id],
+  );
+
   const context: BucketContext = {
     bucket,
     flags: {
       flags,
       isLoading: flagsLoading,
-      context: { user, company, otherContext },
-      setContext: (context: FlagContext) => {
-        setFlagContext({
-          ...flagContext,
-          ...context,
-        });
-      },
     },
+    updateUser,
+    updateCompany,
+    updateOtherContext,
+    track,
+
+    sendFeedback,
+    requestFeedback,
   };
+
+  if (flagsLoading && loadingComponent) {
+    return loadingComponent;
+  }
 
   return <Context.Provider children={children} value={context} />;
 }
@@ -246,67 +310,29 @@ export function useFlags(): {
  * Returns a function to update the current company
  *
  * ```ts
- * const [company, setCompany] = useCompany();
- * setCompany({
- *   ...company,
+ * const {updateUser, updateCompany, updateOtherContext} = useUpdateContext();
+ * updateCompany({
+ *   id: "company-123",
  *   plan: "enterprise",
  * });
- * ```
- */
-export function useCompany() {
-  const { context, setContext } = useContext<BucketContext>(Context).flags;
-  return [
-    context.company,
-    (company: CompanyContext) => {
-      setContext({ ...context, company });
-    },
-  ] as const;
-}
-
-/**
- * Returns a function to update the current user
- *
- * ```ts
- * const [user, setUser] = useUser();
- * setUser({
- *   ...user,
+ * updateUser({
+ *   id: "user-123",
  *   role: "manager",
  * });
- * ```
- */
-export function useUser() {
-  const { context, setContext } = useContext<BucketContext>(Context).flags;
-  return [
-    context.user,
-    (user: UserContext) => {
-      setContext({ ...context, user });
-    },
-  ] as const;
-}
-
-/**
- * Returns a function to update the "other" context
- *
- * ```ts
- * const otherContext = useOtherContext();
- * setOtherContext({
+ * updateOtherContext({
  *   happeningId: "big-conf1",
  * });
  * ```
  */
-export function useOtherContext() {
-  const { context, setContext } = useContext<BucketContext>(Context).flags;
-  return [
-    context.otherContext,
-    (otherContext: OtherContext) => {
-      setContext({ ...context, otherContext });
-    },
-  ] as const;
+export function useUpdateContext() {
+  const { updateUser, updateCompany, updateOtherContext } =
+    useContext<BucketContext>(Context);
+  return { updateUser, updateCompany, updateOtherContext };
 }
 
 /**
  * Returns a function to send an event when a user performs an action
- * Note: When calling `useSendFeedback`, user/company must already be set.
+ * Note: When calling `useTrack`, user/company must already be set.
  *
  * ```ts
  * const track = useTrack();
@@ -315,27 +341,34 @@ export function useOtherContext() {
  */
 export function useTrack() {
   const ctx = useContext<BucketContext>(Context);
-
-  return (eventName: string, attributes?: Record<string, any>) => {
-    const { user, company } = ctx.flags.context;
-
-    if (user?.id === undefined)
-      return () => {
-        console.error("User is required to send events");
-      };
-
-    return ctx.bucket.track(
-      eventName,
-      attributes,
-      user?.id !== undefined ? String(user?.id) : undefined,
-      company?.id !== undefined ? String(company?.id) : undefined,
-    );
-  };
+  return ctx.track;
 }
 
 /**
- * Returns a function to send feedback collected from a user.
+ * Returns a function to open up the feedback form
+ * Note: When calling `useRequestFeedback`, user/company must already be set.
+ *
+ * See https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/tracking-sdk/FEEDBACK.md#bucketrequestfeeback-options
+ * for more information
+ *
+ * ```ts
+ * const requestFeedback = useRequestFeedback();
+ * bucket.requestFeedback({
+ *   featureId: "bucket-feature-id",
+ *   title: "How satisfied are you with file uploads?",
+ * });
+ * ```
+ */
+export function useRequestFeedback() {
+  return useContext<BucketContext>(Context).requestFeedback;
+}
+
+/**
+ * Returns a function to manually send feedback collected from a user.
  * Note: When calling `useSendFeedback`, user/company must already be set.
+ *
+ * See https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/tracking-sdk/FEEDBACK.md#using-your-own-ui-to-collect-feedback
+ * for more information
  *
  * ```ts
  * const sendFeedback = useSendFeedback();
@@ -348,44 +381,5 @@ export function useTrack() {
  * ```
  */
 export function useSendFeedback() {
-  const ctx = useContext<BucketContext>(Context);
-
-  const { user, company } = ctx.flags.context;
-  if (user?.id === undefined)
-    return () => {
-      console.error("User is required to send feedback");
-    };
-
-  return (opts: Omit<Feedback, "userId">) => {
-    return ctx.bucket.feedback({
-      ...opts,
-      companyId: company?.id !== undefined ? String(company.id) : undefined,
-      userId: String(user.id),
-    });
-  };
-}
-
-/**
- * Returns a function to open up the feedback form
- * Note: When calling `useRequestFeedback`, user/company must already be set.
- *
- * ```ts
- * const requestFeedback = useRequestFeedback();
- * requestFeedback("Started Huddle", { button: "cta" });
- * ```
- */
-export function useRequestFeedback() {
-  const ctx = useContext<BucketContext>(Context);
-  const { user, company } = ctx.flags.context;
-  if (user?.id === undefined)
-    return () => {
-      console.error("User is required to request feedback");
-    };
-
-  return (opts: Omit<RequestFeedbackOptions, "userId" | "companyId">) =>
-    ctx.bucket.requestFeedback({
-      ...opts,
-      userId: String(user.id),
-      companyId: company?.id !== undefined ? String(company.id) : undefined,
-    });
+  return useContext<BucketContext>(Context).sendFeedback;
 }

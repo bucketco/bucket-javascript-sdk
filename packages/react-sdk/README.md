@@ -43,7 +43,7 @@ And update your `App.tsx` to insert the `<BucketProvider />` so it looks somethi
   // See "Managing Bucket context" below.
   company={ id: "acme_inc" }
   user={ id: "john doe" }
-  loading={<Loading />}
+  loadingComponent={<Loading />}
   fallbackFlags={["huddle"]} // if we're unable to fetch flags, these flags will be enabled.
 >
 {/* children here are shown when loading finishes */}
@@ -53,7 +53,7 @@ And update your `App.tsx` to insert the `<BucketProvider />` so it looks somethi
 - `publishableKey` is used to connect the provider to an _environment_ on Bucket. Find your `publishableKey` under `Activity` on https://app.bucket.co.
 - `company`, `user` and `otherContext` make up the _context_ that is used to determine if a feature flag is enabled or not. `company` and `user` contexts are automatically transmitted to Bucket servers so the Bucket app can show you which companies have access to which flags etc.
 - `fallbackFlags` is a list of strings which specify which flags to consider enabled if the SDK is unable to fetch flags.
-- `loading` lets you specify an React component to be rendered instead of the children while the Bucket provider is initializing. If you want more control over loading screens, `useFlags()` returns `isLoading` which you can use to customize the loading experience:
+- `loadingComponent` lets you specify an React component to be rendered instead of the children while the Bucket provider is initializing. If you want more control over loading screens, `useFlags()` returns `isLoading` which you can use to customize the loading experience:
 
 ```tsx
 function LoadingBucket({ children }) {
@@ -72,10 +72,6 @@ function LoadingBucket({ children }) {
    </LoadingBucket>
 <BucketProvider>
 ```
-
-### Options
-
-TODO: Describe options to `BucketProvider`
 
 ## Hooks
 
@@ -213,8 +209,13 @@ import { useTrackEvent } from "@bucketco/react-sdk";
 
 const requestFeedback = useRequestFeedback();
 
-useRequestFeedback("sent_message", { foo: "bar" });
+requestFeedback({
+  featureId: "bucket-feature-id",
+  title: "How satisfied are you with file uploads?",
+});
 ```
+
+See https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/tracking-sdk/FEEDBACK.md#manual-feedback-collection for more information on `requestFeedback`
 
 ### `useSendFeedback()`
 
@@ -222,12 +223,18 @@ useRequestFeedback("sent_message", { foo: "bar" });
 This is useful if you've manually collected feedback and want to send it to Bucket.
 
 ```ts
-import { useTrackEvent } from "@bucketco/react-sdk";
+import { useSendFeedback } from "@bucketco/react-sdk";
 
-const trackEvent = useTrack();
+const sendFeedback = useSendFeedback();
 
-track("sent_message", { foo: "bar" });
+sendFeedback({
+  featureId: "bucket-feature-id",
+  score: 5,
+  comment: "Best thing I"ve ever tried!",
+});
 ```
+
+See https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/tracking-sdk/FEEDBACK.md#manual-feedback-collection for more information on `sendFeedback`
 
 # License
 

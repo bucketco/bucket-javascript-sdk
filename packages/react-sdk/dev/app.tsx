@@ -1,13 +1,11 @@
 import React, { useState } from "react";
 import {
-  useCompany,
   useFlag,
   useFlags,
-  useOtherContext,
   useRequestFeedback,
   useTrack,
-  useUser,
   BucketProvider,
+  useUpdateContext,
 } from "../src";
 
 // Extending the Bucket.Flags interface to define the available flags
@@ -32,17 +30,28 @@ function HuddleFlag() {
   );
 }
 
-function UpdateContext() {
-  // Update context
-  const [company, setCompany] = useCompany();
-  const [user, setUser] = useUser();
-  const [otherContext, setOtherContext] = useOtherContext();
+// Initial context
+const initialUser = {
+  id: "demo-user",
+  email: "demo-user@example.com",
+};
+const initialCompany = {
+  id: "demo-company",
+  name: "Demo Company",
+};
+const initialOtherContext = {
+  test: "test",
+};
 
-  const [newCompany, setNewCompany] = useState(JSON.stringify(company));
-  const [newUser, setNewUser] = useState(JSON.stringify(user));
+function UpdateContext() {
+  const [newCompany, setNewCompany] = useState(JSON.stringify(initialCompany));
+  const [newUser, setNewUser] = useState(JSON.stringify(initialUser));
   const [newOtherContext, setNewOtherContext] = useState(
-    JSON.stringify(otherContext),
+    JSON.stringify(initialOtherContext),
   );
+
+  const { updateUser, updateCompany, updateOtherContext } = useUpdateContext();
+
   return (
     <div>
       <h2>Update context</h2>
@@ -59,7 +68,7 @@ function UpdateContext() {
             <td>
               <button
                 onClick={() => {
-                  setCompany(JSON.parse(newCompany));
+                  updateCompany(JSON.parse(newCompany));
                 }}
               >
                 Update company
@@ -76,7 +85,7 @@ function UpdateContext() {
             <td>
               <button
                 onClick={() => {
-                  setUser(JSON.parse(newUser));
+                  updateUser(JSON.parse(newUser));
                 }}
               >
                 Update user
@@ -93,7 +102,7 @@ function UpdateContext() {
             <td>
               <button
                 onClick={() => {
-                  setOtherContext(JSON.parse(newOtherContext));
+                  updateOtherContext(JSON.parse(newOtherContext));
                 }}
               >
                 Update other context
@@ -175,17 +184,12 @@ export function App() {
   return (
     <BucketProvider
       publishableKey="trdwA10Aoant6IaK3Qt45NMI"
-      persistUser={false}
       feedback={{
         enableLiveSatisfaction: false,
       }}
-      user={{
-        id: "demo-user",
-        email: "demo-user@example.com",
-      }}
-      company={{
-        id: "demo-company",
-      }}
+      company={initialCompany}
+      user={initialUser}
+      otherContext={initialOtherContext}
       flagOptions={{
         fallbackFlags: ["huddle"],
       }}
