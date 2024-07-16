@@ -12,12 +12,12 @@ npm i @bucketco/react-sdk
 
 ## Setup
 
-To get type safe feature flags, extend the definition of `Flags` and defines which flags you have.
-See the example below for the details.
-If no explicit flag definitions are provided, there will be no types checked flag lookups.
+### 1. Define Flags (optional)
 
-To get started, add the `BucketProvider` context provider to your application.
-This will initialize the Bucket SDK, fetch feature flags and start listening for Live Satisfaction events.
+To get type safe feature flags, extend the definition of the `Flags` interface and define which flags you have.
+See the example below for the details.
+
+If no explicit flag definitions are provided, there will be no types checked flag lookups.
 
 **Example:**
 
@@ -31,45 +31,52 @@ declare module "@bucketco/react-sdk" {
 }
 ```
 
-And update your `App.tsx` to insert the `<BucketProvider />` so it looks something like the following:
+### 2. Add the `BucketProvider` context provider
+
+Add the `BucketProvider` context provider to your application.
+This will initialize the Bucket SDK, fetch feature flags and start listening for Live Satisfaction events.
+
+**Example:**
 
 ```tsx
-// Initialize the BucketProvider
+import { BucketProvider } from "@bucketco/react-sdk"
+
 <BucketProvider
-  publishableKey="{YOUR_PUBLISHABLE_KEY}" // The publishable key of your app environment
-  // `company` and `user` should have at least the `id` property plus anything additional you want to be able to evaluate flags against.
-  // See "Managing Bucket context" below.
+  publishableKey="{YOUR_PUBLISHABLE_KEY}"
   company={ id: "acme_inc" }
   user={ id: "john doe" }
   loadingComponent={<Loading />}
-  fallbackFlags={["huddle"]} // if we're unable to fetch flags, these flags will be enabled.
+  fallbackFlags={["huddle"]}
 >
-{/* children here are shown when loading finishes */}
+{/* children here are shown when loading finishes or immediately if no `loadingComponent` is given */}
 </BucketProvider>
 ```
 
 - `publishableKey` is used to connect the provider to an _environment_ on Bucket. Find your `publishableKey` under `Activity` on https://app.bucket.co.
 - `company`, `user` and `otherContext` make up the _context_ that is used to determine if a feature flag is enabled or not. `company` and `user` contexts are automatically transmitted to Bucket servers so the Bucket app can show you which companies have access to which flags etc.
+
+  If you specify `company` and/or `user` they must have at least the `id` property plus anything additional you want to be able to evaluate flags against. See "Managing Bucket context" below.
+
 - `fallbackFlags` is a list of strings which specify which flags to consider enabled if the SDK is unable to fetch flags.
 - `loadingComponent` lets you specify an React component to be rendered instead of the children while the Bucket provider is initializing. If you want more control over loading screens, `useFlags()` returns `isLoading` which you can use to customize the loading experience:
 
-```tsx
-function LoadingBucket({ children }) {
-  const {isLoading} = useFlags()
-  if (isLoading) {
-    return <Spinner />
+  ```tsx
+  function LoadingBucket({ children }) {
+    const {isLoading} = useFlags()
+    if (isLoading) {
+      return <Spinner />
+    }
+
+    return children
   }
 
-  return children
-}
-
-//-- Initialize the Bucket provider
-<BucketProvider publishableKey={YOUR_PUBLISHABLE_KEY} /*...*/>
-  <LoadingBucket>
-   {/* children here are shown when loading finishes */}
-   </LoadingBucket>
-<BucketProvider>
-```
+  //-- Initialize the Bucket provider
+  <BucketProvider publishableKey={YOUR_PUBLISHABLE_KEY} /*...*/>
+    <LoadingBucket>
+    {/* children here are shown when loading finishes */}
+    </LoadingBucket>
+  <BucketProvider>
+  ```
 
 ## Hooks
 
