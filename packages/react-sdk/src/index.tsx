@@ -46,7 +46,7 @@ type BucketFlags = keyof (keyof Flags extends never
 
 export type FlagsResult = { [k in BucketFlags]?: boolean };
 
-type BucketContext = {
+type ProviderContextType = {
   bucket: BucketInstance;
   flags: {
     flags: FlagsResult;
@@ -64,7 +64,7 @@ type BucketContext = {
   track: (eventName: string, attributes?: Record<string, any>) => void;
 };
 
-const Context = createContext<BucketContext>({
+const ProviderContext = createContext<ProviderContextType>({
   bucket: BucketSingleton,
   flags: {
     flags: {},
@@ -229,7 +229,7 @@ export function BucketProvider({
     [user?.id, company?.id],
   );
 
-  const context: BucketContext = {
+  const context: ProviderContextType = {
     bucket,
     flags: {
       flags,
@@ -248,7 +248,7 @@ export function BucketProvider({
     return loadingComponent;
   }
 
-  return <Context.Provider children={children} value={context} />;
+  return <ProviderContext.Provider children={children} value={context} />;
 }
 
 /**
@@ -261,7 +261,7 @@ export function BucketProvider({
  * ```
  */
 export function useFlagIsEnabled(flagKey: BucketFlags) {
-  const { flags } = useContext<BucketContext>(Context).flags;
+  const { flags } = useContext<ProviderContextType>(ProviderContext).flags;
   return flags[flagKey] ?? false;
 }
 
@@ -277,7 +277,7 @@ export function useFlagIsEnabled(flagKey: BucketFlags) {
  * ```
  */
 export function useFlag(key: BucketFlags) {
-  const flags = useContext<BucketContext>(Context).flags;
+  const flags = useContext<ProviderContextType>(ProviderContext).flags;
   const isEnabled = flags.flags[key] ?? false;
 
   return { isLoading: flags.isLoading, isEnabled };
@@ -305,7 +305,7 @@ export function useFlags(): {
 } {
   const {
     flags: { flags, isLoading },
-  } = useContext<BucketContext>(Context);
+  } = useContext<ProviderContextType>(ProviderContext);
 
   return {
     isLoading,
@@ -337,7 +337,7 @@ export function useUpdateContext() {
     updateCompany,
     updateOtherContext,
     flags: { isLoading },
-  } = useContext<BucketContext>(Context);
+  } = useContext<ProviderContextType>(ProviderContext);
   return { updateUser, updateCompany, updateOtherContext, isLoading };
 }
 
@@ -351,7 +351,7 @@ export function useUpdateContext() {
  * ```
  */
 export function useTrack() {
-  const ctx = useContext<BucketContext>(Context);
+  const ctx = useContext<ProviderContextType>(ProviderContext);
   return ctx.track;
 }
 
@@ -371,7 +371,7 @@ export function useTrack() {
  * ```
  */
 export function useRequestFeedback() {
-  return useContext<BucketContext>(Context).requestFeedback;
+  return useContext<ProviderContextType>(ProviderContext).requestFeedback;
 }
 
 /**
@@ -392,5 +392,5 @@ export function useRequestFeedback() {
  * ```
  */
 export function useSendFeedback() {
-  return useContext<BucketContext>(Context).sendFeedback;
+  return useContext<ProviderContextType>(ProviderContext).sendFeedback;
 }
