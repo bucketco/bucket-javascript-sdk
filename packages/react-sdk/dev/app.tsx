@@ -1,19 +1,18 @@
 import React, { useState } from "react";
+
 import {
+  BucketProvider,
   useFlag,
   useFlags,
   useRequestFeedback,
   useTrack,
-  BucketProvider,
   useUpdateContext,
 } from "../src";
 
-// Extending the Bucket.Flags interface to define the available flags
-declare global {
-  namespace Bucket {
-    interface Flags {
-      huddle: boolean;
-    }
+// Extending the Flags interface to define the available flags
+declare module "../src" {
+  interface Flags {
+    huddle: boolean;
   }
 }
 

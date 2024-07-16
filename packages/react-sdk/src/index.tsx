@@ -38,23 +38,21 @@ type FlagContext = {
   otherContext?: OtherContext;
 };
 
-declare global {
-  module Bucket {
-    interface Flags {}
-  }
-}
+export interface Flags {}
 
-type BucketFlags = keyof (keyof Bucket.Flags extends never
+type BucketFlags = keyof (keyof Flags extends never
   ? Record<string, boolean>
-  : Bucket.Flags);
+  : Flags);
+
+export type FlagsResult = { [k in BucketFlags]?: boolean };
 
 type BucketContext = {
   bucket: BucketInstance;
   flags: {
-    flags: Flags;
+    flags: FlagsResult;
     isLoading: boolean;
   };
-  updateUser: (user: UserContext) => void;
+  updateUser: (user?: UserContext) => void;
   updateCompany: (company: CompanyContext) => void;
   updateOtherContext: (otherContext: OtherContext) => void;
 
@@ -72,12 +70,12 @@ const Context = createContext<BucketContext>({
     flags: {},
     isLoading: false,
   },
-  updateUser: () => {},
-  updateCompany: () => {},
-  updateOtherContext: () => {},
-  track: () => {},
-  sendFeedback: () => {},
-  requestFeedback: () => {},
+  updateUser: () => undefined,
+  updateCompany: () => undefined,
+  updateOtherContext: () => undefined,
+  track: () => undefined,
+  sendFeedback: () => undefined,
+  requestFeedback: () => undefined,
 });
 
 export type BucketProps = Omit<BucketSDKOptions, "persistUser"> &
@@ -91,8 +89,6 @@ export type BucketProps = Omit<BucketSDKOptions, "persistUser"> &
     loadingComponent?: ReactNode;
   };
 
-export type Flags = { [k in BucketFlags]?: boolean };
-
 export function BucketProvider({
   children,
   sdk,
@@ -104,11 +100,11 @@ export function BucketProvider({
   loadingComponent,
   ...config
 }: BucketProps) {
-  const [flags, setFlags] = useState<Flags>(
+  const [flags, setFlags] = useState<FlagsResult>(
     (flagOptions?.fallbackFlags ?? []).reduce((acc, key) => {
       acc[key] = true;
       return acc;
-    }, {} as Flags),
+    }, {} as FlagsResult),
   );
   const [flagsLoading, setFlagsLoading] = useState(true);
   const [bucket] = useState(() => sdk ?? BucketSingleton);
@@ -118,7 +114,7 @@ export function BucketProvider({
     company: initialCompany,
     otherContext: initialOtherContext,
   });
-  const { user, company, otherContext } = flagContext;
+  const { user, company } = flagContext;
 
   useEffect(() => {
     // on mount
@@ -128,12 +124,12 @@ export function BucketProvider({
   }, []);
 
   // call updateUser with no arguments to logout
-  const updateUser = useCallback((user?: UserContext) => {
-    setFlagContext({ ...flagContext, user });
-    if (user?.id) {
-      const { id, ...attributes } = user;
+  const updateUser = useCallback((newUser?: UserContext) => {
+    setFlagContext({ ...flagContext, user: newUser });
+    if (newUser?.id) {
+      const { id, ...attributes } = newUser;
       // `user` calls bucket.reset() automatically when needed
-      bucket.user(String(id), attributes);
+      void bucket.user(String(id), attributes);
     } else {
       // logout
       bucket.reset();
@@ -141,11 +137,11 @@ export function BucketProvider({
   }, []);
 
   // call updateUser with no arguments to re-set company context
-  const updateCompany = useCallback((company?: CompanyContext) => {
-    setFlagContext({ ...flagContext, company });
-    if (company?.id) {
-      const { id, ...attributes } = company;
-      bucket.company(
+  const updateCompany = useCallback((newCompany?: CompanyContext) => {
+    setFlagContext({ ...flagContext, company: newCompany });
+    if (newCompany?.id) {
+      const { id, ...attributes } = newCompany;
+      void bucket.company(
         String(id),
         attributes,
         flagContext?.user?.id !== undefined
@@ -167,7 +163,7 @@ export function BucketProvider({
 
       setFlagsLoading(true);
 
-      bucket
+      void bucket
         .getFeatureFlags({
           ...flagOptionsRest,
           fallbackFlags,
@@ -208,7 +204,7 @@ export function BucketProvider({
         return;
       }
 
-      bucket.feedback({
+      return bucket.feedback({
         ...opts,
         userId: String(user.id),
         companyId: company?.id !== undefined ? String(company.id) : undefined,
@@ -290,7 +286,7 @@ export function useFlag(key: BucketFlags) {
 /**
  * Returns feature flags as an object, e.g.
  * Note: this returns the raw flag keys, and does not use the
- * optional typing provided through `Bucket.Flags`.
+ * optional typing provided through the `Flags` type.
  *
  * ```ts
  * const flags = useFlags();
@@ -305,7 +301,7 @@ export function useFlag(key: BucketFlags) {
  */
 export function useFlags(): {
   isLoading: boolean;
-  flags: Flags;
+  flags: FlagsResult;
 } {
   const {
     flags: { flags, isLoading },
@@ -318,7 +314,7 @@ export function useFlags(): {
 }
 
 /**
- * Returns a function to update the current company
+ * Returns a set of functions to update the current user, company or "other context".
  *
  * ```ts
  *  import { useUpdateContext } from "@bucketco/react-sdk";

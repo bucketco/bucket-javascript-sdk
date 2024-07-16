@@ -12,7 +12,7 @@ npm i @bucketco/react-sdk
 
 ## Setup
 
-To get type safe feature flags, extend the definition of `Bucket.Flags` and defines which flags you have.
+To get type safe feature flags, extend the definition of `Flags` and defines which flags you have.
 See the example below for the details.
 If no explicit flag definitions are provided, there will be no types checked flag lookups.
 
@@ -22,13 +22,11 @@ This will initialize the Bucket SDK, fetch feature flags and start listening for
 **Example:**
 
 ```tsx
-// Define your flags like so in an appropriate file
-declare global {
-  namespace Bucket {
-    interface Flags {
-      huddle: boolean;
-      recordVideo: boolean;
-    }
+// Define your flags by extending the `Flags` interface in @bucketco/react-sdk
+declare module "@bucketco/react-sdk" {
+  interface Flags {
+    huddle: boolean;
+    recordVideo: boolean;
   }
 }
 ```
