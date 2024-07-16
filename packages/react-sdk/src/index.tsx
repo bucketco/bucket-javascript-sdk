@@ -113,9 +113,12 @@ export function BucketProvider({
   const [flagsLoading, setFlagsLoading] = useState(true);
   const [bucket] = useState(() => sdk ?? BucketSingleton);
 
-  const [user, updateUser] = useState(initialUser);
-  const [company, updateCompany] = useState(initialCompany);
-  const [otherContext, updateOtherContext] = useState(initialOtherContext);
+  const [flagContext, setFlagContext] = useState({
+    user: initialUser,
+    company: initialCompany,
+    otherContext: initialOtherContext,
+  });
+  const { user, company, otherContext } = flagContext;
 
   useEffect(() => {
     // on mount
@@ -124,8 +127,9 @@ export function BucketProvider({
     return () => bucket.reset();
   }, []);
 
-  // if user.id or attributes change, send new attributes to the servers
-  useEffect(() => {
+  // call updateUser with no arguments to logout
+  const updateUser = useCallback((user?: UserContext) => {
+    setFlagContext({ ...flagContext, user });
     if (user?.id) {
       const { id, ...attributes } = user;
       // `user` calls bucket.reset() automatically when needed
@@ -134,21 +138,28 @@ export function BucketProvider({
       // logout
       bucket.reset();
     }
-  }, [canonicalJSON({ user })]);
+  }, []);
 
-  useEffect(() => {
+  // call updateUser with no arguments to re-set company context
+  const updateCompany = useCallback((company?: CompanyContext) => {
+    setFlagContext({ ...flagContext, company });
     if (company?.id) {
       const { id, ...attributes } = company;
       bucket.company(
         String(id),
         attributes,
-        user?.id !== undefined ? String(user?.id) : undefined,
+        flagContext?.user?.id !== undefined
+          ? String(flagContext?.user?.id)
+          : undefined,
       );
     }
-  }, [canonicalJSON({ company })]);
+  }, []);
+
+  const updateOtherContext = useCallback((otherContext?: OtherContext) => {
+    setFlagContext({ ...flagContext, otherContext });
+  }, []);
 
   // fetch flags
-  const flagContext = { user, company, otherContext };
   const contextKey = canonicalJSON({ config, flagContext });
   useEffect(() => {
     try {
@@ -294,7 +305,7 @@ export function useFlag(key: BucketFlags) {
  */
 export function useFlags(): {
   isLoading: boolean;
-  flags: Record<string, boolean>;
+  flags: Flags;
 } {
   const {
     flags: { flags, isLoading },
