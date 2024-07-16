@@ -198,7 +198,7 @@ describe("useUpdateContext", () => {
     result.current.updateUser(newUser);
 
     const { id, ...newUserAttrs } = newUser;
-    expect(sdk.user).toHaveBeenCalledWith(newUser.id, newUserAttrs);
+    expect(sdk.user).toHaveBeenCalledWith(id, newUserAttrs);
     expect(sdk.reset).not.toHaveBeenCalled();
 
     expect(console.error).not.toHaveBeenCalled();
@@ -226,11 +226,7 @@ describe("useUpdateContext", () => {
     result.current.updateCompany(newCompany);
 
     const { id, ...companyAttrs } = newCompany;
-    expect(sdk.company).toHaveBeenCalledWith(
-      newCompany.id,
-      companyAttrs,
-      user.id,
-    );
+    expect(sdk.company).toHaveBeenCalledWith(id, companyAttrs, user.id);
     expect(sdk.reset).not.toHaveBeenCalled();
 
     expect(console.error).not.toHaveBeenCalled();
