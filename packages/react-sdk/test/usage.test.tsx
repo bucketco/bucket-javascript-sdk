@@ -132,50 +132,6 @@ describe("useFlag", () => {
     expect(result.current).toEqual({ isLoading: false, isEnabled: value });
     expect(console.error).not.toHaveBeenCalled();
   });
-});
-
-describe("useUpdateUser", () => {
-  test("updates SDK when user is reset", async () => {
-    console.error = vi.fn();
-
-    const sdk = createSpySDK();
-    sdk.getFeatureFlags = vi.fn(async () => ({}));
-    sdk.user = vi.fn();
-
-    const { result, unmount } = renderHook(() => useUpdateContext(), {
-      wrapper: ({ children }) => getProvider({ sdk, children }),
-    });
-
-    result.current.updateUser();
-
-    expect(sdk.user).not.toHaveBeenCalled();
-    expect(sdk.reset).toHaveBeenCalled();
-
-    expect(console.error).not.toHaveBeenCalled();
-
-    unmount();
-  });
-
-  test("updates SDK when user is updated", async () => {
-    console.error = vi.fn();
-
-    const sdk = createSpySDK();
-    sdk.getFeatureFlags = vi.fn(async () => ({}));
-    sdk.user = vi.fn();
-
-    const { result, unmount } = renderHook(() => useUpdateContext(), {
-      wrapper: ({ children }) => getProvider({ sdk, children }),
-    });
-
-    result.current.updateUser({ id: "123", name: "test" });
-
-    expect(sdk.user).toHaveBeenCalledWith("123", { name: "test" });
-    expect(sdk.reset).not.toHaveBeenCalled();
-
-    expect(console.error).not.toHaveBeenCalled();
-
-    unmount();
-  });
 
   test.each([
     { key: "abc", value: true },
@@ -195,6 +151,121 @@ describe("useUpdateUser", () => {
     await waitFor(() => result.current.isLoading === false);
     expect(result.current).toEqual({ isLoading: false, isEnabled: value });
     expect(console.error).not.toHaveBeenCalled();
+  });
+});
+
+describe("useUpdateContext", () => {
+  test("updates SDK when user is reset", async () => {
+    console.error = vi.fn();
+
+    const sdk = createSpySDK();
+    sdk.getFeatureFlags = vi.fn(async () => ({}));
+    sdk.user = vi.fn();
+
+    const { result, unmount } = renderHook(() => useUpdateContext(), {
+      wrapper: ({ children }) => getProvider({ sdk, children }),
+    });
+
+    result.current.updateUser();
+
+    expect(sdk.user).not.toHaveBeenCalled();
+    expect(sdk.reset).toHaveBeenCalled();
+
+    vi.mocked(sdk.getFeatureFlags).mockReset();
+
+    expect(console.error).not.toHaveBeenCalled();
+
+    await waitFor(() => result.current.isLoading === false);
+    expect(sdk.getFeatureFlags).toHaveBeenCalledWith({
+      context: { company, user: undefined, otherContext },
+    });
+
+    unmount();
+  });
+
+  test("updates SDK when user is updated", async () => {
+    console.error = vi.fn();
+
+    const sdk = createSpySDK();
+    sdk.getFeatureFlags = vi.fn(async () => ({}));
+    sdk.user = vi.fn();
+
+    const { result, unmount } = renderHook(() => useUpdateContext(), {
+      wrapper: ({ children }) => getProvider({ sdk, children }),
+    });
+
+    const newUser = { id: "new-user", name: "new-user-name" };
+    result.current.updateUser(newUser);
+
+    const { id, ...newUserAttrs } = newUser;
+    expect(sdk.user).toHaveBeenCalledWith(newUser.id, newUserAttrs);
+    expect(sdk.reset).not.toHaveBeenCalled();
+
+    expect(console.error).not.toHaveBeenCalled();
+
+    await waitFor(() => result.current.isLoading === false);
+    expect(sdk.getFeatureFlags).toHaveBeenCalledWith({
+      context: { company, user: newUser, otherContext },
+    });
+
+    unmount();
+  });
+
+  test("updates SDK when company is updated", async () => {
+    console.error = vi.fn();
+
+    const sdk = createSpySDK();
+    sdk.getFeatureFlags = vi.fn(async () => ({}));
+    sdk.user = vi.fn();
+
+    const { result, unmount } = renderHook(() => useUpdateContext(), {
+      wrapper: ({ children }) => getProvider({ sdk, children }),
+    });
+
+    const newCompany = { id: "new-comp", name: "new-company-name" };
+    result.current.updateCompany(newCompany);
+
+    const { id, ...companyAttrs } = newCompany;
+    expect(sdk.company).toHaveBeenCalledWith(
+      newCompany.id,
+      companyAttrs,
+      user.id,
+    );
+    expect(sdk.reset).not.toHaveBeenCalled();
+
+    expect(console.error).not.toHaveBeenCalled();
+
+    await waitFor(() => result.current.isLoading === false);
+    expect(sdk.getFeatureFlags).toHaveBeenCalledWith({
+      context: { company: newCompany, user, otherContext },
+    });
+
+    unmount();
+  });
+
+  test("updates SDK when other context is updated", async () => {
+    console.error = vi.fn();
+
+    const sdk = createSpySDK();
+    sdk.getFeatureFlags = vi.fn(async () => ({}));
+    sdk.user = vi.fn();
+
+    const { result, unmount } = renderHook(() => useUpdateContext(), {
+      wrapper: ({ children }) => getProvider({ sdk, children }),
+    });
+
+    const newOtherContext = { happeningId: "new-conference" };
+    result.current.updateOtherContext(newOtherContext);
+
+    expect(sdk.reset).not.toHaveBeenCalled();
+    expect(console.error).not.toHaveBeenCalled();
+
+    await waitFor(() => result.current.isLoading === false);
+    expect(sdk.getFeatureFlags).toHaveBeenCalledWith({
+      context: { company, user, otherContext: newOtherContext },
+    });
+
+    unmount();
   });
 });
 

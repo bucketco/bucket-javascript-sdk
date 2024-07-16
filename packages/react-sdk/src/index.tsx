@@ -332,9 +332,13 @@ export function useFlags(): {
  * ```
  */
 export function useUpdateContext() {
-  const { updateUser, updateCompany, updateOtherContext } =
-    useContext<BucketContext>(Context);
-  return { updateUser, updateCompany, updateOtherContext };
+  const {
+    updateUser,
+    updateCompany,
+    updateOtherContext,
+    flags: { isLoading },
+  } = useContext<BucketContext>(Context);
+  return { updateUser, updateCompany, updateOtherContext, isLoading };
 }
 
 /**
