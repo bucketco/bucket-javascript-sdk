@@ -49,7 +49,7 @@ export class BucketClient {
     featureFlagDefinitionCache?: Cache<FlagDefinitions>;
   };
 
-  private _customContext: Record<string, any> | undefined;
+  private _otherContext: Record<string, any> | undefined;
   private _company: { companyId: string; attrs?: Attributes } | undefined;
   private _user: { userId: string; attrs?: Attributes } | undefined;
   private _fallbackFlags: Record<string, Flag> | undefined;
@@ -62,7 +62,7 @@ export class BucketClient {
   constructor(options: ClientOptions | BucketClient) {
     if (options instanceof BucketClient) {
       this._shared = options._shared;
-      this._customContext = options._customContext;
+      this._otherContext = options._otherContext;
       this._company = options._company;
       this._user = options._user;
       this._fallbackFlags = options._fallbackFlags;
@@ -335,9 +335,9 @@ export class BucketClient {
   }
 
   /**
-   * Sets the custom context for the client.
+   * Sets the extra, custom context for the client.
    *
-   * @param context - The context to set.
+   * @param context - The "extra" context to set.
    * @param opts.replace - A boolean indicating if the context should replace the current context or be merged (optional).
    *
    * @returns A new client with the context set.
@@ -346,7 +346,7 @@ export class BucketClient {
    * If replace is true, the context will replace the current context, otherwise it will be merged.
    * The new context will take precedence over the old context.
    **/
-  public withCustomContext(
+  public withOtherContext(
     context: Record<string, any>,
     opts?: { replace?: boolean },
   ): BucketClient {
@@ -361,21 +361,21 @@ export class BucketClient {
     const client = new BucketClient(this);
 
     if (!opts?.replace) {
-      client._customContext = { ...this._customContext, ...context };
+      client._otherContext = { ...this._otherContext, ...context };
     } else {
-      client._customContext = context;
+      client._otherContext = context;
     }
 
     return client;
   }
 
   /**
-   * Gets the custom context associated with the client.
+   * Gets the extra, custom context associated with the client.
    *
-   * @returns The custom context or `undefined` if it is not set.
+   * @returns The extra, custom context or `undefined` if it is not set.
    **/
-  public get customContext() {
-    return this._customContext;
+  public get otherContext() {
+    return this._otherContext;
   }
 
   /**
@@ -541,7 +541,7 @@ export class BucketClient {
    * Call this method before calling `getFlags` to ensure the feature flag definitions are cached or at least the fallback flags are set.
    **/
   public async initialize<TFlagKey extends string = string>(
-    fallbackFlags?: Record<TFlagKey, Omit<Flag, "key" | "version">>,
+    fallbackFlags?: Record<TFlagKey, boolean>,
   ) {
     ok(
       fallbackFlags === undefined || typeof fallbackFlags === "object",
@@ -554,7 +554,7 @@ export class BucketClient {
         (acc, [key, value]) => {
           acc[key as TFlagKey] = {
             key,
-            ...(value as Omit<Flag, "key" | "version">),
+            value: value as boolean,
           };
           return acc;
         },
@@ -584,7 +584,7 @@ export class BucketClient {
         id: this._company.companyId,
         ...this._company.attrs,
       },
-      ...this._customContext,
+      ...this._otherContext,
     };
 
     const flagDefinitions = this.getFeatureFlagDefinitionCache().get();

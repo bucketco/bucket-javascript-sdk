@@ -50,7 +50,7 @@ describe("Client", () => {
     attrs: { key: "value" },
   };
 
-  const customContext = { custom: "context", key: "value" };
+  const otherContext = { custom: "context", key: "value" };
 
   const expectedGetHeaders = {
     [SDK_VERSION_HEADER_NAME]: SDK_VERSION,
@@ -167,7 +167,7 @@ describe("Client", () => {
   describe("constructor (with existing client)", () => {
     const initialClient = new BucketClient(validOptions);
 
-    initialClient["_customContext"] = { key: "value" };
+    initialClient["_otherContext"] = { key: "value" };
     initialClient["_company"] = {
       companyId: "123",
       attrs: {},
@@ -182,7 +182,9 @@ describe("Client", () => {
 
       expect(newClient).toBeInstanceOf(BucketClient);
       expect(newClient["_shared"]).toBe(initialClient["_shared"]);
-      expect(newClient["_context"]).toEqual(initialClient["_context"]);
+      expect(newClient["_otherContext"]).toEqual(
+        initialClient["_otherContext"],
+      );
       expect(newClient["_company"]).toEqual(initialClient["_company"]);
       expect(newClient["_user"]).toEqual(initialClient["_user"]);
       expect(newClient["_fallbackFlags"]).toEqual(
@@ -192,12 +194,12 @@ describe("Client", () => {
 
     it("should create a new client instance and allow modifying context independently", () => {
       const newClient = new BucketClient(initialClient);
-      newClient["_customContext"] = { key: "newValue" };
+      newClient["_otherContext"] = { key: "newValue" };
 
-      expect(newClient["_customContext"]).not.toEqual(
-        initialClient["_customContext"],
+      expect(newClient["_otherContext"]).not.toEqual(
+        initialClient["_otherContext"],
       );
-      expect(initialClient["_customContext"]).toEqual({ key: "value" });
+      expect(initialClient["_otherContext"]).toEqual({ key: "value" });
     });
 
     it("should create a new client instance and allow modifying company independently", () => {
@@ -349,48 +351,48 @@ describe("Client", () => {
     });
   });
 
-  describe("withCustomContext", () => {
+  describe("withOtherContext", () => {
     const client = new BucketClient(validOptions);
 
-    it("should return a new client instance with the custom context set", () => {
-      const newClient = client.withCustomContext(customContext);
+    it("should return a new client instance with the custom other set", () => {
+      const newClient = client.withOtherContext(otherContext);
 
       expect(newClient).toBeInstanceOf(BucketClient);
       expect(newClient).not.toBe(client); // Ensure a new instance is returned
-      expect(newClient["_customContext"]).toEqual(customContext);
+      expect(newClient["_otherContext"]).toEqual(otherContext);
     });
 
-    it("should return a new client instance with replaced custom context", () => {
+    it("should return a new client instance with replaced other context", () => {
       const newClient = client
-        .withCustomContext(customContext)
-        .withCustomContext({ replaced: true }, { replace: true });
+        .withOtherContext(otherContext)
+        .withOtherContext({ replaced: true }, { replace: true });
 
-      expect(newClient["_customContext"]).toEqual({ replaced: true });
+      expect(newClient["_otherContext"]).toEqual({ replaced: true });
     });
 
     it("should return a new client instance with merged custom context", () => {
       const override = { merged: true, key: "not value" };
       const newClient = client
-        .withCustomContext(customContext)
-        .withCustomContext(override);
+        .withOtherContext(otherContext)
+        .withOtherContext(override);
 
-      expect(newClient["_customContext"]).toEqual({
-        ...customContext,
+      expect(newClient["_otherContext"]).toEqual({
+        ...otherContext,
         ...override,
       });
     });
 
     it("should throw an error if custom context is not an object", () => {
-      expect(() => client.withCustomContext(null as any)).toThrow(
+      expect(() => client.withOtherContext(null as any)).toThrow(
         "context must be an object",
       );
-      expect(() => client.withCustomContext(123 as any)).toThrow(
+      expect(() => client.withOtherContext(123 as any)).toThrow(
         "context must be an object",
       );
-      expect(() => client.withCustomContext("invalidContext" as any)).toThrow(
+      expect(() => client.withOtherContext("invalidContext" as any)).toThrow(
         "context must be an object",
       );
-      expect(() => client.withCustomContext([] as any)).toThrow(
+      expect(() => client.withOtherContext([] as any)).toThrow(
         "context must be an object",
       );
     });
@@ -718,26 +720,26 @@ describe("Client", () => {
     });
   });
 
-  describe("customContext", () => {
+  describe("otherContext", () => {
     it("should return the undefined if custom context was not set", () => {
       const client = new BucketClient(validOptions);
-      expect(client.customContext).toBeUndefined();
+      expect(client.otherContext).toBeUndefined();
     });
 
     it("should return the user if custom context was associated", () => {
-      const client = new BucketClient(validOptions).withCustomContext(
-        customContext,
+      const client = new BucketClient(validOptions).withOtherContext(
+        otherContext,
       );
 
-      expect(client.customContext).toEqual(customContext);
+      expect(client.otherContext).toEqual(otherContext);
     });
   });
 
   describe("initialize", () => {
     it("should initialize the client and set fallbackFlags", async () => {
       const client = new BucketClient(validOptions);
-      const fallbackFlags: Flags = {
-        flagKey: { key: "flagKey", value: true, version: 1 },
+      const fallbackFlags = {
+        flagKey: true,
       };
 
       const cache = {
@@ -805,8 +807,8 @@ describe("Client", () => {
   describe("getFlags", () => {
     let client: BucketClient;
 
-    const fallbackFlags: Flags = {
-      flagKey: { key: "flagKey", value: true },
+    const fallbackFlags = {
+      flagKey: true,
     };
 
     const flagDefinitions: FlagDefinitions = {
@@ -893,7 +895,7 @@ describe("Client", () => {
       client = client
         .withUser(user.userId, { attributes: user.attrs })
         .withCompany(company.companyId, { attributes: company.attrs })
-        .withCustomContext(customContext);
+        .withOtherContext(otherContext);
 
       await client.initialize();
       const result = client.getFlags();
@@ -922,7 +924,7 @@ describe("Client", () => {
               id: "user123",
               ...user.attrs,
             },
-            ...customContext,
+            ...otherContext,
           },
           evalResult: true,
           evalRuleResults: [true],
@@ -947,7 +949,7 @@ describe("Client", () => {
               id: "user123",
               ...user.attrs,
             },
-            ...customContext,
+            ...otherContext,
           },
           evalResult: false,
           evalRuleResults: [false],
@@ -1070,8 +1072,8 @@ describe("Client", () => {
       );
     });
 
-    it("should return evaluated flags when only custom context is defined", async () => {
-      client = client.withCustomContext(customContext);
+    it("should return evaluated flags when only other context is defined", async () => {
+      client = client.withOtherContext(otherContext);
 
       await client.initialize();
       client.getFlags();
@@ -1088,7 +1090,7 @@ describe("Client", () => {
           flagKey: "flag1",
           flagVersion: 1,
           evalContext: {
-            ...customContext,
+            ...otherContext,
           },
           evalResult: true,
           evalRuleResults: [true],
@@ -1105,7 +1107,7 @@ describe("Client", () => {
           flagKey: "flag2",
           flagVersion: 2,
           evalContext: {
-            ...customContext,
+            ...otherContext,
           },
           evalResult: false,
           evalRuleResults: [false],
@@ -1147,7 +1149,7 @@ describe("Client", () => {
       client = client
         .withUser(user.userId, { attributes: user.attrs })
         .withCompany(company.companyId, { attributes: company.attrs })
-        .withCustomContext(customContext);
+        .withOtherContext(otherContext);
 
       await client.initialize(fallbackFlags);
       client.getFlags();
@@ -1168,7 +1170,7 @@ describe("Client", () => {
       client = client
         .withUser(user.userId, { attributes: user.attrs })
         .withCompany(company.companyId, { attributes: company.attrs })
-        .withCustomContext(customContext);
+        .withOtherContext(otherContext);
 
       await client.initialize(fallbackFlags);
       const result = client.getFlags();

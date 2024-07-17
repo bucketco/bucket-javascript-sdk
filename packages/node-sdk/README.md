@@ -49,7 +49,7 @@ await client.initialize();
 ```
 
 At any point where the client needs to be used, we can configure it through
-`withUser()`, `withCompany()` and `withCompanyContext()` methods. Each of
+`withUser()`, `withCompany()` and `withOtherContext()` methods. Each of
 these three methods returns a new instance of `Client` class which includes
 the applied user, company or context:
 
@@ -58,9 +58,9 @@ the applied user, company or context:
 const boundClient = client
   .withUser("john_doe", { attributes: { name: "John Doe" } })
   .withCompany("acme_inc", { attributes: { name "Acme Inc."} })
-  .withCustomContext({ additional: "context", number: [1,2,3] })
+  .withOtherContext({ additional: "context", number: [1,2,3] })
 
-const fallbackFlags = { can_see_new_reports: { value: true } }
+const fallbackFlags = { can_see_new_reports: true  }
 
 // actively wait for the flags to be loaded
 await boundClient.initialize(fallbackFlags)

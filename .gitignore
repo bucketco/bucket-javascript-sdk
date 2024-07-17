@@ -14,7 +14,6 @@ dist-ssr
 *.local
 
 browser-sdk
-node-sdk
 
 # Editor directories and files
 .vscode/*
