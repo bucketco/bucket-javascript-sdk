@@ -25,7 +25,7 @@ const fetchClient: HttpClient = {
         method: "post",
         headers,
         body: JSON.stringify(body),
-        signal: controller.signal,
+        signal: AbortSignal.timeout(2000),
       });
 
       const json = await response.json();
