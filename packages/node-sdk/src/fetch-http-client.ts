@@ -17,43 +17,29 @@ const fetchClient: HttpClient = {
     ok(typeof url === "string" && url.length > 0, "URL must be a string");
     ok(typeof headers === "object", "Headers must be an object");
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+    const response = await fetch(url, {
+      method: "post",
+      headers,
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(API_TIMEOUT_MS),
+    });
 
-    try {
-      const response = await fetch(url, {
-        method: "post",
-        headers,
-        body: JSON.stringify(body),
-        signal: AbortSignal.timeout(2000),
-      });
-
-      const json = await response.json();
-      return json as TResponse;
-    } finally {
-      clearTimeout(timeoutId);
-    }
+    const json = await response.json();
+    return json as TResponse;
   },
 
   get: async <TResponse>(url: string, headers: Record<string, string>) => {
     ok(typeof url === "string" && url.length > 0, "URL must be a string");
     ok(typeof headers === "object", "Headers must be an object");
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+    const response = await fetch(url, {
+      method: "get",
+      headers,
+      signal: AbortSignal.timeout(API_TIMEOUT_MS),
+    });
 
-    try {
-      const response = await fetch(url, {
-        method: "get",
-        headers,
-        signal: controller.signal,
-      });
-
-      const json = await response.json();
-      return json as TResponse;
-    } finally {
-      clearTimeout(timeoutId);
-    }
+    const json = await response.json();
+    return json as TResponse;
   },
 };
 
