@@ -10,6 +10,7 @@
     "dev": "lerna run dev --parallel",
     "build": "lerna run build --stream",
     "test:ci": "lerna run test:ci --stream",
+    "test": "lerna run test --stream",
     "prettier": "lerna run prettier --stream",
     "lint": "lerna run lint --stream",
     "lint:ci": "lerna run lint:ci --stream",

@@ -1,6 +1,7 @@
 import React, {
   createContext,
   ReactNode,
+  useCallback,
   useContext,
   useEffect,
   useState,
@@ -9,129 +10,387 @@ import canonicalJSON from "canonical-json";
 
 import type {
   FeatureFlagsOptions,
-  Flags,
   Options as BucketSDKOptions,
 } from "@bucketco/tracking-sdk";
 import BucketSingleton from "@bucketco/tracking-sdk";
+import {
+  Feedback,
+  RequestFeedbackOptions,
+} from "@bucketco/tracking-sdk/dist/types/src/types";
 
 export type BucketInstance = typeof BucketSingleton;
 
-type BucketContext = {
-  bucket: BucketInstance;
-  flags: {
-    flags: Flags;
-    isLoading: boolean;
-  };
+type UserContext = {
+  id: string | number;
+  [key: string]: any;
 };
 
-const Context = createContext<BucketContext>({
+type CompanyContext = {
+  id: string | number;
+  [key: string]: any;
+};
+
+type OtherContext = Record<string, any>;
+
+type FlagContext = {
+  user?: UserContext;
+  company?: CompanyContext;
+  otherContext?: OtherContext;
+};
+
+export interface Flags {}
+
+type BucketFlags = keyof (keyof Flags extends never
+  ? Record<string, boolean>
+  : Flags);
+
+export type FlagsResult = { [k in BucketFlags]?: boolean };
+
+type ProviderContextType = {
+  bucket: BucketInstance;
+  flags: {
+    flags: FlagsResult;
+    isLoading: boolean;
+  };
+  updateUser: (user?: UserContext) => void;
+  updateCompany: (company: CompanyContext) => void;
+  updateOtherContext: (otherContext: OtherContext) => void;
+
+  sendFeedback: (opts: Omit<Feedback, "userId" | "companyId">) => void;
+  requestFeedback: (
+    opts: Omit<RequestFeedbackOptions, "userId" | "companyId">,
+  ) => void;
+
+  track: (eventName: string, attributes?: Record<string, any>) => void;
+};
+
+const ProviderContext = createContext<ProviderContextType>({
   bucket: BucketSingleton,
   flags: {
     flags: {},
     isLoading: false,
   },
+  updateUser: () => undefined,
+  updateCompany: () => undefined,
+  updateOtherContext: () => undefined,
+  track: () => undefined,
+  sendFeedback: () => undefined,
+  requestFeedback: () => undefined,
 });
 
-export type BucketProps = BucketSDKOptions & {
-  publishableKey: string;
-  flags: FeatureFlagsOptions;
-  children?: ReactNode;
-  sdk?: BucketInstance;
-};
+export type BucketProps = Omit<BucketSDKOptions, "persistUser"> &
+  FlagContext & {
+    publishableKey: string;
+    flagOptions?: Omit<FeatureFlagsOptions, "context" | "fallbackFlags"> & {
+      fallbackFlags?: BucketFlags[];
+    };
+    children?: ReactNode;
+    sdk?: BucketInstance;
+    loadingComponent?: ReactNode;
+  };
 
-export default function Bucket({ children, sdk, ...config }: BucketProps) {
-  const [flags, setFlags] = useState<Flags>({});
+export function BucketProvider({
+  children,
+  sdk,
+  user: initialUser,
+  company: initialCompany,
+  otherContext: initialOtherContext,
+  publishableKey,
+  flagOptions,
+  loadingComponent,
+  ...config
+}: BucketProps) {
+  const [flags, setFlags] = useState<FlagsResult>(
+    (flagOptions?.fallbackFlags ?? []).reduce((acc, key) => {
+      acc[key] = true;
+      return acc;
+    }, {} as FlagsResult),
+  );
   const [flagsLoading, setFlagsLoading] = useState(true);
   const [bucket] = useState(() => sdk ?? BucketSingleton);
 
-  const contextKey = canonicalJSON(config);
+  const [flagContext, setFlagContext] = useState({
+    user: initialUser,
+    company: initialCompany,
+    otherContext: initialOtherContext,
+  });
+  const { user, company } = flagContext;
+
+  useEffect(() => {
+    // on mount
+    bucket.init(publishableKey, config);
+    // on umount
+    return () => bucket.reset();
+  }, []);
+
+  // call updateUser with no arguments to logout
+  const updateUser = useCallback((newUser?: UserContext) => {
+    setFlagContext({ ...flagContext, user: newUser });
+    if (newUser?.id) {
+      const { id, ...attributes } = newUser;
+      // `user` calls bucket.reset() automatically when needed
+      void bucket.user(String(id), attributes);
+    } else {
+      // logout
+      bucket.reset();
+    }
+  }, []);
+
+  // call updateUser with no arguments to re-set company context
+  const updateCompany = useCallback((newCompany?: CompanyContext) => {
+    setFlagContext({ ...flagContext, company: newCompany });
+    if (newCompany?.id) {
+      const { id, ...attributes } = newCompany;
+      void bucket.company(
+        String(id),
+        attributes,
+        flagContext?.user?.id !== undefined
+          ? String(flagContext?.user?.id)
+          : undefined,
+      );
+    }
+  }, []);
+
+  const updateOtherContext = useCallback((otherContext?: OtherContext) => {
+    setFlagContext({ ...flagContext, otherContext });
+  }, []);
+
+  // fetch flags
+  const contextKey = canonicalJSON({ config, flagContext });
   useEffect(() => {
     try {
-      const { publishableKey, flags: flagOptions, ...options } = config;
-
-      bucket.reset();
-      bucket.init(publishableKey, options);
+      const { fallbackFlags, ...flagOptionsRest } = flagOptions || {};
 
       setFlagsLoading(true);
 
-      bucket
-        .getFeatureFlags(flagOptions)
+      void bucket
+        .getFeatureFlags({
+          ...flagOptionsRest,
+          fallbackFlags,
+          context: flagContext,
+        })
         .then((loadedFlags) => {
           setFlags(loadedFlags);
-          setFlagsLoading(false);
         })
-        .catch((err) => {
-          console.error("[Bucket SDK] Error fetching flags:", err);
+        .finally(() => {
+          setFlagsLoading(false);
         });
     } catch (err) {
       console.error("[Bucket SDK] Unknown error:", err);
     }
   }, [contextKey]);
 
-  const context: BucketContext = {
+  const track = useCallback(
+    (eventName: string, attributes?: Record<string, any>) => {
+      if (user?.id === undefined)
+        return () => {
+          console.error("User is required to send events");
+        };
+
+      return bucket.track(
+        eventName,
+        attributes,
+        user?.id !== undefined ? String(user?.id) : undefined,
+        company?.id !== undefined ? String(company?.id) : undefined,
+      );
+    },
+    [user?.id, company?.id],
+  );
+
+  const sendFeedback = useCallback(
+    (opts: Omit<Feedback, "userId" | "companyId">) => {
+      if (user?.id === undefined) {
+        console.error("User is required to request feedback");
+        return;
+      }
+
+      return bucket.feedback({
+        ...opts,
+        userId: String(user.id),
+        companyId: company?.id !== undefined ? String(company.id) : undefined,
+      });
+    },
+    [user?.id, company?.id],
+  );
+
+  const requestFeedback = useCallback(
+    (opts: Omit<RequestFeedbackOptions, "userId" | "companyId">) => {
+      if (user?.id === undefined) {
+        console.error("User is required to request feedback");
+        return;
+      }
+
+      bucket.requestFeedback({
+        ...opts,
+        userId: String(user.id),
+        companyId: company?.id !== undefined ? String(company.id) : undefined,
+      });
+    },
+    [user?.id, company?.id],
+  );
+
+  const context: ProviderContextType = {
     bucket,
-    flags: { flags, isLoading: flagsLoading },
+    flags: {
+      flags,
+      isLoading: flagsLoading,
+    },
+    updateUser,
+    updateCompany,
+    updateOtherContext,
+    track,
+
+    sendFeedback,
+    requestFeedback,
   };
 
-  return <Context.Provider children={children} value={context} />;
+  if (flagsLoading && loadingComponent) {
+    return loadingComponent;
+  }
+
+  return <ProviderContext.Provider children={children} value={context} />;
 }
 
 /**
- * Returns the instance of the Bucket Tracking SDK in use. This can be used to make calls to Bucket, including `track` and `feedback` calls, e.g.
+ * Returns true if the feature flags is enabled.
+ * If the provider hasn't finished loading, it will return false.
  *
  * ```ts
- * const bucket = useBucket();
- *
- * bucket.track("sent_message", { foo: "bar" }, "john_doe", "company_id");
- * ```
- *
- * See the [Tracking SDK documentation](https://github.com/bucketco/bucket-tracking-sdk/blob/main/packages/tracking-sdk/README.md) for usage information.
- */
-export function useBucket() {
-  return useContext<BucketContext>(Context).bucket;
-}
-
-/**
- * Returns feature flags as an object, e.g.
- *
- * ```ts
- * const featureFlags = useFeatureFlags();
- * // {
- * //   "isLoading": false,
- * //   "flags: {
- * //     "join-huddle": {
- * //       "key": "join-huddle",
- * //       "value": true
- * //     },
- * //     "post-message": {
- * //       "key": "post-message",
- * //       "value": true
- * //     }
- * //   }
- * // }
+ * const isEnabled = useFlagIsEnabled('huddle');
+ * // true / false
  * ```
  */
-export function useFeatureFlags() {
-  const { isLoading, flags } = useContext<BucketContext>(Context).flags;
-  return { isLoading, flags };
+export function useFlagIsEnabled(flagKey: BucketFlags) {
+  const { flags } = useContext<ProviderContextType>(ProviderContext).flags;
+  return flags[flagKey] ?? false;
 }
 
 /**
  * Returns the state of a given feature flag for the current context, e.g.
  *
  * ```ts
- * const joinHuddleFlag = useFeatureFlag("join-huddle");
+ * const huddleFlag = useFlag("huddle");
  * // {
  * //   "isLoading": false,
- * //   "value": true,
+ * //   "isEnabled": true,
  * // }
  * ```
  */
-export function useFeatureFlag(key: string) {
-  const flags = useContext<BucketContext>(Context).flags;
-  const flag = flags.flags[key];
+export function useFlag(key: BucketFlags) {
+  const flags = useContext<ProviderContextType>(ProviderContext).flags;
+  const isEnabled = flags.flags[key] ?? false;
 
-  const value = flag?.value ?? null;
+  return { isLoading: flags.isLoading, isEnabled };
+}
 
-  return { isLoading: flags.isLoading, value: value };
+/**
+ * Returns feature flags as an object, e.g.
+ * Note: this returns the raw flag keys, and does not use the
+ * optional typing provided through the `Flags` type.
+ *
+ * ```ts
+ * const flags = useFlags();
+ * // {
+ * //   "isLoading": false,
+ * //   "flags: {
+ * //     "huddle": true,
+ * //     "post-message": true
+ * //   }
+ * // }
+ * ```
+ */
+export function useFlags(): {
+  isLoading: boolean;
+  flags: FlagsResult;
+} {
+  const {
+    flags: { flags, isLoading },
+  } = useContext<ProviderContextType>(ProviderContext);
+
+  return {
+    isLoading,
+    flags,
+  };
+}
+
+/**
+ * Returns a set of functions to update the current user, company or "other context".
+ *
+ * ```ts
+ *  import { useUpdateContext } from "@bucketco/react-sdk";
+ *  function Company() {
+ *  const [company, _] = useState(initialCompany);
+ *  const { updateCompany } = useUpdateContext();
+ *  return (
+ *    <div>
+ *      <button onClick={() => updateCompany({ ...company, plan: "enterprise" })}>
+ *        Upgrade to enterprise
+ *      </button>
+ *    </div>
+ *  );
+ * }
+ * ```
+ */
+export function useUpdateContext() {
+  const {
+    updateUser,
+    updateCompany,
+    updateOtherContext,
+    flags: { isLoading },
+  } = useContext<ProviderContextType>(ProviderContext);
+  return { updateUser, updateCompany, updateOtherContext, isLoading };
+}
+
+/**
+ * Returns a function to send an event when a user performs an action
+ * Note: When calling `useTrack`, user/company must already be set.
+ *
+ * ```ts
+ * const track = useTrack();
+ * track("Started Huddle", { button: "cta" });
+ * ```
+ */
+export function useTrack() {
+  const ctx = useContext<ProviderContextType>(ProviderContext);
+  return ctx.track;
+}
+
+/**
+ * Returns a function to open up the feedback form
+ * Note: When calling `useRequestFeedback`, user/company must already be set.
+ *
+ * See https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/tracking-sdk/FEEDBACK.md#bucketrequestfeeback-options
+ * for more information
+ *
+ * ```ts
+ * const requestFeedback = useRequestFeedback();
+ * bucket.requestFeedback({
+ *   featureId: "bucket-feature-id",
+ *   title: "How satisfied are you with file uploads?",
+ * });
+ * ```
+ */
+export function useRequestFeedback() {
+  return useContext<ProviderContextType>(ProviderContext).requestFeedback;
+}
+
+/**
+ * Returns a function to manually send feedback collected from a user.
+ * Note: When calling `useSendFeedback`, user/company must already be set.
+ *
+ * See https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/tracking-sdk/FEEDBACK.md#using-your-own-ui-to-collect-feedback
+ * for more information
+ *
+ * ```ts
+ * const sendFeedback = useSendFeedback();
+ * sendFeedback({
+ *   featureId: "fe2323223";;
+ *   question: "How did you like the new huddle feature?";
+ *   score: 5;
+ *   comment: "I loved it!";
+ * });
+ * ```
+ */
+export function useSendFeedback() {
+  return useContext<ProviderContextType>(ProviderContext).sendFeedback;
 }

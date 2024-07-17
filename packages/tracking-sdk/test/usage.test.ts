@@ -112,7 +112,7 @@ describe("usage", () => {
     const flags = await bucketInstance.getFeatureFlags({
       context: { user: { id: "user-id" } },
     });
-    expect(flags).toEqual({ feature1: { value: true, key: "feature1" } });
+    expect(flags).toEqual({ feature1: true });
   });
 
   test("re-register user and send event", async () => {
@@ -887,12 +887,12 @@ describe("feature flags", () => {
     const bucketInstance = bucket();
     bucketInstance.init(KEY);
 
-    const fallbackFlags = [{ value: true, key: "feature1" }];
+    const fallbackFlags = ["feature1"];
 
     const result = await bucketInstance.getFeatureFlags({
       context: { user: { id: "user-id" } },
       fallbackFlags,
     });
-    expect(result).toEqual({ feature1: fallbackFlags[0] });
+    expect(result).toEqual({ feature1: true });
   });
 });
