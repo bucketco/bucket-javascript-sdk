@@ -14,15 +14,15 @@ You can also [use the HTTP API directly](https://docs.bucket.co/reference/http-t
 
 ## Basic usage
 
-Before the library can be used, you need to obtain a secret key from
+To get started you need to obtain a secret key from
 [Environment setting view](https://app.bucket.co/envs/{environment}/settings/app-environments)
 in **Bucket.co**.
 
 > [!CAUTION]
-> Secret keys should only be used by the `node-sdk` and not any other
-> SDKs provided by Bucket. Secret keys offer the users the ability to obtain
-> information that is often sensitive and thus should not be used in any
-> front-end application.
+> Secret keys are meant for use in server side SDKs only.
+> Secret keys offer the users the ability to obtain
+> information that is often sensitive and thus should not be used in
+> client-side applications.
 
 ```ts
 import { BucketClient } from "@bucketco/node-sdk";
