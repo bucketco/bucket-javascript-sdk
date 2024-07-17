@@ -37,12 +37,14 @@ const client = new BucketClient({
   secretKey: "sec_prod_xxxxxxxxxxxxxxxxxxxxx",
 });
 
-// Initialize the client's feature flag retrieval loop. You must call this method
-// prior to any calls to `getFlags()`, otherwise an empty object will be returned.
+// Initialize the client and begin fetching flag definitions.
+// You must call this method prior to any calls to `getFlags()`,
+// otherwise an empty object will be returned.
 //
 // You can also supply your `fallbackFlags` to the `initialize()` method. These
 // fallback flags are used in the situation when the server-side flags are not
 // yet loaded or there are issues retrieving them.
+// See "Initialization Options" below for more information.
 await client.initialize();
 ```
 
