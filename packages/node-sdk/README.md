@@ -8,8 +8,9 @@ Install using `yarn` or `npm` with:
 
 > `yarn add -s @bucketco/node-sdk` or `npm install -s @bucketco/node-sdk`.
 
-Other languages than JavaScript/Typescript are currently not supported by an SDK.
-You can [use the HTTP API directly](https://docs.bucket.co/reference/http-tracking-api)
+Other supported languages/frameworks are in the [Supported languages](https://docs.bucket.co/quickstart/supported-languages) documentation pages.
+
+You can also [use the HTTP API directly](https://docs.bucket.co/reference/http-tracking-api)
 
 ## Basic usage
 
