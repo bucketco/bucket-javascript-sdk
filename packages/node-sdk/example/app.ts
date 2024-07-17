@@ -3,20 +3,6 @@ import { bucket } from "./bucket";
 
 export const app = express();
 
-declare module "express" {
-  interface Locals {}
-}
-
-declare global {
-  namespace Express {
-    interface Request {
-      locals: { bucketUser: ReturnType<(typeof bucket)["withUser"]> };
-    }
-  }
-}
-
-declare module "express-serve-static-core" {}
-
 app.use(express.json());
 app.use((req, res, next) => {
   const bucketUser = bucket
