@@ -150,7 +150,7 @@ Supply these to the `constructor` of the `Client` class:
   // The secret key used to authenticate with the Bucket API.
   secretKey: string,
   // The host to send requests to (optional).
-  host?: string = "https://tracking.bucket.co",
+  host?: string = "https://front.bucket.co",
   // The interval to re-fetch feature flag definitions (optional).
   // Default is 60 seconds.
   refetchInterval?: number = 60000,
