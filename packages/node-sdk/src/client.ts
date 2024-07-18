@@ -88,18 +88,7 @@ export class BucketClient {
       options.httpClient === undefined || isObject(options.httpClient),
       "httpClient must be an object",
     );
-    ok(
-      options.refetchInterval === undefined ||
-        typeof options.refetchInterval === "number",
-      "refetchInterval must be a number",
-    );
-    ok(
-      options.staleWarningInterval === undefined ||
-        typeof options.staleWarningInterval === "number",
-      "staleWarningInterval must be a number",
-    );
 
-    const refetchInterval = options.refetchInterval || FLAGS_REFETCH_MS;
     this._shared = {
       logger:
         options.logger && decorateLogger(BUCKET_LOG_PREFIX, options.logger),
@@ -110,8 +99,8 @@ export class BucketClient {
         [SDK_VERSION_HEADER_NAME]: SDK_VERSION,
       },
       httpClient: options.httpClient || fetchClient,
-      refetchInterval,
-      staleWarningInterval: options.staleWarningInterval || refetchInterval * 5,
+      refetchInterval: FLAGS_REFETCH_MS,
+      staleWarningInterval: FLAGS_REFETCH_MS * 5,
     };
   }
 

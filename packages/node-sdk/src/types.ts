@@ -200,16 +200,6 @@ export type ClientOptions = {
   host?: string;
 
   /**
-   * The interval to re-fetch feature flag definitions (optional). Default is 60 seconds.
-   **/
-  refetchInterval?: number;
-
-  /**
-   * The interval to re-fetch feature flags (optional). Default is 5 times the refetch interval.
-   **/
-  staleWarningInterval?: number;
-
-  /**
    * The logger to use for logging (optional). Default is no logging.
    **/
   logger?: Logger;

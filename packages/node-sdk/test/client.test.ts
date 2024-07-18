@@ -11,7 +11,7 @@ import {
   SDK_VERSION_HEADER_NAME,
 } from "../src/config";
 import fetchClient from "../src/fetch-http-client";
-import { ClientOptions, FlagDefinitions, Flags } from "../src/types";
+import { ClientOptions, FlagDefinitions } from "../src/types";
 
 vi.mock("@bucketco/flag-evaluation", () => ({
   evaluateFlag: vi.fn(),
@@ -31,8 +31,6 @@ describe("Client", () => {
     host: "https://api.example.com",
     logger,
     httpClient,
-    refetchInterval: 61000,
-    staleWarningInterval: 310000,
   };
 
   const user = {
@@ -68,8 +66,8 @@ describe("Client", () => {
 
       expect(client).toBeInstanceOf(BucketClient);
       expect(client["_shared"].host).toBe("https://api.example.com");
-      expect(client["_shared"].refetchInterval).toBe(61000);
-      expect(client["_shared"].staleWarningInterval).toBe(310000);
+      expect(client["_shared"].refetchInterval).toBe(FLAGS_REFETCH_MS);
+      expect(client["_shared"].staleWarningInterval).toBe(FLAGS_REFETCH_MS * 5);
       expect(client["_shared"].logger).toBeDefined();
       expect(client["_shared"].httpClient).toBe(validOptions.httpClient);
       expect(client["_shared"].secretKey).toBe(validOptions.secretKey);

@@ -151,12 +151,6 @@ Supply these to the `constructor` of the `Client` class:
   secretKey: string,
   // The host to send requests to (optional).
   host?: string = "https://front.bucket.co",
-  // The interval to re-fetch feature flag definitions (optional).
-  // Default is 60 seconds.
-  refetchInterval?: number = 60000,
-  // The interval to re-fetch feature flags (optional). Default
-  // is 5 times the re-fetch interval.
-  staleWarningInterval?: number = 5 * 60000,
   // The logger you can supply. By default no logging is performed.
   logger?: Logger,
   // The custom http client. By default the internal `fetchClient` is used.
