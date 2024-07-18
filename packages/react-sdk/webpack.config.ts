@@ -11,6 +11,7 @@ const config: Configuration[] = [
           test: /\.tsx?$/,
           use: "ts-loader",
           exclude: /node_modules/,
+          include: path.resolve(__dirname, "src"),
         },
       ],
     },
