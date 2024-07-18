@@ -1,7 +1,16 @@
 import express from "express";
 import { bucket } from "./bucket";
+import { BucketClient } from "../src";
 
 export const app = express();
+
+declare global {
+  namespace Express {
+    interface Locals {
+      bucketUser: BucketClient;
+    }
+  }
+}
 
 app.use(express.json());
 app.use((req, res, next) => {
@@ -24,13 +33,15 @@ app.use((req, res, next) => {
 const todos = ["Buy milk", "Walk the dog"];
 
 app.get("/", (req, res) => {
-  res.locals.bucketUser.track("Front Page Viewed");
+  res.locals.bucketUser.trackFeatureUsage("Front Page Viewed");
   res.send("Hello World");
 });
 
-app.get("/todos", (req, res) => {
-  const showTodosFlag = await res.locals.bucketUser.getFlag("show-todos");
-  showTodosFlag.res.locals.bucketUser.track("Front Page Viewed");
+app.get("/todos", async (req, res) => {
+  const showTodosFlag = await res.locals.bucketUser.getFlags()["show-todos"];
+  if (showTodosFlag.value === false) {
+    res.locals.bucketUser.trackFeatureUsage("Front Page Viewed");
+  }
   res.json({ todos });
 });
 
@@ -42,7 +53,7 @@ app.post("/todos", (req, res) => {
 
   todos.push(todo);
 
-  res.locals.bucketUser.track("Created todo");
+  res.locals.bucketUser.trackFeatureUsage("Created todo");
   res.json({ todo });
 });
 
@@ -54,6 +65,6 @@ app.delete("/todos/:idx", (req, res) => {
 
   todos.splice(idx, 1);
 
-  res.locals.bucketUser.track("Deleted todo");
+  res.locals.bucketUser.trackFeatureUsage("Deleted todo");
   res.json({});
 });
