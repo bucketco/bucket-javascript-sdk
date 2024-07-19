@@ -1,4 +1,4 @@
-import { Flags } from "./flags";
+import { FlagsResponse } from "./flags";
 
 interface StorageItem {
   get(): string | null;
@@ -10,16 +10,16 @@ interface cacheEntry {
   expireAt: number;
   staleAt: number;
   success: boolean; // we also want to cache failures to avoid the UI waiting and spamming the API
-  flags: Flags | undefined;
+  flags: FlagsResponse | undefined;
   attemptCount: number;
 }
 
-export function validateFlags(flagsInput: any): Flags | undefined {
+export function validateFlags(flagsInput: any): FlagsResponse | undefined {
   if (!isObject(flagsInput)) {
     return;
   }
 
-  const flags: Flags = {};
+  const flags: FlagsResponse = {};
   for (const key in flagsInput) {
     const flag = flagsInput[key];
     if (!isObject(flag)) return;
@@ -33,7 +33,7 @@ export function validateFlags(flagsInput: any): Flags | undefined {
 }
 
 export interface CacheResult {
-  flags: Flags | undefined;
+  flags: FlagsResponse | undefined;
   stale: boolean;
   success: boolean;
   attemptCount: number;
@@ -56,7 +56,7 @@ export class FlagCache {
       success,
       flags,
       attemptCount,
-    }: { success: boolean; flags?: Flags; attemptCount: number },
+    }: { success: boolean; flags?: FlagsResponse; attemptCount: number },
   ) {
     let cacheData: CacheData = {};
 

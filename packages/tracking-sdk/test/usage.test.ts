@@ -998,7 +998,7 @@ describe("feature flags", () => {
     const bucketInstance = bucket();
     bucketInstance.init(KEY);
 
-    const fallbackFlags = [{ value: true, key: "feature1" }];
+    const fallbackFlags = ["feature1"];
 
     const asyncNock = nock(API_HOST)
       .post(

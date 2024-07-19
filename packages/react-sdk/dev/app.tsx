@@ -1,78 +1,200 @@
 import React, { useState } from "react";
 
-import Bucket, { useBucket, useFeatureFlag, useFeatureFlags } from "../src";
+import {
+  BucketProvider,
+  useFlag,
+  useFlags,
+  useRequestFeedback,
+  useTrack,
+  useUpdateContext,
+} from "../src";
 
-function Demos() {
-  const [flagName, setFlagName] = useState("");
-  const bucket = useBucket();
-  const flags = useFeatureFlags();
-  const flag = useFeatureFlag(flagName);
+// Extending the Flags interface to define the available flags
+declare module "../src" {
+  interface Flags {
+    huddle: boolean;
+  }
+}
 
+function HuddleFlag() {
+  // Type safe flag
+  const flag = useFlag("huddle");
   return (
-    <main>
-      <h1>React SDK</h1>
-
-      <h2>Flags</h2>
-      <pre>
-        <code>{JSON.stringify(flags, null, 2)}</code>
-      </pre>
-
-      <h2>Specific flag</h2>
-      <select
-        value={flagName}
-        onChange={(e) => {
-          setFlagName(e.currentTarget.value);
-        }}
-      >
-        <option value="">Select a flag</option>
-        {Object.keys(flags).map((key) => {
-          return (
-            <option key={key} value={key}>
-              {key}
-            </option>
-          );
-        })}
-      </select>
+    <div>
+      <h2>Huddle flag</h2>
       <pre>
         <code>{JSON.stringify(flag, null, 2)}</code>
       </pre>
+    </div>
+  );
+}
 
+// Initial context
+const initialUser = {
+  id: "demo-user",
+  email: "demo-user@example.com",
+};
+const initialCompany = {
+  id: "demo-company",
+  name: "Demo Company",
+};
+const initialOtherContext = {
+  test: "test",
+};
+
+function UpdateContext() {
+  const [newCompany, setNewCompany] = useState(JSON.stringify(initialCompany));
+  const [newUser, setNewUser] = useState(JSON.stringify(initialUser));
+  const [newOtherContext, setNewOtherContext] = useState(
+    JSON.stringify(initialOtherContext),
+  );
+
+  const { updateUser, updateCompany, updateOtherContext } = useUpdateContext();
+
+  return (
+    <div>
+      <h2>Update context</h2>
+
+      <table>
+        <tbody>
+          <tr>
+            <td>
+              <textarea
+                value={newCompany}
+                onChange={(e) => setNewCompany(e.target.value)}
+              ></textarea>
+            </td>
+            <td>
+              <button
+                onClick={() => {
+                  updateCompany(JSON.parse(newCompany));
+                }}
+              >
+                Update company
+              </button>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <textarea
+                value={newUser}
+                onChange={(e) => setNewUser(e.target.value)}
+              ></textarea>
+            </td>
+            <td>
+              <button
+                onClick={() => {
+                  updateUser(JSON.parse(newUser));
+                }}
+              >
+                Update user
+              </button>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <textarea
+                value={newOtherContext}
+                onChange={(e) => setNewOtherContext(e.target.value)}
+              ></textarea>
+            </td>
+            <td>
+              <button
+                onClick={() => {
+                  updateOtherContext(JSON.parse(newOtherContext));
+                }}
+              >
+                Update other context
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SendEvent() {
+  // Send track event
+  const [eventName, setEventName] = useState("event1");
+  const track = useTrack();
+  return (
+    <div>
+      <h2>Send event</h2>
+      <input
+        onChange={(e) => setEventName(e.target.value)}
+        type="text"
+        placeholder="Event name"
+        value={eventName}
+      />
+      <button
+        onClick={() => {
+          track(eventName);
+        }}
+      >
+        Send event
+      </button>
+    </div>
+  );
+}
+
+function Feedback() {
+  const requestFeedback = useRequestFeedback();
+
+  return (
+    <div>
       <h2>Feedback</h2>
       <button
         onClick={() => {
-          bucket.requestFeedback({
+          requestFeedback({
             featureId: "fe123",
-            userId: "user123",
           });
         }}
       >
         Request feedback
       </button>
+    </div>
+  );
+}
+
+// App.tsx
+function Demos() {
+  const { flags } = useFlags();
+
+  return (
+    <main>
+      <h1>React SDK</h1>
+
+      <HuddleFlag />
+
+      <h2>All flags</h2>
+      <pre>
+        <code>{JSON.stringify(flags, null, 2)}</code>
+      </pre>
+
+      <UpdateContext />
+      <Feedback />
+      <SendEvent />
     </main>
   );
 }
 
 export function App() {
   return (
-    <Bucket
+    <BucketProvider
       publishableKey="trdwA10Aoant6IaK3Qt45NMI"
-      persistUser={false}
       feedback={{
         enableLiveSatisfaction: false,
       }}
-      flags={{
-        context: {
-          user: {
-            id: "demo-user",
-            email: "demo-user@example.com",
-          },
-          company: {
-            id: "demo-company",
-          },
-        },
+      company={initialCompany}
+      user={initialUser}
+      otherContext={initialOtherContext}
+      flagOptions={{
+        fallbackFlags: ["huddle"],
       }}
     >
       <Demos />
-    </Bucket>
+      {}
+    </BucketProvider>
   );
 }

@@ -11,7 +11,7 @@ import {
 } from "./config";
 import { createDefaultFeedbackPromptHandler } from "./default-feedback-prompt-handler";
 import * as feedbackLib from "./feedback";
-import { FeatureFlagsOptions, Flag, Flags } from "./flags";
+import { FeatureFlagsOptions, Flag, FlagsResponse } from "./flags";
 import { getFlags, mergeDeep } from "./flags-fetch";
 import { getAuthToken } from "./prompt-storage";
 import {
@@ -586,7 +586,7 @@ export default function main() {
     fallbackFlags = [],
     timeoutMs,
     staleWhileRevalidate = true,
-  }: FeatureFlagsOptions): Promise<Flags> {
+  }: FeatureFlagsOptions): Promise<FlagsResponse> {
     const baseContext = {
       user: { id: sessionUserId },
     };
@@ -605,12 +605,15 @@ export default function main() {
     if (!flags) {
       warn(`failed to fetch feature flags, using fall-back flags`);
       flags = fallbackFlags.reduce((acc, flag) => {
-        acc[flag.key] = flag;
+        acc[flag] = {
+          key: flag,
+          value: true,
+        };
         return acc;
-      }, {} as Flags);
+      }, {} as FlagsResponse);
     }
 
-    const keyFunc = (_: keyof Flags, flag: Flag) =>
+    const keyFunc = (_: keyof FlagsResponse, flag: Flag) =>
       `${res.url}:${flag.key}:${flag.version}:${flag.value}`;
 
     return proxify(
