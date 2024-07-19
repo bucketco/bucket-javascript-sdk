@@ -8,7 +8,9 @@ Install using `yarn` or `npm` with:
 
 > `yarn add -s @bucketco/node-sdk` or `npm install -s @bucketco/node-sdk`.
 
-Other supported languages/frameworks are in the [Supported languages](https://docs.bucket.co/quickstart/supported-languages) documentation pages.
+Other supported languages/frameworks are in the
+[Supported languages](https://docs.bucket.co/quickstart/supported-languages)
+documentation pages.
 
 You can also [use the HTTP API directly](https://docs.bucket.co/reference/http-tracking-api)
 
@@ -35,6 +37,7 @@ import { BucketClient } from "@bucketco/node-sdk";
 // to avoid multiple round-trips to our servers.
 const client = new BucketClient({
   secretKey: "sec_prod_xxxxxxxxxxxxxxxxxxxxx",
+  fallbackFlags: { can_see_new_reports: true },
 });
 
 // Initialize the client and begin fetching flag definitions.
@@ -63,7 +66,7 @@ const boundClient = client
 const fallbackFlags = { can_see_new_reports: true  }
 
 // actively wait for the flags to be loaded
-await boundClient.initialize(fallbackFlags)
+await boundClient.initialize()
 ```
 
 Once the client is initialized, one can obtain the evaluated flags:
@@ -106,13 +109,13 @@ client.trackUser("your_user_id", {
 client.trackCompany("company_id", { userId: "your_user_id" });
 ```
 
-If one want to simply update a company's attributes on Bucket side,
-one calls `trackCompany` without supplying an user ID:
+If one needs to simply update a company's attributes on Bucket side,
+one calls `trackCompany` without supplying a user ID:
 
 ```ts
 // either creates a new company on Bucket or updates an existing
 // one by supplying custom attributes
-client.trackcompany("updated_company_id", {
+client.trackCompany("updated_company_id", {
   attributes: {
     status: "active",
     plan: "trial",
@@ -155,6 +158,9 @@ Supply these to the `constructor` of the `Client` class:
   logger?: Logger,
   // The custom http client. By default the internal `fetchClient` is used.
   httpClient?: HttpClient = fetchCient,
+  // A map of fallback flags that will be used when no actual flags
+  // are available yet.
+  fallbackFlags?: Record<string, boolean>
 }
 ```
 
@@ -176,8 +182,9 @@ client.withUser({ userId: await sha256("john_doe"), ... });
 ### Custom Attributes & Context
 
 You can pass attributes as part of the object literal passed to the `withUser()`,
-`withCompany()` and `trackFeatureUsage()` methods. Attributes cannot be nested
-(multiple levels) and must be either strings, integers or booleans.
+`withCompany()`, `trackUser`, `trackCompany` and `trackFeatureUsage()`, methods.
+Attributes cannot be nested (multiple levels) and must be either strings,
+integers or booleans.
 
 Some attributes are used by Bucket.co to improve the UI, and are recommended
 to provide for easier navigation:
@@ -191,21 +198,21 @@ object contains additional data that Bucket uses to make some behavioural choice
 By default, `trackUser`, `trackCompany` and `trackFeatureUsage` calls
 automatically update the given user/company `Last seen` property on Bucket side.
 You can control if `Last seen` should be updated when the events are sent by setting
-`context.active = false` to avoid updating last seen. This is often useful if you
-have a background job that goes through a set of companies just to update their.
+`context.active = false`. This is often useful if you
+have a background job that goes through a set of companies just to update their
+attributes but not their activity.
 
 Example:
 
 ```ts
-// create a new client initialized with an user and a company.
 client.trackUser("188762", {
   attributes: { name: "John O." },
-  context: { active: true },
+  meta: { active: true },
 });
 
 client.trackCompany("0083663", {
   attributes: { name: "My SaaS Inc." },
-  context: { active: false },
+  meta: { active: false },
 });
 ```
 
