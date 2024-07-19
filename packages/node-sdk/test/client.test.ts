@@ -77,9 +77,12 @@ describe("Client", () => {
       expect(client["_shared"].httpClient).toBe(validOptions.httpClient);
       expect(client["_shared"].secretKey).toBe(validOptions.secretKey);
       expect(client["_shared"].headers).toEqual(expectedGetHeaders);
-      expect(client["_shared"].fallbackFlags).toEqual(
-        validOptions.fallbackFlags,
-      );
+      expect(client["_shared"].fallbackFlags).toEqual({
+        flagKey: {
+          key: "flagKey",
+          value: true,
+        },
+      });
     });
 
     it("should route messages to the supplied logger", () => {
@@ -1068,7 +1071,13 @@ describe("Client", () => {
       await client.initialize();
       const result = client.getFlags();
 
-      expect(result).toEqual(fallbackFlags);
+      expect(result).toEqual({
+        flagKey: {
+          key: "flagKey",
+          value: true,
+        },
+      });
+
       expect(logger.warn).toHaveBeenCalledWith(
         expect.stringMatching(
           "failed to use feature flag definitions, there are none cached yet. using fallback flags.",
