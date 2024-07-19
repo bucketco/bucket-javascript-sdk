@@ -4,7 +4,7 @@
   "scripts": {
     "start": "tsx serve.ts"
   },
-  "type": "module",
+  "type": "commonjs",
   "main": "serve.ts",
   "dependencies": {
     "@bucketco/node-sdk": "file:../",

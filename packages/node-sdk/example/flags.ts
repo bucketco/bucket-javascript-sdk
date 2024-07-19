@@ -1,5 +1,4 @@
-import { Flag } from "@bucketco/node-sdk/types";
-
-export interface AppFlags {
-  "show-todos": Flag;
-}
+/**
+ * AppFlags is a type that represents the flags that can be set for the app.
+ */
+export type AppFlags = "show-todos";

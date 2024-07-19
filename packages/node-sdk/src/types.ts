@@ -93,6 +93,23 @@ export type FlagDefinitions = {
 };
 
 /**
+ * Describes the response of a HTTP client.
+ * @typeParam TResponse - The type of the response body.
+ *
+ */
+export type HttpClientResponse<TResponse> = {
+  /**
+   * The status code of the response.
+   **/
+  status: number;
+
+  /**
+   * The body of the response if available.
+   **/
+  body: TResponse | undefined;
+};
+
+/**
  * Defines the interface for an HTTP client.
  *
  * @remarks
@@ -112,7 +129,7 @@ export interface HttpClient {
     url: string,
     headers: Record<string, string>,
     body: TBody,
-  ): Promise<TResponse>;
+  ): Promise<HttpClientResponse<TResponse>>;
 
   /**
    * Sends a GET request to the specified URL.
@@ -124,7 +141,7 @@ export interface HttpClient {
   get<TResponse>(
     url: string,
     headers: Record<string, string>,
-  ): Promise<TResponse>;
+  ): Promise<HttpClientResponse<TResponse>>;
 }
 
 /**

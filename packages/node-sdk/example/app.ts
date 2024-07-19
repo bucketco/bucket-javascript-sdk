@@ -33,17 +33,18 @@ app.use((req, res, next) => {
 
 const todos = ["Buy milk", "Walk the dog"];
 
-app.get("/", (req, res) => {
+app.get("/", (_req, res) => {
   res.locals.bucketUser.trackFeatureUsage("Front Page Viewed");
   res.send("Hello World");
 });
 
-app.get("/todos", async (req, res) => {
+app.get("/todos", async (_req, res) => {
   const flags = res.locals.bucketUser.getFlags<AppFlags>();
 
-  if (showTodosFlag.value === false) {
+  if (flags["show-todos"]) {
     res.locals.bucketUser.trackFeatureUsage("Front Page Viewed");
   }
+
   res.json({ todos });
 });
 

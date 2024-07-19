@@ -55,13 +55,9 @@ describe("Client", () => {
 
   const otherContext = { custom: "context", key: "value" };
 
-  const expectedGetHeaders = {
+  const expectedHeaders = {
     [SDK_VERSION_HEADER_NAME]: SDK_VERSION,
     "Content-Type": "application/json",
-  };
-
-  const expectedPostHeaders = {
-    ...expectedGetHeaders,
     Authorization: `Bearer ${validOptions.secretKey}`,
   };
 
@@ -75,8 +71,7 @@ describe("Client", () => {
       expect(client["_shared"].staleWarningInterval).toBe(FLAGS_REFETCH_MS * 5);
       expect(client["_shared"].logger).toBeDefined();
       expect(client["_shared"].httpClient).toBe(validOptions.httpClient);
-      expect(client["_shared"].secretKey).toBe(validOptions.secretKey);
-      expect(client["_shared"].headers).toEqual(expectedGetHeaders);
+      expect(client["_shared"].headers).toEqual(expectedHeaders);
       expect(client["_shared"].fallbackFlags).toEqual({
         flagKey: {
           key: "flagKey",
@@ -115,12 +110,11 @@ describe("Client", () => {
 
       expect(client).toBeInstanceOf(BucketClient);
       expect(client["_shared"].host).toBe(API_HOST);
-      expect(client["_shared"].secretKey).toBe(validOptions.secretKey);
       expect(client["_shared"].refetchInterval).toBe(FLAGS_REFETCH_MS);
       expect(client["_shared"].staleWarningInterval).toBe(FLAGS_REFETCH_MS * 5);
       expect(client["_shared"].logger).toBeUndefined();
       expect(client["_shared"].httpClient).toBe(fetchClient);
-      expect(client["_shared"].headers).toEqual(expectedGetHeaders);
+      expect(client["_shared"].headers).toEqual(expectedHeaders);
       expect(client["_shared"].fallbackFlags).toBeUndefined();
     });
 
@@ -386,7 +380,8 @@ describe("Client", () => {
     });
 
     it("should successfully update the user with merging attributes", async () => {
-      httpClient.post.mockResolvedValue({ success: true });
+      const response = { status: 200, body: { success: true } };
+      httpClient.post.mockResolvedValue(response);
 
       const result = await client.trackUser({
         attributes: { age: 2, brave: false },
@@ -398,7 +393,7 @@ describe("Client", () => {
       expect(result).toBe(true);
       expect(httpClient.post).toHaveBeenCalledWith(
         "https://api.example.com/user",
-        expectedPostHeaders,
+        expectedHeaders,
         {
           userId: user.userId,
           attributes: { age: 2, brave: false, name: "John" },
@@ -407,7 +402,7 @@ describe("Client", () => {
       );
       expect(logger.debug).toHaveBeenCalledWith(
         expect.stringMatching('post request to "user"'),
-        true,
+        response,
       );
     });
 
@@ -424,15 +419,17 @@ describe("Client", () => {
       );
     });
 
-    it("should return false if the API responds with success: false", async () => {
-      httpClient.post.mockResolvedValue({ success: false });
+    it("should return false if the API call fails", async () => {
+      const response = { status: 200, body: { success: false } };
+
+      httpClient.post.mockResolvedValue(response);
 
       const result = await client.trackUser();
 
       expect(result).toBe(false);
       expect(logger.debug).toHaveBeenCalledWith(
         expect.stringMatching('post request to "user"'),
-        false,
+        response,
       );
     });
 
@@ -462,7 +459,9 @@ describe("Client", () => {
     );
 
     it("should successfully update the company with merging attributes", async () => {
-      httpClient.post.mockResolvedValue({ success: true });
+      const response = { status: 200, body: { success: true } };
+
+      httpClient.post.mockResolvedValue(response);
 
       const result = await client.trackCompany({
         attributes: { employees: 200, bankrupt: false },
@@ -472,7 +471,7 @@ describe("Client", () => {
       expect(result).toBe(true);
       expect(httpClient.post).toHaveBeenCalledWith(
         "https://api.example.com/company",
-        expectedPostHeaders,
+        expectedHeaders,
         {
           companyId: company.companyId,
           attributes: { employees: 200, bankrupt: false, name: "Acme Inc." },
@@ -482,19 +481,22 @@ describe("Client", () => {
 
       expect(logger.debug).toHaveBeenCalledWith(
         expect.stringMatching('post request to "company"'),
-        true,
+        response,
       );
     });
 
     it("should include the user ID as well, if user was set", async () => {
-      httpClient.post.mockResolvedValue({ success: true });
+      httpClient.post.mockResolvedValue({
+        status: 200,
+        body: { success: true },
+      });
 
       const result = await client.withUser(user.userId).trackCompany();
 
       expect(result).toBe(true);
       expect(httpClient.post).toHaveBeenCalledWith(
         "https://api.example.com/company",
-        expectedPostHeaders,
+        expectedHeaders,
         {
           companyId: company.companyId,
           userId: user.userId,
@@ -503,11 +505,6 @@ describe("Client", () => {
             name: "Acme Inc.",
           },
         },
-      );
-
-      expect(logger.debug).toHaveBeenCalledWith(
-        expect.stringMatching('post request to "company"'),
-        true,
       );
     });
 
@@ -525,14 +522,18 @@ describe("Client", () => {
     });
 
     it("should return false if the API responds with success: false", async () => {
-      httpClient.post.mockResolvedValue({ success: false });
+      const response = {
+        status: 200,
+        body: { success: false },
+      };
+      httpClient.post.mockResolvedValue(response);
 
       const result = await client.trackCompany();
 
       expect(result).toBe(false);
       expect(logger.debug).toHaveBeenCalledWith(
         expect.stringMatching('post request to "company"'),
-        false,
+        response,
       );
     });
 
@@ -563,7 +564,11 @@ describe("Client", () => {
     const client = new BucketClient(validOptions);
 
     it("should successfully track the feature usage", async () => {
-      httpClient.post.mockResolvedValue({ success: true });
+      const response = {
+        status: 200,
+        body: { success: true },
+      };
+      httpClient.post.mockResolvedValue(response);
 
       const result = await client.trackFeatureUsage(event.event, {
         attributes: event.attrs,
@@ -573,7 +578,7 @@ describe("Client", () => {
       expect(result).toBe(true);
       expect(httpClient.post).toHaveBeenCalledWith(
         "https://api.example.com/event",
-        expectedPostHeaders,
+        expectedHeaders,
         {
           event: event.event,
           attributes: event.attrs,
@@ -583,12 +588,15 @@ describe("Client", () => {
 
       expect(logger.debug).toHaveBeenCalledWith(
         expect.stringMatching('post request to "event"'),
-        true,
+        response,
       );
     });
 
     it("should successfully track the feature usage including user and company", async () => {
-      httpClient.post.mockResolvedValue({ success: true });
+      httpClient.post.mockResolvedValue({
+        status: 200,
+        body: { success: true },
+      });
 
       const result = await client
         .withUser(user.userId)
@@ -598,17 +606,12 @@ describe("Client", () => {
       expect(result).toBe(true);
       expect(httpClient.post).toHaveBeenCalledWith(
         "https://api.example.com/event",
-        expectedPostHeaders,
+        expectedHeaders,
         {
           event: event.event,
           companyId: company.companyId,
           userId: user.userId,
         },
-      );
-
-      expect(logger.debug).toHaveBeenCalledWith(
-        expect.stringMatching('post request to "event"'),
-        true,
       );
     });
 
@@ -625,15 +628,19 @@ describe("Client", () => {
       );
     });
 
-    it("should return false if the API responds with success: false", async () => {
-      httpClient.post.mockResolvedValue({ success: false });
+    it("should return false if the API call fails", async () => {
+      const response = {
+        status: 200,
+        body: { success: false },
+      };
+      httpClient.post.mockResolvedValue(response);
 
       const result = await client.trackFeatureUsage(event.event);
 
       expect(result).toBe(false);
       expect(logger.debug).toHaveBeenCalledWith(
         expect.stringMatching('post request to "event"'),
-        false,
+        response,
       );
     });
 
@@ -739,8 +746,8 @@ describe("Client", () => {
       await client.initialize();
 
       expect(httpClient.get).toHaveBeenCalledWith(
-        `https://api.example.com/flags&key=${validOptions.secretKey}`,
-        expectedGetHeaders,
+        `https://api.example.com/flags`,
+        expectedHeaders,
       );
     });
   });
@@ -806,8 +813,11 @@ describe("Client", () => {
       vi.clearAllMocks();
 
       httpClient.get.mockResolvedValue({
-        success: true,
-        ...flagDefinitions,
+        status: 200,
+        body: {
+          success: true,
+          ...flagDefinitions,
+        },
       });
 
       client = new BucketClient(validOptions);
@@ -825,7 +835,10 @@ describe("Client", () => {
         };
       });
 
-      httpClient.post.mockResolvedValue({ success: true });
+      httpClient.post.mockResolvedValue({
+        status: 200,
+        body: { success: true },
+      });
     });
 
     it("should return evaluated flags when user, company, and custom context are defined", async () => {
@@ -847,7 +860,7 @@ describe("Client", () => {
       expect(httpClient.post).toHaveBeenNthCalledWith(
         1,
         "https://api.example.com/flags/events",
-        expectedPostHeaders,
+        expectedHeaders,
         {
           action: "evaluate",
           flagKey: "flag1",
@@ -872,7 +885,7 @@ describe("Client", () => {
       expect(httpClient.post).toHaveBeenNthCalledWith(
         2,
         "https://api.example.com/flags/events",
-        expectedPostHeaders,
+        expectedHeaders,
         {
           action: "evaluate",
           flagKey: "flag2",
@@ -897,7 +910,7 @@ describe("Client", () => {
       expect(httpClient.post).toHaveBeenNthCalledWith(
         3,
         "https://api.example.com/flags/events",
-        expectedPostHeaders,
+        expectedHeaders,
         {
           action: "check",
           flagKey: "flag1",
@@ -919,7 +932,7 @@ describe("Client", () => {
       expect(httpClient.post).toHaveBeenNthCalledWith(
         1,
         "https://api.example.com/flags/events",
-        expectedPostHeaders,
+        expectedHeaders,
         {
           action: "evaluate",
           flagKey: "flag1",
@@ -939,7 +952,7 @@ describe("Client", () => {
       expect(httpClient.post).toHaveBeenNthCalledWith(
         2,
         "https://api.example.com/flags/events",
-        expectedPostHeaders,
+        expectedHeaders,
         {
           action: "evaluate",
           flagKey: "flag2",
@@ -971,7 +984,7 @@ describe("Client", () => {
       expect(httpClient.post).toHaveBeenNthCalledWith(
         1,
         "https://api.example.com/flags/events",
-        expectedPostHeaders,
+        expectedHeaders,
         {
           action: "evaluate",
           flagKey: "flag1",
@@ -991,7 +1004,7 @@ describe("Client", () => {
       expect(httpClient.post).toHaveBeenNthCalledWith(
         2,
         "https://api.example.com/flags/events",
-        expectedPostHeaders,
+        expectedHeaders,
         {
           action: "evaluate",
           flagKey: "flag2",
@@ -1021,7 +1034,7 @@ describe("Client", () => {
       expect(httpClient.post).toHaveBeenNthCalledWith(
         1,
         "https://api.example.com/flags/events",
-        expectedPostHeaders,
+        expectedHeaders,
         {
           action: "evaluate",
           flagKey: "flag1",
@@ -1038,7 +1051,7 @@ describe("Client", () => {
       expect(httpClient.post).toHaveBeenNthCalledWith(
         2,
         "https://api.example.com/flags/events",
-        expectedPostHeaders,
+        expectedHeaders,
         {
           action: "evaluate",
           flagKey: "flag2",
@@ -1077,7 +1090,7 @@ describe("Client", () => {
 
       expect(httpClient.post).toHaveBeenCalledWith(
         "https://api.example.com/flags/events",
-        expectedPostHeaders,
+        expectedHeaders,
         {
           action: "check",
           flagKey: "flagKey",
@@ -1108,7 +1121,10 @@ describe("Client", () => {
     });
 
     it("should not fail if sendFeatureFlagEvent fails to send check event", async () => {
-      httpClient.post.mockResolvedValue({ success: true });
+      httpClient.post.mockResolvedValue({
+        status: 200,
+        body: { success: true },
+      });
 
       client = client
         .withUser(user.userId, { attributes: user.attrs })

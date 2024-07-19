@@ -24,8 +24,8 @@ const fetchClient: HttpClient = {
       signal: AbortSignal.timeout(API_TIMEOUT_MS),
     });
 
-    const json = await response.json();
-    return json as TResponse;
+    const json = response.ok ? await response.json() : undefined;
+    return { status: response.status, body: json as TResponse };
   },
 
   get: async <TResponse>(url: string, headers: Record<string, string>) => {
@@ -38,8 +38,8 @@ const fetchClient: HttpClient = {
       signal: AbortSignal.timeout(API_TIMEOUT_MS),
     });
 
-    const json = await response.json();
-    return json as TResponse;
+    const json = response.ok ? await response.json() : undefined;
+    return { status: response.status, body: json as TResponse };
   },
 };
 
