@@ -11,7 +11,7 @@ import {
   SDK_VERSION_HEADER_NAME,
 } from "../src/config";
 import fetchClient from "../src/fetch-http-client";
-import { ClientOptions, FlagDefinitions, Flags } from "../src/types";
+import { ClientOptions, FlagDefinitions } from "../src/types";
 
 vi.mock("@bucketco/flag-evaluation", () => ({
   evaluateFlag: vi.fn(),
@@ -26,13 +26,16 @@ describe("Client", () => {
   };
   const httpClient = { post: vi.fn(), get: vi.fn() };
 
+  const fallbackFlags = {
+    flagKey: true,
+  };
+
   const validOptions: ClientOptions = {
     secretKey: "validSecretKeyWithMoreThan22Chars",
     host: "https://api.example.com",
     logger,
     httpClient,
-    refetchInterval: 61000,
-    staleWarningInterval: 310000,
+    fallbackFlags,
   };
 
   const user = {
@@ -50,7 +53,7 @@ describe("Client", () => {
     attrs: { key: "value" },
   };
 
-  const customContext = { custom: "context", key: "value" };
+  const otherContext = { custom: "context", key: "value" };
 
   const expectedGetHeaders = {
     [SDK_VERSION_HEADER_NAME]: SDK_VERSION,
@@ -68,12 +71,18 @@ describe("Client", () => {
 
       expect(client).toBeInstanceOf(BucketClient);
       expect(client["_shared"].host).toBe("https://api.example.com");
-      expect(client["_shared"].refetchInterval).toBe(61000);
-      expect(client["_shared"].staleWarningInterval).toBe(310000);
+      expect(client["_shared"].refetchInterval).toBe(FLAGS_REFETCH_MS);
+      expect(client["_shared"].staleWarningInterval).toBe(FLAGS_REFETCH_MS * 5);
       expect(client["_shared"].logger).toBeDefined();
       expect(client["_shared"].httpClient).toBe(validOptions.httpClient);
       expect(client["_shared"].secretKey).toBe(validOptions.secretKey);
       expect(client["_shared"].headers).toEqual(expectedGetHeaders);
+      expect(client["_shared"].fallbackFlags).toEqual({
+        flagKey: {
+          key: "flagKey",
+          value: true,
+        },
+      });
     });
 
     it("should route messages to the supplied logger", () => {
@@ -112,6 +121,7 @@ describe("Client", () => {
       expect(client["_shared"].logger).toBeUndefined();
       expect(client["_shared"].httpClient).toBe(fetchClient);
       expect(client["_shared"].headers).toEqual(expectedGetHeaders);
+      expect(client["_shared"].fallbackFlags).toBeUndefined();
     });
 
     it("should throw an error if options are invalid", () => {
@@ -148,18 +158,10 @@ describe("Client", () => {
 
       invalidOptions = {
         ...validOptions,
-        refetchInterval: "notANumber" as any,
+        fallbackFlags: "invalid" as any,
       };
       expect(() => new BucketClient(invalidOptions)).toThrow(
-        "refetchInterval must be a number",
-      );
-
-      invalidOptions = {
-        ...validOptions,
-        staleWarningInterval: "notANumber" as any,
-      };
-      expect(() => new BucketClient(invalidOptions)).toThrow(
-        "staleWarningInterval must be a number",
+        "fallbackFlags must be an object",
       );
     });
   });
@@ -167,37 +169,33 @@ describe("Client", () => {
   describe("constructor (with existing client)", () => {
     const initialClient = new BucketClient(validOptions);
 
-    initialClient["_customContext"] = { key: "value" };
+    initialClient["_otherContext"] = { key: "value" };
     initialClient["_company"] = {
       companyId: "123",
       attrs: {},
     };
     initialClient["_user"] = { userId: "abc", attrs: {} };
-    initialClient["_fallbackFlags"] = {
-      flagKey: { key: "flagKey", value: true, version: 1 },
-    };
 
     it("should create a new client instance based on an existing client", () => {
       const newClient = new BucketClient(initialClient);
 
       expect(newClient).toBeInstanceOf(BucketClient);
       expect(newClient["_shared"]).toBe(initialClient["_shared"]);
-      expect(newClient["_context"]).toEqual(initialClient["_context"]);
+      expect(newClient["_otherContext"]).toEqual(
+        initialClient["_otherContext"],
+      );
       expect(newClient["_company"]).toEqual(initialClient["_company"]);
       expect(newClient["_user"]).toEqual(initialClient["_user"]);
-      expect(newClient["_fallbackFlags"]).toEqual(
-        initialClient["_fallbackFlags"],
-      );
     });
 
     it("should create a new client instance and allow modifying context independently", () => {
       const newClient = new BucketClient(initialClient);
-      newClient["_customContext"] = { key: "newValue" };
+      newClient["_otherContext"] = { key: "newValue" };
 
-      expect(newClient["_customContext"]).not.toEqual(
-        initialClient["_customContext"],
+      expect(newClient["_otherContext"]).not.toEqual(
+        initialClient["_otherContext"],
       );
-      expect(initialClient["_customContext"]).toEqual({ key: "value" });
+      expect(initialClient["_otherContext"]).toEqual({ key: "value" });
     });
 
     it("should create a new client instance and allow modifying company independently", () => {
@@ -219,20 +217,6 @@ describe("Client", () => {
       expect(initialClient["_user"]).toEqual({
         userId: "abc",
         attrs: {},
-      });
-    });
-
-    it("should create a new client instance and allow modifying fallbackFlags independently", () => {
-      const newClient = new BucketClient(initialClient);
-      newClient["_fallbackFlags"] = {
-        flagKey: { key: "flagKey", value: false, version: 2 },
-      };
-
-      expect(newClient["_fallbackFlags"]).not.toEqual(
-        initialClient["_fallbackFlags"],
-      );
-      expect(initialClient["_fallbackFlags"]).toEqual({
-        flagKey: { key: "flagKey", value: true, version: 1 },
       });
     });
   });
@@ -349,61 +333,63 @@ describe("Client", () => {
     });
   });
 
-  describe("withCustomContext", () => {
+  describe("withOtherContext", () => {
     const client = new BucketClient(validOptions);
 
-    it("should return a new client instance with the custom context set", () => {
-      const newClient = client.withCustomContext(customContext);
+    it("should return a new client instance with the custom other set", () => {
+      const newClient = client.withOtherContext(otherContext);
 
       expect(newClient).toBeInstanceOf(BucketClient);
       expect(newClient).not.toBe(client); // Ensure a new instance is returned
-      expect(newClient["_customContext"]).toEqual(customContext);
+      expect(newClient["_otherContext"]).toEqual(otherContext);
     });
 
-    it("should return a new client instance with replaced custom context", () => {
+    it("should return a new client instance with replaced other context", () => {
       const newClient = client
-        .withCustomContext(customContext)
-        .withCustomContext({ replaced: true }, { replace: true });
+        .withOtherContext(otherContext)
+        .withOtherContext({ replaced: true }, { replace: true });
 
-      expect(newClient["_customContext"]).toEqual({ replaced: true });
+      expect(newClient["_otherContext"]).toEqual({ replaced: true });
     });
 
     it("should return a new client instance with merged custom context", () => {
       const override = { merged: true, key: "not value" };
       const newClient = client
-        .withCustomContext(customContext)
-        .withCustomContext(override);
+        .withOtherContext(otherContext)
+        .withOtherContext(override);
 
-      expect(newClient["_customContext"]).toEqual({
-        ...customContext,
+      expect(newClient["_otherContext"]).toEqual({
+        ...otherContext,
         ...override,
       });
     });
 
     it("should throw an error if custom context is not an object", () => {
-      expect(() => client.withCustomContext(null as any)).toThrow(
+      expect(() => client.withOtherContext(null as any)).toThrow(
         "context must be an object",
       );
-      expect(() => client.withCustomContext(123 as any)).toThrow(
+      expect(() => client.withOtherContext(123 as any)).toThrow(
         "context must be an object",
       );
-      expect(() => client.withCustomContext("invalidContext" as any)).toThrow(
+      expect(() => client.withOtherContext("invalidContext" as any)).toThrow(
         "context must be an object",
       );
-      expect(() => client.withCustomContext([] as any)).toThrow(
+      expect(() => client.withOtherContext([] as any)).toThrow(
         "context must be an object",
       );
     });
   });
 
   describe("trackUser", () => {
-    const client = new BucketClient(validOptions);
+    const client = new BucketClient(validOptions).withUser(user.userId, {
+      attributes: user.attrs,
+    });
 
-    it("should successfully update the user when user is defined", async () => {
+    it("should successfully update the user with merging attributes", async () => {
       httpClient.post.mockResolvedValue({ success: true });
 
-      const result = await client.trackUser(user.userId, {
-        attributes: user.attrs,
+      const result = await client.trackUser({
+        attributes: { age: 2, brave: false },
         meta: {
           active: true,
         },
@@ -415,7 +401,7 @@ describe("Client", () => {
         expectedPostHeaders,
         {
           userId: user.userId,
-          attributes: user.attrs,
+          attributes: { age: 2, brave: false, name: "John" },
           context: { active: true },
         },
       );
@@ -429,7 +415,7 @@ describe("Client", () => {
       const error = new Error("Network error");
       httpClient.post.mockRejectedValue(error);
 
-      const result = await client.trackUser(user.userId);
+      const result = await client.trackUser();
 
       expect(result).toBe(false);
       expect(logger.error).toHaveBeenCalledWith(
@@ -441,7 +427,7 @@ describe("Client", () => {
     it("should return false if the API responds with success: false", async () => {
       httpClient.post.mockResolvedValue({ success: false });
 
-      const result = await client.trackUser(user.userId);
+      const result = await client.trackUser();
 
       expect(result).toBe(false);
       expect(logger.debug).toHaveBeenCalledWith(
@@ -450,37 +436,36 @@ describe("Client", () => {
       );
     });
 
-    it("should throw an error if user is not valid", async () => {
-      await expect(client.trackUser(undefined as any)).rejects.toThrow(
-        "userId must be a string",
+    it("should throw an error if opts are not valid or the user is not set", async () => {
+      await expect(new BucketClient(validOptions).trackUser()).rejects.toThrow(
+        "user must be set",
       );
 
-      await expect(client.trackUser(1 as any)).rejects.toThrow(
-        "userId must be a string",
+      await expect(client.trackUser("bad_opts" as any)).rejects.toThrow(
+        "opts must be an object",
       );
 
       await expect(
-        client.trackUser(user.userId, "bad_opts" as any),
-      ).rejects.toThrow("opts must be an object");
-
-      await expect(
-        client.trackUser(user.userId, { attributes: "bad_attributes" as any }),
+        client.trackUser({ attributes: "bad_attributes" as any }),
       ).rejects.toThrow("attributes must be an object");
 
       await expect(
-        client.trackUser(user.userId, { meta: "bad_meta" as any }),
+        client.trackUser({ meta: "bad_meta" as any }),
       ).rejects.toThrow("meta must be an object");
     });
   });
 
   describe("trackCompany", () => {
-    const client = new BucketClient(validOptions);
+    const client = new BucketClient(validOptions).withCompany(
+      company.companyId,
+      { attributes: company.attrs },
+    );
 
-    it("should successfully update the company when company is defined", async () => {
+    it("should successfully update the company with merging attributes", async () => {
       httpClient.post.mockResolvedValue({ success: true });
 
-      const result = await client.trackCompany(company.companyId, {
-        attributes: company.attrs,
+      const result = await client.trackCompany({
+        attributes: { employees: 200, bankrupt: false },
         meta: { active: true },
       });
 
@@ -490,7 +475,7 @@ describe("Client", () => {
         expectedPostHeaders,
         {
           companyId: company.companyId,
-          attributes: company.attrs,
+          attributes: { employees: 200, bankrupt: false, name: "Acme Inc." },
           context: { active: true },
         },
       );
@@ -501,18 +486,23 @@ describe("Client", () => {
       );
     });
 
-    it("should include the user ID as well, if user was defined", async () => {
+    it("should include the user ID as well, if user was set", async () => {
       httpClient.post.mockResolvedValue({ success: true });
 
-      const result = await client.trackCompany(company.companyId, {
-        userId: user.userId,
-      });
+      const result = await client.withUser(user.userId).trackCompany();
 
       expect(result).toBe(true);
       expect(httpClient.post).toHaveBeenCalledWith(
         "https://api.example.com/company",
         expectedPostHeaders,
-        { companyId: company.companyId, userId: user.userId },
+        {
+          companyId: company.companyId,
+          userId: user.userId,
+          attributes: {
+            employees: 100,
+            name: "Acme Inc.",
+          },
+        },
       );
 
       expect(logger.debug).toHaveBeenCalledWith(
@@ -525,7 +515,7 @@ describe("Client", () => {
       const error = new Error("Network error");
       httpClient.post.mockRejectedValue(error);
 
-      const result = await client.trackCompany(company.companyId);
+      const result = await client.trackCompany();
 
       expect(result).toBe(false);
       expect(logger.error).toHaveBeenCalledWith(
@@ -537,7 +527,7 @@ describe("Client", () => {
     it("should return false if the API responds with success: false", async () => {
       httpClient.post.mockResolvedValue({ success: false });
 
-      const result = await client.trackCompany(company.companyId);
+      const result = await client.trackCompany();
 
       expect(result).toBe(false);
       expect(logger.debug).toHaveBeenCalledWith(
@@ -547,30 +537,22 @@ describe("Client", () => {
     });
 
     it("should throw an error if company is not valid", async () => {
-      await expect(client.trackCompany(undefined as any)).rejects.toThrow(
-        "companyId must be a string",
+      await expect(
+        new BucketClient(validOptions).trackCompany(),
+      ).rejects.toThrow("company must be set");
+
+      await expect(client.trackCompany("bad_opts" as any)).rejects.toThrow(
+        "opts must be an object",
       );
 
-      await expect(client.trackCompany(1 as any)).rejects.toThrow(
-        "companyId must be a string",
-      );
-
       await expect(
-        client.trackCompany(company.companyId, "bad_opts" as any),
-      ).rejects.toThrow("opts must be an object");
-
-      await expect(
-        client.trackCompany(company.companyId, { userId: 1 as any }),
-      ).rejects.toThrow("userId must be a string");
-
-      await expect(
-        client.trackCompany(company.companyId, {
+        client.trackCompany({
           attributes: "bad_attributes" as any,
         }),
       ).rejects.toThrow("attributes must be an object");
 
       await expect(
-        client.trackCompany(company.companyId, {
+        client.trackCompany({
           meta: "bad_meta" as any,
         }),
       ).rejects.toThrow("meta must be an object");
@@ -608,10 +590,10 @@ describe("Client", () => {
     it("should successfully track the feature usage including user and company", async () => {
       httpClient.post.mockResolvedValue({ success: true });
 
-      const result = await client.trackFeatureUsage(event.event, {
-        companyId: company.companyId,
-        userId: user.userId,
-      });
+      const result = await client
+        .withUser(user.userId)
+        .withCompany(company.companyId)
+        .trackFeatureUsage(event.event);
 
       expect(result).toBe(true);
       expect(httpClient.post).toHaveBeenCalledWith(
@@ -668,14 +650,6 @@ describe("Client", () => {
       ).rejects.toThrow("opts must be an object");
 
       await expect(
-        client.trackFeatureUsage(event.event, { companyId: 1 as any }),
-      ).rejects.toThrow("companyId must be a string");
-
-      await expect(
-        client.trackFeatureUsage(event.event, { userId: 1 as any }),
-      ).rejects.toThrow("userId must be a string");
-
-      await expect(
         client.trackFeatureUsage(event.event, {
           attributes: "bad_attributes" as any,
         }),
@@ -718,45 +692,23 @@ describe("Client", () => {
     });
   });
 
-  describe("customContext", () => {
+  describe("otherContext", () => {
     it("should return the undefined if custom context was not set", () => {
       const client = new BucketClient(validOptions);
-      expect(client.customContext).toBeUndefined();
+      expect(client.otherContext).toBeUndefined();
     });
 
     it("should return the user if custom context was associated", () => {
-      const client = new BucketClient(validOptions).withCustomContext(
-        customContext,
+      const client = new BucketClient(validOptions).withOtherContext(
+        otherContext,
       );
 
-      expect(client.customContext).toEqual(customContext);
+      expect(client.otherContext).toEqual(otherContext);
     });
   });
 
   describe("initialize", () => {
-    it("should initialize the client and set fallbackFlags", async () => {
-      const client = new BucketClient(validOptions);
-      const fallbackFlags: Flags = {
-        flagKey: { key: "flagKey", value: true, version: 1 },
-      };
-
-      const cache = {
-        refresh: vi.fn(),
-        get: vi.fn(),
-      };
-
-      vi.spyOn(client as any, "getFeatureFlagDefinitionCache").mockReturnValue(
-        cache,
-      );
-
-      await client.initialize(fallbackFlags);
-
-      expect(client["_fallbackFlags"]).toEqual(fallbackFlags);
-      expect(cache.refresh).toHaveBeenCalledTimes(1);
-      expect(cache.get).not.toHaveBeenCalled();
-    });
-
-    it("should initialize the client without fallbackFlags", async () => {
+    it("should initialize the client", async () => {
       const client = new BucketClient(validOptions);
 
       const cache = {
@@ -770,7 +722,6 @@ describe("Client", () => {
 
       await client.initialize();
 
-      expect(client["_fallbackFlags"]).toBeUndefined();
       expect(cache.refresh).toHaveBeenCalledTimes(1);
       expect(cache.get).not.toHaveBeenCalled();
     });
@@ -781,14 +732,6 @@ describe("Client", () => {
 
       await client.initialize();
       expect(client["_shared"].featureFlagDefinitionCache).toBeTypeOf("object");
-    });
-
-    it("should throw an error if fallbackFlags is not an object", async () => {
-      const client = new BucketClient(validOptions);
-
-      await expect(client.initialize("invalidFlags" as any)).rejects.toThrow(
-        "fallbackFlags must be an object",
-      );
     });
 
     it("should call the backend to obtain flags", async () => {
@@ -804,10 +747,6 @@ describe("Client", () => {
 
   describe("getFlags", () => {
     let client: BucketClient;
-
-    const fallbackFlags: Flags = {
-      flagKey: { key: "flagKey", value: true },
-    };
 
     const flagDefinitions: FlagDefinitions = {
       flags: [
@@ -893,7 +832,7 @@ describe("Client", () => {
       client = client
         .withUser(user.userId, { attributes: user.attrs })
         .withCompany(company.companyId, { attributes: company.attrs })
-        .withCustomContext(customContext);
+        .withOtherContext(otherContext);
 
       await client.initialize();
       const result = client.getFlags();
@@ -922,7 +861,7 @@ describe("Client", () => {
               id: "user123",
               ...user.attrs,
             },
-            ...customContext,
+            ...otherContext,
           },
           evalResult: true,
           evalRuleResults: [true],
@@ -947,7 +886,7 @@ describe("Client", () => {
               id: "user123",
               ...user.attrs,
             },
-            ...customContext,
+            ...otherContext,
           },
           evalResult: false,
           evalRuleResults: [false],
@@ -1070,8 +1009,8 @@ describe("Client", () => {
       );
     });
 
-    it("should return evaluated flags when only custom context is defined", async () => {
-      client = client.withCustomContext(customContext);
+    it("should return evaluated flags when only other context is defined", async () => {
+      client = client.withOtherContext(otherContext);
 
       await client.initialize();
       client.getFlags();
@@ -1088,7 +1027,7 @@ describe("Client", () => {
           flagKey: "flag1",
           flagVersion: 1,
           evalContext: {
-            ...customContext,
+            ...otherContext,
           },
           evalResult: true,
           evalRuleResults: [true],
@@ -1105,7 +1044,7 @@ describe("Client", () => {
           flagKey: "flag2",
           flagVersion: 2,
           evalContext: {
-            ...customContext,
+            ...otherContext,
           },
           evalResult: false,
           evalRuleResults: [false],
@@ -1119,10 +1058,16 @@ describe("Client", () => {
         success: false,
       });
 
-      await client.initialize(fallbackFlags);
+      await client.initialize();
       const result = client.getFlags();
 
-      expect(result).toEqual(fallbackFlags);
+      expect(result).toEqual({
+        flagKey: {
+          key: "flagKey",
+          value: true,
+        },
+      });
+
       expect(logger.warn).toHaveBeenCalledWith(
         expect.stringMatching(
           "failed to use feature flag definitions, there are none cached yet. using fallback flags.",
@@ -1147,9 +1092,9 @@ describe("Client", () => {
       client = client
         .withUser(user.userId, { attributes: user.attrs })
         .withCompany(company.companyId, { attributes: company.attrs })
-        .withCustomContext(customContext);
+        .withOtherContext(otherContext);
 
-      await client.initialize(fallbackFlags);
+      await client.initialize();
       client.getFlags();
 
       await flushPromises();
@@ -1168,9 +1113,9 @@ describe("Client", () => {
       client = client
         .withUser(user.userId, { attributes: user.attrs })
         .withCompany(company.companyId, { attributes: company.attrs })
-        .withCustomContext(customContext);
+        .withOtherContext(otherContext);
 
-      await client.initialize(fallbackFlags);
+      await client.initialize();
       const result = client.getFlags();
 
       httpClient.post.mockRejectedValueOnce(new Error("Network error"));

@@ -13,6 +13,8 @@ dist
 dist-ssr
 *.local
 
+browser-sdk
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

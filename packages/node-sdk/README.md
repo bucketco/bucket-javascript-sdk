@@ -8,20 +8,23 @@ Install using `yarn` or `npm` with:
 
 > `yarn add -s @bucketco/node-sdk` or `npm install -s @bucketco/node-sdk`.
 
-Other languages than JavaScript/Typescript are currently not supported by an SDK.
-You can [use the HTTP API directly](https://docs.bucket.co/reference/http-tracking-api)
+Other supported languages/frameworks are in the
+[Supported languages](https://docs.bucket.co/quickstart/supported-languages)
+documentation pages.
+
+You can also [use the HTTP API directly](https://docs.bucket.co/reference/http-tracking-api)
 
 ## Basic usage
 
-Before the library can be used, you need to obtain a secret key from
+To get started you need to obtain a secret key from
 [Environment setting view](https://app.bucket.co/envs/{environment}/settings/app-environments)
 in **Bucket.co**.
 
 > [!CAUTION]
-> Secret keys should only be used by the `node-sdk` and not any other
-> SDKs provided by Bucket. Secret keys offer the users the ability to obtain
-> information that is often sensitive and thus should not be used in any
-> front-end application.
+> Secret keys are meant for use in server side SDKs only.
+> Secret keys offer the users the ability to obtain
+> information that is often sensitive and thus should not be used in
+> client-side applications.
 
 ```ts
 import { BucketClient } from "@bucketco/node-sdk";
@@ -34,19 +37,22 @@ import { BucketClient } from "@bucketco/node-sdk";
 // to avoid multiple round-trips to our servers.
 const client = new BucketClient({
   secretKey: "sec_prod_xxxxxxxxxxxxxxxxxxxxx",
+  fallbackFlags: { can_see_new_reports: true },
 });
 
-// Initialize the client's feature flag retrieval loop. You must call this method
-// prior to any calls to `getFlags()`, otherwise an empty object will be returned.
+// Initialize the client and begin fetching flag definitions.
+// You must call this method prior to any calls to `getFlags()`,
+// otherwise an empty object will be returned.
 //
 // You can also supply your `fallbackFlags` to the `initialize()` method. These
 // fallback flags are used in the situation when the server-side flags are not
 // yet loaded or there are issues retrieving them.
+// See "Initialization Options" below for more information.
 await client.initialize();
 ```
 
 At any point where the client needs to be used, we can configure it through
-`withUser()`, `withCompany()` and `withCompanyContext()` methods. Each of
+`withUser()`, `withCompany()` and `withOtherContext()` methods. Each of
 these three methods returns a new instance of `Client` class which includes
 the applied user, company or context:
 
@@ -55,12 +61,12 @@ the applied user, company or context:
 const boundClient = client
   .withUser("john_doe", { attributes: { name: "John Doe" } })
   .withCompany("acme_inc", { attributes: { name "Acme Inc."} })
-  .withCustomContext({ additional: "context", number: [1,2,3] })
+  .withOtherContext({ additional: "context", number: [1,2,3] })
 
-const fallbackFlags = { can_see_new_reports: { value: true } }
+const fallbackFlags = { can_see_new_reports: true  }
 
 // actively wait for the flags to be loaded
-await boundClient.initialize(fallbackFlags)
+await boundClient.initialize()
 ```
 
 Once the client is initialized, one can obtain the evaluated flags:
@@ -73,8 +79,6 @@ if (flags.can_see_new_reports) {
   // this is your flag-protected code ...
   // send an event when the feature is used:
   boundClient.trackFeatureUsage("new_reports_used", {
-    companyId: "acme_inc",
-    userId: "john_doe",
     attributes: {
       some: "attribute",
     },
@@ -95,21 +99,26 @@ The following example shows how to register a new user, and associate it with a 
 ```ts
 // registers the user with Bucket using the provided unique ID, and
 // providing a set of custom attributes (can be anything)
-client.trackUser("your_user_id", {
-  attributes: { longTimeUser: true, payingCustomer: false },
-});
+const boundClient = client
+  .withUser("your_user_id", {
+    attributes: { longTimeUser: true, payingCustomer: false },
+  })
+  .withCompany("company_id");
+
+// track the user (send a `user` event to Bucket).
+await boundClient.trackUser();
 
 // register the user as being part of a given company
-client.trackCompany("company_id", { userId: "your_user_id" });
+boundClient.trackCompany();
 ```
 
-If one want to simply update a company's attributes on Bucket side,
-one calls `trackCompany` without supplying an user ID:
+If one needs to simply update a company's attributes on Bucket side,
+one calls `trackCompany` without supplying a user ID:
 
 ```ts
 // either creates a new company on Bucket or updates an existing
 // one by supplying custom attributes
-client.trackcompany("updated_company_id", {
+client.withCompany("updated_company_id").trackCompany({
   attributes: {
     status: "active",
     plan: "trial",
@@ -119,10 +128,11 @@ client.trackcompany("updated_company_id", {
 // if a company is not active, and one needs to make sure its
 // "Last Seen" status does not get updated, one can supply
 // an additional meta argument at the end:
-client.trackcompany("updated_company_id", {
-  attributes: { status: "active", plan: "trial" },
-  meta: { active: false },
-});
+client
+  .withCompany("updated_company_id", {
+    attributes: { status: "active", plan: "trial" },
+  })
+  .trackCompany({ meta: { active: false } });
 ```
 
 To generate feature tracking `event`s:
@@ -132,10 +142,10 @@ To generate feature tracking `event`s:
 client.trackFeatureUsage("some_feature_name");
 
 // to specify to which user/company this event belongs one can do
-client.trackFeatureUsage("some_feature_name", {
-  companyId: "acme_inc",
-  userId: "73668762",
-});
+client
+  .withUser("user_id")
+  .withCompany("company_id")
+  .trackFeatureUsage("some_feature_name");
 ```
 
 ### Initialization Options
@@ -147,17 +157,14 @@ Supply these to the `constructor` of the `Client` class:
   // The secret key used to authenticate with the Bucket API.
   secretKey: string,
   // The host to send requests to (optional).
-  host?: string = "https://tracking.bucket.co",
-  // The interval to re-fetch feature flag definitions (optional).
-  // Default is 60 seconds.
-  refetchInterval?: number = 60000,
-  // The interval to re-fetch feature flags (optional). Default
-  // is 5 times the re-fetch interval.
-  staleWarningInterval?: number = 5 * 60000,
+  host?: string = "https://front.bucket.co",
   // The logger you can supply. By default no logging is performed.
   logger?: Logger,
   // The custom http client. By default the internal `fetchClient` is used.
   httpClient?: HttpClient = fetchCient,
+  // A map of fallback flags that will be used when no actual flags
+  // are available yet.
+  fallbackFlags?: Record<string, boolean>
 }
 ```
 
@@ -179,8 +186,9 @@ client.withUser({ userId: await sha256("john_doe"), ... });
 ### Custom Attributes & Context
 
 You can pass attributes as part of the object literal passed to the `withUser()`,
-`withCompany()` and `trackFeatureUsage()` methods. Attributes cannot be nested
-(multiple levels) and must be either strings, integers or booleans.
+`withCompany()`, `trackUser`, `trackCompany` and `trackFeatureUsage()`, methods.
+Attributes cannot be nested (multiple levels) and must be either strings,
+integers or booleans.
 
 Some attributes are used by Bucket.co to improve the UI, and are recommended
 to provide for easier navigation:
@@ -194,21 +202,21 @@ object contains additional data that Bucket uses to make some behavioural choice
 By default, `trackUser`, `trackCompany` and `trackFeatureUsage` calls
 automatically update the given user/company `Last seen` property on Bucket side.
 You can control if `Last seen` should be updated when the events are sent by setting
-`context.active = false` to avoid updating last seen. This is often useful if you
-have a background job that goes through a set of companies just to update their.
+`meta.active = false`. This is often useful if you
+have a background job that goes through a set of companies just to update their
+attributes but not their activity.
 
 Example:
 
 ```ts
-// create a new client initialized with an user and a company.
-client.trackUser("188762", {
+client.trackUser({
   attributes: { name: "John O." },
-  context: { active: true },
+  meta: { active: true },
 });
 
-client.trackCompany("0083663", {
+client.trackCompany({
   attributes: { name: "My SaaS Inc." },
-  context: { active: false },
+  meta: { active: false },
 });
 ```
 

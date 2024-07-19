@@ -99,7 +99,7 @@ To open up the feedback collection UI, call `bucket.requestFeedback(options)` wi
 
 Examples of this could be if you want the click of a `give us feedback`-button or the end of a specific user flow, to trigger a pop-up displaying the feedback user interface.
 
-### bucket.requestFeeback() options
+### bucket.requestFeedback() options
 
 Minimal usage with defaults:
 

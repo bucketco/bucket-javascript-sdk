@@ -200,22 +200,33 @@ export type ClientOptions = {
   host?: string;
 
   /**
-   * The interval to re-fetch feature flag definitions (optional). Default is 60 seconds.
-   **/
-  refetchInterval?: number;
-
-  /**
-   * The interval to re-fetch feature flags (optional). Default is 5 times the refetch interval.
-   **/
-  staleWarningInterval?: number;
-
-  /**
    * The logger to use for logging (optional). Default is no logging.
    **/
   logger?: Logger;
 
   /**
+   * The flags to use as fallbacks when the API is unavailable (optional).
+   **/
+  fallbackFlags?: Record<string, boolean>;
+
+  /**
    * The HTTP client to use for sending requests (optional). Default is the built-in fetch client.
    **/
   httpClient?: HttpClient;
+};
+
+/**
+ * Defines the options for tracking of entities.
+ *
+ **/
+export type TrackOptions = {
+  /**
+   * The attributes associated with the event.
+   **/
+  attributes?: Attributes;
+
+  /**
+   * The meta context associated with the event.
+   **/
+  meta?: TrackingMeta;
 };

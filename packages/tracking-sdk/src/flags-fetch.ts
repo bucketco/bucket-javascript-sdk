@@ -1,7 +1,7 @@
 import fetch from "cross-fetch";
 
 import { SDK_VERSION, SDK_VERSION_HEADER_NAME } from "./config";
-import { Flags } from "./flags";
+import { FlagsResponse } from "./flags";
 import { FlagCache, isObject, validateFlags } from "./flags-cache";
 
 // Deep merge two objects.
@@ -28,7 +28,7 @@ export function mergeDeep(
 
 export type FeatureFlagsResponse = {
   success: boolean;
-  flags: Flags;
+  flags: FlagsResponse;
 };
 
 function validateFeatureFlagsResponse(
@@ -67,14 +67,14 @@ function flattenJSON(obj: Record<string, any>): Record<string, any> {
   return result;
 }
 
-const dedupeFetch: Record<string, Promise<Flags | undefined>> = {};
+const dedupeFetch: Record<string, Promise<FlagsResponse | undefined>> = {};
 export async function fetchFlags(url: string, timeoutMs: number) {
   if (url in dedupeFetch) {
     return dedupeFetch[url];
   }
 
   const fetchFlagsInner = async () => {
-    let flags: Flags | undefined;
+    let flags: FlagsResponse | undefined;
     let success = false;
     try {
       const controller = new AbortController();
@@ -88,9 +88,12 @@ export async function fetchFlags(url: string, timeoutMs: number) {
         signal: controller.signal,
       });
       clearTimeout(id);
+      if (!res.ok) {
+        throw new Error("unexpected response code: " + res.status);
+      }
       const typeRes = validateFeatureFlagsResponse(await res.json());
-      if (!res.ok || !typeRes || !typeRes.success) {
-        throw new Error("Failed to fetch flags");
+      if (!typeRes || !typeRes.success) {
+        throw new Error("unable to validate response");
       }
       flags = typeRes.flags;
       success = true;
@@ -157,7 +160,7 @@ export async function getFlags({
   staleWhileRevalidate?: boolean;
   timeoutMs?: number;
   cacheNegativeAttempts?: number | false;
-}): Promise<Flags | undefined> {
+}): Promise<FlagsResponse | undefined> {
   const flattenedContext = flattenJSON({ context });
 
   const params = new URLSearchParams(flattenedContext);
