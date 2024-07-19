@@ -214,3 +214,19 @@ export type ClientOptions = {
    **/
   httpClient?: HttpClient;
 };
+
+/**
+ * Defines the options for tracking of entities.
+ *
+ **/
+export type TrackOptions = {
+  /**
+   * The attributes associated with the event.
+   **/
+  attributes?: Attributes;
+
+  /**
+   * The meta context associated with the event.
+   **/
+  meta?: TrackingMeta;
+};

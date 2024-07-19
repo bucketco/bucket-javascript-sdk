@@ -381,13 +381,15 @@ describe("Client", () => {
   });
 
   describe("trackUser", () => {
-    const client = new BucketClient(validOptions);
+    const client = new BucketClient(validOptions).withUser(user.userId, {
+      attributes: user.attrs,
+    });
 
-    it("should successfully update the user when user is defined", async () => {
+    it("should successfully update the user with merging attributes", async () => {
       httpClient.post.mockResolvedValue({ success: true });
 
-      const result = await client.trackUser(user.userId, {
-        attributes: user.attrs,
+      const result = await client.trackUser({
+        attributes: { age: 2, brave: false },
         meta: {
           active: true,
         },
@@ -399,7 +401,7 @@ describe("Client", () => {
         expectedPostHeaders,
         {
           userId: user.userId,
-          attributes: user.attrs,
+          attributes: { age: 2, brave: false, name: "John" },
           context: { active: true },
         },
       );
@@ -413,7 +415,7 @@ describe("Client", () => {
       const error = new Error("Network error");
       httpClient.post.mockRejectedValue(error);
 
-      const result = await client.trackUser(user.userId);
+      const result = await client.trackUser();
 
       expect(result).toBe(false);
       expect(logger.error).toHaveBeenCalledWith(
@@ -425,7 +427,7 @@ describe("Client", () => {
     it("should return false if the API responds with success: false", async () => {
       httpClient.post.mockResolvedValue({ success: false });
 
-      const result = await client.trackUser(user.userId);
+      const result = await client.trackUser();
 
       expect(result).toBe(false);
       expect(logger.debug).toHaveBeenCalledWith(
@@ -434,37 +436,36 @@ describe("Client", () => {
       );
     });
 
-    it("should throw an error if user is not valid", async () => {
-      await expect(client.trackUser(undefined as any)).rejects.toThrow(
-        "userId must be a string",
+    it("should throw an error if opts are not valid or the user is not set", async () => {
+      await expect(new BucketClient(validOptions).trackUser()).rejects.toThrow(
+        "user must be set",
       );
 
-      await expect(client.trackUser(1 as any)).rejects.toThrow(
-        "userId must be a string",
+      await expect(client.trackUser("bad_opts" as any)).rejects.toThrow(
+        "opts must be an object",
       );
 
       await expect(
-        client.trackUser(user.userId, "bad_opts" as any),
-      ).rejects.toThrow("opts must be an object");
-
-      await expect(
-        client.trackUser(user.userId, { attributes: "bad_attributes" as any }),
+        client.trackUser({ attributes: "bad_attributes" as any }),
       ).rejects.toThrow("attributes must be an object");
 
       await expect(
-        client.trackUser(user.userId, { meta: "bad_meta" as any }),
+        client.trackUser({ meta: "bad_meta" as any }),
       ).rejects.toThrow("meta must be an object");
     });
   });
 
   describe("trackCompany", () => {
-    const client = new BucketClient(validOptions);
+    const client = new BucketClient(validOptions).withCompany(
+      company.companyId,
+      { attributes: company.attrs },
+    );
 
-    it("should successfully update the company when company is defined", async () => {
+    it("should successfully update the company with merging attributes", async () => {
       httpClient.post.mockResolvedValue({ success: true });
 
-      const result = await client.trackCompany(company.companyId, {
-        attributes: company.attrs,
+      const result = await client.trackCompany({
+        attributes: { employees: 200, bankrupt: false },
         meta: { active: true },
       });
 
@@ -474,7 +475,7 @@ describe("Client", () => {
         expectedPostHeaders,
         {
           companyId: company.companyId,
-          attributes: company.attrs,
+          attributes: { employees: 200, bankrupt: false, name: "Acme Inc." },
           context: { active: true },
         },
       );
@@ -485,18 +486,23 @@ describe("Client", () => {
       );
     });
 
-    it("should include the user ID as well, if user was defined", async () => {
+    it("should include the user ID as well, if user was set", async () => {
       httpClient.post.mockResolvedValue({ success: true });
 
-      const result = await client.trackCompany(company.companyId, {
-        userId: user.userId,
-      });
+      const result = await client.withUser(user.userId).trackCompany();
 
       expect(result).toBe(true);
       expect(httpClient.post).toHaveBeenCalledWith(
         "https://api.example.com/company",
         expectedPostHeaders,
-        { companyId: company.companyId, userId: user.userId },
+        {
+          companyId: company.companyId,
+          userId: user.userId,
+          attributes: {
+            employees: 100,
+            name: "Acme Inc.",
+          },
+        },
       );
 
       expect(logger.debug).toHaveBeenCalledWith(
@@ -509,7 +515,7 @@ describe("Client", () => {
       const error = new Error("Network error");
       httpClient.post.mockRejectedValue(error);
 
-      const result = await client.trackCompany(company.companyId);
+      const result = await client.trackCompany();
 
       expect(result).toBe(false);
       expect(logger.error).toHaveBeenCalledWith(
@@ -521,7 +527,7 @@ describe("Client", () => {
     it("should return false if the API responds with success: false", async () => {
       httpClient.post.mockResolvedValue({ success: false });
 
-      const result = await client.trackCompany(company.companyId);
+      const result = await client.trackCompany();
 
       expect(result).toBe(false);
       expect(logger.debug).toHaveBeenCalledWith(
@@ -531,30 +537,22 @@ describe("Client", () => {
     });
 
     it("should throw an error if company is not valid", async () => {
-      await expect(client.trackCompany(undefined as any)).rejects.toThrow(
-        "companyId must be a string",
+      await expect(
+        new BucketClient(validOptions).trackCompany(),
+      ).rejects.toThrow("company must be set");
+
+      await expect(client.trackCompany("bad_opts" as any)).rejects.toThrow(
+        "opts must be an object",
       );
 
-      await expect(client.trackCompany(1 as any)).rejects.toThrow(
-        "companyId must be a string",
-      );
-
       await expect(
-        client.trackCompany(company.companyId, "bad_opts" as any),
-      ).rejects.toThrow("opts must be an object");
-
-      await expect(
-        client.trackCompany(company.companyId, { userId: 1 as any }),
-      ).rejects.toThrow("userId must be a string");
-
-      await expect(
-        client.trackCompany(company.companyId, {
+        client.trackCompany({
           attributes: "bad_attributes" as any,
         }),
       ).rejects.toThrow("attributes must be an object");
 
       await expect(
-        client.trackCompany(company.companyId, {
+        client.trackCompany({
           meta: "bad_meta" as any,
         }),
       ).rejects.toThrow("meta must be an object");
@@ -592,10 +590,10 @@ describe("Client", () => {
     it("should successfully track the feature usage including user and company", async () => {
       httpClient.post.mockResolvedValue({ success: true });
 
-      const result = await client.trackFeatureUsage(event.event, {
-        companyId: company.companyId,
-        userId: user.userId,
-      });
+      const result = await client
+        .withUser(user.userId)
+        .withCompany(company.companyId)
+        .trackFeatureUsage(event.event);
 
       expect(result).toBe(true);
       expect(httpClient.post).toHaveBeenCalledWith(
@@ -650,14 +648,6 @@ describe("Client", () => {
       await expect(
         client.trackFeatureUsage(event.event, "bad_opts" as any),
       ).rejects.toThrow("opts must be an object");
-
-      await expect(
-        client.trackFeatureUsage(event.event, { companyId: 1 as any }),
-      ).rejects.toThrow("companyId must be a string");
-
-      await expect(
-        client.trackFeatureUsage(event.event, { userId: 1 as any }),
-      ).rejects.toThrow("userId must be a string");
 
       await expect(
         client.trackFeatureUsage(event.event, {

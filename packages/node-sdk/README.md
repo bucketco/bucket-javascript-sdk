@@ -79,8 +79,6 @@ if (flags.can_see_new_reports) {
   // this is your flag-protected code ...
   // send an event when the feature is used:
   boundClient.trackFeatureUsage("new_reports_used", {
-    companyId: "acme_inc",
-    userId: "john_doe",
     attributes: {
       some: "attribute",
     },
@@ -101,12 +99,17 @@ The following example shows how to register a new user, and associate it with a 
 ```ts
 // registers the user with Bucket using the provided unique ID, and
 // providing a set of custom attributes (can be anything)
-client.trackUser("your_user_id", {
-  attributes: { longTimeUser: true, payingCustomer: false },
-});
+const boundClient = client
+  .withUser("your_user_id", {
+    attributes: { longTimeUser: true, payingCustomer: false },
+  })
+  .withCompany("company_id");
+
+// track the user (send a `user` event to Bucket).
+await boundClient.trackUser();
 
 // register the user as being part of a given company
-client.trackCompany("company_id", { userId: "your_user_id" });
+boundClient.trackCompany();
 ```
 
 If one needs to simply update a company's attributes on Bucket side,
@@ -115,7 +118,7 @@ one calls `trackCompany` without supplying a user ID:
 ```ts
 // either creates a new company on Bucket or updates an existing
 // one by supplying custom attributes
-client.trackCompany("updated_company_id", {
+client.withCompany("updated_company_id").trackCompany({
   attributes: {
     status: "active",
     plan: "trial",
@@ -125,10 +128,11 @@ client.trackCompany("updated_company_id", {
 // if a company is not active, and one needs to make sure its
 // "Last Seen" status does not get updated, one can supply
 // an additional meta argument at the end:
-client.trackcompany("updated_company_id", {
-  attributes: { status: "active", plan: "trial" },
-  meta: { active: false },
-});
+client
+  .withCompany("updated_company_id", {
+    attributes: { status: "active", plan: "trial" },
+  })
+  .trackCompany({ meta: { active: false } });
 ```
 
 To generate feature tracking `event`s:
@@ -138,10 +142,10 @@ To generate feature tracking `event`s:
 client.trackFeatureUsage("some_feature_name");
 
 // to specify to which user/company this event belongs one can do
-client.trackFeatureUsage("some_feature_name", {
-  companyId: "acme_inc",
-  userId: "73668762",
-});
+client
+  .withUser("user_id")
+  .withCompany("company_id")
+  .trackFeatureUsage("some_feature_name");
 ```
 
 ### Initialization Options
@@ -198,19 +202,19 @@ object contains additional data that Bucket uses to make some behavioural choice
 By default, `trackUser`, `trackCompany` and `trackFeatureUsage` calls
 automatically update the given user/company `Last seen` property on Bucket side.
 You can control if `Last seen` should be updated when the events are sent by setting
-`context.active = false`. This is often useful if you
+`meta.active = false`. This is often useful if you
 have a background job that goes through a set of companies just to update their
 attributes but not their activity.
 
 Example:
 
 ```ts
-client.trackUser("188762", {
+client.trackUser({
   attributes: { name: "John O." },
   meta: { active: true },
 });
 
-client.trackCompany("0083663", {
+client.trackCompany({
   attributes: { name: "My SaaS Inc." },
   meta: { active: false },
 });

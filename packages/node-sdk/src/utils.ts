@@ -81,7 +81,7 @@ export function ok(condition: boolean, message: string): asserts condition {
  * @param item - The item to check.
  * @returns `true` if the item is an object, `false` otherwise.
  **/
-export function isObject(item: any) {
+export function isObject(item: any): item is Record<string, any> {
   return (item && typeof item === "object" && !Array.isArray(item)) || false;
 }
 

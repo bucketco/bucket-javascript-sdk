@@ -20,7 +20,7 @@ import {
   Flags,
   HttpClient,
   Logger,
-  TrackingMeta,
+  TrackOptions,
 } from "./types";
 import {
   decorateLogger,
@@ -57,7 +57,24 @@ export class BucketClient {
   /**
    * Creates a new SDK client.
    *
+   * @param options - The options for the client.
+   * @throws An error if the options are invalid.
+   **/
+  constructor(options: ClientOptions);
+
+  /**
+   * Creates a new SDK client.
+   *
+   * @param client - An existing client to clone.
+   * @throws An error if the client is invalid.
+   **/
+  constructor(client: BucketClient);
+
+  /**
+   * Creates a new SDK client.
+   *
    * @param options - The options for the client or an existing client to clone.
+   * @throws An error if the options are invalid.
    **/
   constructor(options: ClientOptions | BucketClient) {
     if (options instanceof BucketClient) {
@@ -127,6 +144,7 @@ export class BucketClient {
    * @param path - The path to send the request to.
    * @param body - The body of the request.
    * @returns A boolean indicating if the request was successful.
+   * @throws An error if the path or body is invalid.
    **/
   private async post<TBody>(path: string, body: TBody) {
     ok(typeof path === "string" && path.length > 0, "path must be a string");
@@ -161,6 +179,7 @@ export class BucketClient {
    *
    * @param path - The path to send the request to.
    * @returns The response from the server.
+   * @throws An error if the path is invalid.
    **/
   private async get<TResponse>(path: string) {
     ok(typeof path === "string" && path.length > 0, "path must be a string");
@@ -194,7 +213,9 @@ export class BucketClient {
    * Sends a feature flag event to the Bucket API.
    *
    * @param event - The event to send.
+   *
    * @returns A boolean indicating if the request was successful.
+   * @throws An error if the event is invalid.
    **/
   private async sendFeatureFlagEvent(event: FeatureFlagEvent) {
     ok(typeof event === "object", "event must be an object");
@@ -269,7 +290,7 @@ export class BucketClient {
    * @param opts.attrs - The attributes of the user (optional).
    *
    * @returns A new client with the user set.
-   *
+   * @throws An error if the user ID is not a string or the options are invalid.
    * @remarks
    * If the user ID is the same as the current company, the attributes will be merged, and
    * the new attributes will take precedence.
@@ -308,7 +329,7 @@ export class BucketClient {
    * @param opts.attrs - The attributes of the user (optional).
    *
    * @returns A new client with the company set.
-   *
+   * @throws An error if the company ID is not a string or the options are invalid.
    * @remarks
    * If the company ID is the same as the current company, the attributes will be merged, and
    * the new attributes will take precedence.
@@ -347,7 +368,7 @@ export class BucketClient {
    * @param opts.replace - A boolean indicating if the context should replace the current context or be merged (optional).
    *
    * @returns A new client with the context set.
-   *
+   * @throws An error if the context is not an object or the options are invalid.
    * @remarks
    * If replace is true, the context will replace the current context, otherwise it will be merged.
    * The new context will take precedence over the old context.
@@ -406,22 +427,16 @@ export class BucketClient {
    * Tracks a user in Bucket.
    *
    * @param userId - The user ID to track.
-   * @param opts.attrs - The attributes of the user (optional).
+   * @param opts.attributes - The additional attributes of the user (optional).
    * @param opts.meta - The meta context associated with tracking (optional).
    *
    * @returns A boolean indicating if the request was successful.
+   * @throws An error if the user is not set or the options are invalid.
+   * @remarks
+   * The user must be set using `withUser` before calling this method.
    **/
-  public async trackUser(
-    userId: string,
-    opts?: {
-      attributes?: Attributes;
-      meta?: TrackingMeta;
-    },
-  ) {
-    ok(
-      typeof userId === "string" && userId.length > 0,
-      "userId must be a string",
-    );
+  public async trackUser(opts?: TrackOptions) {
+    ok(isObject(this._user), "user must be set");
     ok(opts === undefined || isObject(opts), "opts must be an object");
     ok(
       opts?.attributes === undefined || isObject(opts.attributes),
@@ -433,40 +448,27 @@ export class BucketClient {
     );
 
     return await this.post("user", {
-      userId,
-      attributes: opts?.attributes,
+      userId: this._user.userId,
+      attributes: { ...this._user.attrs, ...opts?.attributes },
       context: opts?.meta,
     });
   }
 
   /**
-   * Tracks a company in Bucket.
+   * Tracks the associated company in Bucket.
    *
-   * @param companyId - The company ID to track.
-   * @param opts.userId - The user ID associated with the company (optional).
-   * @param opts.attrs - The attributes of the company (optional).
+   * @param opts.attributes - The additional attributes of the company (optional).
    * @param opts.meta - The meta context associated with tracking (optional).
    *
    * @returns A boolean indicating if the request was successful.
+   * @throws An error if the company is not set or the options are invalid.
+   * @remarks
+   * The company must be set using `withCompany` before calling this method.
+   * If the user is set, the company will be associated with the user.
    **/
-  public async trackCompany(
-    companyId: string,
-    opts?: {
-      userId?: string;
-      attributes?: Attributes;
-      meta?: TrackingMeta;
-    },
-  ) {
-    ok(
-      typeof companyId === "string" && companyId.length > 0,
-      "companyId must be a string",
-    );
+  public async trackCompany(opts?: TrackOptions) {
+    ok(isObject(this._company), "company must be set");
     ok(opts === undefined || isObject(opts), "opts must be an object");
-    ok(
-      opts?.userId === undefined ||
-        (typeof opts.userId === "string" && opts.userId.length > 0),
-      "userId must be a string",
-    );
     ok(
       opts?.attributes === undefined || isObject(opts.attributes),
       "attributes must be an object",
@@ -477,9 +479,9 @@ export class BucketClient {
     );
 
     return await this.post("company", {
-      companyId,
-      userId: opts?.userId,
-      attributes: opts?.attributes,
+      companyId: this._company.companyId,
+      userId: this._user?.userId,
+      attributes: { ...this._company.attrs, ...opts?.attributes },
       context: opts?.meta,
     });
   }
@@ -488,35 +490,19 @@ export class BucketClient {
    * Tracks an event in Bucket.
    *
    * @param event - The event to track.
-   * @param opts.companyId - The company ID associated with the event (optional).
-   * @param opts.userId - The user ID associated with the event (optional).
-   * @param opts.attrs - The attributes of the event (optional).
+   * @param opts.attributes - The attributes of the event (optional).
    * @param opts.meta - The meta context associated with tracking (optional).
    *
    * @returns A boolean indicating if the request was successful.
+   * @throws An error if the event is invalid or the options are invalid.
+   * @remarks
+   * If the user is set, the event will be associated with the user.
+   * If the company is set, the event will be associated with the company.
    **/
-  public async trackFeatureUsage(
-    event: string,
-    opts?: {
-      companyId?: string;
-      userId?: string;
-      attributes?: Attributes;
-      meta?: TrackingMeta;
-    },
-  ) {
+  public async trackFeatureUsage(event: string, opts?: TrackOptions) {
     ok(typeof event === "string" && event.length > 0, "event must be a string");
 
     ok(opts === undefined || isObject(opts), "opts must be an object");
-    ok(
-      opts?.userId === undefined ||
-        (typeof opts.userId === "string" && opts.userId.length > 0),
-      "userId must be a string",
-    );
-    ok(
-      opts?.companyId === undefined ||
-        (typeof opts.companyId === "string" && opts.companyId.length > 0),
-      "companyId must be a string",
-    );
     ok(
       opts?.attributes === undefined || isObject(opts.attributes),
       "attributes must be an object",
@@ -528,8 +514,8 @@ export class BucketClient {
 
     return await this.post("event", {
       event,
-      companyId: opts?.companyId,
-      userId: opts?.userId,
+      companyId: this._company?.companyId,
+      userId: this._user?.userId,
       attributes: opts?.attributes,
       context: opts?.meta,
     });
@@ -553,7 +539,6 @@ export class BucketClient {
    * @typeparam TFlagKey - The type of the feature flag keys, `string` by default.
    *
    * @returns The evaluated feature flags.
-   *
    * @remarks
    * Call `initialize` before calling this method to ensure the feature flag definitions are cached, empty flags will be returned otherwise.
    **/
