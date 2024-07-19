@@ -1,0 +1,4 @@
+**/build
+**/gen
+**/node_modules
+**/dist
