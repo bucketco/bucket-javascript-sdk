@@ -205,6 +205,11 @@ export type ClientOptions = {
   logger?: Logger;
 
   /**
+   * The flags to use as fallbacks when the API is unavailable (optional).
+   **/
+  fallbackFlags?: Record<string, boolean>;
+
+  /**
    * The HTTP client to use for sending requests (optional). Default is the built-in fetch client.
    **/
   httpClient?: HttpClient;

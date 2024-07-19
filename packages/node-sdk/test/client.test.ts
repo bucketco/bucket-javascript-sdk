@@ -26,11 +26,16 @@ describe("Client", () => {
   };
   const httpClient = { post: vi.fn(), get: vi.fn() };
 
+  const fallbackFlags = {
+    flagKey: true,
+  };
+
   const validOptions: ClientOptions = {
     secretKey: "validSecretKeyWithMoreThan22Chars",
     host: "https://api.example.com",
     logger,
     httpClient,
+    fallbackFlags,
   };
 
   const user = {
@@ -72,6 +77,9 @@ describe("Client", () => {
       expect(client["_shared"].httpClient).toBe(validOptions.httpClient);
       expect(client["_shared"].secretKey).toBe(validOptions.secretKey);
       expect(client["_shared"].headers).toEqual(expectedGetHeaders);
+      expect(client["_shared"].fallbackFlags).toEqual(
+        validOptions.fallbackFlags,
+      );
     });
 
     it("should route messages to the supplied logger", () => {
@@ -110,6 +118,7 @@ describe("Client", () => {
       expect(client["_shared"].logger).toBeUndefined();
       expect(client["_shared"].httpClient).toBe(fetchClient);
       expect(client["_shared"].headers).toEqual(expectedGetHeaders);
+      expect(client["_shared"].fallbackFlags).toBeUndefined();
     });
 
     it("should throw an error if options are invalid", () => {
@@ -146,18 +155,10 @@ describe("Client", () => {
 
       invalidOptions = {
         ...validOptions,
-        refetchInterval: "notANumber" as any,
+        fallbackFlags: "invalid" as any,
       };
       expect(() => new BucketClient(invalidOptions)).toThrow(
-        "refetchInterval must be a number",
-      );
-
-      invalidOptions = {
-        ...validOptions,
-        staleWarningInterval: "notANumber" as any,
-      };
-      expect(() => new BucketClient(invalidOptions)).toThrow(
-        "staleWarningInterval must be a number",
+        "fallbackFlags must be an object",
       );
     });
   });
@@ -171,9 +172,6 @@ describe("Client", () => {
       attrs: {},
     };
     initialClient["_user"] = { userId: "abc", attrs: {} };
-    initialClient["_fallbackFlags"] = {
-      flagKey: { key: "flagKey", value: true, version: 1 },
-    };
 
     it("should create a new client instance based on an existing client", () => {
       const newClient = new BucketClient(initialClient);
@@ -185,9 +183,6 @@ describe("Client", () => {
       );
       expect(newClient["_company"]).toEqual(initialClient["_company"]);
       expect(newClient["_user"]).toEqual(initialClient["_user"]);
-      expect(newClient["_fallbackFlags"]).toEqual(
-        initialClient["_fallbackFlags"],
-      );
     });
 
     it("should create a new client instance and allow modifying context independently", () => {
@@ -219,20 +214,6 @@ describe("Client", () => {
       expect(initialClient["_user"]).toEqual({
         userId: "abc",
         attrs: {},
-      });
-    });
-
-    it("should create a new client instance and allow modifying fallbackFlags independently", () => {
-      const newClient = new BucketClient(initialClient);
-      newClient["_fallbackFlags"] = {
-        flagKey: { key: "flagKey", value: false, version: 2 },
-      };
-
-      expect(newClient["_fallbackFlags"]).not.toEqual(
-        initialClient["_fallbackFlags"],
-      );
-      expect(initialClient["_fallbackFlags"]).toEqual({
-        flagKey: { key: "flagKey", value: true, version: 1 },
       });
     });
   });
@@ -734,29 +715,7 @@ describe("Client", () => {
   });
 
   describe("initialize", () => {
-    it("should initialize the client and set fallbackFlags", async () => {
-      const client = new BucketClient(validOptions);
-      const fallbackFlags = {
-        flagKey: true,
-      };
-
-      const cache = {
-        refresh: vi.fn(),
-        get: vi.fn(),
-      };
-
-      vi.spyOn(client as any, "getFeatureFlagDefinitionCache").mockReturnValue(
-        cache,
-      );
-
-      await client.initialize(fallbackFlags);
-
-      expect(client["_fallbackFlags"]).toEqual(fallbackFlags);
-      expect(cache.refresh).toHaveBeenCalledTimes(1);
-      expect(cache.get).not.toHaveBeenCalled();
-    });
-
-    it("should initialize the client without fallbackFlags", async () => {
+    it("should initialize the client", async () => {
       const client = new BucketClient(validOptions);
 
       const cache = {
@@ -770,7 +729,6 @@ describe("Client", () => {
 
       await client.initialize();
 
-      expect(client["_fallbackFlags"]).toBeUndefined();
       expect(cache.refresh).toHaveBeenCalledTimes(1);
       expect(cache.get).not.toHaveBeenCalled();
     });
@@ -781,14 +739,6 @@ describe("Client", () => {
 
       await client.initialize();
       expect(client["_shared"].featureFlagDefinitionCache).toBeTypeOf("object");
-    });
-
-    it("should throw an error if fallbackFlags is not an object", async () => {
-      const client = new BucketClient(validOptions);
-
-      await expect(client.initialize("invalidFlags" as any)).rejects.toThrow(
-        "fallbackFlags must be an object",
-      );
     });
 
     it("should call the backend to obtain flags", async () => {
@@ -804,10 +754,6 @@ describe("Client", () => {
 
   describe("getFlags", () => {
     let client: BucketClient;
-
-    const fallbackFlags = {
-      flagKey: true,
-    };
 
     const flagDefinitions: FlagDefinitions = {
       flags: [
@@ -1119,7 +1065,7 @@ describe("Client", () => {
         success: false,
       });
 
-      await client.initialize(fallbackFlags);
+      await client.initialize();
       const result = client.getFlags();
 
       expect(result).toEqual(fallbackFlags);
@@ -1149,7 +1095,7 @@ describe("Client", () => {
         .withCompany(company.companyId, { attributes: company.attrs })
         .withOtherContext(otherContext);
 
-      await client.initialize(fallbackFlags);
+      await client.initialize();
       client.getFlags();
 
       await flushPromises();
@@ -1170,7 +1116,7 @@ describe("Client", () => {
         .withCompany(company.companyId, { attributes: company.attrs })
         .withOtherContext(otherContext);
 
-      await client.initialize(fallbackFlags);
+      await client.initialize();
       const result = client.getFlags();
 
       httpClient.post.mockRejectedValueOnce(new Error("Network error"));

@@ -46,13 +46,13 @@ export class BucketClient {
     refetchInterval: number;
     staleWarningInterval: number;
     headers: Record<string, string>;
+    fallbackFlags?: Record<string, Flag>;
     featureFlagDefinitionCache?: Cache<FlagDefinitions>;
   };
 
   private _otherContext: Record<string, any> | undefined;
   private _company: { companyId: string; attrs?: Attributes } | undefined;
   private _user: { userId: string; attrs?: Attributes } | undefined;
-  private _fallbackFlags: Record<string, Flag> | undefined;
 
   /**
    * Creates a new SDK client.
@@ -65,7 +65,6 @@ export class BucketClient {
       this._otherContext = options._otherContext;
       this._company = options._company;
       this._user = options._user;
-      this._fallbackFlags = options._fallbackFlags;
 
       return;
     }
@@ -88,6 +87,23 @@ export class BucketClient {
       options.httpClient === undefined || isObject(options.httpClient),
       "httpClient must be an object",
     );
+    ok(
+      options.fallbackFlags === undefined || isObject(options.fallbackFlags),
+      "fallbackFlags must be an object",
+    );
+
+    const flags =
+      options.fallbackFlags &&
+      Object.entries(options.fallbackFlags).reduce(
+        (acc, [key, value]) => {
+          acc[key] = {
+            key,
+            value: value as boolean,
+          };
+          return acc;
+        },
+        {} as Record<string, Flag>,
+      );
 
     this._shared = {
       logger:
@@ -101,6 +117,7 @@ export class BucketClient {
       httpClient: options.httpClient || fetchClient,
       refetchInterval: FLAGS_REFETCH_MS,
       staleWarningInterval: FLAGS_REFETCH_MS * 5,
+      fallbackFlags: flags,
     };
   }
 
@@ -521,35 +538,12 @@ export class BucketClient {
   /**
    * Initializes the client by caching the feature flag definitions.
    *
-   * @typeparam TFlagKey - The type of the feature flag keys, `string` by default.
-   *
-   * @param fallbackFlags - The fallback flags to use if the feature flag definitions are not available.
    * @returns void
    *
    * @remarks
-   * Call this method before calling `getFlags` to ensure the feature flag definitions are cached or at least the fallback flags are set.
+   * Call this method before calling `getFlags` to ensure the feature flag definitions are cached.
    **/
-  public async initialize<TFlagKey extends string = string>(
-    fallbackFlags?: Record<TFlagKey, boolean>,
-  ) {
-    ok(
-      fallbackFlags === undefined || typeof fallbackFlags === "object",
-      "fallbackFlags must be an object",
-    );
-
-    this._fallbackFlags =
-      fallbackFlags &&
-      Object.entries(fallbackFlags).reduce(
-        (acc, [key, value]) => {
-          acc[key as TFlagKey] = {
-            key,
-            value: value as boolean,
-          };
-          return acc;
-        },
-        {} as Record<TFlagKey, Flag>,
-      );
-
+  public async initialize() {
     await this.getFeatureFlagDefinitionCache().refresh();
   }
 
@@ -578,7 +572,7 @@ export class BucketClient {
 
     const flagDefinitions = this.getFeatureFlagDefinitionCache().get();
     let evaluatedFlags: Flags<TFlagKey> =
-      (this._fallbackFlags as Flags<TFlagKey>) || {};
+      (this._shared.fallbackFlags as Flags<TFlagKey>) || {};
 
     if (flagDefinitions) {
       const keyToVersionMap = new Map<string, number>(
