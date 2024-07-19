@@ -14,10 +14,10 @@ __metadata:
 
 "@bucketco/node-sdk@file:../::locator=example%40workspace%3A.":
   version: 0.1.0
-  resolution: "@bucketco/node-sdk@file:../#../::hash=7213d5&locator=example%40workspace%3A."
+  resolution: "@bucketco/node-sdk@file:../#../::hash=a889c6&locator=example%40workspace%3A."
   dependencies:
     "@bucketco/flag-evaluation": "npm:~0.0.4"
-  checksum: 10c0/271cab6a239dcb21daaccdab47a78b6d5f8135041935a94181653f148a08836bfedce86228dae326f7486072fe16af4ae75d2f61ac1bfa4c77e882b8943d6425
+  checksum: 10c0/d2a5bb5d6ec849f9454bb68d070e48bf9903aa910c0d7ac49dbb422c36da34de16dae1c0f2b18c806139eedd6b664da62583f34f9c8e751e0c8edc8f8ed8b3f0
   languageName: node
   linkType: hard
 

@@ -1,6 +1,7 @@
 import express from "express";
 import { bucket } from "./bucket";
 import { BucketClient } from "../src";
+import type { AppFlags } from "./flags";
 
 export const app = express();
 
@@ -38,7 +39,8 @@ app.get("/", (req, res) => {
 });
 
 app.get("/todos", async (req, res) => {
-  const showTodosFlag = await res.locals.bucketUser.getFlags()["show-todos"];
+  const flags = res.locals.bucketUser.getFlags<AppFlags>();
+
   if (showTodosFlag.value === false) {
     res.locals.bucketUser.trackFeatureUsage("Front Page Viewed");
   }
