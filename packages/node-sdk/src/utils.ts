@@ -5,16 +5,19 @@ const oneMinute = 60 * 1000;
 const eventsByKey: Record<string, number[]> = {};
 
 /**
- * Create a rate-limited function that calls the given function at most `eventsPerMinute` times per minute.
+ * Create a rate-limited function that calls the given function with a flag indicating whether
+ * `eventsPerMinute` rate limit was reached per minute.
  *
  * @param eventsPerMinute - The maximum number of events per minute.
+ * @param keyFunc - The function to call to generate a key for the given arguments.
  * @param func - The function to call.
+ *
  * @returns The rate-limited function.
  **/
 export function rateLimited<T extends any[], R>(
   eventsPerMinute: number,
   keyFunc: (...args: T) => string,
-  func: (...args: T) => R,
+  func: (limitExceeded: boolean, ...args: T) => R,
 ): (...funcArgs: T) => R {
   return function (...funcArgs: T): R {
     const now = Date.now();
@@ -31,12 +34,14 @@ export function rateLimited<T extends any[], R>(
       events.shift();
     }
 
-    if (events.length >= eventsPerMinute) {
-      return;
+    const limitExceeded = events.length >= eventsPerMinute;
+    const res = func(limitExceeded, ...funcArgs);
+
+    if (!limitExceeded) {
+      events.push(now);
     }
 
-    events.push(now);
-    return func(...funcArgs);
+    return res;
   };
 }
 

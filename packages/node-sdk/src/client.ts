@@ -595,13 +595,15 @@ export class BucketClient {
       rateLimited(
         FLAG_EVENTS_PER_MIN,
         (flags, key) => `${key}:${flags[key].version}:${flags[key].value}`,
-        (flags, key) => {
-          void this.sendFeatureFlagEvent({
-            action: "check",
-            flagKey: key,
-            flagVersion: flags[key].version,
-            evalResult: flags[key].value,
-          });
+        (limitExceeded, flags, key) => {
+          if (!limitExceeded) {
+            void this.sendFeatureFlagEvent({
+              action: "check",
+              flagKey: key,
+              flagVersion: flags[key].version,
+              evalResult: flags[key].value,
+            });
+          }
 
           return flags[key].value;
         },
