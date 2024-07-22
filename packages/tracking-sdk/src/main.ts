@@ -617,21 +617,24 @@ export default function main() {
       `${res.url}:${key}:${flags[key].version}:${flags[key].value}`;
 
     return maskedProxy(
-      recvFlags!,
+      recvFlags,
       rateLimited(FLAG_EVENTS_PER_MIN, keyFunc, sendCheckEvent),
     );
   }
 
-  function sendCheckEvent(f: FlagsResponse, k: string) {
+  function sendCheckEvent(limitExceeded: boolean, f: FlagsResponse, k: string) {
     const flag = f[k];
-    void featureFlagEvent({
-      action: "check",
-      flagKey: flag.key,
-      flagVersion: flag.version,
-      evalResult: flag.value,
-    }).catch((e) => {
-      warn(`failed to send flag check event`, e);
-    });
+
+    if (!limitExceeded) {
+      void featureFlagEvent({
+        action: "check",
+        flagKey: flag.key,
+        flagVersion: flag.version,
+        evalResult: flag.value,
+      }).catch((e) => {
+        warn(`failed to send flag check event`, e);
+      });
+    }
 
     return flag.value;
   }

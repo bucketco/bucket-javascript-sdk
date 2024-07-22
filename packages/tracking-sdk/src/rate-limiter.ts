@@ -5,9 +5,9 @@ const eventsByKey: Record<string, number[]> = {};
 export default function rateLimited<T extends any[], R>(
   eventsPerMinute: number,
   keyFunc: (...args: T) => string,
-  func: (...args: T) => R,
-): (...funcArgs: T) => R | void {
-  return function (...funcArgs: T): R | void {
+  func: (limitExceeded: boolean, ...args: T) => R,
+): (...funcArgs: T) => R {
+  return function (...funcArgs: T): R {
     const now = Date.now();
 
     const key = keyFunc(...funcArgs);
@@ -22,11 +22,13 @@ export default function rateLimited<T extends any[], R>(
       events.shift();
     }
 
-    if (events.length >= eventsPerMinute) {
-      return;
+    const limitExceeded = events.length >= eventsPerMinute;
+    const res = func(limitExceeded, ...funcArgs);
+
+    if (!limitExceeded) {
+      events.push(now);
     }
 
-    events.push(now);
-    return func(...funcArgs);
+    return res;
   };
 }
