@@ -1,11 +1,19 @@
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
 import {
   decorateLogger,
   isObject,
+  maskedProxy,
   ok,
   rateLimited,
-  maskedProxy,
 } from "../src/utils";
 
 describe("isObject", () => {

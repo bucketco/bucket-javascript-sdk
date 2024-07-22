@@ -1,10 +1,10 @@
 import express from "express";
-import { bucket } from "./bucket";
+import bucket from "./bucket";
 import { BucketClient } from "../src";
-import type { AppFlags } from "./flags";
 
-export const app = express();
-
+// Augment the Express types to include the `bucketUser` property on the `res.locals` object
+// This will allow us to access the BucketClient instance in our route handlers
+// without having to pass it around manually
 declare global {
   namespace Express {
     interface Locals {
@@ -13,8 +13,16 @@ declare global {
   }
 }
 
+const app = express();
+
 app.use(express.json());
+
 app.use((req, res, next) => {
+  // Create a new BucketClient instance by calling the `withUser` and `withCompany` methods,
+  // passing the user and company IDs from the request headers.
+  // The original `bucket` instance is not modified, so we can safely use it in other parts of our application.
+  //
+  // We also set some attributes on the user and company objects, which will be sent to the Bucket API.
   const bucketUser = bucket
     .withUser(req.headers["x-bucket-user-id"] as string, {
       attributes: {
@@ -27,6 +35,7 @@ app.use((req, res, next) => {
       },
     });
 
+  // Store the BucketClient instance in the `res.locals` object so we can access it in our route handlers
   res.locals.bucketUser = bucketUser;
   next();
 });
@@ -35,39 +44,63 @@ const todos = ["Buy milk", "Walk the dog"];
 
 app.get("/", (_req, res) => {
   res.locals.bucketUser.trackFeatureUsage("Front Page Viewed");
-  res.send("Hello World");
+  res.json({ message: "Ready to manage some TODOs!" });
 });
 
 app.get("/todos", async (_req, res) => {
-  const flags = res.locals.bucketUser.getFlags<AppFlags>();
+  // Return todos if the feature is enabled for the user
+  // We use the `getFlags` method to check if the user has the "show-todos" flag enabled.
+  if (res.locals.bucketUser.getFlags()["show-todos"]) {
+    res.locals.bucketUser.trackFeatureUsage("Got todos");
 
-  if (flags["show-todos"]) {
-    res.locals.bucketUser.trackFeatureUsage("Front Page Viewed");
+    return res.json({ todos });
   }
 
-  res.json({ todos });
+  // Return no todos if the feature is disabled for the user
+  return res.json({ todos: [] });
 });
 
 app.post("/todos", (req, res) => {
   const { todo } = req.body;
+
   if (typeof todo !== "string") {
     return res.status(400).json({ error: "Invalid todo" });
   }
 
-  todos.push(todo);
+  // Check if the user has the "create-todos" flag enabled
+  if (res.locals.bucketUser.getFlags()["create-todos"]) {
+    // Track the feature usage, including the todo that was created (for analytics)
+    res.locals.bucketUser.trackFeatureUsage("Created todo", {
+      attributes: { todo },
+    });
 
-  res.locals.bucketUser.trackFeatureUsage("Created todo");
-  res.json({ todo });
+    todos.push(todo);
+
+    return res.status(201).json({ todo });
+  }
+
+  res
+    .status(403)
+    .json({ error: "You do not have access to this feature yet!" });
 });
 
 app.delete("/todos/:idx", (req, res) => {
   const idx = parseInt(req.params.idx);
+
   if (isNaN(idx) || idx < 0 || idx >= todos.length) {
     return res.status(400).json({ error: "Invalid index" });
   }
 
-  todos.splice(idx, 1);
+  if (res.locals.bucketUser.getFlags()["delete-todos"]) {
+    todos.splice(idx, 1);
 
-  res.locals.bucketUser.trackFeatureUsage("Deleted todo");
-  res.json({});
+    res.locals.bucketUser.trackFeatureUsage("Deleted todo");
+    res.json({});
+  }
+
+  res
+    .status(403)
+    .json({ error: "You do not have access to this feature yet!" });
 });
+
+export default app;

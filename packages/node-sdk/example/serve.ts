@@ -1,5 +1,14 @@
-import { app } from "./app";
+import bucket from "./bucket";
+import app from "./app";
 
-app.listen(process.env.PORT ?? 3000, () => {
-  console.log("Server is running on port 3000");
+// Initialize Bucket SDK before starting the server,
+// so that feature flags are available when the server starts.
+bucket.initialize().then(() => {
+  console.log("Bucket initialized");
+
+  // Start listening for requests only after Bucket is initialized,
+  // which guarantees that feature flags are available.
+  app.listen(process.env.PORT ?? 3000, () => {
+    console.log("Server is running on port 3000");
+  });
 });

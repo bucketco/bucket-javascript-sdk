@@ -6,16 +6,30 @@ import { evaluateFlag } from "@bucketco/flag-evaluation";
 import { BucketClient } from "../src/client";
 import {
   API_HOST,
+  FLAG_EVENTS_PER_MIN,
   FLAGS_REFETCH_MS,
   SDK_VERSION,
   SDK_VERSION_HEADER_NAME,
 } from "../src/config";
 import fetchClient from "../src/fetch-http-client";
 import { ClientOptions, FlagDefinitions } from "../src/types";
+import { rateLimited } from "../src/utils";
 
-vi.mock("@bucketco/flag-evaluation", () => ({
-  evaluateFlag: vi.fn(),
-}));
+vi.mock("@bucketco/flag-evaluation", async (importOriginal) => {
+  const original = (await importOriginal()) as any;
+  return {
+    ...original,
+    evaluateFlag: vi.fn(),
+  };
+});
+
+vi.mock("../src/utils", async (importOriginal) => {
+  const original = (await importOriginal()) as any;
+  return {
+    ...original,
+    rateLimited: vi.fn(original.rateLimited),
+  };
+});
 
 describe("Client", () => {
   const logger = {
@@ -851,7 +865,7 @@ describe("Client", () => {
       const result = client.getFlags();
 
       expect(result).toEqual({
-        flag1: { key: "flag1", value: true, version: 1 },
+        flag1: true,
       });
 
       expect(evaluateFlag).toHaveBeenCalledTimes(2);
@@ -918,6 +932,31 @@ describe("Client", () => {
           evalResult: true,
         },
       );
+    });
+
+    it("should properly define the rate limiter key", async () => {
+      client = client
+        .withUser(user.userId, { attributes: user.attrs })
+        .withCompany(company.companyId, { attributes: company.attrs })
+        .withOtherContext(otherContext);
+
+      await client.initialize();
+      client.getFlags();
+
+      expect(rateLimited).toHaveBeenCalledWith(
+        FLAG_EVENTS_PER_MIN,
+        expect.any(Function),
+        expect.any(Function),
+      );
+      const key = vi
+        .mocked(rateLimited)
+        .mock.calls[0][1]({ test: { version: 20, value: true } }, "test");
+
+      expect(key).toBe(
+        "user.id=user123&user.age=1&user.name=John&company.id=company123&company.employees=100&company.name=Acme+Inc.&custom=context&key=value:test:20:true",
+      );
+
+      vi.mocked(rateLimited).mockRestore();
     });
 
     it("should return evaluated flags when only user is defined", async () => {
@@ -1075,10 +1114,7 @@ describe("Client", () => {
       const result = client.getFlags();
 
       expect(result).toEqual({
-        flagKey: {
-          key: "flagKey",
-          value: true,
-        },
+        flagKey: true,
       });
 
       expect(logger.warn).toHaveBeenCalledWith(
@@ -1102,10 +1138,7 @@ describe("Client", () => {
     it("should not fail if sendFeatureFlagEvent fails to send evaluate event", async () => {
       httpClient.post.mockRejectedValueOnce(new Error("Network error"));
 
-      client = client
-        .withUser(user.userId, { attributes: user.attrs })
-        .withCompany(company.companyId, { attributes: company.attrs })
-        .withOtherContext(otherContext);
+      client = client.withUser("fancyUser");
 
       await client.initialize();
       client.getFlags();
@@ -1126,10 +1159,7 @@ describe("Client", () => {
         body: { success: true },
       });
 
-      client = client
-        .withUser(user.userId, { attributes: user.attrs })
-        .withCompany(company.companyId, { attributes: company.attrs })
-        .withOtherContext(otherContext);
+      client = client.withUser("anotherUser");
 
       await client.initialize();
       const result = client.getFlags();
@@ -1137,7 +1167,7 @@ describe("Client", () => {
       httpClient.post.mockRejectedValueOnce(new Error("Network error"));
 
       // Trigger a flag check
-      expect(result.flag1.value).toBe(true);
+      expect(result.flag1).toBe(true);
 
       await flushPromises();
 

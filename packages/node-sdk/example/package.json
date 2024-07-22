@@ -7,7 +7,6 @@
   "type": "commonjs",
   "main": "serve.ts",
   "dependencies": {
-    "@bucketco/node-sdk": "file:../",
     "express": "^4.19.2",
     "tsx": "^4.16.2",
     "typescript": "^5.5.3"

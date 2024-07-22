@@ -1,4 +1,4 @@
-import { evaluateFlag } from "@bucketco/flag-evaluation";
+import { evaluateFlag, flattenJSON } from "@bucketco/flag-evaluation";
 
 import cache from "./cache";
 import {
@@ -25,9 +25,9 @@ import {
 import {
   decorateLogger,
   isObject,
+  maskedProxy,
   ok,
   rateLimited,
-  maskedProxy,
 } from "./utils";
 
 /**
@@ -589,12 +589,16 @@ export class BucketClient {
         "failed to use feature flag definitions, there are none cached yet. using fallback flags.",
       );
     }
+    const contextKey = new URLSearchParams(
+      flattenJSON(mergedContext),
+    ).toString();
 
     return maskedProxy(
       evaluatedFlags,
       rateLimited(
         FLAG_EVENTS_PER_MIN,
-        (flags, key) => `${key}:${flags[key].version}:${flags[key].value}`,
+        (flags, key) =>
+          `${contextKey}:${key}:${flags[key].version}:${flags[key].value}`,
         (limitExceeded, flags, key) => {
           if (!limitExceeded) {
             void this.sendFeatureFlagEvent({
