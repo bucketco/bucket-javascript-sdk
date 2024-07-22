@@ -21,6 +21,7 @@ import {
   HttpClient,
   Logger,
   TrackOptions,
+  TypedFlags,
 } from "./types";
 import {
   decorateLogger,
@@ -45,7 +46,7 @@ export class BucketClient {
     refetchInterval: number;
     staleWarningInterval: number;
     headers: Record<string, string>;
-    fallbackFlags?: Record<string, Flag>;
+    fallbackFlags?: Record<keyof TypedFlags, Flag>;
     featureFlagDefinitionCache?: Cache<FlagDefinitions>;
   };
 
@@ -112,13 +113,13 @@ export class BucketClient {
       options.fallbackFlags &&
       Object.entries(options.fallbackFlags).reduce(
         (acc, [key, value]) => {
-          acc[key] = {
+          acc[key as keyof TypedFlags] = {
             key,
             value: value as boolean,
           };
           return acc;
         },
-        {} as Record<string, Flag>,
+        {} as Record<keyof TypedFlags, Flag>,
       );
 
     this._shared = {
@@ -531,9 +532,7 @@ export class BucketClient {
    * @remarks
    * Call `initialize` before calling this method to ensure the feature flag definitions are cached, empty flags will be returned otherwise.
    **/
-  public getFlags<TFlagKey extends string = string>(): Readonly<
-    Record<TFlagKey, Flag>
-  > {
+  public getFlags(): Readonly<TypedFlags> {
     const mergedContext = {
       user: this._user && {
         id: this._user.userId,
@@ -547,8 +546,8 @@ export class BucketClient {
     };
 
     const flagDefinitions = this.getFeatureFlagDefinitionCache().get();
-    let evaluatedFlags: Flags<TFlagKey> =
-      (this._shared.fallbackFlags as Flags<TFlagKey>) || {};
+    let evaluatedFlags: Record<keyof TypedFlags, Flag> =
+      this._shared.fallbackFlags || {};
 
     if (flagDefinitions) {
       const keyToVersionMap = new Map<string, number>(
@@ -575,14 +574,14 @@ export class BucketClient {
         .filter((e) => e.value)
         .reduce(
           (acc, res) => {
-            acc[res.flag.key as TFlagKey] = {
+            acc[res.flag.key as keyof TypedFlags] = {
               key: res.flag.key,
               value: res.value,
               version: keyToVersionMap.get(res.flag.key),
             };
             return acc;
           },
-          {} as Record<TFlagKey, Flag>,
+          {} as Record<keyof TypedFlags, Flag>,
         );
 
       this._shared.logger?.debug("evaluated flags", evaluatedFlags);
@@ -594,13 +593,15 @@ export class BucketClient {
 
     return readNotifyProxy(
       evaluatedFlags,
-      rateLimited(FLAG_EVENTS_PER_MIN, async (_: string, res: Flag) => {
-        await this.sendFeatureFlagEvent({
+      rateLimited(FLAG_EVENTS_PER_MIN, (_: keyof TypedFlags, res: Flag) => {
+        void this.sendFeatureFlagEvent({
           action: "check",
           flagKey: res.key,
           flagVersion: res.version,
           evalResult: res.value,
         });
+
+        re;
       }),
     );
   }

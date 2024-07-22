@@ -78,11 +78,19 @@ export interface Flag {
 /**
  * Describes a collection of evaluated feature flags.
  *
- * @typeParam TFlagKey - The type of the flag keys.
+ * @remarks
+ * Extends the Flags interface to define the available flags.
  */
-export type Flags<TFlagKey extends string = string> = Readonly<
-  Record<TFlagKey, Flag>
->;
+export interface Flags {}
+
+/**
+ * Describes a collection of (strong-typed) evaluated feature flags.
+ *
+ * @typeParam Flags - The type of the flags that is declared by the developer.
+ */
+export type TypedFlags = keyof Flags extends never
+  ? Record<string, boolean>
+  : Record<keyof Flags, boolean>;
 
 /**
  * Describes the response of the feature flags endpoint
@@ -224,7 +232,7 @@ export type ClientOptions = {
   /**
    * The flags to use as fallbacks when the API is unavailable (optional).
    **/
-  fallbackFlags?: Record<string, boolean>;
+  fallbackFlags?: TypedFlags;
 
   /**
    * The HTTP client to use for sending requests (optional). Default is the built-in fetch client.
