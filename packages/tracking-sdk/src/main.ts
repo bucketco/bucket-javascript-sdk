@@ -600,11 +600,11 @@ export default function main() {
       staleWhileRevalidate,
     });
 
-    let flags = res?.flags;
+    let recvFlags = res?.flags;
 
-    if (!flags) {
+    if (!recvFlags) {
       warn(`failed to fetch feature flags, using fall-back flags`);
-      flags = fallbackFlags.reduce((acc, flag) => {
+      recvFlags = fallbackFlags.reduce((acc, flag) => {
         acc[flag] = {
           key: flag,
           value: true,
@@ -613,11 +613,11 @@ export default function main() {
       }, {} as FlagsResponse);
     }
 
-    const keyFunc = (f: FlagsResponse, k: string) =>
-      `${res.url}:${k}:${f[k].version}:${f[k].value}`;
+    const keyFunc = (flags: FlagsResponse, key: string) =>
+      `${res.url}:${key}:${flags[key].version}:${flags[key].value}`;
 
     return maskedProxy(
-      flags!,
+      recvFlags!,
       rateLimited(FLAG_EVENTS_PER_MIN, keyFunc, sendCheckEvent),
     );
   }

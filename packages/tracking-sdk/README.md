@@ -9,7 +9,7 @@ The library can be included directly as an external script or you can import it.
 A. Script tag (client-side directly in html)
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@bucketco/tracking-sdk@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@bucketco/tracking-sdk@3"></script>
 ```
 
 B. Import module (in either node or browser bundling)
@@ -48,7 +48,7 @@ Supply these to the `init` call (2nd argument)
 {
   debug?: false, // enable debug mode to log all info and errors
   persistUser?: true | false // default value depends on environment, see below under "Persisting users"
-  host?: "https://tracking.bucket.co",
+  host?: "https://front.bucket.co",
   sseHost?: "https://livemessaging.bucket.co"
 }
 ```
@@ -121,7 +121,7 @@ const flags = await bucket.getFeatureFlags({
 // }
 ```
 
-Each time a specific flag from `flags` is checked, a `track` event is emitted to Bucket. This helps track all the uses of the flag throughout the application. The events can be manually invoked by using the `bucket.featureFlagEvent` method, though it is recommended that developers always pass around the instance of `flags` and always check the individual flags using that instance.
+Each time a specific flag from `flags` is checked, a special `check` event is emitted to Bucket. This helps track all the uses of the flag throughout the application. The events can be manually sent by using the `bucket.featureFlagEvent` method, though it is recommended that developers always pass around the instance of `flags` and always check the individual flags using that instance.
 
 ### Zero PII
 
@@ -191,7 +191,7 @@ If you are running with strict Content Security Policies active on your website,
 
 | Directive   | Values                          | Module            | Reason                                                                                                                                       |
 | ----------- | ------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| connect-src | https://tracking.bucket.co      | tracking          | Used for all tracking methods: `bucket.user()`, `bucket.company()`, `bucket.track()` and `bucket.feedback()`                                 |
+| connect-src | https://front.bucket.co         | tracking          | Used for all tracking methods: `bucket.user()`, `bucket.company()`, `bucket.track()` and `bucket.feedback()`                                 |
 | connect-src | https://livemessaging.bucket.co | live satisfaction | Server sent events from the Bucket Live Satisfaction service, which allows for automatically collecting feedback when a user used a feature. |
 | style-src   | 'unsafe-inline'                 | feedback UI       | The feedback UI is styled with inline styles. Not having this directive results unstyled HTML elements.                                      |
 

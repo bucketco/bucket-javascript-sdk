@@ -130,7 +130,7 @@ export class AblySSEChannel {
         const errorPayload = JSON.parse(e.data);
         errorCode = errorPayload?.code && Number(errorPayload.code);
       } catch (error: any) {
-        this.warn("received unparseable error message", error, e);
+        this.warn("received unparsable error message", error, e);
       }
 
       if (
@@ -149,7 +149,7 @@ export class AblySSEChannel {
       } else if (connectionState === 1) {
         this.warn("event source connection failed to open", e);
       } else {
-        this.warn("event source unexpected error occured", e);
+        this.warn("event source unexpected error occurred", e);
       }
     }
 
@@ -167,7 +167,7 @@ export class AblySSEChannel {
         }
       }
     } catch (error: any) {
-      this.warn("received unparseable message", error, e);
+      this.warn("received unparsable message", error, e);
       return;
     }
 
