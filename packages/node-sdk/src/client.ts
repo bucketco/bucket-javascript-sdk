@@ -17,7 +17,6 @@ import {
   FeatureFlagEvent,
   Flag,
   FlagDefinitions,
-  Flags,
   HttpClient,
   Logger,
   TrackOptions,
@@ -28,7 +27,7 @@ import {
   isObject,
   ok,
   rateLimited,
-  readNotifyProxy,
+  maskedProxy,
 } from "./utils";
 
 /**
@@ -591,18 +590,22 @@ export class BucketClient {
       );
     }
 
-    return readNotifyProxy(
+    return maskedProxy(
       evaluatedFlags,
-      rateLimited(FLAG_EVENTS_PER_MIN, (_: keyof TypedFlags, res: Flag) => {
-        void this.sendFeatureFlagEvent({
-          action: "check",
-          flagKey: res.key,
-          flagVersion: res.version,
-          evalResult: res.value,
-        });
+      rateLimited(
+        FLAG_EVENTS_PER_MIN,
+        (flags, key) => `${key}:${flags[key].version}:${flags[key].value}`,
+        (flags, key) => {
+          void this.sendFeatureFlagEvent({
+            action: "check",
+            flagKey: key,
+            flagVersion: flags[key].version,
+            evalResult: flags[key].value,
+          });
 
-        re;
-      }),
+          return flags[key].value;
+        },
+      ),
     );
   }
 }

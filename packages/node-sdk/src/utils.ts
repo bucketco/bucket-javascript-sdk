@@ -2,6 +2,8 @@ import { Logger } from "./types";
 
 const oneMinute = 60 * 1000;
 
+const eventsByKey: Record<string, number[]> = {};
+
 /**
  * Create a rate-limited function that calls the given function at most `eventsPerMinute` times per minute.
  *
@@ -11,17 +13,19 @@ const oneMinute = 60 * 1000;
  **/
 export function rateLimited<T extends any[], R>(
   eventsPerMinute: number,
+  keyFunc: (...args: T) => string,
   func: (...args: T) => R,
-): (...funcArgs: T) => R | void {
-  ok(
-    typeof eventsPerMinute === "number" && eventsPerMinute > 0,
-    "eventsPerMinute must be a positive number",
-  );
-  ok(typeof func === "function", "func must be a function");
-
-  const events: number[] = [];
-  return function (...funcArgs: T): R | void {
+): (...funcArgs: T) => R {
+  return function (...funcArgs: T): R {
     const now = Date.now();
+
+    const key = keyFunc(...funcArgs);
+
+    if (!eventsByKey[key]) {
+      eventsByKey[key] = [];
+    }
+
+    const events = eventsByKey[key];
 
     while (events.length && now - events[0] > oneMinute) {
       events.shift();
@@ -37,30 +41,34 @@ export function rateLimited<T extends any[], R>(
 }
 
 /**
- * Create a read-only proxy for the given object that notifies a callback when a property is accessed.
+ * Create a read-only masked proxy for the given object that notifies a
+ * callback when a property is accessed. The callback is then responsible
+ * for returning the masked value for the given property.
  *
  * @param obj - The object to proxy.
  * @param callback - The callback to notify.
+ *
  * @returns The proxy object.
  **/
-export function readNotifyProxy<T extends object, K extends keyof T>(
+export function maskedProxy<T extends object, K extends keyof T, O>(
   obj: T,
-  callback?: (key: K, value: T[K]) => void,
-): Readonly<T> {
+  valueFunc: (target: T, prop: K) => O,
+) {
   return new Proxy(obj, {
     get(target: T, prop) {
       const val = target[prop as K];
 
       if (val !== undefined) {
-        callback?.(prop as K, val);
+        return valueFunc(target, prop as K);
       }
 
-      return target[prop as K];
+      return undefined;
     },
-    set() {
-      return false;
+    set(_target, prop, _value) {
+      console.error(`Cannot modify property '${String(prop)}' of the object.`);
+      return true;
     },
-  });
+  }) as Readonly<Record<K, O>>;
 }
 
 /**
