@@ -2,7 +2,8 @@
 
 ## Running
 
-```
+```sh
 yarn install
-yarn dev
+
+EXPORT BUCKET_SECRET_KEY=<secretKey> yarn start
 ```
