@@ -11,15 +11,15 @@ import {
 } from "./config";
 import { createDefaultFeedbackPromptHandler } from "./default-feedback-prompt-handler";
 import * as feedbackLib from "./feedback";
-import { FeatureFlagsOptions, Flag, FlagsResponse } from "./flags";
+import { FeatureFlagsOptions, FlagsResponse } from "./flags";
 import { getFlags, mergeDeep } from "./flags-fetch";
+import maskedProxy from "./masked-proxy";
 import { getAuthToken } from "./prompt-storage";
 import {
   FeedbackPromptCompletionHandler,
   parsePromptMessage,
   processPromptMessage,
 } from "./prompts";
-import { readonly as proxify } from "./proxy";
 import rateLimited from "./rate-limiter";
 import { AblySSEChannel, closeAblySSEChannel, openAblySSEChannel } from "./sse";
 import type {
@@ -586,7 +586,7 @@ export default function main() {
     fallbackFlags = [],
     timeoutMs,
     staleWhileRevalidate = true,
-  }: FeatureFlagsOptions): Promise<FlagsResponse> {
+  }: FeatureFlagsOptions) {
     const baseContext = {
       user: { id: sessionUserId },
     };
@@ -613,16 +613,17 @@ export default function main() {
       }, {} as FlagsResponse);
     }
 
-    const keyFunc = (_: keyof FlagsResponse, flag: Flag) =>
-      `${res.url}:${flag.key}:${flag.version}:${flag.value}`;
+    const keyFunc = (f: FlagsResponse, k: string) =>
+      `${res.url}:${k}:${f[k].version}:${f[k].value}`;
 
-    return proxify(
+    return maskedProxy(
       flags!,
       rateLimited(FLAG_EVENTS_PER_MIN, keyFunc, sendCheckEvent),
     );
   }
 
-  function sendCheckEvent(_: keyof Flag, flag: Flag) {
+  function sendCheckEvent(f: FlagsResponse, k: string) {
+    const flag = f[k];
     void featureFlagEvent({
       action: "check",
       flagKey: flag.key,
@@ -631,6 +632,8 @@ export default function main() {
     }).catch((e) => {
       warn(`failed to send flag check event`, e);
     });
+
+    return flag.value;
   }
 
   /**

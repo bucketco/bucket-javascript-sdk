@@ -1,7 +1,11 @@
 import { randomUUID } from "crypto";
 import { expect, Locator, Page, test } from "@playwright/test";
 
-import { SDK_VERSION, SDK_VERSION_HEADER_NAME } from "../../src/config";
+import {
+  API_HOST,
+  SDK_VERSION,
+  SDK_VERSION_HEADER_NAME,
+} from "../../src/config";
 import { DEFAULT_TRANSLATIONS } from "../../src/feedback/config/defaultTranslations";
 import {
   feedbackContainerId,
@@ -17,8 +21,6 @@ const headers = {
   "content-type": "application/json",
   authorization: `Bearer ${KEY}`,
 };
-
-const API_HOST = `https://tracking.bucket.co`;
 
 const WINDOW_WIDTH = 1280;
 const WINDOW_HEIGHT = 720;

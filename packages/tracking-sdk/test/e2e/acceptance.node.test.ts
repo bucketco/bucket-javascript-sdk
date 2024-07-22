@@ -4,7 +4,11 @@ import nock from "nock";
 import { beforeEach, expect, test } from "vitest";
 
 import bucket from "../../";
-import { SDK_VERSION, SDK_VERSION_HEADER_NAME } from "../../src/config";
+import {
+  API_HOST,
+  SDK_VERSION,
+  SDK_VERSION_HEADER_NAME,
+} from "../../src/config";
 
 const KEY = randomUUID();
 
@@ -19,7 +23,7 @@ const nockOpts = {
 };
 
 test("Acceptance", async () => {
-  nock(`https://tracking.bucket.co`)
+  nock(API_HOST)
     .post(
       /.*\/user/,
       {
@@ -32,7 +36,7 @@ test("Acceptance", async () => {
     )
     .reply(200);
 
-  nock(`https://tracking.bucket.co`)
+  nock(API_HOST)
     .post(
       /.*\/company/,
       {
@@ -46,7 +50,7 @@ test("Acceptance", async () => {
     )
     .reply(200);
 
-  nock(`https://tracking.bucket.co`)
+  nock(API_HOST)
     .post(
       /.*\/event/,
       {
@@ -61,7 +65,7 @@ test("Acceptance", async () => {
     )
     .reply(200);
 
-  nock(`https://tracking.bucket.co`)
+  nock(API_HOST)
     .post(
       /.*\/feedback/,
       {

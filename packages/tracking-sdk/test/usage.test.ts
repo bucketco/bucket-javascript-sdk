@@ -170,12 +170,7 @@ describe("usage", () => {
       context: { user: { id: "user-id" } },
     });
 
-    expect(flags["feature1"]).toEqual({
-      value: true,
-      key: "feature1",
-      version: 2,
-    });
-
+    expect(flags["feature1"]).toBe(true);
     await nockWait(asyncNock);
   });
 
@@ -1017,7 +1012,7 @@ describe("feature flags", () => {
       fallbackFlags,
     });
 
-    expect(result["feature1"]).toEqual(fallbackFlags[0]);
+    expect(result["feature1"]).toBe(true);
 
     await nockWait(asyncNock);
   });

@@ -1,7 +1,11 @@
 import { randomUUID } from "crypto";
 import { expect, test } from "@playwright/test";
 
-import { SDK_VERSION, SDK_VERSION_HEADER_NAME } from "../../src/config";
+import {
+  API_HOST,
+  SDK_VERSION,
+  SDK_VERSION_HEADER_NAME,
+} from "../../src/config";
 
 const KEY = randomUUID();
 
@@ -17,7 +21,7 @@ test("Acceptance", async ({ page }) => {
   };
 
   // Mock API calls with assertions
-  await page.route(`https://tracking.bucket.co/user`, async (route) => {
+  await page.route(`${API_HOST}/user`, async (route) => {
     expect(route.request().headers()).toMatchObject(headers);
     expect(route.request().method()).toEqual("POST");
     expect(route.request().postDataJSON()).toMatchObject({
@@ -31,7 +35,7 @@ test("Acceptance", async ({ page }) => {
     await route.fulfill({ status: 200 });
   });
 
-  await page.route(`https://tracking.bucket.co/company`, async (route) => {
+  await page.route(`${API_HOST}/company`, async (route) => {
     expect(route.request().method()).toEqual("POST");
     expect(route.request().headers()).toMatchObject(headers);
 
@@ -47,7 +51,7 @@ test("Acceptance", async ({ page }) => {
     await route.fulfill({ status: 200 });
   });
 
-  await page.route(`https://tracking.bucket.co/event`, async (route) => {
+  await page.route(`${API_HOST}/event`, async (route) => {
     expect(route.request().method()).toEqual("POST");
     expect(route.request().headers()).toMatchObject(headers);
 
@@ -64,7 +68,7 @@ test("Acceptance", async ({ page }) => {
     await route.fulfill({ status: 200 });
   });
 
-  await page.route(`https://tracking.bucket.co/feedback`, async (route) => {
+  await page.route(`${API_HOST}/feedback`, async (route) => {
     expect(route.request().method()).toEqual("POST");
     expect(route.request().headers()).toMatchObject(headers);
     expect(route.request().postDataJSON()).toMatchObject({
