@@ -1,7 +1,8 @@
 import { Logger } from "../logger";
-import { HttpClient } from "../request";
+import { HttpClient } from "../httpClient";
 import { FlagCache } from "./flags-cache";
-import { validateFeatureFlagsResponse } from "./flags-fetch";
+import { flattenJSON, validateFeatureFlagsResponse } from "./flags-fetch";
+import { isObject, validateFlags } from "./flags-cache";
 
 export interface Flag {
   value: boolean;
@@ -30,6 +31,69 @@ export const DEFAULT_FLAGS_CONFIG: Config = {
   staleWhileRevalidate: false,
   failureRetryAttempts: false,
 };
+
+// Deep merge two objects.
+export function mergeDeep(
+  target: Record<string, any>,
+  ...sources: Record<string, any>[]
+): Record<string, any> {
+  if (!sources.length) return target;
+  const source = sources.shift();
+
+  if (isObject(target) && isObject(source)) {
+    for (const key in source) {
+      if (isObject(source[key])) {
+        if (!target[key]) Object.assign(target, { [key]: {} });
+        mergeDeep(target[key], source[key]);
+      } else {
+        Object.assign(target, { [key]: source[key] });
+      }
+    }
+  }
+
+  return mergeDeep(target, ...sources);
+}
+
+export type FeatureFlagsResponse = {
+  success: boolean;
+  flags: FlagsResponse;
+};
+
+export function validateFeatureFlagsResponse(
+  response: any,
+): FeatureFlagsResponse | undefined {
+  if (!isObject(response)) {
+    return;
+  }
+
+  if (typeof response.success !== "boolean" || !isObject(response.flags)) {
+    return;
+  }
+  const flags = validateFlags(response.flags);
+  if (!flags) {
+    return;
+  }
+
+  return {
+    success: response.success,
+    flags,
+  };
+}
+
+export function flattenJSON(obj: Record<string, any>): Record<string, any> {
+  const result: Record<string, any> = {};
+  for (const key in obj) {
+    if (typeof obj[key] === "object") {
+      const flat = flattenJSON(obj[key]);
+      for (const flatKey in flat) {
+        result[`${key}.${flatKey}`] = flat[flatKey];
+      }
+    } else {
+      result[key] = obj[key];
+    }
+  }
+  return result;
+}
 
 export const FLAGS_STALE_MS = 60000; // turn stale after 60 seconds, optionally reevaluate in the background
 export const FLAGS_EXPIRE_MS = 7 * 24 * 60 * 60 * 1000; // expire entirely after 7 days
@@ -71,11 +135,14 @@ export class FlagsClient {
     const flattenedContext = flattenJSON({ context: this.context });
 
     const params = new URLSearchParams(flattenedContext);
+    // publishableKey should be part of the cache key
+    params.append("publishableKey", this.httpClient.publishableKey);
+
     // sort the params to ensure that the URL is the same for the same context
     params.sort();
 
-    // const url = `/flags/evaluate?` + params.toString();
-    const cachedItem = this.cache.get(url);
+    const cacheKey = params.toString();
+    const cachedItem = this.cache.get(cacheKey);
 
     // if there's no cached item OR the cached item is a failure and we haven't retried
     // too many times yet - fetch now
@@ -85,7 +152,7 @@ export class FlagsClient {
         (this.config.failureRetryAttempts === false ||
           cachedItem.attemptCount < this.config.failureRetryAttempts))
     ) {
-      return this.fetchFlags(url, this.config.timeoutMs);
+      return this.fetchFlags(cacheKey, params, this.config.timeoutMs);
     }
 
     // cachedItem is a success or a failed attempt that we've retried too many times
@@ -93,21 +160,23 @@ export class FlagsClient {
       // serve successful stale cache if `staleWhileRevalidate` is enabled
       if (this.config.staleWhileRevalidate && cachedItem.success) {
         // re-fetch in the background, return last successful value
-        this.fetchFlags(url, this.config.timeoutMs).catch(() => {
+        this.fetchFlags(cacheKey, params, this.config.timeoutMs).catch(() => {
           // we don't care about the result, we just want to re-fetch
         });
         return cachedItem.flags;
       }
-      return this.fetchFlags(url, this.config.timeoutMs);
+      return this.fetchFlags(cacheKey, params, this.config.timeoutMs);
     }
 
     // serve cached items if not stale and not expired
     return cachedItem.flags;
   }
 
-  private async fetchFlags(params: URLSearchParams, timeoutMs: number) {
-    params.sort();
-    const paramsStr = params.toString();
+  private async fetchFlags(
+    cacheKey: string,
+    params: URLSearchParams,
+    timeoutMs: number,
+  ) {
     try {
       const res = await this.httpClient.get({
         path: "/flags/evaluate",
@@ -123,7 +192,7 @@ export class FlagsClient {
         throw new Error("unable to validate response");
       }
 
-      this.cache.set(paramsStr, {
+      this.cache.set(cacheKey, {
         success: true,
         flags: typeRes.flags,
         attemptCount: 0,
@@ -132,10 +201,10 @@ export class FlagsClient {
     } catch (e) {
       this.logger.error("error fetching flags: ", e);
 
-      const current = this.cache.get(paramsStr);
+      const current = this.cache.get(cacheKey);
       if (current) {
         // if there is a previous failure cached, increase the attempt count
-        this.cache.set(paramsStr, {
+        this.cache.set(cacheKey, {
           success: current.success,
           flags: current.flags,
           attemptCount: current.attemptCount + 1,
@@ -143,7 +212,7 @@ export class FlagsClient {
       } else {
         // otherwise cache if the request failed and there is no previous version to extend
         // to avoid having the UI wait and spam the API
-        this.cache.set(paramsStr, {
+        this.cache.set(cacheKey, {
           success: false,
           flags: undefined,
           attemptCount: 1,

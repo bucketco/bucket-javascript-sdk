@@ -11,7 +11,7 @@ import {
   rememberAuthToken,
 } from "./feedback/prompt-storage";
 import { loggerWithPrefix, Logger } from "./logger";
-import { HttpClient } from "./request";
+import { HttpClient } from "./httpClient";
 
 interface AblyTokenDetails {
   token: string;

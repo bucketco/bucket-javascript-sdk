@@ -19,7 +19,7 @@ export class HttpClient {
       params = new URLSearchParams();
     }
     params.append(SDK_VERSION_HEADER_NAME, SDK_VERSION);
-    params.append("publishable_key", this.publishableKey);
+    params.append("publishableKey", this.publishableKey);
 
     const url = new URL(path, this.baseUrl);
     url.search = params.toString();

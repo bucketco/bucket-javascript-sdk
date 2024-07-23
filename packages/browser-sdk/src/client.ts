@@ -15,9 +15,11 @@ import {
   FeatureFlagsOptions,
   FlagsClient,
 } from "./flags/flags";
-import { Logger, quietConsoleLogger } from "./logger";
-import { HttpClient } from "./request";
+import { Logger, loggerWithPrefix, quietConsoleLogger } from "./logger";
+import { HttpClient } from "./httpClient";
 import * as feedbackLib from "./feedback/ui";
+
+const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
 interface Config {
   debug: boolean;
@@ -33,7 +35,6 @@ interface InitOptions {
   sseHost?: string;
   feedback?: FeedbackConfig;
   flags?: FeatureFlagsOptions;
-  context: BucketContext;
 }
 
 const defaultConfig: Config = {
@@ -60,7 +61,8 @@ export class BucketClient {
     opts?: InitOptions,
   ) {
     this.publishableKey = publishableKey;
-    this.logger = opts?.logger ?? quietConsoleLogger;
+    this.logger =
+      opts?.logger ?? loggerWithPrefix(quietConsoleLogger, "[Bucket]");
     this.context = context ?? {};
     this.config = {
       ...defaultConfig,
@@ -79,17 +81,24 @@ export class BucketClient {
     this.flagsClient = new FlagsClient(
       this.httpClient,
       this.context,
+      this.logger,
       this.config.flags,
     );
 
-    if (this.context?.user) {
-      this.liveSatisfaction = new LiveSatisfaction(
-        this.config.sseHost,
-        this.logger,
-        this.httpClient,
-        this.config.feedback.promptHandler,
-        String(this.context.user?.id),
-      );
+    if (this.context?.user && this.config.feedback.liveSatisfactionEnabled) {
+      if (isMobile) {
+        this.logger.warn(
+          "Feedback prompting is not supported on mobile devices",
+        );
+      } else {
+        this.liveSatisfaction = new LiveSatisfaction(
+          this.config.sseHost,
+          this.logger,
+          this.httpClient,
+          this.config.feedback.promptHandler,
+          String(this.context.user?.id),
+        );
+      }
     }
   }
 
@@ -99,24 +108,17 @@ export class BucketClient {
    * Must be called before calling other SDK methods.
    */
   async initialize() {
+    const inits = [this.flagsClient.initialize()];
     if (this.liveSatisfaction) {
-      await this.liveSatisfaction.init();
+      inits.push(this.liveSatisfaction.init());
     }
+    await Promise.all(inits);
 
-    // this.flagsClient.getFlags
+    this.logger.debug(
+      `initialized with key "${this.publishableKey}" and options`,
+      this.config,
+    );
   }
-
-  //   // feedbackPromptHandler =
-  //   //   options.feedback?.liveFeedbackHandler ??
-  //   //   options.feedback?.liveSatisfactionHandler ??
-  //   //   createDefaultFeedbackPromptHandler(options.feedback?.ui);
-
-  //   log(`initialized with key "${publishableKey}" and options`, options);
-  // }
-
-  // async reset() {
-  //   this.liveSatisfaction.stop();
-  // }
 
   /**
    * Store attributes for this user
@@ -136,7 +138,7 @@ export class BucketClient {
       userId: String(this.context.user.Id),
       attributes,
     };
-    const res = await this.httpClient.post(`/user`, payload);
+    const res = await this.httpClient.post({ path: `/user`, body: payload });
     this.logger.debug(`sent user`, res);
     return res;
   }
@@ -146,7 +148,7 @@ export class BucketClient {
    *
    * @param attributes Any attributes you want to attach to the company in Bucket
    */
-  async company(attributes: Record<string, any> | null) {
+  async company(attributes?: Record<string, any>) {
     if (!this.context.user) {
       this.logger.debug(
         "`company` call ignored. No user context provided at initialization",
@@ -167,7 +169,7 @@ export class BucketClient {
       attributes,
     };
 
-    const res = await this.httpClient.post(`/company`, payload);
+    const res = await this.httpClient.post({ path: `/company`, body: payload });
     this.logger.debug(`sent company`, res);
     return res;
   }
@@ -192,7 +194,7 @@ export class BucketClient {
     if (this.context.company?.id)
       payload.companyId = String(this.context.company?.id);
 
-    const res = await this.httpClient.post(`/event`, payload);
+    const res = await this.httpClient.post({ path: `/event`, body: payload });
     this.logger.debug(`sent event`, res);
     return res;
   }
@@ -266,10 +268,9 @@ export class BucketClient {
     return this.flagsClient.getFlags();
   }
 
-  /**
-   * Promise that resolves whenever flags change.
-   * */
-  async flagsUpdated() {
-    return this.flagsClient.flagsUpdated();
+  stop() {
+    if (this.liveSatisfaction) {
+      this.liveSatisfaction.stop();
+    }
   }
 }

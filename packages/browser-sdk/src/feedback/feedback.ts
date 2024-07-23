@@ -1,5 +1,5 @@
 import { Logger } from "../logger";
-import { HttpClient } from "../request";
+import { HttpClient } from "../httpClient";
 import { AblySSEChannel, openAblySSEChannel } from "../sse";
 import { getAuthToken } from "./prompt-storage";
 import {
@@ -17,8 +17,6 @@ import {
 import * as feedbackLib from "./ui";
 
 export type Key = string;
-
-const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
 export type Options = {
   persistUser?: boolean;
@@ -283,12 +281,6 @@ export class LiveSatisfaction {
       return;
     }
 
-    // TODO: move out
-    // if (isMobile) {
-    //   warn("Feedback prompting is not supported on mobile devices");
-    //   return;
-    // }
-
     const existingAuth = getAuthToken(this.userId);
     let channel = existingAuth?.channel;
 
@@ -306,8 +298,8 @@ export class LiveSatisfaction {
         this.logger.debug(`feedback prompting status sent`, res);
         const body: { success: boolean; channel?: string } = await res.json();
         if (!body.success || !body.channel) {
-          this.logger.debug(`feedback prompting not enabled`);
-          return res;
+          this.logger.debug(`feedback prompting not enabled: ${body}`);
+          return;
         }
 
         channel = body.channel;
@@ -330,7 +322,8 @@ export class LiveSatisfaction {
       // check that SSE channel has actually been opened, otherwise reset the value
       liveSatisfactionActive = !!this.sseChannel;
     }
-    return channel;
+    return;
+    // return channel;
   }
 
   handleFeedbackPromptRequest(userId: string, message: any) {
@@ -355,6 +348,13 @@ export class LiveSatisfaction {
           message,
         );
       }
+    }
+  }
+
+  stop() {
+    if (this.sseChannel) {
+      this.sseChannel.close();
+      this.sseChannel = null;
     }
   }
 
