@@ -4,7 +4,7 @@ import {
   DEFAULT_FEEDBACK_CONFIG,
   feedback,
   Feedback,
-  FeedbackConfig,
+  Options as FeedbackOptions,
   LiveSatisfaction,
   RequestFeedbackOptions,
   TrackedEvent,
@@ -18,6 +18,7 @@ import {
 import { Logger, loggerWithPrefix, quietConsoleLogger } from "./logger";
 import { HttpClient } from "./httpClient";
 import * as feedbackLib from "./feedback/ui";
+import { BucketContext } from "./context";
 
 const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
@@ -25,15 +26,13 @@ interface Config {
   debug: boolean;
   host: string;
   sseHost: string;
-  feedback: FeedbackConfig;
-  flags: FeatureFlagsOptions;
 }
 
 interface InitOptions {
   logger?: Logger;
   host?: string;
   sseHost?: string;
-  feedback?: FeedbackConfig;
+  feedback?: FeedbackOptions;
   flags?: FeatureFlagsOptions;
 }
 
@@ -41,8 +40,6 @@ const defaultConfig: Config = {
   debug: false,
   host: API_HOST,
   sseHost: SSE_REALTIME_HOST,
-  feedback: DEFAULT_FEEDBACK_CONFIG,
-  flags: DEFAULT_FLAGS_CONFIG,
 };
 
 export class BucketClient {
@@ -67,14 +64,6 @@ export class BucketClient {
     this.config = {
       ...defaultConfig,
       ...opts,
-      feedback: {
-        ...defaultConfig.feedback,
-        ...opts?.feedback,
-      },
-      flags: {
-        ...defaultConfig.flags,
-        ...opts?.flags,
-      },
     };
     this.httpClient = new HttpClient(publishableKey, this.config.host);
 
@@ -82,10 +71,10 @@ export class BucketClient {
       this.httpClient,
       this.context,
       this.logger,
-      this.config.flags,
+      opts?.flags,
     );
 
-    if (this.context?.user && this.config.feedback.liveSatisfactionEnabled) {
+    if (this.context?.user && opts?.feedback?.enableLiveSatisfaction) {
       if (isMobile) {
         this.logger.warn(
           "Feedback prompting is not supported on mobile devices",
@@ -95,7 +84,7 @@ export class BucketClient {
           this.config.sseHost,
           this.logger,
           this.httpClient,
-          this.config.feedback.promptHandler,
+          opts?.feedback.promptHandler,
           String(this.context.user?.id),
         );
       }
@@ -264,7 +253,7 @@ export class BucketClient {
     }, 1);
   }
 
-  async getFlags() {
+  getFlags() {
     return this.flagsClient.getFlags();
   }
 

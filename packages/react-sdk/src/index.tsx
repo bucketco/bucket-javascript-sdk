@@ -4,19 +4,18 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import canonicalJSON from "canonical-json";
 
-import type {
-  FeatureFlagsOptions,
-  Options as BucketSDKOptions,
-} from "@bucketco/tracking-sdk";
-import BucketSingleton from "@bucketco/tracking-sdk";
+import BucketSingleton, { BucketClient } from "@bucketco/browser-sdk";
 import {
   Feedback,
   RequestFeedbackOptions,
 } from "@bucketco/tracking-sdk/dist/types/src/types";
+import { FeatureFlagsOptions } from "@bucketco/browser-sdk/dist/types/src/flags/flags";
+import { FeedbackConfig } from "@bucketco/browser-sdk/dist/types/src/feedback/feedback";
 
 export type BucketInstance = typeof BucketSingleton;
 
@@ -47,7 +46,6 @@ type BucketFlags = keyof (keyof Flags extends never
 export type FlagsResult = { [k in BucketFlags]?: boolean };
 
 type ProviderContextType = {
-  bucket: BucketInstance;
   flags: {
     flags: FlagsResult;
     isLoading: boolean;
@@ -65,7 +63,6 @@ type ProviderContextType = {
 };
 
 const ProviderContext = createContext<ProviderContextType>({
-  bucket: BucketSingleton,
   flags: {
     flags: {},
     isLoading: false,
@@ -78,20 +75,18 @@ const ProviderContext = createContext<ProviderContextType>({
   requestFeedback: () => undefined,
 });
 
-export type BucketProps = Omit<BucketSDKOptions, "persistUser"> &
-  FlagContext & {
-    publishableKey: string;
-    flagOptions?: Omit<FeatureFlagsOptions, "context" | "fallbackFlags"> & {
-      fallbackFlags?: BucketFlags[];
-    };
-    children?: ReactNode;
-    sdk?: BucketInstance;
-    loadingComponent?: ReactNode;
+export type BucketProps = FlagContext & {
+  publishableKey: string;
+  flagOptions?: Omit<FeatureFlagsOptions, "context" | "fallbackFlags"> & {
+    fallbackFlags?: BucketFlags[];
   };
+  children?: ReactNode;
+  loadingComponent?: ReactNode;
+  feedback?: FeedbackConfig;
+};
 
 export function BucketProvider({
   children,
-  sdk,
   user: initialUser,
   company: initialCompany,
   otherContext: initialOtherContext,
@@ -100,14 +95,8 @@ export function BucketProvider({
   loadingComponent,
   ...config
 }: BucketProps) {
-  const [flags, setFlags] = useState<FlagsResult>(
-    (flagOptions?.fallbackFlags ?? []).reduce((acc, key) => {
-      acc[key] = true;
-      return acc;
-    }, {} as FlagsResult),
-  );
   const [flagsLoading, setFlagsLoading] = useState(true);
-  const [bucket] = useState(() => sdk ?? BucketSingleton);
+  const ref = useRef<BucketClient>();
 
   const [flagContext, setFlagContext] = useState({
     user: initialUser,
@@ -116,39 +105,49 @@ export function BucketProvider({
   });
   const { user, company } = flagContext;
 
+  const contextKey = canonicalJSON({ config, flagContext });
+
   useEffect(() => {
     // on mount
-    bucket.init(publishableKey, config);
+    if (ref.current) {
+      ref.current.stop();
+    }
+
+    ref.current = new BucketClient(publishableKey, flagContext);
+    ref.current.initialize().then(() => {
+      setFlagsLoading(false);
+
+      // update attributes
+      const { id, ...userAttributes } = flagContext.user || {};
+      ref.current?.user(userAttributes);
+    });
+
     // on umount
-    return () => bucket.reset();
-  }, []);
+    return () => ref.current?.stop();
+  }, [contextKey]);
 
   // call updateUser with no arguments to logout
   const updateUser = useCallback((newUser?: UserContext) => {
     setFlagContext({ ...flagContext, user: newUser });
-    if (newUser?.id) {
-      const { id, ...attributes } = newUser;
-      // `user` calls bucket.reset() automatically when needed
-      void bucket.user(String(id), attributes);
-    } else {
-      // logout
-      bucket.reset();
-    }
+    // if (newUser?.id) {
+    //   const { id, ...attributes } = newUser;
+    //   void ref.current?.user(attributes);
+    // }
   }, []);
 
   // call updateUser with no arguments to re-set company context
   const updateCompany = useCallback((newCompany?: CompanyContext) => {
     setFlagContext({ ...flagContext, company: newCompany });
-    if (newCompany?.id) {
-      const { id, ...attributes } = newCompany;
-      void bucket.company(
-        String(id),
-        attributes,
-        flagContext?.user?.id !== undefined
-          ? String(flagContext?.user?.id)
-          : undefined,
-      );
-    }
+    // if (newCompany?.id) {
+    //   const { id, ...attributes } = newCompany;
+    //   void bucket.company(
+    //     String(id),
+    //     attributes,
+    //     flagContext?.user?.id !== undefined
+    //       ? String(flagContext?.user?.id)
+    //       : undefined,
+    //   );
+    // }
   }, []);
 
   const updateOtherContext = useCallback((otherContext?: OtherContext) => {
@@ -156,29 +155,28 @@ export function BucketProvider({
   }, []);
 
   // fetch flags
-  const contextKey = canonicalJSON({ config, flagContext });
-  useEffect(() => {
-    try {
-      const { fallbackFlags, ...flagOptionsRest } = flagOptions || {};
+  // useEffect(() => {
+  //   try {
+  //     const { fallbackFlags, ...flagOptionsRest } = flagOptions || {};
 
-      setFlagsLoading(true);
+  //     setFlagsLoading(true);
 
-      void bucket
-        .getFeatureFlags({
-          ...flagOptionsRest,
-          fallbackFlags,
-          context: flagContext,
-        })
-        .then((loadedFlags) => {
-          setFlags(loadedFlags);
-        })
-        .finally(() => {
-          setFlagsLoading(false);
-        });
-    } catch (err) {
-      console.error("[Bucket SDK] Unknown error:", err);
-    }
-  }, [contextKey]);
+  //     void bucket
+  //       .getFeatureFlags({
+  //         ...flagOptionsRest,
+  //         fallbackFlags,
+  //         context: flagContext,
+  //       })
+  //       .then((loadedFlags) => {
+  //         setFlags(loadedFlags);
+  //       })
+  //       .finally(() => {
+  //         setFlagsLoading(false);
+  //       });
+  //   } catch (err) {
+  //     console.error("[Bucket SDK] Unknown error:", err);
+  //   }
+  // }, [contextKey]);
 
   const track = useCallback(
     (eventName: string, attributes?: Record<string, any>) => {
@@ -187,12 +185,7 @@ export function BucketProvider({
           console.error("User is required to send events");
         };
 
-      return bucket.track(
-        eventName,
-        attributes,
-        user?.id !== undefined ? String(user?.id) : undefined,
-        company?.id !== undefined ? String(company?.id) : undefined,
-      );
+      return ref.current?.track(eventName, attributes);
     },
     [user?.id, company?.id],
   );
@@ -204,7 +197,7 @@ export function BucketProvider({
         return;
       }
 
-      return bucket.feedback({
+      return ref.current?.feedback({
         ...opts,
         userId: String(user.id),
         companyId: company?.id !== undefined ? String(company.id) : undefined,
@@ -220,7 +213,7 @@ export function BucketProvider({
         return;
       }
 
-      bucket.requestFeedback({
+      ref.current?.requestFeedback({
         ...opts,
         userId: String(user.id),
         companyId: company?.id !== undefined ? String(company.id) : undefined,
@@ -228,11 +221,9 @@ export function BucketProvider({
     },
     [user?.id, company?.id],
   );
-
   const context: ProviderContextType = {
-    bucket,
     flags: {
-      flags,
+      flags: ref.current?.getFlags() ?? {},
       isLoading: flagsLoading,
     },
     updateUser,

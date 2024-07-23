@@ -1,11 +1,6 @@
 import fetch from "cross-fetch";
 
 import {
-  SDK_VERSION,
-  SDK_VERSION_HEADER_NAME,
-  SSE_REALTIME_HOST,
-} from "./config";
-import {
   forgetAuthToken,
   getAuthToken,
   rememberAuthToken,
@@ -44,7 +39,10 @@ export class AblySSEChannel {
 
   private async refreshTokenRequest() {
     const params = new URLSearchParams({ userId: this.userId });
-    const res = await this.httpClient.get(`/feedback/prompting-auth`, params);
+    const res = await this.httpClient.get({
+      path: `/feedback/prompting-auth`,
+      params,
+    });
 
     if (res.ok) {
       const body = await res.json();

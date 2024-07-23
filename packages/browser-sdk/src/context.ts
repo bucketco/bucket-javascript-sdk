@@ -1,14 +1,14 @@
-interface CompanyContext {
+export interface CompanyContext {
   id: string | number;
   [key: string]: string | number;
 }
 
-interface UserContext {
+export interface UserContext {
   id: string | number;
   [key: string]: string | number;
 }
 
-interface BucketContext {
+export interface BucketContext {
   company?: CompanyContext;
   user?: UserContext;
   otherContext?: Record<string, string | number>;

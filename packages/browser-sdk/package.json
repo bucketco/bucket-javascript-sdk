@@ -26,21 +26,30 @@
     "dist"
   ],
   "main": "./dist/bucket.browser-sdk.js",
+  "module": "./dist/bucket.browser-sdk.module.js",
   "types": "./dist/types/src/index.d.ts",
-  "dependencies": {
-    "canonical-json": "^0.0.4"
+  "exports": {
+    ".": {
+      "import": "./dist/bucket.browser-sdk.module.js"
+    }
   },
-  "peerDependencies": {
-    "react": "*",
-    "react-dom": "*"
+  "dependencies": {
+    "@floating-ui/dom": "^1.6.8",
+    "canonical-json": "^0.0.4",
+    "js-cookie": "^3.0.5",
+    "preact": "^10.22.1"
   },
   "devDependencies": {
     "@bucketco/eslint-config": "0.0.2",
     "@bucketco/tsconfig": "0.0.2",
     "@types/node": "^20.14.0",
     "@types/webpack": "^5.28.5",
-    "eslint": "^8.56.0",
+    "@typescript-eslint/eslint-plugin": "^7.17.0",
+    "css-loader": "^7.1.2",
+    "eslint": "^9.7.0",
     "jsdom": "^24.1.0",
+    "postcss": "^8.4.39",
+    "postcss-loader": "^8.1.1",
     "prettier": "^3.2.5",
     "typescript": "^5.4.5",
     "vite": "^5.0.13",

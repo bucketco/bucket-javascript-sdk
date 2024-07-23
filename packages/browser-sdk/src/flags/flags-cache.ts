@@ -1,4 +1,4 @@
-import { FlagsResponse } from "./flags";
+import { Flags } from "./flags";
 
 interface StorageItem {
   get(): string | null;
@@ -10,30 +10,30 @@ interface cacheEntry {
   expireAt: number;
   staleAt: number;
   success: boolean; // we also want to cache failures to avoid the UI waiting and spamming the API
-  flags: FlagsResponse | undefined;
+  flags: Flags | undefined;
   attemptCount: number;
 }
 
-export function validateFlags(flagsInput: any): FlagsResponse | undefined {
+// takes an API flag response and returns a `Flags` object
+// Note: API returns { key: { value: boolean } } and we want to convert it to { key: boolean
+export function parseAPIFlagsResponse(flagsInput: any): Flags | undefined {
   if (!isObject(flagsInput)) {
     return;
   }
 
-  const flags: FlagsResponse = {};
+  const flags: Flags = {};
   for (const key in flagsInput) {
-    const flag = flagsInput[key];
-    if (!isObject(flag)) return;
-
-    if (typeof flag.value !== "boolean" || typeof flag.key !== "string") {
+    const flagValue = flagsInput[key];
+    if (typeof flagValue !== "boolean") {
       return;
     }
-    flags[key] = { value: flag.value, key: flag.key };
+    flags[key] = flagValue;
   }
   return flags;
 }
 
 export interface CacheResult {
-  flags: FlagsResponse | undefined;
+  flags: Flags | undefined;
   stale: boolean;
   success: boolean;
   attemptCount: number;
@@ -64,7 +64,7 @@ export class FlagCache {
       success,
       flags,
       attemptCount,
-    }: { success: boolean; flags?: FlagsResponse; attemptCount: number },
+    }: { success: boolean; flags?: Flags; attemptCount: number },
   ) {
     let cacheData: CacheData = {};
 
@@ -121,6 +121,22 @@ export class FlagCache {
   clear() {
     this.storage.clear();
   }
+}
+
+function validateFlags(flagsInput: any) {
+  if (!isObject(flagsInput)) {
+    return;
+  }
+
+  const flags: Flags = {};
+  for (const key in flagsInput) {
+    const flagValue = flagsInput[key];
+    if (typeof flagValue !== "boolean") {
+      return;
+    }
+    flags[key] = flagValue;
+  }
+  return flags;
 }
 
 type CacheData = Record<string, cacheEntry>;

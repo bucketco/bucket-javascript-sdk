@@ -19,25 +19,20 @@ import * as feedbackLib from "./ui";
 export type Key = string;
 
 export type Options = {
-  persistUser?: boolean;
-  host?: string;
-  sseHost?: string;
-  debug?: boolean;
-  feedback?: {
-    enableLiveSatisfaction?: boolean;
-    liveSatisfactionHandler?: FeedbackPromptHandler;
-    ui?: {
-      /**
-       * Control the placement and behavior of the feedback form.
-       */
-      position?: FeedbackPosition;
+  promptHandler?: FeedbackPromptHandler;
+  enableLiveSatisfaction?: boolean;
+  liveSatisfactionHandler?: FeedbackPromptHandler;
+  ui?: {
+    /**
+     * Control the placement and behavior of the feedback form.
+     */
+    position?: FeedbackPosition;
 
-      /**
-       * Add your own custom translations for the feedback form.
-       * Undefined translation keys fall back to english defaults.
-       */
-      translations?: Partial<FeedbackTranslations>;
-    };
+    /**
+     * Add your own custom translations for the feedback form.
+     * Undefined translation keys fall back to english defaults.
+     */
+    translations?: Partial<FeedbackTranslations>;
   };
 };
 
@@ -200,18 +195,6 @@ export type Context = {
   active?: boolean;
 };
 
-export interface FeedbackConfig {
-  promptHandler?: FeedbackPromptHandler;
-  position?: FeedbackPosition;
-  translations: Partial<FeedbackTranslations> | undefined;
-  liveSatisfactionEnabled: boolean;
-}
-
-export interface LiveSatisfactionState {
-  liveSatisfactionActive: boolean;
-  liveSatisfactionEnabled: boolean;
-}
-
 export const createDefaultFeedbackPromptHandler = (
   options: FeedbackPromptHandlerOpenFeedbackFormOptions = {},
 ): FeedbackPromptHandler => {
@@ -270,6 +253,8 @@ export class LiveSatisfaction {
     private httpClient: HttpClient,
     private feedbackPromptHandler: FeedbackPromptHandler = createDefaultFeedbackPromptHandler(),
     private userId: string,
+    private position: FeedbackPosition = DEFAULT_POSITION,
+    private feedbackTranslations: Partial<FeedbackTranslations> = {},
   ) {}
 
   /**
@@ -318,9 +303,9 @@ export class LiveSatisfaction {
       });
 
       this.logger.debug(`feedback prompting connection established`);
-    } finally {
-      // check that SSE channel has actually been opened, otherwise reset the value
-      liveSatisfactionActive = !!this.sseChannel;
+    } catch (e) {
+      this.logger.error(`error initializing feedback prompting`, e);
+      return;
     }
     return;
     // return channel;
@@ -436,8 +421,8 @@ export class LiveSatisfaction {
             options.onAfterSubmit?.(data);
           },
           onDismiss: () => replyCallback(null),
-          position: feedbackPosition,
-          translations: feedbackTranslations,
+          position: this.position,
+          translations: this.feedbackTranslations,
           ...options,
         });
       },

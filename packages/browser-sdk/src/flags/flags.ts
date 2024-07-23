@@ -1,15 +1,19 @@
 import { Logger } from "../logger";
 import { HttpClient } from "../httpClient";
 import { FlagCache } from "./flags-cache";
-import { flattenJSON, validateFeatureFlagsResponse } from "./flags-fetch";
-import { isObject, validateFlags } from "./flags-cache";
 
-export interface Flag {
-  value: boolean;
-  key: string;
-}
+import { isObject, parseAPIFlagsResponse } from "./flags-cache";
+import { BucketContext } from "../context";
 
-export type FlagsResponse = Record<string, Flag>;
+export type APIFlagsResponse = Record<
+  string,
+  {
+    value: boolean;
+    key: string;
+  }
+>;
+
+export type Flags = Record<string, boolean>;
 
 export type FeatureFlagsOptions = {
   fallbackFlags?: string[];
@@ -56,12 +60,10 @@ export function mergeDeep(
 
 export type FeatureFlagsResponse = {
   success: boolean;
-  flags: FlagsResponse;
+  flags: APIFlagsResponse;
 };
 
-export function validateFeatureFlagsResponse(
-  response: any,
-): FeatureFlagsResponse | undefined {
+export function validateFeatureFlagsResponse(response: any) {
   if (!isObject(response)) {
     return;
   }
@@ -69,7 +71,7 @@ export function validateFeatureFlagsResponse(
   if (typeof response.success !== "boolean" || !isObject(response.flags)) {
     return;
   }
-  const flags = validateFlags(response.flags);
+  const flags = parseAPIFlagsResponse(response.flags);
   if (!flags) {
     return;
   }
@@ -102,14 +104,14 @@ const localStorageCacheKey = `__bucket_flags`;
 
 export class FlagsClient {
   private cache: FlagCache;
-  private flags: FlagsResponse | undefined;
+  private flags: Flags | undefined;
   private config: Config;
 
   constructor(
     private httpClient: HttpClient,
     private context: BucketContext,
     private logger: Logger,
-    config: FeatureFlagsOptions,
+    options?: FeatureFlagsOptions,
   ) {
     this.cache = new FlagCache({
       storage: {
@@ -120,18 +122,18 @@ export class FlagsClient {
       staleTimeMs: FLAGS_STALE_MS,
       expireTimeMs: FLAGS_EXPIRE_MS,
     });
-    this.config = { ...DEFAULT_FLAGS_CONFIG, ...config };
+    this.config = { ...DEFAULT_FLAGS_CONFIG, ...options };
   }
 
   async initialize() {
     this.flags = await this.initFlags();
   }
 
-  getFlags(): FlagsResponse | undefined {
+  getFlags(): Flags | undefined {
     return this.flags;
   }
 
-  private async initFlags(): Promise<FlagsResponse | undefined> {
+  private async initFlags(): Promise<Flags | undefined> {
     const flattenedContext = flattenJSON({ context: this.context });
 
     const params = new URLSearchParams(flattenedContext);
@@ -197,6 +199,7 @@ export class FlagsClient {
         flags: typeRes.flags,
         attemptCount: 0,
       });
+
       return typeRes.flags;
     } catch (e) {
       this.logger.error("error fetching flags: ", e);

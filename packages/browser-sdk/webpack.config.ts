@@ -1,51 +1,7 @@
 import path from "path";
 import { Configuration } from "webpack";
-import nodeExternals from "webpack-node-externals";
 
 const config: Configuration[] = [
-  // Node CommmonJS
-  {
-    entry: "./src/index.ts",
-    mode: "production",
-    module: {
-      rules: [
-        {
-          test: /\.css$/i,
-          use: [
-            {
-              loader: "css-loader",
-              options: {
-                importLoaders: 1, // See: https://blog.jakoblind.no/postcss-webpack/
-              },
-            },
-            {
-              loader: "postcss-loader",
-            },
-          ],
-        },
-        {
-          test: /\.tsx?$/,
-          use: "ts-loader",
-          exclude: /node_modules/,
-        },
-      ],
-    },
-    resolve: {
-      extensions: [".tsx", ".ts", ".js"],
-    },
-    target: "node",
-    output: {
-      path: path.resolve(__dirname, "dist"),
-      filename: "bucket-tracking-sdk.node.js",
-      library: {
-        name: "bucket",
-        type: "umd",
-        export: "default",
-      },
-    },
-    externalsPresets: { node: true },
-    externals: [nodeExternals() as any], // type system is confused for some reason
-  },
   // Browser UMD
   {
     entry: "./src/index.ts",
@@ -79,7 +35,7 @@ const config: Configuration[] = [
     target: "web",
     output: {
       path: path.resolve(__dirname, "dist"),
-      filename: "bucket-tracking-sdk.browser.js",
+      filename: "bucket-browser-sdk.browser.js",
       library: {
         name: "bucket",
         type: "umd",

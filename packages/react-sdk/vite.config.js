@@ -5,6 +5,6 @@ export default defineConfig({
     environment: "jsdom",
   },
   optimizeDeps: {
-    include: ["@bucketco/tracking-sdk"],
+    include: ["@bucketco/browser-sdk"],
   },
 });
