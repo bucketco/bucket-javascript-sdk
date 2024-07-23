@@ -1028,13 +1028,13 @@ __metadata:
 
 "@bucketco/browser-sdk@file:../browser-sdk::locator=%40bucketco%2Freact-sdk%40workspace%3Apackages%2Freact-sdk":
   version: 0.0.1
-  resolution: "@bucketco/browser-sdk@file:../browser-sdk#../browser-sdk::hash=4c02a7&locator=%40bucketco%2Freact-sdk%40workspace%3Apackages%2Freact-sdk"
+  resolution: "@bucketco/browser-sdk@file:../browser-sdk#../browser-sdk::hash=8bdb72&locator=%40bucketco%2Freact-sdk%40workspace%3Apackages%2Freact-sdk"
   dependencies:
     "@floating-ui/dom": "npm:^1.6.8"
     canonical-json: "npm:^0.0.4"
     js-cookie: "npm:^3.0.5"
     preact: "npm:^10.22.1"
-  checksum: 10c0/773506cc82562402cce3597abcd6f0787f7e7d414c59b42e1e30a147855ca30fa27ce0d8c04a4b10ef3655287f944bce0b51121e5ea5a0208f3e3a559790784c
+  checksum: 10c0/e915752ebc2000c0af90b9fe02566f7903fc0b07e892221ee5e1b8c84b5021545189b9bb76ad538f7b4ebdbd833ab7b0e0155dc66fea95dd66b04feb772bc3b0
   languageName: node
   linkType: hard
 
