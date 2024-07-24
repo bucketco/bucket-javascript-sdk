@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { evaluateFlag } from "@bucketco/flag-evaluation";
 
-import { BucketClientClass } from "../src/client";
+import { BucketClient, BucketClientClass } from "../src/client";
 import {
   API_HOST,
   FLAG_EVENTS_PER_MIN,
@@ -1153,6 +1153,73 @@ describe("BucketClientClass", () => {
         ),
         expect.any(Error),
       );
+    });
+  });
+});
+
+describe("BucketClient", () => {
+  const client = BucketClient({
+    secretKey: "validSecretKeyWithMoreThan22Chars",
+  });
+
+  it("should create a client instance", () => {
+    expect(client).toBeInstanceOf(BucketClientClass);
+  });
+
+  describe("type safety", () => {
+    it("should allow using expected methods without being bound", async () => {
+      const updated = client.withOtherContext({ key: "value" });
+      expect(updated.otherContext).toEqual({ key: "value" });
+
+      await updated.initialize();
+      updated.getFlags();
+    });
+
+    it.only("should allow using expected methods when bound to user", async () => {
+      const bound = client.withUser("user");
+      expect(bound.user).toEqual({ userId: "user" });
+
+      bound.withOtherContext({ key: "value" });
+      expect(bound.otherContext).toEqual({ key: "value" });
+
+      await bound.initialize();
+      bound.getFlags();
+
+      await bound.updateUser();
+      await bound.trackFeatureUsage("feature");
+
+      await bound.withCompany("company").updateCompany();
+    });
+
+    it("should allow using expected methods when bound to company", async () => {
+      const bound = client.withCompany("company");
+      expect(bound.company).toEqual({ companyId: "company" });
+
+      bound.withOtherContext({ key: "value" });
+      expect(bound.otherContext).toEqual({ key: "value" });
+
+      await bound.initialize();
+      bound.getFlags();
+
+      await bound.updateCompany();
+
+      await bound.withUser("user").updateUser();
+    });
+
+    it("should allow using expected methods when bound to company and user", async () => {
+      const bound = client.withUser("user").withCompany("company");
+      expect(bound.company).toEqual({ companyId: "company" });
+      expect(bound.user).toEqual({ userId: "user" });
+
+      bound.withOtherContext({ key: "value" });
+      expect(bound.otherContext).toEqual({ key: "value" });
+
+      await bound.initialize();
+      bound.getFlags();
+
+      await bound.updateCompany();
+      await bound.updateUser();
+      await bound.trackFeatureUsage("feature");
     });
   });
 });
