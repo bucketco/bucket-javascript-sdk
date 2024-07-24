@@ -18,7 +18,7 @@ import * as feedbackLib from "./ui";
 
 export type Key = string;
 
-export type Options = {
+export type FeedbackOptions = {
   promptHandler?: FeedbackPromptHandler;
   enableLiveSatisfaction?: boolean;
   liveSatisfactionHandler?: FeedbackPromptHandler;

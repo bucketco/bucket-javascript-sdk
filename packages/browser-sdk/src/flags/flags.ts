@@ -15,7 +15,7 @@ export type APIFlagsResponse = Record<
 
 export type Flags = Record<string, boolean>;
 
-export type FeatureFlagsOptions = {
+export type FlagsOptions = {
   fallbackFlags?: string[];
   timeoutMs?: number;
   staleWhileRevalidate?: boolean;
@@ -111,7 +111,7 @@ export class FlagsClient {
     private httpClient: HttpClient,
     private context: BucketContext,
     private logger: Logger,
-    options?: FeatureFlagsOptions,
+    options?: FlagsOptions,
   ) {
     this.cache = new FlagCache({
       storage: {

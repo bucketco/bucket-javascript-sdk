@@ -27,7 +27,7 @@
   "main": "./dist/bucket-react-sdk.browser.js",
   "types": "./dist/types/src/index.d.ts",
   "dependencies": {
-    "@bucketco/browser-sdk": "file:../browser-sdk",
+    "@bucketco/browser-sdk": "workspace:^",
     "canonical-json": "^0.0.4"
   },
   "peerDependencies": {

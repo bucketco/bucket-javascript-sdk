@@ -9,15 +9,13 @@ import React, {
 } from "react";
 import canonicalJSON from "canonical-json";
 
-import BucketSingleton, { BucketClient } from "@bucketco/browser-sdk";
 import {
+  BucketClient,
   Feedback,
+  FeedbackOptions,
+  FlagsOptions,
   RequestFeedbackOptions,
-} from "@bucketco/tracking-sdk/dist/types/src/types";
-import { FeatureFlagsOptions } from "@bucketco/browser-sdk/dist/types/src/flags/flags";
-import { FeedbackConfig } from "@bucketco/browser-sdk/dist/types/src/feedback/feedback";
-
-export type BucketInstance = typeof BucketSingleton;
+} from "@bucketco/browser-sdk";
 
 type UserContext = {
   id: string | number;
@@ -77,12 +75,12 @@ const ProviderContext = createContext<ProviderContextType>({
 
 export type BucketProps = FlagContext & {
   publishableKey: string;
-  flagOptions?: Omit<FeatureFlagsOptions, "context" | "fallbackFlags"> & {
+  flagOptions?: Omit<FlagsOptions, "fallbackFlags"> & {
     fallbackFlags?: BucketFlags[];
   };
   children?: ReactNode;
   loadingComponent?: ReactNode;
-  feedback?: FeedbackConfig;
+  feedback?: FeedbackOptions;
 };
 
 export function BucketProvider({
@@ -108,7 +106,7 @@ export function BucketProvider({
   const contextKey = canonicalJSON({ config, flagContext });
 
   useEffect(() => {
-    // on mount
+    // on update of contextKey
     if (ref.current) {
       ref.current.stop();
     }
@@ -118,8 +116,13 @@ export function BucketProvider({
       setFlagsLoading(false);
 
       // update attributes
-      const { id, ...userAttributes } = flagContext.user || {};
-      ref.current?.user(userAttributes);
+      const { id: userId, ...userAttributes } = flagContext.user || {};
+      if (userId) ref.current?.user(userAttributes);
+
+      // update company attributes
+      const { id: companyId, ...companyAttributes } = flagContext.company || {};
+
+      if (companyId) ref.current?.company(companyAttributes);
     });
 
     // on umount
@@ -153,30 +156,6 @@ export function BucketProvider({
   const updateOtherContext = useCallback((otherContext?: OtherContext) => {
     setFlagContext({ ...flagContext, otherContext });
   }, []);
-
-  // fetch flags
-  // useEffect(() => {
-  //   try {
-  //     const { fallbackFlags, ...flagOptionsRest } = flagOptions || {};
-
-  //     setFlagsLoading(true);
-
-  //     void bucket
-  //       .getFeatureFlags({
-  //         ...flagOptionsRest,
-  //         fallbackFlags,
-  //         context: flagContext,
-  //       })
-  //       .then((loadedFlags) => {
-  //         setFlags(loadedFlags);
-  //       })
-  //       .finally(() => {
-  //         setFlagsLoading(false);
-  //       });
-  //   } catch (err) {
-  //     console.error("[Bucket SDK] Unknown error:", err);
-  //   }
-  // }, [contextKey]);
 
   const track = useCallback(
     (eventName: string, attributes?: Record<string, any>) => {

@@ -1,20 +1,15 @@
 import { API_HOST, SSE_REALTIME_HOST } from "./config";
 import {
   Company,
-  DEFAULT_FEEDBACK_CONFIG,
   feedback,
   Feedback,
-  Options as FeedbackOptions,
+  FeedbackOptions as FeedbackOptions,
   LiveSatisfaction,
   RequestFeedbackOptions,
   TrackedEvent,
   User,
 } from "./feedback/feedback";
-import {
-  DEFAULT_FLAGS_CONFIG,
-  FeatureFlagsOptions,
-  FlagsClient,
-} from "./flags/flags";
+import { FlagsOptions, FlagsClient } from "./flags/flags";
 import { Logger, loggerWithPrefix, quietConsoleLogger } from "./logger";
 import { HttpClient } from "./httpClient";
 import * as feedbackLib from "./feedback/ui";
@@ -33,7 +28,7 @@ interface InitOptions {
   host?: string;
   sseHost?: string;
   feedback?: FeedbackOptions;
-  flags?: FeatureFlagsOptions;
+  flags?: FlagsOptions;
 }
 
 const defaultConfig: Config = {
@@ -219,8 +214,8 @@ export class BucketClient {
       feedbackLib.openFeedbackForm({
         key: options.featureId,
         title: options.title,
-        position: options.position ?? this.config.feedback.position,
-        translations: options.translations ?? this.config.feedback.translations,
+        position: options.position, // TODO: use config feedback position
+        translations: options.translations, // TODO: use config feedback translations
         openWithCommentVisible: options.openWithCommentVisible,
         onClose: options.onClose,
         onDismiss: options.onDismiss,
