@@ -1,5 +1,13 @@
 import flushPromises from "flush-promises";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
 import { evaluateFlag } from "@bucketco/flag-evaluation";
 
@@ -76,6 +84,10 @@ describe("BucketClientClass", () => {
     "Content-Type": "application/json",
     Authorization: `Bearer ${validOptions.secretKey}`,
   };
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
 
   describe("constructor (with options)", () => {
     it("should create a client instance with valid options", () => {
@@ -242,6 +254,19 @@ describe("BucketClientClass", () => {
       expect(newClient["_user"]).toEqual(user);
     });
 
+    it("should update user in Bucket when called", () => {
+      client.withUser(user.userId, user.attrs);
+
+      expect(httpClient.post).toHaveBeenCalledWith(
+        "https://api.example.com/user",
+        expectedHeaders,
+        {
+          userId: user.userId,
+          attributes: user.attrs,
+        },
+      );
+    });
+
     it("should return a new client instance with merged user attributes", () => {
       const override = { sex: "male", age: 30 };
       const newClient = client
@@ -289,6 +314,19 @@ describe("BucketClientClass", () => {
       expect(newClient).toBeInstanceOf(BucketClientClass);
       expect(newClient).not.toBe(client); // Ensure a new instance is returned
       expect(newClient["company"]).toEqual(company);
+    });
+
+    it("should update company in Bucket when called", () => {
+      client.withCompany(company.companyId, company.attrs);
+
+      expect(httpClient.post).toHaveBeenCalledWith(
+        "https://api.example.com/company",
+        expectedHeaders,
+        {
+          companyId: company.companyId,
+          attributes: company.attrs,
+        },
+      );
     });
 
     it("should return a new client instance with merged company attributes", () => {
@@ -809,8 +847,6 @@ describe("BucketClientClass", () => {
     ];
 
     beforeEach(async () => {
-      vi.clearAllMocks();
-
       httpClient.get.mockResolvedValue({
         status: 200,
         body: {
@@ -845,6 +881,10 @@ describe("BucketClientClass", () => {
         .withUser(user.userId, user.attrs)
         .withCompany(company.companyId, company.attrs)
         .withOtherContext(otherContext);
+
+      httpClient.post.mockClear(); // not interested in updates
+
+      await flushPromises();
 
       await client.initialize();
       const result = client.getFlags();
@@ -938,6 +978,9 @@ describe("BucketClientClass", () => {
     it("should return evaluated flags when only user is defined", async () => {
       client = client.withUser(user.userId, user.attrs);
 
+      httpClient.post.mockClear(); // not interested in updates
+      await flushPromises();
+
       await client.initialize();
       client.getFlags();
 
@@ -987,6 +1030,9 @@ describe("BucketClientClass", () => {
 
     it("should return evaluated flags when only company is defined", async () => {
       client = client.withCompany(company.companyId, company.attrs);
+
+      httpClient.post.mockClear(); // not interested in updates
+      await flushPromises();
 
       await client.initialize();
       client.getFlags();
@@ -1110,9 +1156,12 @@ describe("BucketClientClass", () => {
     });
 
     it("should not fail if sendFeatureFlagEvent fails to send evaluate event", async () => {
-      httpClient.post.mockRejectedValueOnce(new Error("Network error"));
-
       client = client.withUser("fancyUser");
+
+      httpClient.post.mockClear(); // not interested in updates
+      await flushPromises();
+
+      httpClient.post.mockRejectedValueOnce(new Error("Network error"));
 
       await client.initialize();
       client.getFlags();
@@ -1128,12 +1177,15 @@ describe("BucketClientClass", () => {
     });
 
     it("should not fail if sendFeatureFlagEvent fails to send check event", async () => {
+      client = client.withUser("anotherUser");
+
+      httpClient.post.mockClear(); // not interested in updates
+      await flushPromises();
+
       httpClient.post.mockResolvedValue({
         status: 200,
         body: { success: true },
       });
-
-      client = client.withUser("anotherUser");
 
       await client.initialize();
       httpClient.post.mockRejectedValueOnce(new Error("Network error"));

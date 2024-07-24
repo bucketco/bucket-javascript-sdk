@@ -308,6 +308,8 @@ export class BucketClientClass {
    * @remarks
    * If the user ID is the same as the current company, the attributes will be merged, and
    * the new attributes will take precedence.
+   *
+   * The `updateUser` method will automatically be called after setting the user.
    **/
   public withUser(userId: string, attributes?: Attributes): BucketClientClass {
     ok(
@@ -329,6 +331,8 @@ export class BucketClientClass {
       };
     }
 
+    void client.updateUser();
+
     return client;
   }
 
@@ -343,6 +347,8 @@ export class BucketClientClass {
    * @remarks
    * If the company ID is the same as the current company, the attributes will be merged, and
    * the new attributes will take precedence.
+   *
+   * The `updateCompany` method will automatically be called after setting the company.
    **/
   public withCompany(
     companyId: string,
@@ -366,6 +372,8 @@ export class BucketClientClass {
         attrs: { ...this._company.attrs, ...attributes },
       };
     }
+
+    void client.updateCompany();
 
     return client;
   }
