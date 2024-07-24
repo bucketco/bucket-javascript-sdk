@@ -1,5 +1,5 @@
 import flushPromises from "flush-promises";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { evaluateFlag } from "@bucketco/flag-evaluation";
 
@@ -1158,8 +1158,19 @@ describe("BucketClientClass", () => {
 });
 
 describe("BucketClient", () => {
+  const httpClient = { post: vi.fn(), get: vi.fn() };
+
+  beforeAll(() => {
+    const response = {
+      status: 200,
+      body: { success: true },
+    };
+    httpClient.post.mockResolvedValue(response);
+  });
+
   const client = BucketClient({
     secretKey: "validSecretKeyWithMoreThan22Chars",
+    httpClient,
   });
 
   it("should create a client instance", () => {
@@ -1168,19 +1179,21 @@ describe("BucketClient", () => {
 
   describe("type safety", () => {
     it("should allow using expected methods without being bound", async () => {
-      const updated = client.withOtherContext({ key: "value" });
-      expect(updated.otherContext).toEqual({ key: "value" });
+      expect(client.withOtherContext({ key: "value" }).otherContext).toEqual({
+        key: "value",
+      });
 
-      await updated.initialize();
-      updated.getFlags();
+      await client.initialize();
+      client.getFlags();
     });
 
-    it.only("should allow using expected methods when bound to user", async () => {
+    it("should allow using expected methods when bound to user", async () => {
       const bound = client.withUser("user");
       expect(bound.user).toEqual({ userId: "user" });
 
-      bound.withOtherContext({ key: "value" });
-      expect(bound.otherContext).toEqual({ key: "value" });
+      expect(bound.withOtherContext({ key: "value" }).otherContext).toEqual({
+        key: "value",
+      });
 
       await bound.initialize();
       bound.getFlags();
@@ -1195,8 +1208,9 @@ describe("BucketClient", () => {
       const bound = client.withCompany("company");
       expect(bound.company).toEqual({ companyId: "company" });
 
-      bound.withOtherContext({ key: "value" });
-      expect(bound.otherContext).toEqual({ key: "value" });
+      expect(bound.withOtherContext({ key: "value" }).otherContext).toEqual({
+        key: "value",
+      });
 
       await bound.initialize();
       bound.getFlags();
@@ -1211,8 +1225,9 @@ describe("BucketClient", () => {
       expect(bound.company).toEqual({ companyId: "company" });
       expect(bound.user).toEqual({ userId: "user" });
 
-      bound.withOtherContext({ key: "value" });
-      expect(bound.otherContext).toEqual({ key: "value" });
+      expect(bound.withOtherContext({ key: "value" }).otherContext).toEqual({
+        key: "value",
+      });
 
       await bound.initialize();
       bound.getFlags();
