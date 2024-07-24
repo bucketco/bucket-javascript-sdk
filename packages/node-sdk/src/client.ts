@@ -31,13 +31,21 @@ import {
 } from "./utils";
 
 /**
- * The SDK client.
+ * Creates a new SDK client.
  *
  * @remarks
  * The client is used to interact with the Bucket API.
  * Use the client to track users, companies, events, and feature flag usage.
+ */
+export function BucketClient(options: ClientOptions) {
+  return new BucketClientClass(options);
+}
+
+/**
+ * The SDK client.
+ *
  **/
-export class BucketClient {
+export class BucketClientClass {
   private _shared: {
     logger?: Logger;
     host: string;
@@ -67,7 +75,7 @@ export class BucketClient {
    * @param client - An existing client to clone.
    * @throws An error if the client is invalid.
    **/
-  constructor(client: BucketClient);
+  constructor(client: BucketClientClass);
 
   /**
    * Creates a new SDK client.
@@ -75,8 +83,8 @@ export class BucketClient {
    * @param options - The options for the client or an existing client to clone.
    * @throws An error if the options are invalid.
    **/
-  constructor(options: ClientOptions | BucketClient) {
-    if (options instanceof BucketClient) {
+  constructor(options: ClientOptions | BucketClientClass) {
+    if (options instanceof BucketClientClass) {
       this._shared = options._shared;
       this._otherContext = options._otherContext;
       this._company = options._company;
@@ -300,7 +308,7 @@ export class BucketClient {
    * If the user ID is the same as the current company, the attributes will be merged, and
    * the new attributes will take precedence.
    **/
-  public withUser(userId: string, attributes?: Attributes): BucketClient {
+  public withUser(userId: string, attributes?: Attributes): BucketClientClass {
     ok(
       typeof userId === "string" && userId.length > 0,
       "userId must be a string",
@@ -310,7 +318,7 @@ export class BucketClient {
       "attributes must be an object",
     );
 
-    const client = new BucketClient(this);
+    const client = new BucketClientClass(this);
     if (userId !== this._user?.userId) {
       client._user = { userId, attrs: attributes };
     } else {
@@ -335,7 +343,10 @@ export class BucketClient {
    * If the company ID is the same as the current company, the attributes will be merged, and
    * the new attributes will take precedence.
    **/
-  public withCompany(companyId: string, attributes?: Attributes): BucketClient {
+  public withCompany(
+    companyId: string,
+    attributes?: Attributes,
+  ): BucketClientClass {
     ok(
       typeof companyId === "string" && companyId.length > 0,
       "companyId must be a string",
@@ -345,7 +356,7 @@ export class BucketClient {
       "attributes must be an object",
     );
 
-    const client = new BucketClient(this);
+    const client = new BucketClientClass(this);
     if (companyId !== this._company?.companyId) {
       client._company = { companyId, attrs: attributes };
     } else {
@@ -366,10 +377,10 @@ export class BucketClient {
    * @returns A new client with the context set.
    * @throws An error if the context is not an object or the options are invalid.
    **/
-  public withOtherContext(context: Record<string, any>): BucketClient {
+  public withOtherContext(context: Record<string, any>): BucketClientClass {
     ok(isObject(context), "context must be an object");
 
-    const client = new BucketClient(this);
+    const client = new BucketClientClass(this);
 
     client._otherContext = context;
 
