@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { evaluateFlag } from "@bucketco/flag-evaluation";
 
-import { BucketClient, BucketClientClass } from "../src/client";
+import { BucketClientClass } from "../src/client";
 import {
   API_HOST,
   FLAG_EVENTS_PER_MIN,
@@ -33,7 +33,7 @@ vi.mock("../src/utils", async (importOriginal) => {
   };
 });
 
-describe("Client", () => {
+describe("BucketClientClass", () => {
   const logger = {
     debug: vi.fn(),
     info: vi.fn(),
@@ -79,7 +79,7 @@ describe("Client", () => {
 
   describe("constructor (with options)", () => {
     it("should create a client instance with valid options", () => {
-      const client = BucketClient(validOptions);
+      const client = new BucketClientClass(validOptions);
 
       expect(client).toBeInstanceOf(BucketClientClass);
       expect(client["_shared"].host).toBe("https://api.example.com");
@@ -97,7 +97,7 @@ describe("Client", () => {
     });
 
     it("should route messages to the supplied logger", () => {
-      const client = BucketClient(validOptions);
+      const client = new BucketClientClass(validOptions);
 
       const actualLogger = client["_shared"].logger!;
       actualLogger.debug("debug message");
@@ -120,7 +120,7 @@ describe("Client", () => {
     });
 
     it("should create a client instance with default values for optional fields", () => {
-      const client = BucketClient({
+      const client = new BucketClientClass({
         secretKey: "validSecretKeyWithMoreThan22Chars",
       });
 
@@ -136,17 +136,17 @@ describe("Client", () => {
 
     it("should throw an error if options are invalid", () => {
       let invalidOptions: any = null;
-      expect(() => BucketClient(invalidOptions)).toThrow(
+      expect(() => new BucketClientClass(invalidOptions)).toThrow(
         "options must be an object",
       );
 
       invalidOptions = { ...validOptions, secretKey: "shortKey" };
-      expect(() => BucketClient(invalidOptions)).toThrow(
+      expect(() => new BucketClientClass(invalidOptions)).toThrow(
         "secretKey must be a string",
       );
 
       invalidOptions = { ...validOptions, host: 123 };
-      expect(() => BucketClient(invalidOptions)).toThrow(
+      expect(() => new BucketClientClass(invalidOptions)).toThrow(
         "host must be a string",
       );
 
@@ -154,7 +154,7 @@ describe("Client", () => {
         ...validOptions,
         logger: "invalidLogger" as any,
       };
-      expect(() => BucketClient(invalidOptions)).toThrow(
+      expect(() => new BucketClientClass(invalidOptions)).toThrow(
         "logger must be an object",
       );
 
@@ -162,7 +162,7 @@ describe("Client", () => {
         ...validOptions,
         httpClient: "invalidHttpClient" as any,
       };
-      expect(() => BucketClient(invalidOptions)).toThrow(
+      expect(() => new BucketClientClass(invalidOptions)).toThrow(
         "httpClient must be an object",
       );
 
@@ -170,14 +170,14 @@ describe("Client", () => {
         ...validOptions,
         fallbackFlags: "invalid" as any,
       };
-      expect(() => BucketClient(invalidOptions)).toThrow(
+      expect(() => new BucketClientClass(invalidOptions)).toThrow(
         "fallbackFlags must be an object",
       );
     });
   });
 
   describe("constructor (with existing client)", () => {
-    const initialClient = BucketClient(validOptions);
+    const initialClient = new BucketClientClass(validOptions);
 
     initialClient["_otherContext"] = { key: "value" };
     initialClient["_company"] = {
@@ -232,7 +232,7 @@ describe("Client", () => {
   });
 
   describe("withUser", () => {
-    const client = BucketClient(validOptions);
+    const client = new BucketClientClass(validOptions);
 
     it("should return a new client instance with the user set", () => {
       const newClient = client.withUser(user.userId, user.attrs);
@@ -281,7 +281,7 @@ describe("Client", () => {
   });
 
   describe("withCompany", () => {
-    const client = BucketClient(validOptions);
+    const client = new BucketClientClass(validOptions);
 
     it("should return a new client instance with the company set", () => {
       const newClient = client.withCompany(company.companyId, company.attrs);
@@ -330,7 +330,7 @@ describe("Client", () => {
   });
 
   describe("withOtherContext", () => {
-    const client = BucketClient(validOptions);
+    const client = new BucketClientClass(validOptions);
 
     it("should return a new client instance with the custom other set", () => {
       const newClient = client.withOtherContext(otherContext);
@@ -365,7 +365,10 @@ describe("Client", () => {
   });
 
   describe("updateUser", () => {
-    const client = BucketClient(validOptions).withUser(user.userId, user.attrs);
+    const client = new BucketClientClass(validOptions).withUser(
+      user.userId,
+      user.attrs,
+    );
 
     it("should successfully update the user with merging attributes", async () => {
       const response = { status: 200, body: { success: true } };
@@ -422,9 +425,9 @@ describe("Client", () => {
     });
 
     it("should throw an error if opts are not valid or the user is not set", async () => {
-      await expect(BucketClient(validOptions).updateUser()).rejects.toThrow(
-        "user must be set",
-      );
+      await expect(
+        new BucketClientClass(validOptions).updateUser(),
+      ).rejects.toThrow("user must be set");
 
       await expect(client.updateUser("bad_opts" as any)).rejects.toThrow(
         "opts must be an object",
@@ -441,7 +444,7 @@ describe("Client", () => {
   });
 
   describe("updateCompany", () => {
-    const client = BucketClient(validOptions).withCompany(
+    const client = new BucketClientClass(validOptions).withCompany(
       company.companyId,
       company.attrs,
     );
@@ -526,9 +529,9 @@ describe("Client", () => {
     });
 
     it("should throw an error if company is not valid", async () => {
-      await expect(BucketClient(validOptions).updateCompany()).rejects.toThrow(
-        "company must be set",
-      );
+      await expect(
+        new BucketClientClass(validOptions).updateCompany(),
+      ).rejects.toThrow("company must be set");
 
       await expect(client.updateCompany("bad_opts" as any)).rejects.toThrow(
         "opts must be an object",
@@ -549,7 +552,7 @@ describe("Client", () => {
   });
 
   describe("trackFeatureUsage", () => {
-    const client = BucketClient(validOptions);
+    const client = new BucketClientClass(validOptions).withUser(user.userId);
 
     it("should successfully track the feature usage", async () => {
       const response = {
@@ -569,6 +572,7 @@ describe("Client", () => {
         expectedHeaders,
         {
           event: event.event,
+          userId: user.userId,
           attributes: event.attrs,
           context: { active: true },
         },
@@ -632,6 +636,12 @@ describe("Client", () => {
       );
     });
 
+    it("should throw an error if user is not set", async () => {
+      await expect(
+        new BucketClientClass(validOptions).trackFeatureUsage("hello"),
+      ).rejects.toThrow("user must be set");
+    });
+
     it("should throw an error if event is invalid", async () => {
       await expect(client.trackFeatureUsage(undefined as any)).rejects.toThrow(
         "event must be a string",
@@ -658,12 +668,12 @@ describe("Client", () => {
 
   describe("user", () => {
     it("should return the undefined if user was not set", () => {
-      const client = BucketClient(validOptions);
+      const client = new BucketClientClass(validOptions);
       expect(client.user).toBeUndefined();
     });
 
     it("should return the user if user was associated", () => {
-      const client = BucketClient(validOptions).withUser(
+      const client = new BucketClientClass(validOptions).withUser(
         user.userId,
         user.attrs,
       );
@@ -674,12 +684,12 @@ describe("Client", () => {
 
   describe("company", () => {
     it("should return the undefined if company was not set", () => {
-      const client = BucketClient(validOptions);
+      const client = new BucketClientClass(validOptions);
       expect(client.company).toBeUndefined();
     });
 
     it("should return the user if company was associated", () => {
-      const client = BucketClient(validOptions).withCompany(
+      const client = new BucketClientClass(validOptions).withCompany(
         company.companyId,
         company.attrs,
       );
@@ -690,12 +700,14 @@ describe("Client", () => {
 
   describe("otherContext", () => {
     it("should return the undefined if custom context was not set", () => {
-      const client = BucketClient(validOptions);
+      const client = new BucketClientClass(validOptions);
       expect(client.otherContext).toBeUndefined();
     });
 
     it("should return the user if custom context was associated", () => {
-      const client = BucketClient(validOptions).withOtherContext(otherContext);
+      const client = new BucketClientClass(validOptions).withOtherContext(
+        otherContext,
+      );
 
       expect(client.otherContext).toEqual(otherContext);
     });
@@ -703,7 +715,7 @@ describe("Client", () => {
 
   describe("initialize", () => {
     it("should initialize the client", async () => {
-      const client = BucketClient(validOptions);
+      const client = new BucketClientClass(validOptions);
 
       const cache = {
         refresh: vi.fn(),
@@ -721,7 +733,7 @@ describe("Client", () => {
     });
 
     it("should set up the cache object", async () => {
-      const client = BucketClient(validOptions);
+      const client = new BucketClientClass(validOptions);
       expect(client["_shared"].featureFlagDefinitionCache).toBeUndefined();
 
       await client.initialize();
@@ -729,7 +741,7 @@ describe("Client", () => {
     });
 
     it("should call the backend to obtain flags", async () => {
-      const client = BucketClient(validOptions);
+      const client = new BucketClientClass(validOptions);
       await client.initialize();
 
       expect(httpClient.get).toHaveBeenCalledWith(
@@ -807,7 +819,7 @@ describe("Client", () => {
         },
       });
 
-      client = BucketClient(validOptions);
+      client = new BucketClientClass(validOptions);
 
       vi.mocked(evaluateFlag).mockImplementation(({ flag, context }) => {
         const evalFlag = evaluatedFlags.find((f) => f.flag.key === flag.key)!;

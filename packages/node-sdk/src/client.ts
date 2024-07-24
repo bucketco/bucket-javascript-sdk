@@ -12,6 +12,7 @@ import {
 import fetchClient from "./fetch-http-client";
 import {
   Attributes,
+  BucketClient as BucketClientType,
   Cache,
   ClientOptions,
   FeatureFlagEvent,
@@ -38,7 +39,7 @@ import {
  * Use the client to track users, companies, events, and feature flag usage.
  */
 export function BucketClient(options: ClientOptions) {
-  return new BucketClientClass(options);
+  return new BucketClientClass(options) as BucketClientType;
 }
 
 /**
@@ -417,7 +418,6 @@ export class BucketClientClass {
   /**
    * Updates a user in Bucket.
    *
-   * @param userId - The user ID to track.
    * @param opts.attributes - The additional attributes of the user (optional).
    * @param opts.meta - The meta context associated with tracking (optional).
    *
@@ -485,12 +485,12 @@ export class BucketClientClass {
    * @param opts.meta - The meta context associated with tracking (optional).
    *
    * @returns A boolean indicating if the request was successful.
-   * @throws An error if the event is invalid or the options are invalid.
+   * @throws An error if the user is not set or the event is invalid or the options are invalid.
    * @remarks
-   * If the user is set, the event will be associated with the user.
    * If the company is set, the event will be associated with the company.
    **/
   public async trackFeatureUsage(event: string, opts?: TrackOptions) {
+    ok(isObject(this._user), "user must be set");
     ok(typeof event === "string" && event.length > 0, "event must be a string");
 
     ok(opts === undefined || isObject(opts), "opts must be an object");

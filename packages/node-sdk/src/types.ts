@@ -255,3 +255,182 @@ export type TrackOptions = {
    **/
   meta?: TrackingMeta;
 };
+
+/**
+ * The base, unbound Bucket client.
+ */
+export interface BucketClient
+  extends BucketClientBase,
+    BucketClientWithUserMethod<
+      BucketClientUserMethods &
+        BucketClientWithCompanyMethod<
+          BucketClientCompanyMethods & BucketClientUserMethods
+        >
+    >,
+    BucketClientWithCompanyMethod<
+      BucketClientCompanyMethods &
+        BucketClientWithUserMethod<
+          BucketClientUserMethods & BucketClientCompanyMethods
+        >
+    > {}
+
+/**
+ * The base interface used for composition
+ *
+ * @remarks
+ * Internal interface for composition.
+ */
+interface BucketClientBase {
+  /**
+   * Sets the extra, custom context for the client.
+   *
+   * @param context - The "extra" context to set.
+   *
+   * @returns A new client with the context set.
+   * @throws An error if the context is not an object or the options are invalid.
+   **/
+  withOtherContext(context: Record<string, any>): this;
+
+  /**
+   * Gets the extra, custom context associated with the client.
+   *
+   * @returns The extra, custom context or `undefined` if it is not set.
+   **/
+  get otherContext(): Record<string, any> | undefined;
+
+  /**
+   * Initializes the client by caching the feature flag definitions.
+   *
+   * @returns void
+   *
+   * @remarks
+   * Call this method before calling `getFlags` to ensure the feature flag definitions are cached.
+   **/
+  initialize(): Promise<void>;
+
+  /**
+   * Gets the evaluated feature flags for the current context which includes the user, company, and custom context.
+   *
+   * @typeparam TFlagKey - The type of the feature flag keys, `string` by default.
+   *
+   * @returns The evaluated feature flags.
+   * @remarks
+   * Call `initialize` before calling this method to ensure the feature flag definitions are cached, empty flags will be returned otherwise.
+   **/
+  getFlags(): Readonly<TypedFlags>;
+}
+
+/**
+ * Contains the `withUser` method.
+ *
+ * @remarks
+ * Internal interface for composition.
+ */
+interface BucketClientWithUserMethod<TReturn> {
+  /**
+   * Sets the user that is used for feature flag evaluation.
+   *
+   * @param userId - The user ID to set.
+   * @param attributes - The attributes of the user (optional).
+   *
+   * @returns A new client with the user set.
+   * @throws An error if the user ID is not a string or the options are invalid.
+   * @remarks
+   * If the user ID is the same as the current company, the attributes will be merged, and
+   * the new attributes will take precedence.
+   **/
+  withUser(userId: string, attributes?: Attributes): BucketClientBase & TReturn;
+}
+
+/**
+ * Contains the `withCompany` method.
+ *
+ * @remarks
+ * Internal interface for composition.
+ */
+interface BucketClientWithCompanyMethod<TReturn> {
+  /**
+   * Sets the company that is used for feature flag evaluation.
+   *
+   * @param companyId - The company ID to set.
+   * @param attributes - The attributes of the user (optional).
+   *
+   * @returns A new client with the company set.
+   * @throws An error if the company ID is not a string or the options are invalid.
+   * @remarks
+   * If the company ID is the same as the current company, the attributes will be merged, and
+   * the new attributes will take precedence.
+   **/
+  withCompany(
+    companyId: string,
+    ttributes?: Attributes,
+  ): BucketClientBase & TReturn;
+}
+
+/**
+ * Contains all user related methods.
+ *
+ * @remarks
+ * Internal interface for composition.
+ */
+interface BucketClientUserMethods {
+  /**
+   * Gets the user associated with the client.
+   *
+   * @returns The user associated with the client.
+   **/
+  get user(): { userId: string; attrs?: Attributes };
+
+  /**
+   * Updates a user in Bucket.
+   *
+   * @param opts.attributes - The additional attributes of the user (optional).
+   * @param opts.meta - The meta context associated with tracking (optional).
+   *
+   * @returns A boolean indicating if the request was successful.
+   * @throws An error if the options are invalid.
+   **/
+  updateUser(opts?: TrackOptions): Promise<boolean>;
+
+  /**
+   * Tracks an event in Bucket.
+   *
+   * @param event - The event to track.
+   * @param opts.attributes - The attributes of the event (optional).
+   * @param opts.meta - The meta context associated with tracking (optional).
+   *
+   * @returns A boolean indicating if the request was successful.
+   * @throws An error if the event is invalid or the options are invalid.
+   * @remarks
+   * If the company is set, the event will be associated with the company.
+   **/
+  trackFeatureUsage(event: string, opts?: TrackOptions): Promise<boolean>;
+}
+
+/**
+ * Contains all company related methods.
+ *
+ * @remarks
+ * Internal interface for composition.
+ */
+interface BucketClientCompanyMethods {
+  /**
+   * Gets the company associated with the client.
+   *
+   * @returns The company associated with the client.
+   **/
+  get company(): { companyId: string; attrs?: Attributes };
+
+  /**
+   * Updates the associated company in Bucket.
+   *
+   * @param opts.attributes - The additional attributes of the company (optional).
+   * @param opts.meta - The meta context associated with tracking (optional).
+   *
+   * @returns A boolean indicating if the request was successful.
+   * @throws An error if the company is not set or the options are invalid.
+   * @remarks
+   * If the user is set, the company will be associated with the user.
+   **/
+  updateCompany(opts?: TrackOptions): Promise<boolean>;
+}
