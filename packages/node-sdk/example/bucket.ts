@@ -15,7 +15,7 @@ if (!process.env.BUCKET_SECRET_KEY) {
 
 // Create a new BucketClient instance with the secret key and default flags
 // The default flags will be used if the user does not have any flags set
-export default new BucketClient({
+export default BucketClient({
   secretKey: process.env.BUCKET_SECRET_KEY!,
   fallbackFlags: {
     "show-todos": true,

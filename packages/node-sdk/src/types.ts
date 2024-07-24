@@ -275,6 +275,14 @@ export interface BucketClient
     > {}
 
 /**
+ * Useful interface to use as a type for the fully initialized Bucket client.
+ **/
+export interface BoundBucketClient
+  extends BucketClientBase,
+    BucketClientUserMethods,
+    BucketClientCompanyMethods {}
+
+/**
  * The base interface used for composition
  *
  * @remarks
