@@ -364,7 +364,7 @@ describe("Client", () => {
     });
   });
 
-  describe("trackUser", () => {
+  describe("updateUser", () => {
     const client = new BucketClient(validOptions).withUser(
       user.userId,
       user.attrs,
@@ -374,7 +374,7 @@ describe("Client", () => {
       const response = { status: 200, body: { success: true } };
       httpClient.post.mockResolvedValue(response);
 
-      const result = await client.trackUser({
+      const result = await client.updateUser({
         attributes: { age: 2, brave: false },
         meta: {
           active: true,
@@ -401,7 +401,7 @@ describe("Client", () => {
       const error = new Error("Network error");
       httpClient.post.mockRejectedValue(error);
 
-      const result = await client.trackUser();
+      const result = await client.updateUser();
 
       expect(result).toBe(false);
       expect(logger.error).toHaveBeenCalledWith(
@@ -415,7 +415,7 @@ describe("Client", () => {
 
       httpClient.post.mockResolvedValue(response);
 
-      const result = await client.trackUser();
+      const result = await client.updateUser();
 
       expect(result).toBe(false);
       expect(logger.debug).toHaveBeenCalledWith(
@@ -425,25 +425,25 @@ describe("Client", () => {
     });
 
     it("should throw an error if opts are not valid or the user is not set", async () => {
-      await expect(new BucketClient(validOptions).trackUser()).rejects.toThrow(
+      await expect(new BucketClient(validOptions).updateUser()).rejects.toThrow(
         "user must be set",
       );
 
-      await expect(client.trackUser("bad_opts" as any)).rejects.toThrow(
+      await expect(client.updateUser("bad_opts" as any)).rejects.toThrow(
         "opts must be an object",
       );
 
       await expect(
-        client.trackUser({ attributes: "bad_attributes" as any }),
+        client.updateUser({ attributes: "bad_attributes" as any }),
       ).rejects.toThrow("attributes must be an object");
 
       await expect(
-        client.trackUser({ meta: "bad_meta" as any }),
+        client.updateUser({ meta: "bad_meta" as any }),
       ).rejects.toThrow("meta must be an object");
     });
   });
 
-  describe("trackCompany", () => {
+  describe("updateCompany", () => {
     const client = new BucketClient(validOptions).withCompany(
       company.companyId,
       company.attrs,
@@ -454,7 +454,7 @@ describe("Client", () => {
 
       httpClient.post.mockResolvedValue(response);
 
-      const result = await client.trackCompany({
+      const result = await client.updateCompany({
         attributes: { employees: 200, bankrupt: false },
         meta: { active: true },
       });
@@ -482,7 +482,7 @@ describe("Client", () => {
         body: { success: true },
       });
 
-      const result = await client.withUser(user.userId).trackCompany();
+      const result = await client.withUser(user.userId).updateCompany();
 
       expect(result).toBe(true);
       expect(httpClient.post).toHaveBeenCalledWith(
@@ -503,7 +503,7 @@ describe("Client", () => {
       const error = new Error("Network error");
       httpClient.post.mockRejectedValue(error);
 
-      const result = await client.trackCompany();
+      const result = await client.updateCompany();
 
       expect(result).toBe(false);
       expect(logger.error).toHaveBeenCalledWith(
@@ -519,7 +519,7 @@ describe("Client", () => {
       };
       httpClient.post.mockResolvedValue(response);
 
-      const result = await client.trackCompany();
+      const result = await client.updateCompany();
 
       expect(result).toBe(false);
       expect(logger.debug).toHaveBeenCalledWith(
@@ -530,21 +530,21 @@ describe("Client", () => {
 
     it("should throw an error if company is not valid", async () => {
       await expect(
-        new BucketClient(validOptions).trackCompany(),
+        new BucketClient(validOptions).updateCompany(),
       ).rejects.toThrow("company must be set");
 
-      await expect(client.trackCompany("bad_opts" as any)).rejects.toThrow(
+      await expect(client.updateCompany("bad_opts" as any)).rejects.toThrow(
         "opts must be an object",
       );
 
       await expect(
-        client.trackCompany({
+        client.updateCompany({
           attributes: "bad_attributes" as any,
         }),
       ).rejects.toThrow("attributes must be an object");
 
       await expect(
-        client.trackCompany({
+        client.updateCompany({
           meta: "bad_meta" as any,
         }),
       ).rejects.toThrow("meta must be an object");

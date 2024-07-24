@@ -404,7 +404,7 @@ export class BucketClient {
   }
 
   /**
-   * Tracks a user in Bucket.
+   * Updates a user in Bucket.
    *
    * @param userId - The user ID to track.
    * @param opts.attributes - The additional attributes of the user (optional).
@@ -415,7 +415,7 @@ export class BucketClient {
    * @remarks
    * The user must be set using `withUser` before calling this method.
    **/
-  public async trackUser(opts?: TrackOptions) {
+  public async updateUser(opts?: TrackOptions) {
     ok(isObject(this._user), "user must be set");
     ok(opts === undefined || isObject(opts), "opts must be an object");
     ok(
@@ -435,7 +435,7 @@ export class BucketClient {
   }
 
   /**
-   * Tracks the associated company in Bucket.
+   * Updates the associated company in Bucket.
    *
    * @param opts.attributes - The additional attributes of the company (optional).
    * @param opts.meta - The meta context associated with tracking (optional).
@@ -446,7 +446,7 @@ export class BucketClient {
    * The company must be set using `withCompany` before calling this method.
    * If the user is set, the company will be associated with the user.
    **/
-  public async trackCompany(opts?: TrackOptions) {
+  public async updateCompany(opts?: TrackOptions) {
     ok(isObject(this._company), "company must be set");
     ok(opts === undefined || isObject(opts), "opts must be an object");
     ok(
