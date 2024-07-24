@@ -109,7 +109,7 @@ describe("fetchClient", () => {
   });
 
   it("should handle POST non-20x responses", async () => {
-    const response = { status: 400 };
+    const response = { status: 400, body: { error: "Something went wrong" } };
 
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,
@@ -123,7 +123,7 @@ describe("fetchClient", () => {
   });
 
   it("should handle GET non-20x responses", async () => {
-    const response = { status: 400 };
+    const response = { status: 400, body: { error: "Something went wrong" } };
 
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,

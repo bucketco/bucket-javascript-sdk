@@ -233,9 +233,7 @@ describe("Client", () => {
     const client = new BucketClient(validOptions);
 
     it("should return a new client instance with the user set", () => {
-      const newClient = client.withUser(user.userId, {
-        attributes: user.attrs,
-      });
+      const newClient = client.withUser(user.userId, user.attrs);
 
       expect(newClient).toBeInstanceOf(BucketClient);
       expect(newClient).not.toBe(client); // Ensure a new instance is returned
@@ -245,8 +243,8 @@ describe("Client", () => {
     it("should return a new client instance with merged user attributes", () => {
       const override = { sex: "male", age: 30 };
       const newClient = client
-        .withUser(user.userId, { attributes: user.attrs })
-        .withUser(user.userId, { attributes: override });
+        .withUser(user.userId, user.attrs)
+        .withUser(user.userId, override);
 
       expect(newClient["_user"]).toEqual({
         userId: user.userId,
@@ -256,8 +254,8 @@ describe("Client", () => {
 
     it("should return a new client instance with reset user", () => {
       const newClient = client
-        .withUser(user.userId, { attributes: user.attrs })
-        .withUser("anotherUser", { attributes: { another: "value" } });
+        .withUser(user.userId, user.attrs)
+        .withUser("anotherUser", { another: "value" });
 
       expect(newClient["_user"]).toEqual({
         userId: "anotherUser",
@@ -274,12 +272,8 @@ describe("Client", () => {
         "userId must be a string",
       );
 
-      expect(() => client.withUser(user.userId, "bad_opts" as any)).toThrow(
-        "opts must be an object",
-      );
-
       expect(() =>
-        client.withUser(user.userId, { attributes: "bad_attributes" as any }),
+        client.withUser(user.userId, "bad_attributes" as any),
       ).toThrow("attributes must be an object");
     });
   });
@@ -288,9 +282,7 @@ describe("Client", () => {
     const client = new BucketClient(validOptions);
 
     it("should return a new client instance with the company set", () => {
-      const newClient = client.withCompany(company.companyId, {
-        attributes: company.attrs,
-      });
+      const newClient = client.withCompany(company.companyId, company.attrs);
 
       expect(newClient).toBeInstanceOf(BucketClient);
       expect(newClient).not.toBe(client); // Ensure a new instance is returned
@@ -300,8 +292,8 @@ describe("Client", () => {
     it("should return a new client instance with merged company attributes", () => {
       const override = { age: 30, name: "not acme" };
       const newClient = client
-        .withCompany(company.companyId, { attributes: company.attrs })
-        .withCompany(company.companyId, { attributes: override });
+        .withCompany(company.companyId, company.attrs)
+        .withCompany(company.companyId, override);
 
       expect(newClient["_company"]).toEqual({
         companyId: company.companyId,
@@ -311,8 +303,8 @@ describe("Client", () => {
 
     it("should return a new client instance with reset company", () => {
       const newClient = client
-        .withCompany(company.companyId, { attributes: company.attrs })
-        .withCompany("anotherCompany", { attributes: { another: "value" } });
+        .withCompany(company.companyId, company.attrs)
+        .withCompany("anotherCompany", { another: "value" });
 
       expect(newClient["_company"]).toEqual({
         companyId: "anotherCompany",
@@ -330,13 +322,7 @@ describe("Client", () => {
       );
 
       expect(() =>
-        client.withCompany(company.companyId, "bad_opts" as any),
-      ).toThrow("opts must be an object");
-
-      expect(() =>
-        client.withCompany(company.companyId, {
-          attributes: "bad_attributes" as any,
-        }),
+        client.withCompany(company.companyId, "bad_attributes" as any),
       ).toThrow("attributes must be an object");
     });
   });
@@ -355,21 +341,9 @@ describe("Client", () => {
     it("should return a new client instance with replaced other context", () => {
       const newClient = client
         .withOtherContext(otherContext)
-        .withOtherContext({ replaced: true }, { replace: true });
+        .withOtherContext({ replaced: true });
 
       expect(newClient["_otherContext"]).toEqual({ replaced: true });
-    });
-
-    it("should return a new client instance with merged custom context", () => {
-      const override = { merged: true, key: "not value" };
-      const newClient = client
-        .withOtherContext(otherContext)
-        .withOtherContext(override);
-
-      expect(newClient["_otherContext"]).toEqual({
-        ...otherContext,
-        ...override,
-      });
     });
 
     it("should throw an error if custom context is not an object", () => {
@@ -389,9 +363,10 @@ describe("Client", () => {
   });
 
   describe("trackUser", () => {
-    const client = new BucketClient(validOptions).withUser(user.userId, {
-      attributes: user.attrs,
-    });
+    const client = new BucketClient(validOptions).withUser(
+      user.userId,
+      user.attrs,
+    );
 
     it("should successfully update the user with merging attributes", async () => {
       const response = { status: 200, body: { success: true } };
@@ -469,7 +444,7 @@ describe("Client", () => {
   describe("trackCompany", () => {
     const client = new BucketClient(validOptions).withCompany(
       company.companyId,
-      { attributes: company.attrs },
+      company.attrs,
     );
 
     it("should successfully update the company with merging attributes", async () => {
@@ -689,9 +664,10 @@ describe("Client", () => {
     });
 
     it("should return the user if user was associated", () => {
-      const client = new BucketClient(validOptions).withUser(user.userId, {
-        attributes: user.attrs,
-      });
+      const client = new BucketClient(validOptions).withUser(
+        user.userId,
+        user.attrs,
+      );
 
       expect(client.user).toEqual(user);
     });
@@ -706,7 +682,7 @@ describe("Client", () => {
     it("should return the user if company was associated", () => {
       const client = new BucketClient(validOptions).withCompany(
         company.companyId,
-        { attributes: company.attrs },
+        company.attrs,
       );
 
       expect(client.company).toEqual(company);
@@ -857,8 +833,8 @@ describe("Client", () => {
 
     it("should return evaluated flags when user, company, and custom context are defined", async () => {
       client = client
-        .withUser(user.userId, { attributes: user.attrs })
-        .withCompany(company.companyId, { attributes: company.attrs })
+        .withUser(user.userId, user.attrs)
+        .withCompany(company.companyId, company.attrs)
         .withOtherContext(otherContext);
 
       await client.initialize();
@@ -936,8 +912,8 @@ describe("Client", () => {
 
     it("should properly define the rate limiter key", async () => {
       client = client
-        .withUser(user.userId, { attributes: user.attrs })
-        .withCompany(company.companyId, { attributes: company.attrs })
+        .withUser(user.userId, user.attrs)
+        .withCompany(company.companyId, company.attrs)
         .withOtherContext(otherContext);
 
       await client.initialize();
@@ -960,7 +936,7 @@ describe("Client", () => {
     });
 
     it("should return evaluated flags when only user is defined", async () => {
-      client = client.withUser(user.userId, { attributes: user.attrs });
+      client = client.withUser(user.userId, user.attrs);
 
       await client.initialize();
       client.getFlags();
@@ -1010,9 +986,7 @@ describe("Client", () => {
     });
 
     it("should return evaluated flags when only company is defined", async () => {
-      client = client.withCompany(company.companyId, {
-        attributes: company.attrs,
-      });
+      client = client.withCompany(company.companyId, company.attrs);
 
       await client.initialize();
       client.getFlags();

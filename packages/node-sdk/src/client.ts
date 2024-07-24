@@ -276,7 +276,7 @@ export class BucketClient {
    * Sets the user that is used for feature flag evaluation.
    *
    * @param userId - The user ID to set.
-   * @param opts.attrs - The attributes of the user (optional).
+   * @param attributes - The attributes of the user (optional).
    *
    * @returns A new client with the user set.
    * @throws An error if the user ID is not a string or the options are invalid.
@@ -284,27 +284,23 @@ export class BucketClient {
    * If the user ID is the same as the current company, the attributes will be merged, and
    * the new attributes will take precedence.
    **/
-  public withUser(
-    userId: string,
-    opts?: { attributes?: Attributes },
-  ): BucketClient {
+  public withUser(userId: string, attributes?: Attributes): BucketClient {
     ok(
       typeof userId === "string" && userId.length > 0,
       "userId must be a string",
     );
-    ok(opts === undefined || isObject(opts), "opts must be an object");
     ok(
-      opts?.attributes === undefined || isObject(opts.attributes),
+      attributes === undefined || isObject(attributes),
       "attributes must be an object",
     );
 
     const client = new BucketClient(this);
     if (userId !== this._user?.userId) {
-      client._user = { userId, attrs: opts?.attributes };
+      client._user = { userId, attrs: attributes };
     } else {
       client._user = {
         userId: this._user.userId,
-        attrs: { ...this._user.attrs, ...opts?.attributes },
+        attrs: { ...this._user.attrs, ...attributes },
       };
     }
 
@@ -315,7 +311,7 @@ export class BucketClient {
    * Sets the company that is used for feature flag evaluation.
    *
    * @param companyId - The company ID to set.
-   * @param opts.attrs - The attributes of the user (optional).
+   * @param attributes - The attributes of the user (optional).
    *
    * @returns A new client with the company set.
    * @throws An error if the company ID is not a string or the options are invalid.
@@ -323,27 +319,23 @@ export class BucketClient {
    * If the company ID is the same as the current company, the attributes will be merged, and
    * the new attributes will take precedence.
    **/
-  public withCompany(
-    companyId: string,
-    opts?: { attributes?: Attributes },
-  ): BucketClient {
+  public withCompany(companyId: string, attributes?: Attributes): BucketClient {
     ok(
       typeof companyId === "string" && companyId.length > 0,
       "companyId must be a string",
     );
-    ok(opts === undefined || isObject(opts), "opts must be an object");
     ok(
-      opts?.attributes === undefined || isObject(opts.attributes),
+      attributes === undefined || isObject(attributes),
       "attributes must be an object",
     );
 
     const client = new BucketClient(this);
     if (companyId !== this._company?.companyId) {
-      client._company = { companyId, attrs: opts?.attributes };
+      client._company = { companyId, attrs: attributes };
     } else {
       client._company = {
         companyId: this._company.companyId,
-        attrs: { ...this._company.attrs, ...opts?.attributes },
+        attrs: { ...this._company.attrs, ...attributes },
       };
     }
 
@@ -354,33 +346,16 @@ export class BucketClient {
    * Sets the extra, custom context for the client.
    *
    * @param context - The "extra" context to set.
-   * @param opts.replace - A boolean indicating if the context should replace the current context or be merged (optional).
    *
    * @returns A new client with the context set.
    * @throws An error if the context is not an object or the options are invalid.
-   * @remarks
-   * If replace is true, the context will replace the current context, otherwise it will be merged.
-   * The new context will take precedence over the old context.
    **/
-  public withOtherContext(
-    context: Record<string, any>,
-    opts?: { replace?: boolean },
-  ): BucketClient {
+  public withOtherContext(context: Record<string, any>): BucketClient {
     ok(isObject(context), "context must be an object");
-
-    ok(opts === undefined || isObject(opts), "opts must be an object");
-    ok(
-      opts?.replace === undefined || typeof opts.replace === "boolean",
-      "replace must be a boolean",
-    );
 
     const client = new BucketClient(this);
 
-    if (!opts?.replace) {
-      client._otherContext = { ...this._otherContext, ...context };
-    } else {
-      client._otherContext = context;
-    }
+    client._otherContext = context;
 
     return client;
   }
