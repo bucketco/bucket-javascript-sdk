@@ -106,19 +106,19 @@ const boundClient = client
   .withCompany("company_id");
 
 // track the user (send a `user` event to Bucket).
-await boundClient.trackUser();
+await boundClient.updateUser();
 
 // register the user as being part of a given company
-boundClient.trackCompany();
+boundClient.updateCompany();
 ```
 
 If one needs to simply update a company's attributes on Bucket side,
-one calls `trackCompany` without supplying a user ID:
+one calls `updateCompany` without supplying a user ID:
 
 ```ts
 // either creates a new company on Bucket or updates an existing
 // one by supplying custom attributes
-client.withCompany("updated_company_id").trackCompany({
+client.withCompany("updated_company_id").updateCompany({
   attributes: {
     status: "active",
     plan: "trial",
@@ -132,7 +132,7 @@ client
   .withCompany("updated_company_id", {
     attributes: { status: "active", plan: "trial" },
   })
-  .trackCompany({ meta: { active: false } });
+  .updateCompany({ meta: { active: false } });
 ```
 
 To generate feature tracking `event`s:
@@ -186,7 +186,7 @@ client.withUser({ userId: await sha256("john_doe"), ... });
 ### Custom Attributes & Context
 
 You can pass attributes as part of the object literal passed to the `withUser()`,
-`withCompany()`, `trackUser`, `trackCompany` and `trackFeatureUsage()`, methods.
+`withCompany()`, `updateUser`, `updateCompany` and `trackFeatureUsage()`, methods.
 Attributes cannot be nested (multiple levels) and must be either strings,
 integers or booleans.
 
@@ -199,7 +199,7 @@ to provide for easier navigation:
 You can supply an additional `context` to these functions as well. The `context`
 object contains additional data that Bucket uses to make some behavioural choices.
 
-By default, `trackUser`, `trackCompany` and `trackFeatureUsage` calls
+By default, `updateUser`, `updateCompany` and `trackFeatureUsage` calls
 automatically update the given user/company `Last seen` property on Bucket side.
 You can control if `Last seen` should be updated when the events are sent by setting
 `meta.active = false`. This is often useful if you
@@ -209,12 +209,12 @@ attributes but not their activity.
 Example:
 
 ```ts
-client.trackUser({
+client.updateUser({
   attributes: { name: "John O." },
   meta: { active: true },
 });
 
-client.trackCompany({
+client.updateCompany({
   attributes: { name: "My SaaS Inc." },
   meta: { active: false },
 });
