@@ -13,7 +13,7 @@ import {
 } from "../src/config";
 import fetchClient from "../src/fetch-http-client";
 import { ClientOptions, FlagDefinitions } from "../src/types";
-import { rateLimited } from "../src/utils";
+import { checkWithinAllottedTimeWindow } from "../src/utils";
 
 vi.mock("@bucketco/flag-evaluation", async (importOriginal) => {
   const original = (await importOriginal()) as any;
@@ -27,7 +27,9 @@ vi.mock("../src/utils", async (importOriginal) => {
   const original = (await importOriginal()) as any;
   return {
     ...original,
-    rateLimited: vi.fn(original.rateLimited),
+    checkWithinAllottedTimeWindow: vi.fn(
+      original.checkWithinAllottedTimeWindow,
+    ),
   };
 });
 
@@ -919,20 +921,11 @@ describe("Client", () => {
       await client.initialize();
       client.getFlags();
 
-      expect(rateLimited).toHaveBeenCalledWith(
+      expect(checkWithinAllottedTimeWindow).toHaveBeenCalledWith(
         FLAG_EVENTS_PER_MIN,
-        expect.any(Function),
-        expect.any(Function),
+        "evaluate:user.id=user123&user.age=1&user.name=John&company.id=company123&company.employees=100&company.name=Acme+Inc.&custom=context&key=value:flag1:1:true",
       );
-      const key = vi
-        .mocked(rateLimited)
-        .mock.calls[0][1]({ test: { version: 20, value: true } }, "test");
-
-      expect(key).toBe(
-        "user.id=user123&user.age=1&user.name=John&company.id=company123&company.employees=100&company.name=Acme+Inc.&custom=context&key=value:test:20:true",
-      );
-
-      vi.mocked(rateLimited).mockRestore();
+      //      vi.mocked(rateLimited).mockRestore();
     });
 
     it("should return evaluated flags when only user is defined", async () => {
@@ -1136,9 +1129,11 @@ describe("Client", () => {
       client = client.withUser("anotherUser");
 
       await client.initialize();
-      const result = client.getFlags();
-
       httpClient.post.mockRejectedValueOnce(new Error("Network error"));
+
+      await flushPromises();
+
+      const result = client.getFlags();
 
       // Trigger a flag check
       expect(result.flag1).toBe(true);

@@ -23,11 +23,11 @@ import {
   TypedFlags,
 } from "./types";
 import {
+  checkWithinAllottedTimeWindow,
   decorateLogger,
   isObject,
   maskedProxy,
   ok,
-  rateLimited,
 } from "./utils";
 
 /**
@@ -205,6 +205,9 @@ export class BucketClient {
    *
    * @returns A boolean indicating if the request was successful.
    * @throws An error if the event is invalid.
+   *
+   * @remarks
+   * This method is rate-limited to prevent too many events from being sent.
    **/
   private async sendFeatureFlagEvent(event: FeatureFlagEvent) {
     ok(typeof event === "object", "event must be an object");
@@ -239,6 +242,19 @@ export class BucketClient {
         Array.isArray(event.evalMissingFields),
       "event missing fields must be an array",
     );
+
+    const contextKey = new URLSearchParams(
+      flattenJSON(event.evalContext || {}),
+    ).toString();
+
+    if (
+      !checkWithinAllottedTimeWindow(
+        FLAG_EVENTS_PER_MIN,
+        `${event.action}:${contextKey}:${event.flagKey}:${event.flagVersion}:${event.evalResult}`,
+      )
+    ) {
+      return false;
+    }
 
     return await this.post("flags/events", {
       action: event.action,
@@ -564,29 +580,16 @@ export class BucketClient {
         "failed to use feature flag definitions, there are none cached yet. using fallback flags.",
       );
     }
-    const contextKey = new URLSearchParams(
-      flattenJSON(mergedContext),
-    ).toString();
 
-    return maskedProxy(
-      evaluatedFlags,
-      rateLimited(
-        FLAG_EVENTS_PER_MIN,
-        (flags, key) =>
-          `${contextKey}:${key}:${flags[key].version}:${flags[key].value}`,
-        (limitExceeded, flags, key) => {
-          if (!limitExceeded) {
-            void this.sendFeatureFlagEvent({
-              action: "check",
-              flagKey: key,
-              flagVersion: flags[key].version,
-              evalResult: flags[key].value,
-            });
-          }
+    return maskedProxy(evaluatedFlags, (flags, key) => {
+      void this.sendFeatureFlagEvent({
+        action: "check",
+        flagKey: key,
+        flagVersion: flags[key].version,
+        evalResult: flags[key].value,
+      });
 
-          return flags[key].value;
-        },
-      ),
-    );
+      return flags[key].value;
+    });
   }
 }

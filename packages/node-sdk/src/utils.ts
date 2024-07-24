@@ -4,45 +4,29 @@ const oneMinute = 60 * 1000;
 
 const eventsByKey: Record<string, number[]> = {};
 
-/**
- * Create a rate-limited function that calls the given function with a flag indicating whether
- * `eventsPerMinute` rate limit was reached per minute.
- *
- * @param eventsPerMinute - The maximum number of events per minute.
- * @param keyFunc - The function to call to generate a key for the given arguments.
- * @param func - The function to call.
- *
- * @returns The rate-limited function.
- **/
-export function rateLimited<T extends any[], R>(
+export function checkWithinAllottedTimeWindow(
   eventsPerMinute: number,
-  keyFunc: (...args: T) => string,
-  func: (limitExceeded: boolean, ...args: T) => R,
-): (...funcArgs: T) => R {
-  return function (...funcArgs: T): R {
-    const now = Date.now();
+  key: string,
+): boolean {
+  const now = Date.now();
 
-    const key = keyFunc(...funcArgs);
+  if (!eventsByKey[key]) {
+    eventsByKey[key] = [];
+  }
 
-    if (!eventsByKey[key]) {
-      eventsByKey[key] = [];
-    }
+  const events = eventsByKey[key];
 
-    const events = eventsByKey[key];
+  while (events.length && now - events[0] > oneMinute) {
+    events.shift();
+  }
 
-    while (events.length && now - events[0] > oneMinute) {
-      events.shift();
-    }
+  const limitExceeded = events.length >= eventsPerMinute;
 
-    const limitExceeded = events.length >= eventsPerMinute;
-    const res = func(limitExceeded, ...funcArgs);
+  if (!limitExceeded) {
+    events.push(now);
+  }
 
-    if (!limitExceeded) {
-      events.push(now);
-    }
-
-    return res;
-  };
+  return !limitExceeded;
 }
 
 /**
