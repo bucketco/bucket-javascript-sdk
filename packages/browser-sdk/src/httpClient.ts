@@ -18,8 +18,8 @@ export class HttpClient {
     if (!params) {
       params = new URLSearchParams();
     }
-    params.append(SDK_VERSION_HEADER_NAME, SDK_VERSION);
-    params.append("publishableKey", this.publishableKey);
+    params.set(SDK_VERSION_HEADER_NAME, SDK_VERSION);
+    params.set("publishableKey", this.publishableKey);
 
     const url = new URL(path, this.baseUrl);
     url.search = params.toString();
@@ -53,6 +53,7 @@ export class HttpClient {
       headers: {
         "Content-Type": "application/json",
         [SDK_VERSION_HEADER_NAME]: SDK_VERSION,
+        Authorization: `Bearer ${this.publishableKey}`,
       },
       body: JSON.stringify(body),
     });

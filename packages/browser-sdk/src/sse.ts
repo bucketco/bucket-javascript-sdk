@@ -5,8 +5,8 @@ import {
   getAuthToken,
   rememberAuthToken,
 } from "./feedback/prompt-storage";
-import { loggerWithPrefix, Logger } from "./logger";
 import { HttpClient } from "./httpClient";
+import { Logger, loggerWithPrefix } from "./logger";
 
 interface AblyTokenDetails {
   token: string;
@@ -97,7 +97,8 @@ export class AblySSEChannel {
       return details.token;
     }
 
-    this.logger.error("server did not release a token", res);
+    this.logger.error("server did not release a token");
+
     return;
   }
 
@@ -239,7 +240,7 @@ export class AblySSEChannel {
     void tryConnect();
 
     this.retryInterval = setInterval(() => {
-      if (!this.isOpen && this.retryInterval) {
+      if (!this.isConnected() && this.retryInterval) {
         if (retriesRemaining <= 0) {
           clearInterval(this.retryInterval);
           this.retryInterval = null;
@@ -266,7 +267,7 @@ export class AblySSEChannel {
   }
 
   public isConnected() {
-    return this.isOpen;
+    return this.isOpen && !!this.eventSource;
   }
 }
 

@@ -1,19 +1,19 @@
-import { API_HOST, SSE_REALTIME_HOST } from "./config";
 import {
   Company,
-  feedback,
   Feedback,
+  feedback,
   FeedbackOptions as FeedbackOptions,
   LiveSatisfaction,
   RequestFeedbackOptions,
   TrackedEvent,
   User,
 } from "./feedback/feedback";
-import { FlagsOptions, FlagsClient } from "./flags/flags";
-import { Logger, loggerWithPrefix, quietConsoleLogger } from "./logger";
-import { HttpClient } from "./httpClient";
 import * as feedbackLib from "./feedback/ui";
+import { FlagsClient, FlagsOptions } from "./flags/flags";
+import { API_HOST, SSE_REALTIME_HOST } from "./config";
 import { BucketContext } from "./context";
+import { HttpClient } from "./httpClient";
+import { Logger, loggerWithPrefix, quietConsoleLogger } from "./logger";
 
 const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
@@ -23,7 +23,7 @@ interface Config {
   sseHost: string;
 }
 
-interface InitOptions {
+export interface InitOptions {
   logger?: Logger;
   host?: string;
   sseHost?: string;
@@ -41,6 +41,7 @@ export class BucketClient {
   private publishableKey: string;
   private context: BucketContext;
   private config: Config;
+  private requestFeedbackOptions: Partial<RequestFeedbackOptions>;
   private logger: Logger;
   private httpClient: HttpClient;
 
@@ -60,6 +61,12 @@ export class BucketClient {
       ...defaultConfig,
       ...opts,
     };
+
+    this.requestFeedbackOptions = {
+      position: opts?.feedback?.ui?.position,
+      translations: opts?.feedback?.ui?.translations,
+    };
+
     this.httpClient = new HttpClient(publishableKey, this.config.host);
 
     this.flagsClient = new FlagsClient(
@@ -69,7 +76,10 @@ export class BucketClient {
       opts?.flags,
     );
 
-    if (this.context?.user && opts?.feedback?.enableLiveSatisfaction) {
+    if (
+      this.context?.user &&
+      opts?.feedback?.enableLiveSatisfaction !== false // default to on
+    ) {
       if (isMobile) {
         this.logger.warn(
           "Feedback prompting is not supported on mobile devices",
@@ -79,8 +89,10 @@ export class BucketClient {
           this.config.sseHost,
           this.logger,
           this.httpClient,
-          opts?.feedback.promptHandler,
+          opts?.feedback?.liveSatisfactionHandler,
           String(this.context.user?.id),
+          opts?.feedback?.ui?.position,
+          opts?.feedback?.ui?.translations,
         );
       }
     }
@@ -94,7 +106,7 @@ export class BucketClient {
   async initialize() {
     const inits = [this.flagsClient.initialize()];
     if (this.liveSatisfaction) {
-      inits.push(this.liveSatisfaction.init());
+      inits.push(this.liveSatisfaction.initialize());
     }
     await Promise.all(inits);
 
@@ -116,10 +128,10 @@ export class BucketClient {
       );
       return;
     }
-    this.context.user = { id: this.context.user.Id, ...attributes };
+    this.context.user = { id: this.context.user.id, ...attributes };
 
     const payload: User = {
-      userId: String(this.context.user.Id),
+      userId: String(this.context.user.id),
       attributes,
     };
     const res = await this.httpClient.post({ path: `/user`, body: payload });
@@ -190,7 +202,17 @@ export class BucketClient {
    * @returns
    */
   async feedback(payload: Feedback) {
-    return await feedback(this.httpClient, this.logger, payload);
+    const userId =
+      payload.userId ||
+      (this.context.user?.id ? String(this.context.user?.id) : undefined);
+    const companyId =
+      payload.companyId ||
+      (this.context.company?.id ? String(this.context.company?.id) : undefined);
+    return await feedback(this.httpClient, this.logger, {
+      userId,
+      companyId,
+      ...payload,
+    });
   }
 
   /**
@@ -208,22 +230,31 @@ export class BucketClient {
       return;
     }
 
+    const feedbackData = {
+      featureId: options.featureId,
+      companyId:
+        options.companyId ||
+        (this.context.company?.id
+          ? String(this.context.company?.id)
+          : undefined),
+      source: "widget" as const,
+    };
+
     // Wait a tick before opening the feedback form,
     // to prevent the same click from closing it.
     setTimeout(() => {
       feedbackLib.openFeedbackForm({
         key: options.featureId,
         title: options.title,
-        position: options.position, // TODO: use config feedback position
-        translations: options.translations, // TODO: use config feedback translations
+        position: options.position || this.requestFeedbackOptions.position,
+        translations:
+          options.translations || this.requestFeedbackOptions.translations,
         openWithCommentVisible: options.openWithCommentVisible,
         onClose: options.onClose,
         onDismiss: options.onDismiss,
         onScoreSubmit: async (data) => {
           const res = await this.feedback({
-            featureId: options.featureId,
-            companyId: options.companyId,
-            source: "widget",
+            ...feedbackData,
             ...data,
           });
 
@@ -236,9 +267,7 @@ export class BucketClient {
         onSubmit: async (data) => {
           // Default onSubmit handler
           await this.feedback({
-            featureId: options.featureId,
-            companyId: options.companyId,
-            source: "widget",
+            ...feedbackData,
             ...data,
           });
 

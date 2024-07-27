@@ -1,9 +1,8 @@
-import { Logger } from "../logger";
-import { HttpClient } from "../httpClient";
-import { FlagCache } from "./flags-cache";
-
-import { isObject, parseAPIFlagsResponse } from "./flags-cache";
 import { BucketContext } from "../context";
+import { HttpClient } from "../httpClient";
+import { Logger } from "../logger";
+
+import { FlagCache, isObject, parseAPIFlagsResponse } from "./flags-cache";
 
 export type APIFlagsResponse = Record<
   string,
@@ -97,6 +96,10 @@ export function flattenJSON(obj: Record<string, any>): Record<string, any> {
   return result;
 }
 
+export function clearFlagCache() {
+  localStorage.clear();
+}
+
 export const FLAGS_STALE_MS = 60000; // turn stale after 60 seconds, optionally reevaluate in the background
 export const FLAGS_EXPIRE_MS = 7 * 24 * 60 * 60 * 1000; // expire entirely after 7 days
 
@@ -111,31 +114,31 @@ export class FlagsClient {
     private httpClient: HttpClient,
     private context: BucketContext,
     private logger: Logger,
-    options?: FlagsOptions,
+    options?: FlagsOptions & { cache?: FlagCache },
   ) {
-    this.cache = new FlagCache({
-      storage: {
-        get: () => localStorage.getItem(localStorageCacheKey),
-        set: (value) => localStorage.setItem(localStorageCacheKey, value),
-        clear: () => localStorage.removeItem(localStorageCacheKey),
-      },
-      staleTimeMs: FLAGS_STALE_MS,
-      expireTimeMs: FLAGS_EXPIRE_MS,
-    });
+    this.cache = options?.cache
+      ? options.cache
+      : new FlagCache({
+          storage: {
+            get: () => localStorage.getItem(localStorageCacheKey),
+            set: (value) => localStorage.setItem(localStorageCacheKey, value),
+          },
+          staleTimeMs: FLAGS_STALE_MS,
+          expireTimeMs: FLAGS_EXPIRE_MS,
+        });
     this.config = { ...DEFAULT_FLAGS_CONFIG, ...options };
   }
 
   async initialize() {
-    this.flags = await this.initFlags();
+    this.flags = await this.maybeFetchFlags();
   }
 
   getFlags(): Flags | undefined {
     return this.flags;
   }
 
-  private async initFlags(): Promise<Flags | undefined> {
+  private fetchParams() {
     const flattenedContext = flattenJSON({ context: this.context });
-
     const params = new URLSearchParams(flattenedContext);
     // publishableKey should be part of the cache key
     params.append("publishableKey", this.httpClient.publishableKey);
@@ -143,8 +146,11 @@ export class FlagsClient {
     // sort the params to ensure that the URL is the same for the same context
     params.sort();
 
-    const cacheKey = params.toString();
-    const cachedItem = this.cache.get(cacheKey);
+    return params;
+  }
+
+  private async maybeFetchFlags(): Promise<Flags | undefined> {
+    const cachedItem = this.cache.get(this.fetchParams().toString());
 
     // if there's no cached item OR the cached item is a failure and we haven't retried
     // too many times yet - fetch now
@@ -154,7 +160,7 @@ export class FlagsClient {
         (this.config.failureRetryAttempts === false ||
           cachedItem.attemptCount < this.config.failureRetryAttempts))
     ) {
-      return this.fetchFlags(cacheKey, params, this.config.timeoutMs);
+      return await this.fetchFlags();
     }
 
     // cachedItem is a success or a failed attempt that we've retried too many times
@@ -162,32 +168,40 @@ export class FlagsClient {
       // serve successful stale cache if `staleWhileRevalidate` is enabled
       if (this.config.staleWhileRevalidate && cachedItem.success) {
         // re-fetch in the background, return last successful value
-        this.fetchFlags(cacheKey, params, this.config.timeoutMs).catch(() => {
+        this.fetchFlags().catch(() => {
           // we don't care about the result, we just want to re-fetch
         });
         return cachedItem.flags;
       }
-      return this.fetchFlags(cacheKey, params, this.config.timeoutMs);
+
+      return await this.fetchFlags();
     }
 
     // serve cached items if not stale and not expired
     return cachedItem.flags;
   }
 
-  private async fetchFlags(
-    cacheKey: string,
-    params: URLSearchParams,
-    timeoutMs: number,
-  ) {
+  public async fetchFlags() {
+    const params = this.fetchParams();
+    const cacheKey = params.toString();
     try {
       const res = await this.httpClient.get({
         path: "/flags/evaluate",
-        timeoutMs,
+        timeoutMs: this.config.timeoutMs,
         params,
       });
 
       if (!res.ok) {
-        throw new Error("unexpected response code: " + res.status);
+        let errorBody = "";
+        try {
+          errorBody = await res.json();
+        } catch (e) {
+          // ignore
+        }
+
+        throw new Error(
+          "unexpected response code: " + res.status + " - " + errorBody,
+        );
       }
       const typeRes = validateFeatureFlagsResponse(await res.json());
       if (!typeRes || !typeRes.success) {
@@ -222,11 +236,13 @@ export class FlagsClient {
         });
       }
 
-      return;
+      return this.config.fallbackFlags.reduce(
+        (acc, key) => {
+          acc[key] = true;
+          return acc;
+        },
+        {} as Record<string, boolean>,
+      );
     }
-  }
-
-  clearCache() {
-    this.cache.clear();
   }
 }

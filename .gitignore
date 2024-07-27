@@ -34,3 +34,5 @@ playwright/.cache/
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+junit.xml

@@ -35,11 +35,11 @@ const config: Configuration[] = [
     target: "web",
     output: {
       path: path.resolve(__dirname, "dist"),
-      filename: "bucket-browser-sdk.browser.js",
+      filename: "bucket-browser-sdk.js",
       library: {
-        name: "bucket",
+        name: "BucketClient",
         type: "umd",
-        export: "default",
+        export: "BucketClient",
       },
     },
   },

@@ -1,6 +1,13 @@
-import { Logger } from "../logger";
 import { HttpClient } from "../httpClient";
+import { Logger } from "../logger";
 import { AblySSEChannel, openAblySSEChannel } from "../sse";
+
+import {
+  FeedbackPosition,
+  FeedbackSubmission,
+  FeedbackTranslations,
+  OpenFeedbackFormOptions,
+} from "./ui/types";
 import { getAuthToken } from "./prompt-storage";
 import {
   FeedbackPromptCompletionHandler,
@@ -8,18 +15,11 @@ import {
   processPromptMessage,
 } from "./prompts";
 import { DEFAULT_POSITION } from "./ui";
-import {
-  FeedbackPosition,
-  FeedbackSubmission,
-  FeedbackTranslations,
-  OpenFeedbackFormOptions,
-} from "./ui/types";
 import * as feedbackLib from "./ui";
 
 export type Key = string;
 
 export type FeedbackOptions = {
-  promptHandler?: FeedbackPromptHandler;
   enableLiveSatisfaction?: boolean;
   liveSatisfactionHandler?: FeedbackPromptHandler;
   ui?: {
@@ -212,14 +212,14 @@ export const DEFAULT_FEEDBACK_CONFIG = {
 export async function feedback(
   httpClient: HttpClient,
   logger: Logger,
-  feedback: Feedback,
+  payload: Feedback,
 ) {
-  if (!feedback.score && !feedback.comment) {
+  if (!payload.score && !payload.comment) {
     logger.error("either 'score' or 'comment' must be provided");
     return;
   }
 
-  if (!feedback.userId) {
+  if (!payload.userId) {
     logger.error("`feedback` call ignored, no user id given");
     return;
   }
@@ -238,9 +238,9 @@ export async function feedback(
   //   source: source ?? "sdk",
   // };
 
-  const res = await httpClient.post({ path: `/feedback`, body: feedback });
+  const res = await httpClient.post({ path: `/feedback`, body: payload });
   logger.debug(`sent feedback`, res);
-  return await res.json();
+  return res;
 }
 
 export class LiveSatisfaction {
@@ -260,17 +260,40 @@ export class LiveSatisfaction {
   /**
    * Start receiving Live Satisfaction feedback prompts.
    */
-  async init() {
+  async initialize() {
     if (this.initialized) {
       this.logger.error("feedback prompting already initialized");
       return;
     }
 
-    const existingAuth = getAuthToken(this.userId);
-    let channel = existingAuth?.channel;
+    const channel = await this.getChannel();
+    if (!channel) return;
 
-    // while initializing, consider the channel active
-    // liveSatisfactionActive = true;
+    try {
+      this.logger.debug(`feedback prompting enabled`, channel);
+      this.sseChannel = openAblySSEChannel({
+        userId: this.userId,
+        channel,
+        httpClient: this.httpClient,
+        callback: (message) =>
+          this.handleFeedbackPromptRequest(this.userId, message),
+        logger: this.logger,
+        sseHost: this.sseHost,
+      });
+      this.logger.debug(`feedback prompting connection established`);
+    } catch (e) {
+      this.logger.error(`error initializing feedback prompting`, e);
+    }
+  }
+
+  private async getChannel() {
+    const existingAuth = getAuthToken(this.userId);
+    const channel = existingAuth?.channel;
+
+    if (channel) {
+      return channel;
+    }
+
     try {
       if (!channel) {
         const res = await this.httpClient.post({
@@ -281,34 +304,18 @@ export class LiveSatisfaction {
         });
 
         this.logger.debug(`feedback prompting status sent`, res);
-        const body: { success: boolean; channel?: string } = await res.json();
-        if (!body.success || !body.channel) {
-          this.logger.debug(`feedback prompting not enabled: ${body}`);
-          return;
+        if (res.ok) {
+          const body: { success: boolean; channel?: string } = await res.json();
+          if (body.success && body.channel) {
+            return body.channel;
+          }
         }
-
-        channel = body.channel;
       }
-
-      this.logger.debug(`feedback prompting enabled`, channel);
-
-      this.sseChannel = openAblySSEChannel({
-        userId: this.userId,
-        channel,
-        httpClient: this.httpClient,
-        callback: (message) =>
-          this.handleFeedbackPromptRequest(this.userId, message),
-        logger: this.logger,
-        sseHost: this.sseHost,
-      });
-
-      this.logger.debug(`feedback prompting connection established`);
     } catch (e) {
       this.logger.error(`error initializing feedback prompting`, e);
       return;
     }
     return;
-    // return channel;
   }
 
   handleFeedbackPromptRequest(userId: string, message: any) {
@@ -349,16 +356,6 @@ export class LiveSatisfaction {
     completionHandler: FeedbackPromptCompletionHandler,
   ) {
     let feedbackId: string | undefined = undefined;
-
-    // TODO: still needed?
-    // if (feedbackPromptingUserId !== userId) {
-    //   log(
-    //     `feedback prompt not shown, received for another user`,
-    //     userId,
-    //     message,
-    //   );
-    //   return;
-    // }
 
     await this.feedbackPromptEvent({
       promptId: message.promptId,
@@ -402,7 +399,11 @@ export class LiveSatisfaction {
       );
 
       completionHandler();
-      return await response.json();
+
+      if (response && response.ok) {
+        return await response?.json();
+      }
+      return;
     };
 
     const handlers: FeedbackPromptHandlerCallbacks = {

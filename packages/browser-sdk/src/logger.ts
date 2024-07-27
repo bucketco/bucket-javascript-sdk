@@ -6,8 +6,12 @@ export interface Logger {
 }
 
 export const quietConsoleLogger = {
-  debug(_: string) {},
-  info(_: string) {},
+  debug(_: string) {
+    // do nothing
+  },
+  info(_: string) {
+    // do nothing
+  },
   warn(message: string, ...args: any[]) {
     console.warn(message, ...args);
   },

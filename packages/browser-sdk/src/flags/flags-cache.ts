@@ -3,7 +3,6 @@ import { Flags } from "./flags";
 interface StorageItem {
   get(): string | null;
   set(value: string): void;
-  clear(): void;
 }
 
 interface cacheEntry {
@@ -23,11 +22,11 @@ export function parseAPIFlagsResponse(flagsInput: any): Flags | undefined {
 
   const flags: Flags = {};
   for (const key in flagsInput) {
-    const flagValue = flagsInput[key];
-    if (typeof flagValue !== "boolean") {
+    const flag = flagsInput[key];
+    if (typeof flag.value !== "boolean" || flag.key !== key) {
       return;
     }
-    flags[key] = flagValue;
+    flags[key] = flag.value;
   }
   return flags;
 }
@@ -116,10 +115,6 @@ export class FlagCache {
       // ignore errors
     }
     return;
-  }
-
-  clear() {
-    this.storage.clear();
   }
 }
 
