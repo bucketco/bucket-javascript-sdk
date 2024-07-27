@@ -36,33 +36,6 @@ export type FeedbackOptions = {
   };
 };
 
-export type User = {
-  userId: string;
-  attributes?: {
-    name?: string;
-    [key: string]: any;
-  };
-  context?: Context;
-};
-
-export type Company = {
-  userId: string;
-  companyId: string;
-  attributes?: {
-    name?: string;
-    [key: string]: any;
-  };
-  context?: Context;
-};
-
-export type TrackedEvent = {
-  event: string;
-  userId: string;
-  companyId?: string;
-  attributes?: Record<string, any>;
-  context?: Context;
-};
-
 export interface RequestFeedbackOptions
   extends Omit<OpenFeedbackFormOptions, "key" | "onSubmit"> {
   /**
@@ -190,10 +163,6 @@ export type FeedbackPromptHandler = (
   prompt: FeedbackPrompt,
   handlers: FeedbackPromptHandlerCallbacks,
 ) => void;
-
-export type Context = {
-  active?: boolean;
-};
 
 export const createDefaultFeedbackPromptHandler = (
   options: FeedbackPromptHandlerOpenFeedbackFormOptions = {},

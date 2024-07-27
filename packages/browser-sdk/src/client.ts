@@ -17,6 +17,37 @@ import { Logger, loggerWithPrefix, quietConsoleLogger } from "./logger";
 
 const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
+export type User = {
+  userId: string;
+  attributes?: {
+    name?: string;
+    [key: string]: any;
+  };
+  context?: PayloadContext;
+};
+
+export type Company = {
+  userId: string;
+  companyId: string;
+  attributes?: {
+    name?: string;
+    [key: string]: any;
+  };
+  context?: PayloadContext;
+};
+
+export type TrackedEvent = {
+  event: string;
+  userId: string;
+  companyId?: string;
+  attributes?: Record<string, any>;
+  context?: PayloadContext;
+};
+
+export type PayloadContext = {
+  active?: boolean;
+};
+
 interface Config {
   debug: boolean;
   host: string;
