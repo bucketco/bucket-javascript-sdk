@@ -26,7 +26,7 @@
   "files": [
     "dist"
   ],
-  "main": "./dist/bucket.browser-sdk.js",
+  "main": "./dist/bucket-browser-sdk.js",
   "types": "./dist/types/src/index.d.ts",
   "dependencies": {
     "@floating-ui/dom": "^1.6.8",
