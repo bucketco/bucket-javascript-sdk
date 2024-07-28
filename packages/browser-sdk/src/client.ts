@@ -1,12 +1,9 @@
 import {
-  Company,
   Feedback,
   feedback,
   FeedbackOptions as FeedbackOptions,
   LiveSatisfaction,
   RequestFeedbackOptions,
-  TrackedEvent,
-  User,
 } from "./feedback/feedback";
 import * as feedbackLib from "./feedback/ui";
 import { FlagsClient, FlagsOptions } from "./flags/flags";
