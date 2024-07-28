@@ -1,4 +1,3 @@
-import flushPromises from "flush-promises";
 import { http, HttpResponse } from "msw";
 import nock from "nock";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
@@ -42,7 +41,9 @@ function createSSEChannel(callback: (message: any) => void = vi.fn()) {
 }
 
 Object.defineProperty(window, "EventSource", {
-  value: vi.fn().mockImplementation(() => {}),
+  value: vi.fn().mockImplementation(() => {
+    // ignore
+  }),
 });
 
 vi.mock("../src/feedback/prompt-storage", () => {

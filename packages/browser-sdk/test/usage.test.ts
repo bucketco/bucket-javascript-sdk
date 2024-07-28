@@ -75,7 +75,6 @@ describe("usage", () => {
 // Same for feedback state management below
 
 describe("feedback prompting", () => {
-  const events = [];
   const closeChannel = vi.fn();
   beforeAll(() => {
     vi.mocked(openAblySSEChannel).mockReturnValue({
