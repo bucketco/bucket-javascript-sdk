@@ -193,21 +193,16 @@ export async function feedback(
     return;
   }
 
-  // const payload: Feedback & { userId: string } = {
-  //   feedbackId,
-  //   userId: String(this.context.user.id),
-  //   featureId,
-  //   score,
-  //   companyId,
-  //   comment,
-  //   promptId,
-  //   question,
-  //   promptedQuestion,
-  // TODO: check that source is always set
-  //   source: source ?? "sdk",
-  // };
+  // set default source to sdk
+  const feedbackPayload = {
+    ...payload,
+    source: payload.source ?? "sdk",
+  };
 
-  const res = await httpClient.post({ path: `/feedback`, body: payload });
+  const res = await httpClient.post({
+    path: `/feedback`,
+    body: feedbackPayload,
+  });
   logger.debug(`sent feedback`, res);
   return res;
 }
