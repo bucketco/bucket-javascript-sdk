@@ -24,7 +24,7 @@
   "files": [
     "dist"
   ],
-  "main": "./dist/bucket-react-sdk.browser.js",
+  "main": "./dist/bucket-react-sdk.js",
   "types": "./dist/types/src/index.d.ts",
   "dependencies": {
     "@bucketco/browser-sdk": "workspace:^",

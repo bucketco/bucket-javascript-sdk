@@ -15,25 +15,12 @@ import {
   FeedbackOptions,
   FlagsOptions,
   RequestFeedbackOptions,
+  UserContext,
+  CompanyContext,
+  BucketContext,
 } from "@bucketco/browser-sdk";
 
-type UserContext = {
-  id: string | number;
-  [key: string]: any;
-};
-
-type CompanyContext = {
-  id: string | number;
-  [key: string]: any;
-};
-
 type OtherContext = Record<string, any>;
-
-type FlagContext = {
-  user?: UserContext;
-  company?: CompanyContext;
-  otherContext?: OtherContext;
-};
 
 export interface Flags {}
 
@@ -73,7 +60,7 @@ const ProviderContext = createContext<ProviderContextType>({
   requestFeedback: () => undefined,
 });
 
-export type BucketProps = FlagContext & {
+export type BucketProps = BucketContext & {
   publishableKey: string;
   flagOptions?: Omit<FlagsOptions, "fallbackFlags"> & {
     fallbackFlags?: BucketFlags[];
