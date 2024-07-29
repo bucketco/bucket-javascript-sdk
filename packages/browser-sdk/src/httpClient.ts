@@ -13,6 +13,10 @@ export class HttpClient {
   }
 
   getUrl(path: string): URL {
+    // see tests for examples
+    if (path.startsWith("/")) {
+      path = path.slice(1);
+    }
     return new URL(path, this.baseUrl);
   }
 

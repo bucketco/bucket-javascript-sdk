@@ -6,7 +6,15 @@ const cases = [
   ["https://front.bucket.co/basepath", "https://front.bucket.co/basepath/path"],
 ];
 
-test.each(cases)("handles base url: %s -> %s", (base, expected) => {
+test.each(cases)(
+  "url construction with `/path`: %s -> %s",
+  (base, expected) => {
+    const client = new HttpClient("publishableKey", base);
+    expect(client.getUrl("/path").toString()).toBe(expected);
+  },
+);
+
+test.each(cases)("url construction with `path`: %s -> %s", (base, expected) => {
   const client = new HttpClient("publishableKey", base);
   expect(client.getUrl("path").toString()).toBe(expected);
 });
