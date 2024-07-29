@@ -4,7 +4,17 @@ export class HttpClient {
   constructor(
     public publishableKey: string,
     private baseUrl: string,
-  ) {}
+  ) {
+    // Ensure baseUrl ends with a trailing slash so subsequent
+    // path concatenation works as expected
+    if (!this.baseUrl.endsWith("/")) {
+      this.baseUrl += "/";
+    }
+  }
+
+  getUrl(path: string): URL {
+    return new URL(path, this.baseUrl);
+  }
 
   async get({
     path,
@@ -21,7 +31,7 @@ export class HttpClient {
     params.set(SDK_VERSION_HEADER_NAME, SDK_VERSION);
     params.set("publishableKey", this.publishableKey);
 
-    const url = new URL(path, this.baseUrl);
+    const url = this.getUrl(path);
     url.search = params.toString();
 
     if (timeoutMs === undefined) {
@@ -47,8 +57,7 @@ export class HttpClient {
     path: string;
     body: any;
   }): ReturnType<typeof fetch> {
-    const url = new URL(path, this.baseUrl);
-    return fetch(url, {
+    return fetch(this.getUrl(path), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

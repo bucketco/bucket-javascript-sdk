@@ -68,6 +68,9 @@ export type BucketProps = BucketContext & {
   children?: ReactNode;
   loadingComponent?: ReactNode;
   feedback?: FeedbackOptions;
+  host?: string;
+  sseHost?: string;
+  debug?: boolean;
 };
 
 export function BucketProvider({
@@ -98,7 +101,15 @@ export function BucketProvider({
       ref.current.stop();
     }
 
-    ref.current = new BucketClient(publishableKey, flagContext);
+    ref.current = new BucketClient(publishableKey, flagContext, {
+      host: config.host,
+      sseHost: config.sseHost,
+      flags: {
+        ...flagOptions,
+      },
+      feedback: config.feedback,
+      logger: config.debug ? console : undefined,
+    });
     ref.current.initialize().then(() => {
       setFlagsLoading(false);
 

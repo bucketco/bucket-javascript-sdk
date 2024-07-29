@@ -1,11 +1,12 @@
-export { BucketClient, InitOptions } from "./client";
-export { BucketContext, CompanyContext, UserContext } from "./context";
-export {
+export type { InitOptions } from "./client";
+export { BucketClient } from "./client";
+export type { BucketContext, CompanyContext, UserContext } from "./context";
+export type {
   Feedback,
   FeedbackOptions,
   RequestFeedbackOptions,
 } from "./feedback/feedback";
-export { DEFAULT_TRANSLATIONS } from "./feedback/ui/config/defaultTranslations";
+export type { DEFAULT_TRANSLATIONS } from "./feedback/ui/config/defaultTranslations";
 export { feedbackContainerId, propagatedEvents } from "./feedback/ui/constants";
-export { FeedbackTranslations } from "./feedback/ui/types";
-export { Flags, FlagsOptions } from "./flags/flags";
+export type { FeedbackTranslations } from "./feedback/ui/types";
+export type { Flags, FlagsOptions } from "./flags/flags";

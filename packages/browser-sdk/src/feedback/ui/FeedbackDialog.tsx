@@ -13,6 +13,7 @@ import {
 } from "./packages/floating-ui-preact-dom";
 import { feedbackContainerId } from "./constants";
 import { FeedbackForm } from "./FeedbackForm";
+import styles from "./index.css?inline";
 import { RadialProgress } from "./RadialProgress";
 import {
   FeedbackScoreSubmission,
@@ -21,8 +22,6 @@ import {
   OpenFeedbackFormOptions,
   WithRequired,
 } from "./types";
-
-import styles from "./index.css";
 
 type Position = Partial<
   Record<"top" | "left" | "right" | "bottom", number | string>
