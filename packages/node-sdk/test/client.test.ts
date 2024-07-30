@@ -913,7 +913,7 @@ describe("BucketClientClass", () => {
               id: "user123",
               ...user.attrs,
             },
-            ...otherContext,
+            other: otherContext,
           },
           evalResult: true,
           evalRuleResults: [true],
@@ -938,7 +938,7 @@ describe("BucketClientClass", () => {
               id: "user123",
               ...user.attrs,
             },
-            ...otherContext,
+            other: otherContext,
           },
           evalResult: false,
           evalRuleResults: [false],
@@ -970,7 +970,7 @@ describe("BucketClientClass", () => {
 
       expect(checkWithinAllottedTimeWindow).toHaveBeenCalledWith(
         FLAG_EVENTS_PER_MIN,
-        "evaluate:user.id=user123&user.age=1&user.name=John&company.id=company123&company.employees=100&company.name=Acme+Inc.&custom=context&key=value:flag1:1:true",
+        "evaluate:user.id=user123&user.age=1&user.name=John&company.id=company123&company.employees=100&company.name=Acme+Inc.&other.custom=context&other.key=value:flag1:1:true",
       );
       //      vi.mocked(rateLimited).mockRestore();
     });
@@ -1099,7 +1099,7 @@ describe("BucketClientClass", () => {
           flagKey: "flag1",
           flagVersion: 1,
           evalContext: {
-            ...otherContext,
+            other: otherContext,
           },
           evalResult: true,
           evalRuleResults: [true],
@@ -1116,7 +1116,7 @@ describe("BucketClientClass", () => {
           flagKey: "flag2",
           flagVersion: 2,
           evalContext: {
-            ...otherContext,
+            other: otherContext,
           },
           evalResult: false,
           evalRuleResults: [false],
