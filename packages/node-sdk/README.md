@@ -51,6 +51,8 @@ const client = new BucketClient({
 await client.initialize();
 ```
 
+Once the client is initialized, one can obtain the evaluated flags.
+
 At any point where the client needs to be used, we can configure it through
 `withUser()`, `withCompany()` and `withOtherContext()` methods. Each of
 these three methods returns a new instance of `Client` class which includes
@@ -63,13 +65,7 @@ const boundClient = client
   .withCompany("acme_inc", { attributes: { name "Acme Inc."} })
   .withOtherContext({ additional: "context", number: [1,2,3] })
 
-const fallbackFlags = { can_see_new_reports: true  }
-
-// actively wait for the flags to be loaded
-await boundClient.initialize()
 ```
-
-Once the client is initialized, one can obtain the evaluated flags:
 
 ```ts
 // get the current flags (uses company, user and custom context to evaluate the flags).
