@@ -89,7 +89,7 @@ if (flags.can_see_new_reports) {
 ## Tracking
 
 Tracking allows sending `user`, `company` and `event` messages to Bucket.
-`user` events can be used to register or update an user's attributes
+`user` events can be used to register or update a user's attributes
 with Bucket. `company` allows the same, and additionally, allows
 associating an user with a company on the Bucket side. Finally, `event`
 is used to track feature usage across your application.
