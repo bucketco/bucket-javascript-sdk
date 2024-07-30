@@ -43,6 +43,16 @@ function getProvider(props: Partial<BucketProps> = {}) {
   );
 }
 
+vi.mock("@bucketco/browser-sdk", () => {
+  const BucketClient = vi.fn();
+  BucketClient.prototype.initialize = vi.fn();
+  BucketClient.prototype.getFlags = vi.fn();
+  BucketClient.prototype.stop = vi.fn();
+  BucketClient.prototype.user = vi.fn();
+  BucketClient.prototype.company = vi.fn();
+  return { BucketClient };
+});
+
 const flags = {
   abc: true,
   def: true,
@@ -62,9 +72,41 @@ beforeEach(() => {
 
 describe("<BucketProvider />", () => {
   test("calls initialize", () => {
-    const provider = getProvider();
+    const provider = getProvider({
+      publishableKey: "KEY",
+      host: "https://test.com",
+      sseHost: "https://test.com",
+      company: { id: "123", name: "test" },
+      user: { id: "456", name: "test" },
+      otherContext: { test: "test" },
+    });
 
     render(provider);
+
+    expect(vi.mocked(BucketClient).mock.instances).toHaveLength(1);
+    expect(vi.mocked(BucketClient).mock.calls.at(0)).toStrictEqual([
+      "KEY",
+      {
+        user: {
+          id: "456",
+          name: "test",
+        },
+        company: {
+          id: "123",
+          name: "test",
+        },
+        otherContext: {
+          test: "test",
+        },
+      },
+      {
+        host: "https://test.com",
+        logger: undefined,
+        sseHost: "https://test.com",
+        feedback: undefined,
+        flags: {},
+      },
+    ]);
 
     expect(BucketClient.prototype.initialize).toHaveBeenCalledOnce();
     expect(BucketClient.prototype.stop).not.toHaveBeenCalledOnce();

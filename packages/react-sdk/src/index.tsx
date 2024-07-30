@@ -71,8 +71,6 @@ export type BucketProps = BucketContext & {
   host?: string;
   sseHost?: string;
   debug?: boolean;
-
-  client?: BucketClient;
 };
 
 export function BucketProvider({
@@ -83,11 +81,10 @@ export function BucketProvider({
   publishableKey,
   flagOptions,
   loadingComponent,
-  client, // useful for tests
   ...config
 }: BucketProps) {
   const [flagsLoading, setFlagsLoading] = useState(true);
-  const ref = useRef<BucketClient | null>(client ?? null);
+  const ref = useRef<BucketClient>();
 
   const [flagContext, setFlagContext] = useState({
     user: initialUser,
@@ -99,7 +96,7 @@ export function BucketProvider({
   const contextKey = canonicalJSON({ config, flagContext });
 
   useEffect(() => {
-    // on update of contextKey
+    // on update of contextKey and on mount
     if (ref.current) {
       ref.current.stop();
     }
