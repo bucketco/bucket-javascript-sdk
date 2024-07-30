@@ -118,7 +118,7 @@ one calls `updateCompany` without supplying a user ID:
 ```ts
 // either creates a new company on Bucket or updates an existing
 // one by supplying custom attributes
-client.withCompany("updated_company_id").updateCompany({
+client.withCompany("company_id").updateCompany({
   attributes: {
     status: "active",
     plan: "trial",
