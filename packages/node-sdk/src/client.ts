@@ -551,7 +551,7 @@ export class BucketClientClass {
         id: this._company.companyId,
         ...this._company.attrs,
       },
-      ...this._otherContext,
+      other: this._otherContext,
     };
 
     const flagDefinitions = this.getFeatureFlagDefinitionCache().get();
