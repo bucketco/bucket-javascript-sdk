@@ -71,6 +71,8 @@ export type BucketProps = BucketContext & {
   host?: string;
   sseHost?: string;
   debug?: boolean;
+
+  client?: BucketClient;
 };
 
 export function BucketProvider({
@@ -81,10 +83,11 @@ export function BucketProvider({
   publishableKey,
   flagOptions,
   loadingComponent,
+  client, // useful for tests
   ...config
 }: BucketProps) {
   const [flagsLoading, setFlagsLoading] = useState(true);
-  const ref = useRef<BucketClient>();
+  const ref = useRef<BucketClient | null>(client ?? null);
 
   const [flagContext, setFlagContext] = useState({
     user: initialUser,
@@ -110,6 +113,7 @@ export function BucketProvider({
       feedback: config.feedback,
       logger: config.debug ? console : undefined,
     });
+
     ref.current.initialize().then(() => {
       setFlagsLoading(false);
 
@@ -130,25 +134,11 @@ export function BucketProvider({
   // call updateUser with no arguments to logout
   const updateUser = useCallback((newUser?: UserContext) => {
     setFlagContext({ ...flagContext, user: newUser });
-    // if (newUser?.id) {
-    //   const { id, ...attributes } = newUser;
-    //   void ref.current?.user(attributes);
-    // }
   }, []);
 
   // call updateUser with no arguments to re-set company context
   const updateCompany = useCallback((newCompany?: CompanyContext) => {
     setFlagContext({ ...flagContext, company: newCompany });
-    // if (newCompany?.id) {
-    //   const { id, ...attributes } = newCompany;
-    //   void bucket.company(
-    //     String(id),
-    //     attributes,
-    //     flagContext?.user?.id !== undefined
-    //       ? String(flagContext?.user?.id)
-    //       : undefined,
-    //   );
-    // }
   }, []);
 
   const updateOtherContext = useCallback((otherContext?: OtherContext) => {

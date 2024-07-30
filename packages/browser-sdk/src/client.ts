@@ -46,7 +46,6 @@ export type PayloadContext = {
 };
 
 interface Config {
-  debug: boolean;
   host: string;
   sseHost: string;
 }
@@ -60,7 +59,6 @@ export interface InitOptions {
 }
 
 const defaultConfig: Config = {
-  debug: false,
   host: API_HOST,
   sseHost: SSE_REALTIME_HOST,
 };
@@ -85,10 +83,11 @@ export class BucketClient {
     this.logger =
       opts?.logger ?? loggerWithPrefix(quietConsoleLogger, "[Bucket]");
     this.context = context ?? {};
+
     this.config = {
-      ...defaultConfig,
-      ...opts,
-    };
+      host: opts?.host ?? defaultConfig.host,
+      sseHost: opts?.sseHost ?? defaultConfig.sseHost,
+    } satisfies Config;
 
     this.requestFeedbackOptions = {
       position: opts?.feedback?.ui?.position,

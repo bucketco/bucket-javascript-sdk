@@ -1,15 +1,25 @@
 import React from "react";
 import { render, renderHook, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, test, vi } from "vitest";
+import {
+  afterEach,
+  describe,
+  expect,
+  test,
+  vi,
+  beforeEach,
+  beforeAll,
+} from "vitest";
 
 import {
-  BucketInstance,
   BucketProps,
   BucketProvider,
   useFlag,
+  useFlagIsEnabled,
   useFlags,
   useUpdateContext,
 } from "../src";
+
+import { BucketClient } from "@bucketco/browser-sdk";
 
 const originalConsoleError = console.error.bind(console);
 afterEach(() => {
@@ -21,136 +31,107 @@ const company = { id: "123", name: "test" };
 const user = { id: "456", name: "test" };
 const otherContext = { test: "test" };
 
-function getProvider(props: Partial<BucketProps>) {
+function getProvider(props: Partial<BucketProps> = {}) {
   return (
     <BucketProvider
-      {...props}
       publishableKey={publishableKey}
       company={company}
       user={user}
       otherContext={otherContext}
+      {...props}
     />
   );
 }
 
+const flags = {
+  abc: true,
+  def: true,
+};
+
+beforeAll(() => {
+  vi.spyOn(BucketClient.prototype, "initialize").mockResolvedValue();
+  vi.spyOn(BucketClient.prototype, "getFlags").mockReturnValue(flags);
+  vi.spyOn(BucketClient.prototype, "stop");
+  vi.spyOn(BucketClient.prototype, "user");
+  vi.spyOn(BucketClient.prototype, "company");
+});
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
 describe("<BucketProvider />", () => {
-  test("calls init and getFeatureFlags", () => {
-    const sdk = createSpySDK();
-    const provider = getProvider({ sdk });
+  test("calls initialize", () => {
+    const provider = getProvider();
 
     render(provider);
 
-    expect(sdk.init).toHaveBeenCalledOnce();
-    expect(sdk.init).toHaveBeenCalledWith(publishableKey, {});
-    expect(sdk.getFeatureFlags).toHaveBeenCalledOnce();
-    expect(sdk.getFeatureFlags).toHaveBeenCalledWith({
-      context: { company, user, otherContext },
-    });
+    expect(BucketClient.prototype.initialize).toHaveBeenCalledOnce();
+    expect(BucketClient.prototype.stop).not.toHaveBeenCalledOnce();
   });
 
   test("only calls init once with the same args", () => {
-    const sdk = createSpySDK();
-    const node = getProvider({ sdk });
+    const node = getProvider();
+    const initialize = vi.spyOn(BucketClient.prototype, "initialize");
 
     const x = render(node);
     x.rerender(node);
     x.rerender(node);
     x.rerender(node);
 
-    expect(sdk.init).toHaveBeenCalledOnce();
-    expect(sdk.getFeatureFlags).toHaveBeenCalledOnce();
-    expect(sdk.getFeatureFlags).toHaveBeenCalledWith({
-      context: { company, user, otherContext },
+    expect(initialize).toHaveBeenCalledOnce();
+    expect(BucketClient.prototype.stop).not.toHaveBeenCalledOnce();
+  });
+});
+
+describe("useFlagIsEnabled", () => {
+  test("returns the feature flags in context", async () => {
+    const { result } = renderHook(() => useFlagIsEnabled("abc"), {
+      wrapper: ({ children }) => getProvider({ children }),
     });
+
+    await waitFor(() => expect(result.current).toStrictEqual(true));
+    expect(result.current).toStrictEqual(true);
   });
 });
 
 describe("useFlags", () => {
-  test("returns a loading state initially", async () => {
-    const sdk = createSpySDK();
-    sdk.getFeatureFlags = vi.fn(async () => ({}) as any);
-
+  test("returns a loading state initially, stops loading once initialized", async () => {
     const { result, unmount } = renderHook(() => useFlags(), {
-      wrapper: ({ children }) => getProvider({ sdk, children }),
+      wrapper: ({ children }) => getProvider({ children }),
     });
 
-    expect(result.current).toMatchObject({ flags: {}, isLoading: true });
+    await waitFor(() =>
+      expect(result.current).toStrictEqual({ flags, isLoading: false }),
+    );
+    expect(result.current).toStrictEqual({ flags, isLoading: false });
     unmount();
-  });
-
-  test("returns the feature flags in context", async () => {
-    const flags = {
-      abc: true,
-      def: true,
-    };
-
-    const sdk = createSpySDK();
-    sdk.getFeatureFlags = vi.fn(async () => Promise.resolve(flags));
-
-    const { result } = renderHook(() => useFlags(), {
-      wrapper: ({ children }) => getProvider({ sdk, children }),
-    });
-
-    await waitFor(() => result.current.isLoading === false);
-    expect(result.current).toMatchObject({ flags, isLoading: false });
   });
 });
 
 describe("useFlag", () => {
-  test("returns a loading state initially", async () => {
+  test("returns a loading state initially, stops loading once initialized", async () => {
     console.error = vi.fn();
-
-    const sdk = createSpySDK();
-    sdk.getFeatureFlags = vi.fn(async () => ({}));
 
     const { result, unmount } = renderHook(() => useFlag("test-flag"), {
-      wrapper: ({ children }) => getProvider({ sdk, children }),
+      wrapper: ({ children }) => getProvider({ children }),
     });
 
-    expect(result.current).toEqual({ isLoading: true, isEnabled: false });
-    expect(console.error).not.toHaveBeenCalled();
+    expect(result.current).toStrictEqual({ isEnabled: false, isLoading: true });
+
+    await waitFor(() =>
+      expect(result.current).toStrictEqual({
+        isEnabled: false,
+        isLoading: false,
+      }),
+    );
+    expect(result.current).toStrictEqual({
+      isEnabled: false,
+      isLoading: false,
+    }),
+      expect(console.error).not.toHaveBeenCalled();
 
     unmount();
-  });
-
-  test.each([
-    { key: "abc", value: true },
-    { key: "def", value: false },
-  ])("returns the feature flag from context", async ({ key, value }) => {
-    console.error = vi.fn();
-
-    const flags = { [key]: value };
-
-    const sdk = createSpySDK();
-    sdk.getFeatureFlags = vi.fn(async () => flags);
-
-    const { result } = renderHook(() => useFlag(key), {
-      wrapper: ({ children }) => getProvider({ sdk, children }),
-    });
-
-    await waitFor(() => result.current.isLoading === false);
-    expect(result.current).toEqual({ isLoading: false, isEnabled: value });
-    expect(console.error).not.toHaveBeenCalled();
-  });
-
-  test.each([
-    { key: "abc", value: true },
-    { key: "def", value: false },
-  ])("returns the feature flag from context", async ({ key, value }) => {
-    console.error = vi.fn();
-
-    const flags = { [key]: value };
-
-    const sdk = createSpySDK();
-    sdk.getFeatureFlags = vi.fn(async () => flags);
-
-    const { result } = renderHook(() => useFlag(key), {
-      wrapper: ({ children }) => getProvider({ sdk, children }),
-    });
-
-    await waitFor(() => result.current.isLoading === false);
-    expect(result.current).toEqual({ isLoading: false, isEnabled: value });
-    expect(console.error).not.toHaveBeenCalled();
   });
 });
 
@@ -158,55 +139,30 @@ describe("useUpdateContext", () => {
   test("updates SDK when user is reset", async () => {
     console.error = vi.fn();
 
-    const sdk = createSpySDK();
-    sdk.getFeatureFlags = vi.fn(async () => ({}));
-    sdk.user = vi.fn();
-
+    const initialized = vi.mocked(BucketClient.prototype.initialize);
+    const user = vi.mocked(BucketClient.prototype.user);
+    const stop = vi.mocked(BucketClient.prototype.stop);
+    expect(initialized).not.toHaveBeenCalled();
     const { result, unmount } = renderHook(() => useUpdateContext(), {
-      wrapper: ({ children }) => getProvider({ sdk, children }),
+      wrapper: ({ children }) => getProvider({ children }),
     });
 
-    result.current.updateUser();
+    expect(initialized).toHaveBeenCalledOnce();
 
-    expect(sdk.user).not.toHaveBeenCalled();
-    expect(sdk.reset).toHaveBeenCalled();
+    result.current.updateUser({
+      id: "new-user",
+      name: "new-user-name",
+    });
 
-    vi.mocked(sdk.getFeatureFlags).mockReset();
+    await waitFor(() => expect(stop).toHaveBeenCalled());
+    expect(stop).toHaveBeenCalled();
+    expect(user).toHaveBeenCalledTimes(2);
+    expect(user).toHaveBeenCalledWith({
+      name: "new-user-name",
+    });
+    expect(initialized).toHaveBeenCalledTimes(2);
 
     expect(console.error).not.toHaveBeenCalled();
-
-    await waitFor(() => result.current.isLoading === false);
-    expect(sdk.getFeatureFlags).toHaveBeenCalledWith({
-      context: { company, user: undefined, otherContext },
-    });
-
-    unmount();
-  });
-
-  test("updates SDK when user is updated", async () => {
-    console.error = vi.fn();
-
-    const sdk = createSpySDK();
-    sdk.getFeatureFlags = vi.fn(async () => ({}));
-    sdk.user = vi.fn();
-
-    const { result, unmount } = renderHook(() => useUpdateContext(), {
-      wrapper: ({ children }) => getProvider({ sdk, children }),
-    });
-
-    const newUser = { id: "new-user", name: "new-user-name" };
-    result.current.updateUser(newUser);
-
-    const { id, ...newUserAttrs } = newUser;
-    expect(sdk.user).toHaveBeenCalledWith(id, newUserAttrs);
-    expect(sdk.reset).not.toHaveBeenCalled();
-
-    expect(console.error).not.toHaveBeenCalled();
-
-    await waitFor(() => result.current.isLoading === false);
-    expect(sdk.getFeatureFlags).toHaveBeenCalledWith({
-      context: { company, user: newUser, otherContext },
-    });
 
     unmount();
   });
@@ -214,27 +170,30 @@ describe("useUpdateContext", () => {
   test("updates SDK when company is updated", async () => {
     console.error = vi.fn();
 
-    const sdk = createSpySDK();
-    sdk.getFeatureFlags = vi.fn(async () => ({}));
-    sdk.user = vi.fn();
-
+    const initialized = vi.mocked(BucketClient.prototype.initialize);
+    const company = vi.mocked(BucketClient.prototype.company);
+    const stop = vi.mocked(BucketClient.prototype.stop);
+    expect(initialized).not.toHaveBeenCalled();
     const { result, unmount } = renderHook(() => useUpdateContext(), {
-      wrapper: ({ children }) => getProvider({ sdk, children }),
+      wrapper: ({ children }) => getProvider({ children }),
     });
 
-    const newCompany = { id: "new-comp", name: "new-company-name" };
-    result.current.updateCompany(newCompany);
+    expect(initialized).toHaveBeenCalledOnce();
 
-    const { id, ...companyAttrs } = newCompany;
-    expect(sdk.company).toHaveBeenCalledWith(id, companyAttrs, user.id);
-    expect(sdk.reset).not.toHaveBeenCalled();
+    result.current.updateCompany({
+      id: "new-company",
+      name: "new-company-name",
+    });
+
+    await waitFor(() => expect(stop).toHaveBeenCalled());
+    expect(stop).toHaveBeenCalled();
+    expect(company).toHaveBeenCalledTimes(2);
+    expect(company).toHaveBeenCalledWith({
+      name: "new-company-name",
+    });
+    expect(initialized).toHaveBeenCalledTimes(2);
 
     expect(console.error).not.toHaveBeenCalled();
-
-    await waitFor(() => result.current.isLoading === false);
-    expect(sdk.getFeatureFlags).toHaveBeenCalledWith({
-      context: { company: newCompany, user, otherContext },
-    });
 
     unmount();
   });
@@ -242,36 +201,27 @@ describe("useUpdateContext", () => {
   test("updates SDK when other context is updated", async () => {
     console.error = vi.fn();
 
-    const sdk = createSpySDK();
-    sdk.getFeatureFlags = vi.fn(async () => ({}));
-    sdk.user = vi.fn();
-
+    const initialized = vi.mocked(BucketClient.prototype.initialize);
+    const stop = vi.mocked(BucketClient.prototype.stop);
+    expect(initialized).not.toHaveBeenCalled();
     const { result, unmount } = renderHook(() => useUpdateContext(), {
-      wrapper: ({ children }) => getProvider({ sdk, children }),
+      wrapper: ({ children }) => getProvider({ children }),
     });
+
+    expect(initialized).toHaveBeenCalledOnce();
+
+    expect(stop).not.toHaveBeenCalled();
 
     const newOtherContext = { happeningId: "new-conference" };
     result.current.updateOtherContext(newOtherContext);
 
-    expect(sdk.reset).not.toHaveBeenCalled();
+    await waitFor(() => expect(stop).toHaveBeenCalled());
+
+    expect(stop).toHaveBeenCalled();
     expect(console.error).not.toHaveBeenCalled();
 
     await waitFor(() => result.current.isLoading === false);
-    expect(sdk.getFeatureFlags).toHaveBeenCalledWith({
-      context: { company, user, otherContext: newOtherContext },
-    });
 
     unmount();
   });
 });
-
-function createSpySDK(): BucketInstance {
-  return {
-    getFeatureFlags: vi.fn(async () => ({})),
-    init: vi.fn(),
-    reset: vi.fn(),
-    user: vi.fn(),
-    company: vi.fn(),
-    track: vi.fn(),
-  } as any as BucketInstance;
-}
