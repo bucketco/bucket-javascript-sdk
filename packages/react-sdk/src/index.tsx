@@ -101,6 +101,7 @@ export function BucketProvider({
     if (contextKeyRef.current === contextKey) {
       return;
     }
+    contextKeyRef.current = contextKey;
 
     // on update of contextKey and on mount
     if (clientRef.current) {
