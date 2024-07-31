@@ -1,6 +1,7 @@
 {
-  "name": "@bucketco/react-sdk",
-  "version": "1.0.0-beta.1",
+  "name": "@bucketco/browser-sdk",
+  "version": "0.0.1",
+  "packageManager": "yarn@4.1.1",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -12,46 +13,46 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --project tsconfig.build.json && vite build",
-    "test": "vitest -c vite.config.mjs",
-    "test:ci": "vitest run -c vite.config.mjs --reporter=default --reporter=junit --outputFile=junit.xml",
+    "test": "vitest -c vitest.config.ts",
+    "test:ci": "vitest run -c vitest.config.ts --reporter=default --reporter=junit --outputFile=junit.xml",
+    "test:e2e": "yarn build && playwright test",
     "coverage": "vitest run --coverage",
     "lint": "eslint .",
     "lint:ci": "eslint --output-file eslint-report.json --format json .",
     "prettier": "prettier --check .",
     "format": "yarn lint --fix && yarn prettier --write",
-    "preversion": "yarn lint && yarn prettier && yarn vitest run -c vite.config.mjs && yarn build"
+    "preversion": "yarn lint && yarn prettier && yarn vitest run -c vitest.config.ts && yarn build"
   },
   "files": [
     "dist"
   ],
-  "main": "./dist/bucket-react-sdk.js",
-  "module": "./dist/bucket-react-sdk.js",
+  "main": "./dist/bucket-browser-sdk.umd.js",
+  "module": "./dist/bucket-browser-sdk.mjs",
   "types": "./dist/types/src/index.d.ts",
   "dependencies": {
-    "@bucketco/browser-sdk": "^0.0.1",
-    "canonical-json": "^0.0.4"
-  },
-  "peerDependencies": {
-    "react": "*",
-    "react-dom": "*"
+    "@floating-ui/dom": "^1.6.8",
+    "canonical-json": "^0.0.4",
+    "js-cookie": "^3.0.5",
+    "preact": "^10.22.1"
   },
   "devDependencies": {
     "@bucketco/eslint-config": "0.0.2",
     "@bucketco/tsconfig": "0.0.2",
-    "@testing-library/react": "^15.0.7",
-    "@types/jsdom": "^21.1.6",
+    "@playwright/test": "^1.45.3",
     "@types/node": "^20.14.0",
-    "@types/react": "^18.3.2",
-    "@types/react-dom": "^18.3.0",
     "@types/webpack": "^5.28.5",
-    "eslint": "^8.56.0",
+    "css-loader": "^6.9.0",
+    "eslint": "^8.57.0",
     "jsdom": "^24.1.0",
+    "msw": "^2.3.4",
+    "postcss": "^8.4.33",
+    "postcss-loader": "^7.3.4",
+    "postcss-nesting": "^12.0.2",
+    "postcss-preset-env": "^9.3.0",
     "prettier": "^3.2.5",
-    "react": "*",
-    "react-dom": "*",
-    "ts-node": "^10.9.2",
+    "style-loader": "^3.3.4",
     "typescript": "^5.4.5",
-    "vite": "^5.0.13",
+    "vite": "^5.3.5",
     "vite-plugin-dts": "^4.0.0-beta.1",
     "vitest": "^2.0.4",
     "webpack": "^5.89.0",
