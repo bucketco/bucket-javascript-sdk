@@ -56,6 +56,7 @@ export interface InitOptions {
   sseHost?: string;
   feedback?: FeedbackOptions;
   flags?: FlagsOptions;
+  sdkVersion?: string;
 }
 
 const defaultConfig: Config = {
@@ -94,7 +95,10 @@ export class BucketClient {
       translations: opts?.feedback?.ui?.translations,
     };
 
-    this.httpClient = new HttpClient(publishableKey, this.config.host);
+    this.httpClient = new HttpClient(publishableKey, {
+      baseUrl: this.config.host,
+      sdkVersion: opts?.sdkVersion,
+    });
 
     this.flagsClient = new FlagsClient(
       this.httpClient,

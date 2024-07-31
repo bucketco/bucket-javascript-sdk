@@ -20,9 +20,13 @@ import {
   UserContext,
 } from "@bucketco/browser-sdk";
 
+import { version } from "../package.json";
+
 type OtherContext = Record<string, any>;
 
 export interface Flags {}
+
+const SDK_VERSION = `react-sdk/${version}`;
 
 type BucketFlags = keyof (keyof Flags extends never
   ? Record<string, boolean>
@@ -84,7 +88,8 @@ export function BucketProvider({
   ...config
 }: BucketProps) {
   const [flagsLoading, setFlagsLoading] = useState(true);
-  const ref = useRef<BucketClient>();
+  const clientRef = useRef<BucketClient>();
+  const contextKeyRef = useRef<string>();
 
   const [flagContext, setFlagContext] = useState({
     user: initialUser,
@@ -96,9 +101,16 @@ export function BucketProvider({
   const contextKey = canonicalJSON({ config, flagContext });
 
   useEffect(() => {
+    // useEffect will run twice in development mode
+    // This is a workaround to prevent re-initialization
+    if (contextKeyRef.current === contextKey) {
+      return;
+    }
+    contextKeyRef.current = contextKey;
+
     // on update of contextKey and on mount
-    if (ref.current) {
-      ref.current.stop();
+    if (clientRef.current) {
+      clientRef.current.stop();
     }
 
     const client = new BucketClient(publishableKey, flagContext, {
@@ -109,8 +121,9 @@ export function BucketProvider({
       },
       feedback: config.feedback,
       logger: config.debug ? console : undefined,
+      sdkVersion: SDK_VERSION,
     });
-    ref.current = client;
+    clientRef.current = client;
     client
       .initialize()
       .then(() => {
@@ -163,7 +176,7 @@ export function BucketProvider({
           console.error("User is required to send events");
         };
 
-      return ref.current?.track(eventName, attributes);
+      return clientRef.current?.track(eventName, attributes);
     },
     [user?.id, company?.id],
   );
@@ -175,7 +188,7 @@ export function BucketProvider({
         return;
       }
 
-      return ref.current?.feedback({
+      return clientRef.current?.feedback({
         ...opts,
         userId: String(user.id),
         companyId: company?.id !== undefined ? String(company.id) : undefined,
@@ -191,7 +204,7 @@ export function BucketProvider({
         return;
       }
 
-      ref.current?.requestFeedback({
+      clientRef.current?.requestFeedback({
         ...opts,
         userId: String(user.id),
         companyId: company?.id !== undefined ? String(company.id) : undefined,
@@ -201,7 +214,7 @@ export function BucketProvider({
   );
   const context: ProviderContextType = {
     flags: {
-      flags: ref.current?.getFlags() ?? {},
+      flags: clientRef.current?.getFlags() ?? {},
       isLoading: flagsLoading,
     },
     updateUser,
