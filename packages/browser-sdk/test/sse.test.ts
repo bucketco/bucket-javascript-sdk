@@ -6,12 +6,12 @@ import {
   forgetAuthToken,
   getAuthToken,
   rememberAuthToken,
-} from "../src/feedback/prompt-storage";
+} from "../src/feedback/promptStorage";
 import { HttpClient } from "../src/httpClient";
 import { AblySSEChannel } from "../src/sse";
 
 import { server } from "./mocks/server";
-import { testLogger } from "./logger";
+import { testLogger } from "./testLogger";
 
 const KEY = "123";
 const sseHost = "https://ssehost.com";
@@ -46,7 +46,7 @@ Object.defineProperty(window, "EventSource", {
   }),
 });
 
-vi.mock("../src/feedback/prompt-storage", () => {
+vi.mock("../src/feedback/promptStorage", () => {
   return {
     rememberAuthToken: vi.fn(),
     forgetAuthToken: vi.fn(),

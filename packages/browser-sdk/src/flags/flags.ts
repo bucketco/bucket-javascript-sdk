@@ -4,8 +4,8 @@ import { HttpClient } from "../httpClient";
 import { Logger, loggerWithPrefix } from "../logger";
 import RateLimiter from "../rateLimiter";
 
-import { FlagCache, isObject, parseAPIFlagsResponse } from "./flags-cache";
-import maskedProxy from "./masked-proxy";
+import { FlagCache, isObject, parseAPIFlagsResponse } from "./flagsCache";
+import maskedProxy from "./maskedProxy";
 
 export type APIFlagResponse = {
   value: boolean;

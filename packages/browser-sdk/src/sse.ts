@@ -4,7 +4,7 @@ import {
   forgetAuthToken,
   getAuthToken,
   rememberAuthToken,
-} from "./feedback/prompt-storage";
+} from "./feedback/promptStorage";
 import { HttpClient } from "./httpClient";
 import { Logger, loggerWithPrefix } from "./logger";
 

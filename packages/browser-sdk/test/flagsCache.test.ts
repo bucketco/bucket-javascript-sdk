@@ -8,7 +8,7 @@ import {
   vitest,
 } from "vitest";
 
-import { CacheResult, FlagCache } from "../src/flags/flags-cache";
+import { CacheResult, FlagCache } from "../src/flags/flagsCache";
 
 beforeEach(() => {
   vi.useFakeTimers();

@@ -14,7 +14,7 @@ import {
   getAuthToken,
   markPromptMessageCompleted,
   rememberAuthToken,
-} from "../src/feedback/prompt-storage";
+} from "../src/feedback/promptStorage";
 
 describe("prompt-storage", () => {
   beforeAll(() => {
