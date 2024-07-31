@@ -1,15 +1,15 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import {
-  checkPromptMessageCompleted,
-  markPromptMessageCompleted,
-} from "../src/feedback/prompt-storage";
-import {
   parsePromptMessage,
   processPromptMessage,
 } from "../src/feedback/prompts";
+import {
+  checkPromptMessageCompleted,
+  markPromptMessageCompleted,
+} from "../src/feedback/promptStorage";
 
-vi.mock("../src/feedback/prompt-storage", () => {
+vi.mock("../src/feedback/promptStorage", () => {
   return {
     markPromptMessageCompleted: vi.fn(),
     checkPromptMessageCompleted: vi.fn(),

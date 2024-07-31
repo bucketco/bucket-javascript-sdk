@@ -2,7 +2,7 @@ import { FeedbackPrompt } from "./feedback";
 import {
   checkPromptMessageCompleted,
   markPromptMessageCompleted,
-} from "./prompt-storage";
+} from "./promptStorage";
 
 export const parsePromptMessage = (
   message: any,

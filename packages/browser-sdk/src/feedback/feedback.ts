@@ -8,12 +8,12 @@ import {
   FeedbackTranslations,
   OpenFeedbackFormOptions,
 } from "./ui/types";
-import { getAuthToken } from "./prompt-storage";
 import {
   FeedbackPromptCompletionHandler,
   parsePromptMessage,
   processPromptMessage,
 } from "./prompts";
+import { getAuthToken } from "./promptStorage";
 import { DEFAULT_POSITION } from "./ui";
 import * as feedbackLib from "./ui";
 

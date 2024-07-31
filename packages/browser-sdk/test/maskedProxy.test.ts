@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import maskedProxy from "../src/flags/masked-proxy";
+import maskedProxy from "../src/flags/maskedProxy";
 
 describe("maskedProxy", () => {
   it("should not allow modification of properties", () => {

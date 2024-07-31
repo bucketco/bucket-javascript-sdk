@@ -10,7 +10,7 @@ import {
 
 import RateLimiter from "../src/rateLimiter";
 
-import { testLogger } from "./logger";
+import { testLogger } from "./testLogger";
 
 describe("rateLimit", () => {
   beforeAll(() => {

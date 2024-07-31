@@ -4,8 +4,8 @@ import { FLAGS_EXPIRE_MS, FlagsClient, FlagsOptions } from "../src/flags/flags";
 import { HttpClient } from "../src/httpClient";
 
 import { flagsResult } from "./mocks/handlers";
-import { newCache, TEST_STALE_MS } from "./flags-cache.test";
-import { testLogger } from "./logger";
+import { newCache, TEST_STALE_MS } from "./flagsCache.test";
+import { testLogger } from "./testLogger";
 
 beforeEach(() => {
   vi.useFakeTimers();

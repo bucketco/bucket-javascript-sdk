@@ -16,7 +16,7 @@ import {
   checkPromptMessageCompleted,
   getAuthToken,
   markPromptMessageCompleted,
-} from "../src/feedback/prompt-storage";
+} from "../src/feedback/promptStorage";
 import {
   AblySSEChannel,
   closeAblySSEChannel,
@@ -29,7 +29,7 @@ import { server } from "./mocks/server";
 const KEY = "123";
 
 vi.mock("../src/sse");
-vi.mock("../src/feedback/prompt-storage", () => {
+vi.mock("../src/feedback/promptStorage", () => {
   return {
     markPromptMessageCompleted: vi.fn(),
     checkPromptMessageCompleted: vi.fn(),
