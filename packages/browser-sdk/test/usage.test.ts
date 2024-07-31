@@ -43,7 +43,6 @@ window.innerWidth = 1024;
 
 describe("usage", () => {
   afterEach(() => {
-    // nock.cleanAll();
     vi.clearAllMocks();
   });
 
