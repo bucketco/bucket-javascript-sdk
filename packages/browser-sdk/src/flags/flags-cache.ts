@@ -1,4 +1,4 @@
-import { APIFlagsResponse, Flags } from "./flags";
+import { APIFlagsResponse } from "./flags";
 
 interface StorageItem {
   get(): string | null;

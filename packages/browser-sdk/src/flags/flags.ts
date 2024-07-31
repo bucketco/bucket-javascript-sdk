@@ -146,7 +146,9 @@ export class FlagsClient {
       return;
     }
     const proxiedFlags = maskedProxy(flags, (fs, key) => {
-      void this.sendCheckEvent(flags[key]);
+      this.sendCheckEvent(flags[key]).catch(() => {
+        // logged elsewhere
+      });
       return fs[key].value;
     });
 
@@ -275,7 +277,7 @@ export class FlagsClient {
   async sendCheckEvent(flag: APIFlagResponse) {
     const rateLimitKey = `${this.fetchParams().toString()}:${flag.key}:${flag.version}:${flag.value}`;
 
-    this.rateLimiter.rateLimited(rateLimitKey, async () => {
+    await this.rateLimiter.rateLimited(rateLimitKey, async () => {
       const payload = {
         action: "check",
         flagKey: flag.key,

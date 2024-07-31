@@ -267,7 +267,7 @@ describe(`sends "check" events`, () => {
     const client = newFlagsClient();
     await client.initialize();
 
-    const f = client.getFlags()?.featureA;
+    const _ = client.getFlags()?.featureA;
     expect(httpClient.post).toHaveBeenCalledTimes(1);
     expect(httpClient.post).toHaveBeenCalledWith({
       path: "flags/events",
