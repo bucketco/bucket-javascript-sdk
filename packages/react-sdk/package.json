@@ -6,21 +6,20 @@
     "type": "git",
     "url": "https://github.com/bucketco/bucket-javascript-sdk.git"
   },
-  "type": "module",
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
     "dev": "vite",
     "build": "tsc --project tsconfig.build.json && vite build",
-    "test": "vitest -c vite.config.js",
-    "test:ci": "vitest run -c vite.config.js --reporter=default --reporter=junit --outputFile=junit.xml",
+    "test": "vitest -c vite.config.mjs",
+    "test:ci": "vitest run -c vite.config.mjs --reporter=default --reporter=junit --outputFile=junit.xml",
     "coverage": "vitest run --coverage",
     "lint": "eslint .",
     "lint:ci": "eslint --output-file eslint-report.json --format json .",
     "prettier": "prettier --check .",
     "format": "yarn lint --fix && yarn prettier --write",
-    "preversion": "yarn lint && yarn prettier && yarn vitest run -c vite.config.js && yarn build"
+    "preversion": "yarn lint && yarn prettier && yarn vitest run -c vite.config.mjs && yarn build"
   },
   "files": [
     "dist"

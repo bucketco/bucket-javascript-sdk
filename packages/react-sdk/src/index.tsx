@@ -11,13 +11,13 @@ import canonicalJSON from "canonical-json";
 
 import {
   BucketClient,
+  BucketContext,
+  CompanyContext,
   Feedback,
   FeedbackOptions,
   FlagsOptions,
   RequestFeedbackOptions,
   UserContext,
-  CompanyContext,
-  BucketContext,
 } from "@bucketco/browser-sdk";
 
 type OtherContext = Record<string, any>;
@@ -101,7 +101,7 @@ export function BucketProvider({
       ref.current.stop();
     }
 
-    ref.current = new BucketClient(publishableKey, flagContext, {
+    const client = new BucketClient(publishableKey, flagContext, {
       host: config.host,
       sseHost: config.sseHost,
       flags: {
@@ -110,22 +110,36 @@ export function BucketProvider({
       feedback: config.feedback,
       logger: config.debug ? console : undefined,
     });
+    ref.current = client;
+    client
+      .initialize()
+      .then(() => {
+        setFlagsLoading(false);
 
-    ref.current.initialize().then(() => {
-      setFlagsLoading(false);
+        // update user attributes
+        const { id: userId, ...userAttributes } = flagContext.user || {};
+        if (userId) {
+          client.user(userAttributes).catch(() => {
+            // ignore rejections. Logged inside
+          });
+        }
 
-      // update attributes
-      const { id: userId, ...userAttributes } = flagContext.user || {};
-      if (userId) ref.current?.user(userAttributes);
+        // update company attributes
+        const { id: companyId, ...companyAttributes } =
+          flagContext.company || {};
 
-      // update company attributes
-      const { id: companyId, ...companyAttributes } = flagContext.company || {};
-
-      if (companyId) ref.current?.company(companyAttributes);
-    });
+        if (companyId) {
+          client.company(companyAttributes).catch(() => {
+            // ignore rejections. Logged inside
+          });
+        }
+      })
+      .catch(() => {
+        // initialize cannot actually throw, but this fixes lint warnings
+      });
 
     // on umount
-    return () => ref.current?.stop();
+    return () => client.stop();
   }, [contextKey]);
 
   // call updateUser with no arguments to logout

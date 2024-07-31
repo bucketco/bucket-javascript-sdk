@@ -2,13 +2,15 @@ import React from "react";
 import { render, renderHook, waitFor } from "@testing-library/react";
 import {
   afterEach,
+  beforeAll,
+  beforeEach,
   describe,
   expect,
   test,
   vi,
-  beforeEach,
-  beforeAll,
 } from "vitest";
+
+import { BucketClient } from "@bucketco/browser-sdk";
 
 import {
   BucketProps,
@@ -18,8 +20,6 @@ import {
   useFlags,
   useUpdateContext,
 } from "../src";
-
-import { BucketClient } from "@bucketco/browser-sdk";
 
 const originalConsoleError = console.error.bind(console);
 afterEach(() => {
@@ -44,13 +44,13 @@ function getProvider(props: Partial<BucketProps> = {}) {
 }
 
 vi.mock("@bucketco/browser-sdk", () => {
-  const BucketClient = vi.fn();
-  BucketClient.prototype.initialize = vi.fn();
-  BucketClient.prototype.getFlags = vi.fn();
-  BucketClient.prototype.stop = vi.fn();
-  BucketClient.prototype.user = vi.fn();
-  BucketClient.prototype.company = vi.fn();
-  return { BucketClient };
+  const MockedBucketClient = vi.fn();
+  MockedBucketClient.prototype.initialize = vi.fn();
+  MockedBucketClient.prototype.getFlags = vi.fn();
+  MockedBucketClient.prototype.stop = vi.fn();
+  MockedBucketClient.prototype.user = vi.fn();
+  MockedBucketClient.prototype.company = vi.fn();
+  return { BucketClient: MockedBucketClient };
 });
 
 const flags = {
@@ -62,8 +62,8 @@ beforeAll(() => {
   vi.spyOn(BucketClient.prototype, "initialize").mockResolvedValue();
   vi.spyOn(BucketClient.prototype, "getFlags").mockReturnValue(flags);
   vi.spyOn(BucketClient.prototype, "stop");
-  vi.spyOn(BucketClient.prototype, "user");
-  vi.spyOn(BucketClient.prototype, "company");
+  vi.spyOn(BucketClient.prototype, "user").mockResolvedValue({} as Response);
+  vi.spyOn(BucketClient.prototype, "company").mockResolvedValue({} as Response);
 });
 
 beforeEach(() => {
@@ -182,8 +182,8 @@ describe("useUpdateContext", () => {
     console.error = vi.fn();
 
     const initialized = vi.mocked(BucketClient.prototype.initialize);
-    const user = vi.mocked(BucketClient.prototype.user);
-    const stop = vi.mocked(BucketClient.prototype.stop);
+    const mockedUser = vi.mocked(BucketClient.prototype.user);
+    const mockedStop = vi.mocked(BucketClient.prototype.stop);
     expect(initialized).not.toHaveBeenCalled();
     const { result, unmount } = renderHook(() => useUpdateContext(), {
       wrapper: ({ children }) => getProvider({ children }),
@@ -196,10 +196,10 @@ describe("useUpdateContext", () => {
       name: "new-user-name",
     });
 
-    await waitFor(() => expect(stop).toHaveBeenCalled());
-    expect(stop).toHaveBeenCalled();
-    expect(user).toHaveBeenCalledTimes(2);
-    expect(user).toHaveBeenCalledWith({
+    await waitFor(() => expect(mockedStop).toHaveBeenCalled());
+    expect(mockedStop).toHaveBeenCalled();
+    expect(mockedUser).toHaveBeenCalledTimes(2);
+    expect(mockedUser).toHaveBeenCalledWith({
       name: "new-user-name",
     });
     expect(initialized).toHaveBeenCalledTimes(2);
@@ -212,28 +212,37 @@ describe("useUpdateContext", () => {
   test("updates SDK when company is updated", async () => {
     console.error = vi.fn();
 
-    const initialized = vi.mocked(BucketClient.prototype.initialize);
-    const company = vi.mocked(BucketClient.prototype.company);
-    const stop = vi.mocked(BucketClient.prototype.stop);
-    expect(initialized).not.toHaveBeenCalled();
+    expect(BucketClient.prototype.initialize).not.toHaveBeenCalled();
     const { result, unmount } = renderHook(() => useUpdateContext(), {
       wrapper: ({ children }) => getProvider({ children }),
     });
 
-    expect(initialized).toHaveBeenCalledOnce();
-
+    expect(BucketClient.prototype.initialize).toHaveBeenCalledOnce();
+    expect(BucketClient.prototype.stop).not.toHaveBeenCalled();
     result.current.updateCompany({
-      id: "new-company",
+      id: "new-company1",
       name: "new-company-name",
     });
 
-    await waitFor(() => expect(stop).toHaveBeenCalled());
-    expect(stop).toHaveBeenCalled();
-    expect(company).toHaveBeenCalledTimes(2);
-    expect(company).toHaveBeenCalledWith({
+    // due to our use of useEffect, stop actually gets called twice
+    await waitFor(() => expect(BucketClient.prototype.stop).toHaveBeenCalled());
+
+    await waitFor(() =>
+      expect(
+        vi.mocked(BucketClient.prototype.initialize),
+      ).toHaveBeenCalledTimes(2),
+    );
+
+    await waitFor(() =>
+      expect(vi.mocked(BucketClient.prototype.company)).toHaveBeenCalledTimes(
+        2,
+      ),
+    );
+    expect(BucketClient.prototype.company).toHaveBeenCalledTimes(2);
+    expect(BucketClient.prototype.company).toHaveBeenCalledWith({
       name: "new-company-name",
     });
-    expect(initialized).toHaveBeenCalledTimes(2);
+    expect(BucketClient.prototype.initialize).toHaveBeenCalledTimes(2);
 
     expect(console.error).not.toHaveBeenCalled();
 
