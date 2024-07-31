@@ -1,16 +1,19 @@
+import { FLAG_EVENTS_PER_MIN } from "../config";
 import { BucketContext } from "../context";
 import { HttpClient } from "../httpClient";
-import { Logger } from "../logger";
+import { Logger, loggerWithPrefix } from "../logger";
+import RateLimiter from "../rateLimiter";
 
 import { FlagCache, isObject, parseAPIFlagsResponse } from "./flags-cache";
+import maskedProxy from "./masked-proxy";
 
-export type APIFlagsResponse = Record<
-  string,
-  {
-    value: boolean;
-    key: string;
-  }
->;
+export type APIFlagResponse = {
+  value: boolean;
+  key: string;
+  version?: number;
+};
+
+export type APIFlagsResponse = Record<string, APIFlagResponse>;
 
 export type Flags = Record<string, boolean>;
 
@@ -109,13 +112,19 @@ export class FlagsClient {
   private cache: FlagCache;
   private flags: Flags | undefined;
   private config: Config;
+  private rateLimiter: RateLimiter;
+  private logger: Logger;
 
   constructor(
     private httpClient: HttpClient,
     private context: BucketContext,
-    private logger: Logger,
-    options?: FlagsOptions & { cache?: FlagCache },
+    logger: Logger,
+    options?: FlagsOptions & {
+      cache?: FlagCache;
+      rateLimiter?: RateLimiter;
+    },
   ) {
+    this.logger = loggerWithPrefix(logger, "[Flags]");
     this.cache = options?.cache
       ? options.cache
       : new FlagCache({
@@ -127,10 +136,23 @@ export class FlagsClient {
           expireTimeMs: FLAGS_EXPIRE_MS,
         });
     this.config = { ...DEFAULT_FLAGS_CONFIG, ...options };
+    this.rateLimiter =
+      options?.rateLimiter ?? new RateLimiter(FLAG_EVENTS_PER_MIN, this.logger);
   }
 
   async initialize() {
-    this.flags = await this.maybeFetchFlags();
+    const flags = await this.maybeFetchFlags();
+    if (!flags) {
+      return;
+    }
+    const proxiedFlags = maskedProxy(flags, (fs, key) => {
+      this.sendCheckEvent(flags[key]).catch(() => {
+        // logged elsewhere
+      });
+      return fs[key].value;
+    });
+
+    this.flags = proxiedFlags;
   }
 
   getFlags(): Flags | undefined {
@@ -149,7 +171,7 @@ export class FlagsClient {
     return params;
   }
 
-  private async maybeFetchFlags(): Promise<Flags | undefined> {
+  private async maybeFetchFlags(): Promise<APIFlagsResponse | undefined> {
     const cachedItem = this.cache.get(this.fetchParams().toString());
 
     // if there's no cached item OR the cached item is a failure and we haven't retried
@@ -181,7 +203,7 @@ export class FlagsClient {
     return cachedItem.flags;
   }
 
-  public async fetchFlags() {
+  public async fetchFlags(): Promise<APIFlagsResponse> {
     const params = this.fetchParams();
     const cacheKey = params.toString();
     try {
@@ -236,13 +258,46 @@ export class FlagsClient {
         });
       }
 
-      return this.config.fallbackFlags.reduce(
-        (acc, key) => {
-          acc[key] = true;
-          return acc;
-        },
-        {} as Record<string, boolean>,
-      );
+      return this.config.fallbackFlags.reduce((acc, key) => {
+        acc[key] = {
+          key,
+          value: true,
+        };
+        return acc;
+      }, {} as APIFlagsResponse);
     }
+  }
+
+  /**
+   * Send a flag "check" event.
+   *
+   *
+   * @param flag - The flag to send the event for.
+   */
+  async sendCheckEvent(flag: APIFlagResponse) {
+    const rateLimitKey = `${this.fetchParams().toString()}:${flag.key}:${flag.version}:${flag.value}`;
+
+    await this.rateLimiter.rateLimited(rateLimitKey, async () => {
+      const payload = {
+        action: "check",
+        flagKey: flag.key,
+        flagVersion: flag.version,
+        evalContext: this.context,
+        evalResult: flag.value,
+      };
+
+      this.httpClient
+        .post({
+          path: "flags/events",
+          body: payload,
+        })
+        .catch((e: any) => {
+          this.logger.warn(`failed to send flag check event`, e);
+        });
+
+      this.logger.debug(`sent flag event`, payload);
+    });
+
+    return flag.value;
   }
 }

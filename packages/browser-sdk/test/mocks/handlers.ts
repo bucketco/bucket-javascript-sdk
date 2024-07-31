@@ -7,7 +7,7 @@ export const testChannel = "testChannel";
 export const flagsResponse: FeatureFlagsResponse = {
   success: true,
   flags: {
-    featureA: { value: true, key: "featureA" },
+    featureA: { value: true, key: "featureA", version: 1 },
   },
 };
 
