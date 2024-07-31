@@ -38,10 +38,10 @@ export function newCache(): { cache: FlagCache; cacheItem: (string | null)[] } {
 }
 
 describe("cache", () => {
+  const flags = { featureA: { value: true, key: "featureA", version: 1 } };
+
   test("caches items", async () => {
     const { cache } = newCache();
-
-    const flags = { featureA: true };
 
     cache.set("key", { success: true, flags, attemptCount: 1 });
     expect(cache.get("key")).toEqual({
@@ -55,8 +55,6 @@ describe("cache", () => {
   test("caches unsuccessful items", async () => {
     const { cache } = newCache();
 
-    const flags = { featureA: true };
-
     cache.set("key", { success: false, flags, attemptCount: 1 });
     expect(cache.get("key")).toEqual({
       stale: false,
@@ -69,8 +67,6 @@ describe("cache", () => {
   test("sets stale", async () => {
     const { cache } = newCache();
 
-    const flags = { featureA: true };
-
     cache.set("key", { success: true, flags, attemptCount: 1 });
 
     vitest.advanceTimersByTime(TEST_STALE_MS + 1);
@@ -81,8 +77,6 @@ describe("cache", () => {
 
   test("expires on set", async () => {
     const { cache, cacheItem } = newCache();
-
-    const flags = { featureA: true };
 
     cache.set("first key", { success: true, flags, attemptCount: 1 });
     expect(cacheItem[0]).not.toBeNull();

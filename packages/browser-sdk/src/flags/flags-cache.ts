@@ -1,4 +1,4 @@
-import { Flags } from "./flags";
+import { APIFlagsResponse, Flags } from "./flags";
 
 interface StorageItem {
   get(): string | null;
@@ -9,30 +9,39 @@ interface cacheEntry {
   expireAt: number;
   staleAt: number;
   success: boolean; // we also want to cache failures to avoid the UI waiting and spamming the API
-  flags: Flags | undefined;
+  flags: APIFlagsResponse | undefined;
   attemptCount: number;
 }
 
-// takes an API flag response and returns a `Flags` object
-// Note: API returns { key: { value: boolean } } and we want to convert it to { key: boolean
-export function parseAPIFlagsResponse(flagsInput: any): Flags | undefined {
+// Parse and validate an API flag response
+export function parseAPIFlagsResponse(
+  flagsInput: any,
+): APIFlagsResponse | undefined {
   if (!isObject(flagsInput)) {
     return;
   }
 
-  const flags: Flags = {};
+  const flags: APIFlagsResponse = {};
   for (const key in flagsInput) {
     const flag = flagsInput[key];
-    if (typeof flag.value !== "boolean" || flag.key !== key) {
+    if (
+      typeof flag.value !== "boolean" ||
+      flag.key !== key ||
+      typeof flag.version !== "number"
+    ) {
       return;
     }
-    flags[key] = flag.value;
+    flags[key] = {
+      value: flag.value,
+      version: flag.version,
+      key,
+    };
   }
   return flags;
 }
 
 export interface CacheResult {
-  flags: Flags | undefined;
+  flags: APIFlagsResponse | undefined;
   stale: boolean;
   success: boolean;
   attemptCount: number;
@@ -63,7 +72,7 @@ export class FlagCache {
       success,
       flags,
       attemptCount,
-    }: { success: boolean; flags?: Flags; attemptCount: number },
+    }: { success: boolean; flags?: APIFlagsResponse; attemptCount: number },
   ) {
     let cacheData: CacheData = {};
 
@@ -150,7 +159,7 @@ function validateCacheData(cacheDataInput: any) {
       typeof cacheEntry.staleAt !== "number" ||
       typeof cacheEntry.success !== "boolean" ||
       typeof cacheEntry.attemptCount !== "number" ||
-      (cacheEntry.flags && !validateFlags(cacheEntry.flags))
+      (cacheEntry.flags && !parseAPIFlagsResponse(cacheEntry.flags))
     ) {
       return;
     }

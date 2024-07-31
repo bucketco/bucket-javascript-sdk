@@ -205,7 +205,7 @@ describe("FlagsClient unit tests", () => {
           return Promise.resolve({
             success: true,
             flags: {
-              featureB: { value: true, key: "featureB" },
+              featureB: { value: true, key: "featureB", version: 1 },
             },
           });
         },
