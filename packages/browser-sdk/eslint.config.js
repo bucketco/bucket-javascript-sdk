@@ -1,3 +1,3 @@
-import base from "@bucketco/eslint-config/base";
+const base = require("@bucketco/eslint-config/base");
 
-export default [...base, { ignores: ["dist/", "example/"] }];
+module.exports = [...base, { ignores: ["dist/", "example/"] }];
