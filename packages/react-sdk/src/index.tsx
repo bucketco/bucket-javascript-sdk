@@ -88,8 +88,7 @@ export function BucketProvider({
   ...config
 }: BucketProps) {
   const [flagsLoading, setFlagsLoading] = useState(true);
-  const clientRef = useRef<BucketClient>();
-  const contextKeyRef = useRef<string>();
+  const ref = useRef<BucketClient>();
 
   const [flagContext, setFlagContext] = useState({
     user: initialUser,
@@ -101,16 +100,9 @@ export function BucketProvider({
   const contextKey = canonicalJSON({ config, flagContext });
 
   useEffect(() => {
-    // useEffect will run twice in development mode
-    // This is a workaround to prevent re-initialization
-    if (contextKeyRef.current === contextKey) {
-      return;
-    }
-    contextKeyRef.current = contextKey;
-
     // on update of contextKey and on mount
-    if (clientRef.current) {
-      clientRef.current.stop();
+    if (ref.current) {
+      ref.current.stop();
     }
 
     const client = new BucketClient(publishableKey, flagContext, {
@@ -123,7 +115,7 @@ export function BucketProvider({
       logger: config.debug ? console : undefined,
       sdkVersion: SDK_VERSION,
     });
-    clientRef.current = client;
+    ref.current = client;
     client
       .initialize()
       .then(() => {
@@ -176,7 +168,7 @@ export function BucketProvider({
           console.error("User is required to send events");
         };
 
-      return clientRef.current?.track(eventName, attributes);
+      return ref.current?.track(eventName, attributes);
     },
     [user?.id, company?.id],
   );
@@ -188,7 +180,7 @@ export function BucketProvider({
         return;
       }
 
-      return clientRef.current?.feedback({
+      return ref.current?.feedback({
         ...opts,
         userId: String(user.id),
         companyId: company?.id !== undefined ? String(company.id) : undefined,
@@ -204,7 +196,7 @@ export function BucketProvider({
         return;
       }
 
-      clientRef.current?.requestFeedback({
+      ref.current?.requestFeedback({
         ...opts,
         userId: String(user.id),
         companyId: company?.id !== undefined ? String(company.id) : undefined,
@@ -214,7 +206,7 @@ export function BucketProvider({
   );
   const context: ProviderContextType = {
     flags: {
-      flags: clientRef.current?.getFlags() ?? {},
+      flags: ref.current?.getFlags() ?? {},
       isLoading: flagsLoading,
     },
     updateUser,
