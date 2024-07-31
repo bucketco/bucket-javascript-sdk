@@ -127,22 +127,6 @@ export class FlagCache {
   }
 }
 
-function validateFlags(flagsInput: any) {
-  if (!isObject(flagsInput)) {
-    return;
-  }
-
-  const flags: Flags = {};
-  for (const key in flagsInput) {
-    const flagValue = flagsInput[key];
-    if (typeof flagValue !== "boolean") {
-      return;
-    }
-    flags[key] = flagValue;
-  }
-  return flags;
-}
-
 type CacheData = Record<string, cacheEntry>;
 function validateCacheData(cacheDataInput: any) {
   if (!isObject(cacheDataInput)) {
