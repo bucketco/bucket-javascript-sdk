@@ -285,7 +285,7 @@ describe("feedback state management", () => {
 
     await createBucketInstance(callback);
 
-    await vi.waitUntil(() => events.length > 2, { timeout: 5000 });
+    await vi.waitUntil(() => events.length > 2);
 
     expect(events).toEqual(["received", "shown", "dismissed"]);
 
