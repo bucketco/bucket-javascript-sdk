@@ -25,7 +25,7 @@
     "dist"
   ],
   "main": "./dist/bucket-react-sdk.js",
-  "module": "./dist/bucket-react-sdk.js",
+  "module": "./dist/bucket-react-sdk.mjs",
   "types": "./dist/types/src/index.d.ts",
   "dependencies": {
     "@bucketco/browser-sdk": "^0.0.1",
