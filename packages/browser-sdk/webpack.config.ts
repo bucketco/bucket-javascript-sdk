@@ -2,11 +2,26 @@ import path from "path";
 import { Configuration } from "webpack";
 
 const config: Configuration[] = [
+  // Browser UMD
   {
-    entry: "./src/index.tsx",
+    entry: "./src/index.ts",
     mode: "production",
     module: {
       rules: [
+        {
+          test: /\.css$/i,
+          use: [
+            {
+              loader: "css-loader",
+              options: {
+                importLoaders: 1, // See: https://blog.jakoblind.no/postcss-webpack/
+              },
+            },
+            {
+              loader: "postcss-loader",
+            },
+          ],
+        },
         {
           test: /\.tsx?$/,
           use: "ts-loader",
@@ -19,13 +34,13 @@ const config: Configuration[] = [
       extensions: [".tsx", ".ts", ".js"],
     },
     target: "web",
-    externals: ["react", "react-dom"],
     output: {
       path: path.resolve(__dirname, "dist"),
-      filename: "bucket-react-sdk.browser.js",
+      filename: "bucket-browser-sdk.js",
       library: {
-        name: "bucket-react-sdk",
+        name: "BucketClient",
         type: "umd",
+        export: "BucketClient",
       },
     },
   },

@@ -1,0 +1,195 @@
+@keyframes scale {
+  from {
+    transform: scale(0.9);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes floatUp {
+  from {
+    transform: translateY(15%);
+  }
+  to {
+    transform: translateY(0%);
+  }
+}
+
+@keyframes floatDown {
+  from {
+    transform: translateY(-15%);
+  }
+  to {
+    transform: translateY(0%);
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.dialog {
+  position: fixed;
+  width: 210px;
+  padding: 16px 22px 10px;
+  font-size: var(--bucket-feedback-dialog-font-size, 1rem);
+  font-family: var(
+    --bucket-feedback-dialog-font-family,
+    InterVariable,
+    Inter,
+    system-ui,
+    Open Sans,
+    sans-serif
+  );
+  color: var(--bucket-feedback-dialog-color, #1e1f24);
+  border: 1px solid;
+  border-color: var(--bucket-feedback-dialog-border, #d8d9df);
+  border-radius: var(--bucket-feedback-dialog-border-radius, 6px);
+  box-shadow: var(
+    --bucket-feedback-dialog-box-shadow,
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05)
+  );
+  background-color: var(--bucket-feedback-dialog-background-color, #fff);
+  z-index: 2147410000;
+
+  &:not(.modal) {
+    margin: unset;
+    top: unset;
+    right: unset;
+    left: unset;
+    bottom: unset;
+  }
+}
+
+.arrow {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background-color: var(--bucket-feedback-dialog-background-color, #fff);
+  box-shadow: var(--bucket-feedback-dialog-border, #d8d9df) -1px -1px 1px 0px;
+  transform: rotate(45deg);
+
+  &.bottom {
+    box-shadow: var(--bucket-feedback-dialog-border, #d8d9df) -1px -1px 1px 0px;
+  }
+  &.top {
+    box-shadow: var(--bucket-feedback-dialog-border, #d8d9df) 1px 1px 1px 0px;
+  }
+  &.left {
+    box-shadow: var(--bucket-feedback-dialog-border, #d8d9df) 1px -1px 1px 0px;
+  }
+  &.right {
+    box-shadow: var(--bucket-feedback-dialog-border, #d8d9df) -1px 1px 1px 0px;
+  }
+}
+
+.close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+
+  width: 28px;
+  height: 28px;
+
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: none;
+
+  cursor: pointer;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  color: var(--bucket-feedback-dialog-color, #1e1f24);
+
+  svg {
+    position: absolute;
+  }
+}
+
+.plug {
+  font-size: 0.75em;
+  text-align: center;
+  margin-top: 7px;
+  width: 100%;
+}
+
+.plug a {
+  opacity: 0.5;
+  color: var(--bucket-feedback-dialog-color, #1e1f24);
+  text-decoration: none;
+
+  transition: opacity 200ms;
+}
+
+.plug a:hover {
+  opacity: 0.7;
+}
+
+/* Modal */
+
+.dialog.modal {
+  margin: auto;
+  margin-top: 4rem;
+
+  &[open] {
+    animation: /* easeOutQuint */
+      scale 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      fade 200ms cubic-bezier(0.22, 1, 0.36, 1);
+
+    &::backdrop {
+      animation: fade 200ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+  }
+}
+
+/* Anchored */
+
+.dialog.anchored {
+  position: absolute;
+
+  &[open] {
+    animation: /* easeOutQuint */
+      scale 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      fade 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  &.bottom {
+    transform-origin: top center;
+  }
+  &.top {
+    transform-origin: bottom center;
+  }
+  &.left {
+    transform-origin: right center;
+  }
+  &.right {
+    transform-origin: left center;
+  }
+}
+
+/* Unanchored */
+
+.dialog[open].unanchored {
+  &.unanchored-bottom-left,
+  &.unanchored-bottom-right {
+    animation: /* easeOutQuint */
+      floatUp 300ms cubic-bezier(0.22, 1, 0.36, 1),
+      fade 300ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  &.unanchored-top-left,
+  &.unanchored-top-right {
+    animation: /* easeOutQuint */
+      floatDown 300ms cubic-bezier(0.22, 1, 0.36, 1),
+      fade 300ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}

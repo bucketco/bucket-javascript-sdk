@@ -13,9 +13,6 @@ dist
 dist-ssr
 *.local
 
-browser-sdk
-node-sdk
-
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -31,9 +28,13 @@ playwright-report/
 playwright/.cache/
 
 .pnp.*
-.yarn/*
+.yarn
 !.yarn/patches
 !.yarn/plugins
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+junit.xml
+
+.next
