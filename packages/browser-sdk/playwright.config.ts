@@ -31,7 +31,8 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: "npx http-server . -p 8000",
+    // separate port to let the app run alongside the tracking sdk tests
+    command: "npx http-server . -p 8001",
     timeout: 120 * 1000,
   },
 });

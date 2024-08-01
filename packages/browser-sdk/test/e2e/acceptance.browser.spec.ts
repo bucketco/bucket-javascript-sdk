@@ -6,7 +6,7 @@ import { API_HOST } from "../../src/config";
 const KEY = randomUUID();
 
 test("Acceptance", async ({ page }) => {
-  await page.goto("http://localhost:8000/test/e2e/empty.html");
+  await page.goto("http://localhost:8001/test/e2e/empty.html");
 
   const successfulRequests: string[] = [];
 
