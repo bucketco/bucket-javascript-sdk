@@ -1,15 +1,26 @@
-import { SDK_VERSION, SDK_VERSION_HEADER_NAME } from "./config";
+import { API_HOST, SDK_VERSION, SDK_VERSION_HEADER_NAME } from "./config";
+
+export interface HttpClientOptions {
+  baseUrl?: string;
+  sdkVersion?: string;
+}
 
 export class HttpClient {
+  private baseUrl: string;
+  private sdkVersion: string;
+
   constructor(
     public publishableKey: string,
-    private baseUrl: string,
+    opts: HttpClientOptions = {},
   ) {
+    this.baseUrl = opts.baseUrl ?? API_HOST;
+
     // Ensure baseUrl ends with a trailing slash so subsequent
     // path concatenation works as expected
     if (!this.baseUrl.endsWith("/")) {
       this.baseUrl += "/";
     }
+    this.sdkVersion = opts.sdkVersion ?? SDK_VERSION;
   }
 
   getUrl(path: string): URL {
@@ -32,7 +43,7 @@ export class HttpClient {
     if (!params) {
       params = new URLSearchParams();
     }
-    params.set(SDK_VERSION_HEADER_NAME, SDK_VERSION);
+    params.set(SDK_VERSION_HEADER_NAME, this.sdkVersion);
     params.set("publishableKey", this.publishableKey);
 
     const url = this.getUrl(path);
@@ -65,7 +76,7 @@ export class HttpClient {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        [SDK_VERSION_HEADER_NAME]: SDK_VERSION,
+        [SDK_VERSION_HEADER_NAME]: this.sdkVersion,
         Authorization: `Bearer ${this.publishableKey}`,
       },
       body: JSON.stringify(body),

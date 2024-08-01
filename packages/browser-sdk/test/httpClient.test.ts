@@ -9,12 +9,12 @@ const cases = [
 test.each(cases)(
   "url construction with `/path`: %s -> %s",
   (base, expected) => {
-    const client = new HttpClient("publishableKey", base);
+    const client = new HttpClient("publishableKey", { baseUrl: base });
     expect(client.getUrl("/path").toString()).toBe(expected);
   },
 );
 
 test.each(cases)("url construction with `path`: %s -> %s", (base, expected) => {
-  const client = new HttpClient("publishableKey", base);
+  const client = new HttpClient("publishableKey", { baseUrl: base });
   expect(client.getUrl("path").toString()).toBe(expected);
 });

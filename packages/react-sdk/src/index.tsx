@@ -20,9 +20,13 @@ import {
   UserContext,
 } from "@bucketco/browser-sdk";
 
+import { version } from "../package.json";
+
 type OtherContext = Record<string, any>;
 
 export interface Flags {}
+
+const SDK_VERSION = `react-sdk/${version}`;
 
 type BucketFlags = keyof (keyof Flags extends never
   ? Record<string, boolean>
@@ -116,6 +120,7 @@ export function BucketProvider({
       },
       feedback: config.feedback,
       logger: config.debug ? console : undefined,
+      sdkVersion: SDK_VERSION,
     });
     ref.current = client;
     client
