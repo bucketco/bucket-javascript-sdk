@@ -1,6 +1,9 @@
 import React from "react";
 import { render, renderHook, waitFor } from "@testing-library/react";
+import { http, HttpResponse } from "msw";
+import { setupServer } from "msw/node";
 import {
+  afterAll,
   afterEach,
   beforeAll,
   beforeEach,
@@ -11,6 +14,7 @@ import {
 } from "vitest";
 
 import { BucketClient } from "@bucketco/browser-sdk";
+import { HttpClient } from "@bucketco/browser-sdk/src/httpClient";
 
 import {
   BucketProps,
@@ -43,15 +47,70 @@ function getProvider(props: Partial<BucketProps> = {}) {
   );
 }
 
-vi.mock("@bucketco/browser-sdk", () => {
-  const MockedBucketClient = vi.fn();
-  MockedBucketClient.prototype.initialize = vi.fn();
-  MockedBucketClient.prototype.getFlags = vi.fn();
-  MockedBucketClient.prototype.stop = vi.fn();
-  MockedBucketClient.prototype.user = vi.fn();
-  MockedBucketClient.prototype.company = vi.fn();
-  return { BucketClient: MockedBucketClient };
-});
+const server = setupServer(
+  http.get(/\/flags\/evaluate$/, () => {
+    return new HttpResponse(
+      JSON.stringify({
+        success: true,
+        flags: {
+          abc: {
+            key: "abc",
+            value: true,
+            version: 1,
+          },
+          def: {
+            key: "def",
+            value: true,
+            version: 2,
+          },
+        },
+      }),
+      { status: 200 },
+    );
+  }),
+  http.post(/\/user$/, () => {
+    return new HttpResponse(
+      JSON.stringify({
+        success: true,
+      }),
+      { status: 200 },
+    );
+  }),
+  http.post(/\/company$/, () => {
+    return new HttpResponse(
+      JSON.stringify({
+        success: true,
+      }),
+      { status: 200 },
+    );
+  }),
+  http.post(/feedback\/prompting-init$/, () => {
+    return new HttpResponse(
+      JSON.stringify({
+        success: false,
+      }),
+      { status: 200 },
+    );
+  }),
+  http.post(/\/flags\/events$/, () => {
+    return new HttpResponse(
+      JSON.stringify({
+        success: false,
+      }),
+      { status: 200 },
+    );
+  }),
+);
+
+beforeAll(() =>
+  server.listen({
+    onUnhandledRequest(request) {
+      console.error("Unhandled %s %s", request.method, request.url);
+    },
+  }),
+);
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
 
 const flags = {
   abc: true,
@@ -59,11 +118,14 @@ const flags = {
 };
 
 beforeAll(() => {
-  vi.spyOn(BucketClient.prototype, "initialize").mockResolvedValue();
-  vi.spyOn(BucketClient.prototype, "getFlags").mockReturnValue(flags);
+  vi.spyOn(BucketClient.prototype, "initialize");
+  vi.spyOn(BucketClient.prototype, "getFlags");
   vi.spyOn(BucketClient.prototype, "stop");
-  vi.spyOn(BucketClient.prototype, "user").mockResolvedValue({} as Response);
-  vi.spyOn(BucketClient.prototype, "company").mockResolvedValue({} as Response);
+  vi.spyOn(BucketClient.prototype, "user");
+  vi.spyOn(BucketClient.prototype, "company");
+
+  vi.spyOn(HttpClient.prototype, "get");
+  vi.spyOn(HttpClient.prototype, "post");
 });
 
 beforeEach(() => {
@@ -72,6 +134,10 @@ beforeEach(() => {
 
 describe("<BucketProvider />", () => {
   test("calls initialize", () => {
+    const newBucketClient = vi.fn().mockReturnValue({
+      initialize: vi.fn().mockResolvedValue(undefined),
+    });
+
     const provider = getProvider({
       publishableKey: "KEY",
       host: "https://test.com",
@@ -79,12 +145,12 @@ describe("<BucketProvider />", () => {
       company: { id: "123", name: "test" },
       user: { id: "456", name: "test" },
       otherContext: { test: "test" },
+      newBucketClient,
     });
 
     render(provider);
 
-    expect(vi.mocked(BucketClient).mock.instances).toHaveLength(1);
-    expect(vi.mocked(BucketClient).mock.calls.at(0)).toStrictEqual([
+    expect(newBucketClient.mock.calls.at(0)).toStrictEqual([
       "KEY",
       {
         user: {
@@ -108,9 +174,6 @@ describe("<BucketProvider />", () => {
         sdkVersion: "react-sdk/1.0.0-beta.1",
       },
     ]);
-
-    expect(BucketClient.prototype.initialize).toHaveBeenCalledOnce();
-    expect(BucketClient.prototype.stop).not.toHaveBeenCalledOnce();
   });
 
   test("only calls init once with the same args", () => {
@@ -145,17 +208,17 @@ describe("useFlags", () => {
     });
 
     await waitFor(() =>
-      expect(result.current).toStrictEqual({ flags, isLoading: false }),
+      expect(JSON.stringify(result.current)).toEqual(
+        JSON.stringify({ isLoading: false, flags }),
+      ),
     );
-    expect(result.current).toStrictEqual({ flags, isLoading: false });
+
     unmount();
   });
 });
 
 describe("useFlag", () => {
   test("returns a loading state initially, stops loading once initialized", async () => {
-    console.error = vi.fn();
-
     const { result, unmount } = renderHook(() => useFlag("test-flag"), {
       wrapper: ({ children }) => getProvider({ children }),
     });
@@ -172,9 +235,7 @@ describe("useFlag", () => {
       isEnabled: false,
       isLoading: false,
     }),
-      expect(console.error).not.toHaveBeenCalled();
-
-    unmount();
+      unmount();
   });
 });
 

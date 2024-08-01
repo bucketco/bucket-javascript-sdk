@@ -77,6 +77,11 @@ export type BucketProps = BucketContext & {
   host?: string;
   sseHost?: string;
   debug?: boolean;
+
+  // for testing
+  newBucketClient?: (
+    ...args: ConstructorParameters<typeof BucketClient>
+  ) => BucketClient;
 };
 
 export function BucketProvider({
@@ -87,9 +92,11 @@ export function BucketProvider({
   publishableKey,
   flagOptions,
   loadingComponent,
+  newBucketClient = (...args) => new BucketClient(...args),
   ...config
 }: BucketProps) {
   const [flagsLoading, setFlagsLoading] = useState(true);
+  const [flags, setFlags] = useState<FlagsResult>({});
   const ref = useRef<BucketClient>();
 
   const [flagContext, setFlagContext] = useState({
@@ -107,7 +114,7 @@ export function BucketProvider({
       ref.current.stop();
     }
 
-    const client = new BucketClient(publishableKey, flagContext, {
+    const client = newBucketClient(publishableKey, flagContext, {
       host: config.host,
       sseHost: config.sseHost,
       flags: {
@@ -121,6 +128,7 @@ export function BucketProvider({
     client
       .initialize()
       .then(() => {
+        setFlags(client.getFlags() ?? {});
         setFlagsLoading(false);
 
         // update user attributes
@@ -206,9 +214,10 @@ export function BucketProvider({
     },
     [user?.id, company?.id],
   );
+
   const context: ProviderContextType = {
     flags: {
-      flags: ref.current?.getFlags() ?? {},
+      flags,
       isLoading: flagsLoading,
     },
     updateUser,
@@ -253,10 +262,12 @@ export function useFlagIsEnabled(flagKey: BucketFlags) {
  * ```
  */
 export function useFlag(key: BucketFlags) {
-  const flags = useContext<ProviderContextType>(ProviderContext).flags;
-  const isEnabled = flags.flags[key] ?? false;
+  const { flags, isLoading } =
+    useContext<ProviderContextType>(ProviderContext).flags;
 
-  return { isLoading: flags.isLoading, isEnabled };
+  const isEnabled = flags[key] ?? false;
+
+  return { isLoading: isLoading, isEnabled };
 }
 
 /**
@@ -279,9 +290,8 @@ export function useFlags(): {
   isLoading: boolean;
   flags: FlagsResult;
 } {
-  const {
-    flags: { flags, isLoading },
-  } = useContext<ProviderContextType>(ProviderContext);
+  const { flags, isLoading } =
+    useContext<ProviderContextType>(ProviderContext).flags;
 
   return {
     isLoading,
