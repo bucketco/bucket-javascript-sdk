@@ -1,6 +1,9 @@
 import React from "react";
 import { render, renderHook, waitFor } from "@testing-library/react";
+import { http, HttpResponse } from "msw";
+import { setupServer } from "msw/node";
 import {
+  afterAll,
   afterEach,
   beforeAll,
   beforeEach,
@@ -8,10 +11,10 @@ import {
   expect,
   test,
   vi,
-  afterAll,
 } from "vitest";
 
 import { BucketClient } from "@bucketco/browser-sdk";
+import { HttpClient } from "@bucketco/browser-sdk/src/httpClient";
 
 import {
   BucketProps,
@@ -21,10 +24,6 @@ import {
   useFlags,
   useUpdateContext,
 } from "../src";
-
-import { http, HttpResponse } from "msw";
-import { setupServer } from "msw/node";
-import { HttpClient } from "@bucketco/browser-sdk/src/httpClient";
 
 const originalConsoleError = console.error.bind(console);
 afterEach(() => {
