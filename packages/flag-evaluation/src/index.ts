@@ -73,7 +73,12 @@ export type PercentageRolloutFilter = {
   partialRolloutThreshold: number;
 };
 
-export type RuleFilter = FilterTree<ContextFilter | PercentageRolloutFilter>;
+export type ConstantFilter = {
+  type: "constant";
+  value: boolean;
+};
+
+export type RuleFilter = FilterTree<ContextFilter | PercentageRolloutFilter | ConstantFilter>;
 
 export function flattenJSON(data: object): Record<string, string> {
   if (Object.keys(data).length === 0) return {};
