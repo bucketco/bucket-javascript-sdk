@@ -147,8 +147,8 @@ export class FlagsClient {
         key,
         version: flags[key]?.version,
         value: flags[key]?.value ?? false,
-      }).catch(() => {
-        // logged elsewhere
+      }).catch((e) => {
+        this.logger.error("error sending flag check event", e);
       });
       return fs[key]?.value || false;
     });
