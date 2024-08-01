@@ -1,5 +1,3 @@
-import fetch from "cross-fetch";
-
 import {
   forgetAuthToken,
   getAuthToken,
