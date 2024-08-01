@@ -105,6 +105,7 @@ describe("<BucketProvider />", () => {
         sseHost: "https://test.com",
         feedback: undefined,
         flags: {},
+        sdkVersion: "react-sdk/1.0.0-beta.1",
       },
     ]);
 
