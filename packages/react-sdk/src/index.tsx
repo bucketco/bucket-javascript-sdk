@@ -71,6 +71,11 @@ export type BucketProps = BucketContext & {
   host?: string;
   sseHost?: string;
   debug?: boolean;
+
+  // for testing
+  newBucketClient?: (
+    ...args: ConstructorParameters<typeof BucketClient>
+  ) => BucketClient;
 };
 
 export function BucketProvider({
@@ -81,6 +86,7 @@ export function BucketProvider({
   publishableKey,
   flagOptions,
   loadingComponent,
+  newBucketClient = (...args) => new BucketClient(...args),
   ...config
 }: BucketProps) {
   const [flagsLoading, setFlagsLoading] = useState(true);
@@ -102,7 +108,7 @@ export function BucketProvider({
       ref.current.stop();
     }
 
-    const client = new BucketClient(publishableKey, flagContext, {
+    const client = newBucketClient(publishableKey, flagContext, {
       host: config.host,
       sseHost: config.sseHost,
       flags: {
