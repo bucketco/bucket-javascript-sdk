@@ -284,4 +284,27 @@ describe(`sends "check" events`, () => {
       },
     });
   });
+
+  it("sends check event for not-enabled flags", async () => {
+    // disabled flags don't appear in the API response
+    const { newFlagsClient, httpClient } = flagsClientFactory();
+    const client = newFlagsClient();
+    await client.initialize();
+
+    const _ = client.getFlags()?.notAvailableFlag;
+    expect(httpClient.post).toHaveBeenCalledTimes(1);
+    expect(httpClient.post).toHaveBeenCalledWith({
+      path: "flags/events",
+      body: {
+        action: "check",
+        evalContext: {
+          user: {
+            id: "123",
+          },
+        },
+        evalResult: false,
+        flagKey: "notAvailableFlag",
+      },
+    });
+  });
 });

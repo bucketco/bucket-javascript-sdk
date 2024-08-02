@@ -141,17 +141,17 @@ export class FlagsClient {
   }
 
   async initialize() {
-    const flags = await this.maybeFetchFlags();
-    if (!flags) {
-      return;
-    }
+    const flags = (await this.maybeFetchFlags()) || {};
     const proxiedFlags = maskedProxy(flags, (fs, key) => {
-      this.sendCheckEvent(flags[key]).catch(() => {
-        // logged elsewhere
+      this.sendCheckEvent({
+        key,
+        version: flags[key]?.version,
+        value: flags[key]?.value ?? false,
+      }).catch((e) => {
+        this.logger.error("error sending flag check event", e);
       });
-      return fs[key].value;
+      return fs[key]?.value || false;
     });
-
     this.flags = proxiedFlags;
   }
 
@@ -274,7 +274,11 @@ export class FlagsClient {
    *
    * @param flag - The flag to send the event for.
    */
-  async sendCheckEvent(flag: APIFlagResponse) {
+  async sendCheckEvent(flag: {
+    key: string;
+    value: boolean;
+    version?: number;
+  }) {
     const rateLimitKey = `${this.fetchParams().toString()}:${flag.key}:${flag.version}:${flag.value}`;
 
     await this.rateLimiter.rateLimited(rateLimitKey, async () => {
