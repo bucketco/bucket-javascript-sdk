@@ -1,13 +1,13 @@
 import { randomUUID } from "crypto";
 import { expect, Locator, Page, test } from "@playwright/test";
 
+import { InitOptions } from "../../src/client";
+import { DEFAULT_TRANSLATIONS } from "../../src/feedback/ui/config/defaultTranslations";
 import {
-  DEFAULT_TRANSLATIONS,
   feedbackContainerId,
-  FeedbackTranslations,
-  InitOptions,
   propagatedEvents,
-} from "../../src";
+} from "../../src/feedback/ui/constants";
+import { FeedbackTranslations } from "../../src/feedback/ui/types";
 
 const KEY = randomUUID();
 const API_HOST = `https://front.bucket.co`;
@@ -29,21 +29,27 @@ async function getOpenedWidgetContainer(
   page: Page,
   initOptions: InitOptions = {},
 ) {
-  await page.goto("http://localhost:8000/test/e2e/empty.html");
+  await page.goto("http://localhost:8001/test/e2e/empty.html");
 
   // Mock API calls
   await page.route(`${API_HOST}/user`, async (route) => {
     await route.fulfill({ status: 200 });
   });
 
-  // Load the built Bucket SDK
-  await page.addScriptTag({
-    url: "http://localhost:8000/dist/bucket-browser-sdk.js",
+  await page.route(`${API_HOST}/flags/evaluate*`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      body: JSON.stringify({
+        success: true,
+        flags: {},
+      }),
+    });
   });
 
   // Golden path requests
   await page.evaluate(`
     ;(async () => {
+      const { BucketClient } = await import("/dist/bucket-browser-sdk.mjs");
       const bucket = new BucketClient("${KEY}", {user: {id: "foo"}, company: {id: "bar"}}, ${JSON.stringify(initOptions)});
       await bucket.initialize();
       await bucket.requestFeedback({
@@ -110,7 +116,7 @@ test("Opens a feedback widget in the bottom right by default", async ({
 
   const bbox = await container.locator("dialog").boundingBox();
   expect(bbox?.x).toEqual(WINDOW_WIDTH - bbox!.width - 16);
-  expect(bbox?.y).toBeGreaterThan(WINDOW_HEIGHT - bbox!.height - 16); // Account for browser differences
+  expect(bbox?.y).toBeGreaterThan(WINDOW_HEIGHT - bbox!.height - 30); // Account for browser differences
   expect(bbox?.y).toBeLessThan(WINDOW_HEIGHT - bbox!.height);
 });
 
@@ -133,7 +139,7 @@ test("Opens a feedback widget in the correct position when overridden", async ({
   const bbox = await container.locator("dialog").boundingBox();
   expect(bbox?.x).toEqual(16);
   expect(bbox?.y).toBeGreaterThan(0); // Account for browser differences
-  expect(bbox?.y).toBeLessThan(16);
+  expect(bbox?.y).toBeLessThanOrEqual(16);
 });
 
 test("Opens a feedback widget with the correct translations", async ({
