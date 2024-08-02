@@ -39,17 +39,17 @@ This will initialize the Bucket SDK, fetch feature flags and start listening for
 **Example:**
 
 ```tsx
-import { BucketProvider } from "@bucketco/react-sdk"
+import { BucketProvider } from "@bucketco/react-sdk";
 
 <BucketProvider
   publishableKey="{YOUR_PUBLISHABLE_KEY}"
-  company={ id: "acme_inc" }
-  user={ id: "john doe" }
+  company={{ id: "acme_inc" }}
+  user={{ id: "john doe" }}
   loadingComponent={<Loading />}
   fallbackFlags={["huddle"]}
 >
-{/* children here are shown when loading finishes or immediately if no `loadingComponent` is given */}
-</BucketProvider>
+  {/* children here are shown when loading finishes or immediately if no `loadingComponent` is given */}
+</BucketProvider>;
 ```
 
 - `publishableKey` is used to connect the provider to an _environment_ on Bucket. Find your `publishableKey` under `Activity` on https://app.bucket.co.

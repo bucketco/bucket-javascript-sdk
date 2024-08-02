@@ -7,14 +7,16 @@ import {
   useRequestFeedback,
   useTrack,
   useUpdateContext,
-} from "../src";
+} from "../../src";
 
 // Extending the Flags interface to define the available flags
-declare module "../src" {
+declare module "../../src" {
   interface Flags {
     huddle: boolean;
   }
 }
+
+const publishableKey = process.env.PUBLISHABLE_KEY || "";
 
 function HuddleFlag() {
   // Type safe flag
@@ -182,7 +184,7 @@ function Demos() {
 export function App() {
   return (
     <BucketProvider
-      publishableKey="trdwA10Aoant6IaK3Qt45NMI"
+      publishableKey={publishableKey}
       feedback={{
         enableLiveSatisfaction: true,
       }}
