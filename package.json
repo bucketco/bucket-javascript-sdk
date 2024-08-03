@@ -5,7 +5,8 @@
   "license": "MIT",
   "workspaces": [
     "packages/*",
-    "packages/react-sdk/dev/*"
+    "packages/react-sdk/dev/*",
+    "packages/vue-sdk/example"
   ],
   "scripts": {
     "dev": "lerna run dev --parallel",

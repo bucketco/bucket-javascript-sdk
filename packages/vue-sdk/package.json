@@ -1,0 +1,57 @@
+{
+  "name": "@bucketco/vue-sdk",
+  "version": "1.0.0",
+  "description": "Vue SDK for Bucket",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --project tsconfig.build.json && vite build",
+    "test": "vitest -c vite.config.mjs",
+    "test:ci": "vitest run -c vite.config.mjs --reporter=default --reporter=junit --outputFile=junit.xml",
+    "coverage": "vitest run --coverage",
+    "lint": "eslint .",
+    "lint:ci": "eslint --output-file eslint-report.json --format json .",
+    "prettier": "prettier --check .",
+    "format": "yarn lint --fix && yarn prettier --write",
+    "preversion": "yarn lint && yarn prettier && yarn vitest run -c vite.config.mjs && yarn build"
+  },
+  "keywords": [
+    "vue",
+    "bucket",
+    "sdk",
+    "feature flags"
+  ],
+  "author": "Bucket",
+  "license": "MIT",
+  "peerDependencies": {
+    "vue": "^3.0.0"
+  },
+  "dependencies": {
+    "@bucketco/browser-sdk": "workspace:^"
+  },
+  "devDependencies": {
+    "@types/node": "^22.1.0",
+    "@vitejs/plugin-vue": "^5.1.2",
+    "@vue/tsconfig": "^0.5.1",
+    "jsdom": "^24.1.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.4.5",
+    "vite": "^5.3.5",
+    "vite-plugin-dts": "^4.0.0-beta.2",
+    "vue": "^3.0.0"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bucketco/bucket-javascript-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/bucketco/bucket-javascript-sdk/issues"
+  },
+  "homepage": "https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/vue-sdk/README.md"
+}
