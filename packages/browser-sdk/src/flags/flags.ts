@@ -3,6 +3,7 @@ import { BucketContext } from "../context";
 import { HttpClient } from "../httpClient";
 import { Logger, loggerWithPrefix } from "../logger";
 import RateLimiter from "../rateLimiter";
+import { AblySSEConn } from "../sse";
 
 import { FlagCache, isObject, parseAPIFlagsResponse } from "./flagsCache";
 import maskedProxy from "./maskedProxy";
@@ -14,6 +15,10 @@ export type APIFlagResponse = {
 };
 
 export type APIFlagsResponse = Record<string, APIFlagResponse>;
+export type APIResponse = {
+  flags: APIFlagsResponse | undefined;
+  updatedAt: number;
+};
 
 export type Flags = Record<string, boolean>;
 
@@ -22,6 +27,7 @@ export type FlagsOptions = {
   timeoutMs?: number;
   staleWhileRevalidate?: boolean;
   failureRetryAttempts?: number | false;
+  onUpdatedFlags?: (flags: Flags) => void;
 };
 
 type Config = {
@@ -29,6 +35,7 @@ type Config = {
   timeoutMs: number;
   staleWhileRevalidate: boolean;
   failureRetryAttempts: number | false;
+  onUpdatedFlags?: (flags: Flags) => void;
 };
 
 export const DEFAULT_FLAGS_CONFIG: Config = {
@@ -70,17 +77,24 @@ export function validateFeatureFlagsResponse(response: any) {
     return;
   }
 
-  if (typeof response.success !== "boolean" || !isObject(response.flags)) {
+  const { success, updatedAt, flags } = response;
+
+  if (
+    typeof success !== "boolean" ||
+    typeof updatedAt !== "number" ||
+    !isObject(flags)
+  ) {
     return;
   }
-  const flags = parseAPIFlagsResponse(response.flags);
-  if (!flags) {
+  const flagsParsed = parseAPIFlagsResponse(flags);
+  if (!flagsParsed) {
     return;
   }
 
   return {
-    success: response.success,
-    flags,
+    success,
+    flags: flagsParsed,
+    updatedAt,
   };
 }
 
@@ -109,11 +123,13 @@ export const FLAGS_EXPIRE_MS = 7 * 24 * 60 * 60 * 1000; // expire entirely after
 const localStorageCacheKey = `__bucket_flags`;
 
 export class FlagsClient {
+  private logger: Logger;
   private cache: FlagCache;
-  private flags: Flags | undefined;
   private config: Config;
   private rateLimiter: RateLimiter;
-  private logger: Logger;
+
+  private flags: Flags | undefined;
+  private updatedAt: number;
 
   constructor(
     private httpClient: HttpClient,
@@ -122,6 +138,8 @@ export class FlagsClient {
     options?: FlagsOptions & {
       cache?: FlagCache;
       rateLimiter?: RateLimiter;
+      liveConn?: AblySSEConn;
+      onUpdatedFlags?: (flags: Flags) => void;
     },
   ) {
     this.logger = loggerWithPrefix(logger, "[Flags]");
@@ -138,21 +156,48 @@ export class FlagsClient {
     this.config = { ...DEFAULT_FLAGS_CONFIG, ...options };
     this.rateLimiter =
       options?.rateLimiter ?? new RateLimiter(FLAG_EVENTS_PER_MIN, this.logger);
+
+    // subscribe to changes in targeting
+    options?.liveConn?.addOnMessageCallback("targeting_updated", (message) => {
+      if (message.updatedAt && message.updatedAt > this.updatedAt) {
+        this.refreshFlags().catch((e) => {
+          this.logger.error(
+            "error refreshing flags following targeting-updated message",
+            e,
+          );
+        });
+      }
+    });
+
+    this.updatedAt = 0;
   }
 
-  async initialize() {
-    const flags = (await this.maybeFetchFlags()) || {};
-    const proxiedFlags = maskedProxy(flags, (fs, key) => {
+  setFlags(flags: APIResponse) {
+    if (!flags.flags) return;
+
+    const proxiedFlags = maskedProxy(flags.flags, (fs, key) => {
       this.sendCheckEvent({
         key,
-        version: flags[key]?.version,
-        value: flags[key]?.value ?? false,
+        version: fs[key]?.version,
+        value: fs[key]?.value ?? false,
       }).catch((e) => {
         this.logger.error("error sending flag check event", e);
       });
       return fs[key]?.value || false;
     });
     this.flags = proxiedFlags;
+    
+    if(this.config.onUpdatedFlags) {
+      this.config.onUpdatedFlags(this.flags);
+    }
+  }
+
+  public async maybeRefreshFlags() {
+    this.setFlags((await this.maybeFetchFlags()) || {});
+  }
+
+  public async refreshFlags() {
+    this.setFlags(await this.fetchFlags());
   }
 
   getFlags(): Flags | undefined {
@@ -171,7 +216,7 @@ export class FlagsClient {
     return params;
   }
 
-  private async maybeFetchFlags(): Promise<APIFlagsResponse | undefined> {
+  private async maybeFetchFlags(): Promise<APIResponse> {
     const cachedItem = this.cache.get(this.fetchParams().toString());
 
     // if there's no cached item OR the cached item is a failure and we haven't retried
@@ -193,17 +238,17 @@ export class FlagsClient {
         this.fetchFlags().catch(() => {
           // we don't care about the result, we just want to re-fetch
         });
-        return cachedItem.flags;
+        return { flags: cachedItem.flags, updatedAt: cachedItem.updatedAt };
       }
 
       return await this.fetchFlags();
     }
 
     // serve cached items if not stale and not expired
-    return cachedItem.flags;
+    return { flags: cachedItem.flags, updatedAt: cachedItem.updatedAt };
   }
 
-  public async fetchFlags(): Promise<APIFlagsResponse> {
+  public async fetchFlags(): Promise<APIResponse> {
     const params = this.fetchParams();
     const cacheKey = params.toString();
     try {
@@ -233,10 +278,11 @@ export class FlagsClient {
       this.cache.set(cacheKey, {
         success: true,
         flags: typeRes.flags,
+        updatedAt: typeRes.updatedAt,
         attemptCount: 0,
       });
 
-      return typeRes.flags;
+      return typeRes;
     } catch (e) {
       this.logger.error("error fetching flags: ", e);
 
@@ -247,6 +293,7 @@ export class FlagsClient {
           success: current.success,
           flags: current.flags,
           attemptCount: current.attemptCount + 1,
+          updatedAt: current.updatedAt,
         });
       } else {
         // otherwise cache if the request failed and there is no previous version to extend
@@ -255,16 +302,22 @@ export class FlagsClient {
           success: false,
           flags: undefined,
           attemptCount: 1,
+          updatedAt: 0,
         });
       }
 
-      return this.config.fallbackFlags.reduce((acc, key) => {
+      const flags = this.config.fallbackFlags.reduce((acc, key) => {
         acc[key] = {
           key,
           value: true,
         };
         return acc;
       }, {} as APIFlagsResponse);
+
+      return {
+        flags,
+        updatedAt: 0,
+      };
     }
   }
 

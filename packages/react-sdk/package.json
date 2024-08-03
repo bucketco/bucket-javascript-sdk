@@ -32,8 +32,8 @@
     "canonical-json": "^0.0.4"
   },
   "peerDependencies": {
-    "react": "*",
-    "react-dom": "*"
+    "react": "^18.0",
+    "react-dom": "^18.0"
   },
   "devDependencies": {
     "@bucketco/eslint-config": "0.0.2",

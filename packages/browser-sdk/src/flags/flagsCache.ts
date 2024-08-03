@@ -11,6 +11,7 @@ interface cacheEntry {
   success: boolean; // we also want to cache failures to avoid the UI waiting and spamming the API
   flags: APIFlagsResponse | undefined;
   attemptCount: number;
+  updatedAt: number;
 }
 
 // Parse and validate an API flag response
@@ -45,6 +46,7 @@ export interface CacheResult {
   stale: boolean;
   success: boolean;
   attemptCount: number;
+  updatedAt: number;
 }
 
 export class FlagCache {
@@ -72,7 +74,13 @@ export class FlagCache {
       success,
       flags,
       attemptCount,
-    }: { success: boolean; flags?: APIFlagsResponse; attemptCount: number },
+      updatedAt,
+    }: {
+      success: boolean;
+      flags?: APIFlagsResponse;
+      attemptCount: number;
+      updatedAt: number;
+    },
   ) {
     let cacheData: CacheData = {};
 
@@ -91,6 +99,7 @@ export class FlagCache {
       flags,
       success,
       attemptCount,
+      updatedAt,
     } satisfies cacheEntry;
 
     cacheData = Object.fromEntries(
@@ -117,6 +126,7 @@ export class FlagCache {
             success: cachedResponse[key].success,
             stale: cachedResponse[key].staleAt < Date.now(),
             attemptCount: cachedResponse[key].attemptCount,
+            updatedAt: cachedResponse[key].updatedAt,
           };
         }
       }
@@ -138,22 +148,27 @@ function validateCacheData(cacheDataInput: any) {
     const cacheEntry = cacheDataInput[key];
     if (!isObject(cacheEntry)) return;
 
+    const { expireAt, staleAt, success, flags, attemptCount, updatedAt } =
+      cacheEntry;
+
     if (
-      typeof cacheEntry.expireAt !== "number" ||
-      typeof cacheEntry.staleAt !== "number" ||
-      typeof cacheEntry.success !== "boolean" ||
-      typeof cacheEntry.attemptCount !== "number" ||
-      (cacheEntry.flags && !parseAPIFlagsResponse(cacheEntry.flags))
+      typeof expireAt !== "number" ||
+      typeof staleAt !== "number" ||
+      typeof success !== "boolean" ||
+      typeof attemptCount !== "number" ||
+      typeof updatedAt !== "number" ||
+      (flags && !parseAPIFlagsResponse(flags))
     ) {
       return;
     }
 
     cacheData[key] = {
-      expireAt: cacheEntry.expireAt,
-      staleAt: cacheEntry.staleAt,
-      success: cacheEntry.success,
-      flags: cacheEntry.flags,
-      attemptCount: cacheEntry.attemptCount,
+      expireAt,
+      staleAt,
+      success,
+      flags,
+      attemptCount,
+      updatedAt,
     };
   }
   return cacheData;

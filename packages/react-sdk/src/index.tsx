@@ -117,6 +117,9 @@ export function BucketProvider({
       sseHost: config.sseHost,
       flags: {
         ...flagOptions,
+        onUpdatedFlags: (flags) => {
+          setFlags(flags);
+        },
       },
       feedback: config.feedback,
       logger: config.debug ? console : undefined,
