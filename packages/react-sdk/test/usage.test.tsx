@@ -52,7 +52,7 @@ const server = setupServer(
     return new HttpResponse(
       JSON.stringify({
         success: true,
-        flags: {
+        features: {
           abc: {
             key: "abc",
             value: true,
@@ -112,7 +112,7 @@ beforeAll(() =>
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
-const flags = {
+const features = {
   abc: true,
   def: true,
 };
@@ -170,7 +170,7 @@ describe("<BucketProvider />", () => {
         logger: undefined,
         sseHost: "https://test.com",
         feedback: undefined,
-        flags: {},
+        features: {},
         sdkVersion: "react-sdk/1.0.0-beta.1",
       },
     ]);
@@ -191,7 +191,7 @@ describe("<BucketProvider />", () => {
 });
 
 describe("useFeatureIsEnabled", () => {
-  test("returns the feature flags in context", async () => {
+  test("returns the features in context", async () => {
     const { result } = renderHook(() => useFeatureIsEnabled("abc"), {
       wrapper: ({ children }) => getProvider({ children }),
     });
@@ -209,7 +209,7 @@ describe("useFeatures", () => {
 
     await waitFor(() =>
       expect(JSON.stringify(result.current)).toEqual(
-        JSON.stringify({ isLoading: false, flags }),
+        JSON.stringify({ isLoading: false, features }),
       ),
     );
 
@@ -219,7 +219,7 @@ describe("useFeatures", () => {
 
 describe("useFeature", () => {
   test("returns a loading state initially, stops loading once initialized", async () => {
-    const { result, unmount } = renderHook(() => useFeature("test-flag"), {
+    const { result, unmount } = renderHook(() => useFeature("huddle"), {
       wrapper: ({ children }) => getProvider({ children }),
     });
 
