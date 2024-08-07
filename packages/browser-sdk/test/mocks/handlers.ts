@@ -1,6 +1,6 @@
 import { DefaultBodyType, http, HttpResponse, StrictRequest } from "msw";
 
-import { FeatureFlagsResponse, Flags } from "../../src/flags/flags";
+import { FeatureFlagsResponse, Flags } from "../../src/features/features";
 
 export const testChannel = "testChannel";
 
