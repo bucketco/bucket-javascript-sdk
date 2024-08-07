@@ -14,7 +14,7 @@ export const Providers = ({ publishableKey, children }: Props) => {
       publishableKey={publishableKey}
       company={{ id: "acme_inc" }}
       user={{ id: "john doe" }}
-      flagOptions={{ fallbackFlags: ["fallback-flag"] }}
+      featureOptions={{ fallbackFeatures: ["fallback-flag"] }}
     >
       {children}
     </BucketProvider>
