@@ -78,7 +78,9 @@ export type ConstantFilter = {
   value: boolean;
 };
 
-export type RuleFilter = FilterTree<ContextFilter | PercentageRolloutFilter | ConstantFilter>;
+export type RuleFilter = FilterTree<
+  ContextFilter | PercentageRolloutFilter | ConstantFilter
+>;
 
 export function flattenJSON(data: object): Record<string, string> {
   if (Object.keys(data).length === 0) return {};
@@ -163,7 +165,6 @@ function evaluateRecursively(
   context: Record<string, string>,
   missingContextFieldsSet: Set<string>,
 ): boolean {
-
   switch (filter.type) {
     case "constant":
       return filter.value;
@@ -172,7 +173,7 @@ function evaluateRecursively(
         missingContextFieldsSet.add(filter.field);
         return false;
       }
-  
+
       return evaluate(
         context[filter.field],
         filter.operator,
@@ -182,30 +183,30 @@ function evaluateRecursively(
       if (filter.partialRolloutThreshold === 100000) {
         return true;
       }
-  
+
       missingContextFieldsSet.add(filter.partialRolloutAttribute);
-  
+
       if (!(filter.partialRolloutAttribute in context)) {
         return false;
       }
-  
+
       return (
-        hashInt(`${filter.flagKey}.${context[filter.partialRolloutAttribute]}`) >
-        filter.partialRolloutThreshold
+        hashInt(
+          `${filter.flagKey}.${context[filter.partialRolloutAttribute]}`,
+        ) > filter.partialRolloutThreshold
       );
     case "group":
-      const isAnd = filter.operator === "and";
-
       return filter.filters.reduce((acc, current) => {
         if (filter.operator === "and") {
           return (
-            acc && evaluateRecursively(current, context, missingContextFieldsSet)
+            acc &&
+            evaluateRecursively(current, context, missingContextFieldsSet)
           );
         }
         return (
           acc || evaluateRecursively(current, context, missingContextFieldsSet)
         );
-      }, isAnd);
+      }, filter.operator === "and");
     case "negation":
       return !evaluateRecursively(
         filter.filter,

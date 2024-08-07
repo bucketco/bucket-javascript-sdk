@@ -29,7 +29,7 @@ const flag: FlagData = {
 describe("evaluate flag integration ", () => {
   it("evaluates all kinds of filters", async () => {
     // Flag with context filter, rollout percentage AND and OR groups, negation and constant filters
-    const flag: FlagData = {
+    const flagWithAllFilterTypes: FlagData = {
       key: "flag",
       rules: [
         {
@@ -88,7 +88,7 @@ describe("evaluate flag integration ", () => {
     };
 
     const res = evaluateFlag({
-      flag,
+      flag: flagWithAllFilterTypes,
       context,
     });
 
