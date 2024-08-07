@@ -1,4 +1,4 @@
-import { evaluateFlag, flattenJSON } from "@bucketco/flag-evaluation";
+import { evaluateTargeting, flattenJSON } from "@bucketco/flag-evaluation";
 
 import cache from "./cache";
 import {
@@ -563,15 +563,15 @@ export class BucketClientClass {
         flagDefinitions.features.map((f) => [f.key, f.targeting.version]),
       );
 
-      const evaluated = flagDefinitions.features.map((flag) =>
-        evaluateFlag({ context: mergedContext, flag }),
+      const evaluated = flagDefinitions.features.map((feature) =>
+        evaluateTargeting({ context: mergedContext, feature }),
       );
 
       evaluated.forEach(async (res) => {
         await this.sendFeatureFlagEvent({
           action: "evaluate",
-          flagKey: res.flag.key,
-          flagVersion: keyToVersionMap.get(res.flag.key),
+          flagKey: res.feature.key,
+          flagVersion: keyToVersionMap.get(res.feature.key),
           evalResult: res.value,
           evalContext: res.context,
           evalRuleResults: res.ruleEvaluationResults,
@@ -583,10 +583,10 @@ export class BucketClientClass {
         .filter((e) => e.value)
         .reduce(
           (acc, res) => {
-            acc[res.flag.key as keyof TypedFlags] = {
-              key: res.flag.key,
+            acc[res.feature.key as keyof TypedFlags] = {
+              key: res.feature.key,
               value: res.value,
-              version: keyToVersionMap.get(res.flag.key),
+              version: keyToVersionMap.get(res.feature.key),
             };
             return acc;
           },
