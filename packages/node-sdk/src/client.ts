@@ -17,7 +17,7 @@ import {
   ClientOptions,
   FeatureFlagEvent,
   Flag,
-  FlagDefinitions,
+  Features,
   HttpClient,
   Logger,
   TrackOptions,
@@ -55,7 +55,7 @@ export class BucketClientClass {
     staleWarningInterval: number;
     headers: Record<string, string>;
     fallbackFlags?: Record<keyof TypedFlags, Flag>;
-    featureFlagDefinitionCache?: Cache<FlagDefinitions>;
+    featureFlagDefinitionCache?: Cache<Features>;
   };
 
   private _otherContext: Record<string, any> | undefined;
@@ -278,14 +278,14 @@ export class BucketClientClass {
 
   private getFeatureFlagDefinitionCache() {
     if (!this._shared.featureFlagDefinitionCache) {
-      this._shared.featureFlagDefinitionCache = cache<FlagDefinitions>(
+      this._shared.featureFlagDefinitionCache = cache<Features>(
         this._shared.refetchInterval,
         this._shared.staleWarningInterval,
         this._shared.logger,
         async () => {
-          const res = await this.get<FlagDefinitions>("flags");
+          const res = await this.get<Features>("features");
 
-          if (!isObject(res) || !Array.isArray(res?.flags)) {
+          if (!isObject(res) || !Array.isArray(res?.features)) {
             return undefined;
           }
 
@@ -560,10 +560,10 @@ export class BucketClientClass {
 
     if (flagDefinitions) {
       const keyToVersionMap = new Map<string, number>(
-        flagDefinitions.flags.map((f) => [f.key, f.version]),
+        flagDefinitions.features.map((f) => [f.key, f.targeting.version]),
       );
 
-      const evaluated = flagDefinitions.flags.map((flag) =>
+      const evaluated = flagDefinitions.features.map((flag) =>
         evaluateFlag({ context: mergedContext, flag }),
       );
 

@@ -20,7 +20,7 @@ import {
   SDK_VERSION_HEADER_NAME,
 } from "../src/config";
 import fetchClient from "../src/fetch-http-client";
-import { ClientOptions, FlagDefinitions } from "../src/types";
+import { ClientOptions, Features } from "../src/types";
 import { checkWithinAllottedTimeWindow } from "../src/utils";
 
 vi.mock("@bucketco/flag-evaluation", async (importOriginal) => {
@@ -783,7 +783,7 @@ describe("BucketClientClass", () => {
       await client.initialize();
 
       expect(httpClient.get).toHaveBeenCalledWith(
-        `https://api.example.com/flags`,
+        `https://api.example.com/features`,
         expectedHeaders,
       );
     });
@@ -792,39 +792,43 @@ describe("BucketClientClass", () => {
   describe("getFlags", () => {
     let client: BucketClientClass;
 
-    const flagDefinitions: FlagDefinitions = {
-      flags: [
+    const flagDefinitions: Features = {
+      features: [
         {
           key: "flag1",
-          version: 1,
-          rules: [
-            {
-              filter: [
-                {
-                  field: "attributeKey",
-                  operator: "IS",
-                  values: ["attributeValue"],
-                },
-              ],
-            },
-          ],
+          targeting: {
+            version: 1,
+            rules: [
+              {
+                filter: [
+                  {
+                    field: "attributeKey",
+                    operator: "IS",
+                    values: ["attributeValue"],
+                  },
+                ],
+              },
+            ],
+          },
         },
         {
           key: "flag2",
-          version: 2,
-          rules: [
-            {
-              partialRolloutThreshold: 0.5,
-              partialRolloutAttribute: "attributeKey",
-              filter: [
-                {
-                  field: "attributeKey",
-                  operator: "IS",
-                  values: ["attributeValue"],
-                },
-              ],
-            },
-          ],
+          targeting: {
+            version: 2,
+            rules: [
+              {
+                partialRolloutThreshold: 0.5,
+                partialRolloutAttribute: "attributeKey",
+                filter: [
+                  {
+                    field: "attributeKey",
+                    operator: "IS",
+                    values: ["attributeValue"],
+                  },
+                ],
+              },
+            ],
+          },
         },
       ],
     };
@@ -859,7 +863,9 @@ describe("BucketClientClass", () => {
 
       vi.mocked(evaluateFlag).mockImplementation(({ flag, context }) => {
         const evalFlag = evaluatedFlags.find((f) => f.flag.key === flag.key)!;
-        const flagDef = flagDefinitions.flags.find((f) => f.key === flag.key)!;
+        const flagDef = flagDefinitions.features.find(
+          (f) => f.key === flag.key,
+        )!;
 
         return {
           value: evalFlag.value,

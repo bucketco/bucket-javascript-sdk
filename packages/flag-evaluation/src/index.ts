@@ -24,19 +24,19 @@ export interface Rule {
   filter: RuleFilter;
 }
 
-export type FlagData = {
+export type FeatureData = {
   key: string;
-  rules: Rule[];
+  targeting: {rules: Rule[]};
 };
 
-export interface EvaluateFlagParams {
+export interface EvaluateTargetingParams {
   context: Record<string, unknown>;
-  flag: FlagData;
+  feature: FeatureData;
 }
 
-export interface EvaluateFlagResult {
+export interface EvaluateTargetingResult {
   value: boolean;
-  flag: FlagData;
+  feature: FeatureData;
   context: Record<string, any>;
   ruleEvaluationResults: boolean[];
   reason?: string;
@@ -124,15 +124,15 @@ export function unflattenJSON(data: Record<string, any>) {
   return result;
 }
 
-export function evaluateFlag({
+export function evaluateTargeting({
   context,
-  flag,
-}: EvaluateFlagParams): EvaluateFlagResult {
+  feature,
+}: EvaluateTargetingParams): EvaluateTargetingResult {
   const flatContext = flattenJSON(context);
 
   const missingContextFieldsSet = new Set<string>();
 
-  const ruleEvaluationResults = flag.rules.map((rule) =>
+  const ruleEvaluationResults = feature.targeting.rules.map((rule) =>
     evaluateRecursively(rule.filter, flatContext, missingContextFieldsSet),
   );
   const missingContextFields = Array.from(missingContextFieldsSet);
@@ -140,7 +140,7 @@ export function evaluateFlag({
   const firstIdx = ruleEvaluationResults.findIndex(Boolean);
   return {
     value: firstIdx > -1,
-    flag,
+    feature,
     context: flatContext,
     ruleEvaluationResults,
     reason: firstIdx > -1 ? `rule #${firstIdx} matched` : "no matched rules",

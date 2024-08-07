@@ -1,37 +1,40 @@
-import { evaluate, evaluateFlag, FlagData, hashInt } from "../src";
+import { evaluate,  evaluateTargeting,  FeatureData,hashInt } from "../src";
 
-const flag: FlagData = {
-  key: "flag",
-  rules: [
-    {
-      filter: {
-        type: "group",
-        operator: "and",
-        filters: [
-          {
-            type: "context",
-            field: "company.id",
-            operator: "IS",
-            values: ["company1"],
-          },
-          {
-            type: "rolloutPercentage",
-            flagKey: "flag",
-            partialRolloutAttribute: "company.id",
-            partialRolloutThreshold: 100000,
-          },
-        ],
+const feature: FeatureData = {
+  key: "feature",
+  targeting: {
+    rules: [
+      {
+        filter: {
+          type: "group",
+          operator: "and",
+          filters: [
+            {
+              type: "context",
+              field: "company.id",
+              operator: "IS",
+              values: ["company1"],
+            },
+            {
+              type: "rolloutPercentage",
+              flagKey: "flag",
+              partialRolloutAttribute: "company.id",
+              partialRolloutThreshold: 100000,
+            },
+          ],
+        },
       },
-    },
-  ],
+    ]
+  }
 };
 
-describe("evaluate flag integration ", () => {
+describe("evaluate feature targeting integration ", () => {
   it("evaluates all kinds of filters", async () => {
-    // Flag with context filter, rollout percentage AND and OR groups, negation and constant filters
-    const flagWithAllFilterTypes: FlagData = {
-      key: "flag",
-      rules: [
+    // Feature with context filter targeting, rollout percentage AND and OR groups, negation and constant filters
+    const featureWithAllFilterTypes: FeatureData = {
+      key: "feature",
+      targeting: {
+        rules: [
         {
           filter: {
             type: "group",
@@ -80,15 +83,15 @@ describe("evaluate flag integration ", () => {
             ],
           },
         },
-      ],
+      ]}
     };
 
     const context = {
       "company.id": "company1",
     };
 
-    const res = evaluateFlag({
-      flag: flagWithAllFilterTypes,
+    const res = evaluateTargeting({
+      feature: featureWithAllFilterTypes,
       context,
     });
 
@@ -97,7 +100,7 @@ describe("evaluate flag integration ", () => {
       context: {
         "company.id": "company1",
       },
-      flag: flagWithAllFilterTypes,
+      feature: featureWithAllFilterTypes,
       missingContextFields: [],
       reason: "rule #0 matched",
       ruleEvaluationResults: [true],
@@ -105,8 +108,8 @@ describe("evaluate flag integration ", () => {
   });
 
   it("evaluates flag when there's no matching rule", async () => {
-    const res = evaluateFlag({
-      flag,
+    const res = evaluateTargeting({
+      feature,
       context: {
         company: {
           id: "wrong value",
@@ -119,45 +122,21 @@ describe("evaluate flag integration ", () => {
       context: {
         "company.id": "wrong value",
       },
-      flag: {
-        key: "flag",
-        rules: [
-          {
-            filter: {
-              type: "group",
-              operator: "and",
-              filters: [
-                {
-                  type: "context",
-                  field: "company.id",
-                  operator: "IS",
-                  values: ["company1"],
-                },
-                {
-                  type: "rolloutPercentage",
-                  flagKey: "flag",
-                  partialRolloutAttribute: "company.id",
-                  partialRolloutThreshold: 100000,
-                },
-              ],
-            },
-          },
-        ],
-      },
+      feature,
       missingContextFields: [],
       reason: "no matched rules",
       ruleEvaluationResults: [false],
     });
   });
 
-  it("evaluates flag when there's a matching rule", async () => {
+  it("evaluates targeting when there's a matching rule", async () => {
     const context = {
       company: {
         id: "company1",
       },
     };
-    const res = evaluateFlag({
-      flag,
+    const res = evaluateTargeting({
+      feature,
       context,
     });
     expect(res).toEqual({
@@ -165,7 +144,7 @@ describe("evaluate flag integration ", () => {
       context: {
         "company.id": "company1",
       },
-      flag,
+      feature,
       missingContextFields: [],
       reason: "rule #0 matched",
       ruleEvaluationResults: [true],
@@ -173,9 +152,9 @@ describe("evaluate flag integration ", () => {
   });
 
   it("evaluates flag with missing values", async () => {
-    const flagWithSegmentRule: FlagData = {
-      key: "flag",
-      rules: [
+    const featureWithSegmentRule: FeatureData = {
+      key: "feature",
+      targeting: {rules: [
         {
           filter: {
             type: "group",
@@ -196,11 +175,11 @@ describe("evaluate flag integration ", () => {
             ],
           },
         },
-      ],
+      ],}
     };
 
-    const res = evaluateFlag({
-      flag: flagWithSegmentRule,
+    const res = evaluateTargeting({
+      feature: featureWithSegmentRule,
       context: {
         some_field: "",
       },
@@ -211,7 +190,7 @@ describe("evaluate flag integration ", () => {
         some_field: "",
       },
       value: true,
-      flag: flagWithSegmentRule,
+      feature: featureWithSegmentRule,
       missingContextFields: [],
       reason: "rule #0 matched",
       ruleEvaluationResults: [true],
@@ -219,40 +198,40 @@ describe("evaluate flag integration ", () => {
   });
 
   it("returns list of missing context keys ", async () => {
-    const res = evaluateFlag({
-      flag,
+    const res = evaluateTargeting({
+      feature: feature,
       context: {},
     });
     expect(res).toEqual({
       context: {},
       value: false,
       reason: "no matched rules",
-      flag,
+      feature,
       missingContextFields: ["company.id"],
       ruleEvaluationResults: [false],
     });
   });
 
   it("fails evaluation and includes key in missing keys when rollout attribute is missing from context", async () => {
-    const myflag = {
-      key: "myflag",
-      rules: [
+    const myfeature = {
+      key: "myfeature",
+      targeting: {rules: [
         {
           filter: {
             type: "rolloutPercentage" as const,
-            flagKey: "myflag",
+            flagKey: "myfeature",
             partialRolloutAttribute: "happening.id",
             partialRolloutThreshold: 50000,
           },
         },
-      ],
+      ],}
     };
-    const res = evaluateFlag({
-      flag: myflag,
+    const res = evaluateTargeting({
+      feature: myfeature,
       context: {},
     });
     expect(res).toEqual({
-      flag: myflag,
+      feature: myfeature,
       context: {},
       value: false,
       reason: "no matched rules",

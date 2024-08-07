@@ -1,4 +1,4 @@
-import { FlagData } from "@bucketco/flag-evaluation";
+import { FeatureData } from "@bucketco/flag-evaluation";
 
 /**
  * Describes the meta context associated with tracking.
@@ -93,11 +93,11 @@ export type TypedFlags = keyof Flags extends never
   : Record<keyof Flags, boolean>;
 
 /**
- * Describes the response of the feature flags endpoint
+ * Describes the response of the features endpoint
  */
-export type FlagDefinitions = {
+export type Features = {
   /** The flag definitions */
-  flags: (FlagData & { version: number })[];
+  features: (FeatureData & { targeting: { version: number } })[];
 };
 
 /**
