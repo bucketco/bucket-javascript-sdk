@@ -1,4 +1,4 @@
-import { FeaturesClient, FeaturesOptions } from "./features/features";
+import { FeaturesClient, FeaturesOptions } from "./feature/features";
 import {
   Feedback,
   feedback,

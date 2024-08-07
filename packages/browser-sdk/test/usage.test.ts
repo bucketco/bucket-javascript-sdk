@@ -23,7 +23,7 @@ import {
   openAblySSEChannel,
 } from "../src/sse";
 
-import { flagsResult } from "./mocks/handlers";
+import { featuresResult } from "./mocks/handlers";
 import { server } from "./mocks/server";
 
 const KEY = "123";
@@ -63,8 +63,8 @@ describe("usage", () => {
       promptedQuestion: "How are you?",
     });
 
-    const flags = bucketInstance.getFlags();
-    expect(flags).toEqual(flagsResult);
+    const flags = bucketInstance.getFeatures();
+    expect(flags).toEqual(featuresResult);
   });
 });
 

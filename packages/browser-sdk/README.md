@@ -69,13 +69,13 @@ const bucketClient = new BucketClient(
 );
 await bucketClient.initialize()
 
-bucketClient.getFlags()
+bucketClient.getFeatures()
 // {
 //   "join-huddle": true,
 //   "post-message": true
 // }
 
-if(bucketClient.getFlags()["join-huddle"]) {
+if(bucketClient.getFeatures()["join-huddle"]) {
   ...
 }
 ```

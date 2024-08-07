@@ -19,9 +19,9 @@ import { HttpClient } from "@bucketco/browser-sdk/src/httpClient";
 import {
   BucketProps,
   BucketProvider,
-  useFlag,
-  useFlagIsEnabled,
-  useFlags,
+  useFeature,
+  useFeatureIsEnabled,
+  useFeatures,
   useUpdateContext,
 } from "../src";
 
@@ -119,7 +119,7 @@ const flags = {
 
 beforeAll(() => {
   vi.spyOn(BucketClient.prototype, "initialize");
-  vi.spyOn(BucketClient.prototype, "getFlags");
+  vi.spyOn(BucketClient.prototype, "getFeatures");
   vi.spyOn(BucketClient.prototype, "stop");
   vi.spyOn(BucketClient.prototype, "user");
   vi.spyOn(BucketClient.prototype, "company");
@@ -190,9 +190,9 @@ describe("<BucketProvider />", () => {
   });
 });
 
-describe("useFlagIsEnabled", () => {
+describe("useFeatureIsEnabled", () => {
   test("returns the feature flags in context", async () => {
-    const { result } = renderHook(() => useFlagIsEnabled("abc"), {
+    const { result } = renderHook(() => useFeatureIsEnabled("abc"), {
       wrapper: ({ children }) => getProvider({ children }),
     });
 
@@ -201,9 +201,9 @@ describe("useFlagIsEnabled", () => {
   });
 });
 
-describe("useFlags", () => {
+describe("useFeatures", () => {
   test("returns a loading state initially, stops loading once initialized", async () => {
-    const { result, unmount } = renderHook(() => useFlags(), {
+    const { result, unmount } = renderHook(() => useFeatures(), {
       wrapper: ({ children }) => getProvider({ children }),
     });
 
@@ -217,9 +217,9 @@ describe("useFlags", () => {
   });
 });
 
-describe("useFlag", () => {
+describe("useFeature", () => {
   test("returns a loading state initially, stops loading once initialized", async () => {
-    const { result, unmount } = renderHook(() => useFlag("test-flag"), {
+    const { result, unmount } = renderHook(() => useFeature("test-flag"), {
       wrapper: ({ children }) => getProvider({ children }),
     });
 

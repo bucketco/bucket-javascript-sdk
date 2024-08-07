@@ -4,7 +4,11 @@ import { HttpClient } from "../httpClient";
 import { Logger, loggerWithPrefix } from "../logger";
 import RateLimiter from "../rateLimiter";
 
-import { FeatureCache, isObject, parseAPIFeaturesResponse } from "./featuresCache";
+import {
+  FeatureCache,
+  isObject,
+  parseAPIFeaturesResponse,
+} from "./featureCache";
 import maskedProxy from "./maskedProxy";
 
 export type APIFeatureResponse = {
@@ -60,12 +64,12 @@ export function mergeDeep(
   return mergeDeep(target, ...sources);
 }
 
-export type FeatureFeaturesResponse = {
+export type FeaturesResponse = {
   success: boolean;
   features: APIFeaturesResponse;
 };
 
-export function validateFeatureFeaturesResponse(response: any) {
+export function validateFeaturesResponse(response: any) {
   if (!isObject(response)) {
     return;
   }
@@ -208,7 +212,7 @@ export class FeaturesClient {
     const cacheKey = params.toString();
     try {
       const res = await this.httpClient.get({
-        path: "/features",
+        path: "/flags/evaluate",
         timeoutMs: this.config.timeoutMs,
         params,
       });
@@ -225,7 +229,7 @@ export class FeaturesClient {
           "unexpected response code: " + res.status + " - " + errorBody,
         );
       }
-      const typeRes = validateFeatureFeaturesResponse(await res.json());
+      const typeRes = validateFeaturesResponse(await res.json());
       if (!typeRes || !typeRes.success) {
         throw new Error("unable to validate response");
       }

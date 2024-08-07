@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 
 import { BucketClient } from "../src";
 
-import { flagsEvaluate } from "./mocks/handlers";
+import { getFeatures } from "./mocks/handlers";
 import { server } from "./mocks/server";
 
 const KEY = "123";
@@ -43,14 +43,14 @@ describe("init", () => {
         "https://example.com/flags/evaluate",
         ({ request }: { request: StrictRequest<DefaultBodyType> }) => {
           usedSpecialHost = true;
-          return flagsEvaluate({ request });
+          return getFeatures({ request });
         },
       ),
     );
     const bucketInstance = new BucketClient(
       KEY,
       { user: { id: "foo" } },
-      { host: CUSTOM_HOST },
+      { host: "https://example.com" },
     );
     await bucketInstance.initialize();
 

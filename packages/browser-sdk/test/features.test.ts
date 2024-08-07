@@ -1,10 +1,14 @@
 import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
 
-import { FLAGS_EXPIRE_MS, FlagsClient, FlagsOptions } from "../src/flags/flags";
+import {
+  FeaturesClient,
+  FeaturesOptions,
+  FLAGS_EXPIRE_MS,
+} from "../src/feature/features";
 import { HttpClient } from "../src/httpClient";
 
-import { flagsResult } from "./mocks/handlers";
-import { newCache, TEST_STALE_MS } from "./flagsCache.test";
+import { featuresResult } from "./mocks/handlers";
+import { newCache, TEST_STALE_MS } from "./featureCache.test";
 import { testLogger } from "./testLogger";
 
 beforeEach(() => {
@@ -16,111 +20,118 @@ afterAll(() => {
   vi.useRealTimers();
 });
 
-function flagsClientFactory() {
+function featuresClientFactory() {
   const { cache } = newCache();
-  const httpClient = new HttpClient("pk", "https://front.bucket.co");
+  const httpClient = new HttpClient("pk", {
+    baseUrl: "https://front.bucket.co",
+  });
   vi.spyOn(httpClient, "get");
   vi.spyOn(httpClient, "post");
   return {
     cache,
     httpClient,
-    newFlagsClient: function newFlagsClient(options?: FlagsOptions) {
-      return new FlagsClient(httpClient, { user: { id: "123" } }, testLogger, {
-        cache,
-        ...options,
-      });
+    newFeaturesClient: function newFeaturesClient(options?: FeaturesOptions) {
+      return new FeaturesClient(
+        httpClient,
+        { user: { id: "123" } },
+        testLogger,
+        {
+          cache,
+          ...options,
+        },
+      );
     },
   };
 }
 
-describe("FlagsClient unit tests", () => {
-  test("fetches flags", async () => {
-    const flagsClient = flagsClientFactory().newFlagsClient();
+describe("FeaturesClient unit tests", () => {
+  test("fetches features", async () => {
+    const featuresClient = featuresClientFactory().newFeaturesClient();
 
-    await flagsClient.initialize();
-    expect(flagsClient.getFlags()).toEqual(flagsResult);
+    await featuresClient.initialize();
+    expect(featuresClient.getFeatures()).toEqual(featuresResult);
   });
 
-  test("return fallback flags on failure", async () => {
-    const { newFlagsClient, httpClient } = flagsClientFactory();
+  test("return fallback features on failure", async () => {
+    const { newFeaturesClient, httpClient } = featuresClientFactory();
 
     vi.mocked(httpClient.get).mockRejectedValue(
-      new Error("Failed to fetch flags"),
+      new Error("Failed to fetch features"),
     );
-    const flagsClient = newFlagsClient({
-      fallbackFlags: ["huddle"],
+    const featuresClient = newFeaturesClient({
+      fallbackFeatures: ["huddle"],
     });
-    await flagsClient.initialize();
-    expect(flagsClient.getFlags()).toEqual({ huddle: true });
+    await featuresClient.initialize();
+    expect(featuresClient.getFeatures()).toEqual({ huddle: true });
   });
 
   test("caches response", async () => {
-    const { newFlagsClient, httpClient } = flagsClientFactory();
+    const { newFeaturesClient, httpClient } = featuresClientFactory();
 
-    const flagsClient = newFlagsClient();
-    await flagsClient.initialize();
+    const featuresClient = newFeaturesClient();
+    await featuresClient.initialize();
 
     expect(httpClient.get).toBeCalledTimes(1);
 
-    const flagsClient2 = newFlagsClient();
-    await flagsClient2.initialize();
-    const flags = flagsClient2.getFlags();
+    const featuresClient2 = newFeaturesClient();
+    await featuresClient2.initialize();
+    const features = featuresClient2.getFeatures();
 
-    expect(flags).toEqual(flagsResult);
+    expect(features).toEqual(featuresResult);
     expect(httpClient.get).toBeCalledTimes(1);
   });
 
-  test("maintains previously successful flags on negative response", async () => {
-    const { newFlagsClient, httpClient } = flagsClientFactory();
-    const flagsClient = newFlagsClient();
-    await flagsClient.initialize();
+  test("maintains previously successful features on negative response", async () => {
+    const { newFeaturesClient, httpClient } = featuresClientFactory();
+    const featuresClient = newFeaturesClient();
+    await featuresClient.initialize();
 
     vi.mocked(httpClient.get).mockRejectedValue(
-      new Error("Failed to fetch flags"),
+      new Error("Failed to fetch features"),
     );
     // expect(httpClientGetSpy).toBeCalledTimes(0);
 
-    // vi.mocked(fetch).mockRejectedValue(new Error("Failed to fetch flags"));
+    // vi.mocked(fetch).mockRejectedValue(new Error("Failed to fetch features"));
     vi.advanceTimersByTime(60000);
 
-    await flagsClient.fetchFlags();
+    await featuresClient.fetchFeatures();
 
-    const staleFlags = flagsClient.getFlags();
-    expect(staleFlags).toEqual(flagsResult);
+    const staleFeatures = featuresClient.getFeatures();
+    expect(staleFeatures).toEqual(featuresResult);
   });
 
   test("attempts multiple tries before caching negative response", async () => {
-    const { newFlagsClient, httpClient } = flagsClientFactory();
+    const { newFeaturesClient, httpClient } = featuresClientFactory();
 
     vi.mocked(httpClient.get).mockRejectedValue(
-      new Error("Failed to fetch flags"),
+      new Error("Failed to fetch features"),
     );
 
     for (let i = 0; i < 3; i++) {
-      const flagsClient = newFlagsClient({
+      const featuresClient = newFeaturesClient({
         staleWhileRevalidate: false,
         failureRetryAttempts: 3,
       });
-      await flagsClient.initialize();
+      await featuresClient.initialize();
 
       expect(httpClient.get).toHaveBeenCalledTimes(i + 1);
     }
 
-    const flagsClient = newFlagsClient({ failureRetryAttempts: 3 });
-    await flagsClient.initialize();
+    const featuresClient = newFeaturesClient({ failureRetryAttempts: 3 });
+    await featuresClient.initialize();
     expect(httpClient.get).toHaveBeenCalledTimes(3);
   });
 
   test("disable caching negative response", async () => {
-    const { newFlagsClient, httpClient } = flagsClientFactory();
+    const { newFeaturesClient, httpClient } = featuresClientFactory();
 
     vi.mocked(httpClient.get).mockRejectedValue(
-      new Error("Failed to fetch flags"),
+      new Error("Failed to fetch features"),
     );
 
     for (let i = 0; i < 5; i++) {
-      const flagsClient = newFlagsClient({ failureRetryAttempts: false });
-      await flagsClient.initialize();
+      const featuresClient = newFeaturesClient({ failureRetryAttempts: false });
+      await featuresClient.initialize();
 
       expect(httpClient.get).toHaveBeenCalledTimes(i + 1);
     }
@@ -130,12 +141,12 @@ describe("FlagsClient unit tests", () => {
     test("when stale cache is success response", async () => {
       const response = {
         success: true,
-        flags: {
+        features: {
           featureB: { value: true, key: "featureB" },
         },
       };
 
-      const { newFlagsClient, httpClient } = flagsClientFactory();
+      const { newFeaturesClient, httpClient } = featuresClientFactory();
 
       vi.mocked(httpClient.get).mockResolvedValue({
         status: 200,
@@ -145,7 +156,7 @@ describe("FlagsClient unit tests", () => {
         },
       } as Response);
 
-      const client = newFlagsClient({
+      const client = newFeaturesClient({
         failureRetryAttempts: false,
         staleWhileRevalidate: true,
       });
@@ -154,7 +165,7 @@ describe("FlagsClient unit tests", () => {
       await client.initialize();
 
       expect(httpClient.get).toHaveBeenCalledTimes(1);
-      const client2 = newFlagsClient({
+      const client2 = newFeaturesClient({
         failureRetryAttempts: false,
         staleWhileRevalidate: true,
       });
@@ -166,7 +177,7 @@ describe("FlagsClient unit tests", () => {
         json: () =>
           Promise.resolve({
             success: true,
-            flags: {
+            features: {
               featureA: { value: true, key: "featureA" },
             },
           }),
@@ -175,14 +186,14 @@ describe("FlagsClient unit tests", () => {
       vi.advanceTimersByTime(TEST_STALE_MS + 1);
 
       await client2.initialize();
-      expect(client.getFlags()).toEqual(client2.getFlags());
+      expect(client.getFeatures()).toEqual(client2.getFeatures());
 
       // new fetch was fired in the background
       expect(httpClient.get).toHaveBeenCalledTimes(2);
     });
 
     test("when stale cache is failed response", async () => {
-      const { newFlagsClient, httpClient } = flagsClientFactory();
+      const { newFeaturesClient, httpClient } = featuresClientFactory();
       // when cached response is failure, we should not serve the stale cache
       const response = {
         success: false,
@@ -198,7 +209,7 @@ describe("FlagsClient unit tests", () => {
         },
       } as Response);
 
-      const client = newFlagsClient({
+      const client = newFeaturesClient({
         staleWhileRevalidate: true,
         failureRetryAttempts: 0,
       });
@@ -213,7 +224,7 @@ describe("FlagsClient unit tests", () => {
         json: function () {
           return Promise.resolve({
             success: true,
-            flags: {
+            features: {
               featureB: { value: true, key: "featureB", version: 1 },
             },
           });
@@ -221,10 +232,10 @@ describe("FlagsClient unit tests", () => {
       } as Response);
 
       vi.advanceTimersByTime(TEST_STALE_MS + 1);
-      const client2 = newFlagsClient();
+      const client2 = newFeaturesClient();
       await client2.initialize();
 
-      expect(client2.getFlags()).toEqual({ featureB: true });
+      expect(client2.getFeatures()).toEqual({ featureB: true });
 
       // new fetch was fired
       // stale while validate in the background
@@ -234,10 +245,10 @@ describe("FlagsClient unit tests", () => {
 
   test("expires cache eventually", async () => {
     // change the response so we can validate that we'll serve the stale cache
-    const { newFlagsClient, httpClient } = flagsClientFactory();
-    const client = newFlagsClient();
+    const { newFeaturesClient, httpClient } = featuresClientFactory();
+    const client = newFeaturesClient();
     await client.initialize();
-    const a = client.getFlags();
+    const a = client.getFeatures();
 
     vi.advanceTimersByTime(FLAGS_EXPIRE_MS + 1);
     vi.mocked(httpClient.get).mockResolvedValue({
@@ -246,15 +257,15 @@ describe("FlagsClient unit tests", () => {
       json: () =>
         Promise.resolve({
           success: true,
-          flags: {
+          features: {
             featureB: { value: true, key: "featureB" },
           },
         }),
     } as Response);
-    const client2 = newFlagsClient();
+    const client2 = newFeaturesClient();
     await client2.initialize();
 
-    const b = client2.getFlags();
+    const b = client2.getFeatures();
 
     expect(httpClient.get).toHaveBeenCalledTimes(2);
     expect(a).not.toEqual(b);
@@ -263,14 +274,14 @@ describe("FlagsClient unit tests", () => {
 
 describe(`sends "check" events`, () => {
   it("sends check event", async () => {
-    const { newFlagsClient, httpClient } = flagsClientFactory();
-    const client = newFlagsClient();
+    const { newFeaturesClient, httpClient } = featuresClientFactory();
+    const client = newFeaturesClient();
     await client.initialize();
 
-    const _ = client.getFlags()?.featureA;
+    const _ = client.getFeatures()?.featureA;
     expect(httpClient.post).toHaveBeenCalledTimes(1);
     expect(httpClient.post).toHaveBeenCalledWith({
-      path: "flags/events",
+      path: "features/events",
       body: {
         action: "check",
         evalContext: {
@@ -279,22 +290,22 @@ describe(`sends "check" events`, () => {
           },
         },
         evalResult: true,
-        flagKey: "featureA",
-        flagVersion: 1,
+        featureKey: "featureA",
+        featureVersion: 1,
       },
     });
   });
 
-  it("sends check event for not-enabled flags", async () => {
-    // disabled flags don't appear in the API response
-    const { newFlagsClient, httpClient } = flagsClientFactory();
-    const client = newFlagsClient();
+  it("sends check event for not-enabled features", async () => {
+    // disabled features don't appear in the API response
+    const { newFeaturesClient, httpClient } = featuresClientFactory();
+    const client = newFeaturesClient();
     await client.initialize();
 
-    const _ = client.getFlags()?.notAvailableFlag;
+    const _ = client.getFeatures()?.notAvailableFeature;
     expect(httpClient.post).toHaveBeenCalledTimes(1);
     expect(httpClient.post).toHaveBeenCalledWith({
-      path: "flags/events",
+      path: "features/events",
       body: {
         action: "check",
         evalContext: {
@@ -303,7 +314,7 @@ describe(`sends "check" events`, () => {
           },
         },
         evalResult: false,
-        flagKey: "notAvailableFlag",
+        featureKey: "notAvailableFeature",
       },
     });
   });
