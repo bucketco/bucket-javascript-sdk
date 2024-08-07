@@ -36,7 +36,7 @@ async function getOpenedWidgetContainer(
     await route.fulfill({ status: 200 });
   });
 
-  await page.route(`${API_HOST}/flags/evaluate*`, async (route) => {
+  await page.route(`${API_HOST}/features/evaluate*`, async (route) => {
     await route.fulfill({
       status: 200,
       body: JSON.stringify({

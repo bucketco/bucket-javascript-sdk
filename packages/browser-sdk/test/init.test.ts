@@ -7,7 +7,6 @@ import { getFeatures } from "./mocks/handlers";
 import { server } from "./mocks/server";
 
 const KEY = "123";
-const CUSTOM_HOST = "https://example.com";
 
 const logger = {
   debug: vi.fn(),
@@ -40,7 +39,7 @@ describe("init", () => {
 
     server.use(
       http.get(
-        "https://example.com/flags/evaluate",
+        "https://example.com/features/evaluate",
         ({ request }: { request: StrictRequest<DefaultBodyType> }) => {
           usedSpecialHost = true;
           return getFeatures({ request });

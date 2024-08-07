@@ -167,7 +167,7 @@ export async function getFlags({
   // sort the params to ensure that the URL is the same for the same context
   params.sort();
 
-  const url = `${apiBaseUrl}/flags/evaluate?` + params.toString();
+  const url = `${apiBaseUrl}/features/evaluate?` + params.toString();
   const cachedItem = cache.get(url);
 
   // if there's no cached item OR the cached item is a failure and we haven't retried

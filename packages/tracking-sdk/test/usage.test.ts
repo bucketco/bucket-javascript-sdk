@@ -84,7 +84,7 @@ describe("usage", () => {
       })
       .reply(200);
     nock(`${API_HOST}/${KEY}`)
-      .get(/.*\/flags\/evaluate\?context.user.id=/)
+      .get(/.*\/features\/evaluate\?context.user.id=/)
       .reply(200, {
         success: true,
         flags: {

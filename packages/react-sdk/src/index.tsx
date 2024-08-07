@@ -15,9 +15,9 @@ import {
   BucketClient,
   BucketContext,
   CompanyContext,
+  FeaturesOptions,
   Feedback,
   FeedbackOptions,
-  FeaturesOptions,
   RequestFeedbackOptions,
   UserContext,
 } from "@bucketco/browser-sdk";
@@ -254,11 +254,8 @@ export function useFeatureIsEnabled(featureKey: BucketFeatures) {
  * Returns the state of a given feature for the current context, e.g.
  *
  * ```ts
- * const huddleFeature = useFeature("huddle");
- * // {
- * //   "isLoading": false,
- * //   "isEnabled": true,
- * // }
+ * const {isEnabled, isLoading, track} = useFeature("huddle");
+ * 
  * ```
  */
 export function useFeature(key: BucketFeatures) {
