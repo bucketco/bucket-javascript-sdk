@@ -163,60 +163,58 @@ function evaluateRecursively(
   context: Record<string, string>,
   missingContextFieldsSet: Set<string>,
 ): boolean {
-  if (filter.type === "context") {
-    if (!(filter.field in context)) {
-      missingContextFieldsSet.add(filter.field);
-      return false;
-    }
 
-    return evaluate(
-      context[filter.field],
-      filter.operator,
-      filter.values || [],
-    );
-  }
-
-  if (filter.type === "rolloutPercentage") {
-    if (filter.partialRolloutThreshold === 100000) {
-      return true;
-    }
-
-    missingContextFieldsSet.add(filter.partialRolloutAttribute);
-
-    if (!(filter.partialRolloutAttribute in context)) {
-      return false;
-    }
-
-    return (
-      hashInt(`${filter.flagKey}.${context[filter.partialRolloutAttribute]}`) >
-      filter.partialRolloutThreshold
-    );
-  }
-
-  if (filter.type === "group") {
-    const isAnd = filter.operator === "and";
-
-    return filter.filters.reduce((acc, current) => {
-      if (filter.operator === "and") {
-        return (
-          acc && evaluateRecursively(current, context, missingContextFieldsSet)
-        );
+  switch (filter.type) {
+    case "constant":
+      return filter.value;
+    case "context":
+      if (!(filter.field in context)) {
+        missingContextFieldsSet.add(filter.field);
+        return false;
       }
-      return (
-        acc || evaluateRecursively(current, context, missingContextFieldsSet)
+  
+      return evaluate(
+        context[filter.field],
+        filter.operator,
+        filter.values || [],
       );
-    }, isAnd);
-  }
+    case "rolloutPercentage":
+      if (filter.partialRolloutThreshold === 100000) {
+        return true;
+      }
+  
+      missingContextFieldsSet.add(filter.partialRolloutAttribute);
+  
+      if (!(filter.partialRolloutAttribute in context)) {
+        return false;
+      }
+  
+      return (
+        hashInt(`${filter.flagKey}.${context[filter.partialRolloutAttribute]}`) >
+        filter.partialRolloutThreshold
+      );
+    case "group":
+      const isAnd = filter.operator === "and";
 
-  if (filter.type === "negation") {
-    return !evaluateRecursively(
-      filter.filter,
-      context,
-      missingContextFieldsSet,
-    );
+      return filter.filters.reduce((acc, current) => {
+        if (filter.operator === "and") {
+          return (
+            acc && evaluateRecursively(current, context, missingContextFieldsSet)
+          );
+        }
+        return (
+          acc || evaluateRecursively(current, context, missingContextFieldsSet)
+        );
+      }, isAnd);
+    case "negation":
+      return !evaluateRecursively(
+        filter.filter,
+        context,
+        missingContextFieldsSet,
+      );
+    default:
+      return false;
   }
-
-return false;
 }
 
 export function evaluate(

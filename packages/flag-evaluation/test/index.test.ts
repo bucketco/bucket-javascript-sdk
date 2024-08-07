@@ -27,6 +27,83 @@ const flag: FlagData = {
 };
 
 describe("evaluate flag integration ", () => {
+  it("evaluates all kinds of filters", async () => {
+    // Flag with context filter, rollout percentage AND and OR groups, negation and constant filters
+    const flag: FlagData = {
+      key: "flag",
+      rules: [
+        {
+          filter: {
+            type: "group",
+            operator: "and",
+            filters: [
+              {
+                type: "context",
+                field: "company.id",
+                operator: "IS",
+                values: ["company1"],
+              },
+              {
+                type: "rolloutPercentage",
+                flagKey: "flag",
+                partialRolloutAttribute: "company.id",
+                partialRolloutThreshold: 100000,
+              },
+              {
+                type: "group",
+                operator: "or",
+                filters: [
+                  {
+                    type: "context",
+                    field: "company.id",
+                    operator: "IS",
+                    values: ["company2"],
+                  },
+                  {
+                    type: "negation",
+                    filter: {
+                      type: "context",
+                      field: "company.id",
+                      operator: "IS",
+                      values: ["company3"],
+                    },
+                  },
+                ],
+              },
+              {
+                type: "negation",
+                filter: {
+                  type: "constant",
+                  value: false,
+                },
+              },
+            ],
+          },
+        },
+      ],
+    };
+
+    const context = {
+      "company.id": "company1",
+    };
+
+    const res = evaluateFlag({
+      flag,
+      context,
+    });
+
+    expect(res).toEqual({
+      value: true,
+      context: {
+        "company.id": "company1",
+      },
+      flag,
+      missingContextFields: [],
+      reason: "rule #0 matched",
+      ruleEvaluationResults: [true],
+    });
+  });
+
   it("evaluates flag when there's no matching rule", async () => {
     const res = evaluateFlag({
       flag,
