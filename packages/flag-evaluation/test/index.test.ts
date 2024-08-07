@@ -97,7 +97,7 @@ describe("evaluate flag integration ", () => {
       context: {
         "company.id": "company1",
       },
-      flag,
+      flag: flagWithAllFilterTypes,
       missingContextFields: [],
       reason: "rule #0 matched",
       ruleEvaluationResults: [true],
