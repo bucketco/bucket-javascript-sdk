@@ -2,7 +2,7 @@ export { BucketClient } from "./client";
 export type {
   Attributes,
   ClientOptions,
-  Flags,
+  Features,
   HttpClient,
   Logger,
   TrackingMeta,

@@ -20,7 +20,7 @@ import {
   SDK_VERSION_HEADER_NAME,
 } from "../src/config";
 import fetchClient from "../src/fetch-http-client";
-import { ClientOptions, Features } from "../src/types";
+import { ClientOptions, FeaturesAPIResponse } from "../src/types";
 import { checkWithinAllottedTimeWindow } from "../src/utils";
 
 vi.mock("@bucketco/flag-evaluation", async (importOriginal) => {
@@ -792,7 +792,7 @@ describe("BucketClientClass", () => {
   describe("getFlags", () => {
     let client: BucketClientClass;
 
-    const featureDefinitions: Features = {
+    const featureDefinitions: FeaturesAPIResponse = {
       features: [
         {
           key: "flag1",

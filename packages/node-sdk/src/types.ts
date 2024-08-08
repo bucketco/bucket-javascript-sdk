@@ -81,21 +81,21 @@ export interface Flag {
  * @remarks
  * Extends the Flags interface to define the available flags.
  */
-export interface Flags {}
+export interface Features {}
 
 /**
  * Describes a collection of (strong-typed) evaluated feature flags.
  *
  * @typeParam Flags - The type of the flags that is declared by the developer.
  */
-export type TypedFlags = keyof Flags extends never
+export type TypedFeatures = keyof Features extends never
   ? Record<string, boolean>
-  : Record<keyof Flags, boolean>;
+  : Record<keyof Features, boolean>;
 
 /**
  * Describes the response of the features endpoint
  */
-export type Features = {
+export type FeaturesAPIResponse = {
   /** The flag definitions */
   features: (FeatureData & { targeting: { version: number } })[];
 };
@@ -232,7 +232,7 @@ export type ClientOptions = {
   /**
    * The flags to use as fallbacks when the API is unavailable (optional).
    **/
-  fallbackFlags?: TypedFlags;
+  fallbackFlags?: TypedFeatures;
 
   /**
    * The HTTP client to use for sending requests (optional). Default is the built-in fetch client.
@@ -325,7 +325,7 @@ interface BucketClientBase {
    * @remarks
    * Call `initialize` before calling this method to ensure the feature flag definitions are cached, empty flags will be returned otherwise.
    **/
-  getFlags(): Readonly<TypedFlags>;
+  getFlags(): Readonly<TypedFeatures>;
 }
 
 /**

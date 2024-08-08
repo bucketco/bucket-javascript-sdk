@@ -17,11 +17,11 @@ import {
   ClientOptions,
   FeatureFlagEvent,
   Flag,
-  Features,
+  FeaturesAPIResponse,
   HttpClient,
   Logger,
   TrackOptions,
-  TypedFlags,
+  TypedFeatures,
 } from "./types";
 import {
   checkWithinAllottedTimeWindow,
@@ -54,8 +54,8 @@ export class BucketClientClass {
     refetchInterval: number;
     staleWarningInterval: number;
     headers: Record<string, string>;
-    fallbackFlags?: Record<keyof TypedFlags, Flag>;
-    featureFlagDefinitionCache?: Cache<Features>;
+    fallbackFlags?: Record<keyof TypedFeatures, Flag>;
+    featureFlagDefinitionCache?: Cache<FeaturesAPIResponse>;
   };
 
   private _otherContext: Record<string, any> | undefined;
@@ -121,13 +121,13 @@ export class BucketClientClass {
       options.fallbackFlags &&
       Object.entries(options.fallbackFlags).reduce(
         (acc, [key, value]) => {
-          acc[key as keyof TypedFlags] = {
+          acc[key as keyof TypedFeatures] = {
             key,
             value: value as boolean,
           };
           return acc;
         },
-        {} as Record<keyof TypedFlags, Flag>,
+        {} as Record<keyof TypedFeatures, Flag>,
       );
 
     this._shared = {
@@ -278,12 +278,12 @@ export class BucketClientClass {
 
   private getFeatureFlagDefinitionCache() {
     if (!this._shared.featureFlagDefinitionCache) {
-      this._shared.featureFlagDefinitionCache = cache<Features>(
+      this._shared.featureFlagDefinitionCache = cache<FeaturesAPIResponse>(
         this._shared.refetchInterval,
         this._shared.staleWarningInterval,
         this._shared.logger,
         async () => {
-          const res = await this.get<Features>("features");
+          const res = await this.get<FeaturesAPIResponse>("features");
 
           if (!isObject(res) || !Array.isArray(res?.features)) {
             return undefined;
@@ -541,7 +541,7 @@ export class BucketClientClass {
    * @remarks
    * Call `initialize` before calling this method to ensure the feature flag definitions are cached, empty flags will be returned otherwise.
    **/
-  public getFlags(): Readonly<TypedFlags> {
+  public getFlags(): Readonly<TypedFeatures> {
     const mergedContext = {
       user: this._user && {
         id: this._user.userId,
@@ -555,7 +555,7 @@ export class BucketClientClass {
     };
 
     const flagDefinitions = this.getFeatureFlagDefinitionCache().get();
-    let evaluatedFlags: Record<keyof TypedFlags, Flag> =
+    let evaluatedFlags: Record<keyof TypedFeatures, Flag> =
       this._shared.fallbackFlags || {};
 
     if (flagDefinitions) {
@@ -583,14 +583,14 @@ export class BucketClientClass {
         .filter((e) => e.value)
         .reduce(
           (acc, res) => {
-            acc[res.feature.key as keyof TypedFlags] = {
+            acc[res.feature.key as keyof TypedFeatures] = {
               key: res.feature.key,
               value: res.value,
               version: keyToVersionMap.get(res.feature.key),
             };
             return acc;
           },
-          {} as Record<keyof TypedFlags, Flag>,
+          {} as Record<keyof TypedFeatures, Flag>,
         );
 
       this._shared.logger?.debug("evaluated flags", evaluatedFlags);

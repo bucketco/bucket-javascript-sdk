@@ -37,21 +37,21 @@ import { BucketClient } from "@bucketco/node-sdk";
 // to avoid multiple round-trips to our servers.
 const client = new BucketClient({
   secretKey: "sec_prod_xxxxxxxxxxxxxxxxxxxxx",
-  fallbackFlags: { can_see_new_reports: true },
+  fallbackFeatures: { can_see_new_reports: true },
 });
 
-// Initialize the client and begin fetching flag definitions.
-// You must call this method prior to any calls to `getFlags()`,
+// Initialize the client and begin fetching feature targeting definitions.
+// You must call this method prior to any calls to `getFeatures()`,
 // otherwise an empty object will be returned.
 //
-// You can also supply your `fallbackFlags` to the `initialize()` method. These
-// fallback flags are used in the situation when the server-side flags are not
+// You can also supply your `fallbackFeatures` to the `initialize()` method. These
+// fallback features are used in the situation when the server-side features are not
 // yet loaded or there are issues retrieving them.
 // See "Initialization Options" below for more information.
 await client.initialize();
 ```
 
-Once the client is initialized, one can obtain the evaluated flags.
+Once the client is initialized, one can obtain the evaluated features.
 
 At any point where the client needs to be used, we can configure it through
 `withUser()`, `withCompany()` and `withOtherContext()` methods. Each of
@@ -68,17 +68,13 @@ const boundClient = client
 ```
 
 ```ts
-// get the current flags (uses company, user and custom context to evaluate the flags).
-const flags = boundClient.getFlags();
+// get the current features (uses company, user and custom context to evaluate the features).
+const features = boundClient.getFeatures();
 
-if (flags.can_see_new_reports) {
-  // this is your flag-protected code ...
+if (features["can_see_new_reports"]?.isEnabled) {
+  // this is your feature gated code ...
   // send an event when the feature is used:
-  boundClient.trackFeatureUsage("new_reports_used", {
-    attributes: {
-      some: "attribute",
-    },
-  });
+  features["can_see_new_reports"].track();
 }
 ```
 
@@ -88,7 +84,7 @@ Tracking allows sending `user`, `company` and `event` messages to Bucket.
 `user` events can be used to register or update a user's attributes
 with Bucket. `company` allows the same, and additionally, allows
 associating an user with a company on the Bucket side. Finally, `event`
-is used to track feature usage across your application.
+is used to custom events in your application.
 
 The following example shows how to register a new user, and associate it with a company:
 
@@ -134,10 +130,7 @@ client
 To generate feature tracking `event`s:
 
 ```ts
-// this simply sends an event to Bucket, not associated with any company or user.
-client.trackFeatureUsage("some_feature_name");
-
-// to specify to which user/company this event belongs one can do
+// this simply sends an event to Bucket
 client
   .withUser("user_id")
   .withCompany("company_id")
@@ -158,9 +151,9 @@ Supply these to the `constructor` of the `Client` class:
   logger?: Logger,
   // The custom http client. By default the internal `fetchClient` is used.
   httpClient?: HttpClient = fetchCient,
-  // A map of fallback flags that will be used when no actual flags
+  // A map of fallback features that will be used when no actual features
   // are available yet.
-  fallbackFlags?: Record<string, boolean>
+  fallbackFeatures?: Record<string, boolean>
 }
 ```
 
