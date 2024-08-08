@@ -48,7 +48,7 @@ function getProvider(props: Partial<BucketProps> = {}) {
 }
 
 const server = setupServer(
-  http.get(/\/features\/evaluate$/, () => {
+  http.get(/\/features\/enabled$/, () => {
     return new HttpResponse(
       JSON.stringify({
         success: true,
@@ -92,7 +92,7 @@ const server = setupServer(
       { status: 200 },
     );
   }),
-  http.post(/\/flags\/events$/, () => {
+  http.post(/\/features\/events$/, () => {
     return new HttpResponse(
       JSON.stringify({
         success: false,
