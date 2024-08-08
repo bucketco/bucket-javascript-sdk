@@ -212,7 +212,7 @@ export class FeaturesClient {
     const cacheKey = params.toString();
     try {
       const res = await this.httpClient.get({
-        path: "/features/evaluate",
+        path: "/features/enabled",
         timeoutMs: this.config.timeoutMs,
         params,
       });

@@ -39,7 +39,7 @@ describe("init", () => {
 
     server.use(
       http.get(
-        "https://example.com/features/evaluate",
+        "https://example.com/features/enabled",
         ({ request }: { request: StrictRequest<DefaultBodyType> }) => {
           usedSpecialHost = true;
           return getFeatures({ request });

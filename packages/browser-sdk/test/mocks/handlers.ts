@@ -103,7 +103,7 @@ export const handlers = [
       success: true,
     });
   }),
-  http.get("https://front.bucket.co/features/evaluate", getFeatures),
+  http.get("https://front.bucket.co/features/enabled", getFeatures),
   http.post(
     "https://front.bucket.co/feedback/prompting-init",
     ({ request }) => {
