@@ -1,15 +1,28 @@
 import { randomUUID } from "crypto";
 import { expect, test } from "@playwright/test";
 
+import { API_HOST } from "../../src/config";
+
 const KEY = randomUUID();
 
 test("Acceptance", async ({ page }) => {
-  await page.goto("http://localhost:8000/test/e2e/empty.html");
+  await page.goto("http://localhost:8001/test/e2e/empty.html");
 
   const successfulRequests: string[] = [];
 
   // Mock API calls with assertions
-  await page.route(`https://front.bucket.co/user`, async (route) => {
+  await page.route(`${API_HOST}/flags/evaluate*`, async (route) => {
+    successfulRequests.push("FLAGS");
+    await route.fulfill({
+      status: 200,
+      body: JSON.stringify({
+        success: true,
+        flags: {},
+      }),
+    });
+  });
+
+  await page.route(`${API_HOST}/user`, async (route) => {
     expect(route.request().method()).toEqual("POST");
     expect(route.request().postDataJSON()).toMatchObject({
       userId: "foo",
@@ -25,7 +38,7 @@ test("Acceptance", async ({ page }) => {
     });
   });
 
-  await page.route(`https://front.bucket.co/company`, async (route) => {
+  await page.route(`${API_HOST}/company`, async (route) => {
     expect(route.request().method()).toEqual("POST");
     expect(route.request().postDataJSON()).toMatchObject({
       userId: "foo",
@@ -42,7 +55,7 @@ test("Acceptance", async ({ page }) => {
     });
   });
 
-  await page.route(`https://front.bucket.co/event`, async (route) => {
+  await page.route(`${API_HOST}/event`, async (route) => {
     expect(route.request().method()).toEqual("POST");
     expect(route.request().postDataJSON()).toMatchObject({
       userId: "foo",
@@ -60,7 +73,7 @@ test("Acceptance", async ({ page }) => {
     });
   });
 
-  await page.route(`https://front.bucket.co/feedback`, async (route) => {
+  await page.route(`${API_HOST}/feedback`, async (route) => {
     expect(route.request().method()).toEqual("POST");
     expect(route.request().postDataJSON()).toMatchObject({
       userId: "foo",
@@ -79,15 +92,11 @@ test("Acceptance", async ({ page }) => {
     });
   });
 
-  // Load the built Bucket SDK
-  await page.addScriptTag({
-    url: "http://localhost:8000/dist/bucket-browser-sdk.js",
-  });
-
   // Golden path requests
   await page.evaluate(`
     ;(async () => {
-      const bucketClient = new window.BucketClient("${KEY}", {
+    const { BucketClient } = await import("/dist/bucket-browser-sdk.mjs");
+      const bucketClient = new BucketClient("${KEY}", {
         user: {
           id: "foo",
           name: "john doe",
@@ -112,5 +121,11 @@ test("Acceptance", async ({ page }) => {
   `);
 
   // Assert all API requests were made
-  expect(successfulRequests).toEqual(["USER", "COMPANY", "EVENT", "FEEDBACK"]);
+  expect(successfulRequests).toEqual([
+    "FLAGS",
+    "USER",
+    "COMPANY",
+    "EVENT",
+    "FEEDBACK",
+  ]);
 });

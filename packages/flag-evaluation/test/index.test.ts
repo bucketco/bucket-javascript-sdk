@@ -4,20 +4,106 @@ const flag: FlagData = {
   key: "flag",
   rules: [
     {
-      partialRolloutThreshold: 100000,
-      partialRolloutAttribute: "company.id",
-      filter: [
-        {
-          field: "company.id",
-          operator: "IS",
-          values: ["company1"],
-        },
-      ],
+      filter: {
+        type: "group",
+        operator: "and",
+        filters: [
+          {
+            type: "context",
+            field: "company.id",
+            operator: "IS",
+            values: ["company1"],
+          },
+          {
+            type: "rolloutPercentage",
+            flagKey: "flag",
+            partialRolloutAttribute: "company.id",
+            partialRolloutThreshold: 100000,
+          },
+        ],
+      },
     },
   ],
 };
 
 describe("evaluate flag integration ", () => {
+  it("evaluates all kinds of filters", async () => {
+    // Flag with context filter, rollout percentage AND and OR groups, negation and constant filters
+    const flagWithAllFilterTypes: FlagData = {
+      key: "flag",
+      rules: [
+        {
+          filter: {
+            type: "group",
+            operator: "and",
+            filters: [
+              {
+                type: "context",
+                field: "company.id",
+                operator: "IS",
+                values: ["company1"],
+              },
+              {
+                type: "rolloutPercentage",
+                flagKey: "flag",
+                partialRolloutAttribute: "company.id",
+                partialRolloutThreshold: 100000,
+              },
+              {
+                type: "group",
+                operator: "or",
+                filters: [
+                  {
+                    type: "context",
+                    field: "company.id",
+                    operator: "IS",
+                    values: ["company2"],
+                  },
+                  {
+                    type: "negation",
+                    filter: {
+                      type: "context",
+                      field: "company.id",
+                      operator: "IS",
+                      values: ["company3"],
+                    },
+                  },
+                ],
+              },
+              {
+                type: "negation",
+                filter: {
+                  type: "constant",
+                  value: false,
+                },
+              },
+            ],
+          },
+        },
+      ],
+    };
+
+    const context = {
+      "company.id": "company1",
+    };
+
+    const res = evaluateFlag({
+      flag: flagWithAllFilterTypes,
+      context,
+    });
+
+    expect(res).toEqual({
+      value: true,
+      context: {
+        "company.id": "company1",
+      },
+      flag: flagWithAllFilterTypes,
+      missingContextFields: [],
+      reason: "rule #0 matched",
+      ruleEvaluationResults: [true],
+    });
+  });
+
   it("evaluates flag when there's no matching rule", async () => {
     const res = evaluateFlag({
       flag,
@@ -37,15 +123,24 @@ describe("evaluate flag integration ", () => {
         key: "flag",
         rules: [
           {
-            partialRolloutThreshold: 100000,
-            partialRolloutAttribute: "company.id",
-            filter: [
-              {
-                field: "company.id",
-                operator: "IS",
-                values: ["company1"],
-              },
-            ],
+            filter: {
+              type: "group",
+              operator: "and",
+              filters: [
+                {
+                  type: "context",
+                  field: "company.id",
+                  operator: "IS",
+                  values: ["company1"],
+                },
+                {
+                  type: "rolloutPercentage",
+                  flagKey: "flag",
+                  partialRolloutAttribute: "company.id",
+                  partialRolloutThreshold: 100000,
+                },
+              ],
+            },
           },
         ],
       },
@@ -82,13 +177,24 @@ describe("evaluate flag integration ", () => {
       key: "flag",
       rules: [
         {
-          filter: [
-            {
-              field: "some_field",
-              operator: "IS",
-            },
-          ],
-          partialRolloutThreshold: 100000,
+          filter: {
+            type: "group",
+            operator: "and",
+            filters: [
+              {
+                type: "context",
+                field: "some_field",
+                operator: "IS",
+                values: [""],
+              },
+              {
+                type: "rolloutPercentage",
+                flagKey: "flag",
+                partialRolloutAttribute: "some_field",
+                partialRolloutThreshold: 100000,
+              },
+            ],
+          },
         },
       ],
     };
@@ -132,8 +238,12 @@ describe("evaluate flag integration ", () => {
       key: "myflag",
       rules: [
         {
-          partialRolloutAttribute: "happening.id",
-          partialRolloutThreshold: 50000,
+          filter: {
+            type: "rolloutPercentage" as const,
+            flagKey: "myflag",
+            partialRolloutAttribute: "happening.id",
+            partialRolloutThreshold: 50000,
+          },
         },
       ],
     };

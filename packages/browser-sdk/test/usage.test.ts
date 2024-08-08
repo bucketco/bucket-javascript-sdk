@@ -159,8 +159,8 @@ describe("feedback prompting", () => {
 describe("feedback state management", () => {
   const message = {
     question: "How are you?",
-    showAfter: new Date(Date.now() - 1000).valueOf(),
-    showBefore: new Date(Date.now() + 1000).valueOf(),
+    showAfter: new Date(Date.now() - 10000).valueOf(),
+    showBefore: new Date(Date.now() + 10000).valueOf(),
     promptId: "123",
     featureId: "456",
   };
@@ -201,7 +201,7 @@ describe("feedback state management", () => {
 
   test("ignores prompt if expired", async () => {
     vi.useFakeTimers();
-    vi.setSystemTime(message.showAfter - 1000);
+    vi.setSystemTime(message.showAfter - 10000);
 
     const callback = vi.fn();
 

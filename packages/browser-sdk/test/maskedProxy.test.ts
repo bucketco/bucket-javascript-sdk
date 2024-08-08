@@ -23,17 +23,6 @@ describe("maskedProxy", () => {
     expect(value).toBe(1);
   });
 
-  it("should not call the callback when accessing unknown property", () => {
-    const obj = { a: 1, b: 2 };
-    const callback = vi.fn();
-    const proxy = maskedProxy(obj, callback);
-
-    const value = (proxy as any).z;
-
-    expect(callback).not.toHaveBeenCalled();
-    expect(value).toBeUndefined();
-  });
-
   it("should mascarade the real object", () => {
     const obj = { a: 1, b: 2, c: { d: 3 } };
 

@@ -116,8 +116,8 @@ describe("processPromptMessage", () => {
 
     const prompt = {
       ...promptTemplate,
-      showAfter: new Date(now - 1000),
-      showBefore: new Date(now + 1000),
+      showAfter: new Date(now - 10000),
+      showBefore: new Date(now + 10000),
     };
 
     const showCallback = vi.fn();
@@ -131,8 +131,8 @@ describe("processPromptMessage", () => {
   test("will not process expired prompts", () => {
     const prompt = {
       ...promptTemplate,
-      showAfter: new Date(now - 1000),
-      showBefore: new Date(now - 500),
+      showAfter: new Date(now - 10000),
+      showBefore: new Date(now - 5000),
     };
 
     const showCallback = vi.fn();
@@ -147,8 +147,8 @@ describe("processPromptMessage", () => {
   test("will process prompts that are ready to be shown", () => {
     const prompt = {
       ...promptTemplate,
-      showAfter: new Date(now - 500),
-      showBefore: new Date(now + 500),
+      showAfter: new Date(now - 10000),
+      showBefore: new Date(now + 10000),
     };
 
     const showCallback = vi
@@ -175,8 +175,8 @@ describe("processPromptMessage", () => {
   test("will process and delay prompts that are not yet ready to be shown", () => {
     const prompt = {
       ...promptTemplate,
-      showAfter: new Date(now + 500),
-      showBefore: new Date(now + 1000),
+      showAfter: new Date(now + 5000),
+      showBefore: new Date(now + 10000),
     };
 
     const showCallback = vi
