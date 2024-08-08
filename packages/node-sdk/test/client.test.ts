@@ -9,7 +9,7 @@ import {
   vi,
 } from "vitest";
 
-import { evaluateFlag } from "@bucketco/flag-evaluation";
+import { evaluateTargeting } from "@bucketco/flag-evaluation";
 
 import { BucketClient, BucketClientClass } from "../src/client";
 import {
@@ -27,7 +27,7 @@ vi.mock("@bucketco/flag-evaluation", async (importOriginal) => {
   const original = (await importOriginal()) as any;
   return {
     ...original,
-    evaluateFlag: vi.fn(),
+    evaluateTargeting: vi.fn(),
   };
 });
 
@@ -792,7 +792,7 @@ describe("BucketClientClass", () => {
   describe("getFlags", () => {
     let client: BucketClientClass;
 
-    const flagDefinitions: Features = {
+    const featureDefinitions: Features = {
       features: [
         {
           key: "flag1",
@@ -833,16 +833,16 @@ describe("BucketClientClass", () => {
       ],
     };
 
-    const evaluatedFlags = [
+    const evaluatedFeatures = [
       {
-        flag: { key: "flag1", version: 1 },
+        feature: { key: "flag1", version: 1 },
         value: true,
         context: {},
         ruleEvaluationResults: [true],
         missingContextFields: [],
       },
       {
-        flag: { key: "flag2", version: 2 },
+        feature: { key: "flag2", version: 2 },
         value: false,
         context: {},
         ruleEvaluationResults: [false],
@@ -855,26 +855,30 @@ describe("BucketClientClass", () => {
         status: 200,
         body: {
           success: true,
-          ...flagDefinitions,
+          ...featureDefinitions,
         },
       });
 
       client = new BucketClientClass(validOptions);
 
-      vi.mocked(evaluateFlag).mockImplementation(({ flag, context }) => {
-        const evalFlag = evaluatedFlags.find((f) => f.flag.key === flag.key)!;
-        const flagDef = flagDefinitions.features.find(
-          (f) => f.key === flag.key,
-        )!;
+      vi.mocked(evaluateTargeting).mockImplementation(
+        ({ feature, context }) => {
+          const evalFlag = evaluatedFeatures.find(
+            (f) => f.feature.key === feature.key,
+          )!;
+          const featureDef = featureDefinitions.features.find(
+            (f) => f.key === feature.key,
+          )!;
 
-        return {
-          value: evalFlag.value,
-          flag: flagDef,
-          context: context,
-          ruleEvaluationResults: evalFlag.ruleEvaluationResults,
-          missingContextFields: evalFlag.missingContextFields,
-        };
-      });
+          return {
+            value: evalFlag.value,
+            feature: featureDef,
+            context: context,
+            ruleEvaluationResults: evalFlag.ruleEvaluationResults,
+            missingContextFields: evalFlag.missingContextFields,
+          };
+        },
+      );
 
       httpClient.post.mockResolvedValue({
         status: 200,
@@ -899,7 +903,7 @@ describe("BucketClientClass", () => {
         flag1: true,
       });
 
-      expect(evaluateFlag).toHaveBeenCalledTimes(2);
+      expect(evaluateTargeting).toHaveBeenCalledTimes(2);
       expect(httpClient.post).toHaveBeenCalledTimes(3); // For "evaluate" events
 
       expect(httpClient.post).toHaveBeenNthCalledWith(
@@ -990,7 +994,7 @@ describe("BucketClientClass", () => {
       await client.initialize();
       client.getFlags();
 
-      expect(evaluateFlag).toHaveBeenCalledTimes(2);
+      expect(evaluateTargeting).toHaveBeenCalledTimes(2);
       expect(httpClient.post).toHaveBeenCalledTimes(2); // For "evaluate" events
 
       expect(httpClient.post).toHaveBeenNthCalledWith(
@@ -1043,7 +1047,7 @@ describe("BucketClientClass", () => {
       await client.initialize();
       client.getFlags();
 
-      expect(evaluateFlag).toHaveBeenCalledTimes(2);
+      expect(evaluateTargeting).toHaveBeenCalledTimes(2);
       expect(httpClient.post).toHaveBeenCalledTimes(2); // For "evaluate" events
 
       expect(httpClient.post).toHaveBeenNthCalledWith(
@@ -1093,7 +1097,7 @@ describe("BucketClientClass", () => {
       await client.initialize();
       client.getFlags();
 
-      expect(evaluateFlag).toHaveBeenCalledTimes(2);
+      expect(evaluateTargeting).toHaveBeenCalledTimes(2);
       expect(httpClient.post).toHaveBeenCalledTimes(2); // For "evaluate" events
 
       expect(httpClient.post).toHaveBeenNthCalledWith(
