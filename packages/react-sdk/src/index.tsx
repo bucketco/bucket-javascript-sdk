@@ -97,7 +97,7 @@ export function BucketProvider({
 }: BucketProps) {
   const [flagsLoading, setFlagsLoading] = useState(true);
   const [flags, setFlags] = useState<FlagsResult>({});
-  
+
   const clientRef = useRef<BucketClient>();
   const contextKeyRef = useRef<string>();
 
