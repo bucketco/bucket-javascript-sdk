@@ -218,7 +218,7 @@ export class FeaturesClient {
       });
 
       if (!res.ok) {
-        let errorBody = "";
+        let errorBody = null;
         try {
           errorBody = await res.json();
         } catch (e) {
@@ -226,7 +226,10 @@ export class FeaturesClient {
         }
 
         throw new Error(
-          "unexpected response code: " + res.status + " - " + errorBody,
+          "unexpected response code: " +
+            res.status +
+            " - " +
+            JSON.stringify(errorBody),
         );
       }
       const typeRes = validateFeaturesResponse(await res.json());
