@@ -1,7 +1,6 @@
 import { DefaultBodyType, http, HttpResponse, StrictRequest } from "msw";
 
-import { Features,FeaturesResponse } from "../../src/feature/features";
-
+import { Features, FeaturesResponse } from "../../src/feature/features";
 
 export const testChannel = "testChannel";
 

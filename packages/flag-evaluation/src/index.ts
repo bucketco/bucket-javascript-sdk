@@ -26,7 +26,7 @@ export interface Rule {
 
 export type FeatureData = {
   key: string;
-  targeting: {rules: Rule[]};
+  targeting: { rules: Rule[] };
 };
 
 export interface EvaluateTargetingParams {

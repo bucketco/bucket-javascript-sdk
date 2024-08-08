@@ -1,4 +1,4 @@
-import { evaluate,  evaluateTargeting,  FeatureData,hashInt } from "../src";
+import { evaluate, evaluateTargeting, FeatureData, hashInt } from "../src";
 
 const feature: FeatureData = {
   key: "feature",
@@ -24,8 +24,8 @@ const feature: FeatureData = {
           ],
         },
       },
-    ]
-  }
+    ],
+  },
 };
 
 describe("evaluate feature targeting integration ", () => {
@@ -35,55 +35,56 @@ describe("evaluate feature targeting integration ", () => {
       key: "feature",
       targeting: {
         rules: [
-        {
-          filter: {
-            type: "group",
-            operator: "and",
-            filters: [
-              {
-                type: "context",
-                field: "company.id",
-                operator: "IS",
-                values: ["company1"],
-              },
-              {
-                type: "rolloutPercentage",
-                flagKey: "flag",
-                partialRolloutAttribute: "company.id",
-                partialRolloutThreshold: 100000,
-              },
-              {
-                type: "group",
-                operator: "or",
-                filters: [
-                  {
-                    type: "context",
-                    field: "company.id",
-                    operator: "IS",
-                    values: ["company2"],
-                  },
-                  {
-                    type: "negation",
-                    filter: {
+          {
+            filter: {
+              type: "group",
+              operator: "and",
+              filters: [
+                {
+                  type: "context",
+                  field: "company.id",
+                  operator: "IS",
+                  values: ["company1"],
+                },
+                {
+                  type: "rolloutPercentage",
+                  flagKey: "flag",
+                  partialRolloutAttribute: "company.id",
+                  partialRolloutThreshold: 100000,
+                },
+                {
+                  type: "group",
+                  operator: "or",
+                  filters: [
+                    {
                       type: "context",
                       field: "company.id",
                       operator: "IS",
-                      values: ["company3"],
+                      values: ["company2"],
                     },
-                  },
-                ],
-              },
-              {
-                type: "negation",
-                filter: {
-                  type: "constant",
-                  value: false,
+                    {
+                      type: "negation",
+                      filter: {
+                        type: "context",
+                        field: "company.id",
+                        operator: "IS",
+                        values: ["company3"],
+                      },
+                    },
+                  ],
                 },
-              },
-            ],
+                {
+                  type: "negation",
+                  filter: {
+                    type: "constant",
+                    value: false,
+                  },
+                },
+              ],
+            },
           },
-        },
-      ]}
+        ],
+      },
     };
 
     const context = {
@@ -154,28 +155,30 @@ describe("evaluate feature targeting integration ", () => {
   it("evaluates flag with missing values", async () => {
     const featureWithSegmentRule: FeatureData = {
       key: "feature",
-      targeting: {rules: [
-        {
-          filter: {
-            type: "group",
-            operator: "and",
-            filters: [
-              {
-                type: "context",
-                field: "some_field",
-                operator: "IS",
-                values: [""],
-              },
-              {
-                type: "rolloutPercentage",
-                flagKey: "flag",
-                partialRolloutAttribute: "some_field",
-                partialRolloutThreshold: 100000,
-              },
-            ],
+      targeting: {
+        rules: [
+          {
+            filter: {
+              type: "group",
+              operator: "and",
+              filters: [
+                {
+                  type: "context",
+                  field: "some_field",
+                  operator: "IS",
+                  values: [""],
+                },
+                {
+                  type: "rolloutPercentage",
+                  flagKey: "flag",
+                  partialRolloutAttribute: "some_field",
+                  partialRolloutThreshold: 100000,
+                },
+              ],
+            },
           },
-        },
-      ],}
+        ],
+      },
     };
 
     const res = evaluateTargeting({
@@ -215,16 +218,18 @@ describe("evaluate feature targeting integration ", () => {
   it("fails evaluation and includes key in missing keys when rollout attribute is missing from context", async () => {
     const myfeature = {
       key: "myfeature",
-      targeting: {rules: [
-        {
-          filter: {
-            type: "rolloutPercentage" as const,
-            flagKey: "myfeature",
-            partialRolloutAttribute: "happening.id",
-            partialRolloutThreshold: 50000,
+      targeting: {
+        rules: [
+          {
+            filter: {
+              type: "rolloutPercentage" as const,
+              flagKey: "myfeature",
+              partialRolloutAttribute: "happening.id",
+              partialRolloutThreshold: 50000,
+            },
           },
-        },
-      ],}
+        ],
+      },
     };
     const res = evaluateTargeting({
       feature: myfeature,

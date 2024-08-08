@@ -72,7 +72,11 @@ export class FeatureCache {
       success,
       features,
       attemptCount,
-    }: { success: boolean; features?: APIFeaturesResponse; attemptCount: number },
+    }: {
+      success: boolean;
+      features?: APIFeaturesResponse;
+      attemptCount: number;
+    },
   ) {
     let cacheData: CacheData = {};
 

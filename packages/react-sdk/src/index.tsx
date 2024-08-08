@@ -101,7 +101,6 @@ export function BucketProvider({
   const clientRef = useRef<BucketClient>();
   const contextKeyRef = useRef<string>();
 
-
   const [featureContext, setFeatureContext] = useState({
     user: initialUser,
     company: initialCompany,
@@ -256,7 +255,8 @@ export function BucketProvider({
  * ```
  */
 export function useFeatureIsEnabled(featureKey: BucketFeatures) {
-  const { features } = useContext<ProviderContextType>(ProviderContext).features;
+  const { features } =
+    useContext<ProviderContextType>(ProviderContext).features;
   return features[featureKey] ?? false;
 }
 
@@ -265,16 +265,16 @@ export function useFeatureIsEnabled(featureKey: BucketFeatures) {
  *
  * ```ts
  * const {isEnabled, isLoading, track} = useFeature("huddle");
- * 
+ *
  * ```
  */
 export function useFeature(key: BucketFeatures) {
   const { features, isLoading } =
-    useContext<ProviderContextType>(ProviderContext).features
+    useContext<ProviderContextType>(ProviderContext).features;
 
-    const isEnabled = features[key] ?? false;
-    
-  return { isLoading: isLoading, isEnabled};
+  const isEnabled = features[key] ?? false;
+
+  return { isLoading: isLoading, isEnabled };
 }
 
 /**
