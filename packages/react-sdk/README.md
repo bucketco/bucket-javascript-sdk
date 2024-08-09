@@ -58,11 +58,11 @@ import { BucketProvider } from "@bucketco/react-sdk";
   If you specify `company` and/or `user` they must have at least the `id` property plus anything additional you want to be able to evaluate feature targeting against. See "Managing Bucket context" below.
 
 - `fallbackFeatures` is a list of strings which specify which features to consider enabled if the SDK is unable to fetch features.
-- `loadingComponent` lets you specify an React component to be rendered instead of the children while the Bucket provider is initializing. If you want more control over loading screens, `useFeatures()` returns `isLoading` which you can use to customize the loading experience:
+- `loadingComponent` lets you specify an React component to be rendered instead of the children while the Bucket provider is initializing. If you want more control over loading screens, `useFeature()` returns `isLoading` which you can use to customize the loading experience:
 
   ```tsx
   function LoadingBucket({ children }) {
-    const {isLoading} = useFeatures()
+    const {isLoading} = useFeature("myFeature")
     if (isLoading) {
       return <Spinner />
     }
@@ -79,28 +79,6 @@ import { BucketProvider } from "@bucketco/react-sdk";
   ```
 
 ## Hooks
-
-### `useFeatureIsEnabled()`
-
-Returns a boolean indicating if the given feature is enabled for the current context.
-`useFeatureIsEnabled` returns false while features are being loaded.
-
-Use `useFeature()` for fine-grained control over loading and rendering.
-
-```tsx
-import { useFeatureIsEnabled } from "@bucketco/react-sdk";
-
-function StartHuddleButton() {
-  const joinHuddleFeatureEnabled = useFeatureIsEnabled("huddle");
-  // true / false
-
-  if (!joinHuddleFeatureEnabled) {
-    return null;
-  }
-
-  return <Button />;
-}
-```
 
 ### `useFeature()`
 
@@ -124,54 +102,9 @@ function StartHuddleButton() {
 }
 ```
 
-### `useFeatures()`
-
-Returns all enabled features as an object. Mostly useful for debugging and getting the current loading state.
-
-```tsx
-import { useFeature } from "@bucketco/react-sdk";
-
-function DebugFeatures() {
-  const { isLoading, features } = useFeatures();
-  // {
-  //   "isLoading": false,
-  //   "features: {
-  //     "join-huddle": true
-  //     "post-message": true
-  //   }
-  // }
-
-  if (isLoading) {
-    return <Loading />;
-  }
-
-  return <pre>{JSON.stringify(features)}</pre>;
-}
-```
-
-### `useUpdateContext()`
-
-`useUpdateContext` returns functions `updateCompany`, `updateUser` and `updateOtherContext`. The functions lets you update the _context_ that is used to determine if a feature is enabled or not. For example, if the user logs out, changes company or similar or a specific property changes on the company as in the example below:
-
-```tsx
-import { useUpdateContext } from "@bucketco/react-sdk";
-
-function Company() {
-  const [company, _] = useState(initialCompany);
-  const { updateCompany } = useUpdateContext();
-  return (
-    <div>
-      <button onClick={() => updateCompany({ ...company, plan: "enterprise" })}>
-        Upgrade to enterprise
-      </button>
-    </div>
-  );
-}
-```
-
 ### `useTrack()`
 
-`useTrack()` lets you send events to Bucket. Use this whenever a user _uses_ a feature. Create [features](https://docs.bucket.co/introduction/concepts/feature) in Bucket based off of these events to analyze feature usage.
+`useTrack()` lets you send custom events to Bucket. Use this whenever a user _uses_ a feature. Create [features](https://docs.bucket.co/introduction/concepts/feature) in Bucket based off of these events to analyze feature usage.
 
 ```tsx
 import { useTrack } from "@bucketco/react-sdk";
