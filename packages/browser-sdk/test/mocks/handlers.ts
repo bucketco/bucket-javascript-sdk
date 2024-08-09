@@ -1,17 +1,17 @@
 import { DefaultBodyType, http, HttpResponse, StrictRequest } from "msw";
 
-import { FeatureFlagsResponse, Flags } from "../../src/flags/flags";
+import { Features, FeaturesResponse } from "../../src/feature/features";
 
 export const testChannel = "testChannel";
 
-export const flagsResponse: FeatureFlagsResponse = {
+export const featureResponse: FeaturesResponse = {
   success: true,
-  flags: {
+  features: {
     featureA: { value: true, key: "featureA", version: 1 },
   },
 };
 
-export const flagsResult: Flags = {
+export const featuresResult: Features = {
   featureA: true,
 };
 
@@ -41,7 +41,7 @@ const invalidReqResponse = new HttpResponse("missing token or sdk", {
   status: 400,
 });
 
-export function flagsEvaluate({
+export function getFeatures({
   request,
 }: {
   request: StrictRequest<DefaultBodyType>;
@@ -53,7 +53,7 @@ export function flagsEvaluate({
     console.error("no user id: " + url.searchParams.get("context.user.id"));
     return HttpResponse.json({ success: false });
   }
-  return HttpResponse.json(flagsResponse);
+  return HttpResponse.json(featureResponse);
 }
 
 export const handlers = [
@@ -102,7 +102,7 @@ export const handlers = [
       success: true,
     });
   }),
-  http.get("https://front.bucket.co/flags/evaluate", flagsEvaluate),
+  http.get("https://front.bucket.co/features/enabled", getFeatures),
   http.post(
     "https://front.bucket.co/feedback/prompting-init",
     ({ request }) => {

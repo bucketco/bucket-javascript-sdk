@@ -19,9 +19,9 @@ import { HttpClient } from "@bucketco/browser-sdk/src/httpClient";
 import {
   BucketProps,
   BucketProvider,
-  useFlag,
-  useFlagIsEnabled,
-  useFlags,
+  useFeature,
+  useFeatureIsEnabled,
+  useFeatures,
   useUpdateContext,
 } from "../src";
 
@@ -48,11 +48,11 @@ function getProvider(props: Partial<BucketProps> = {}) {
 }
 
 const server = setupServer(
-  http.get(/\/flags\/evaluate$/, () => {
+  http.get(/\/features\/enabled$/, () => {
     return new HttpResponse(
       JSON.stringify({
         success: true,
-        flags: {
+        features: {
           abc: {
             key: "abc",
             value: true,
@@ -92,7 +92,7 @@ const server = setupServer(
       { status: 200 },
     );
   }),
-  http.post(/\/flags\/events$/, () => {
+  http.post(/\/features\/events$/, () => {
     return new HttpResponse(
       JSON.stringify({
         success: false,
@@ -112,14 +112,14 @@ beforeAll(() =>
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
-const flags = {
+const features = {
   abc: true,
   def: true,
 };
 
 beforeAll(() => {
   vi.spyOn(BucketClient.prototype, "initialize");
-  vi.spyOn(BucketClient.prototype, "getFlags");
+  vi.spyOn(BucketClient.prototype, "getFeatures");
   vi.spyOn(BucketClient.prototype, "stop");
   vi.spyOn(BucketClient.prototype, "user");
   vi.spyOn(BucketClient.prototype, "company");
@@ -170,7 +170,9 @@ describe("<BucketProvider />", () => {
         logger: undefined,
         sseHost: "https://test.com",
         feedback: undefined,
-        flags: {},
+        features: {
+          onUpdatedFeatures: expect.any(Function),
+        },
         sdkVersion: "react-sdk/1.0.0-beta.1",
       },
     ]);
@@ -190,9 +192,9 @@ describe("<BucketProvider />", () => {
   });
 });
 
-describe("useFlagIsEnabled", () => {
-  test("returns the feature flags in context", async () => {
-    const { result } = renderHook(() => useFlagIsEnabled("abc"), {
+describe("useFeatureIsEnabled", () => {
+  test("returns the features in context", async () => {
+    const { result } = renderHook(() => useFeatureIsEnabled("abc"), {
       wrapper: ({ children }) => getProvider({ children }),
     });
 
@@ -201,15 +203,15 @@ describe("useFlagIsEnabled", () => {
   });
 });
 
-describe("useFlags", () => {
+describe("useFeatures", () => {
   test("returns a loading state initially, stops loading once initialized", async () => {
-    const { result, unmount } = renderHook(() => useFlags(), {
+    const { result, unmount } = renderHook(() => useFeatures(), {
       wrapper: ({ children }) => getProvider({ children }),
     });
 
     await waitFor(() =>
       expect(JSON.stringify(result.current)).toEqual(
-        JSON.stringify({ isLoading: false, flags }),
+        JSON.stringify({ isLoading: false, features }),
       ),
     );
 
@@ -217,9 +219,9 @@ describe("useFlags", () => {
   });
 });
 
-describe("useFlag", () => {
+describe("useFeature", () => {
   test("returns a loading state initially, stops loading once initialized", async () => {
-    const { result, unmount } = renderHook(() => useFlag("test-flag"), {
+    const { result, unmount } = renderHook(() => useFeature("huddle"), {
       wrapper: ({ children }) => getProvider({ children }),
     });
 

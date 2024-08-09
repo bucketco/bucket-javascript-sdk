@@ -1,3 +1,4 @@
+import { FeaturesClient, FeaturesOptions } from "./feature/features";
 import {
   Feedback,
   feedback,
@@ -6,7 +7,6 @@ import {
   RequestFeedbackOptions,
 } from "./feedback/feedback";
 import * as feedbackLib from "./feedback/ui";
-import { FlagsClient, FlagsOptions } from "./flags/flags";
 import { API_HOST, SSE_REALTIME_HOST } from "./config";
 import { BucketContext } from "./context";
 import { HttpClient } from "./httpClient";
@@ -56,7 +56,7 @@ export interface InitOptions {
   host?: string;
   sseHost?: string;
   feedback?: FeedbackOptions;
-  flags?: FlagsOptions;
+  features?: FeaturesOptions;
   sdkVersion?: string;
 }
 
@@ -73,8 +73,8 @@ export class BucketClient {
   private logger: Logger;
   private httpClient: HttpClient;
 
-  private flagsClient: FlagsClient;
   private sseConn: AblySSEConn;
+  private featuresClient: FeaturesClient;
 
   constructor(
     publishableKey: string,
@@ -108,11 +108,11 @@ export class BucketClient {
       this.logger,
     );
 
-    this.flagsClient = new FlagsClient(
+    this.featuresClient = new FeaturesClient(
       this.httpClient,
       this.context,
       this.logger,
-      { ...opts?.flags, liveConn: this.sseConn },
+      { ...opts?.features, liveConn: this.sseConn },
     );
 
     if (
@@ -144,7 +144,7 @@ export class BucketClient {
    * Must be called before calling other SDK methods.
    */
   async initialize() {
-    await this.flagsClient.maybeRefreshFlags();
+    await this.featuresClient.maybeRefreshFeatures();
 
     this.sseConn.open();
 
@@ -315,8 +315,8 @@ export class BucketClient {
     }, 1);
   }
 
-  getFlags() {
-    return this.flagsClient.getFlags();
+  getFeatures() {
+    return this.featuresClient.getFeatures();
   }
 
   stop() {

@@ -1,45 +1,49 @@
-import { FLAG_EVENTS_PER_MIN } from "../config";
+import { FEATURE_EVENTS_PER_MIN } from "../config";
 import { BucketContext } from "../context";
 import { HttpClient } from "../httpClient";
 import { Logger, loggerWithPrefix } from "../logger";
 import RateLimiter from "../rateLimiter";
 import { AblySSEConn } from "../sse";
 
-import { FlagCache, isObject, parseAPIFlagsResponse } from "./flagsCache";
+import {
+  FeatureCache,
+  isObject,
+  parseAPIFeaturesResponse,
+} from "./featureCache";
 import maskedProxy from "./maskedProxy";
 
-export type APIFlagResponse = {
+export type APIFeatureResponse = {
   value: boolean;
   key: string;
   version?: number;
 };
 
-export type APIFlagsResponse = Record<string, APIFlagResponse>;
+export type APIFeaturesResponse = Record<string, APIFeatureResponse>;
 export type APIResponse = {
-  flags: APIFlagsResponse | undefined;
+  features: APIFeaturesResponse | undefined;
   updatedAt: number;
 };
 
-export type Flags = Record<string, boolean>;
+export type Features = Record<string, boolean>;
 
-export type FlagsOptions = {
-  fallbackFlags?: string[];
+export type FeaturesOptions = {
+  fallbackFeatures?: string[];
   timeoutMs?: number;
   staleWhileRevalidate?: boolean;
   failureRetryAttempts?: number | false;
-  onUpdatedFlags?: (flags: Flags) => void;
+  onUpdatedFeatures?: (flags: Features) => void;
 };
 
 type Config = {
-  fallbackFlags: string[];
+  fallbackFeatures: string[];
   timeoutMs: number;
   staleWhileRevalidate: boolean;
   failureRetryAttempts: number | false;
-  onUpdatedFlags?: (flags: Flags) => void;
+  onUpdatedFlags?: (flags: Features) => void;
 };
 
-export const DEFAULT_FLAGS_CONFIG: Config = {
-  fallbackFlags: [],
+export const DEFAULT_FEATURES_CONFIG: Config = {
+  fallbackFeatures: [],
   timeoutMs: 5000,
   staleWhileRevalidate: false,
   failureRetryAttempts: false,
@@ -67,33 +71,33 @@ export function mergeDeep(
   return mergeDeep(target, ...sources);
 }
 
-export type FeatureFlagsResponse = {
+export type FeaturesResponse = {
   success: boolean;
-  flags: APIFlagsResponse;
+  features: APIFeaturesResponse;
 };
 
-export function validateFeatureFlagsResponse(response: any) {
+export function validateFeaturesResponse(response: any) {
   if (!isObject(response)) {
     return;
   }
 
-  const { success, updatedAt, flags } = response;
+  const { success, updatedAt, features } = response;
 
   if (
     typeof success !== "boolean" ||
     typeof updatedAt !== "number" ||
-    !isObject(flags)
+    !isObject(features)
   ) {
     return;
   }
-  const flagsParsed = parseAPIFlagsResponse(flags);
+  const flagsParsed = parseAPIFeaturesResponse(flags);
   if (!flagsParsed) {
     return;
   }
 
   return {
-    success,
-    flags: flagsParsed,
+    success: response.success,
+    features,
     updatedAt,
   };
 }
@@ -113,54 +117,54 @@ export function flattenJSON(obj: Record<string, any>): Record<string, any> {
   return result;
 }
 
-export function clearFlagCache() {
+export function clearFeatureCache() {
   localStorage.clear();
 }
 
-export const FLAGS_STALE_MS = 60000; // turn stale after 60 seconds, optionally reevaluate in the background
-export const FLAGS_EXPIRE_MS = 7 * 24 * 60 * 60 * 1000; // expire entirely after 7 days
+export const FEATURES_STALE_MS = 60000; // turn stale after 60 seconds, optionally reevaluate in the background
+export const FEATURES_EXPIRE_MS = 7 * 24 * 60 * 60 * 1000; // expire entirely after 7 days
 
-const localStorageCacheKey = `__bucket_flags`;
+const localStorageCacheKey = `__bucket_features`;
 
-export class FlagsClient {
+export class FeaturesClient {
   private logger: Logger;
-  private cache: FlagCache;
+  private cache: FeatureCache;
   private config: Config;
   private rateLimiter: RateLimiter;
 
-  private flags: Flags | undefined;
+  private features: Features | undefined;
   private updatedAt: number;
 
   constructor(
     private httpClient: HttpClient,
     private context: BucketContext,
     logger: Logger,
-    options?: FlagsOptions & {
-      cache?: FlagCache;
+    options?: FeaturesOptions & {
+      cache?: FeatureCache;
       rateLimiter?: RateLimiter;
       liveConn?: AblySSEConn;
-      onUpdatedFlags?: (flags: Flags) => void;
+      onUpdatedFeatures?: (flags: Features) => void;
     },
   ) {
-    this.logger = loggerWithPrefix(logger, "[Flags]");
+    this.logger = loggerWithPrefix(logger, "[Features]");
     this.cache = options?.cache
       ? options.cache
-      : new FlagCache({
+      : new FeatureCache({
           storage: {
             get: () => localStorage.getItem(localStorageCacheKey),
             set: (value) => localStorage.setItem(localStorageCacheKey, value),
           },
-          staleTimeMs: FLAGS_STALE_MS,
-          expireTimeMs: FLAGS_EXPIRE_MS,
+          staleTimeMs: FEATURES_STALE_MS,
+          expireTimeMs: FEATURES_EXPIRE_MS,
         });
-    this.config = { ...DEFAULT_FLAGS_CONFIG, ...options };
+    this.config = { ...DEFAULT_FEATURES_CONFIG, ...options };
     this.rateLimiter =
-      options?.rateLimiter ?? new RateLimiter(FLAG_EVENTS_PER_MIN, this.logger);
+      options?.rateLimiter ?? new RateLimiter(FEATURE_EVENTS_PER_MIN, this.logger);
 
     // subscribe to changes in targeting
     options?.liveConn?.addOnMessageCallback("targeting_updated", (message) => {
       if (message.updatedAt && message.updatedAt > this.updatedAt) {
-        this.refreshFlags().catch((e) => {
+        this.refreshFeatures().catch((e) => {
           this.logger.error(
             "error refreshing flags following targeting-updated message",
             e,
@@ -172,36 +176,36 @@ export class FlagsClient {
     this.updatedAt = 0;
   }
 
-  setFlags(flags: APIResponse) {
-    if (!flags.flags) return;
+  setFeatures(features: APIResponse) {
+    if (!features.flags) return;
 
-    const proxiedFlags = maskedProxy(flags.flags, (fs, key) => {
+    const proxiedFlags = maskedProxy(features.flags, (fs, key) => {
       this.sendCheckEvent({
         key,
-        version: fs[key]?.version,
+        version: fs[key]?.,
         value: fs[key]?.value ?? false,
       }).catch((e) => {
-        this.logger.error("error sending flag check event", e);
+        this.logger.error("error sending feature check event", e);
       });
       return fs[key]?.value || false;
     });
-    this.flags = proxiedFlags;
+    this.features = proxiedFlags;
     
     if(this.config.onUpdatedFlags) {
-      this.config.onUpdatedFlags(this.flags);
+      this.config.onUpdatedFlags(this.features);
     }
   }
 
-  public async maybeRefreshFlags() {
-    this.setFlags((await this.maybeFetchFlags()) || {});
+  public async maybeRefreshFeatures() {
+    this.setFeatures((await this.maybeFetchFeatures()) || {});
   }
 
-  public async refreshFlags() {
-    this.setFlags(await this.fetchFlags());
+  public async refreshFeatures() {
+    this.setFeatures(await this.fetchFeatures());
   }
 
-  getFlags(): Flags | undefined {
-    return this.flags;
+  getFeatures(): Features | undefined {
+    return this.features;
   }
 
   private fetchParams() {
@@ -216,7 +220,7 @@ export class FlagsClient {
     return params;
   }
 
-  private async maybeFetchFlags(): Promise<APIResponse> {
+  private async maybeFetchFeatures(): Promise<APIResponse | undefined> {
     const cachedItem = this.cache.get(this.fetchParams().toString());
 
     // if there's no cached item OR the cached item is a failure and we haven't retried
@@ -227,7 +231,7 @@ export class FlagsClient {
         (this.config.failureRetryAttempts === false ||
           cachedItem.attemptCount < this.config.failureRetryAttempts))
     ) {
-      return await this.fetchFlags();
+      return await this.fetchFeatures();
     }
 
     // cachedItem is a success or a failed attempt that we've retried too many times
@@ -235,31 +239,31 @@ export class FlagsClient {
       // serve successful stale cache if `staleWhileRevalidate` is enabled
       if (this.config.staleWhileRevalidate && cachedItem.success) {
         // re-fetch in the background, return last successful value
-        this.fetchFlags().catch(() => {
+        this.fetchFeatures().catch(() => {
           // we don't care about the result, we just want to re-fetch
         });
-        return { flags: cachedItem.flags, updatedAt: cachedItem.updatedAt };
+        return { features: cachedItem.features, updatedAt: cachedItem.updatedAt };
       }
 
-      return await this.fetchFlags();
+      return await this.fetchFeatures();
     }
 
     // serve cached items if not stale and not expired
-    return { flags: cachedItem.flags, updatedAt: cachedItem.updatedAt };
+    return { features: cachedItem.features, updatedAt: cachedItem.updatedAt };
   }
 
-  public async fetchFlags(): Promise<APIResponse> {
+  public async fetchFeatures(): Promise<APIResponse> {
     const params = this.fetchParams();
     const cacheKey = params.toString();
     try {
       const res = await this.httpClient.get({
-        path: "/flags/evaluate",
+        path: "/features/enabled",
         timeoutMs: this.config.timeoutMs,
         params,
       });
 
       if (!res.ok) {
-        let errorBody = "";
+        let errorBody = null;
         try {
           errorBody = await res.json();
         } catch (e) {
@@ -267,31 +271,34 @@ export class FlagsClient {
         }
 
         throw new Error(
-          "unexpected response code: " + res.status + " - " + errorBody,
+          "unexpected response code: " +
+            res.status +
+            " - " +
+            JSON.stringify(errorBody),
         );
       }
-      const typeRes = validateFeatureFlagsResponse(await res.json());
+      const typeRes = validateFeaturesResponse(await res.json());
       if (!typeRes || !typeRes.success) {
         throw new Error("unable to validate response");
       }
 
       this.cache.set(cacheKey, {
         success: true,
-        flags: typeRes.flags,
+        features: typeRes.features,
         updatedAt: typeRes.updatedAt,
         attemptCount: 0,
       });
 
       return typeRes;
     } catch (e) {
-      this.logger.error("error fetching flags: ", e);
+      this.logger.error("error fetching features: ", e);
 
       const current = this.cache.get(cacheKey);
       if (current) {
         // if there is a previous failure cached, increase the attempt count
         this.cache.set(cacheKey, {
           success: current.success,
-          flags: current.flags,
+          features: current.features,
           attemptCount: current.attemptCount + 1,
           updatedAt: current.updatedAt,
         });
@@ -300,61 +307,61 @@ export class FlagsClient {
         // to avoid having the UI wait and spam the API
         this.cache.set(cacheKey, {
           success: false,
-          flags: undefined,
+          features: undefined,
           attemptCount: 1,
           updatedAt: 0,
         });
       }
 
-      const flags = this.config.fallbackFlags.reduce((acc, key) => {
+      const features = this.config.fallbackFeatures.reduce((acc, key) => {
         acc[key] = {
           key,
           value: true,
         };
         return acc;
-      }, {} as APIFlagsResponse);
 
+      }, {} as APIFeaturesResponse);
       return {
-        flags,
-        updatedAt: 0,
-      };
+        features,
+        updatedAt: 0
+      }
     }
   }
 
   /**
-   * Send a flag "check" event.
+   * Send a feature "check" event.
    *
    *
-   * @param flag - The flag to send the event for.
+   * @param feature - The feature to send the event for.
    */
-  async sendCheckEvent(flag: {
+  async sendCheckEvent(feature: {
     key: string;
     value: boolean;
     version?: number;
   }) {
-    const rateLimitKey = `${this.fetchParams().toString()}:${flag.key}:${flag.version}:${flag.value}`;
+    const rateLimitKey = `${this.fetchParams().toString()}:${feature.key}:${feature.version}:${feature.value}`;
 
     await this.rateLimiter.rateLimited(rateLimitKey, async () => {
       const payload = {
         action: "check",
-        flagKey: flag.key,
-        flagVersion: flag.version,
+        key: feature.key,
+        targetingVersion: feature.version,
         evalContext: this.context,
-        evalResult: flag.value,
+        evalResult: feature.value,
       };
 
       this.httpClient
         .post({
-          path: "flags/events",
+          path: "features/events",
           body: payload,
         })
         .catch((e: any) => {
-          this.logger.warn(`failed to send flag check event`, e);
+          this.logger.warn(`failed to send feature check event`, e);
         });
 
-      this.logger.debug(`sent flag event`, payload);
+      this.logger.debug(`sent feature event`, payload);
     });
 
-    return flag.value;
+    return feature.value;
   }
 }

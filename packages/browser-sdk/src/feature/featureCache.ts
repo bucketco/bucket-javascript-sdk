@@ -1,4 +1,4 @@
-import { APIFlagsResponse } from "./flags";
+import { APIFeaturesResponse } from "./features";
 
 interface StorageItem {
   get(): string | null;
@@ -9,47 +9,47 @@ interface cacheEntry {
   expireAt: number;
   staleAt: number;
   success: boolean; // we also want to cache failures to avoid the UI waiting and spamming the API
-  flags: APIFlagsResponse | undefined;
+  features: APIFeaturesResponse | undefined;
   attemptCount: number;
   updatedAt: number;
 }
 
-// Parse and validate an API flag response
-export function parseAPIFlagsResponse(
-  flagsInput: any,
-): APIFlagsResponse | undefined {
-  if (!isObject(flagsInput)) {
+// Parse and validate an API feature response
+export function parseAPIFeaturesResponse(
+  featuresInput: any,
+): APIFeaturesResponse | undefined {
+  if (!isObject(featuresInput)) {
     return;
   }
 
-  const flags: APIFlagsResponse = {};
-  for (const key in flagsInput) {
-    const flag = flagsInput[key];
+  const features: APIFeaturesResponse = {};
+  for (const key in featuresInput) {
+    const feature = featuresInput[key];
     if (
-      typeof flag.value !== "boolean" ||
-      flag.key !== key ||
-      typeof flag.version !== "number"
+      typeof feature.value !== "boolean" ||
+      feature.key !== key ||
+      typeof feature.version !== "number"
     ) {
       return;
     }
-    flags[key] = {
-      value: flag.value,
-      version: flag.version,
+    features[key] = {
+      value: feature.value,
+      version: feature.version,
       key,
     };
   }
-  return flags;
+  return features;
 }
 
 export interface CacheResult {
-  flags: APIFlagsResponse | undefined;
+  features: APIFeaturesResponse | undefined;
   stale: boolean;
   success: boolean;
   attemptCount: number;
   updatedAt: number;
 }
 
-export class FlagCache {
+export class FeatureCache {
   private storage: StorageItem;
   private staleTimeMs: number;
   private expireTimeMs: number;
@@ -72,12 +72,12 @@ export class FlagCache {
     key: string,
     {
       success,
-      flags,
+      features,
       attemptCount,
       updatedAt,
     }: {
       success: boolean;
-      flags?: APIFlagsResponse;
+      features?: APIFeaturesResponse;
       attemptCount: number;
       updatedAt: number;
     },
@@ -96,7 +96,7 @@ export class FlagCache {
     cacheData[key] = {
       expireAt: Date.now() + this.expireTimeMs,
       staleAt: Date.now() + this.staleTimeMs,
-      flags,
+      features,
       success,
       attemptCount,
       updatedAt,
@@ -122,7 +122,7 @@ export class FlagCache {
           cachedResponse[key].expireAt > Date.now()
         ) {
           return {
-            flags: cachedResponse[key].flags,
+            features: cachedResponse[key].features,
             success: cachedResponse[key].success,
             stale: cachedResponse[key].staleAt < Date.now(),
             attemptCount: cachedResponse[key].attemptCount,
@@ -148,7 +148,7 @@ function validateCacheData(cacheDataInput: any) {
     const cacheEntry = cacheDataInput[key];
     if (!isObject(cacheEntry)) return;
 
-    const { expireAt, staleAt, success, flags, attemptCount, updatedAt } =
+    const { expireAt, staleAt, success, attemptCount, updatedAt, features } =
       cacheEntry;
 
     if (
@@ -157,7 +157,7 @@ function validateCacheData(cacheDataInput: any) {
       typeof success !== "boolean" ||
       typeof attemptCount !== "number" ||
       typeof updatedAt !== "number" ||
-      (flags && !parseAPIFlagsResponse(flags))
+      (features && !parseAPIFeaturesResponse(features))
     ) {
       return;
     }
@@ -166,7 +166,7 @@ function validateCacheData(cacheDataInput: any) {
       expireAt,
       staleAt,
       success,
-      flags,
+      features,
       attemptCount,
       updatedAt,
     };

@@ -2,28 +2,30 @@ import React, { useState } from "react";
 
 import {
   BucketProvider,
-  useFlag,
-  useFlags,
+  useFeature,
+  useFeatures,
   useRequestFeedback,
   useTrack,
   useUpdateContext,
-} from "../src";
+} from "../../src";
 
-// Extending the Flags interface to define the available flags
-declare module "../src" {
-  interface Flags {
+// Extending the Features interface to define the available features
+declare module "../../src" {
+  interface Features {
     huddle: boolean;
   }
 }
 
-function HuddleFlag() {
-  // Type safe flag
-  const flag = useFlag("huddle");
+const publishableKey = process.env.PUBLISHABLE_KEY || "";
+
+function HuddleFeature() {
+  // Type safe feature
+  const feature = useFeature("huddle");
   return (
     <div>
-      <h2>Huddle flag</h2>
+      <h2>Huddle feature</h2>
       <pre>
-        <code>{JSON.stringify(flag, null, 2)}</code>
+        <code>{JSON.stringify(feature, null, 2)}</code>
       </pre>
     </div>
   );
@@ -159,17 +161,17 @@ function Feedback() {
 
 // App.tsx
 function Demos() {
-  const { flags } = useFlags();
+  const { features } = useFeatures();
 
   return (
     <main>
       <h1>React SDK</h1>
 
-      <HuddleFlag />
+      <HuddleFeature />
 
-      <h2>All flags</h2>
+      <h2>All features</h2>
       <pre>
-        <code>{JSON.stringify(flags, null, 2)}</code>
+        <code>{JSON.stringify(features, null, 2)}</code>
       </pre>
 
       <UpdateContext />
@@ -182,15 +184,15 @@ function Demos() {
 export function App() {
   return (
     <BucketProvider
-      publishableKey="trdwA10Aoant6IaK3Qt45NMI"
+      publishableKey={publishableKey}
       feedback={{
         enableLiveSatisfaction: true,
       }}
       company={initialCompany}
       user={initialUser}
       otherContext={initialOtherContext}
-      flagOptions={{
-        fallbackFlags: ["huddle"],
+      featureOptions={{
+        fallbackFeatures: ["huddle"],
       }}
     >
       <Demos />

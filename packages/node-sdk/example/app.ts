@@ -49,8 +49,8 @@ app.get("/", (_req, res) => {
 
 app.get("/todos", async (_req, res) => {
   // Return todos if the feature is enabled for the user
-  // We use the `getFlags` method to check if the user has the "show-todos" flag enabled.
-  if (res.locals.bucketUser.getFlags()["show-todos"]) {
+  // We use the `getFeatures` method to check if the user has the "show-todos" feature enabled.
+  if (res.locals.bucketUser.getFeatures()["show-todos"]) {
     res.locals.bucketUser.trackFeatureUsage("Got todos");
 
     return res.json({ todos });
@@ -67,8 +67,8 @@ app.post("/todos", (req, res) => {
     return res.status(400).json({ error: "Invalid todo" });
   }
 
-  // Check if the user has the "create-todos" flag enabled
-  if (res.locals.bucketUser.getFlags()["create-todos"]) {
+  // Check if the user has the "create-todos" feature enabled
+  if (res.locals.bucketUser.getFeatures()["create-todos"]) {
     // Track the feature usage, including the todo that was created (for analytics)
     res.locals.bucketUser.trackFeatureUsage("Created todo", {
       attributes: { todo },
@@ -91,7 +91,7 @@ app.delete("/todos/:idx", (req, res) => {
     return res.status(400).json({ error: "Invalid index" });
   }
 
-  if (res.locals.bucketUser.getFlags()["delete-todos"]) {
+  if (res.locals.bucketUser.getFeatures()["delete-todos"]) {
     todos.splice(idx, 1);
 
     res.locals.bucketUser.trackFeatureUsage("Deleted todo");

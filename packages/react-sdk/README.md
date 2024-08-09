@@ -12,19 +12,19 @@ npm i @bucketco/react-sdk
 
 ## Setup
 
-### 1. Define Flags (optional)
+### 1. Define Features (optional)
 
-To get type safe feature flags, extend the definition of the `Flags` interface and define which flags you have.
+To get type safe feature definitions, extend the definition of the `Features` interface and define which features you have.
 See the example below for the details.
 
-If no explicit flag definitions are provided, there will be no types checked flag lookups.
+If no explicit feature definitions are provided, there will be no types checked feature lookups.
 
 **Example:**
 
 ```tsx
-// Define your flags by extending the `Flags` interface in @bucketco/react-sdk
+// Define your features by extending the `Features` interface in @bucketco/react-sdk
 declare module "@bucketco/react-sdk" {
-  interface Flags {
+  interface Features {
     huddle: boolean;
     recordVideo: boolean;
   }
@@ -34,35 +34,35 @@ declare module "@bucketco/react-sdk" {
 ### 2. Add the `BucketProvider` context provider
 
 Add the `BucketProvider` context provider to your application.
-This will initialize the Bucket SDK, fetch feature flags and start listening for Live Satisfaction events.
+This will initialize the Bucket SDK, fetch features and start listening for Live Satisfaction events.
 
 **Example:**
 
 ```tsx
-import { BucketProvider } from "@bucketco/react-sdk"
+import { BucketProvider } from "@bucketco/react-sdk";
 
 <BucketProvider
   publishableKey="{YOUR_PUBLISHABLE_KEY}"
-  company={ id: "acme_inc" }
-  user={ id: "john doe" }
+  company={{ id: "acme_inc" }}
+  user={{ id: "john doe" }}
   loadingComponent={<Loading />}
-  fallbackFlags={["huddle"]}
+  fallbackFeatures={["huddle"]}
 >
-{/* children here are shown when loading finishes or immediately if no `loadingComponent` is given */}
-</BucketProvider>
+  {/* children here are shown when loading finishes or immediately if no `loadingComponent` is given */}
+</BucketProvider>;
 ```
 
 - `publishableKey` is used to connect the provider to an _environment_ on Bucket. Find your `publishableKey` under `Activity` on https://app.bucket.co.
-- `company`, `user` and `otherContext` make up the _context_ that is used to determine if a feature flag is enabled or not. `company` and `user` contexts are automatically transmitted to Bucket servers so the Bucket app can show you which companies have access to which flags etc.
+- `company`, `user` and `otherContext` make up the _context_ that is used to determine if a feature is enabled or not. `company` and `user` contexts are automatically transmitted to Bucket servers so the Bucket app can show you which companies have access to which features etc.
 
-  If you specify `company` and/or `user` they must have at least the `id` property plus anything additional you want to be able to evaluate flags against. See "Managing Bucket context" below.
+  If you specify `company` and/or `user` they must have at least the `id` property plus anything additional you want to be able to evaluate feature targeting against. See "Managing Bucket context" below.
 
-- `fallbackFlags` is a list of strings which specify which flags to consider enabled if the SDK is unable to fetch flags.
-- `loadingComponent` lets you specify an React component to be rendered instead of the children while the Bucket provider is initializing. If you want more control over loading screens, `useFlags()` returns `isLoading` which you can use to customize the loading experience:
+- `fallbackFeatures` is a list of strings which specify which features to consider enabled if the SDK is unable to fetch features.
+- `loadingComponent` lets you specify an React component to be rendered instead of the children while the Bucket provider is initializing. If you want more control over loading screens, `useFeatures()` returns `isLoading` which you can use to customize the loading experience:
 
   ```tsx
   function LoadingBucket({ children }) {
-    const {isLoading} = useFlags()
+    const {isLoading} = useFeatures()
     if (isLoading) {
       return <Spinner />
     }
@@ -80,21 +80,21 @@ import { BucketProvider } from "@bucketco/react-sdk"
 
 ## Hooks
 
-### `useFlagIsEnabled()`
+### `useFeatureIsEnabled()`
 
-Returns a boolean indicating if the given feature flag is enabled for the current context.
-`useFlagIsEnabled` returns false while flags are being loaded.
+Returns a boolean indicating if the given feature is enabled for the current context.
+`useFeatureIsEnabled` returns false while features are being loaded.
 
-Use `useFlag()` for fine-grained control over loading and rendering.
+Use `useFeature()` for fine-grained control over loading and rendering.
 
 ```tsx
-import { useFlagIsEnabled } from "@bucketco/react-sdk";
+import { useFeatureIsEnabled } from "@bucketco/react-sdk";
 
 function StartHuddleButton() {
-  const joinHuddleFlagEnabled = useFlagIsEnabled("huddle");
+  const joinHuddleFeatureEnabled = useFeatureIsEnabled("huddle");
   // true / false
 
-  if (!joinHuddleFlagEnabled) {
+  if (!joinHuddleFeatureEnabled) {
     return null;
   }
 
@@ -102,15 +102,15 @@ function StartHuddleButton() {
 }
 ```
 
-### `useFlag()`
+### `useFeature()`
 
-Returns the state of a given feature flag for the current context.
+Returns the state of a given features for the current context.
 
 ```tsx
-import { useFlag } from "@bucketco/react-sdk";
+import { useFeature } from "@bucketco/react-sdk";
 
 function StartHuddleButton() {
-  const { isLoading, isEnabled } = useFlag("huddle");
+  const { isLoading, isEnabled } = useFeature("huddle");
 
   if (isLoading) {
     return <Loading />;
@@ -124,34 +124,34 @@ function StartHuddleButton() {
 }
 ```
 
-### `useFlags()`
+### `useFeatures()`
 
-Returns all enabled feature flags as an object. Mostly useful for debugging and getting the current loading state.
+Returns all enabled features as an object. Mostly useful for debugging and getting the current loading state.
 
 ```tsx
-import { useFlags } from "@bucketco/react-sdk";
+import { useFeature } from "@bucketco/react-sdk";
 
-function DebugFlags() {
-  const featureFlags = useFlags();
+function DebugFeatures() {
+  const { isLoading, features } = useFeatures();
   // {
   //   "isLoading": false,
-  //   "flags: {
+  //   "features: {
   //     "join-huddle": true
   //     "post-message": true
   //   }
   // }
 
-  if (featureFlags.isLoading) {
+  if (isLoading) {
     return <Loading />;
   }
 
-  return <pre>{JSON.stringify(featureFlags.flags)}</pre>;
+  return <pre>{JSON.stringify(features)}</pre>;
 }
 ```
 
 ### `useUpdateContext()`
 
-`useUpdateContext` returns functions `updateCompany`, `updateUser` and `updateOtherContext`. The functions lets you update the _context_ that is used to determine if a feature flag is enabled or not. For example, if the user logs out, changes company or similar or a specific property changes on the company as in the example below:
+`useUpdateContext` returns functions `updateCompany`, `updateUser` and `updateOtherContext`. The functions lets you update the _context_ that is used to determine if a feature is enabled or not. For example, if the user logs out, changes company or similar or a specific property changes on the company as in the example below:
 
 ```tsx
 import { useUpdateContext } from "@bucketco/react-sdk";

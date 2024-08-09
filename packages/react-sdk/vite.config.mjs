@@ -9,9 +9,9 @@ export default defineConfig({
   optimizeDeps: {
     include: ["@bucketco/browser-sdk"],
   },
-  plugins: [dts({ insertTypesEntry: true })],
+  plugins: [dts({ insertTypesEntry: true, exclude: ["dev"] })],
   build: {
-    exclude: ["**/node_modules/**", "test/e2e/**"],
+    exclude: ["**/node_modules/**", "test/e2e/**", "dev"],
     sourcemap: true,
     lib: {
       entry: resolve(__dirname, "src/index.tsx"),

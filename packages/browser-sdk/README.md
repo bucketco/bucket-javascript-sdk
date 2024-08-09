@@ -44,20 +44,20 @@ Supply these to the constructor call (3rd argument)
   host?: "https://front.bucket.co",
   sseHost?: "https://livemessaging.bucket.co"
   feedback?: undefined // See FEEDBACK.md
-  flags?: {
-    fallbackFlags?: string[]; // Enable these flags if unable to contact bucket.co
-    timeoutMs?: number; // Timeout for fetching flags
-    staleWhileRevalidate?: boolean; // Revalidate in the background when cached flags turn stale to avoid latency in the UI
+  featureOptions?: {
+    fallbackFeatures?: string[]; // Enable these features if unable to contact bucket.co
+    timeoutMs?: number; // Timeout for fetching features
+    staleWhileRevalidate?: boolean; // Revalidate in the background when cached features turn stale to avoid latency in the UI
     failureRetryAttempts?: number | false; // Cache a negative response after `failureRetryAttempts` attempts to avoid latency in the UI
   };
 }
 ```
 
-### Feature Flags
+### Feature toggles
 
-Bucket can determine which feature flags are active for a given context. The context is given in the BucketClient constructor.
+Bucket can determine which features are active for a given context. The context is given in the BucketClient constructor.
 
-The context should take the form of `{ user: { id }, company: { id } }` plus anything additional you want to be able to evaluate flags against.
+The context should take the form of `{ user: { id }, company: { id } }` plus anything additional you want to be able to evaluate feature targeting rules against.
 
 ```ts
 const bucketClient = new BucketClient(
@@ -69,13 +69,13 @@ const bucketClient = new BucketClient(
 );
 await bucketClient.initialize()
 
-bucketClient.getFlags()
+bucketClient.getFeatures()
 // {
 //   "join-huddle": true,
 //   "post-message": true
 // }
 
-if(bucketClient.getFlags()["join-huddle"]) {
+if(bucketClient.getFeatures()["join-huddle"]) {
   ...
 }
 ```

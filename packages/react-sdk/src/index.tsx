@@ -1,3 +1,5 @@
+"use client";
+
 import React, {
   createContext,
   ReactNode,
@@ -13,9 +15,9 @@ import {
   BucketClient,
   BucketContext,
   CompanyContext,
+  FeaturesOptions,
   Feedback,
   FeedbackOptions,
-  FlagsOptions,
   RequestFeedbackOptions,
   UserContext,
 } from "@bucketco/browser-sdk";
@@ -24,19 +26,19 @@ import { version } from "../package.json";
 
 type OtherContext = Record<string, any>;
 
-export interface Flags {}
+export interface Features {}
 
 const SDK_VERSION = `react-sdk/${version}`;
 
-type BucketFlags = keyof (keyof Flags extends never
+type BucketFeatures = keyof (keyof Features extends never
   ? Record<string, boolean>
-  : Flags);
+  : Features);
 
-export type FlagsResult = { [k in BucketFlags]?: boolean };
+export type FeaturesResult = { [k in BucketFeatures]?: boolean };
 
 type ProviderContextType = {
-  flags: {
-    flags: FlagsResult;
+  features: {
+    features: FeaturesResult;
     isLoading: boolean;
   };
   updateUser: (user?: UserContext) => void;
@@ -52,8 +54,8 @@ type ProviderContextType = {
 };
 
 const ProviderContext = createContext<ProviderContextType>({
-  flags: {
-    flags: {},
+  features: {
+    features: {},
     isLoading: false,
   },
   updateUser: () => undefined,
@@ -66,8 +68,8 @@ const ProviderContext = createContext<ProviderContextType>({
 
 export type BucketProps = BucketContext & {
   publishableKey: string;
-  flagOptions?: Omit<FlagsOptions, "fallbackFlags"> & {
-    fallbackFlags?: BucketFlags[];
+  featureOptions?: Omit<FeaturesOptions, "fallbackFeatures"> & {
+    fallbackFeatures?: BucketFeatures[];
   };
   children?: ReactNode;
   loadingComponent?: ReactNode;
@@ -88,52 +90,61 @@ export function BucketProvider({
   company: initialCompany,
   otherContext: initialOtherContext,
   publishableKey,
-  flagOptions,
+  featureOptions,
   loadingComponent,
   newBucketClient = (...args) => new BucketClient(...args),
   ...config
 }: BucketProps) {
-  const [flagsLoading, setFlagsLoading] = useState(true);
-  const [flags, setFlags] = useState<FlagsResult>({});
-  const ref = useRef<BucketClient>();
+  const [featuresLoading, setFeaturesLoading] = useState(true);
+  const [features, setFeatures] = useState<FeaturesResult>({});
 
-  const [flagContext, setFlagContext] = useState({
+  const clientRef = useRef<BucketClient>();
+  const contextKeyRef = useRef<string>();
+
+  const [featureContext, setFeatureContext] = useState({
     user: initialUser,
     company: initialCompany,
     otherContext: initialOtherContext,
   });
-  const { user, company } = flagContext;
+  const { user, company } = featureContext;
 
-  const contextKey = canonicalJSON({ config, flagContext });
+  const contextKey = canonicalJSON({ config, featureContext });
 
   useEffect(() => {
+    // useEffect will run twice in development mode
+    // This is a workaround to prevent re-initialization
+    if (contextKeyRef.current === contextKey) {
+      return;
+    }
+    contextKeyRef.current = contextKey;
+
     // on update of contextKey and on mount
-    if (ref.current) {
-      ref.current.stop();
+    if (clientRef.current) {
+      clientRef.current.stop();
     }
 
-    const client = newBucketClient(publishableKey, flagContext, {
+    const client = newBucketClient(publishableKey, featureContext, {
       host: config.host,
       sseHost: config.sseHost,
-      flags: {
-        ...flagOptions,
-        onUpdatedFlags: (flags) => {
-          setFlags(flags);
+      features: {
+        ...featureOptions,
+        onUpdatedFeatures: (flags) => {
+          setFeatures(flags);
         },
       },
       feedback: config.feedback,
       logger: config.debug ? console : undefined,
       sdkVersion: SDK_VERSION,
     });
-    ref.current = client;
+    clientRef.current = client;
     client
       .initialize()
       .then(() => {
-        setFlags(client.getFlags() ?? {});
-        setFlagsLoading(false);
+        setFeatures(client.getFeatures() ?? {});
+        setFeaturesLoading(false);
 
         // update user attributes
-        const { id: userId, ...userAttributes } = flagContext.user || {};
+        const { id: userId, ...userAttributes } = featureContext.user || {};
         if (userId) {
           client.user(userAttributes).catch(() => {
             // ignore rejections. Logged inside
@@ -142,7 +153,7 @@ export function BucketProvider({
 
         // update company attributes
         const { id: companyId, ...companyAttributes } =
-          flagContext.company || {};
+          featureContext.company || {};
 
         if (companyId) {
           client.company(companyAttributes).catch(() => {
@@ -160,16 +171,16 @@ export function BucketProvider({
 
   // call updateUser with no arguments to logout
   const updateUser = useCallback((newUser?: UserContext) => {
-    setFlagContext({ ...flagContext, user: newUser });
+    setFeatureContext({ ...featureContext, user: newUser });
   }, []);
 
   // call updateUser with no arguments to re-set company context
   const updateCompany = useCallback((newCompany?: CompanyContext) => {
-    setFlagContext({ ...flagContext, company: newCompany });
+    setFeatureContext({ ...featureContext, company: newCompany });
   }, []);
 
   const updateOtherContext = useCallback((otherContext?: OtherContext) => {
-    setFlagContext({ ...flagContext, otherContext });
+    setFeatureContext({ ...featureContext, otherContext });
   }, []);
 
   const track = useCallback(
@@ -179,7 +190,7 @@ export function BucketProvider({
           console.error("User is required to send events");
         };
 
-      return ref.current?.track(eventName, attributes);
+      return clientRef.current?.track(eventName, attributes);
     },
     [user?.id, company?.id],
   );
@@ -191,7 +202,7 @@ export function BucketProvider({
         return;
       }
 
-      return ref.current?.feedback({
+      return clientRef.current?.feedback({
         ...opts,
         userId: String(user.id),
         companyId: company?.id !== undefined ? String(company.id) : undefined,
@@ -207,7 +218,7 @@ export function BucketProvider({
         return;
       }
 
-      ref.current?.requestFeedback({
+      clientRef.current?.requestFeedback({
         ...opts,
         userId: String(user.id),
         companyId: company?.id !== undefined ? String(company.id) : undefined,
@@ -217,9 +228,9 @@ export function BucketProvider({
   );
 
   const context: ProviderContextType = {
-    flags: {
-      flags,
-      isLoading: flagsLoading,
+    features: {
+      features,
+      isLoading: featuresLoading,
     },
     updateUser,
     updateCompany,
@@ -230,7 +241,7 @@ export function BucketProvider({
     requestFeedback,
   };
 
-  if (flagsLoading && loadingComponent) {
+  if (featuresLoading && loadingComponent) {
     return loadingComponent;
   }
 
@@ -238,65 +249,63 @@ export function BucketProvider({
 }
 
 /**
- * Returns true if the feature flags is enabled.
+ * Returns true if the feature is enabled.
  * If the provider hasn't finished loading, it will return false.
  *
  * ```ts
- * const isEnabled = useFlagIsEnabled('huddle');
+ * const isEnabled = useFeatureIsEnabled('huddle');
  * // true / false
  * ```
  */
-export function useFlagIsEnabled(flagKey: BucketFlags) {
-  const { flags } = useContext<ProviderContextType>(ProviderContext).flags;
-  return flags[flagKey] ?? false;
+export function useFeatureIsEnabled(featureKey: BucketFeatures) {
+  const { features } =
+    useContext<ProviderContextType>(ProviderContext).features;
+  return features[featureKey] ?? false;
 }
 
 /**
- * Returns the state of a given feature flag for the current context, e.g.
+ * Returns the state of a given feature for the current context, e.g.
  *
  * ```ts
- * const huddleFlag = useFlag("huddle");
- * // {
- * //   "isLoading": false,
- * //   "isEnabled": true,
- * // }
+ * const {isEnabled, isLoading, track} = useFeature("huddle");
+ *
  * ```
  */
-export function useFlag(key: BucketFlags) {
-  const { flags, isLoading } =
-    useContext<ProviderContextType>(ProviderContext).flags;
+export function useFeature(key: BucketFeatures) {
+  const { features, isLoading } =
+    useContext<ProviderContextType>(ProviderContext).features;
 
-  const isEnabled = flags[key] ?? false;
+  const isEnabled = features[key] ?? false;
 
   return { isLoading: isLoading, isEnabled };
 }
 
 /**
- * Returns feature flags as an object, e.g.
- * Note: this returns the raw flag keys, and does not use the
- * optional typing provided through the `Flags` type.
+ * Returns features as an object, e.g.
+ * Note: this returns the raw feature keys, and does not use the
+ * optional typing provided through the `Features` type.
  *
  * ```ts
- * const flags = useFlags();
+ * const features = useFeatures();
  * // {
  * //   "isLoading": false,
- * //   "flags: {
+ * //   "features: {
  * //     "huddle": true,
  * //     "post-message": true
  * //   }
  * // }
  * ```
  */
-export function useFlags(): {
+export function useFeatures(): {
   isLoading: boolean;
-  flags: FlagsResult;
+  features: FeaturesResult;
 } {
-  const { flags, isLoading } =
-    useContext<ProviderContextType>(ProviderContext).flags;
+  const { features, isLoading } =
+    useContext<ProviderContextType>(ProviderContext).features;
 
   return {
     isLoading,
-    flags,
+    features,
   };
 }
 
@@ -323,7 +332,7 @@ export function useUpdateContext() {
     updateUser,
     updateCompany,
     updateOtherContext,
-    flags: { isLoading },
+    features: { isLoading },
   } = useContext<ProviderContextType>(ProviderContext);
   return { updateUser, updateCompany, updateOtherContext, isLoading };
 }

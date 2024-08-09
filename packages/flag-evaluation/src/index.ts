@@ -1,24 +1,42 @@
 import { createHash } from "node:crypto";
 
-export interface Rule {
-  filter?: ContextFilter[];
-  partialRolloutThreshold?: number;
-  partialRolloutAttribute?: string;
-}
-
-export type FlagData = {
-  key: string;
-  rules: Rule[];
+export type FilterClass = {
+  type: string;
 };
 
-export interface EvaluateFlagParams {
-  context: Record<string, unknown>;
-  flag: FlagData;
+export type FilterGroup<T extends FilterClass> = {
+  type: "group";
+  operator: "and" | "or";
+  filters: FilterTree<T>[];
+};
+
+export type FilterNegation<T extends FilterClass> = {
+  type: "negation";
+  filter: FilterTree<T>;
+};
+
+export type FilterTree<T extends FilterClass> =
+  | FilterGroup<T>
+  | FilterNegation<T>
+  | T;
+
+export interface Rule {
+  filter: RuleFilter;
 }
 
-export interface EvaluateFlagResult {
+export type FeatureData = {
+  key: string;
+  targeting: { rules: Rule[] };
+};
+
+export interface EvaluateTargetingParams {
+  context: Record<string, unknown>;
+  feature: FeatureData;
+}
+
+export interface EvaluateTargetingResult {
   value: boolean;
-  flag: FlagData;
+  feature: FeatureData;
   context: Record<string, any>;
   ruleEvaluationResults: boolean[];
   reason?: string;
@@ -42,10 +60,27 @@ type ContextFilterOp =
   | "IS_FALSE";
 
 export type ContextFilter = {
+  type: "context";
   field: string;
   operator: ContextFilterOp;
   values?: string[];
 };
+
+export type PercentageRolloutFilter = {
+  type: "rolloutPercentage";
+  flagKey: string;
+  partialRolloutAttribute: string;
+  partialRolloutThreshold: number;
+};
+
+export type ConstantFilter = {
+  type: "constant";
+  value: boolean;
+};
+
+export type RuleFilter = FilterTree<
+  ContextFilter | PercentageRolloutFilter | ConstantFilter
+>;
 
 export function flattenJSON(data: object): Record<string, string> {
   if (Object.keys(data).length === 0) return {};
@@ -89,40 +124,23 @@ export function unflattenJSON(data: Record<string, any>) {
   return result;
 }
 
-export function evaluateFlag({
+export function evaluateTargeting({
   context,
-  flag,
-}: EvaluateFlagParams): EvaluateFlagResult {
+  feature,
+}: EvaluateTargetingParams): EvaluateTargetingResult {
   const flatContext = flattenJSON(context);
 
   const missingContextFieldsSet = new Set<string>();
-  for (const rule of flag.rules) {
-    rule.filter
-      ?.map((r) => r.field)
-      .filter((field) => !(field in flatContext))
-      .forEach((field) => missingContextFieldsSet.add(field));
 
-    if (
-      rule.partialRolloutAttribute &&
-      !(rule.partialRolloutAttribute in flatContext)
-    ) {
-      missingContextFieldsSet.add(rule.partialRolloutAttribute);
-    }
-  }
+  const ruleEvaluationResults = feature.targeting.rules.map((rule) =>
+    evaluateRecursively(rule.filter, flatContext, missingContextFieldsSet),
+  );
   const missingContextFields = Array.from(missingContextFieldsSet);
-
-  const ruleEvaluationResults = flag.rules.map((rule) => {
-    return evaluateRuleWithContext({
-      context: flatContext,
-      rule,
-      key: flag.key,
-    });
-  });
 
   const firstIdx = ruleEvaluationResults.findIndex(Boolean);
   return {
     value: firstIdx > -1,
-    flag,
+    feature,
     context: flatContext,
     ruleEvaluationResults,
     reason: firstIdx > -1 ? `rule #${firstIdx} matched` : "no matched rules",
@@ -142,63 +160,62 @@ export function hashInt(hashInput: string) {
   return Math.floor((hash / 0xfffff) * 100000);
 }
 
-export function rejectedDueToPartialRollout({
-  rule,
-  context,
-  key,
-}: {
-  rule: Rule;
-  context: Record<string, string>;
-  key: string;
-}) {
-  if (
-    rule.partialRolloutAttribute === undefined ||
-    rule.partialRolloutThreshold === undefined
-  ) {
-    return false;
-  }
+function evaluateRecursively(
+  filter: RuleFilter,
+  context: Record<string, string>,
+  missingContextFieldsSet: Set<string>,
+): boolean {
+  switch (filter.type) {
+    case "constant":
+      return filter.value;
+    case "context":
+      if (!(filter.field in context)) {
+        missingContextFieldsSet.add(filter.field);
+        return false;
+      }
 
-  // reject if the partial rollout attribute is not present in the context
-  if (!(rule.partialRolloutAttribute in context)) {
-    return true;
-  }
+      return evaluate(
+        context[filter.field],
+        filter.operator,
+        filter.values || [],
+      );
+    case "rolloutPercentage":
+      if (filter.partialRolloutThreshold === 100000) {
+        return true;
+      }
 
-  // not included in the partial rollout if the hash is above the threshold
-  return (
-    hashInt(`${key}.${context[rule.partialRolloutAttribute]}`) >
-    rule.partialRolloutThreshold
-  );
-}
+      missingContextFieldsSet.add(filter.partialRolloutAttribute);
 
-export function evaluateRuleWithContext({
-  context,
-  key,
-  rule,
-}: {
-  key: string;
-  context: Record<string, string>;
-  rule: Rule;
-}) {
-  const match = (rule.filter || []).every((filter) => {
-    if (!(filter.field in context)) {
+      if (!(filter.partialRolloutAttribute in context)) {
+        return false;
+      }
+
+      return (
+        hashInt(
+          `${filter.flagKey}.${context[filter.partialRolloutAttribute]}`,
+        ) > filter.partialRolloutThreshold
+      );
+    case "group":
+      return filter.filters.reduce((acc, current) => {
+        if (filter.operator === "and") {
+          return (
+            acc &&
+            evaluateRecursively(current, context, missingContextFieldsSet)
+          );
+        }
+        return (
+          acc || evaluateRecursively(current, context, missingContextFieldsSet)
+        );
+      }, filter.operator === "and");
+    case "negation":
+      return !evaluateRecursively(
+        filter.filter,
+        context,
+        missingContextFieldsSet,
+      );
+    default:
       return false;
-    }
-    return evaluate(
-      context[filter.field] as string,
-      filter.operator,
-      filter?.values?.length ? filter.values : [""],
-    );
-  });
-
-  if (!match) {
-    return false;
   }
-
-  if (rejectedDueToPartialRollout({ rule, context, key })) {
-    return false;
-  }
-
-  return true;
 }
 
 export function evaluate(
