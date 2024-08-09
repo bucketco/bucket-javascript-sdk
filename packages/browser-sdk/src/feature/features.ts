@@ -90,7 +90,7 @@ export function validateFeaturesResponse(response: any) {
   ) {
     return;
   }
-  const flagsParsed = parseAPIFeaturesResponse(flags);
+  const flagsParsed = parseAPIFeaturesResponse(features);
   if (!flagsParsed) {
     return;
   }
@@ -159,7 +159,8 @@ export class FeaturesClient {
         });
     this.config = { ...DEFAULT_FEATURES_CONFIG, ...options };
     this.rateLimiter =
-      options?.rateLimiter ?? new RateLimiter(FEATURE_EVENTS_PER_MIN, this.logger);
+      options?.rateLimiter ??
+      new RateLimiter(FEATURE_EVENTS_PER_MIN, this.logger);
 
     // subscribe to changes in targeting
     options?.liveConn?.addOnMessageCallback("targeting_updated", (message) => {
@@ -176,13 +177,15 @@ export class FeaturesClient {
     this.updatedAt = 0;
   }
 
-  setFeatures(features: APIResponse) {
-    if (!features.flags) return;
+  private setFeatures(features: APIResponse) {
+    // ignore failures or older versions
+    if (!features || !features.features || features.updatedAt < this.updatedAt)
+      return;
 
-    const proxiedFlags = maskedProxy(features.flags, (fs, key) => {
+    const proxiedFlags = maskedProxy(features?.features || {}, (fs, key) => {
       this.sendCheckEvent({
         key,
-        version: fs[key]?.,
+        version: fs[key].version,
         value: fs[key]?.value ?? false,
       }).catch((e) => {
         this.logger.error("error sending feature check event", e);
@@ -190,14 +193,15 @@ export class FeaturesClient {
       return fs[key]?.value || false;
     });
     this.features = proxiedFlags;
-    
-    if(this.config.onUpdatedFlags) {
+    this.updatedAt = features.updatedAt;
+
+    if (this.config.onUpdatedFlags) {
       this.config.onUpdatedFlags(this.features);
     }
   }
 
   public async maybeRefreshFeatures() {
-    this.setFeatures((await this.maybeFetchFeatures()) || {});
+    this.setFeatures(await this.maybeFetchFeatures());
   }
 
   public async refreshFeatures() {
@@ -220,7 +224,7 @@ export class FeaturesClient {
     return params;
   }
 
-  private async maybeFetchFeatures(): Promise<APIResponse | undefined> {
+  private async maybeFetchFeatures(): Promise<APIResponse> {
     const cachedItem = this.cache.get(this.fetchParams().toString());
 
     // if there's no cached item OR the cached item is a failure and we haven't retried
@@ -242,7 +246,10 @@ export class FeaturesClient {
         this.fetchFeatures().catch(() => {
           // we don't care about the result, we just want to re-fetch
         });
-        return { features: cachedItem.features, updatedAt: cachedItem.updatedAt };
+        return {
+          features: cachedItem.features,
+          updatedAt: cachedItem.updatedAt,
+        };
       }
 
       return await this.fetchFeatures();
@@ -319,12 +326,11 @@ export class FeaturesClient {
           value: true,
         };
         return acc;
-
       }, {} as APIFeaturesResponse);
       return {
         features,
-        updatedAt: 0
-      }
+        updatedAt: 0,
+      };
     }
   }
 
