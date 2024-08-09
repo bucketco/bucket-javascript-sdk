@@ -39,7 +39,6 @@ type Config = {
   timeoutMs: number;
   staleWhileRevalidate: boolean;
   failureRetryAttempts: number | false;
-  onUpdatedFlags?: (flags: Features) => void;
 };
 
 export const DEFAULT_FEATURES_CONFIG: Config = {
@@ -162,19 +161,24 @@ export class FeaturesClient {
       options?.rateLimiter ??
       new RateLimiter(FEATURE_EVENTS_PER_MIN, this.logger);
 
-    // subscribe to changes in targeting
-    options?.liveConn?.addOnMessageCallback("targeting_updated", (message) => {
-      if (message.updatedAt && message.updatedAt > this.updatedAt) {
-        this.refreshFeatures().catch((e) => {
-          this.logger.error(
-            "error refreshing flags following targeting-updated message",
-            e,
-          );
-        });
-      }
-    });
-
     this.updatedAt = 0;
+
+    if (options?.onUpdatedFeatures) {
+      // subscribe to changes in targeting
+      options?.liveConn?.addOnMessageCallback(
+        "targeting_updated",
+        (message) => {
+          if (message.updatedAt && message.updatedAt > this.updatedAt) {
+            this.refreshFeatures().catch((e) => {
+              this.logger.error(
+                "error refreshing flags following targeting-updated message",
+                e,
+              );
+            });
+          }
+        },
+      );
+    }
   }
 
   private setFeatures(features: APIResponse) {
