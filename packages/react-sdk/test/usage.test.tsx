@@ -105,11 +105,6 @@ beforeAll(() =>
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
-const features = {
-  abc: true,
-  def: true,
-};
-
 beforeAll(() => {
   vi.spyOn(BucketClient.prototype, "initialize");
   vi.spyOn(BucketClient.prototype, "getFeatures");
