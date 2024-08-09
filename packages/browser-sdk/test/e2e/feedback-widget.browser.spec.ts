@@ -36,12 +36,12 @@ async function getOpenedWidgetContainer(
     await route.fulfill({ status: 200 });
   });
 
-  await page.route(`${API_HOST}/flags/evaluate*`, async (route) => {
+  await page.route(`${API_HOST}/features/enabled*`, async (route) => {
     await route.fulfill({
       status: 200,
       body: JSON.stringify({
         success: true,
-        flags: {},
+        features: {},
       }),
     });
   });
@@ -54,7 +54,7 @@ async function getOpenedWidgetContainer(
       await bucket.initialize();
       await bucket.requestFeedback({
         featureId: "featureId1",
-        title: "baz"
+        title: "baz",
       });
     })()
   `);

@@ -1,4 +1,4 @@
-import { FlagData } from "@bucketco/flag-evaluation";
+import { FeatureData } from "@bucketco/flag-evaluation";
 
 /**
  * Describes the meta context associated with tracking.
@@ -16,26 +16,26 @@ export type TrackingMeta = {
 export type Attributes = Record<string, any>;
 
 /**
- * Describes a feature flag evaluation event.
+ * Describes a feature event. Can be "check" or "evaluate".
  **/
-export type FeatureFlagEvent = {
+export type FeatureEvent = {
   /**
    * The action that was performed.
    **/
   action: "evaluate" | "check";
 
   /**
-   * The flag key.
+   * The feature key.
    **/
-  flagKey: string;
+  key: string;
 
   /**
-   * The flag version (optional).
+   * The feature targeting version (optional).
    **/
-  flagVersion: number | undefined;
+  targetingVersion: number | undefined;
 
   /**
-   * The result of flag evaluation.
+   * The result of targeting evaluation.
    **/
   evalResult: boolean;
 
@@ -56,48 +56,51 @@ export type FeatureFlagEvent = {
 };
 
 /**
- * Describes an evaluated feature flag.
+ * Describes a feature
  */
-export interface Flag {
+export interface Feature {
   /**
-   * The value of the flag.
-   */
-  value: boolean;
-
-  /**
-   * The key of the flag.
+   * The key of the feature.
    */
   key: string;
 
   /**
-   * The version of the flag (optional).
+   * If the feature is enabled.
    */
-  version?: number;
+  isEnabled: boolean;
+
+  /**
+   * The version of the targeting used to evaluate if the feature is enabled (optional).
+   */
+  targetingVersion?: number;
 }
 
 /**
- * Describes a collection of evaluated feature flags.
+ * Describes a collection of evaluated features.
  *
  * @remarks
- * Extends the Flags interface to define the available flags.
+ * You should extend the Features interface to define the available features.
  */
-export interface Flags {}
+export interface Features {}
 
 /**
- * Describes a collection of (strong-typed) evaluated feature flags.
+ * Describes a collection of evaluated feature.
  *
- * @typeParam Flags - The type of the flags that is declared by the developer.
+ * @remarks
+ * This types falls back to a generic Record<string, boolean> if the Features interface
+ * has not been extended.
+ *
  */
-export type TypedFlags = keyof Flags extends never
+export type TypedFeatures = keyof Features extends never
   ? Record<string, boolean>
-  : Record<keyof Flags, boolean>;
+  : Record<keyof Features, boolean>;
 
 /**
- * Describes the response of the feature flags endpoint
+ * Describes the response of the features endpoint
  */
-export type FlagDefinitions = {
-  /** The flag definitions */
-  flags: (FlagData & { version: number })[];
+export type FeaturesAPIResponse = {
+  /** The feature definitions */
+  features: (FeatureData & { targeting: { version: number } })[];
 };
 
 /**
@@ -230,9 +233,9 @@ export type ClientOptions = {
   logger?: Logger;
 
   /**
-   * The flags to use as fallbacks when the API is unavailable (optional).
+   * The features to use as fallbacks when the API is unavailable (optional).
    **/
-  fallbackFlags?: TypedFlags;
+  fallbackFeatures?: TypedFeatures;
 
   /**
    * The HTTP client to use for sending requests (optional). Default is the built-in fetch client.
@@ -307,25 +310,24 @@ interface BucketClientBase {
   get otherContext(): Record<string, any> | undefined;
 
   /**
-   * Initializes the client by caching the feature flag definitions.
+   * Initializes the client by caching the feature definitions.
    *
    * @returns void
    *
    * @remarks
-   * Call this method before calling `getFlags` to ensure the feature flag definitions are cached.
+   * Call this method before calling `getFeatures` to ensure the feature definitions are cached.
    **/
   initialize(): Promise<void>;
 
   /**
-   * Gets the evaluated feature flags for the current context which includes the user, company, and custom context.
-   *
-   * @typeparam TFlagKey - The type of the feature flag keys, `string` by default.
-   *
-   * @returns The evaluated feature flags.
+   * Gets the evaluated features for the current context which includes the user, company, and custom context.
+   *   *
+   * @returns The evaluated features.
    * @remarks
-   * Call `initialize` before calling this method to ensure the feature flag definitions are cached, empty flags will be returned otherwise.
+   * Call `initialize` before calling this method to ensure the feature definitions are cached. No features
+   * will be returned if the client is not initialized.
    **/
-  getFlags(): Readonly<TypedFlags>;
+  getFeatures(): Readonly<TypedFeatures>;
 }
 
 /**
@@ -336,7 +338,7 @@ interface BucketClientBase {
  */
 interface BucketClientWithUserMethod<TReturn> {
   /**
-   * Sets the user that is used for feature flag evaluation.
+   * Sets the user that is used for feature targeting evaluation.
    *
    * @param userId - The user ID to set.
    * @param attributes - The attributes of the user (optional).
@@ -358,7 +360,7 @@ interface BucketClientWithUserMethod<TReturn> {
  */
 interface BucketClientWithCompanyMethod<TReturn> {
   /**
-   * Sets the company that is used for feature flag evaluation.
+   * Sets the company that is used for feature targeting evaluation.
    *
    * @param companyId - The company ID to set.
    * @param attributes - The attributes of the user (optional).

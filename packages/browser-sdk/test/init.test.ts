@@ -3,11 +3,10 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 
 import { BucketClient } from "../src";
 
-import { flagsEvaluate } from "./mocks/handlers";
+import { getFeatures } from "./mocks/handlers";
 import { server } from "./mocks/server";
 
 const KEY = "123";
-const CUSTOM_HOST = "https://example.com";
 
 const logger = {
   debug: vi.fn(),
@@ -21,15 +20,14 @@ beforeEach(() => {
 });
 
 describe("init", () => {
-  test("will accept setup with key and debug flag", async () => {
+  test("will accept setup with key and debug logger", async () => {
     const bucketInstance = new BucketClient(
       KEY,
       { user: { id: 42 } },
       { logger },
     );
     const spyInit = vi.spyOn(bucketInstance, "initialize");
-    // const spyLog = vi.spyOn(console, "log");
-    // spyLog.mockImplementationOnce(() => null);
+
     await bucketInstance.initialize();
     expect(spyInit).toHaveBeenCalled();
     expect(logger.debug).toHaveBeenCalled();
@@ -40,17 +38,17 @@ describe("init", () => {
 
     server.use(
       http.get(
-        "https://example.com/flags/evaluate",
+        "https://example.com/features/enabled",
         ({ request }: { request: StrictRequest<DefaultBodyType> }) => {
           usedSpecialHost = true;
-          return flagsEvaluate({ request });
+          return getFeatures({ request });
         },
       ),
     );
     const bucketInstance = new BucketClient(
       KEY,
       { user: { id: "foo" } },
-      { host: CUSTOM_HOST },
+      { host: "https://example.com" },
     );
     await bucketInstance.initialize();
 

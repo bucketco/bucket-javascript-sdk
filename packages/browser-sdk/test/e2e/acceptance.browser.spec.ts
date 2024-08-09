@@ -11,13 +11,13 @@ test("Acceptance", async ({ page }) => {
   const successfulRequests: string[] = [];
 
   // Mock API calls with assertions
-  await page.route(`${API_HOST}/flags/evaluate*`, async (route) => {
-    successfulRequests.push("FLAGS");
+  await page.route(`${API_HOST}/features/enabled*`, async (route) => {
+    successfulRequests.push("FEATURES");
     await route.fulfill({
       status: 200,
       body: JSON.stringify({
         success: true,
-        flags: {},
+        features: {},
       }),
     });
   });
@@ -122,7 +122,7 @@ test("Acceptance", async ({ page }) => {
 
   // Assert all API requests were made
   expect(successfulRequests).toEqual([
-    "FLAGS",
+    "FEATURES",
     "USER",
     "COMPANY",
     "EVENT",

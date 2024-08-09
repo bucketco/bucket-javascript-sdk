@@ -1,3 +1,4 @@
+import { FeaturesClient, FeaturesOptions } from "./feature/features";
 import {
   Feedback,
   feedback,
@@ -6,7 +7,6 @@ import {
   RequestFeedbackOptions,
 } from "./feedback/feedback";
 import * as feedbackLib from "./feedback/ui";
-import { FlagsClient, FlagsOptions } from "./flags/flags";
 import { API_HOST, SSE_REALTIME_HOST } from "./config";
 import { BucketContext } from "./context";
 import { HttpClient } from "./httpClient";
@@ -55,7 +55,7 @@ export interface InitOptions {
   host?: string;
   sseHost?: string;
   feedback?: FeedbackOptions;
-  flags?: FlagsOptions;
+  features?: FeaturesOptions;
   sdkVersion?: string;
 }
 
@@ -73,7 +73,7 @@ export class BucketClient {
   private httpClient: HttpClient;
 
   private liveSatisfaction: LiveSatisfaction | undefined;
-  private flagsClient: FlagsClient;
+  private featuresClient: FeaturesClient;
 
   constructor(
     publishableKey: string,
@@ -100,11 +100,11 @@ export class BucketClient {
       sdkVersion: opts?.sdkVersion,
     });
 
-    this.flagsClient = new FlagsClient(
+    this.featuresClient = new FeaturesClient(
       this.httpClient,
       this.context,
       this.logger,
-      opts?.flags,
+      opts?.features,
     );
 
     if (
@@ -135,7 +135,7 @@ export class BucketClient {
    * Must be called before calling other SDK methods.
    */
   async initialize() {
-    const inits = [this.flagsClient.initialize()];
+    const inits = [this.featuresClient.initialize()];
     if (this.liveSatisfaction) {
       inits.push(this.liveSatisfaction.initialize());
     }
@@ -308,8 +308,8 @@ export class BucketClient {
     }, 1);
   }
 
-  getFlags() {
-    return this.flagsClient.getFlags();
+  getFeatures() {
+    return this.featuresClient.getFeatures();
   }
 
   stop() {

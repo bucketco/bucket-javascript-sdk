@@ -1,8 +1,8 @@
 import { BucketClient } from "../src";
 
-// Extending the Flags interface to define the available flags
+// Extending the Features interface to define the available features
 declare module "../src/types" {
-  interface Flags {
+  interface Features {
     "show-todos": boolean;
     "create-todos": boolean;
     "delete-todos": boolean;
@@ -13,11 +13,11 @@ if (!process.env.BUCKET_SECRET_KEY) {
   throw new Error("BUCKET_SECRET_KEY is required");
 }
 
-// Create a new BucketClient instance with the secret key and default flags
-// The default flags will be used if the user does not have any flags set
+// Create a new BucketClient instance with the secret key and default features
+// The default features will be used if the user does not have any features set
 export default BucketClient({
   secretKey: process.env.BUCKET_SECRET_KEY!,
-  fallbackFlags: {
+  fallbackFeatures: {
     "show-todos": true,
     "create-todos": false,
     "delete-todos": false,

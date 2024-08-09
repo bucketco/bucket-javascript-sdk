@@ -7,5 +7,5 @@ export const API_TIMEOUT_MS = 5000;
 
 export const BUCKET_LOG_PREFIX = "[Bucket]";
 
-export const FLAG_EVENTS_PER_MIN = 1;
-export const FLAGS_REFETCH_MS = 60 * 1000; // re-fetch every 60 seconds
+export const FEATURE_EVENTS_PER_MIN = 1;
+export const FEATURES_REFETCH_MS = 60 * 1000; // re-fetch every 60 seconds
