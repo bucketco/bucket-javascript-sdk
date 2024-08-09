@@ -206,28 +206,39 @@ export function BucketProvider({
     requestFeedback,
   };
 
-  if (featuresLoading && loadingComponent) {
-    return loadingComponent;
-  }
-
-  return <ProviderContext.Provider children={children} value={context} />;
+  return (
+    <ProviderContext.Provider
+      children={
+        featuresLoading && typeof loadingComponent !== "undefined"
+          ? loadingComponent
+          : children
+      }
+      value={context}
+    />
+  );
 }
 
 /**
  * Returns the state of a given feature for the current context, e.g.
  *
  * ```ts
- * const {isEnabled, isLoading, track} = useFeature("huddle");
- *
+ * function HuddleButton() {
+ *   const {isEnabled, track} = useFeature("huddle");
+ *   if (isEnabled) {
+ *    return <button onClick={() => track()}>Start Huddle</button>;
+ *   }
+ * }
  * ```
  */
 export function useFeature(key: BucketFeatures) {
-  const { features, isLoading } =
-    useContext<ProviderContextType>(ProviderContext).features;
+  const {
+    features: { features, isLoading },
+    track,
+  } = useContext<ProviderContextType>(ProviderContext);
 
   const isEnabled = features[key] ?? false;
 
-  return { isLoading: isLoading, isEnabled };
+  return { isLoading: isLoading, isEnabled, track: () => track(key) };
 }
 
 /**
