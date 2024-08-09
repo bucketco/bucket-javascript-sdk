@@ -14,17 +14,13 @@ import canonicalJSON from "canonical-json";
 import {
   BucketClient,
   BucketContext,
-  CompanyContext,
   FeaturesOptions,
   Feedback,
   FeedbackOptions,
   RequestFeedbackOptions,
-  UserContext,
 } from "@bucketco/browser-sdk";
 
 import { version } from "../package.json";
-
-type OtherContext = Record<string, any>;
 
 export interface Features {}
 
@@ -41,9 +37,6 @@ type ProviderContextType = {
     features: FeaturesResult;
     isLoading: boolean;
   };
-  updateUser: (user?: UserContext) => void;
-  updateCompany: (company: CompanyContext) => void;
-  updateOtherContext: (otherContext: OtherContext) => void;
 
   sendFeedback: (opts: Omit<Feedback, "userId" | "companyId">) => void;
   requestFeedback: (
@@ -58,9 +51,7 @@ const ProviderContext = createContext<ProviderContextType>({
     features: {},
     isLoading: false,
   },
-  updateUser: () => undefined,
-  updateCompany: () => undefined,
-  updateOtherContext: () => undefined,
+
   track: () => undefined,
   sendFeedback: () => undefined,
   requestFeedback: () => undefined,
@@ -86,9 +77,9 @@ export type BucketProps = BucketContext & {
 
 export function BucketProvider({
   children,
-  user: initialUser,
-  company: initialCompany,
-  otherContext: initialOtherContext,
+  user,
+  company,
+  otherContext,
   publishableKey,
   featureOptions,
   loadingComponent,
@@ -101,13 +92,7 @@ export function BucketProvider({
   const clientRef = useRef<BucketClient>();
   const contextKeyRef = useRef<string>();
 
-  const [featureContext, setFeatureContext] = useState({
-    user: initialUser,
-    company: initialCompany,
-    otherContext: initialOtherContext,
-  });
-  const { user, company } = featureContext;
-
+  const featureContext = { user, company, otherContext };
   const contextKey = canonicalJSON({ config, featureContext });
 
   useEffect(() => {
@@ -169,20 +154,6 @@ export function BucketProvider({
     return () => client.stop();
   }, [contextKey]);
 
-  // call updateUser with no arguments to logout
-  const updateUser = useCallback((newUser?: UserContext) => {
-    setFeatureContext({ ...featureContext, user: newUser });
-  }, []);
-
-  // call updateUser with no arguments to re-set company context
-  const updateCompany = useCallback((newCompany?: CompanyContext) => {
-    setFeatureContext({ ...featureContext, company: newCompany });
-  }, []);
-
-  const updateOtherContext = useCallback((otherContext?: OtherContext) => {
-    setFeatureContext({ ...featureContext, otherContext });
-  }, []);
-
   const track = useCallback(
     (eventName: string, attributes?: Record<string, any>) => {
       if (user?.id === undefined)
@@ -232,9 +203,6 @@ export function BucketProvider({
       features,
       isLoading: featuresLoading,
     },
-    updateUser,
-    updateCompany,
-    updateOtherContext,
     track,
 
     sendFeedback,
@@ -246,21 +214,6 @@ export function BucketProvider({
   }
 
   return <ProviderContext.Provider children={children} value={context} />;
-}
-
-/**
- * Returns true if the feature is enabled.
- * If the provider hasn't finished loading, it will return false.
- *
- * ```ts
- * const isEnabled = useFeatureIsEnabled('huddle');
- * // true / false
- * ```
- */
-export function useFeatureIsEnabled(featureKey: BucketFeatures) {
-  const { features } =
-    useContext<ProviderContextType>(ProviderContext).features;
-  return features[featureKey] ?? false;
 }
 
 /**
@@ -278,63 +231,6 @@ export function useFeature(key: BucketFeatures) {
   const isEnabled = features[key] ?? false;
 
   return { isLoading: isLoading, isEnabled };
-}
-
-/**
- * Returns features as an object, e.g.
- * Note: this returns the raw feature keys, and does not use the
- * optional typing provided through the `Features` type.
- *
- * ```ts
- * const features = useFeatures();
- * // {
- * //   "isLoading": false,
- * //   "features: {
- * //     "huddle": true,
- * //     "post-message": true
- * //   }
- * // }
- * ```
- */
-export function useFeatures(): {
-  isLoading: boolean;
-  features: FeaturesResult;
-} {
-  const { features, isLoading } =
-    useContext<ProviderContextType>(ProviderContext).features;
-
-  return {
-    isLoading,
-    features,
-  };
-}
-
-/**
- * Returns a set of functions to update the current user, company or "other context".
- *
- * ```ts
- *  import { useUpdateContext } from "@bucketco/react-sdk";
- *  function Company() {
- *  const [company, _] = useState(initialCompany);
- *  const { updateCompany } = useUpdateContext();
- *  return (
- *    <div>
- *      <button onClick={() => updateCompany({ ...company, plan: "enterprise" })}>
- *        Upgrade to enterprise
- *      </button>
- *    </div>
- *  );
- * }
- * ```
- */
-export function useUpdateContext() {
-  const {
-    updateUser,
-    updateCompany,
-    updateOtherContext,
-    features: { isLoading },
-  } = useContext<ProviderContextType>(ProviderContext);
-  return { updateUser, updateCompany, updateOtherContext, isLoading };
 }
 
 /**

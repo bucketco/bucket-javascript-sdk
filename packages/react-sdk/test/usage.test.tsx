@@ -16,14 +16,7 @@ import {
 import { BucketClient } from "@bucketco/browser-sdk";
 import { HttpClient } from "@bucketco/browser-sdk/src/httpClient";
 
-import {
-  BucketProps,
-  BucketProvider,
-  useFeature,
-  useFeatureIsEnabled,
-  useFeatures,
-  useUpdateContext,
-} from "../src";
+import { BucketProps, BucketProvider, useFeature } from "../src";
 
 const originalConsoleError = console.error.bind(console);
 afterEach(() => {
@@ -112,11 +105,6 @@ beforeAll(() =>
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
-const features = {
-  abc: true,
-  def: true,
-};
-
 beforeAll(() => {
   vi.spyOn(BucketClient.prototype, "initialize");
   vi.spyOn(BucketClient.prototype, "getFeatures");
@@ -192,33 +180,6 @@ describe("<BucketProvider />", () => {
   });
 });
 
-describe("useFeatureIsEnabled", () => {
-  test("returns the features in context", async () => {
-    const { result } = renderHook(() => useFeatureIsEnabled("abc"), {
-      wrapper: ({ children }) => getProvider({ children }),
-    });
-
-    await waitFor(() => expect(result.current).toStrictEqual(true));
-    expect(result.current).toStrictEqual(true);
-  });
-});
-
-describe("useFeatures", () => {
-  test("returns a loading state initially, stops loading once initialized", async () => {
-    const { result, unmount } = renderHook(() => useFeatures(), {
-      wrapper: ({ children }) => getProvider({ children }),
-    });
-
-    await waitFor(() =>
-      expect(JSON.stringify(result.current)).toEqual(
-        JSON.stringify({ isLoading: false, features }),
-      ),
-    );
-
-    unmount();
-  });
-});
-
 describe("useFeature", () => {
   test("returns a loading state initially, stops loading once initialized", async () => {
     const { result, unmount } = renderHook(() => useFeature("huddle"), {
@@ -238,105 +199,5 @@ describe("useFeature", () => {
       isLoading: false,
     }),
       unmount();
-  });
-});
-
-describe("useUpdateContext", () => {
-  test("updates SDK when user is reset", async () => {
-    console.error = vi.fn();
-
-    const initialized = vi.mocked(BucketClient.prototype.initialize);
-    const mockedUser = vi.mocked(BucketClient.prototype.user);
-    const mockedStop = vi.mocked(BucketClient.prototype.stop);
-    expect(initialized).not.toHaveBeenCalled();
-    const { result, unmount } = renderHook(() => useUpdateContext(), {
-      wrapper: ({ children }) => getProvider({ children }),
-    });
-
-    expect(initialized).toHaveBeenCalledOnce();
-
-    result.current.updateUser({
-      id: "new-user",
-      name: "new-user-name",
-    });
-
-    await waitFor(() => expect(mockedStop).toHaveBeenCalled());
-    expect(mockedStop).toHaveBeenCalled();
-    expect(mockedUser).toHaveBeenCalledTimes(2);
-    expect(mockedUser).toHaveBeenCalledWith({
-      name: "new-user-name",
-    });
-    expect(initialized).toHaveBeenCalledTimes(2);
-
-    expect(console.error).not.toHaveBeenCalled();
-
-    unmount();
-  });
-
-  test("updates SDK when company is updated", async () => {
-    console.error = vi.fn();
-
-    expect(BucketClient.prototype.initialize).not.toHaveBeenCalled();
-    const { result, unmount } = renderHook(() => useUpdateContext(), {
-      wrapper: ({ children }) => getProvider({ children }),
-    });
-
-    expect(BucketClient.prototype.initialize).toHaveBeenCalledOnce();
-    expect(BucketClient.prototype.stop).not.toHaveBeenCalled();
-    result.current.updateCompany({
-      id: "new-company1",
-      name: "new-company-name",
-    });
-
-    // due to our use of useEffect, stop actually gets called twice
-    await waitFor(() => expect(BucketClient.prototype.stop).toHaveBeenCalled());
-
-    await waitFor(() =>
-      expect(
-        vi.mocked(BucketClient.prototype.initialize),
-      ).toHaveBeenCalledTimes(2),
-    );
-
-    await waitFor(() =>
-      expect(vi.mocked(BucketClient.prototype.company)).toHaveBeenCalledTimes(
-        2,
-      ),
-    );
-    expect(BucketClient.prototype.company).toHaveBeenCalledTimes(2);
-    expect(BucketClient.prototype.company).toHaveBeenCalledWith({
-      name: "new-company-name",
-    });
-    expect(BucketClient.prototype.initialize).toHaveBeenCalledTimes(2);
-
-    expect(console.error).not.toHaveBeenCalled();
-
-    unmount();
-  });
-
-  test("updates SDK when other context is updated", async () => {
-    console.error = vi.fn();
-
-    const initialized = vi.mocked(BucketClient.prototype.initialize);
-    const stop = vi.mocked(BucketClient.prototype.stop);
-    expect(initialized).not.toHaveBeenCalled();
-    const { result, unmount } = renderHook(() => useUpdateContext(), {
-      wrapper: ({ children }) => getProvider({ children }),
-    });
-
-    expect(initialized).toHaveBeenCalledOnce();
-
-    expect(stop).not.toHaveBeenCalled();
-
-    const newOtherContext = { happeningId: "new-conference" };
-    result.current.updateOtherContext(newOtherContext);
-
-    await waitFor(() => expect(stop).toHaveBeenCalled());
-
-    expect(stop).toHaveBeenCalled();
-    expect(console.error).not.toHaveBeenCalled();
-
-    await waitFor(() => result.current.isLoading === false);
-
-    unmount();
   });
 });
