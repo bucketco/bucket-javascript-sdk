@@ -20,15 +20,14 @@ beforeEach(() => {
 });
 
 describe("init", () => {
-  test("will accept setup with key and debug flag", async () => {
+  test("will accept setup with key and debug logger", async () => {
     const bucketInstance = new BucketClient(
       KEY,
       { user: { id: 42 } },
       { logger },
     );
     const spyInit = vi.spyOn(bucketInstance, "initialize");
-    // const spyLog = vi.spyOn(console, "log");
-    // spyLog.mockImplementationOnce(() => null);
+
     await bucketInstance.initialize();
     expect(spyInit).toHaveBeenCalled();
     expect(logger.debug).toHaveBeenCalled();

@@ -4,8 +4,8 @@ import cache from "./cache";
 import {
   API_HOST,
   BUCKET_LOG_PREFIX,
-  FLAG_EVENTS_PER_MIN,
-  FLAGS_REFETCH_MS,
+  FEATURE_EVENTS_PER_MIN,
+  FEATURES_REFETCH_MS,
   SDK_VERSION,
   SDK_VERSION_HEADER_NAME,
 } from "./config";
@@ -15,9 +15,9 @@ import {
   BucketClient as BucketClientType,
   Cache,
   ClientOptions,
-  FeatureFlagEvent,
+  FeatureEvent,
   FeaturesAPIResponse,
-  Flag,
+  Feature,
   HttpClient,
   Logger,
   TrackOptions,
@@ -36,7 +36,7 @@ import {
  *
  * @remarks
  * The client is used to interact with the Bucket API.
- * Use the client to track users, companies, events, and feature flag usage.
+ * Use the client to track users, companies, events, and feature usage and determine which features should be enabled.
  */
 export function BucketClient(options: ClientOptions) {
   return new BucketClientClass(options) as BucketClientType;
@@ -54,8 +54,8 @@ export class BucketClientClass {
     refetchInterval: number;
     staleWarningInterval: number;
     headers: Record<string, string>;
-    fallbackFlags?: Record<keyof TypedFeatures, Flag>;
-    featureFlagDefinitionCache?: Cache<FeaturesAPIResponse>;
+    fallbackFeatures?: Record<keyof TypedFeatures, Feature>;
+    featuresCache?: Cache<FeaturesAPIResponse>;
   };
 
   private _otherContext: Record<string, any> | undefined;
@@ -113,21 +113,22 @@ export class BucketClientClass {
       "httpClient must be an object",
     );
     ok(
-      options.fallbackFlags === undefined || isObject(options.fallbackFlags),
-      "fallbackFlags must be an object",
+      options.fallbackFeatures === undefined ||
+        isObject(options.fallbackFeatures),
+      "fallbackFeatures must be an object",
     );
 
-    const flags =
-      options.fallbackFlags &&
-      Object.entries(options.fallbackFlags).reduce(
-        (acc, [key, value]) => {
+    const features =
+      options.fallbackFeatures &&
+      Object.entries(options.fallbackFeatures).reduce(
+        (acc, [key, isEnabled]) => {
           acc[key as keyof TypedFeatures] = {
             key,
-            value: value as boolean,
+            isEnabled,
           };
           return acc;
         },
-        {} as Record<keyof TypedFeatures, Flag>,
+        {} as Record<keyof TypedFeatures, Feature>,
       );
 
     this._shared = {
@@ -140,9 +141,9 @@ export class BucketClientClass {
         ["Authorization"]: `Bearer ${options.secretKey}`,
       },
       httpClient: options.httpClient || fetchClient,
-      refetchInterval: FLAGS_REFETCH_MS,
-      staleWarningInterval: FLAGS_REFETCH_MS * 5,
-      fallbackFlags: flags,
+      refetchInterval: FEATURES_REFETCH_MS,
+      staleWarningInterval: FEATURES_REFETCH_MS * 5,
+      fallbackFeatures: features,
     };
   }
 
@@ -208,7 +209,12 @@ export class BucketClientClass {
   }
 
   /**
-   * Sends a feature flag event to the Bucket API.
+   * Sends a feature event to the Bucket API.
+   *
+   * Feature events are used to track the evaluation of feature targeting rules.
+   * "check" events are sent when a feature's `isEnabled` property is checked.
+   * "evaluate" events are sent when a feature's targeting rules are matched against
+   * the current context.
    *
    * @param event - The event to send.
    *
@@ -218,7 +224,7 @@ export class BucketClientClass {
    * @remarks
    * This method is rate-limited to prevent too many events from being sent.
    **/
-  private async sendFeatureFlagEvent(event: FeatureFlagEvent) {
+  private async sendFeatureEvent(event: FeatureEvent) {
     ok(typeof event === "object", "event must be an object");
     ok(
       typeof event.action === "string" &&
@@ -226,12 +232,13 @@ export class BucketClientClass {
       "event must have an action",
     );
     ok(
-      typeof event.flagKey === "string" && event.flagKey.length > 0,
-      "event must have a flag key",
+      typeof event.key === "string" && event.key.length > 0,
+      "event must have a feature key",
     );
     ok(
-      typeof event.flagVersion === "number" || event.flagVersion === undefined,
-      "event must have a flag version",
+      typeof event.targetingVersion === "number" ||
+        event.targetingVersion === undefined,
+      "event must have a targeting version",
     );
     ok(
       typeof event.evalResult === "boolean",
@@ -258,17 +265,17 @@ export class BucketClientClass {
 
     if (
       !checkWithinAllottedTimeWindow(
-        FLAG_EVENTS_PER_MIN,
-        `${event.action}:${contextKey}:${event.flagKey}:${event.flagVersion}:${event.evalResult}`,
+        FEATURE_EVENTS_PER_MIN,
+        `${event.action}:${contextKey}:${event.key}:${event.targetingVersion}:${event.evalResult}`,
       )
     ) {
       return false;
     }
 
-    return await this.post("flags/events", {
+    return await this.post("features/events", {
       action: event.action,
-      flagKey: event.flagKey,
-      flagVersion: event.flagVersion,
+      key: event.key,
+      targetingVersion: event.targetingVersion,
       evalContext: event.evalContext,
       evalResult: event.evalResult,
       evalRuleResults: event.evalRuleResults,
@@ -276,9 +283,9 @@ export class BucketClientClass {
     });
   }
 
-  private getFeatureFlagDefinitionCache() {
-    if (!this._shared.featureFlagDefinitionCache) {
-      this._shared.featureFlagDefinitionCache = cache<FeaturesAPIResponse>(
+  private getFeaturesCache() {
+    if (!this._shared.featuresCache) {
+      this._shared.featuresCache = cache<FeaturesAPIResponse>(
         this._shared.refetchInterval,
         this._shared.staleWarningInterval,
         this._shared.logger,
@@ -294,11 +301,11 @@ export class BucketClientClass {
       );
     }
 
-    return this._shared.featureFlagDefinitionCache;
+    return this._shared.featuresCache;
   }
 
   /**
-   * Sets the user that is used for feature flag evaluation.
+   * Sets the user that is used for targeting evaluation.
    *
    * @param userId - The user ID to set.
    * @param attributes - The attributes of the user (optional).
@@ -337,7 +344,7 @@ export class BucketClientClass {
   }
 
   /**
-   * Sets the company that is used for feature flag evaluation.
+   * Sets the company that is used for feature targeting evaluation.
    *
    * @param companyId - The company ID to set.
    * @param attributes - The attributes of the user (optional).
@@ -521,27 +528,25 @@ export class BucketClientClass {
   }
 
   /**
-   * Initializes the client by caching the feature flag definitions.
+   * Initializes the client by caching the features definitions.
    *
    * @returns void
    *
    * @remarks
-   * Call this method before calling `getFlags` to ensure the feature flag definitions are cached.
+   * Call this method before calling `getFeatures` to ensure the feature definitions are cached.
    **/
   public async initialize() {
-    await this.getFeatureFlagDefinitionCache().refresh();
+    await this.getFeaturesCache().refresh();
   }
 
   /**
-   * Gets the evaluated feature flags for the current context which includes the user, company, and custom context.
+   * Gets the evaluated feature for the current context which includes the user, company, and custom context.
    *
-   * @typeparam TFlagKey - The type of the feature flag keys, `string` by default.
-   *
-   * @returns The evaluated feature flags.
+   * @returns The evaluated features.
    * @remarks
-   * Call `initialize` before calling this method to ensure the feature flag definitions are cached, empty flags will be returned otherwise.
+   * Call `initialize` before calling this method to ensure the feature definitions are cached, no features will be returned otherwise.
    **/
-  public getFlags(): Readonly<TypedFeatures> {
+  public getFeatures(): Readonly<TypedFeatures> {
     const mergedContext = {
       user: this._user && {
         id: this._user.userId,
@@ -554,24 +559,24 @@ export class BucketClientClass {
       other: this._otherContext,
     };
 
-    const flagDefinitions = this.getFeatureFlagDefinitionCache().get();
-    let evaluatedFlags: Record<keyof TypedFeatures, Flag> =
-      this._shared.fallbackFlags || {};
+    const featureDefinitions = this.getFeaturesCache().get();
+    let evaluatedFeatures: Record<keyof TypedFeatures, Feature> =
+      this._shared.fallbackFeatures || {};
 
-    if (flagDefinitions) {
+    if (featureDefinitions) {
       const keyToVersionMap = new Map<string, number>(
-        flagDefinitions.features.map((f) => [f.key, f.targeting.version]),
+        featureDefinitions.features.map((f) => [f.key, f.targeting.version]),
       );
 
-      const evaluated = flagDefinitions.features.map((feature) =>
+      const evaluated = featureDefinitions.features.map((feature) =>
         evaluateTargeting({ context: mergedContext, feature }),
       );
 
       evaluated.forEach(async (res) => {
-        await this.sendFeatureFlagEvent({
+        await this.sendFeatureEvent({
           action: "evaluate",
-          flagKey: res.feature.key,
-          flagVersion: keyToVersionMap.get(res.feature.key),
+          key: res.feature.key,
+          targetingVersion: keyToVersionMap.get(res.feature.key),
           evalResult: res.value,
           evalContext: res.context,
           evalRuleResults: res.ruleEvaluationResults,
@@ -579,36 +584,36 @@ export class BucketClientClass {
         });
       });
 
-      evaluatedFlags = evaluated
+      evaluatedFeatures = evaluated
         .filter((e) => e.value)
         .reduce(
           (acc, res) => {
             acc[res.feature.key as keyof TypedFeatures] = {
               key: res.feature.key,
-              value: res.value,
-              version: keyToVersionMap.get(res.feature.key),
+              isEnabled: res.value,
+              targetingVersion: keyToVersionMap.get(res.feature.key),
             };
             return acc;
           },
-          {} as Record<keyof TypedFeatures, Flag>,
+          {} as Record<keyof TypedFeatures, Feature>,
         );
 
-      this._shared.logger?.debug("evaluated flags", evaluatedFlags);
+      this._shared.logger?.debug("evaluated features", evaluatedFeatures);
     } else {
       this._shared.logger?.warn(
-        "failed to use feature flag definitions, there are none cached yet. using fallback flags.",
+        "failed to use feature definitions, there are none cached yet. Using fallback features.",
       );
     }
 
-    return maskedProxy(evaluatedFlags, (flags, key) => {
-      void this.sendFeatureFlagEvent({
+    return maskedProxy(evaluatedFeatures, (features, key) => {
+      void this.sendFeatureEvent({
         action: "check",
-        flagKey: key,
-        flagVersion: flags[key].version,
-        evalResult: flags[key].value,
+        key: key,
+        targetingVersion: features[key].targetingVersion,
+        evalResult: features[key].isEnabled,
       });
 
-      return flags[key].value;
+      return features[key].isEnabled;
     });
   }
 }

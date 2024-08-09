@@ -46,7 +46,7 @@ describe("usage", () => {
     vi.clearAllMocks();
   });
 
-  test("golden path - register user, company, send event, send feedback, get feature flags", async () => {
+  test("golden path - register user, company, send event, send feedback, get features", async () => {
     const bucketInstance = new BucketClient(KEY, { user: { id: "foo " } });
     await bucketInstance.initialize();
 
@@ -63,8 +63,8 @@ describe("usage", () => {
       promptedQuestion: "How are you?",
     });
 
-    const flags = bucketInstance.getFeatures();
-    expect(flags).toEqual(featuresResult);
+    const features = bucketInstance.getFeatures();
+    expect(features).toEqual(featuresResult);
   });
 });
 

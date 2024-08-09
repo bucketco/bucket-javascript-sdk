@@ -1,9 +1,9 @@
 import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
 
 import {
+  FEATURES_EXPIRE_MS,
   FeaturesClient,
   FeaturesOptions,
-  FLAGS_EXPIRE_MS,
 } from "../src/feature/features";
 import { HttpClient } from "../src/httpClient";
 
@@ -250,7 +250,7 @@ describe("FeaturesClient unit tests", () => {
     await client.initialize();
     const a = client.getFeatures();
 
-    vi.advanceTimersByTime(FLAGS_EXPIRE_MS + 1);
+    vi.advanceTimersByTime(FEATURES_EXPIRE_MS + 1);
     vi.mocked(httpClient.get).mockResolvedValue({
       status: 200,
       ok: true,

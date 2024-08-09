@@ -1,4 +1,4 @@
-import { FLAG_EVENTS_PER_MIN } from "../config";
+import { FEATURE_EVENTS_PER_MIN } from "../config";
 import { BucketContext } from "../context";
 import { HttpClient } from "../httpClient";
 import { Logger, loggerWithPrefix } from "../logger";
@@ -35,7 +35,7 @@ type Config = {
   failureRetryAttempts: number | false;
 };
 
-export const DEFAULT_FLAGS_CONFIG: Config = {
+export const DEFAULT_FEATURES_CONFIG: Config = {
   fallbackFeatures: [],
   timeoutMs: 5000,
   staleWhileRevalidate: false,
@@ -107,8 +107,8 @@ export function clearFeatureCache() {
   localStorage.clear();
 }
 
-export const FLAGS_STALE_MS = 60000; // turn stale after 60 seconds, optionally reevaluate in the background
-export const FLAGS_EXPIRE_MS = 7 * 24 * 60 * 60 * 1000; // expire entirely after 7 days
+export const FEATURES_STALE_MS = 60000; // turn stale after 60 seconds, optionally reevaluate in the background
+export const FEATURES_EXPIRE_MS = 7 * 24 * 60 * 60 * 1000; // expire entirely after 7 days
 
 const localStorageCacheKey = `__bucket_features`;
 
@@ -136,12 +136,13 @@ export class FeaturesClient {
             get: () => localStorage.getItem(localStorageCacheKey),
             set: (value) => localStorage.setItem(localStorageCacheKey, value),
           },
-          staleTimeMs: FLAGS_STALE_MS,
-          expireTimeMs: FLAGS_EXPIRE_MS,
+          staleTimeMs: FEATURES_STALE_MS,
+          expireTimeMs: FEATURES_EXPIRE_MS,
         });
-    this.config = { ...DEFAULT_FLAGS_CONFIG, ...options };
+    this.config = { ...DEFAULT_FEATURES_CONFIG, ...options };
     this.rateLimiter =
-      options?.rateLimiter ?? new RateLimiter(FLAG_EVENTS_PER_MIN, this.logger);
+      options?.rateLimiter ??
+      new RateLimiter(FEATURE_EVENTS_PER_MIN, this.logger);
   }
 
   async initialize() {
@@ -291,8 +292,8 @@ export class FeaturesClient {
     await this.rateLimiter.rateLimited(rateLimitKey, async () => {
       const payload = {
         action: "check",
-        featureKey: feature.key,
-        featureVersion: feature.version,
+        key: feature.key,
+        targetingVersion: feature.version,
         evalContext: this.context,
         evalResult: feature.value,
       };

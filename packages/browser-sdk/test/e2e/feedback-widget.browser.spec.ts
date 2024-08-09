@@ -41,7 +41,7 @@ async function getOpenedWidgetContainer(
       status: 200,
       body: JSON.stringify({
         success: true,
-        flags: {},
+        features: {},
       }),
     });
   });
@@ -54,7 +54,7 @@ async function getOpenedWidgetContainer(
       await bucket.initialize();
       await bucket.requestFeedback({
         featureId: "featureId1",
-        title: "baz"
+        title: "baz",
       });
     })()
   `);

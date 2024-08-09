@@ -14,14 +14,16 @@ import { evaluateTargeting } from "@bucketco/flag-evaluation";
 import { BucketClient, BucketClientClass } from "../src/client";
 import {
   API_HOST,
-  FLAG_EVENTS_PER_MIN,
-  FLAGS_REFETCH_MS,
+  FEATURE_EVENTS_PER_MIN,
+  FEATURES_REFETCH_MS,
   SDK_VERSION,
   SDK_VERSION_HEADER_NAME,
 } from "../src/config";
 import fetchClient from "../src/fetch-http-client";
 import { ClientOptions, FeaturesAPIResponse } from "../src/types";
 import { checkWithinAllottedTimeWindow } from "../src/utils";
+
+const FEATURE_EVENTS_ENDPOINT = "https://api.example.com/features/events";
 
 vi.mock("@bucketco/flag-evaluation", async (importOriginal) => {
   const original = (await importOriginal()) as any;
@@ -50,8 +52,8 @@ describe("BucketClientClass", () => {
   };
   const httpClient = { post: vi.fn(), get: vi.fn() };
 
-  const fallbackFlags = {
-    flagKey: true,
+  const fallbackFeatures = {
+    key: true,
   };
 
   const validOptions: ClientOptions = {
@@ -59,7 +61,7 @@ describe("BucketClientClass", () => {
     host: "https://api.example.com",
     logger,
     httpClient,
-    fallbackFlags,
+    fallbackFeatures,
   };
 
   const user = {
@@ -95,15 +97,17 @@ describe("BucketClientClass", () => {
 
       expect(client).toBeInstanceOf(BucketClientClass);
       expect(client["_shared"].host).toBe("https://api.example.com");
-      expect(client["_shared"].refetchInterval).toBe(FLAGS_REFETCH_MS);
-      expect(client["_shared"].staleWarningInterval).toBe(FLAGS_REFETCH_MS * 5);
+      expect(client["_shared"].refetchInterval).toBe(FEATURES_REFETCH_MS);
+      expect(client["_shared"].staleWarningInterval).toBe(
+        FEATURES_REFETCH_MS * 5,
+      );
       expect(client["_shared"].logger).toBeDefined();
       expect(client["_shared"].httpClient).toBe(validOptions.httpClient);
       expect(client["_shared"].headers).toEqual(expectedHeaders);
-      expect(client["_shared"].fallbackFlags).toEqual({
-        flagKey: {
-          key: "flagKey",
-          value: true,
+      expect(client["_shared"].fallbackFeatures).toEqual({
+        key: {
+          key: "key",
+          isEnabled: true,
         },
       });
     });
@@ -138,12 +142,14 @@ describe("BucketClientClass", () => {
 
       expect(client).toBeInstanceOf(BucketClientClass);
       expect(client["_shared"].host).toBe(API_HOST);
-      expect(client["_shared"].refetchInterval).toBe(FLAGS_REFETCH_MS);
-      expect(client["_shared"].staleWarningInterval).toBe(FLAGS_REFETCH_MS * 5);
+      expect(client["_shared"].refetchInterval).toBe(FEATURES_REFETCH_MS);
+      expect(client["_shared"].staleWarningInterval).toBe(
+        FEATURES_REFETCH_MS * 5,
+      );
       expect(client["_shared"].logger).toBeUndefined();
       expect(client["_shared"].httpClient).toBe(fetchClient);
       expect(client["_shared"].headers).toEqual(expectedHeaders);
-      expect(client["_shared"].fallbackFlags).toBeUndefined();
+      expect(client["_shared"].fallbackFeatures).toBeUndefined();
     });
 
     it("should throw an error if options are invalid", () => {
@@ -180,10 +186,10 @@ describe("BucketClientClass", () => {
 
       invalidOptions = {
         ...validOptions,
-        fallbackFlags: "invalid" as any,
+        fallbackFeatures: "invalid" as any,
       };
       expect(() => new BucketClientClass(invalidOptions)).toThrow(
-        "fallbackFlags must be an object",
+        "fallbackFeatures must be an object",
       );
     });
   });
@@ -760,9 +766,7 @@ describe("BucketClientClass", () => {
         get: vi.fn(),
       };
 
-      vi.spyOn(client as any, "getFeatureFlagDefinitionCache").mockReturnValue(
-        cache,
-      );
+      vi.spyOn(client as any, "getFeaturesCache").mockReturnValue(cache);
 
       await client.initialize();
 
@@ -772,13 +776,13 @@ describe("BucketClientClass", () => {
 
     it("should set up the cache object", async () => {
       const client = new BucketClientClass(validOptions);
-      expect(client["_shared"].featureFlagDefinitionCache).toBeUndefined();
+      expect(client["_shared"].featuresCache).toBeUndefined();
 
       await client.initialize();
-      expect(client["_shared"].featureFlagDefinitionCache).toBeTypeOf("object");
+      expect(client["_shared"].featuresCache).toBeTypeOf("object");
     });
 
-    it("should call the backend to obtain flags", async () => {
+    it("should call the backend to obtain features", async () => {
       const client = new BucketClientClass(validOptions);
       await client.initialize();
 
@@ -789,13 +793,13 @@ describe("BucketClientClass", () => {
     });
   });
 
-  describe("getFlags", () => {
+  describe("getFeatures", () => {
     let client: BucketClientClass;
 
     const featureDefinitions: FeaturesAPIResponse = {
       features: [
         {
-          key: "flag1",
+          key: "feature1",
           targeting: {
             version: 1,
             rules: [
@@ -812,7 +816,7 @@ describe("BucketClientClass", () => {
           },
         },
         {
-          key: "flag2",
+          key: "feature2",
           targeting: {
             version: 2,
             rules: [
@@ -835,14 +839,14 @@ describe("BucketClientClass", () => {
 
     const evaluatedFeatures = [
       {
-        feature: { key: "flag1", version: 1 },
+        feature: { key: "feature1", version: 1 },
         value: true,
         context: {},
         ruleEvaluationResults: [true],
         missingContextFields: [],
       },
       {
-        feature: { key: "flag2", version: 2 },
+        feature: { key: "feature2", version: 2 },
         value: false,
         context: {},
         ruleEvaluationResults: [false],
@@ -863,7 +867,7 @@ describe("BucketClientClass", () => {
 
       vi.mocked(evaluateTargeting).mockImplementation(
         ({ feature, context }) => {
-          const evalFlag = evaluatedFeatures.find(
+          const evalFeature = evaluatedFeatures.find(
             (f) => f.feature.key === feature.key,
           )!;
           const featureDef = featureDefinitions.features.find(
@@ -871,11 +875,11 @@ describe("BucketClientClass", () => {
           )!;
 
           return {
-            value: evalFlag.value,
+            value: evalFeature.value,
             feature: featureDef,
             context: context,
-            ruleEvaluationResults: evalFlag.ruleEvaluationResults,
-            missingContextFields: evalFlag.missingContextFields,
+            ruleEvaluationResults: evalFeature.ruleEvaluationResults,
+            missingContextFields: evalFeature.missingContextFields,
           };
         },
       );
@@ -886,7 +890,7 @@ describe("BucketClientClass", () => {
       });
     });
 
-    it("should return evaluated flags when user, company, and custom context are defined", async () => {
+    it("should return evaluated features when user, company, and custom context are defined", async () => {
       client = client
         .withUser(user.userId, user.attrs)
         .withCompany(company.companyId, company.attrs)
@@ -897,10 +901,10 @@ describe("BucketClientClass", () => {
       await flushPromises();
 
       await client.initialize();
-      const result = client.getFlags();
+      const result = client.getFeatures();
 
       expect(result).toEqual({
-        flag1: true,
+        feature1: true,
       });
 
       expect(evaluateTargeting).toHaveBeenCalledTimes(2);
@@ -908,12 +912,12 @@ describe("BucketClientClass", () => {
 
       expect(httpClient.post).toHaveBeenNthCalledWith(
         1,
-        "https://api.example.com/flags/events",
+        FEATURE_EVENTS_ENDPOINT,
         expectedHeaders,
         {
           action: "evaluate",
-          flagKey: "flag1",
-          flagVersion: 1,
+          key: "feature1",
+          targetingVersion: 1,
           evalContext: {
             company: {
               id: "company123",
@@ -933,12 +937,12 @@ describe("BucketClientClass", () => {
 
       expect(httpClient.post).toHaveBeenNthCalledWith(
         2,
-        "https://api.example.com/flags/events",
+        FEATURE_EVENTS_ENDPOINT,
         expectedHeaders,
         {
           action: "evaluate",
-          flagKey: "flag2",
-          flagVersion: 2,
+          key: "feature2",
+          targetingVersion: 2,
           evalContext: {
             company: {
               id: "company123",
@@ -958,12 +962,12 @@ describe("BucketClientClass", () => {
 
       expect(httpClient.post).toHaveBeenNthCalledWith(
         3,
-        "https://api.example.com/flags/events",
+        FEATURE_EVENTS_ENDPOINT,
         expectedHeaders,
         {
           action: "check",
-          flagKey: "flag1",
-          flagVersion: 1,
+          key: "feature1",
+          targetingVersion: 1,
           evalResult: true,
         },
       );
@@ -976,35 +980,35 @@ describe("BucketClientClass", () => {
         .withOtherContext(otherContext);
 
       await client.initialize();
-      client.getFlags();
+      client.getFeatures();
 
       expect(checkWithinAllottedTimeWindow).toHaveBeenCalledWith(
-        FLAG_EVENTS_PER_MIN,
-        "evaluate:user.id=user123&user.age=1&user.name=John&company.id=company123&company.employees=100&company.name=Acme+Inc.&other.custom=context&other.key=value:flag1:1:true",
+        FEATURE_EVENTS_PER_MIN,
+        "evaluate:user.id=user123&user.age=1&user.name=John&company.id=company123&company.employees=100&company.name=Acme+Inc.&other.custom=context&other.key=value:feature1:1:true",
       );
       //      vi.mocked(rateLimited).mockRestore();
     });
 
-    it("should return evaluated flags when only user is defined", async () => {
+    it("should return evaluated features when only user is defined", async () => {
       client = client.withUser(user.userId, user.attrs);
 
       httpClient.post.mockClear(); // not interested in updates
       await flushPromises();
 
       await client.initialize();
-      client.getFlags();
+      client.getFeatures();
 
       expect(evaluateTargeting).toHaveBeenCalledTimes(2);
       expect(httpClient.post).toHaveBeenCalledTimes(2); // For "evaluate" events
 
       expect(httpClient.post).toHaveBeenNthCalledWith(
         1,
-        "https://api.example.com/flags/events",
+        FEATURE_EVENTS_ENDPOINT,
         expectedHeaders,
         {
           action: "evaluate",
-          flagKey: "flag1",
-          flagVersion: 1,
+          key: "feature1",
+          targetingVersion: 1,
           evalContext: {
             user: {
               id: "user123",
@@ -1019,12 +1023,12 @@ describe("BucketClientClass", () => {
 
       expect(httpClient.post).toHaveBeenNthCalledWith(
         2,
-        "https://api.example.com/flags/events",
+        FEATURE_EVENTS_ENDPOINT,
         expectedHeaders,
         {
           action: "evaluate",
-          flagKey: "flag2",
-          flagVersion: 2,
+          key: "feature2",
+          targetingVersion: 2,
           evalContext: {
             user: {
               id: "user123",
@@ -1038,26 +1042,26 @@ describe("BucketClientClass", () => {
       );
     });
 
-    it("should return evaluated flags when only company is defined", async () => {
+    it("should return evaluated features when only company is defined", async () => {
       client = client.withCompany(company.companyId, company.attrs);
 
       httpClient.post.mockClear(); // not interested in updates
       await flushPromises();
 
       await client.initialize();
-      client.getFlags();
+      client.getFeatures();
 
       expect(evaluateTargeting).toHaveBeenCalledTimes(2);
       expect(httpClient.post).toHaveBeenCalledTimes(2); // For "evaluate" events
 
       expect(httpClient.post).toHaveBeenNthCalledWith(
         1,
-        "https://api.example.com/flags/events",
+        FEATURE_EVENTS_ENDPOINT,
         expectedHeaders,
         {
           action: "evaluate",
-          flagKey: "flag1",
-          flagVersion: 1,
+          key: "feature1",
+          targetingVersion: 1,
           evalContext: {
             company: {
               id: "company123",
@@ -1072,12 +1076,12 @@ describe("BucketClientClass", () => {
 
       expect(httpClient.post).toHaveBeenNthCalledWith(
         2,
-        "https://api.example.com/flags/events",
+        FEATURE_EVENTS_ENDPOINT,
         expectedHeaders,
         {
           action: "evaluate",
-          flagKey: "flag2",
-          flagVersion: 2,
+          key: "feature2",
+          targetingVersion: 2,
           evalContext: {
             company: {
               id: "company123",
@@ -1091,23 +1095,23 @@ describe("BucketClientClass", () => {
       );
     });
 
-    it("should return evaluated flags when only other context is defined", async () => {
+    it("should return evaluated features when only other context is defined", async () => {
       client = client.withOtherContext(otherContext);
 
       await client.initialize();
-      client.getFlags();
+      client.getFeatures();
 
       expect(evaluateTargeting).toHaveBeenCalledTimes(2);
       expect(httpClient.post).toHaveBeenCalledTimes(2); // For "evaluate" events
 
       expect(httpClient.post).toHaveBeenNthCalledWith(
         1,
-        "https://api.example.com/flags/events",
+        FEATURE_EVENTS_ENDPOINT,
         expectedHeaders,
         {
           action: "evaluate",
-          flagKey: "flag1",
-          flagVersion: 1,
+          key: "feature1",
+          targetingVersion: 1,
           evalContext: {
             other: otherContext,
           },
@@ -1119,12 +1123,12 @@ describe("BucketClientClass", () => {
 
       expect(httpClient.post).toHaveBeenNthCalledWith(
         2,
-        "https://api.example.com/flags/events",
+        FEATURE_EVENTS_ENDPOINT,
         expectedHeaders,
         {
           action: "evaluate",
-          flagKey: "flag2",
-          flagVersion: 2,
+          key: "feature2",
+          targetingVersion: 2,
           evalContext: {
             other: otherContext,
           },
@@ -1135,37 +1139,37 @@ describe("BucketClientClass", () => {
       );
     });
 
-    it("should use fallback flags when getFeatureFlagDefinitions returns undefined", async () => {
+    it("should use fallback features when getFeatureDefinitions returns undefined", async () => {
       httpClient.get.mockResolvedValue({
         success: false,
       });
 
       await client.initialize();
-      const result = client.getFlags();
+      const result = client.getFeatures();
 
       expect(result).toEqual({
-        flagKey: true,
+        key: true,
       });
 
       expect(logger.warn).toHaveBeenCalledWith(
         expect.stringMatching(
-          "failed to use feature flag definitions, there are none cached yet. using fallback flags.",
+          "failed to use feature definitions, there are none cached yet. Using fallback features.",
         ),
       );
       expect(httpClient.post).toHaveBeenCalledTimes(1); // For "evaluate" events
 
       expect(httpClient.post).toHaveBeenCalledWith(
-        "https://api.example.com/flags/events",
+        FEATURE_EVENTS_ENDPOINT,
         expectedHeaders,
         {
           action: "check",
-          flagKey: "flagKey",
+          key: "key",
           evalResult: true,
         },
       );
     });
 
-    it("should not fail if sendFeatureFlagEvent fails to send evaluate event", async () => {
+    it("should not fail if sendFeatureEvent fails to send evaluate event", async () => {
       client = client.withUser("fancyUser");
 
       httpClient.post.mockClear(); // not interested in updates
@@ -1174,19 +1178,19 @@ describe("BucketClientClass", () => {
       httpClient.post.mockRejectedValueOnce(new Error("Network error"));
 
       await client.initialize();
-      client.getFlags();
+      client.getFeatures();
 
       await flushPromises();
 
       expect(logger.error).toHaveBeenCalledWith(
         expect.stringMatching(
-          'post request to "flags/events" failed with error',
+          'post request to "features/events" failed with error',
         ),
         expect.any(Error),
       );
     });
 
-    it("should not fail if sendFeatureFlagEvent fails to send check event", async () => {
+    it("should not fail if sendFeatureEvent fails to send check event", async () => {
       client = client.withUser("anotherUser");
 
       httpClient.post.mockClear(); // not interested in updates
@@ -1202,16 +1206,16 @@ describe("BucketClientClass", () => {
 
       await flushPromises();
 
-      const result = client.getFlags();
+      const result = client.getFeatures();
 
-      // Trigger a flag check
-      expect(result.flag1).toBe(true);
+      // Trigger a feature check
+      expect(result.feature1).toBe(true);
 
       await flushPromises();
 
       expect(logger.error).toHaveBeenCalledWith(
         expect.stringMatching(
-          'post request to "flags/events" failed with error',
+          'post request to "features/events" failed with error',
         ),
         expect.any(Error),
       );
@@ -1246,7 +1250,7 @@ describe("BucketClient", () => {
       });
 
       await client.initialize();
-      client.getFlags();
+      client.getFeatures();
     });
 
     it("should allow using expected methods when bound to user", async () => {
@@ -1258,7 +1262,7 @@ describe("BucketClient", () => {
       });
 
       await bound.initialize();
-      bound.getFlags();
+      bound.getFeatures();
 
       await bound.updateUser();
       await bound.trackFeatureUsage("feature");
@@ -1275,7 +1279,7 @@ describe("BucketClient", () => {
       });
 
       await bound.initialize();
-      bound.getFlags();
+      bound.getFeatures();
 
       await bound.updateCompany();
 
@@ -1292,7 +1296,7 @@ describe("BucketClient", () => {
       });
 
       await bound.initialize();
-      bound.getFlags();
+      bound.getFeatures();
 
       await bound.updateCompany();
       await bound.updateUser();
