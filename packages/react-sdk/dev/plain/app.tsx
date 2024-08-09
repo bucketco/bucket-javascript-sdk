@@ -1,12 +1,10 @@
-import React, { useState } from "react";
+import React, { createContext, useContext, useState } from "react";
 
 import {
   BucketProvider,
   useFeature,
-  useFeatures,
   useRequestFeedback,
   useTrack,
-  useUpdateContext,
 } from "../../src";
 
 // Extending the Features interface to define the available features
@@ -45,13 +43,13 @@ const initialOtherContext = {
 };
 
 function UpdateContext() {
+  const { user, company, otherContext, setContext } =
+    useContext(SessionContext);
   const [newCompany, setNewCompany] = useState(JSON.stringify(initialCompany));
   const [newUser, setNewUser] = useState(JSON.stringify(initialUser));
   const [newOtherContext, setNewOtherContext] = useState(
     JSON.stringify(initialOtherContext),
   );
-
-  const { updateUser, updateCompany, updateOtherContext } = useUpdateContext();
 
   return (
     <div>
@@ -69,7 +67,11 @@ function UpdateContext() {
             <td>
               <button
                 onClick={() => {
-                  updateCompany(JSON.parse(newCompany));
+                  setContext({
+                    user,
+                    other: otherContext,
+                    company: JSON.parse(newCompany),
+                  });
                 }}
               >
                 Update company
@@ -85,9 +87,13 @@ function UpdateContext() {
             </td>
             <td>
               <button
-                onClick={() => {
-                  updateUser(JSON.parse(newUser));
-                }}
+                onClick={() =>
+                  setContext({
+                    user: JSON.parse(newUser),
+                    other: otherContext,
+                    company,
+                  })
+                }
               >
                 Update user
               </button>
@@ -102,9 +108,13 @@ function UpdateContext() {
             </td>
             <td>
               <button
-                onClick={() => {
-                  updateOtherContext(JSON.parse(newOtherContext));
-                }}
+                onClick={() =>
+                  setContext({
+                    user,
+                    other: JSON.parse(newOtherContext),
+                    company,
+                  })
+                }
               >
                 Update other context
               </button>
@@ -161,18 +171,11 @@ function Feedback() {
 
 // App.tsx
 function Demos() {
-  const { features } = useFeatures();
-
   return (
     <main>
       <h1>React SDK</h1>
 
       <HuddleFeature />
-
-      <h2>All features</h2>
-      <pre>
-        <code>{JSON.stringify(features, null, 2)}</code>
-      </pre>
 
       <UpdateContext />
       <Feedback />
@@ -181,22 +184,39 @@ function Demos() {
   );
 }
 
+const SessionContext = createContext({
+  user: initialUser,
+  company: initialCompany,
+  otherContext: initialOtherContext,
+  setContext: (_: any) => {},
+});
+
 export function App() {
+  const [context, setContext] = useState({
+    user: initialUser,
+    company: initialCompany,
+    otherContext: initialOtherContext,
+  });
+
+  const { user, company, otherContext } = context;
+
   return (
-    <BucketProvider
-      publishableKey={publishableKey}
-      feedback={{
-        enableLiveSatisfaction: true,
-      }}
-      company={initialCompany}
-      user={initialUser}
-      otherContext={initialOtherContext}
-      featureOptions={{
-        fallbackFeatures: ["huddle"],
-      }}
-    >
-      <Demos />
-      {}
-    </BucketProvider>
+    <SessionContext.Provider value={{ setContext, ...context }}>
+      <BucketProvider
+        publishableKey={publishableKey}
+        feedback={{
+          enableLiveSatisfaction: true,
+        }}
+        company={company}
+        user={user}
+        otherContext={otherContext}
+        featureOptions={{
+          fallbackFeatures: ["huddle"],
+        }}
+      >
+        <Demos />
+        {}
+      </BucketProvider>
+    </SessionContext.Provider>
   );
 }
