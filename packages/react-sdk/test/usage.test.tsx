@@ -16,6 +16,7 @@ import {
 import { BucketClient } from "@bucketco/browser-sdk";
 import { HttpClient } from "@bucketco/browser-sdk/src/httpClient";
 
+import { version } from "../package.json";
 import { BucketProps, BucketProvider, useFeature } from "../src";
 
 const originalConsoleError = console.error.bind(console);
@@ -159,7 +160,7 @@ describe("<BucketProvider />", () => {
         sseHost: "https://test.com",
         feedback: undefined,
         features: {},
-        sdkVersion: "react-sdk/1.0.0-beta.1",
+        sdkVersion: `react-sdk/${version}`,
       },
     ]);
   });
