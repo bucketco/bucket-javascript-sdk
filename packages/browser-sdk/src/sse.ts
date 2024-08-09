@@ -18,27 +18,62 @@ interface AblyTokenRequest {
 const ABLY_TOKEN_ERROR_MIN = 40000;
 const ABLY_TOKEN_ERROR_MAX = 49999;
 
-export class AblySSEChannel {
+export class AblySSEConn {
   private isOpen: boolean = false;
   private eventSource: EventSource | null = null;
   private retryInterval: ReturnType<typeof setInterval> | null = null;
   private logger: Logger;
 
+  private msgCallbacks: { [key: string]: (message: any) => void } = {};
+
   constructor(
     private userId: string,
-    private channel: string,
     private sseHost: string,
-    private messageHandler: (message: any) => void,
     private httpClient: HttpClient,
     logger: Logger,
   ) {
     this.logger = loggerWithPrefix(logger, "[SSE]");
   }
 
+  private async initSse() {
+    const cached = getAuthToken(this.userId);
+    if (cached) {
+      this.logger.debug(`using existing token`, cached.channels, cached.token);
+      return cached.channels;
+    }
+
+    try {
+      const res = await this.httpClient.post({
+        path: `/sse-init`,
+        body: {
+          userId: this.userId,
+        },
+      });
+
+      if (res.ok) {
+        const body: { success: boolean; channels?: string[] } =
+          await res.json();
+        if (body.success && body.channels) {
+          this.logger.debug(`SSE channels fetched`);
+          return body.channels;
+        }
+      }
+    } catch (e) {
+      this.logger.error(`error initializing SSE`, e);
+      return;
+    }
+    return;
+  }
+
   private async refreshTokenRequest() {
+    const channels = await this.initSse();
+    if (!channels) {
+      return;
+    }
+
     const params = new URLSearchParams({ userId: this.userId });
     const res = await this.httpClient.get({
-      path: `/feedback/prompting-auth`,
+      path: `/sse-auth`,
       params,
     });
 
@@ -49,7 +84,7 @@ export class AblySSEChannel {
         const tokenRequest: AblyTokenRequest = body;
 
         this.logger.debug("obtained new token request", tokenRequest);
-        return tokenRequest;
+        return { tokenRequest, channels };
       }
     }
 
@@ -57,11 +92,11 @@ export class AblySSEChannel {
     return;
   }
 
-  private async refreshToken() {
+  private async maybeRefreshToken() {
     const cached = getAuthToken(this.userId);
-    if (cached && cached.channel === this.channel) {
-      this.logger.debug("using existing token", cached.channel, cached.token);
-      return cached.token;
+    if (cached) {
+      this.logger.debug("using existing token", cached.channels, cached.token);
+      return cached;
     }
 
     const tokenRequest = await this.refreshTokenRequest();
@@ -70,7 +105,7 @@ export class AblySSEChannel {
     }
 
     const url = new URL(
-      `/keys/${encodeURIComponent(tokenRequest.keyName)}/requestToken`,
+      `/keys/${encodeURIComponent(tokenRequest.tokenRequest.keyName)}/requestToken`,
       this.sseHost,
     );
 
@@ -79,7 +114,7 @@ export class AblySSEChannel {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(tokenRequest),
+      body: JSON.stringify(tokenRequest.tokenRequest),
     });
 
     if (res.ok) {
@@ -88,11 +123,11 @@ export class AblySSEChannel {
 
       rememberAuthToken(
         this.userId,
-        this.channel,
+        tokenRequest.channels,
         details.token,
         new Date(details.expires),
       );
-      return details.token;
+      return { token: details.token, channels: tokenRequest.channels };
     }
 
     this.logger.error("server did not release a token");
@@ -136,12 +171,14 @@ export class AblySSEChannel {
 
   private onMessage(e: MessageEvent) {
     let payload: any;
+    let eventName: string = "";
 
     try {
       if (e.data) {
         const message = JSON.parse(e.data);
-        if (message.data) {
+        if (message.data && message.name) {
           payload = JSON.parse(message.data);
+          eventName = message.name;
         }
       }
     } catch (error: any) {
@@ -153,7 +190,9 @@ export class AblySSEChannel {
       this.logger.debug("received message", payload);
 
       try {
-        this.messageHandler(payload);
+        if (eventName in this.msgCallbacks) {
+          this.msgCallbacks[eventName](payload);
+        }
       } catch (error: any) {
         this.logger.warn("failed to handle message", error, payload);
       }
@@ -176,14 +215,14 @@ export class AblySSEChannel {
 
     this.isOpen = true;
     try {
-      const token = await this.refreshToken();
+      const sseConfig = await this.maybeRefreshToken();
 
-      if (!token) return;
+      if (!sseConfig) return;
 
       const url = new URL("/sse", this.sseHost);
       url.searchParams.append("v", "1.2");
-      url.searchParams.append("accessToken", token);
-      url.searchParams.append("channels", this.channel);
+      url.searchParams.append("accessToken", sseConfig.token);
+      url.searchParams.append("channels", sseConfig.channels.join(","));
       url.searchParams.append("rewind", "1");
 
       this.eventSource = new EventSource(url);
@@ -196,6 +235,13 @@ export class AblySSEChannel {
     } finally {
       this.isOpen = !!this.eventSource;
     }
+  }
+
+  public addOnMessageCallback(
+    msgType: string,
+    callback: (message: any) => void,
+  ) {
+    this.msgCallbacks[msgType] = callback;
   }
 
   public disconnect() {
@@ -271,8 +317,6 @@ export class AblySSEChannel {
 
 export function openAblySSEChannel({
   userId,
-  channel,
-  callback,
   httpClient,
   sseHost,
   logger,
@@ -284,20 +328,13 @@ export function openAblySSEChannel({
   logger: Logger;
   sseHost: string;
 }) {
-  const sse = new AblySSEChannel(
-    userId,
-    channel,
-    sseHost,
-    callback,
-    httpClient,
-    logger,
-  );
+  const sse = new AblySSEConn(userId, sseHost, httpClient, logger);
 
   sse.open();
 
   return sse;
 }
 
-export function closeAblySSEChannel(channel: AblySSEChannel) {
+export function closeAblySSEChannel(channel: AblySSEConn) {
   channel.close();
 }

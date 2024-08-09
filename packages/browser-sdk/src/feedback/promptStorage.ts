@@ -22,11 +22,11 @@ export const checkPromptMessageCompleted = (
 
 export const rememberAuthToken = (
   userId: string,
-  channel: string,
+  channels: string[],
   token: string,
   expiresAt: Date,
 ) => {
-  Cookies.set(`bucket-token-${userId}`, JSON.stringify({ channel, token }), {
+  Cookies.set(`bucket-token-${userId}`, JSON.stringify({ channels, token }), {
     expires: expiresAt,
     sameSite: "strict",
     secure: true,
@@ -40,15 +40,15 @@ export const getAuthToken = (userId: string) => {
   }
 
   try {
-    const { channel, token } = JSON.parse(val) as {
-      channel: string;
+    const { channels, token } = JSON.parse(val) as {
+      channels: string[];
       token: string;
     };
-    if (!channel?.length || !token?.length) {
+    if (!channels?.length || !token?.length) {
       return undefined;
     }
     return {
-      channel,
+      channels,
       token,
     };
   } catch (e) {

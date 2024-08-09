@@ -158,7 +158,9 @@ describe("<BucketProvider />", () => {
         logger: undefined,
         sseHost: "https://test.com",
         feedback: undefined,
-        features: {},
+        features: {
+          onUpdatedFeatures: expect.any(Function),
+        },
         sdkVersion: "react-sdk/1.0.0-beta.1",
       },
     ]);

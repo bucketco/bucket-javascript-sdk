@@ -18,7 +18,7 @@ import {
   markPromptMessageCompleted,
 } from "../src/feedback/promptStorage";
 import {
-  AblySSEChannel,
+  AblySSEConn,
   closeAblySSEChannel,
   openAblySSEChannel,
 } from "../src/sse";
@@ -78,7 +78,7 @@ describe("feedback prompting", () => {
   beforeAll(() => {
     vi.mocked(openAblySSEChannel).mockReturnValue({
       close: closeChannel,
-    } as unknown as AblySSEChannel);
+    } as unknown as AblySSEConn);
     vi.mocked(closeAblySSEChannel).mockResolvedValue(undefined);
   });
 
@@ -103,7 +103,7 @@ describe("feedback prompting", () => {
   test("does not call tracking endpoints if token cached", async () => {
     const specialChannel = "special-channel";
     vi.mocked(getAuthToken).mockReturnValue({
-      channel: specialChannel,
+      channels: [specialChannel],
       token: "something",
     });
 
@@ -169,7 +169,7 @@ describe("feedback state management", () => {
   beforeEach(() => {
     vi.mocked(openAblySSEChannel).mockImplementation(({ callback }) => {
       callback(message);
-      return {} as AblySSEChannel;
+      return {} as AblySSEConn;
     });
     events = [];
     server.use(

@@ -11,6 +11,7 @@ interface cacheEntry {
   success: boolean; // we also want to cache failures to avoid the UI waiting and spamming the API
   features: APIFeaturesResponse | undefined;
   attemptCount: number;
+  updatedAt: number;
 }
 
 // Parse and validate an API feature response
@@ -45,6 +46,7 @@ export interface CacheResult {
   stale: boolean;
   success: boolean;
   attemptCount: number;
+  updatedAt: number;
 }
 
 export class FeatureCache {
@@ -72,10 +74,12 @@ export class FeatureCache {
       success,
       features,
       attemptCount,
+      updatedAt,
     }: {
       success: boolean;
       features?: APIFeaturesResponse;
       attemptCount: number;
+      updatedAt: number;
     },
   ) {
     let cacheData: CacheData = {};
@@ -95,6 +99,7 @@ export class FeatureCache {
       features,
       success,
       attemptCount,
+      updatedAt,
     } satisfies cacheEntry;
 
     cacheData = Object.fromEntries(
@@ -121,6 +126,7 @@ export class FeatureCache {
             success: cachedResponse[key].success,
             stale: cachedResponse[key].staleAt < Date.now(),
             attemptCount: cachedResponse[key].attemptCount,
+            updatedAt: cachedResponse[key].updatedAt,
           };
         }
       }
@@ -142,22 +148,27 @@ function validateCacheData(cacheDataInput: any) {
     const cacheEntry = cacheDataInput[key];
     if (!isObject(cacheEntry)) return;
 
+    const { expireAt, staleAt, success, attemptCount, updatedAt, features } =
+      cacheEntry;
+
     if (
-      typeof cacheEntry.expireAt !== "number" ||
-      typeof cacheEntry.staleAt !== "number" ||
-      typeof cacheEntry.success !== "boolean" ||
-      typeof cacheEntry.attemptCount !== "number" ||
-      (cacheEntry.features && !parseAPIFeaturesResponse(cacheEntry.features))
+      typeof expireAt !== "number" ||
+      typeof staleAt !== "number" ||
+      typeof success !== "boolean" ||
+      typeof attemptCount !== "number" ||
+      typeof updatedAt !== "number" ||
+      (features && !parseAPIFeaturesResponse(features))
     ) {
       return;
     }
 
     cacheData[key] = {
-      expireAt: cacheEntry.expireAt,
-      staleAt: cacheEntry.staleAt,
-      success: cacheEntry.success,
-      features: cacheEntry.features,
-      attemptCount: cacheEntry.attemptCount,
+      expireAt,
+      staleAt,
+      success,
+      features,
+      attemptCount,
+      updatedAt,
     };
   }
   return cacheData;

@@ -113,6 +113,9 @@ export function BucketProvider({
       sseHost: config.sseHost,
       features: {
         ...featureOptions,
+        onUpdatedFeatures: (features) => {
+          setFeatures(features);
+        },
       },
       feedback: config.feedback,
       logger: config.debug ? console : undefined,
