@@ -290,8 +290,8 @@ describe(`sends "check" events`, () => {
           },
         },
         evalResult: true,
-        featureKey: "featureA",
-        featureVersion: 1,
+        key: "featureA",
+        targetingVersion: 1,
       },
     });
   });
@@ -314,7 +314,7 @@ describe(`sends "check" events`, () => {
           },
         },
         evalResult: false,
-        featureKey: "notAvailableFeature",
+        key: "notAvailableFeature",
       },
     });
   });
