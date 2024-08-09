@@ -1,0 +1,10 @@
+{
+  "extends": "@vue/tsconfig/tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist/",
+    "declaration": true,
+    "declarationDir": "./dist/types"
+  },
+  "include": ["src", "dev"],
+  "typeRoots": ["./node_modules/@types"]
+}
