@@ -17,6 +17,7 @@ module.exports = [
       "**/*.jsx",
       "**/*.ts",
       "**/*.tsx",
+      "**/*.vue",
     ],
     plugins: {
       import: importsPlugin,
