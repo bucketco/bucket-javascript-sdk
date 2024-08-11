@@ -1,34 +1,22 @@
-import { computed, inject } from "vue";
+import { inject } from "vue";
 import { BucketInjectionKey } from "./BucketPlugin";
-import type { BucketFlags } from "./BucketPlugin";
+import type { BucketFeatures } from "./BucketPlugin";
 
 export function useBucket() {
   const bucket = inject(BucketInjectionKey);
   if (!bucket) {
     throw new Error("Bucket not found. Make sure to provide the BucketPlugin.");
   }
-  return bucket
+  return bucket;
 }
 
-export function useFlagIsEnabled(flagKey: BucketFlags) {
+export function useFeature(key: BucketFeatures) {
   const bucket = useBucket();
-  return computed(() => bucket.state.flags[flagKey] ?? false);
-}
-
-export function useFlag(key: BucketFlags) {
-  const bucket = useBucket();
-  return computed(() => ({
+  return {
     isLoading: bucket.state.isLoading,
-    isEnabled: bucket.state.flags[key] ?? false,
-  }));
-}
-
-export function useFlags() {
-  const bucket = useBucket();
-  return computed(() => ({
-    isLoading: bucket.state.isLoading,
-    flags: bucket.state.flags,
-  }));
+    isEnabled: bucket.state.features[key] ?? false,
+    track: () => bucket.track(key),
+  };
 }
 
 export function useTrack() {

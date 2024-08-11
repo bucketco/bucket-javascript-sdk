@@ -5,7 +5,7 @@ import type {
   CompanyContext,
   Feedback,
   FeedbackOptions,
-  FlagsOptions,
+  FeaturesOptions,
   RequestFeedbackOptions,
   UserContext,
 } from "@bucketco/browser-sdk";
@@ -17,16 +17,16 @@ const SDK_VERSION = `vue-sdk/${version}`;
 
 type OtherContext = Record<string, any>;
 
-export interface Flags {}
+export interface Features {}
 
-export type BucketFlags = keyof (keyof Flags extends never
+export type BucketFeatures = keyof (keyof Features extends never
   ? Record<string, boolean>
-  : Flags);
+  : Features);
 
-export type FlagsResult = { [k in BucketFlags]?: boolean };
+export type FeaturesResult = { [k in BucketFeatures]?: boolean };
 
 export interface BucketState {
-  flags: FlagsResult;
+  features: FeaturesResult;
   isLoading: boolean;
   user: UserContext | null;
   company: CompanyContext | null;
@@ -35,8 +35,8 @@ export interface BucketState {
 
 export interface BucketPluginOptions {
   publishableKey: string;
-  flagOptions?: Omit<FlagsOptions, "fallbackFlags"> & {
-    fallbackFlags?: BucketFlags[];
+  flagOptions?: Omit<FeaturesOptions, "fallbackFeatures"> & {
+    fallbackFeatures?: BucketFeatures[];
   };
   feedback?: FeedbackOptions;
   host?: string;
@@ -58,7 +58,7 @@ export const BucketInjectionKey = Symbol() as InjectionKey<ProvideType>;
 export const BucketPlugin = {
   install(app: App, options: BucketPluginOptions) {
     const bucketState = reactive<BucketState>({
-      flags: {},
+      features: {},
       isLoading: true,
       user: null,
       company: null,
@@ -82,11 +82,11 @@ export const BucketPlugin = {
         {
           host: options.host,
           sseHost: options.sseHost,
-          flags: {
+          features: {
             ...options.flagOptions,
-            onUpdatedFlags: (flags) => {
-              bucketState.flags = flags;
-            },
+            // onUpdatedFeatures: (flags) => {
+            //   bucketState.flags = flags;
+            // },
           },
           feedback: options.feedback,
           logger: options.debug ? console : undefined,
@@ -97,7 +97,7 @@ export const BucketPlugin = {
       client.value
         .initialize()
         .then(() => {
-          bucketState.flags = client.value!.getFlags() ?? {};
+          bucketState.features = client.value!.getFeatures() ?? {};
           bucketState.isLoading = false;
 
           // Update user attributes
