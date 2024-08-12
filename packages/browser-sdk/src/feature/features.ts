@@ -31,7 +31,7 @@ export type FeaturesOptions = {
   timeoutMs?: number;
   staleWhileRevalidate?: boolean;
   failureRetryAttempts?: number | false;
-  onUpdatedFeatures?: (flags: Features) => void;
+  onUpdatedFeatures?: (features: Features) => void;
 };
 
 type Config = {
@@ -39,6 +39,7 @@ type Config = {
   timeoutMs: number;
   staleWhileRevalidate: boolean;
   failureRetryAttempts: number | false;
+  onUpdatedFeatures: (features: Features) => void;
 };
 
 export const DEFAULT_FEATURES_CONFIG: Config = {
@@ -46,6 +47,8 @@ export const DEFAULT_FEATURES_CONFIG: Config = {
   timeoutMs: 5000,
   staleWhileRevalidate: false,
   failureRetryAttempts: false,
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  onUpdatedFeatures: () => {},
 };
 
 // Deep merge two objects.
@@ -142,7 +145,6 @@ export class FeaturesClient {
       cache?: FeatureCache;
       rateLimiter?: RateLimiter;
       liveConn?: AblySSEConn;
-      onUpdatedFeatures?: (flags: Features) => void;
     },
   ) {
     this.logger = loggerWithPrefix(logger, "[Features]");
@@ -199,9 +201,7 @@ export class FeaturesClient {
     this.features = proxiedFlags;
     this.updatedAt = features.updatedAt;
 
-    if (this.config.onUpdatedFlags) {
-      this.config.onUpdatedFlags(this.features);
-    }
+    this.config.onUpdatedFeatures(this.features);
   }
 
   public async maybeRefreshFeatures() {

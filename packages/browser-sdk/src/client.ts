@@ -144,9 +144,10 @@ export class BucketClient {
    * Must be called before calling other SDK methods.
    */
   async initialize() {
-    await this.featuresClient.maybeRefreshFeatures();
-
+    // start trying to open the SSE connection
     this.sseConn.open();
+
+    await this.featuresClient.maybeRefreshFeatures();
 
     this.logger.debug(
       `initialized with key "${this.publishableKey}" and options`,
