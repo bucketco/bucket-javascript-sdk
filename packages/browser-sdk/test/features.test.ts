@@ -142,7 +142,7 @@ describe("FeaturesClient unit tests", () => {
       const response = {
         success: true,
         features: {
-          featureB: { value: true, key: "featureB" },
+          featureB: { isEnabled: true, key: "featureB" },
         },
       };
 
@@ -178,7 +178,7 @@ describe("FeaturesClient unit tests", () => {
           Promise.resolve({
             success: true,
             features: {
-              featureA: { value: true, key: "featureA" },
+              featureA: { isEnabled: true, key: "featureA" },
             },
           }),
       } as Response);
@@ -225,7 +225,11 @@ describe("FeaturesClient unit tests", () => {
           return Promise.resolve({
             success: true,
             features: {
-              featureB: { value: true, key: "featureB", version: 1 },
+              featureB: {
+                isEnabled: true,
+                key: "featureB",
+                targetingVersion: 1,
+              },
             },
           });
         },
@@ -258,7 +262,7 @@ describe("FeaturesClient unit tests", () => {
         Promise.resolve({
           success: true,
           features: {
-            featureB: { value: true, key: "featureB" },
+            featureB: { isEnabled: true, key: "featureB" },
           },
         }),
     } as Response);

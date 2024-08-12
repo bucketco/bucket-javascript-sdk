@@ -41,7 +41,9 @@ export function newCache(): {
 }
 
 describe("cache", () => {
-  const features = { featureA: { value: true, key: "featureA", version: 1 } };
+  const features = {
+    featureA: { isEnabled: true, key: "featureA", targetingVersion: 1 },
+  };
 
   test("caches items", async () => {
     const { cache } = newCache();

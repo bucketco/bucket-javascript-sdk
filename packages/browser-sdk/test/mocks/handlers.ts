@@ -7,7 +7,7 @@ export const testChannel = "testChannel";
 export const featureResponse: FeaturesResponse = {
   success: true,
   features: {
-    featureA: { value: true, key: "featureA", version: 1 },
+    featureA: { isEnabled: true, key: "featureA", targetingVersion: 1 },
   },
 };
 
@@ -115,10 +115,4 @@ export const handlers = [
     if (!checkRequest(request)) return invalidReqResponse;
     return HttpResponse.json({ success: true, keyName: "keyName" });
   }),
-  // http.post("https://ssehost.com/keys/keyName/requestToken", () => {
-  //   return HttpResponse.json({
-  //     token: "token",
-  //     expires: new Date("2023-01-01T00:00:00.000Z"),
-  //   });
-  // }),
 ];

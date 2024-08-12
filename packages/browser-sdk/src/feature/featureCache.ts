@@ -25,15 +25,15 @@ export function parseAPIFeaturesResponse(
   for (const key in featuresInput) {
     const feature = featuresInput[key];
     if (
-      typeof feature.value !== "boolean" ||
+      typeof feature.isEnabled !== "boolean" ||
       feature.key !== key ||
-      typeof feature.version !== "number"
+      typeof feature.targetingVersion !== "number"
     ) {
       return;
     }
     features[key] = {
-      value: feature.value,
-      version: feature.version,
+      isEnabled: feature.isEnabled,
+      targetingVersion: feature.targetingVersion,
       key,
     };
   }
