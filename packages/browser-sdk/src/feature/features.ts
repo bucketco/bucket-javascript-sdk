@@ -3,6 +3,7 @@ import { BucketContext } from "../context";
 import { HttpClient } from "../httpClient";
 import { Logger, loggerWithPrefix } from "../logger";
 import RateLimiter from "../rateLimiter";
+import { AblySSEConn } from "../sse";
 
 import {
   FeatureCache,
@@ -18,6 +19,10 @@ export type APIFeatureResponse = {
 };
 
 export type APIFeaturesResponse = Record<string, APIFeatureResponse>;
+export type APIResponse = {
+  features: APIFeaturesResponse | undefined;
+  updatedAt: number;
+};
 
 export type Features = Record<string, boolean>;
 
@@ -26,6 +31,7 @@ export type FeaturesOptions = {
   timeoutMs?: number;
   staleWhileRevalidate?: boolean;
   failureRetryAttempts?: number | false;
+  onUpdatedFeatures?: (features: Features) => void;
 };
 
 type Config = {
@@ -33,6 +39,7 @@ type Config = {
   timeoutMs: number;
   staleWhileRevalidate: boolean;
   failureRetryAttempts: number | false;
+  onUpdatedFeatures: (features: Features) => void;
 };
 
 export const DEFAULT_FEATURES_CONFIG: Config = {
@@ -40,6 +47,8 @@ export const DEFAULT_FEATURES_CONFIG: Config = {
   timeoutMs: 5000,
   staleWhileRevalidate: false,
   failureRetryAttempts: false,
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  onUpdatedFeatures: () => {},
 };
 
 // Deep merge two objects.
@@ -74,17 +83,24 @@ export function validateFeaturesResponse(response: any) {
     return;
   }
 
-  if (typeof response.success !== "boolean" || !isObject(response.features)) {
+  const { success, updatedAt, features } = response;
+
+  if (
+    typeof success !== "boolean" ||
+    typeof updatedAt !== "number" ||
+    !isObject(features)
+  ) {
     return;
   }
-  const features = parseAPIFeaturesResponse(response.features);
-  if (!features) {
+  const flagsParsed = parseAPIFeaturesResponse(features);
+  if (!flagsParsed) {
     return;
   }
 
   return {
     success: response.success,
     features,
+    updatedAt,
   };
 }
 
@@ -113,11 +129,13 @@ export const FEATURES_EXPIRE_MS = 7 * 24 * 60 * 60 * 1000; // expire entirely af
 const localStorageCacheKey = `__bucket_features`;
 
 export class FeaturesClient {
+  private logger: Logger;
   private cache: FeatureCache;
-  private features: Features | undefined;
   private config: Config;
   private rateLimiter: RateLimiter;
-  private logger: Logger;
+
+  private features: Features | undefined;
+  private updatedAt: number;
 
   constructor(
     private httpClient: HttpClient,
@@ -126,6 +144,7 @@ export class FeaturesClient {
     options?: FeaturesOptions & {
       cache?: FeatureCache;
       rateLimiter?: RateLimiter;
+      liveConn?: AblySSEConn;
     },
   ) {
     this.logger = loggerWithPrefix(logger, "[Features]");
@@ -143,21 +162,54 @@ export class FeaturesClient {
     this.rateLimiter =
       options?.rateLimiter ??
       new RateLimiter(FEATURE_EVENTS_PER_MIN, this.logger);
+
+    this.updatedAt = 0;
+
+    if (options?.onUpdatedFeatures) {
+      // subscribe to changes in targeting
+      options?.liveConn?.addOnMessageCallback(
+        "targeting_updated",
+        (message) => {
+          if (message.updatedAt && message.updatedAt > this.updatedAt) {
+            this.refreshFeatures().catch((e) => {
+              this.logger.error(
+                "error refreshing flags following targeting-updated message",
+                e,
+              );
+            });
+          }
+        },
+      );
+    }
   }
 
-  async initialize() {
-    const features = (await this.maybeFetchFeatures()) || {};
-    const proxiedFeatures = maskedProxy(features, (fs, key) => {
+  private setFeatures(features: APIResponse) {
+    // ignore failures or older versions
+    if (!features || !features.features || features.updatedAt < this.updatedAt)
+      return;
+
+    const proxiedFlags = maskedProxy(features?.features || {}, (fs, key) => {
       this.sendCheckEvent({
         key,
-        version: features[key]?.version,
-        value: features[key]?.value ?? false,
+        version: fs[key].version,
+        value: fs[key]?.value ?? false,
       }).catch((e) => {
         this.logger.error("error sending feature check event", e);
       });
       return fs[key]?.value || false;
     });
-    this.features = proxiedFeatures;
+    this.features = proxiedFlags;
+    this.updatedAt = features.updatedAt;
+
+    this.config.onUpdatedFeatures(this.features);
+  }
+
+  public async maybeRefreshFeatures() {
+    this.setFeatures(await this.maybeFetchFeatures());
+  }
+
+  public async refreshFeatures() {
+    this.setFeatures(await this.fetchFeatures());
   }
 
   getFeatures(): Features | undefined {
@@ -176,7 +228,7 @@ export class FeaturesClient {
     return params;
   }
 
-  private async maybeFetchFeatures(): Promise<APIFeaturesResponse | undefined> {
+  private async maybeFetchFeatures(): Promise<APIResponse> {
     const cachedItem = this.cache.get(this.fetchParams().toString());
 
     // if there's no cached item OR the cached item is a failure and we haven't retried
@@ -198,17 +250,20 @@ export class FeaturesClient {
         this.fetchFeatures().catch(() => {
           // we don't care about the result, we just want to re-fetch
         });
-        return cachedItem.features;
+        return {
+          features: cachedItem.features,
+          updatedAt: cachedItem.updatedAt,
+        };
       }
 
       return await this.fetchFeatures();
     }
 
     // serve cached items if not stale and not expired
-    return cachedItem.features;
+    return { features: cachedItem.features, updatedAt: cachedItem.updatedAt };
   }
 
-  public async fetchFeatures(): Promise<APIFeaturesResponse> {
+  public async fetchFeatures(): Promise<APIResponse> {
     const params = this.fetchParams();
     const cacheKey = params.toString();
     try {
@@ -241,10 +296,11 @@ export class FeaturesClient {
       this.cache.set(cacheKey, {
         success: true,
         features: typeRes.features,
+        updatedAt: typeRes.updatedAt,
         attemptCount: 0,
       });
 
-      return typeRes.features;
+      return typeRes;
     } catch (e) {
       this.logger.error("error fetching features: ", e);
 
@@ -255,6 +311,7 @@ export class FeaturesClient {
           success: current.success,
           features: current.features,
           attemptCount: current.attemptCount + 1,
+          updatedAt: current.updatedAt,
         });
       } else {
         // otherwise cache if the request failed and there is no previous version to extend
@@ -263,16 +320,21 @@ export class FeaturesClient {
           success: false,
           features: undefined,
           attemptCount: 1,
+          updatedAt: 0,
         });
       }
 
-      return this.config.fallbackFeatures.reduce((acc, key) => {
+      const features = this.config.fallbackFeatures.reduce((acc, key) => {
         acc[key] = {
           key,
           value: true,
         };
         return acc;
       }, {} as APIFeaturesResponse);
+      return {
+        features,
+        updatedAt: 0,
+      };
     }
   }
 

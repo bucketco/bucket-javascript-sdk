@@ -8,7 +8,7 @@ import {
   rememberAuthToken,
 } from "../src/feedback/promptStorage";
 import { HttpClient } from "../src/httpClient";
-import { AblySSEChannel } from "../src/sse";
+import { AblySSEConn } from "../src/sse";
 
 import { server } from "./mocks/server";
 import { testLogger } from "./testLogger";
@@ -29,7 +29,7 @@ const channel = "channel";
 
 function createSSEChannel(callback: (message: any) => void = vi.fn()) {
   const httpClient = new HttpClient(KEY, "https://front.bucket.co");
-  const sse = new AblySSEChannel(
+  const sse = new AblySSEConn(
     userId,
     channel,
     sseHost,

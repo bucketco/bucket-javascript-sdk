@@ -11,6 +11,7 @@ import { API_HOST, SSE_REALTIME_HOST } from "./config";
 import { BucketContext } from "./context";
 import { HttpClient } from "./httpClient";
 import { Logger, loggerWithPrefix, quietConsoleLogger } from "./logger";
+import { AblySSEConn } from "./sse";
 
 const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
@@ -72,7 +73,7 @@ export class BucketClient {
   private logger: Logger;
   private httpClient: HttpClient;
 
-  private liveSatisfaction: LiveSatisfaction | undefined;
+  private sseConn: AblySSEConn;
   private featuresClient: FeaturesClient;
 
   constructor(
@@ -100,11 +101,18 @@ export class BucketClient {
       sdkVersion: opts?.sdkVersion,
     });
 
+    this.sseConn = new AblySSEConn(
+      this.context.user ? String(this.context.user.id) : "",
+      this.config.sseHost,
+      this.httpClient,
+      this.logger,
+    );
+
     this.featuresClient = new FeaturesClient(
       this.httpClient,
       this.context,
       this.logger,
-      opts?.features,
+      { ...opts?.features, liveConn: this.sseConn },
     );
 
     if (
@@ -116,14 +124,15 @@ export class BucketClient {
           "Feedback prompting is not supported on mobile devices",
         );
       } else {
-        this.liveSatisfaction = new LiveSatisfaction(
-          this.config.sseHost,
+        // initialize LiveSatisfaction
+        new LiveSatisfaction(
           this.logger,
           this.httpClient,
           opts?.feedback?.liveSatisfactionHandler,
           String(this.context.user?.id),
           opts?.feedback?.ui?.position,
           opts?.feedback?.ui?.translations,
+          this.sseConn,
         );
       }
     }
@@ -135,11 +144,10 @@ export class BucketClient {
    * Must be called before calling other SDK methods.
    */
   async initialize() {
-    const inits = [this.featuresClient.initialize()];
-    if (this.liveSatisfaction) {
-      inits.push(this.liveSatisfaction.initialize());
-    }
-    await Promise.all(inits);
+    // start trying to open the SSE connection
+    this.sseConn.open();
+
+    await this.featuresClient.maybeRefreshFeatures();
 
     this.logger.debug(
       `initialized with key "${this.publishableKey}" and options`,
@@ -313,8 +321,8 @@ export class BucketClient {
   }
 
   stop() {
-    if (this.liveSatisfaction) {
-      this.liveSatisfaction.stop();
+    if (this.sseConn) {
+      this.sseConn.close();
     }
   }
 }

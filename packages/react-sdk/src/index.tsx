@@ -61,6 +61,7 @@ export type BucketProps = BucketContext & {
   publishableKey: string;
   featureOptions?: Omit<FeaturesOptions, "fallbackFeatures"> & {
     fallbackFeatures?: BucketFeatures[];
+    liveUpdate?: boolean;
   };
   children?: ReactNode;
   loadingComponent?: ReactNode;
@@ -108,11 +109,18 @@ export function BucketProvider({
       clientRef.current.stop();
     }
 
+    // on by unless set to false explicitly
+    const onUpdatedFeatures =
+      featureOptions?.liveUpdate !== false
+        ? (updatedFeatures: Features) => setFeatures(updatedFeatures)
+        : undefined;
+
     const client = newBucketClient(publishableKey, featureContext, {
       host: config.host,
       sseHost: config.sseHost,
       features: {
         ...featureOptions,
+        onUpdatedFeatures,
       },
       feedback: config.feedback,
       logger: config.debug ? console : undefined,
