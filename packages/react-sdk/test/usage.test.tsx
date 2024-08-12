@@ -185,17 +185,23 @@ describe("useFeature", () => {
       wrapper: ({ children }) => getProvider({ children }),
     });
 
-    expect(result.current).toStrictEqual({ isEnabled: false, isLoading: true });
+    expect(result.current).toStrictEqual({
+      isEnabled: false,
+      isLoading: true,
+      track: expect.any(Function),
+    });
 
     await waitFor(() =>
       expect(result.current).toStrictEqual({
         isEnabled: false,
         isLoading: false,
+        track: expect.any(Function),
       }),
     );
     expect(result.current).toStrictEqual({
       isEnabled: false,
       isLoading: false,
+      track: expect.any(Function),
     }),
       unmount();
   });
