@@ -12,9 +12,9 @@ import {
 import maskedProxy from "./maskedProxy";
 
 export type APIFeatureResponse = {
-  value: boolean;
   key: string;
-  version?: number;
+  isEnabled: boolean;
+  targetingVersion?: number;
 };
 
 export type APIFeaturesResponse = Record<string, APIFeatureResponse>;
@@ -150,12 +150,12 @@ export class FeaturesClient {
     const proxiedFeatures = maskedProxy(features, (fs, key) => {
       this.sendCheckEvent({
         key,
-        version: features[key]?.version,
-        value: features[key]?.value ?? false,
+        version: features[key]?.targetingVersion,
+        value: features[key]?.isEnabled ?? false,
       }).catch((e) => {
         this.logger.error("error sending feature check event", e);
       });
-      return fs[key]?.value || false;
+      return fs[key]?.isEnabled || false;
     });
     this.features = proxiedFeatures;
   }
@@ -269,7 +269,7 @@ export class FeaturesClient {
       return this.config.fallbackFeatures.reduce((acc, key) => {
         acc[key] = {
           key,
-          value: true,
+          isEnabled: true,
         };
         return acc;
       }, {} as APIFeaturesResponse);

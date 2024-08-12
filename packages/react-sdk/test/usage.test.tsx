@@ -49,13 +49,13 @@ const server = setupServer(
         features: {
           abc: {
             key: "abc",
-            value: true,
-            version: 1,
+            isEnabled: true,
+            targetingVersion: 1,
           },
           def: {
             key: "def",
-            value: true,
-            version: 2,
+            isEnabled: true,
+            targetingVersion: 2,
           },
         },
       }),
