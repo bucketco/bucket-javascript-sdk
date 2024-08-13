@@ -105,7 +105,7 @@ export function clearFeatureCache() {
 }
 
 export const FEATURES_STALE_MS = 60000; // turn stale after 60 seconds, optionally reevaluate in the background
-export const FEATURES_EXPIRE_MS = 7 * 24 * 60 * 60 * 1000; // expire entirely after 7 days
+export const FEATURES_EXPIRE_MS = 30 * 24 * 60 * 60 * 1000; // expire entirely after 30 days
 
 const localStorageCacheKey = `__bucket_features`;
 

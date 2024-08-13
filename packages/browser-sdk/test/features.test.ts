@@ -100,28 +100,6 @@ describe("FeaturesClient unit tests", () => {
     expect(staleFeatures).toEqual(featuresResult);
   });
 
-  test("attempts multiple tries before caching negative response", async () => {
-    const { newFeaturesClient, httpClient } = featuresClientFactory();
-
-    vi.mocked(httpClient.get).mockRejectedValue(
-      new Error("Failed to fetch features"),
-    );
-
-    for (let i = 0; i < 3; i++) {
-      const featuresClient = newFeaturesClient({
-        staleWhileRevalidate: false,
-        failureRetryAttempts: 3,
-      });
-      await featuresClient.initialize();
-
-      expect(httpClient.get).toHaveBeenCalledTimes(i + 1);
-    }
-
-    const featuresClient = newFeaturesClient({ failureRetryAttempts: 3 });
-    await featuresClient.initialize();
-    expect(httpClient.get).toHaveBeenCalledTimes(3);
-  });
-
   test("disable caching negative response", async () => {
     const { newFeaturesClient, httpClient } = featuresClientFactory();
 

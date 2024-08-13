@@ -133,8 +133,6 @@ function validateCacheData(cacheDataInput: any) {
     if (
       typeof cacheEntry.expireAt !== "number" ||
       typeof cacheEntry.staleAt !== "number" ||
-      typeof cacheEntry.success !== "boolean" ||
-      typeof cacheEntry.attemptCount !== "number" ||
       (cacheEntry.features && !parseAPIFeaturesResponse(cacheEntry.features))
     ) {
       return;
