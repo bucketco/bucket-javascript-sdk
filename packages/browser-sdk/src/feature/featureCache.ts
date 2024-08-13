@@ -8,9 +8,7 @@ interface StorageItem {
 interface cacheEntry {
   expireAt: number;
   staleAt: number;
-  success: boolean; // we also want to cache failures to avoid the UI waiting and spamming the API
-  features: APIFeaturesResponse | undefined;
-  attemptCount: number;
+  features: APIFeaturesResponse;
 }
 
 // Parse and validate an API feature response
@@ -41,10 +39,8 @@ export function parseAPIFeaturesResponse(
 }
 
 export interface CacheResult {
-  features: APIFeaturesResponse | undefined;
+  features: APIFeaturesResponse;
   stale: boolean;
-  success: boolean;
-  attemptCount: number;
 }
 
 export class FeatureCache {
@@ -69,13 +65,9 @@ export class FeatureCache {
   set(
     key: string,
     {
-      success,
       features,
-      attemptCount,
     }: {
-      success: boolean;
-      features?: APIFeaturesResponse;
-      attemptCount: number;
+      features: APIFeaturesResponse;
     },
   ) {
     let cacheData: CacheData = {};
@@ -93,8 +85,6 @@ export class FeatureCache {
       expireAt: Date.now() + this.expireTimeMs,
       staleAt: Date.now() + this.staleTimeMs,
       features,
-      success,
-      attemptCount,
     } satisfies cacheEntry;
 
     cacheData = Object.fromEntries(
@@ -118,9 +108,7 @@ export class FeatureCache {
         ) {
           return {
             features: cachedResponse[key].features,
-            success: cachedResponse[key].success,
             stale: cachedResponse[key].staleAt < Date.now(),
-            attemptCount: cachedResponse[key].attemptCount,
           };
         }
       }
@@ -155,9 +143,7 @@ function validateCacheData(cacheDataInput: any) {
     cacheData[key] = {
       expireAt: cacheEntry.expireAt,
       staleAt: cacheEntry.staleAt,
-      success: cacheEntry.success,
       features: cacheEntry.features,
-      attemptCount: cacheEntry.attemptCount,
     };
   }
   return cacheData;

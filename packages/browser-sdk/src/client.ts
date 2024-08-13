@@ -135,11 +135,14 @@ export class BucketClient {
    * Must be called before calling other SDK methods.
    */
   async initialize() {
-    const inits = [this.featuresClient.initialize()];
     if (this.liveSatisfaction) {
-      inits.push(this.liveSatisfaction.initialize());
+      // do not block on live satisfaction initialization
+      this.liveSatisfaction.initialize().catch((e) => {
+        this.logger.error("error initializing live satisfaction", e);
+      });
     }
-    await Promise.all(inits);
+
+    await this.featuresClient.initialize();
 
     this.logger.debug(
       `initialized with key "${this.publishableKey}" and options`,
