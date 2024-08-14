@@ -144,6 +144,10 @@ export class FeaturesClient {
 
   async initialize() {
     const features = (await this.maybeFetchFeatures()) || {};
+    this.setFeatures(features);
+  }
+
+  private setFeatures(features: APIFeaturesResponse) {
     const proxiedFeatures = maskedProxy(features, (fs, key) => {
       this.sendCheckEvent({
         key,
@@ -190,6 +194,7 @@ export class FeaturesClient {
             this.cache.set(cacheKey, {
               features,
             });
+            this.setFeatures(features);
           })
           .catch(() => {
             // we don't care about the result, we just want to re-fetch
@@ -208,6 +213,11 @@ export class FeaturesClient {
       });
 
       return fetchedFlags;
+    }
+
+    if (cachedItem) {
+      // fetch failed, return stale cache
+      return cachedItem.features;
     }
 
     // fetch failed, nothing cached => return fallbacks

@@ -148,7 +148,7 @@ export function BucketProvider({
       });
 
     // on umount
-    return () => client.stop();
+    return () => void client.stop();
   }, [contextKey]);
 
   const track = useCallback(
