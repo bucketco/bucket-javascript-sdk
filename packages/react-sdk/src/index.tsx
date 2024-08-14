@@ -105,7 +105,7 @@ export function BucketProvider({
 
     // on update of contextKey and on mount
     if (clientRef.current) {
-      clientRef.current.stop();
+      void clientRef.current.stop();
     }
 
     const client = newBucketClient(publishableKey, featureContext, {

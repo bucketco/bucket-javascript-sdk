@@ -94,8 +94,8 @@ describe("feedback prompting", () => {
     expect(openAblySSEChannel).toBeCalledTimes(1);
 
     // call twice, expect only one reset to go through
-    bucketInstance.stop();
-    bucketInstance.stop();
+    await bucketInstance.stop();
+    await bucketInstance.stop();
 
     expect(closeChannel).toBeCalledTimes(1);
   });
