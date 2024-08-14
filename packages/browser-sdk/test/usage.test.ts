@@ -166,10 +166,12 @@ describe("feedback state management", () => {
   };
 
   let events: string[] = [];
+  let bucketInstance: BucketClient | null = null;
   beforeEach(() => {
     vi.mocked(openAblySSEChannel).mockImplementation(({ callback }) => {
       callback(message);
-      return {} as AblySSEChannel;
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      return { close: () => {} } as AblySSEChannel;
     });
     events = [];
     server.use(
@@ -181,12 +183,14 @@ describe("feedback state management", () => {
     );
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    if (bucketInstance) await bucketInstance.stop();
+
     vi.resetAllMocks();
   });
 
   const createBucketInstance = async (callback: FeedbackPromptHandler) => {
-    const bucketInstance = new BucketClient(
+    bucketInstance = new BucketClient(
       KEY,
       { user: { id: "foo" } },
       {
@@ -225,10 +229,8 @@ describe("feedback state management", () => {
 
     expect(callback).not.toBeCalled;
     await vi.waitFor(() =>
-      expect(checkPromptMessageCompleted).toHaveBeenCalled(),
+      expect(checkPromptMessageCompleted).toHaveBeenCalledOnce(),
     );
-
-    expect(vi.mocked(checkPromptMessageCompleted).mock.calls).toEqual([]);
 
     expect(checkPromptMessageCompleted).toHaveBeenCalledWith("foo", "123");
   });

@@ -73,6 +73,7 @@ export class BucketClient {
   private httpClient: HttpClient;
 
   private liveSatisfaction: LiveSatisfaction | undefined;
+  private liveSatisfactionInit: Promise<void> | undefined;
   private featuresClient: FeaturesClient;
 
   constructor(
@@ -137,9 +138,11 @@ export class BucketClient {
   async initialize() {
     if (this.liveSatisfaction) {
       // do not block on live satisfaction initialization
-      this.liveSatisfaction.initialize().catch((e) => {
-        this.logger.error("error initializing live satisfaction", e);
-      });
+      this.liveSatisfactionInit = this.liveSatisfaction
+        .initialize()
+        .catch((e) => {
+          this.logger.error("error initializing live satisfaction", e);
+        });
     }
 
     await this.featuresClient.initialize();
@@ -315,9 +318,10 @@ export class BucketClient {
     return this.featuresClient.getFeatures();
   }
 
-  stop() {
+  async stop() {
     if (this.liveSatisfaction) {
       this.liveSatisfaction.stop();
+      await this.liveSatisfactionInit;
     }
   }
 }
