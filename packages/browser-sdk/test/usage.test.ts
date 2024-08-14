@@ -217,14 +217,19 @@ describe("feedback state management", () => {
 
   test("ignores prompt if already seen", async () => {
     vi.mocked(checkPromptMessageCompleted).mockReturnValue(true);
+    expect(checkPromptMessageCompleted).not.toHaveBeenCalled();
 
     const callback = vi.fn();
 
     await createBucketInstance(callback);
 
     expect(callback).not.toBeCalled;
+    await vi.waitFor(() =>
+      expect(checkPromptMessageCompleted).toHaveBeenCalled(),
+    );
 
-    expect(checkPromptMessageCompleted).toHaveBeenCalledOnce();
+    expect(vi.mocked(checkPromptMessageCompleted).mock.calls).toEqual([]);
+
     expect(checkPromptMessageCompleted).toHaveBeenCalledWith("foo", "123");
   });
 
