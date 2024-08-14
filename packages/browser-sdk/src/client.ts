@@ -320,8 +320,9 @@ export class BucketClient {
 
   async stop() {
     if (this.liveSatisfaction) {
-      this.liveSatisfaction.stop();
+      // ensure fully initialized before stopping
       await this.liveSatisfactionInit;
+      this.liveSatisfaction.stop();
     }
   }
 }
