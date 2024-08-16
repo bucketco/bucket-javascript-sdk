@@ -88,7 +88,7 @@ Returns the state of a given features for the current context.
 import { useFeature } from "@bucketco/react-sdk";
 
 function StartHuddleButton() {
-  const { isLoading, isEnabled } = useFeature("huddle");
+  const { isLoading, isEnabled, track } = useFeature("huddle");
 
   if (isLoading) {
     return <Loading />;
@@ -98,7 +98,7 @@ function StartHuddleButton() {
     return null;
   }
 
-  return <Button />;
+  return <Button onClick={() => track()} />;
 }
 ```
 
