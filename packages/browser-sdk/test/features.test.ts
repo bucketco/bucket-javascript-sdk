@@ -1,5 +1,6 @@
 import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
 
+import { APIFeatureResponse } from "../dist/src/feature/features";
 import {
   FEATURES_EXPIRE_MS,
   FeaturesClient,
@@ -81,170 +82,88 @@ describe("FeaturesClient unit tests", () => {
     expect(httpClient.get).toBeCalledTimes(1);
   });
 
-  test("maintains previously successful features on negative response", async () => {
+  test("use cache when unable to fetch features", async () => {
     const { newFeaturesClient, httpClient } = featuresClientFactory();
-    const featuresClient = newFeaturesClient();
-    await featuresClient.initialize();
+    const featuresClient = newFeaturesClient({ staleWhileRevalidate: false });
+    await featuresClient.initialize(); // cache them initially
 
     vi.mocked(httpClient.get).mockRejectedValue(
       new Error("Failed to fetch features"),
     );
-    // expect(httpClientGetSpy).toBeCalledTimes(0);
+    expect(httpClient.get).toBeCalledTimes(1);
 
-    // vi.mocked(fetch).mockRejectedValue(new Error("Failed to fetch features"));
-    vi.advanceTimersByTime(60000);
+    vi.advanceTimersByTime(TEST_STALE_MS + 1);
 
+    // fail this time
     await featuresClient.fetchFeatures();
+    expect(httpClient.get).toBeCalledTimes(2);
 
     const staleFeatures = featuresClient.getFeatures();
     expect(staleFeatures).toEqual(featuresResult);
   });
 
-  test("attempts multiple tries before caching negative response", async () => {
+  test("stale-while-revalidate should cache but start new fetch", async () => {
+    const response = {
+      success: true,
+      features: {
+        featureB: {
+          isEnabled: true,
+          key: "featureB",
+          targetingVersion: 1,
+        } satisfies APIFeatureResponse,
+      },
+    };
+
     const { newFeaturesClient, httpClient } = featuresClientFactory();
 
-    vi.mocked(httpClient.get).mockRejectedValue(
-      new Error("Failed to fetch features"),
-    );
+    vi.mocked(httpClient.get).mockResolvedValue({
+      status: 200,
+      ok: true,
+      json: function () {
+        return Promise.resolve(response);
+      },
+    } as Response);
 
-    for (let i = 0; i < 3; i++) {
-      const featuresClient = newFeaturesClient({
-        staleWhileRevalidate: false,
-        failureRetryAttempts: 3,
-      });
-      await featuresClient.initialize();
+    const client = newFeaturesClient({
+      staleWhileRevalidate: true,
+    });
+    expect(httpClient.get).toHaveBeenCalledTimes(0);
 
-      expect(httpClient.get).toHaveBeenCalledTimes(i + 1);
-    }
+    await client.initialize();
+    expect(client.getFeatures()).toEqual({ featureB: true });
 
-    const featuresClient = newFeaturesClient({ failureRetryAttempts: 3 });
-    await featuresClient.initialize();
-    expect(httpClient.get).toHaveBeenCalledTimes(3);
-  });
-
-  test("disable caching negative response", async () => {
-    const { newFeaturesClient, httpClient } = featuresClientFactory();
-
-    vi.mocked(httpClient.get).mockRejectedValue(
-      new Error("Failed to fetch features"),
-    );
-
-    for (let i = 0; i < 5; i++) {
-      const featuresClient = newFeaturesClient({ failureRetryAttempts: false });
-      await featuresClient.initialize();
-
-      expect(httpClient.get).toHaveBeenCalledTimes(i + 1);
-    }
-  });
-
-  describe("stale cache while reevaluating", async () => {
-    test("when stale cache is success response", async () => {
-      const response = {
-        success: true,
-        features: {
-          featureB: { isEnabled: true, key: "featureB" },
-        },
-      };
-
-      const { newFeaturesClient, httpClient } = featuresClientFactory();
-
-      vi.mocked(httpClient.get).mockResolvedValue({
-        status: 200,
-        ok: true,
-        json: function () {
-          return Promise.resolve(response);
-        },
-      } as Response);
-
-      const client = newFeaturesClient({
-        failureRetryAttempts: false,
-        staleWhileRevalidate: true,
-      });
-      expect(httpClient.get).toHaveBeenCalledTimes(0);
-
-      await client.initialize();
-
-      expect(httpClient.get).toHaveBeenCalledTimes(1);
-      const client2 = newFeaturesClient({
-        failureRetryAttempts: false,
-        staleWhileRevalidate: true,
-      });
-
-      // change the response so we can validate that we'll serve the stale cache
-      vi.mocked(httpClient.get).mockResolvedValue({
-        status: 200,
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            success: true,
-            features: {
-              featureA: { isEnabled: true, key: "featureA" },
-            },
-          }),
-      } as Response);
-
-      vi.advanceTimersByTime(TEST_STALE_MS + 1);
-
-      await client2.initialize();
-      expect(client.getFeatures()).toEqual(client2.getFeatures());
-
-      // new fetch was fired in the background
-      expect(httpClient.get).toHaveBeenCalledTimes(2);
+    expect(httpClient.get).toHaveBeenCalledTimes(1);
+    const client2 = newFeaturesClient({
+      staleWhileRevalidate: true,
     });
 
-    test("when stale cache is failed response", async () => {
-      const { newFeaturesClient, httpClient } = featuresClientFactory();
-      // when cached response is failure, we should not serve the stale cache
-      const response = {
-        success: false,
-      };
+    // change the response so we can validate that we'll serve the stale cache
+    vi.mocked(httpClient.get).mockResolvedValue({
+      status: 200,
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          success: true,
+          features: {
+            featureA: {
+              isEnabled: true,
+              key: "featureA",
+              targetingVersion: 1,
+            } satisfies APIFeatureResponse,
+          },
+        }),
+    } as Response);
 
-      expect(httpClient.get).toHaveBeenCalledTimes(0);
+    vi.advanceTimersByTime(TEST_STALE_MS + 1);
 
-      vi.mocked(httpClient.get).mockResolvedValue({
-        status: 200,
-        ok: true,
-        json: function () {
-          return Promise.resolve(response);
-        },
-      } as Response);
+    await client2.initialize();
 
-      const client = newFeaturesClient({
-        staleWhileRevalidate: true,
-        failureRetryAttempts: 0,
-      });
-      await client.initialize();
+    // new fetch was fired in the background
+    expect(httpClient.get).toHaveBeenCalledTimes(2);
 
-      expect(httpClient.get).toHaveBeenCalledTimes(1);
-
-      // change the response so we can validate that we'll not serve the stale cache
-      vi.mocked(httpClient.get).mockResolvedValue({
-        status: 200,
-        ok: true,
-        json: function () {
-          return Promise.resolve({
-            success: true,
-            features: {
-              featureB: {
-                isEnabled: true,
-                key: "featureB",
-                targetingVersion: 1,
-              },
-            },
-          });
-        },
-      } as Response);
-
-      vi.advanceTimersByTime(TEST_STALE_MS + 1);
-      const client2 = newFeaturesClient();
-      await client2.initialize();
-
-      expect(client2.getFeatures()).toEqual({ featureB: true });
-
-      // new fetch was fired
-      // stale while validate in the background
-      expect(httpClient.get).toHaveBeenCalledTimes(2);
-    });
+    await vi.waitFor(() =>
+      expect(client2.getFeatures()).toEqual({ featureA: true }),
+    );
   });
 
   test("expires cache eventually", async () => {

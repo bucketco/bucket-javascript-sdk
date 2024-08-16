@@ -73,6 +73,7 @@ export class BucketClient {
   private httpClient: HttpClient;
 
   private liveSatisfaction: LiveSatisfaction | undefined;
+  private liveSatisfactionInit: Promise<void> | undefined;
   private featuresClient: FeaturesClient;
 
   constructor(
@@ -135,11 +136,16 @@ export class BucketClient {
    * Must be called before calling other SDK methods.
    */
   async initialize() {
-    const inits = [this.featuresClient.initialize()];
     if (this.liveSatisfaction) {
-      inits.push(this.liveSatisfaction.initialize());
+      // do not block on live satisfaction initialization
+      this.liveSatisfactionInit = this.liveSatisfaction
+        .initialize()
+        .catch((e) => {
+          this.logger.error("error initializing live satisfaction", e);
+        });
     }
-    await Promise.all(inits);
+
+    await this.featuresClient.initialize();
 
     this.logger.debug(
       `initialized with key "${this.publishableKey}" and options`,
@@ -312,8 +318,10 @@ export class BucketClient {
     return this.featuresClient.getFeatures();
   }
 
-  stop() {
+  async stop() {
     if (this.liveSatisfaction) {
+      // ensure fully initialized before stopping
+      await this.liveSatisfactionInit;
       this.liveSatisfaction.stop();
     }
   }

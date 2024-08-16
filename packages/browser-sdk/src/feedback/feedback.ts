@@ -229,6 +229,7 @@ export class LiveSatisfaction {
       this.logger.error("feedback prompting already initialized");
       return;
     }
+    this.initialized = true;
 
     const channel = await this.getChannel();
     if (!channel) return;
