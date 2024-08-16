@@ -205,14 +205,14 @@ export class FeaturesClient {
 
     // if there's no cached item or there is a stale one but `staleWhileRevalidate` is disabled
     // try fetching a new one
-    const fetchedFlags = await this.fetchFeatures();
+    const fetchedFeatures = await this.fetchFeatures();
 
-    if (fetchedFlags) {
+    if (fetchedFeatures) {
       this.cache.set(cacheKey, {
-        features: fetchedFlags,
+        features: fetchedFeatures,
       });
 
-      return fetchedFlags;
+      return fetchedFeatures;
     }
 
     if (cachedItem) {
