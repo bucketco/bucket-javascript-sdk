@@ -25,21 +25,18 @@ export type FeaturesOptions = {
   fallbackFeatures?: string[];
   timeoutMs?: number;
   staleWhileRevalidate?: boolean;
-  failureRetryAttempts?: number | false;
 };
 
 type Config = {
   fallbackFeatures: string[];
   timeoutMs: number;
   staleWhileRevalidate: boolean;
-  failureRetryAttempts: number | false;
 };
 
 export const DEFAULT_FEATURES_CONFIG: Config = {
   fallbackFeatures: [],
   timeoutMs: 5000,
   staleWhileRevalidate: false,
-  failureRetryAttempts: false,
 };
 
 // Deep merge two objects.
@@ -108,7 +105,7 @@ export function clearFeatureCache() {
 }
 
 export const FEATURES_STALE_MS = 60000; // turn stale after 60 seconds, optionally reevaluate in the background
-export const FEATURES_EXPIRE_MS = 7 * 24 * 60 * 60 * 1000; // expire entirely after 7 days
+export const FEATURES_EXPIRE_MS = 30 * 24 * 60 * 60 * 1000; // expire entirely after 30 days
 
 const localStorageCacheKey = `__bucket_features`;
 
@@ -147,6 +144,10 @@ export class FeaturesClient {
 
   async initialize() {
     const features = (await this.maybeFetchFeatures()) || {};
+    this.setFeatures(features);
+  }
+
+  private setFeatures(features: APIFeaturesResponse) {
     const proxiedFeatures = maskedProxy(features, (fs, key) => {
       this.sendCheckEvent({
         key,
@@ -177,40 +178,60 @@ export class FeaturesClient {
   }
 
   private async maybeFetchFeatures(): Promise<APIFeaturesResponse | undefined> {
-    const cachedItem = this.cache.get(this.fetchParams().toString());
+    const cacheKey = this.fetchParams().toString();
+    const cachedItem = this.cache.get(cacheKey);
 
-    // if there's no cached item OR the cached item is a failure and we haven't retried
-    // too many times yet - fetch now
-    if (
-      !cachedItem ||
-      (!cachedItem.success &&
-        (this.config.failureRetryAttempts === false ||
-          cachedItem.attemptCount < this.config.failureRetryAttempts))
-    ) {
-      return await this.fetchFeatures();
-    }
+    if (cachedItem) {
+      if (!cachedItem.stale) return cachedItem.features;
 
-    // cachedItem is a success or a failed attempt that we've retried too many times
-    if (cachedItem.stale) {
       // serve successful stale cache if `staleWhileRevalidate` is enabled
-      if (this.config.staleWhileRevalidate && cachedItem.success) {
-        // re-fetch in the background, return last successful value
-        this.fetchFeatures().catch(() => {
-          // we don't care about the result, we just want to re-fetch
-        });
+      if (this.config.staleWhileRevalidate) {
+        // re-fetch in the background, but immediately return last successful value
+        this.fetchFeatures()
+          .then((features) => {
+            if (!features) return;
+
+            this.cache.set(cacheKey, {
+              features,
+            });
+            this.setFeatures(features);
+          })
+          .catch(() => {
+            // we don't care about the result, we just want to re-fetch
+          });
         return cachedItem.features;
       }
-
-      return await this.fetchFeatures();
     }
 
-    // serve cached items if not stale and not expired
-    return cachedItem.features;
+    // if there's no cached item or there is a stale one but `staleWhileRevalidate` is disabled
+    // try fetching a new one
+    const fetchedFeatures = await this.fetchFeatures();
+
+    if (fetchedFeatures) {
+      this.cache.set(cacheKey, {
+        features: fetchedFeatures,
+      });
+
+      return fetchedFeatures;
+    }
+
+    if (cachedItem) {
+      // fetch failed, return stale cache
+      return cachedItem.features;
+    }
+
+    // fetch failed, nothing cached => return fallbacks
+    return this.config.fallbackFeatures.reduce((acc, key) => {
+      acc[key] = {
+        key,
+        isEnabled: true,
+      };
+      return acc;
+    }, {} as APIFeaturesResponse);
   }
 
-  public async fetchFeatures(): Promise<APIFeaturesResponse> {
+  public async fetchFeatures(): Promise<APIFeaturesResponse | undefined> {
     const params = this.fetchParams();
-    const cacheKey = params.toString();
     try {
       const res = await this.httpClient.get({
         path: "/features/enabled",
@@ -238,41 +259,10 @@ export class FeaturesClient {
         throw new Error("unable to validate response");
       }
 
-      this.cache.set(cacheKey, {
-        success: true,
-        features: typeRes.features,
-        attemptCount: 0,
-      });
-
       return typeRes.features;
     } catch (e) {
       this.logger.error("error fetching features: ", e);
-
-      const current = this.cache.get(cacheKey);
-      if (current) {
-        // if there is a previous failure cached, increase the attempt count
-        this.cache.set(cacheKey, {
-          success: current.success,
-          features: current.features,
-          attemptCount: current.attemptCount + 1,
-        });
-      } else {
-        // otherwise cache if the request failed and there is no previous version to extend
-        // to avoid having the UI wait and spam the API
-        this.cache.set(cacheKey, {
-          success: false,
-          features: undefined,
-          attemptCount: 1,
-        });
-      }
-
-      return this.config.fallbackFeatures.reduce((acc, key) => {
-        acc[key] = {
-          key,
-          isEnabled: true,
-        };
-        return acc;
-      }, {} as APIFeaturesResponse);
+      return;
     }
   }
 
