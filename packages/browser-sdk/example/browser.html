@@ -3,10 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Bucket</title>
+    <title>Bucket feature management</title>
   </head>
   <body>
-    <div id="app"></div>
+    <span id="loading">Loading...</span>
+    <button
+      id="start-huddle"
+      style="display: none"
+      onClick="bucket.track('huddle')"
+    >
+      Click me
+    </button>
 
     <script src="../dist/bucket-browser-sdk.umd.js"></script>
     <script>
@@ -24,13 +31,5 @@
         }
       });
     </script>
-    <span id="loading">Loading...</span>
-    <button
-      id="start-huddle"
-      style="display: none"
-      onClick="bucket.track('huddle')"
-    >
-      Click me
-    </button>
   </body>
 </html>
