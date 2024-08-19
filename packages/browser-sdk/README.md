@@ -39,7 +39,7 @@ bucketClient.track("huddle");
 
 B. Script tag (client-side directly in html)
 
-See (examples/browser.html)[examples/browser.html] for a working example:
+See [example/browser.html](example/browser.html) for a working example:
 
 ```html
 <script src="https://cdn.jsdelivr.net/npm/@bucketco/browser-sdk@1"></script>
