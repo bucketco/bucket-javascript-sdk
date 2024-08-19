@@ -4,23 +4,13 @@ Basic client for Bucket.co. If you're using React, you'll be better off with the
 
 ## Install
 
-The library can be included directly as an external script or you can import it.
+The package can be imported or used direclty in a HTML script tag:
 
-A. Script tag (client-side directly in html)
+A. Import module
 
-```html
-<script src="https://cdn.jsdelivr.net/npm/@bucketco/browser-sdk@1"></script>
-```
-
-B. Import module
-
-```js
+```ts
 import bucket from "@bucketco/browser-sdk";
-```
 
-## Basic usage
-
-```js
 const user = {
   id: 42,
   role: "manager",
@@ -32,6 +22,47 @@ const company = {
 };
 
 const bucketClient = new BucketClient(publishableKey, { user, company });
+
+await bucketClient.initialize();
+
+const { huddle } = bucketClient.getFeatures();
+
+if (huddle) {
+  // show feature
+}
+
+// on feature usage, send an event using the same feature key
+// to get feature usage tracked automatically.
+// You can also use `track` to send any custom event.
+bucketClient.track("huddle");
+```
+
+B. Script tag (client-side directly in html)
+
+See (examples/browser.html)[examples/browser.html] for a working example:
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/@bucketco/browser-sdk@1"></script>
+<script>
+  const bucket = new BucketBrowserSDK.BucketClient("123", {
+    user: { id: "42" },
+    company: { id: "1" },
+  });
+
+  bucket.initialize().then(() => {
+    console.log("Bucket initialized");
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("start-huddle").style.display = "block";
+  });
+</script>
+<span id="loading">Loading...</span>
+<button
+  id="start-huddle"
+  style="display: none"
+  onClick="bucket.track('Started huddle')"
+>
+  Click me
+</button>
 ```
 
 ### Init options
@@ -71,11 +102,11 @@ await bucketClient.initialize()
 
 bucketClient.getFeatures()
 // {
-//   "join-huddle": true,
-//   "post-message": true
+//   "huddle": true,
+//   "message": true
 // }
 
-if(bucketClient.getFeatures()["join-huddle"]) {
+if(bucketClient.getFeatures().huddle) {
   ...
 }
 ```
