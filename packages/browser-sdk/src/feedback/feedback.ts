@@ -20,8 +20,8 @@ import * as feedbackLib from "./ui";
 export type Key = string;
 
 export type FeedbackOptions = {
-  enableLiveSatisfaction?: boolean;
-  liveSatisfactionHandler?: FeedbackPromptHandler;
+  enableAutoSurveys?: boolean;
+  autoSurveysHandler?: FeedbackPromptHandler;
   ui?: {
     /**
      * Control the placement and behavior of the feedback form.
@@ -34,7 +34,22 @@ export type FeedbackOptions = {
      */
     translations?: Partial<FeedbackTranslations>;
   };
+
+  // Deprecated
+  enableLiveSatisfaction?: boolean;
+  liveSatisfactionHandler?: FeedbackPromptHandler;
 };
+
+export function handleDeprecatedFeedbackOptions(
+  opts?: FeedbackOptions,
+): FeedbackOptions {
+  return {
+    ...opts,
+    enableAutoSurveys: opts?.enableAutoSurveys ?? opts?.enableLiveSatisfaction,
+    autoSurveysHandler:
+      opts?.autoSurveysHandler ?? opts?.liveSatisfactionHandler,
+  };
+}
 
 export interface RequestFeedbackOptions
   extends Omit<OpenFeedbackFormOptions, "key" | "onSubmit"> {
@@ -94,7 +109,7 @@ export type Feedback = {
 
   /**
    * The original question.
-   * This only needs to be populated if the feedback was submitted through the Live Satisfaction channel.
+   * This only needs to be populated if the feedback was submitted through the Automated Feedback Surveys channel.
    */
   promptedQuestion?: string;
 
@@ -121,7 +136,7 @@ export type Feedback = {
 
   /**
    * Source of the feedback, depending on how the user was asked
-   * - `prompt` - Feedback submitted by a Live Satisfaction prompt
+   * - `prompt` - Feedback submitted by a Automated Feedback Surveys prompt
    * - `widget` - Feedback submitted via `requestFeedback`
    * - `sdk` - Feedback submitted via `feedback`
    */
@@ -175,7 +190,7 @@ export const DEFAULT_FEEDBACK_CONFIG = {
   promptHandler: createDefaultFeedbackPromptHandler(),
   feedbackPosition: DEFAULT_POSITION,
   translations: {},
-  liveSatisfactionEnabled: true,
+  autoSurveysEnabled: true,
 };
 
 export async function feedback(
@@ -207,7 +222,7 @@ export async function feedback(
   return res;
 }
 
-export class LiveSatisfaction {
+export class AutoSurveys {
   private initialized = false;
   private sseChannel: AblySSEChannel | null = null;
 
@@ -222,7 +237,7 @@ export class LiveSatisfaction {
   ) {}
 
   /**
-   * Start receiving Live Satisfaction feedback prompts.
+   * Start receiving Automated Feedback Surveys feedback prompts.
    */
   async initialize() {
     if (this.initialized) {

@@ -69,7 +69,7 @@ describe("usage", () => {
 });
 
 // TODO:
-// Since we now have LiveSatisfaction as it's own class, we should rewrite these tests
+// Since we now have AutoSurveys as it's own class, we should rewrite these tests
 // to test that class instead of the BucketClient class.
 // Same for feedback state management below
 
@@ -142,12 +142,12 @@ describe("feedback prompting", () => {
     expect(openAblySSEChannel).toBeCalledTimes(0);
   });
 
-  test("skip feedback prompting if live satisfaction is disabled", async () => {
+  test("skip feedback prompting if Automated Feedback Surveys is disabled", async () => {
     const bucketInstance = new BucketClient(
       KEY,
       { user: { id: "foo" } },
       {
-        feedback: { enableLiveSatisfaction: false },
+        feedback: { enableAutoSurveys: false },
       },
     );
     await bucketInstance.initialize();
@@ -195,7 +195,7 @@ describe("feedback state management", () => {
       { user: { id: "foo" } },
       {
         feedback: {
-          liveSatisfactionHandler: callback,
+          autoSurveysHandler: callback,
         },
       },
     );

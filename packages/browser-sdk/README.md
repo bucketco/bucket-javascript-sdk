@@ -84,14 +84,14 @@ if(bucketClient.getFeatures()["join-huddle"]) {
 
 Bucket can collect qualitative feedback from your users in the form of a [Customer Satisfaction Score](https://en.wikipedia.org/wiki/Customer_satisfaction) and a comment.
 
-#### Live Satisfaction collection
+#### Automated Feedback Surveys collection
 
-The Bucket Browser SDK comes with a Live Satisfaction collection mode enabled by default, which lets the Bucket service ask your users for feedback for relevant features just after they've used them.
+The Bucket Browser SDK comes with a Automated Feedback Surveys collection mode enabled by default, which lets the Bucket service ask your users for feedback for relevant features just after they've used them.
 
 Note: To get started with automatic feedback collection, make sure you call `bucket.user()`.
 
-Live Satisfaction works even if you're not using the SDK to send events to Bucket.
-It works because the Bucket Browser SDK maintains a live connection to Bucket's servers and can show a Live Satisfaction prompt whenever the Bucket servers determines that an event should trigger a prompt - regardless of how this event is sent to Bucket.
+Automated Feedback Surveys works even if you're not using the SDK to send events to Bucket.
+It works because the Bucket Browser SDK maintains a live connection to Bucket's servers and can show a Automated Feedback Surveys prompt whenever the Bucket servers determines that an event should trigger a prompt - regardless of how this event is sent to Bucket.
 
 You can find all the options to make changes to the default behaviour in the [Bucket feedback documentation](./FEEDBACK.md).
 
@@ -136,12 +136,12 @@ bucket.user(await sha256("john_doe"));
 
 ### Use of cookies
 
-The Bucket Browser SDK uses a couple of cookies to support Live Satisfaction. These cookies are not used for tracking purposes and thus should not need to appear in cookie consent forms.
+The Bucket Browser SDK uses a couple of cookies to support Automated Feedback Surveys. These cookies are not used for tracking purposes and thus should not need to appear in cookie consent forms.
 
 The two cookies are:
 
-- `bucket-prompt-${userId}`: store the last Live Satisfaction prompt message ID received to avoid repeating prompts
-- `bucket-token-${userId}`: caching a token used to connect to Bucket's live messaging infrastructure that is used to deliver Live Satisfaction prompts in real time.
+- `bucket-prompt-${userId}`: store the last Automated Feedback Surveys prompt message ID received to avoid repeating prompts
+- `bucket-token-${userId}`: caching a token used to connect to Bucket's live messaging infrastructure that is used to deliver Automated Feedback Surveys prompts in real time.
 
 ### Custom attributes
 
@@ -190,7 +190,7 @@ If you are running with strict Content Security Policies active on your website,
 | Directive   | Values                          | Module            | Reason                                                                                                                                       |
 | ----------- | ------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | connect-src | https://tracking.bucket.co      | tracking          | Used for all tracking methods: `bucket.user()`, `bucket.company()`, `bucket.track()` and `bucket.feedback()`                                 |
-| connect-src | https://livemessaging.bucket.co | live satisfaction | Server sent events from the Bucket Live Satisfaction service, which allows for automatically collecting feedback when a user used a feature. |
+| connect-src | https://livemessaging.bucket.co | Automated Feedback Surveys | Server sent events from the Bucket Automated Feedback Surveys service, which allows for automatically collecting feedback when a user used a feature. |
 | style-src   | 'unsafe-inline'                 | feedback UI       | The feedback UI is styled with inline styles. Not having this directive results unstyled HTML elements.                                      |
 
 If you are including the Bucket tracking SDK with a `<script>`-tag from `jsdelivr.net` you will also need:

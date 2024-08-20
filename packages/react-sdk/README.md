@@ -34,7 +34,7 @@ declare module "@bucketco/react-sdk" {
 ### 2. Add the `BucketProvider` context provider
 
 Add the `BucketProvider` context provider to your application.
-This will initialize the Bucket SDK, fetch features and start listening for Live Satisfaction events.
+This will initialize the Bucket SDK, fetch features and start listening for Automated Feedback Surveys events.
 
 **Example:**
 
@@ -124,7 +124,7 @@ function StartHuddle() {
 ### `useRequestFeedback()`
 
 `useRequestFeedback()` returns a function that lets you open up a dialog to ask for feedback on a specific feature.
-See [Live Satisfaction](https://docs.bucket.co/product-handbook/live-satisfaction) for how to do this automatically, without code.
+See [Automated Feedback Surveys](https://docs.bucket.co/product-handbook/live-satisfaction) for how to do this automatically, without code.
 
 ```ts
 import { useTrackEvent } from "@bucketco/react-sdk";
