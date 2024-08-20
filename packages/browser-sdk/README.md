@@ -152,19 +152,6 @@ If you are not using the Bucket Browser SDK, you can still submit feedback using
 
 See details in [Feedback HTTP API](https://docs.bucket.co/reference/http-tracking-api#feedback)
 
-### Zero PII
-
-The Bucket Browser SDK doesn't collect any metadata and HTTP IP addresses are _not_ being stored.
-
-For tracking individual users, we recommend using something like database ID as userId, as it's unique and doesn't include any PII (personal identifiable information). If, however, you're using e.g. email address as userId, but prefer not to send any PII to Bucket, you can hash the sensitive data before sending it to Bucket:
-
-```
-import bucket from "@bucketco/browser-sdk";
-import { sha256 } from 'crypto-hash';
-
-bucket.user(await sha256("john_doe"));
-```
-
 ### Use of cookies
 
 The Bucket Browser SDK uses a couple of cookies to support Live Satisfaction. These cookies are not used for tracking purposes and thus should not need to appear in cookie consent forms.
@@ -173,42 +160,6 @@ The two cookies are:
 
 - `bucket-prompt-${userId}`: store the last Live Satisfaction prompt message ID received to avoid repeating prompts
 - `bucket-token-${userId}`: caching a token used to connect to Bucket's live messaging infrastructure that is used to deliver Live Satisfaction prompts in real time.
-
-### Custom attributes
-
-You can pass attributes as a object literal to the `user`, `company` and `track` methods (2nd argument).
-Attributes cannot be nested (multiple levels) and must be either strings, integers or booleans.
-
-Built-in attributes:
-
-- `name` (display name for user/company)
-
-### Context
-
-You can supply additional `context` to `group`, `user` and `event` calls.
-
-#### context.active
-
-By default, sending `group`, `user` and `event` calls automatically update the given user/company "Last seen" property.
-You can control if "Last seen" should be updated when the events are sent by setting `context.active=false` to avoid updating last seen.
-This is often useful if you have a background job that goes through a set of companies just to update their attributes or similar
-
-```typescript
-// set current company without updating last seen.
-bucket.company("acme_inc", { name: "Acme Inc", plan: "pro" }, "john_doe", {
-  active: false,
-});
-```
-
-### Persisting users
-
-**Usage in the browser** (imported or script tag):
-Once you call `user`, the userId will be persisted so you don't have to supply userId to each subsequent `company` and `track` calls.
-This is practical for client-side usage where a session always is a single user.
-
-**Usage in node.js**
-User persistence is disabled by default when imported in node.js to avoid that companies or events are tied to the wrong user by mistake. This is because your server is (usually) not in a single user context.
-Instead, you should provide the userId to each call, as the 3rd argument to `company` and `track`.
 
 ### Typescript
 
