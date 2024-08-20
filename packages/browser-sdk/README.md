@@ -187,11 +187,11 @@ Types are bundled together with the library and exposed automatically when impor
 
 If you are running with strict Content Security Policies active on your website, you will need to enable these directives in order to use the SDK:
 
-| Directive   | Values                          | Module            | Reason                                                                                                                                       |
-| ----------- | ------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| connect-src | https://tracking.bucket.co      | tracking          | Used for all tracking methods: `bucket.user()`, `bucket.company()`, `bucket.track()` and `bucket.feedback()`                                 |
+| Directive   | Values                          | Module                     | Reason                                                                                                                                                |
+| ----------- | ------------------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| connect-src | https://tracking.bucket.co      | tracking                   | Used for all tracking methods: `bucket.user()`, `bucket.company()`, `bucket.track()` and `bucket.feedback()`                                          |
 | connect-src | https://livemessaging.bucket.co | Automated Feedback Surveys | Server sent events from the Bucket Automated Feedback Surveys service, which allows for automatically collecting feedback when a user used a feature. |
-| style-src   | 'unsafe-inline'                 | feedback UI       | The feedback UI is styled with inline styles. Not having this directive results unstyled HTML elements.                                      |
+| style-src   | 'unsafe-inline'                 | feedback UI                | The feedback UI is styled with inline styles. Not having this directive results unstyled HTML elements.                                               |
 
 If you are including the Bucket tracking SDK with a `<script>`-tag from `jsdelivr.net` you will also need:
 
