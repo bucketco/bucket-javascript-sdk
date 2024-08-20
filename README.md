@@ -6,17 +6,23 @@ Bucket is B2B feature flagging with a built-in feedback loop that lets you roll 
 
 ## SDKs
 
-### Tracking SDK
-
-Universal JS SDK for the browser and Node.js
-
-[Read the docs](packages/tracking-sdk/README.md)
-
 ### React SDK
 
 Client side React SDK
 
 [Read the docs](packages/react-sdk/README.md)
+
+### Browser SDK
+
+Browser SDK for use in non-React web applications
+
+[Read the docs](packages/browser-sdk/README.md)
+
+### Node.js SDK
+
+Node.js SDK for use on the server side.
+
+[Read the docs](packages/node-sdk/README.md)
 
 ## Development
 
