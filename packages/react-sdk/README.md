@@ -137,7 +137,7 @@ requestFeedback({
 });
 ```
 
-See https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/tracking-sdk/FEEDBACK.md#manual-feedback-collection for more information on `requestFeedback`
+See https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/browser-sdk/FEEDBACK.md#manual-feedback-collection for more information on `requestFeedback`
 
 ### `useSendFeedback()`
 
@@ -156,7 +156,11 @@ sendFeedback({
 });
 ```
 
-See https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/tracking-sdk/FEEDBACK.md#manual-feedback-collection for more information on `sendFeedback`
+See https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/browser-sdk/FEEDBACK.md#manual-feedback-collection for more information on `sendFeedback`
+
+# Content Security Policy (CSP)
+
+See https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/browser-sdk/README.md#content-security-policy-csp for info on using Bucket React SDK with CSP
 
 # License
 
