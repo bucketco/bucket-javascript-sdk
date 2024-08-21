@@ -1,6 +1,6 @@
 import { FeaturesClient, FeaturesOptions } from "./feature/features";
 import {
-  AutoSurveys,
+  AutoFeedback,
   Feedback,
   feedback,
   FeedbackOptions as FeedbackOptions,
@@ -73,8 +73,8 @@ export class BucketClient {
   private logger: Logger;
   private httpClient: HttpClient;
 
-  private autoSurveys: AutoSurveys | undefined;
-  private autoSurveysInit: Promise<void> | undefined;
+  private autoFeedback: AutoFeedback | undefined;
+  private autoFeedbackInit: Promise<void> | undefined;
   private featuresClient: FeaturesClient;
 
   constructor(
@@ -113,18 +113,18 @@ export class BucketClient {
 
     if (
       this.context?.user &&
-      feedbackOpts?.enableAutoSurveys !== false // default to on
+      feedbackOpts?.enableAutoFeedback !== false // default to on
     ) {
       if (isMobile) {
         this.logger.warn(
           "Feedback prompting is not supported on mobile devices",
         );
       } else {
-        this.autoSurveys = new AutoSurveys(
+        this.autoFeedback = new AutoFeedback(
           this.config.sseHost,
           this.logger,
           this.httpClient,
-          feedbackOpts?.autoSurveysHandler,
+          feedbackOpts?.autoFeedbackHandler,
           String(this.context.user?.id),
           feedbackOpts?.ui?.position,
           feedbackOpts?.ui?.translations,
@@ -139,10 +139,10 @@ export class BucketClient {
    * Must be called before calling other SDK methods.
    */
   async initialize() {
-    if (this.autoSurveys) {
-      // do not block on Automated Feedback Surveys initialization
-      this.autoSurveysInit = this.autoSurveys.initialize().catch((e) => {
-        this.logger.error("error initializing Automated Feedback Surveys", e);
+    if (this.autoFeedback) {
+      // do not block on automated feedback surveys initialization
+      this.autoFeedbackInit = this.autoFeedback.initialize().catch((e) => {
+        this.logger.error("error initializing automated feedback surveys", e);
       });
     }
 
@@ -320,10 +320,10 @@ export class BucketClient {
   }
 
   async stop() {
-    if (this.autoSurveys) {
+    if (this.autoFeedback) {
       // ensure fully initialized before stopping
-      await this.autoSurveysInit;
-      this.autoSurveys.stop();
+      await this.autoFeedbackInit;
+      this.autoFeedback.stop();
     }
   }
 }

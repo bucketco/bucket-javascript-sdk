@@ -115,16 +115,16 @@ if(bucketClient.getFeatures().huddle) {
 
 Bucket can collect qualitative feedback from your users in the form of a [Customer Satisfaction Score](https://en.wikipedia.org/wiki/Customer_satisfaction) and a comment.
 
-#### Automated Feedback Surveys collection
+#### Automated feedback collection
 
-The Bucket Browser SDK comes with a Automated Feedback Surveys collection mode enabled by default, which lets the Bucket service ask your users for feedback for relevant features just after they've used them.
+The Bucket Browser SDK comes with automated feedback collection mode enabled by default, which lets the Bucket service ask your users for feedback for relevant features just after they've used them.
 
-Note: To get started with automatic feedback collection, make sure you call `bucket.user()`.
+Note: To get started with automatic feedback collection, make sure you've set `user` in the `BucketClient` constructor.
 
-Automated Feedback Surveys works even if you're not using the SDK to send events to Bucket.
-It works because the Bucket Browser SDK maintains a live connection to Bucket's servers and can show a Automated Feedback Surveys prompt whenever the Bucket servers determines that an event should trigger a prompt - regardless of how this event is sent to Bucket.
+Automated feedback surveys work even if you're not using the SDK to send events to Bucket.
+It works because the Bucket Browser SDK maintains a live connection to Bucket's servers and can automatically show a feedback prompt whenever the Bucket servers determines that an event should trigger a prompt - regardless of how this event is sent to Bucket.
 
-You can find all the options to make changes to the default behaviour in the [Bucket feedback documentation](./FEEDBACK.md).
+You can find all the options to make changes to the default behavior in the [Bucket feedback documentation](./FEEDBACK.md).
 
 #### Bucket feedback UI
 
@@ -167,12 +167,12 @@ bucket.user(await sha256("john_doe"));
 
 ### Use of cookies
 
-The Bucket Browser SDK uses a couple of cookies to support Automated Feedback Surveys. These cookies are not used for tracking purposes and thus should not need to appear in cookie consent forms.
+The Bucket Browser SDK uses a couple of cookies to support automated feedback surveys. These cookies are not used for tracking purposes and thus should not need to appear in cookie consent forms.
 
 The two cookies are:
 
-- `bucket-prompt-${userId}`: store the last Automated Feedback Surveys prompt message ID received to avoid repeating prompts
-- `bucket-token-${userId}`: caching a token used to connect to Bucket's live messaging infrastructure that is used to deliver Automated Feedback Surveys prompts in real time.
+- `bucket-prompt-${userId}`: store the last automated feedback prompt message ID received to avoid repeating surveys
+- `bucket-token-${userId}`: caching a token used to connect to Bucket's live messaging infrastructure that is used to deliver automated feedback surveys in real time.
 
 ### Custom attributes
 

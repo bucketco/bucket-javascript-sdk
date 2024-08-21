@@ -34,7 +34,7 @@ declare module "@bucketco/react-sdk" {
 ### 2. Add the `BucketProvider` context provider
 
 Add the `BucketProvider` context provider to your application.
-This will initialize the Bucket SDK, fetch features and start listening for Automated Feedback Surveys events.
+This will initialize the Bucket SDK, fetch features and start listening for automated feedback survey events.
 
 **Example:**
 
