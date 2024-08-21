@@ -11,51 +11,59 @@ The Bucket Browser SDK feedback UI is configured with reasonable defaults, posit
 These settings can be overwritten when initializing the Bucket Browser SDK:
 
 ```javascript
-bucket.init("bucket-publishable-key", {
-  feedback: {
-    ui: {
-      position: POSITION_CONFIG, // See positioning section
-      translations: TRANSLATION_KEYS, // See internationalization section
+const bucket = new BucketClient(
+  "bucket-publishable-key",
+  { user: { id: "42" } },
+  {
+    feedback: {
+      ui: {
+        position: POSITION_CONFIG, // See positioning section
+        translations: TRANSLATION_KEYS, // See internationalization section
 
-      // Enable Live Satisfaction. Default: `true`
-      enableLiveSatisfaction: boolean,
+        // Enable automated feedback surveys. Default: `true`
+        enableAutoFeedback: boolean,
 
-      /**
-       * Do your own feedback prompt handling or override
-       * default settings at runtime.
-       */
-      liveSatisfactionHandler: (promptMessage, handlers) => {
-        // See Live Satisfaction section
+        /**
+         * Do your own feedback prompt handling or override
+         * default settings at runtime.
+         */
+        autoFeedbackHandler: (promptMessage, handlers) => {
+          // See Automated Feedback Surveys section
+        },
       },
     },
   },
-});
+);
 ```
 
 See also:
 
 - [Positioning and behavior](#positioning-and-behavior) for the position option.
 - [Static language configuration](#static-language-configuration) if you want to translate the feedback UI.
-- [Live Satisfaction](#live-satisfaction) to override default configuration.
+- [Automated Feedback Surveys](#automated-feedback-surveys) to override default configuration.
 
-## Live Satisfaction
+## Automated Feedback Surveys
 
-Live Satisfaction is enabled by default.
+Automated feedback surveys are enabled by default.
 
-When Live Satisfaction is enabled, the Bucket Browser SDK will open and maintain a connection to the Bucket service. When a user triggers an event tracked by a feature and is eligible to be prompted for feedback, the Bucket service will send a request to the SDK instance. By default, this request will open up the Bucket feedback UI in the user's browser, but you can intercept the request and override this behaviour.
+When automated feedback surveys are enabled, the Bucket Browser SDK will open and maintain a connection to the Bucket service. When a user triggers an event tracked by a feature and is eligible to be prompted for feedback, the Bucket service will send a request to the SDK instance. By default, this request will open up the Bucket feedback UI in the user's browser, but you can intercept the request and override this behavior.
 
-The live connection for automated feedback is established once you have identified a user with `bucket.user()`.
+The live connection for automated feedback is established when the `BucketClient` is initialized.
 
-### Disabling Live Satisfaction
+### Disabling Automated Feedback Surveys
 
-You can disable automated collection in the `bucket.init()`-call:
+You can disable automated collection in the `BucketClient` constructor:
 
 ```javascript
-bucket.init("bucket-publishable-key", {
-  feedback: {
-    enableLiveSatisfaction: false,
+const bucket = new BucketClient(
+  "bucket-publishable-key",
+  { user: { id: "42" } },
+  {
+    feedback: {
+      enableAutoFeedback: false,
+    },
   },
-});
+);
 ```
 
 ### Overriding prompt event defaults
@@ -63,25 +71,29 @@ bucket.init("bucket-publishable-key", {
 If you are not satisfied with the default UI behavior when an automated prompt event arrives, you can can [override the global defaults](#global-feedback-configuration) or intercept and override settings at runtime like this:
 
 ```javascript
-bucket.init("bucket-publishable-key", {
-  feedback: {
-    liveSatisfactionHandler: (promptMessage, handlers) => {
-      // Pass your overrides here. Everything is optional
-      handlers.openFeedbackForm({
-        title: promptMessage.question,
+const bucket = new BucketClient(
+  "bucket-publishable-key",
+  {user: {id: "42"}},
+  {
+    feedback: {
+      autoFeedbackHandler: (promptMessage, handlers) => {
+        // Pass your overrides here. Everything is optional
+        handlers.openFeedbackForm({
+          title: promptMessage.question,
 
-        position: POSITION_CONFIG, // See positioning section
-        translations: TRANSLATION_KEYS, // See internationalization section
+          position: POSITION_CONFIG, // See positioning section
+          translations: TRANSLATION_KEYS, // See internationalization section
 
-        // Trigger side effects with the collected data,
-        // for example posting it back into your own CRM
-        onAfterSubmit: (feedback) => {
-          storeFeedbackInCRM({
-            score: feedback.score,
-            comment: feedback.comment,
-          });
-        },
-      });
+          // Trigger side effects with the collected data,
+          // for example posting it back into your own CRM
+          onAfterSubmit: (feedback) => {
+            storeFeedbackInCRM({
+              score: feedback.score,
+              comment: feedback.comment,
+            });
+          },
+        });
+      },
     },
   },
 });
@@ -95,16 +107,16 @@ See also:
 
 ## Manual feedback collection
 
-To open up the feedback collection UI, call `bucket.requestFeedback(options)` with the appropriate options. This approach is particularly beneficial if you wish to retain manual control over feedback collection from your users while leveraging the convenience of the Bucket feedback UI to reduce the amount of code you need to maintain.
+To open up the feedback collection UI, call `bucketClient.requestFeedback(options)` with the appropriate options. This approach is particularly beneficial if you wish to retain manual control over feedback collection from your users while leveraging the convenience of the Bucket feedback UI to reduce the amount of code you need to maintain.
 
 Examples of this could be if you want the click of a `give us feedback`-button or the end of a specific user flow, to trigger a pop-up displaying the feedback user interface.
 
-### bucket.requestFeedback() options
+### bucketClient.requestFeedback() options
 
 Minimal usage with defaults:
 
 ```javascript
-bucket.requestFeedback({
+bucketClient.requestFeedback({
   featureId: "bucket-feature-id",
   title: "How satisfied are you with file uploads?",
 });
@@ -113,7 +125,7 @@ bucket.requestFeedback({
 All options:
 
 ```javascript
-bucket.requestFeedback({
+bucketClient.requestFeedback({
   featureId: "bucket-feature-id", // [Required]
   userId: "your-user-id",  // [Optional] if user persistence is enabled (default in browsers),
   companyId: "users-company-or-account-id", // [Optional]
@@ -164,9 +176,9 @@ A dialog that appears in a specified corner of the viewport, without limiting th
 
 ![image](https://github.com/bucketco/bucket-tracking-sdk/assets/331790/30413513-fd5f-4a2c-852a-9b074fa4666c)
 
-Using a dialog is a soft push for feedback. It lets the user continue their work with a minimal amount of intrusion. The user can opt-in to respond but is not required to. A good use case for this behaviour is when a user uses a feature where the expected outcome is predictable, possibly because they have used it multiple times before. For example: Uploading a file, switching to a different view of a visualisation, visiting a specific page, or manipulating some data.
+Using a dialog is a soft push for feedback. It lets the user continue their work with a minimal amount of intrusion. The user can opt-in to respond but is not required to. A good use case for this behavior is when a user uses a feature where the expected outcome is predictable, possibly because they have used it multiple times before. For example: Uploading a file, switching to a different view of a visualization, visiting a specific page, or manipulating some data.
 
-The default feedback UI behaviour is a dialog placed in the bottom right corner of the viewport.
+The default feedback UI behavior is a dialog placed in the bottom right corner of the viewport.
 
 ```typescript
 position: {
@@ -201,7 +213,7 @@ Popover feedback button example:
 <script>
   const button = document.getElementById("feedbackButton");
   button.addEventListener("click", (e) => {
-    bucket.requestFeedback({
+    bucketClient.requestFeedback({
       featureId: "bucket-feature-id",
       userId: "your-user-id",
       title: "How do you like the popover?",
@@ -216,7 +228,7 @@ Popover feedback button example:
 
 ## Internationalization (i18n)
 
-By default, the feedback UI is written in English. However, you can supply your own translations by passing an object to the options to either or both of the `bucket.init(options)` or `bucket.requestFeedback(options)` calls. These translations will replace the English ones used by the feedback interface. See examples below.
+By default, the feedback UI is written in English. However, you can supply your own translations by passing an object to the options to either or both of the `new BucketClient("key", context, options)` or `bucketClient.requestFeedback(options)` calls. These translations will replace the English ones used by the feedback interface. See examples below.
 
 ![image](https://github.com/bucketco/bucket-tracking-sdk/assets/331790/68805b38-e9f6-4de5-9f55-188216983e3c)
 
@@ -227,7 +239,7 @@ See [default english localization keys](./src/feedback/config/defaultTranslation
 If you know the language at page load, you can configure your translation keys while initializing the Bucket Browser SDK:
 
 ```javascript
-bucket.init("my-publishable-key", {
+new BucketClient("my-publishable-key", context, {
   feedback: {
     ui: {
       translations: {
@@ -253,12 +265,12 @@ bucket.init("my-publishable-key", {
 
 ### Runtime language configuration
 
-If you only know the user's language after the page has loaded, you can provide translations to either the `bucket.requestFeedback(options)` call or the `liveSatisfactionHandler` option before the feedback interface opens. See examples below.
+If you only know the user's language after the page has loaded, you can provide translations to either the `bucketClient.requestFeedback(options)` call or the `autoFeedbackHandler` option before the feedback interface opens. See examples below.
 
 ### Manual feedback collection
 
 ```javascript
-bucket.requestFeedback({
+bucketClient.requestFeedback({
   ... // Other options
   translations: {
     // your translation keys
@@ -266,16 +278,16 @@ bucket.requestFeedback({
 })
 ```
 
-### Live Satisfaction
+### Automated Feedback Surveys
 
 When you are collecting feedback through the Bucket automation, you can intercept the default prompt handling and override the defaults.
 
 If you set the prompt question in the Bucket app to be one of your own translation keys, you can even get a translated version of the question you want to ask your customer in the feedback UI.
 
 ```javascript
-bucket.init("bucket-publishable-key", {
+bucketClient.init("bucket-publishable-key", {
   feedback: {
-    liveSatisfactionHandler: (message, handlers) => {
+    autoFeedbackHandler: (message, handlers) => {
       const translatedQuestion =
         i18nLookup[message.question] ?? message.question;
       handlers.openFeedbackForm({
@@ -349,10 +361,10 @@ Either `score` or `comment` must be defined in order to pass validation in the B
 
 Examples of a HTML-form that collects the relevant data can be found in [feedback.html](./example/feedback/feedback.html) and [feedback.jsx](./example/feedback/feedback.jsx).
 
-Once you have collected the feedback data, pass it along to `bucket.feedback()`:
+Once you have collected the feedback data, pass it along to `bucketClient.feedback()`:
 
 ```javascript
-bucket.feedback({
+bucketClient.feedback({
   featureId: "bucket-feature-id",
   userId: "your-user-id",
   score: 5,
@@ -360,22 +372,22 @@ bucket.feedback({
 });
 ```
 
-### Intercepting Live Satisfaction events
+### Intercepting automated feedback survey events
 
-When using Live Satisfaction, the Bucket service will, when specified, send a feedback prompt message to your user's instance of the Bucket Browser SDK. This will result in the feedback UI being opened.
+When using automated feedback surveys, the Bucket service will, when specified, send a feedback prompt message to your user's instance of the Bucket Browser SDK. This will result in the feedback UI being opened.
 
 You can intercept this behavior and open your own custom feedback collection form:
 
 ```javascript
-bucket.init("bucket-publishable-key", {
+bucketClient.init("bucket-publishable-key", {
   feedback: {
-    liveSatisfactionHandler: async (promptMessage, handlers) => {
+    autoFeedbackHandler: async (promptMessage, handlers) => {
       // This opens your custom UI
       customFeedbackCollection({
         // The question configured in the Bucket UI for the feature
         question: promptMessage.question,
         // When the user successfully submits feedback data.
-        // Use this instead of `bucket.feedback()`, otherwise
+        // Use this instead of `bucketClient.feedback()`, otherwise
         // the feedback prompt handler will keep being called
         // with the same prompt message
         onFeedbackSubmitted: (feedback) => {

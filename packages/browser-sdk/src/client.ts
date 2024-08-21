@@ -1,9 +1,10 @@
 import { FeaturesClient, FeaturesOptions } from "./feature/features";
 import {
+  AutoFeedback,
   Feedback,
   feedback,
   FeedbackOptions as FeedbackOptions,
-  LiveSatisfaction,
+  handleDeprecatedFeedbackOptions,
   RequestFeedbackOptions,
 } from "./feedback/feedback";
 import * as feedbackLib from "./feedback/ui";
@@ -72,8 +73,8 @@ export class BucketClient {
   private logger: Logger;
   private httpClient: HttpClient;
 
-  private liveSatisfaction: LiveSatisfaction | undefined;
-  private liveSatisfactionInit: Promise<void> | undefined;
+  private autoFeedback: AutoFeedback | undefined;
+  private autoFeedbackInit: Promise<void> | undefined;
   private featuresClient: FeaturesClient;
 
   constructor(
@@ -91,9 +92,11 @@ export class BucketClient {
       sseHost: opts?.sseHost ?? defaultConfig.sseHost,
     } satisfies Config;
 
+    const feedbackOpts = handleDeprecatedFeedbackOptions(opts?.feedback);
+
     this.requestFeedbackOptions = {
-      position: opts?.feedback?.ui?.position,
-      translations: opts?.feedback?.ui?.translations,
+      position: feedbackOpts?.ui?.position,
+      translations: feedbackOpts?.ui?.translations,
     };
 
     this.httpClient = new HttpClient(publishableKey, {
@@ -110,21 +113,21 @@ export class BucketClient {
 
     if (
       this.context?.user &&
-      opts?.feedback?.enableLiveSatisfaction !== false // default to on
+      feedbackOpts?.enableAutoFeedback !== false // default to on
     ) {
       if (isMobile) {
         this.logger.warn(
           "Feedback prompting is not supported on mobile devices",
         );
       } else {
-        this.liveSatisfaction = new LiveSatisfaction(
+        this.autoFeedback = new AutoFeedback(
           this.config.sseHost,
           this.logger,
           this.httpClient,
-          opts?.feedback?.liveSatisfactionHandler,
+          feedbackOpts?.autoFeedbackHandler,
           String(this.context.user?.id),
-          opts?.feedback?.ui?.position,
-          opts?.feedback?.ui?.translations,
+          feedbackOpts?.ui?.position,
+          feedbackOpts?.ui?.translations,
         );
       }
     }
@@ -136,13 +139,11 @@ export class BucketClient {
    * Must be called before calling other SDK methods.
    */
   async initialize() {
-    if (this.liveSatisfaction) {
-      // do not block on live satisfaction initialization
-      this.liveSatisfactionInit = this.liveSatisfaction
-        .initialize()
-        .catch((e) => {
-          this.logger.error("error initializing live satisfaction", e);
-        });
+    if (this.autoFeedback) {
+      // do not block on automated feedback surveys initialization
+      this.autoFeedbackInit = this.autoFeedback.initialize().catch((e) => {
+        this.logger.error("error initializing automated feedback surveys", e);
+      });
     }
 
     await this.featuresClient.initialize();
@@ -255,7 +256,7 @@ export class BucketClient {
   /**
    * Display the Bucket feedback form UI programmatically.
    *
-   * This can be used to collect feedback from users in Bucket in cases where Live Satisfaction isn't appropriate.
+   * This can be used to collect feedback from users in Bucket in cases where Automated Feedback Surveys isn't appropriate.
    *
    * @param options
    */
@@ -319,10 +320,10 @@ export class BucketClient {
   }
 
   async stop() {
-    if (this.liveSatisfaction) {
+    if (this.autoFeedback) {
       // ensure fully initialized before stopping
-      await this.liveSatisfactionInit;
-      this.liveSatisfaction.stop();
+      await this.autoFeedbackInit;
+      this.autoFeedback.stop();
     }
   }
 }

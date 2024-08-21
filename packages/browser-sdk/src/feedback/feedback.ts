@@ -20,8 +20,8 @@ import * as feedbackLib from "./ui";
 export type Key = string;
 
 export type FeedbackOptions = {
-  enableLiveSatisfaction?: boolean;
-  liveSatisfactionHandler?: FeedbackPromptHandler;
+  enableAutoFeedback?: boolean;
+  autoFeedbackHandler?: FeedbackPromptHandler;
   ui?: {
     /**
      * Control the placement and behavior of the feedback form.
@@ -34,7 +34,23 @@ export type FeedbackOptions = {
      */
     translations?: Partial<FeedbackTranslations>;
   };
+
+  // Deprecated
+  enableLiveSatisfaction?: boolean;
+  liveSatisfactionHandler?: FeedbackPromptHandler;
 };
+
+export function handleDeprecatedFeedbackOptions(
+  opts?: FeedbackOptions,
+): FeedbackOptions {
+  return {
+    ...opts,
+    enableAutoFeedback:
+      opts?.enableAutoFeedback ?? opts?.enableLiveSatisfaction,
+    autoFeedbackHandler:
+      opts?.autoFeedbackHandler ?? opts?.liveSatisfactionHandler,
+  };
+}
 
 export interface RequestFeedbackOptions
   extends Omit<OpenFeedbackFormOptions, "key" | "onSubmit"> {
@@ -94,7 +110,7 @@ export type Feedback = {
 
   /**
    * The original question.
-   * This only needs to be populated if the feedback was submitted through the Live Satisfaction channel.
+   * This only needs to be populated if the feedback was submitted through the automated feedback surveys channel.
    */
   promptedQuestion?: string;
 
@@ -121,7 +137,7 @@ export type Feedback = {
 
   /**
    * Source of the feedback, depending on how the user was asked
-   * - `prompt` - Feedback submitted by a Live Satisfaction prompt
+   * - `prompt` - Feedback submitted by way of an automated feedback survey (prompted)
    * - `widget` - Feedback submitted via `requestFeedback`
    * - `sdk` - Feedback submitted via `feedback`
    */
@@ -175,7 +191,7 @@ export const DEFAULT_FEEDBACK_CONFIG = {
   promptHandler: createDefaultFeedbackPromptHandler(),
   feedbackPosition: DEFAULT_POSITION,
   translations: {},
-  liveSatisfactionEnabled: true,
+  autoFeedbackEnabled: true,
 };
 
 export async function feedback(
@@ -207,7 +223,7 @@ export async function feedback(
   return res;
 }
 
-export class LiveSatisfaction {
+export class AutoFeedback {
   private initialized = false;
   private sseChannel: AblySSEChannel | null = null;
 
@@ -222,11 +238,11 @@ export class LiveSatisfaction {
   ) {}
 
   /**
-   * Start receiving Live Satisfaction feedback prompts.
+   * Start receiving automated feedback surveys.
    */
   async initialize() {
     if (this.initialized) {
-      this.logger.error("feedback prompting already initialized");
+      this.logger.error("auto. feedback client already initialized");
       return;
     }
     this.initialized = true;
@@ -235,7 +251,7 @@ export class LiveSatisfaction {
     if (!channel) return;
 
     try {
-      this.logger.debug(`feedback prompting enabled`, channel);
+      this.logger.debug(`auto. feedback enabled`, channel);
       this.sseChannel = openAblySSEChannel({
         userId: this.userId,
         channel,
@@ -245,9 +261,9 @@ export class LiveSatisfaction {
         logger: this.logger,
         sseHost: this.sseHost,
       });
-      this.logger.debug(`feedback prompting connection established`);
+      this.logger.debug(`auto. feedback connection established`);
     } catch (e) {
-      this.logger.error(`error initializing feedback prompting`, e);
+      this.logger.error(`error initializing auto. feedback client`, e);
     }
   }
 
@@ -268,7 +284,7 @@ export class LiveSatisfaction {
           },
         });
 
-        this.logger.debug(`feedback prompting status sent`, res);
+        this.logger.debug(`auto. feedback status sent`, res);
         if (res.ok) {
           const body: { success: boolean; channel?: string } = await res.json();
           if (body.success && body.channel) {
@@ -277,7 +293,7 @@ export class LiveSatisfaction {
         }
       }
     } catch (e) {
-      this.logger.error(`error initializing feedback prompting`, e);
+      this.logger.error(`error initializing auto. feedback`, e);
       return;
     }
     return;
