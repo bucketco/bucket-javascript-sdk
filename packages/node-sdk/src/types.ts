@@ -58,7 +58,7 @@ export type FeatureEvent = {
 /**
  * Describes a feature
  */
-export interface Feature {
+export interface InternalFeature {
   /**
    * The key of the feature.
    */
@@ -76,6 +76,26 @@ export interface Feature {
 }
 
 /**
+ * Describes a feature
+ */
+export interface Feature {
+  /**
+   * The key of the feature.
+   */
+  key: string;
+
+  /**
+   * If the feature is enabled.
+   */
+  isEnabled: boolean;
+
+  /**
+   * Track feature usage in Bucket.
+   */
+  track(): Promise<void>;
+}
+
+/**
  * Describes a collection of evaluated features.
  *
  * @remarks
@@ -87,13 +107,13 @@ export interface Features {}
  * Describes a collection of evaluated feature.
  *
  * @remarks
- * This types falls back to a generic Record<string, boolean> if the Features interface
+ * This types falls back to a generic Record<string, Feature> if the Features interface
  * has not been extended.
  *
  */
 export type TypedFeatures = keyof Features extends never
-  ? Record<string, boolean>
-  : Record<keyof Features, boolean>;
+  ? Record<string, Feature>
+  : Record<keyof Features, Feature>;
 
 /**
  * Describes the response of the features endpoint
@@ -233,9 +253,9 @@ export type ClientOptions = {
   logger?: Logger;
 
   /**
-   * The features to use as fallbacks when the API is unavailable (optional).
+   * The features to "enable" as fallbacks when the API is unavailable (optional).
    **/
-  fallbackFeatures?: TypedFeatures;
+  fallbackFeatures?: (keyof TypedFeatures)[];
 
   /**
    * The HTTP client to use for sending requests (optional). Default is the built-in fetch client.
@@ -260,187 +280,20 @@ export type TrackOptions = {
 };
 
 /**
- * The base, unbound Bucket client.
- */
-export interface BucketClient
-  extends BucketClientBase,
-    BucketClientWithUserMethod<
-      BucketClientUserMethods &
-        BucketClientWithCompanyMethod<
-          BucketClientCompanyMethods & BucketClientUserMethods
-        >
-    >,
-    BucketClientWithCompanyMethod<
-      BucketClientCompanyMethods &
-        BucketClientWithUserMethod<
-          BucketClientUserMethods & BucketClientCompanyMethods
-        >
-    > {}
-
-/**
- * Useful interface to use as a type for the fully initialized Bucket client.
+ * Describes the current user context, company context, and other context.
+ * This is used to determine if feature targeting matches and to track events.
  **/
-export interface BoundBucketClient
-  extends BucketClientBase,
-    BucketClientUserMethods,
-    BucketClientCompanyMethods {}
-
-/**
- * The base interface used for composition
- *
- * @remarks
- * Internal interface for composition.
- */
-interface BucketClientBase {
+export type Context = {
   /**
-   * Sets the extra, custom context for the client.
-   *
-   * @param context - The "extra" context to set.
-   *
-   * @returns A new client with the context set.
-   * @throws An error if the context is not an object or the options are invalid.
-   **/
-  withOtherContext(context: Record<string, any>): this;
-
+   * The user context. If the user is set, the user ID is required.
+   */
+  user?: { id: string; attrs?: Attributes };
   /**
-   * Gets the extra, custom context associated with the client.
-   *
-   * @returns The extra, custom context or `undefined` if it is not set.
-   **/
-  get otherContext(): Record<string, any> | undefined;
-
+   * The company context. If the company is set, the company ID is required.
+   */
+  company?: { id: string; attrs?: Attributes };
   /**
-   * Initializes the client by caching the feature definitions.
-   *
-   * @returns void
-   *
-   * @remarks
-   * Call this method before calling `getFeatures` to ensure the feature definitions are cached.
-   **/
-  initialize(): Promise<void>;
-
-  /**
-   * Gets the evaluated features for the current context which includes the user, company, and custom context.
-   *   *
-   * @returns The evaluated features.
-   * @remarks
-   * Call `initialize` before calling this method to ensure the feature definitions are cached. No features
-   * will be returned if the client is not initialized.
-   **/
-  getFeatures(): Readonly<TypedFeatures>;
-}
-
-/**
- * Contains the `withUser` method.
- *
- * @remarks
- * Internal interface for composition.
- */
-interface BucketClientWithUserMethod<TReturn> {
-  /**
-   * Sets the user that is used for feature targeting evaluation.
-   *
-   * @param userId - The user ID to set.
-   * @param attributes - The attributes of the user (optional).
-   *
-   * @returns A new client with the user set.
-   * @throws An error if the user ID is not a string or the options are invalid.
-   * @remarks
-   * If the user ID is the same as the current company, the attributes will be merged, and
-   * the new attributes will take precedence.
-   **/
-  withUser(userId: string, attributes?: Attributes): BucketClientBase & TReturn;
-}
-
-/**
- * Contains the `withCompany` method.
- *
- * @remarks
- * Internal interface for composition.
- */
-interface BucketClientWithCompanyMethod<TReturn> {
-  /**
-   * Sets the company that is used for feature targeting evaluation.
-   *
-   * @param companyId - The company ID to set.
-   * @param attributes - The attributes of the user (optional).
-   *
-   * @returns A new client with the company set.
-   * @throws An error if the company ID is not a string or the options are invalid.
-   * @remarks
-   * If the company ID is the same as the current company, the attributes will be merged, and
-   * the new attributes will take precedence.
-   **/
-  withCompany(
-    companyId: string,
-    ttributes?: Attributes,
-  ): BucketClientBase & TReturn;
-}
-
-/**
- * Contains all user related methods.
- *
- * @remarks
- * Internal interface for composition.
- */
-interface BucketClientUserMethods {
-  /**
-   * Gets the user associated with the client.
-   *
-   * @returns The user associated with the client.
-   **/
-  get user(): { userId: string; attrs?: Attributes };
-
-  /**
-   * Updates a user in Bucket.
-   *
-   * @param opts.attributes - The additional attributes of the user (optional).
-   * @param opts.meta - The meta context associated with tracking (optional).
-   *
-   * @returns A boolean indicating if the request was successful.
-   * @throws An error if the options are invalid.
-   **/
-  updateUser(opts?: TrackOptions): Promise<boolean>;
-
-  /**
-   * Tracks an event in Bucket.
-   *
-   * @param event - The event to track.
-   * @param opts.attributes - The attributes of the event (optional).
-   * @param opts.meta - The meta context associated with tracking (optional).
-   *
-   * @returns A boolean indicating if the request was successful.
-   * @throws An error if the event is invalid or the options are invalid.
-   * @remarks
-   * If the company is set, the event will be associated with the company.
-   **/
-  trackFeatureUsage(event: string, opts?: TrackOptions): Promise<boolean>;
-}
-
-/**
- * Contains all company related methods.
- *
- * @remarks
- * Internal interface for composition.
- */
-interface BucketClientCompanyMethods {
-  /**
-   * Gets the company associated with the client.
-   *
-   * @returns The company associated with the client.
-   **/
-  get company(): { companyId: string; attrs?: Attributes };
-
-  /**
-   * Updates the associated company in Bucket.
-   *
-   * @param opts.attributes - The additional attributes of the company (optional).
-   * @param opts.meta - The meta context associated with tracking (optional).
-   *
-   * @returns A boolean indicating if the request was successful.
-   * @throws An error if the company is not set or the options are invalid.
-   * @remarks
-   * If the user is set, the company will be associated with the user.
-   **/
-  updateCompany(opts?: TrackOptions): Promise<boolean>;
-}
+   * The other context. This is used for any additional context that is not related to user or company.
+   */
+  other?: Record<string, any>;
+};
