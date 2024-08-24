@@ -55,11 +55,6 @@ const company = {
   name: "Acme Inc.",
 };
 
-const event = {
-  event: "testEvent",
-  attrs: { key: "value" },
-};
-
 const otherContext = { custom: "context", key: "value" };
 
 describe("BucketClient", () => {

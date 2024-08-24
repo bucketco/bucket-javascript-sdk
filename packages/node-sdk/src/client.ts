@@ -13,14 +13,14 @@ import fetchClient from "./fetch-http-client";
 import {
   Cache,
   ClientOptions,
-  InternalFeature,
+  Context,
   FeatureEvent,
   FeaturesAPIResponse,
   HttpClient,
+  InternalFeature,
   Logger,
   TrackOptions,
   TypedFeatures,
-  Context,
 } from "./types";
 import {
   checkWithinAllottedTimeWindow,
@@ -631,7 +631,7 @@ export class BoundBucketClient {
    */
   public bindClient({ user, company, other }: Context) {
     // merge new context into existing
-    let newContext = {
+    const newContext = {
       ...this._context,
       user: user ? { ...this._context.user, ...user } : undefined,
       company: company ? { ...this._context.company, ...company } : undefined,
