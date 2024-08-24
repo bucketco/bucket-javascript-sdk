@@ -1,3 +1,5 @@
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+
 import { evaluate, evaluateTargeting, FeatureData, hashInt } from "../src";
 
 const feature: FeatureData = {
@@ -50,7 +52,7 @@ describe("evaluate feature targeting integration ", () => {
                   type: "rolloutPercentage",
                   flagKey: "flag",
                   partialRolloutAttribute: "company.id",
-                  partialRolloutThreshold: 100000,
+                  partialRolloutThreshold: 99999,
                 },
                 {
                   type: "group",
@@ -172,7 +174,7 @@ describe("evaluate feature targeting integration ", () => {
                   type: "rolloutPercentage",
                   flagKey: "flag",
                   partialRolloutAttribute: "some_field",
-                  partialRolloutThreshold: 100000,
+                  partialRolloutThreshold: 99000,
                 },
               ],
             },
@@ -248,11 +250,11 @@ describe("evaluate feature targeting integration ", () => {
 
 describe("operator evaluation", () => {
   beforeAll(() => {
-    jest.useFakeTimers().setSystemTime(new Date("2024-01-10"));
+    vi.useFakeTimers().setSystemTime(new Date("2024-01-10"));
   });
 
   afterAll(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   const tests = [

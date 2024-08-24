@@ -11,8 +11,8 @@
   },
   "scripts": {
     "build": "tsc --project tsconfig.build.json",
-    "test": "jest",
-    "test:ci": "jest --reporters=\"default\" --reporters=\"jest-junit\" --collectCoverage",
+    "test": "vitest",
+    "test:ci": "vitest --reporters=\"default\" --reporters=\"vitest-junit\" --collectCoverage",
     "lint": "eslint .",
     "lint:ci": "eslint --output-file eslint-report.json --format json .",
     "prettier": "prettier --check .",
@@ -27,14 +27,11 @@
   "devDependencies": {
     "@bucketco/eslint-config": "workspace:^",
     "@bucketco/tsconfig": "workspace:^",
-    "@types/jest": "^29.5.12",
     "@types/node": "^20.11.0",
     "eslint": "^8.57.0",
-    "jest": "^29.7.0",
-    "jest-junit": "^16.0.0",
     "prettier": "^3.3.3",
-    "ts-jest": "^29.1.4",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vitest": "^2.0.5"
   }
 }

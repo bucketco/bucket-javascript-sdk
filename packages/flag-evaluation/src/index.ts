@@ -179,22 +179,18 @@ function evaluateRecursively(
         filter.operator,
         filter.values || [],
       );
-    case "rolloutPercentage":
-      if (filter.partialRolloutThreshold === 100000) {
-        return true;
-      }
-
-      missingContextFieldsSet.add(filter.partialRolloutAttribute);
-
+    case "rolloutPercentage": {
       if (!(filter.partialRolloutAttribute in context)) {
+        missingContextFieldsSet.add(filter.partialRolloutAttribute);
         return false;
       }
 
-      return (
-        hashInt(
-          `${filter.flagKey}.${context[filter.partialRolloutAttribute]}`,
-        ) > filter.partialRolloutThreshold
+      const hashVal = hashInt(
+        `${filter.flagKey}.${context[filter.partialRolloutAttribute]}`,
       );
+
+      return hashVal < filter.partialRolloutThreshold;
+    }
     case "group":
       return filter.filters.reduce((acc, current) => {
         if (filter.operator === "and") {
