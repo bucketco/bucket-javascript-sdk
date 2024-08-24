@@ -946,7 +946,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@bucketco/node-sdk@workspace:^, @bucketco/node-sdk@workspace:packages/node-sdk":
+"@bucketco/node-sdk@workspace:packages/node-sdk":
   version: 0.0.0-use.local
   resolution: "@bucketco/node-sdk@workspace:packages/node-sdk"
   dependencies:
@@ -3994,29 +3994,6 @@ __metadata:
   version: 1.2.0
   resolution: "@ungap/structured-clone@npm:1.2.0"
   checksum: 10c0/8209c937cb39119f44eb63cf90c0b73e7c754209a6411c707be08e50e29ee81356dca1a848a405c8bdeebfe2f5e4f831ad310ae1689eeef65e7445c090c6657d
-  languageName: node
-  linkType: hard
-
-"@vercel/flags@npm:^2.6.0":
-  version: 2.6.0
-  resolution: "@vercel/flags@npm:2.6.0"
-  dependencies:
-    jose: "npm:5.2.1"
-  peerDependencies:
-    "@sveltejs/kit": "*"
-    next: "*"
-    react: "*"
-    react-dom: "*"
-  peerDependenciesMeta:
-    "@sveltejs/kit":
-      optional: true
-    next:
-      optional: true
-    react:
-      optional: true
-    react-dom:
-      optional: true
-  checksum: 10c0/c36ccb86e25e82ef612a6c9d2c85a4daa1f9793682f21ed7750bbaae1c7edde76961e8a351357e4c537036c1728866ea0dfde925d0f80e2d34d5092c9060c853
   languageName: node
   linkType: hard
 
@@ -7913,26 +7890,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"example-nextjs-server-side@workspace:examples/nextjs-server-side":
-  version: 0.0.0-use.local
-  resolution: "example-nextjs-server-side@workspace:examples/nextjs-server-side"
-  dependencies:
-    "@bucketco/node-sdk": "workspace:^"
-    "@types/node": "npm:^20"
-    "@types/react": "npm:^18"
-    "@types/react-dom": "npm:^18"
-    "@vercel/flags": "npm:^2.6.0"
-    eslint: "npm:^8"
-    eslint-config-next: "npm:14.2.5"
-    next: "npm:14.2.5"
-    postcss: "npm:^8"
-    react: "npm:^18"
-    react-dom: "npm:^18"
-    tailwindcss: "npm:^3.4.1"
-    typescript: "npm:^5"
-  languageName: unknown
-  linkType: soft
-
 "execa@npm:5.0.0":
   version: 5.0.0
   resolution: "execa@npm:5.0.0"
@@ -9943,13 +9900,6 @@ __metadata:
   version: 1.4.0
   resolution: "jju@npm:1.4.0"
   checksum: 10c0/f3f444557e4364cfc06b1abf8331bf3778b26c0c8552ca54429bc0092652172fdea26cbffe33e1017b303d5aa506f7ede8571857400efe459cb7439180e2acad
-  languageName: node
-  linkType: hard
-
-"jose@npm:5.2.1":
-  version: 5.2.1
-  resolution: "jose@npm:5.2.1"
-  checksum: 10c0/76044e4cba28a4326c9fd8ba8bd1c1d99624d4dad4a20238b3fe44e2227d301ca7cb049d3ad3bb481b61a77c929c814ab59bafafbbe2b1d901d4007411a1d97a
   languageName: node
   linkType: hard
 
