@@ -21,7 +21,6 @@ import {
   TrackOptions,
   TypedFeatures,
   Context,
-  Features,
 } from "./types";
 import {
   checkWithinAllottedTimeWindow,

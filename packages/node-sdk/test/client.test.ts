@@ -673,13 +673,12 @@ describe("BucketClient", () => {
             version: 1,
             rules: [
               {
-                filter: [
-                  {
-                    field: "attributeKey",
-                    operator: "IS",
-                    values: ["attributeValue"],
-                  },
-                ],
+                filter: {
+                  type: "context" as const,
+                  field: "company.id",
+                  operator: "IS",
+                  values: ["company123"],
+                },
               },
             ],
           },
@@ -690,15 +689,24 @@ describe("BucketClient", () => {
             version: 2,
             rules: [
               {
-                partialRolloutThreshold: 0.5,
-                partialRolloutAttribute: "attributeKey",
-                filter: [
-                  {
-                    field: "attributeKey",
-                    operator: "IS",
-                    values: ["attributeValue"],
-                  },
-                ],
+                filter: {
+                  type: "group" as const,
+                  operator: "and",
+                  filters: [
+                    {
+                      type: "context" as const,
+                      field: "company.id",
+                      operator: "IS",
+                      values: ["company123"],
+                    },
+                    {
+                      partialRolloutThreshold: 0.5,
+                      partialRolloutAttribute: "attributeKey",
+                      type: "rolloutPercentage" as const,
+                      flagKey: "feature2",
+                    },
+                  ],
+                },
               },
             ],
           },
