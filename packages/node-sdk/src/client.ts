@@ -30,6 +30,7 @@ import {
   maskedProxy,
   ok,
 } from "./utils";
+import { isArray } from "util";
 
 /**
  * The SDK client.
@@ -82,7 +83,7 @@ export class BucketClient {
     );
     ok(
       options.fallbackFeatures === undefined ||
-        isObject(options.fallbackFeatures),
+        Array.isArray(options.fallbackFeatures),
       "fallbackFeatures must be an object",
     );
 
@@ -328,7 +329,7 @@ export class BucketClient {
    * The company must be set using `withCompany` before calling this method.
    * If the user is set, the company will be associated with the user.
    **/
-  public async updateUser(userId: string, opts: TrackOptions) {
+  public async updateUser(userId: string, opts?: TrackOptions) {
     ok(
       typeof userId === "string" && userId.length > 0,
       "companyId must be a string",
@@ -345,7 +346,7 @@ export class BucketClient {
 
     return await this.post("user", {
       userId,
-      attributes: opts.attributes,
+      attributes: opts?.attributes,
       context: opts?.meta,
     });
   }
@@ -548,15 +549,11 @@ export class BoundBucketClient {
   private checkContext(context: Context) {
     ok(isObject(context), "context must be an object");
     ok(
-      context.user === undefined ||
-        !isObject(context.user) ||
-        typeof context.user?.id === "string",
+      context.user === undefined || typeof context.user?.id === "string",
       "user.id must be a string if user is given",
     );
     ok(
-      context.company === undefined ||
-        !isObject(context.company) ||
-        typeof context.company?.id === "string",
+      context.company === undefined || typeof context.company?.id === "string",
       "company.id must be a string if company is given",
     );
     ok(
