@@ -30,7 +30,6 @@ import {
   maskedProxy,
   ok,
 } from "./utils";
-import { isArray } from "util";
 
 /**
  * The SDK client.
@@ -47,14 +46,6 @@ export class BucketClient {
     fallbackFeatures?: Record<keyof TypedFeatures, InternalFeature>;
     featuresCache?: Cache<FeaturesAPIResponse>;
   };
-
-  /**
-   * Creates a new SDK client.
-   *
-   * @param options - The options for the client.
-   * @throws An error if the options are invalid.
-   **/
-  constructor(options: ClientOptions);
 
   /**
    * Creates a new SDK client.
@@ -471,7 +462,7 @@ export class BucketClient {
 
       // TODO: use the bulk endpoint
       evaluated.forEach(async (res) => {
-        await this.sendFeatureEvent({
+        this.sendFeatureEvent({
           action: "evaluate",
           key: res.feature.key,
           targetingVersion: keyToVersionMap.get(res.feature.key),
@@ -479,6 +470,11 @@ export class BucketClient {
           evalContext: res.context,
           evalRuleResults: res.ruleEvaluationResults,
           evalMissingFields: res.missingContextFields,
+        }).catch((err) => {
+          this._config.logger?.error(
+            `failed to send evaluate event for "${res.feature.key}"`,
+            err,
+          );
         });
       });
 
@@ -509,6 +505,11 @@ export class BucketClient {
         key: key,
         targetingVersion: features[key].targetingVersion,
         evalResult: features[key].isEnabled,
+      }).catch((err) => {
+        this._config.logger?.error(
+          `failed to send check event for "${key}": ${err}`,
+          err,
+        );
       });
 
       const feature = features[key];

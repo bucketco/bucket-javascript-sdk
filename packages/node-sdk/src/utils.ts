@@ -2,7 +2,11 @@ import { Logger } from "./types";
 
 const oneMinute = 60 * 1000;
 
-const eventsByKey: Record<string, number[]> = {};
+let eventsByKey: Record<string, number[]> = {};
+
+export function clearRateLimiter() {
+  eventsByKey = {};
+}
 
 export function checkWithinAllottedTimeWindow(
   eventsPerMinute: number,

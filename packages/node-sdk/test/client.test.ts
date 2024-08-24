@@ -21,7 +21,7 @@ import {
 } from "../src/config";
 import fetchClient from "../src/fetch-http-client";
 import { ClientOptions, FeaturesAPIResponse } from "../src/types";
-import { checkWithinAllottedTimeWindow } from "../src/utils";
+import { checkWithinAllottedTimeWindow, clearRateLimiter } from "../src/utils";
 
 const FEATURE_EVENTS_ENDPOINT = "https://api.example.com/features/events";
 
@@ -44,13 +44,15 @@ vi.mock("../src/utils", async (importOriginal) => {
 });
 
 const user = {
-  userId: "user123",
-  attrs: { age: 1, name: "John" },
+  id: "user123",
+  age: 1,
+  name: "John",
 };
 
 const company = {
-  companyId: "company123",
-  attrs: { employees: 100, name: "Acme Inc." },
+  id: "company123",
+  employees: 100,
+  name: "Acme Inc.",
 };
 
 const event = {
@@ -87,6 +89,7 @@ describe("BucketClient", () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+    clearRateLimiter();
   });
 
   describe("constructor (with options)", () => {
@@ -113,7 +116,7 @@ describe("BucketClient", () => {
     it("should route messages to the supplied logger", () => {
       const client = new BucketClient(validOptions);
 
-      const actualLogger = client["_shared"].logger!;
+      const actualLogger = client["_config"].logger!;
       actualLogger.debug("debug message");
       actualLogger.info("info message");
       actualLogger.warn("warn message");
@@ -194,8 +197,8 @@ describe("BucketClient", () => {
   describe("bindClient", () => {
     const client = new BucketClient(validOptions);
     const context = {
-      user: { id: user.userId, ...user.attrs },
-      company: { id: company.companyId, ...company.attrs },
+      user,
+      company,
     };
 
     it("should return a new client instance with the user set", () => {
@@ -209,12 +212,13 @@ describe("BucketClient", () => {
     it("should update user in Bucket when called", () => {
       client.bindClient({ user: context.user });
 
+      const { id: _, ...attributes } = context.user;
       expect(httpClient.post).toHaveBeenCalledWith(
         "https://api.example.com/user",
         expectedHeaders,
         {
-          userId: user.userId,
-          attributes: user.attrs,
+          userId: user.id,
+          attributes: attributes,
           context: {
             active: false,
           },
@@ -226,13 +230,14 @@ describe("BucketClient", () => {
 
     it("should update user in Bucket when called", () => {
       client.bindClient({ company: context.company });
+      const { id: _, ...attributes } = context.company;
 
       expect(httpClient.post).toHaveBeenCalledWith(
         "https://api.example.com/company",
         expectedHeaders,
         {
-          companyId: company.companyId,
-          attributes: company.attrs,
+          companyId: company.id,
+          attributes: attributes,
           context: {
             active: false,
           },
@@ -282,11 +287,11 @@ describe("BucketClient", () => {
   describe("updateUser", () => {
     const client = new BucketClient(validOptions);
 
-    it("should successfully update the user with merging attributes", async () => {
+    it("should successfully update the user", async () => {
       const response = { status: 200, body: { success: true } };
       httpClient.post.mockResolvedValue(response);
 
-      const result = await client.updateUser(user.userId, {
+      const result = await client.updateUser(user.id, {
         attributes: { age: 2, brave: false },
         meta: {
           active: true,
@@ -298,8 +303,8 @@ describe("BucketClient", () => {
         "https://api.example.com/user",
         expectedHeaders,
         {
-          userId: user.userId,
-          attributes: { age: 2, brave: false, name: "John" },
+          userId: user.id,
+          attributes: { age: 2, brave: false },
           context: { active: true },
         },
       );
@@ -313,7 +318,7 @@ describe("BucketClient", () => {
       const error = new Error("Network error");
       httpClient.post.mockRejectedValue(error);
 
-      const result = await client.updateUser(user.userId);
+      const result = await client.updateUser(user.id);
 
       expect(result).toBe(false);
       expect(logger.error).toHaveBeenCalledWith(
@@ -327,7 +332,7 @@ describe("BucketClient", () => {
 
       httpClient.post.mockResolvedValue(response);
 
-      const result = await client.updateUser(user.userId);
+      const result = await client.updateUser(user.id);
 
       expect(result).toBe(false);
       expect(logger.debug).toHaveBeenCalledWith(
@@ -337,20 +342,16 @@ describe("BucketClient", () => {
     });
 
     it("should throw an error if opts are not valid or the user is not set", async () => {
-      await expect(new BucketClient(validOptions).updateUser()).rejects.toThrow(
-        "user must be set",
-      );
-
-      await expect(client.updateUser("bad_opts" as any)).rejects.toThrow(
-        "opts must be an object",
-      );
+      await expect(
+        client.updateUser(user.id, "bad_opts" as any),
+      ).rejects.toThrow("opts must be an object");
 
       await expect(
-        client.updateUser({ attributes: "bad_attributes" as any }),
+        client.updateUser(user.id, { attributes: "bad_attributes" as any }),
       ).rejects.toThrow("attributes must be an object");
 
       await expect(
-        client.updateUser({ meta: "bad_meta" as any }),
+        client.updateUser(user.id, { meta: "bad_meta" as any }),
       ).rejects.toThrow("meta must be an object");
     });
   });
@@ -644,10 +645,10 @@ describe("BucketClient", () => {
 
     it("should set up the cache object", async () => {
       const client = new BucketClient(validOptions);
-      expect(client["_shared"].featuresCache).toBeUndefined();
+      expect(client["_config"].featuresCache).toBeUndefined();
 
       await client.initialize();
-      expect(client["_shared"].featuresCache).toBeTypeOf("object");
+      expect(client["_config"].featuresCache).toBeTypeOf("object");
     });
 
     it("should call the backend to obtain features", async () => {
@@ -758,21 +759,24 @@ describe("BucketClient", () => {
       });
     });
 
-    it("should return evaluated features when user, company, and custom context are defined", async () => {
-      client = client
-        .withUser(user.userId, user.attrs)
-        .withCompany(company.companyId, company.attrs)
-        .withOtherContext(otherContext);
-
+    it("should return evaluated features", async () => {
       httpClient.post.mockClear(); // not interested in updates
 
       await flushPromises();
 
       await client.initialize();
-      const result = client.getFeatures();
+      const result = client.getFeatures({
+        company,
+        user,
+        other: otherContext,
+      });
 
       expect(result).toEqual({
-        feature1: true,
+        feature1: {
+          key: "feature1",
+          isEnabled: true,
+          track: expect.any(Function),
+        },
       });
 
       expect(evaluateTargeting).toHaveBeenCalledTimes(2);
@@ -787,14 +791,8 @@ describe("BucketClient", () => {
           key: "feature1",
           targetingVersion: 1,
           evalContext: {
-            company: {
-              id: "company123",
-              ...company.attrs,
-            },
-            user: {
-              id: "user123",
-              ...user.attrs,
-            },
+            company,
+            user,
             other: otherContext,
           },
           evalResult: true,
@@ -812,14 +810,8 @@ describe("BucketClient", () => {
           key: "feature2",
           targetingVersion: 2,
           evalContext: {
-            company: {
-              id: "company123",
-              ...company.attrs,
-            },
-            user: {
-              id: "user123",
-              ...user.attrs,
-            },
+            company,
+            user,
             other: otherContext,
           },
           evalResult: false,
@@ -842,32 +834,30 @@ describe("BucketClient", () => {
     });
 
     it("should properly define the rate limiter key", async () => {
-      client = client
-        .withUser(user.userId, user.attrs)
-        .withCompany(company.companyId, company.attrs)
-        .withOtherContext(otherContext);
-
       await client.initialize();
-      client.getFeatures();
-
+      client.getFeatures({ user, company, other: otherContext });
+      await flushPromises();
       expect(checkWithinAllottedTimeWindow).toHaveBeenCalledWith(
         FEATURE_EVENTS_PER_MIN,
         "evaluate:user.id=user123&user.age=1&user.name=John&company.id=company123&company.employees=100&company.name=Acme+Inc.&other.custom=context&other.key=value:feature1:1:true",
       );
-      //      vi.mocked(rateLimited).mockRestore();
     });
 
     it("should return evaluated features when only user is defined", async () => {
-      client = client.withUser(user.userId, user.attrs);
-
       httpClient.post.mockClear(); // not interested in updates
+      await client.initialize();
+      const features = client.getFeatures({ user });
+      expect(features).toEqual({
+        feature1: {
+          isEnabled: true,
+          key: "feature1",
+          track: expect.any(Function),
+        },
+      });
       await flushPromises();
 
-      await client.initialize();
-      client.getFeatures();
-
       expect(evaluateTargeting).toHaveBeenCalledTimes(2);
-      expect(httpClient.post).toHaveBeenCalledTimes(2); // For "evaluate" events
+      expect(httpClient.post).toHaveBeenCalledTimes(3); // For 2x "evaluate", 1x "check" events
 
       expect(httpClient.post).toHaveBeenNthCalledWith(
         1,
@@ -878,10 +868,7 @@ describe("BucketClient", () => {
           key: "feature1",
           targetingVersion: 1,
           evalContext: {
-            user: {
-              id: "user123",
-              ...user.attrs,
-            },
+            user,
           },
           evalResult: true,
           evalRuleResults: [true],
@@ -898,10 +885,7 @@ describe("BucketClient", () => {
           key: "feature2",
           targetingVersion: 2,
           evalContext: {
-            user: {
-              id: "user123",
-              ...user.attrs,
-            },
+            user,
           },
           evalResult: false,
           evalRuleResults: [false],
@@ -911,16 +895,20 @@ describe("BucketClient", () => {
     });
 
     it("should return evaluated features when only company is defined", async () => {
-      client = client.withCompany(company.companyId, company.attrs);
+      await client.initialize();
+      const features = client.getFeatures({ company });
+      expect(features).toEqual({
+        feature1: {
+          isEnabled: true,
+          key: "feature1",
+          track: expect.any(Function),
+        },
+      });
 
-      httpClient.post.mockClear(); // not interested in updates
       await flushPromises();
 
-      await client.initialize();
-      client.getFeatures();
-
       expect(evaluateTargeting).toHaveBeenCalledTimes(2);
-      expect(httpClient.post).toHaveBeenCalledTimes(2); // For "evaluate" events
+      expect(httpClient.post).toHaveBeenCalledTimes(3); // For 2x "evaluate", 1x "check" events
 
       expect(httpClient.post).toHaveBeenNthCalledWith(
         1,
@@ -931,10 +919,7 @@ describe("BucketClient", () => {
           key: "feature1",
           targetingVersion: 1,
           evalContext: {
-            company: {
-              id: "company123",
-              ...company.attrs,
-            },
+            company,
           },
           evalResult: true,
           evalRuleResults: [true],
@@ -951,10 +936,7 @@ describe("BucketClient", () => {
           key: "feature2",
           targetingVersion: 2,
           evalContext: {
-            company: {
-              id: "company123",
-              ...company.attrs,
-            },
+            company,
           },
           evalResult: false,
           evalRuleResults: [false],
@@ -964,10 +946,8 @@ describe("BucketClient", () => {
     });
 
     it("should return evaluated features when only other context is defined", async () => {
-      client = client.withOtherContext(otherContext);
-
       await client.initialize();
-      client.getFeatures();
+      client.getFeatures({ other: otherContext });
 
       expect(evaluateTargeting).toHaveBeenCalledTimes(2);
       expect(httpClient.post).toHaveBeenCalledTimes(2); // For "evaluate" events
@@ -1013,10 +993,14 @@ describe("BucketClient", () => {
       });
 
       await client.initialize();
-      const result = client.getFeatures();
+      const result = client.getFeatures({});
 
       expect(result).toEqual({
-        key: true,
+        key: {
+          key: "key",
+          isEnabled: true,
+          track: expect.any(Function),
+        },
       });
 
       expect(logger.warn).toHaveBeenCalledWith(
@@ -1038,15 +1022,10 @@ describe("BucketClient", () => {
     });
 
     it("should not fail if sendFeatureEvent fails to send evaluate event", async () => {
-      client = client.withUser("fancyUser");
-
-      httpClient.post.mockClear(); // not interested in updates
-      await flushPromises();
-
       httpClient.post.mockRejectedValueOnce(new Error("Network error"));
 
       await client.initialize();
-      client.getFeatures();
+      const features = client.getFeatures({});
 
       await flushPromises();
 
@@ -1056,29 +1035,38 @@ describe("BucketClient", () => {
         ),
         expect.any(Error),
       );
+
+      expect(features).toEqual({
+        feature1: {
+          key: "feature1",
+          isEnabled: true,
+          track: expect.any(Function),
+        },
+      });
     });
 
     it("should not fail if sendFeatureEvent fails to send check event", async () => {
-      client = client.withUser("anotherUser");
-
-      httpClient.post.mockClear(); // not interested in updates
-      await flushPromises();
-
       httpClient.post.mockResolvedValue({
         status: 200,
         body: { success: true },
       });
 
       await client.initialize();
-      httpClient.post.mockRejectedValueOnce(new Error("Network error"));
+      httpClient.post.mockRejectedValue(new Error("Network error"));
 
       await flushPromises();
 
-      const result = client.getFeatures();
+      const result = client.getFeatures({});
 
       // Trigger a feature check
-      expect(result.feature1).toBe(true);
+      expect(result.feature1).toEqual({
+        key: "feature1",
+        isEnabled: true,
+        track: expect.any(Function),
+      });
 
+      await flushPromises();
+      await flushPromises();
       await flushPromises();
 
       expect(logger.error).toHaveBeenCalledWith(
@@ -1118,20 +1106,19 @@ describe("BoundBucketClient", () => {
     const other = { key: "value" };
     const newClient = client
       .bindClient({
-        user: { id: user.userId, ...user.attrs },
-        company: { id: company.companyId, ...company.attrs },
+        user,
+        company,
         other,
       })
       .bindClient({
-        user: { id: user.userId, ...userOverride },
-        company: { id: company.companyId, ...companyOverride },
+        user: { id: user.id, ...userOverride },
+        company: { id: company.id, ...companyOverride },
         other: otherOverride,
       });
 
     expect(newClient["_context"]).toEqual({
-      userId: user.userId,
-      user: { id: user.userId, ...user.attrs, ...userOverride },
-      company: { id: company.companyId, ...company.attrs, ...companyOverride },
+      user: { ...user, ...userOverride },
+      company: { ...company, ...companyOverride },
       other: { ...other, ...otherOverride },
     });
   });
