@@ -47,11 +47,11 @@ describe("usage", () => {
   });
 
   test("golden path - register user, company, send event, send feedback, get features", async () => {
-    const bucketInstance = new BucketClient(KEY, { user: { id: "foo " } });
+    const bucketInstance = new BucketClient(KEY, {
+      user: { id: "foo " },
+      company: { id: "bar", name: "bar corp" },
+    });
     await bucketInstance.initialize();
-
-    await bucketInstance.user({ name: "john doe" });
-    await bucketInstance.company({ name: "bar corp" });
 
     await bucketInstance.track("baz", { baz: true });
 

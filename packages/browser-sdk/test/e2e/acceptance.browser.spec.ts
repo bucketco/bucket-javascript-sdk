@@ -107,8 +107,6 @@ test("Acceptance", async ({ page }) => {
         }
       });
       await bucketClient.initialize();
-      await bucketClient.user({ name: "new user name" });
-      await bucketClient.company({ name: "new company name" });
       await bucketClient.track("baz", { baz: true }, "foo", "bar");
       await bucketClient.feedback({
         featureId: "featureId1",
