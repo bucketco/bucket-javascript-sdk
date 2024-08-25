@@ -49,6 +49,8 @@ app.get("/", (_req, res) => {
 app.get("/todos", async (_req, res) => {
   // Return todos if the feature is enabled for the user
   // We use the `getFeatures` method to check if the user has the "show-todos" feature enabled.
+  // Note that "show-todos" is a feature that we defined in the `Features` interface in the `bucket.ts` file.
+  // and that the indexing for feature name below is type-checked at compile time.
   const { track, isEnabled } =
     res.locals.bucketUser.getFeatures()["show-todos"];
 
