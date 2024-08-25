@@ -167,19 +167,18 @@ export class BucketClient {
   }
 
   /**
-   * Store attributes for this user
+   * Send attributes to Bucket for the current user
    *
-   * @param attributes Any attributes you want to attach to the user in Bucket
+   * @param attributes Any attributes you want to attach to the user in Bucket in addition
+   * to the user ID and attributes provided at initialization
    */
   async user(attributes?: Record<string, any>) {
     if (!this.context.user) {
-      this.logger.debug(
+      this.logger.warn(
         "`user` call ignored. No user context provided at initialization",
       );
       return;
     }
-    this.context.user = { id: this.context.user.id, ...attributes };
-
     const payload: User = {
       userId: String(this.context.user.id),
       attributes,
@@ -190,20 +189,21 @@ export class BucketClient {
   }
 
   /**
-   * Set additional attributes for the current company.
+   * Send attributes to Bucket for the current company.
    *
-   * @param attributes Any attributes you want to attach to the company in Bucket
+   * @param attributes Any attributes you want to attach to the company in Bucket in addition
+   * to the company ID and attributes provided at initialization
    */
   async company(attributes?: Record<string, any>) {
     if (!this.context.user) {
-      this.logger.debug(
+      this.logger.warn(
         "`company` call ignored. No user context provided at initialization",
       );
       return;
     }
 
     if (!this.context.company) {
-      this.logger.debug(
+      this.logger.warn(
         "`company` call ignored. No company context provided at initialization",
       );
       return;
