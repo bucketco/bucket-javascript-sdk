@@ -27,7 +27,7 @@ test("Acceptance", async ({ page }) => {
     expect(route.request().postDataJSON()).toMatchObject({
       userId: "foo",
       attributes: {
-        name: "new user name",
+        name: "john doe",
       },
     });
 
@@ -44,7 +44,7 @@ test("Acceptance", async ({ page }) => {
       userId: "foo",
       companyId: "bar",
       attributes: {
-        name: "new company name",
+        name: "bar corp",
       },
     });
 
