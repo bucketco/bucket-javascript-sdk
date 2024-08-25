@@ -148,6 +148,18 @@ export class BucketClient {
 
     await this.featuresClient.initialize();
 
+    if (this.context.user) {
+      this.user().catch((e) => {
+        this.logger.error("error sending user", e);
+      });
+    }
+
+    if (this.context.company) {
+      this.company().catch((e) => {
+        this.logger.error("error sending company", e);
+      });
+    }
+
     this.logger.debug(
       `initialized with key "${this.publishableKey}" and options`,
       this.config,
