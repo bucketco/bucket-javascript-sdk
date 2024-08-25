@@ -287,11 +287,11 @@ export type Context = {
   /**
    * The user context. If the user is set, the user ID is required.
    */
-  user?: { id: string; attrs?: Attributes };
+  user?: { id: string; [k: string]: any };
   /**
    * The company context. If the company is set, the company ID is required.
    */
-  company?: { id: string; attrs?: Attributes };
+  company?: { id: string; [k: string]: any };
   /**
    * The other context. This is used for any additional context that is not related to user or company.
    */

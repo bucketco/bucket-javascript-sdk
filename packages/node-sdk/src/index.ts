@@ -1,4 +1,4 @@
-export { BucketClient } from "./client";
+export { BucketClient, BoundBucketClient } from "./client";
 export type {
   Attributes,
   ClientOptions,
