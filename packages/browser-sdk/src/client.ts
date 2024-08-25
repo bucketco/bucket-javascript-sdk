@@ -149,13 +149,13 @@ export class BucketClient {
     await this.featuresClient.initialize();
 
     if (this.context.user) {
-      this.user().catch((e) => {
+      this.user(this.context.user).catch((e) => {
         this.logger.error("error sending user", e);
       });
     }
 
     if (this.context.company) {
-      this.company().catch((e) => {
+      this.company(this.context.company).catch((e) => {
         this.logger.error("error sending company", e);
       });
     }
