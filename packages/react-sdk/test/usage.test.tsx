@@ -140,8 +140,8 @@ describe("<BucketProvider />", () => {
     render(provider);
 
     expect(newBucketClient.mock.calls.at(0)).toStrictEqual([
-      "KEY",
       {
+        publishableKey: "KEY",
         user: {
           id: "456",
           name: "test",
@@ -153,8 +153,6 @@ describe("<BucketProvider />", () => {
         otherContext: {
           test: "test",
         },
-      },
-      {
         host: "https://test.com",
         logger: undefined,
         sseHost: "https://test.com",

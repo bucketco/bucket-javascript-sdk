@@ -50,7 +50,7 @@ async function getOpenedWidgetContainer(
   await page.evaluate(`
     ;(async () => {
       const { BucketClient } = await import("/dist/bucket-browser-sdk.mjs");
-      const bucket = new BucketClient("${KEY}", {user: {id: "foo"}, company: {id: "bar"}}, ${JSON.stringify(initOptions)});
+      const bucket = new BucketClient({publishableKey: "${KEY}", user: {id: "foo"}, company: {id: "bar"}, ...${JSON.stringify(initOptions ?? {})}});
       await bucket.initialize();
       await bucket.requestFeedback({
         featureId: "featureId1",

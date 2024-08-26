@@ -21,11 +21,11 @@ beforeEach(() => {
 
 describe("init", () => {
   test("will accept setup with key and debug logger", async () => {
-    const bucketInstance = new BucketClient(
-      KEY,
-      { user: { id: 42 } },
-      { logger },
-    );
+    const bucketInstance = new BucketClient({
+      publishableKey: KEY,
+      user: { id: 42 },
+      logger,
+    });
     const spyInit = vi.spyOn(bucketInstance, "initialize");
 
     await bucketInstance.initialize();
@@ -45,11 +45,11 @@ describe("init", () => {
         },
       ),
     );
-    const bucketInstance = new BucketClient(
-      KEY,
-      { user: { id: "foo" } },
-      { host: "https://example.com" },
-    );
+    const bucketInstance = new BucketClient({
+      publishableKey: KEY,
+      user: { id: "foo" },
+      host: "https://example.com",
+    });
     await bucketInstance.initialize();
 
     expect(usedSpecialHost).toBe(true);
