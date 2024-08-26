@@ -9,7 +9,7 @@ import {
 } from "./feedback/feedback";
 import * as feedbackLib from "./feedback/ui";
 import { API_HOST, SSE_REALTIME_HOST } from "./config";
-import { BucketContext } from "./context";
+import { BucketContext, CompanyContext, UserContext } from "./context";
 import { HttpClient } from "./httpClient";
 import { Logger, loggerWithPrefix, quietConsoleLogger } from "./logger";
 
@@ -52,6 +52,10 @@ interface Config {
 }
 
 export interface InitOptions {
+  publishableKey: string;
+  user?: UserContext;
+  company?: CompanyContext;
+  otherContext?: Record<string, any>;
   logger?: Logger;
   host?: string;
   sseHost?: string;
@@ -77,15 +81,15 @@ export class BucketClient {
   private autoFeedbackInit: Promise<void> | undefined;
   private featuresClient: FeaturesClient;
 
-  constructor(
-    publishableKey: string,
-    context?: BucketContext,
-    opts?: InitOptions,
-  ) {
-    this.publishableKey = publishableKey;
+  constructor(opts: InitOptions) {
+    this.publishableKey = opts.publishableKey;
     this.logger =
       opts?.logger ?? loggerWithPrefix(quietConsoleLogger, "[Bucket]");
-    this.context = context ?? {};
+    this.context = {
+      user: opts?.user,
+      company: opts?.company,
+      otherContext: opts?.otherContext,
+    };
 
     this.config = {
       host: opts?.host ?? defaultConfig.host,
@@ -99,7 +103,7 @@ export class BucketClient {
       translations: feedbackOpts?.ui?.translations,
     };
 
-    this.httpClient = new HttpClient(publishableKey, {
+    this.httpClient = new HttpClient(this.publishableKey, {
       baseUrl: this.config.host,
       sdkVersion: opts?.sdkVersion,
     });
