@@ -47,7 +47,8 @@ describe("usage", () => {
   });
 
   test("golden path - register user, company, send event, send feedback, get features", async () => {
-    const bucketInstance = new BucketClient(KEY, {
+    const bucketInstance = new BucketClient({
+      publishableKey: KEY,
       user: { id: "foo " },
       company: { id: "bar", name: "bar corp" },
     });
@@ -88,7 +89,10 @@ describe("feedback prompting", () => {
   });
 
   test("initiates and stops feedback prompting", async () => {
-    const bucketInstance = new BucketClient(KEY, { user: { id: "foo" } });
+    const bucketInstance = new BucketClient({
+      publishableKey: KEY,
+      user: { id: "foo" },
+    });
     await bucketInstance.initialize();
 
     expect(openAblySSEChannel).toBeCalledTimes(1);
@@ -113,7 +117,10 @@ describe("feedback prompting", () => {
       }),
     );
 
-    const bucketInstance = new BucketClient(KEY, { user: { id: "foo" } });
+    const bucketInstance = new BucketClient({
+      publishableKey: KEY,
+      user: { id: "foo" },
+    });
     await bucketInstance.initialize();
 
     expect(openAblySSEChannel).toBeCalledTimes(1);
@@ -129,27 +136,28 @@ describe("feedback prompting", () => {
       }),
     );
 
-    const bucketInstance = new BucketClient(KEY, { user: { id: "foo" } });
+    const bucketInstance = new BucketClient({
+      publishableKey: KEY,
+      user: { id: "foo" },
+    });
     await bucketInstance.initialize();
 
     expect(openAblySSEChannel).toBeCalledTimes(0);
   });
 
   test("skip feedback prompting if no user id configured", async () => {
-    const bucketInstance = new BucketClient(KEY);
+    const bucketInstance = new BucketClient({ publishableKey: KEY });
     await bucketInstance.initialize();
 
     expect(openAblySSEChannel).toBeCalledTimes(0);
   });
 
   test("skip feedback prompting if automated feedback surveys are disabled", async () => {
-    const bucketInstance = new BucketClient(
-      KEY,
-      { user: { id: "foo" } },
-      {
-        feedback: { enableAutoFeedback: false },
-      },
-    );
+    const bucketInstance = new BucketClient({
+      publishableKey: KEY,
+      user: { id: "foo" },
+      feedback: { enableAutoFeedback: false },
+    });
     await bucketInstance.initialize();
 
     expect(openAblySSEChannel).toBeCalledTimes(0);
@@ -190,15 +198,13 @@ describe("feedback state management", () => {
   });
 
   const createBucketInstance = async (callback: FeedbackPromptHandler) => {
-    bucketInstance = new BucketClient(
-      KEY,
-      { user: { id: "foo" } },
-      {
-        feedback: {
-          autoFeedbackHandler: callback,
-        },
+    bucketInstance = new BucketClient({
+      publishableKey: KEY,
+      user: { id: "foo" },
+      feedback: {
+        autoFeedbackHandler: callback,
       },
-    );
+    });
     await bucketInstance.initialize();
     return bucketInstance;
   };

@@ -96,7 +96,8 @@ test("Acceptance", async ({ page }) => {
   await page.evaluate(`
     ;(async () => {
     const { BucketClient } = await import("/dist/bucket-browser-sdk.mjs");
-      const bucketClient = new BucketClient("${KEY}", {
+      const bucketClient = new BucketClient({
+        publishableKey: "${KEY}",
         user: {
           id: "foo",
           name: "john doe",
