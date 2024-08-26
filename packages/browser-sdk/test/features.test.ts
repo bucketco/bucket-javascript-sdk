@@ -1,6 +1,7 @@
-import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, test, vi } from "vitest";
 
 import { APIFeatureResponse } from "../dist/src/feature/features";
+import { version } from "../package.json";
 import {
   FEATURES_EXPIRE_MS,
   FeaturesClient,
@@ -34,7 +35,11 @@ function featuresClientFactory() {
     newFeaturesClient: function newFeaturesClient(options?: FeaturesOptions) {
       return new FeaturesClient(
         httpClient,
-        { user: { id: "123" } },
+        {
+          user: { id: "123" },
+          company: { id: "456" },
+          other: { eventId: "big-conference1" },
+        },
         testLogger,
         {
           cache,
@@ -47,10 +52,26 @@ function featuresClientFactory() {
 
 describe("FeaturesClient unit tests", () => {
   test("fetches features", async () => {
-    const featuresClient = featuresClientFactory().newFeaturesClient();
-
+    const { newFeaturesClient, httpClient } = featuresClientFactory();
+    const featuresClient = newFeaturesClient();
     await featuresClient.initialize();
     expect(featuresClient.getFeatures()).toEqual(featuresResult);
+
+    expect(httpClient.get).toBeCalledTimes(1);
+    const calls = vi.mocked(httpClient.get).mock.calls.at(0);
+    const { params, path, timeoutMs } = calls?.[0]!;
+
+    const paramsObj = Object.fromEntries(new URLSearchParams(params));
+    expect(paramsObj).toEqual({
+      "bucket-sdk-version": "browser-sdk/" + version,
+      "context.user.id": "123",
+      "context.company.id": "456",
+      "context.other.eventId": "big-conference1",
+      publishableKey: "pk",
+    });
+
+    expect(path).toEqual("/features/enabled");
+    expect(timeoutMs).toEqual(5000);
   });
 
   test("return fallback features on failure", async () => {
@@ -211,6 +232,12 @@ describe(`sends "check" events`, () => {
           user: {
             id: "123",
           },
+          company: {
+            id: "456",
+          },
+          other: {
+            eventId: "big-conference1",
+          },
         },
         evalResult: true,
         key: "featureA",
@@ -234,6 +261,12 @@ describe(`sends "check" events`, () => {
         evalContext: {
           user: {
             id: "123",
+          },
+          company: {
+            id: "456",
+          },
+          other: {
+            eventId: "big-conference1",
           },
         },
         evalResult: false,

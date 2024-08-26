@@ -106,7 +106,12 @@ export class BucketClient {
 
     this.featuresClient = new FeaturesClient(
       this.httpClient,
-      this.context,
+      // API expects `other` and we have `otherContext`.
+      {
+        user: this.context.user,
+        company: this.context.company,
+        other: this.context.otherContext,
+      },
       this.logger,
       opts?.features,
     );
