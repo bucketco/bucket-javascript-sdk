@@ -59,7 +59,7 @@ describe("FeaturesClient unit tests", () => {
 
     expect(httpClient.get).toBeCalledTimes(1);
     const calls = vi.mocked(httpClient.get).mock.calls.at(0);
-    const { params, path, timeoutMs } = calls?.[0]!;
+    const { params, path, timeoutMs } = calls![0];
 
     const paramsObj = Object.fromEntries(new URLSearchParams(params));
     expect(paramsObj).toEqual({
