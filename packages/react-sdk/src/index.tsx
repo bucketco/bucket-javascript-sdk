@@ -124,24 +124,6 @@ export function BucketProvider({
       .then(() => {
         setFeatures(client.getFeatures() ?? {});
         setFeaturesLoading(false);
-
-        // update user attributes
-        const { id: userId, ...userAttributes } = featureContext.user || {};
-        if (userId) {
-          client.user(userAttributes).catch(() => {
-            // ignore rejections. Logged inside
-          });
-        }
-
-        // update company attributes
-        const { id: companyId, ...companyAttributes } =
-          featureContext.company || {};
-
-        if (companyId) {
-          client.company(companyAttributes).catch(() => {
-            // ignore rejections. Logged inside
-          });
-        }
       })
       .catch(() => {
         // initialize cannot actually throw, but this fixes lint warnings
