@@ -27,7 +27,7 @@ test("Acceptance", async ({ page }) => {
     expect(route.request().postDataJSON()).toMatchObject({
       userId: "foo",
       attributes: {
-        name: "new user name",
+        name: "john doe",
       },
     });
 
@@ -44,7 +44,7 @@ test("Acceptance", async ({ page }) => {
       userId: "foo",
       companyId: "bar",
       attributes: {
-        name: "new company name",
+        name: "bar corp",
       },
     });
 
@@ -107,8 +107,6 @@ test("Acceptance", async ({ page }) => {
         }
       });
       await bucketClient.initialize();
-      await bucketClient.user({ name: "new user name" });
-      await bucketClient.company({ name: "new company name" });
       await bucketClient.track("baz", { baz: true }, "foo", "bar");
       await bucketClient.feedback({
         featureId: "featureId1",

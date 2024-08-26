@@ -148,6 +148,18 @@ export class BucketClient {
 
     await this.featuresClient.initialize();
 
+    if (this.context.user) {
+      this.user().catch((e) => {
+        this.logger.error("error sending user", e);
+      });
+    }
+
+    if (this.context.company) {
+      this.company().catch((e) => {
+        this.logger.error("error sending company", e);
+      });
+    }
+
     this.logger.debug(
       `initialized with key "${this.publishableKey}" and options`,
       this.config,
@@ -156,19 +168,18 @@ export class BucketClient {
 
   /**
    * Send attributes to Bucket for the current user
-   *
-   * @param attributes Any attributes you want to attach to the user in Bucket in addition
-   * to the user ID and attributes provided at initialization
    */
-  async user(attributes?: Record<string, any>) {
+  private async user() {
     if (!this.context.user) {
       this.logger.warn(
         "`user` call ignored. No user context provided at initialization",
       );
       return;
     }
+
+    const { id, ...attributes } = this.context.user;
     const payload: User = {
-      userId: String(this.context.user.id),
+      userId: String(id),
       attributes,
     };
     const res = await this.httpClient.post({ path: `/user`, body: payload });
@@ -178,11 +189,8 @@ export class BucketClient {
 
   /**
    * Send attributes to Bucket for the current company.
-   *
-   * @param attributes Any attributes you want to attach to the company in Bucket in addition
-   * to the company ID and attributes provided at initialization
    */
-  async company(attributes?: Record<string, any>) {
+  private async company() {
     if (!this.context.user) {
       this.logger.warn(
         "`company` call ignored. No user context provided at initialization",
@@ -197,9 +205,10 @@ export class BucketClient {
       return;
     }
 
+    const { id, ...attributes } = this.context.company;
     const payload: Company = {
       userId: String(this.context.user.id),
-      companyId: String(this.context.company.id),
+      companyId: String(id),
       attributes,
     };
 
