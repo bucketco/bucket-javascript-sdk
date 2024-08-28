@@ -30,116 +30,130 @@ in **Bucket.co**.
 import { BucketClient } from "@bucketco/node-sdk";
 
 // Create a new instance of the client with the secret key. Additional options
-// are available, such as supplying a logging sink, a custom HTTP client and
+// are available, such as supplying a logger, fallback features and
 // other custom properties.
+//
+// Fallback features are used in the situation when the server-side
+// features are not yet loaded or there are issues retrieving them.
+// See "Initialization Options" below for more information.
 //
 // We recommend that only one global instance of `client` should be created
 // to avoid multiple round-trips to our servers.
 const client = new BucketClient({
   secretKey: "sec_prod_xxxxxxxxxxxxxxxxxxxxx",
-  fallbackFeatures: { can_see_new_reports: true },
+  fallbackFeatures: ["huddle", "voice-huddle"],
 });
 
 // Initialize the client and begin fetching feature targeting definitions.
 // You must call this method prior to any calls to `getFeatures()`,
 // otherwise an empty object will be returned.
-//
-// You can also supply your `fallbackFeatures` to the `initialize()` method. These
-// fallback features are used in the situation when the server-side features are not
-// yet loaded or there are issues retrieving them.
-// See "Initialization Options" below for more information.
 await client.initialize();
 ```
 
 Once the client is initialized, one can obtain the evaluated features.
 
-At any point where the client needs to be used, we can configure it through
-`withUser()`, `withCompany()` and `withOtherContext()` methods. Each of
-these three methods returns a new instance of `Client` class which includes
-the applied user, company or context:
-
 ```ts
 // configure the client
-const boundClient = client
-  .withUser("john_doe", { attributes: { name: "John Doe" } })
-  .withCompany("acme_inc", { attributes: { name "Acme Inc."} })
-  .withOtherContext({ additional: "context", number: [1,2,3] })
+const boundClient = client.bindClient({
+  user: { id: "john_doe", name: "John Doe" },
+  company: { id: "acme_inc", name: "Acme, Inc." },
+});
 
-```
-
-```ts
 // get the current features (uses company, user and custom context to evaluate the features).
-const features = boundClient.getFeatures();
+const { huddle } = boundClient.getFeatures();
 
-if (features["can_see_new_reports"]?.isEnabled) {
+if (huddle.isEnabled) {
   // this is your feature gated code ...
   // send an event when the feature is used:
-  features["can_see_new_reports"].track();
+  huddle.track();
 }
 ```
 
-## Tracking
+When you bind a client to a user/company, this data is automatically transferred to Bucket.
+This ensures that you'll have up-to-date information about companies and users and accurate
+targeting information available in Bucket at all time.
 
-Tracking allows sending `user`, `company` and `event` messages to Bucket.
-`user` events can be used to register or update a user's attributes
-with Bucket. `company` allows the same, and additionally, allows
-associating an user with a company on the Bucket side. Finally, `event`
-is used to custom events in your application.
+## High performance feature targeting
 
-The following example shows how to register a new user, and associate it with a company:
+The Bucket Node SDK contacts the Bucket servers when you call `initialize`
+and downloads the features with their targeting rules.
+These rules are then matched against the user/company information you provide
+to `getFeatures` (or through `bindClient(..).getFeatures()`). That means the
+`getFeatures` call does not need to contact the Bucket servers once initialize
+has completed. `BucketClient` will continue to periodically download the
+targeting rules from the Bucket servers in the background.
+
+## Tracking custom events and setting custom attributes
+
+Tracking allows events and updating user/company attributes in Bucket. For example, if a
+customer changes their plan, you'll want Bucket to know about it in order to continue to
+provide up-do-date targeting information in the Bucket interface.
+
+The following example shows how to register a new user, associate it with a company and
+finally update the plan they are on.
 
 ```ts
 // registers the user with Bucket using the provided unique ID, and
 // providing a set of custom attributes (can be anything)
-const boundClient = client
-  .withUser("your_user_id", {
-    attributes: { longTimeUser: true, payingCustomer: false },
-  })
-  .withCompany("company_id");
+client.updateUser("user_id", {
+  attributes: { longTimeUser: true, payingCustomer: false },
+});
+client.updateCompany("company_id", { userId: "user_id" });
 
-// track the user (send a `user` event to Bucket).
-await boundClient.updateUser();
-
-// register the user as being part of a given company
-boundClient.updateCompany();
+// the user started a voice huddle
+client.track("user_id", "huddle", { attributes: { voice: true } });
 ```
 
-If one needs to simply update a company's attributes on Bucket side,
-one calls `updateCompany` without supplying a user ID:
+It's also possible to achieve the same through a bound client in the following manner:
 
 ```ts
-// either creates a new company on Bucket or updates an existing
-// one by supplying custom attributes
-client.withCompany("company_id").updateCompany({
-  attributes: {
-    status: "active",
-    plan: "trial",
-  },
+const boundClient = client.bindClient({
+  user: { id: "user_id", longTimeUser: true, payingCustomer: false },
+  company: { id: "company_id" },
 });
 
-// if a company is not active, and one needs to make sure its
-// "Last Seen" status does not get updated, one can supply
-// an additional meta argument at the end:
-client
-  .withCompany("updated_company_id", {
-    attributes: { status: "active", plan: "trial" },
-  })
-  .updateCompany({ meta: { active: false } });
+boundClient.track("huddle", { attributes: { voice: true } });
 ```
 
-To generate feature tracking `event`s:
+Some attributes are used by Bucket to improve the UI, and are recommended
+to provide for easier navigation:
+
+- `name` -- display name for `user`/`company`,
+- `email` -- the email of the user.
+
+Attributes cannot be nested (multiple levels) and must be either strings,
+integers or booleans.
+
+## Managing `Last seen`
+
+By default `updateUser`/`updateCompany` calls automatically update the given
+user/company `Last seen` property on Bucket servers.
+
+You can control if `Last seen` should be updated when the events are sent by setting
+`meta.active = false`. This is often useful if you
+have a background job that goes through a set of companies just to update their
+attributes but not their activity.
+
+Example:
 
 ```ts
-// this simply sends an event to Bucket
-client
-  .withUser("user_id")
-  .withCompany("company_id")
-  .trackFeatureUsage("some_feature_name");
+client.updateUser("john_doe", {
+  attributes: { name: "John O." },
+  meta: { active: true },
+});
+
+client.updateCompany("acme_inc", {
+  attributes: { name: "Acme, Inc" },
+  meta: { active: false },
+});
 ```
+
+`bindClient()` updates attributes on the Bucket servers but does not automatically
+update `Last seen`.
 
 ### Initialization Options
 
-Supply these to the `constructor` of the `Client` class:
+Supply these to the `constructor` of the `BucketClient` class:
 
 ```ts
 {
@@ -150,10 +164,10 @@ Supply these to the `constructor` of the `Client` class:
   // The logger you can supply. By default no logging is performed.
   logger?: Logger,
   // The custom http client. By default the internal `fetchClient` is used.
-  httpClient?: HttpClient = fetchCient,
-  // A map of fallback features that will be used when no actual features
-  // are available yet.
-  fallbackFeatures?: Record<string, boolean>
+  httpClient?: HttpClient = fetchClient,
+  // A list of fallback features that will be enabled the Bucket servers
+  // have not been contacted yet.
+  fallbackFeatures?: string[]
 }
 ```
 
@@ -169,44 +183,7 @@ it to Bucket:
 ```ts
 import { sha256 } from 'crypto-hash';
 
-client.withUser({ userId: await sha256("john_doe"), ... });
-```
-
-### Custom Attributes & Context
-
-You can pass attributes as part of the object literal passed to the `withUser()`,
-`withCompany()`, `updateUser`, `updateCompany` and `trackFeatureUsage()`, methods.
-Attributes cannot be nested (multiple levels) and must be either strings,
-integers or booleans.
-
-Some attributes are used by Bucket.co to improve the UI, and are recommended
-to provide for easier navigation:
-
-- `name` or `$name` -- display name for `user`/`company`,
-- `email` or `$email` -- the email of the user.
-
-You can supply an additional `context` to these functions as well. The `context`
-object contains additional data that Bucket uses to make some behavioural choices.
-
-By default, `updateUser`, `updateCompany` and `trackFeatureUsage` calls
-automatically update the given user/company `Last seen` property on Bucket side.
-You can control if `Last seen` should be updated when the events are sent by setting
-`meta.active = false`. This is often useful if you
-have a background job that goes through a set of companies just to update their
-attributes but not their activity.
-
-Example:
-
-```ts
-client.updateUser({
-  attributes: { name: "John O." },
-  meta: { active: true },
-});
-
-client.updateCompany({
-  attributes: { name: "My SaaS Inc." },
-  meta: { active: false },
-});
+client.updateUser({ userId: await sha256("john_doe"), ... });
 ```
 
 ### Typescript

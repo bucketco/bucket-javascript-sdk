@@ -15,13 +15,9 @@ if (!process.env.BUCKET_SECRET_KEY) {
 
 // Create a new BucketClient instance with the secret key and default features
 // The default features will be used if the user does not have any features set
-export default BucketClient({
+export default new BucketClient({
   secretKey: process.env.BUCKET_SECRET_KEY!,
-  fallbackFeatures: {
-    "show-todos": true,
-    "create-todos": false,
-    "delete-todos": false,
-  },
+  fallbackFeatures: ["show-todos"], // typed checked at compile time
   // Optional: Set a logger to log debug information, errors, etc.
   logger: console,
 });

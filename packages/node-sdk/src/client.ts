@@ -11,14 +11,13 @@ import {
 } from "./config";
 import fetchClient from "./fetch-http-client";
 import {
-  Attributes,
-  BucketClient as BucketClientType,
   Cache,
   ClientOptions,
-  Feature,
+  Context,
   FeatureEvent,
   FeaturesAPIResponse,
   HttpClient,
+  InternalFeature,
   Logger,
   TrackOptions,
   TypedFeatures,
@@ -32,51 +31,20 @@ import {
 } from "./utils";
 
 /**
- * Creates a new SDK client.
- *
- * @remarks
- * The client is used to interact with the Bucket API.
- * Use the client to track users, companies, events, and feature usage and determine which features should be enabled.
- */
-export function BucketClient(options: ClientOptions) {
-  return new BucketClientClass(options) as BucketClientType;
-}
-
-/**
  * The SDK client.
  *
  **/
-export class BucketClientClass {
-  private _shared: {
+export class BucketClient {
+  private _config: {
     logger?: Logger;
     host: string;
     httpClient: HttpClient;
     refetchInterval: number;
     staleWarningInterval: number;
     headers: Record<string, string>;
-    fallbackFeatures?: Record<keyof TypedFeatures, Feature>;
+    fallbackFeatures?: Record<keyof TypedFeatures, InternalFeature>;
     featuresCache?: Cache<FeaturesAPIResponse>;
   };
-
-  private _otherContext: Record<string, any> | undefined;
-  private _company: { companyId: string; attrs?: Attributes } | undefined;
-  private _user: { userId: string; attrs?: Attributes } | undefined;
-
-  /**
-   * Creates a new SDK client.
-   *
-   * @param options - The options for the client.
-   * @throws An error if the options are invalid.
-   **/
-  constructor(options: ClientOptions);
-
-  /**
-   * Creates a new SDK client.
-   *
-   * @param client - An existing client to clone.
-   * @throws An error if the client is invalid.
-   **/
-  constructor(client: BucketClientClass);
 
   /**
    * Creates a new SDK client.
@@ -84,16 +52,7 @@ export class BucketClientClass {
    * @param options - The options for the client or an existing client to clone.
    * @throws An error if the options are invalid.
    **/
-  constructor(options: ClientOptions | BucketClientClass) {
-    if (options instanceof BucketClientClass) {
-      this._shared = options._shared;
-      this._otherContext = options._otherContext;
-      this._company = options._company;
-      this._user = options._user;
-
-      return;
-    }
-
+  constructor(options: ClientOptions) {
     ok(isObject(options), "options must be an object");
     ok(
       typeof options.secretKey === "string" && options.secretKey.length > 22,
@@ -114,24 +73,24 @@ export class BucketClientClass {
     );
     ok(
       options.fallbackFeatures === undefined ||
-        isObject(options.fallbackFeatures),
+        Array.isArray(options.fallbackFeatures),
       "fallbackFeatures must be an object",
     );
 
     const features =
       options.fallbackFeatures &&
-      Object.entries(options.fallbackFeatures).reduce(
-        (acc, [key, isEnabled]) => {
+      options.fallbackFeatures.reduce(
+        (acc, key) => {
           acc[key as keyof TypedFeatures] = {
+            isEnabled: true,
             key,
-            isEnabled,
           };
           return acc;
         },
-        {} as Record<keyof TypedFeatures, Feature>,
+        {} as Record<keyof TypedFeatures, InternalFeature>,
       );
 
-    this._shared = {
+    this._config = {
       logger:
         options.logger && decorateLogger(BUCKET_LOG_PREFIX, options.logger),
       host: options.host || API_HOST,
@@ -160,15 +119,15 @@ export class BucketClientClass {
     ok(typeof body === "object", "body must be an object");
 
     try {
-      const response = await this._shared.httpClient.post<
+      const response = await this._config.httpClient.post<
         TBody,
         { success: boolean }
-      >(`${this._shared.host}/${path}`, this._shared.headers, body);
+      >(`${this._config.host}/${path}`, this._config.headers, body);
 
-      this._shared.logger?.debug(`post request to "${path}"`, response);
+      this._config.logger?.debug(`post request to "${path}"`, response);
       return response.body?.success === true;
     } catch (error) {
-      this._shared.logger?.error(
+      this._config.logger?.error(
         `post request to "${path}" failed with error`,
         error,
       );
@@ -187,11 +146,11 @@ export class BucketClientClass {
     ok(typeof path === "string" && path.length > 0, "path must be a string");
 
     try {
-      const response = await this._shared.httpClient.get<
+      const response = await this._config.httpClient.get<
         TResponse & { success: boolean }
-      >(`${this._shared.host}/${path}`, this._shared.headers);
+      >(`${this._config.host}/${path}`, this._config.headers);
 
-      this._shared.logger?.debug(`get request to "${path}"`, response);
+      this._config.logger?.debug(`get request to "${path}"`, response);
 
       if (!isObject(response.body) || response.body.success !== true) {
         return undefined;
@@ -200,7 +159,7 @@ export class BucketClientClass {
       const { success: _, ...result } = response.body;
       return result as TResponse;
     } catch (error) {
-      this._shared.logger?.error(
+      this._config.logger?.error(
         `get request to "${path}" failed with error`,
         error,
       );
@@ -284,11 +243,11 @@ export class BucketClientClass {
   }
 
   private getFeaturesCache() {
-    if (!this._shared.featuresCache) {
-      this._shared.featuresCache = cache<FeaturesAPIResponse>(
-        this._shared.refetchInterval,
-        this._shared.staleWarningInterval,
-        this._shared.logger,
+    if (!this._config.featuresCache) {
+      this._config.featuresCache = cache<FeaturesAPIResponse>(
+        this._config.refetchInterval,
+        this._config.staleWarningInterval,
+        this._config.logger,
         async () => {
           const res = await this.get<FeaturesAPIResponse>("features");
 
@@ -301,148 +260,70 @@ export class BucketClientClass {
       );
     }
 
-    return this._shared.featuresCache;
+    return this._config.featuresCache;
   }
 
   /**
-   * Sets the user that is used for targeting evaluation.
+   * Gets the logger associated with the client.
    *
-   * @param userId - The user ID to set.
-   * @param attributes - The attributes of the user (optional).
-   *
-   * @returns A new client with the user set.
-   * @throws An error if the user ID is not a string or the options are invalid.
-   * @remarks
-   * If the user ID is the same as the current company, the attributes will be merged, and
-   * the new attributes will take precedence.
-   *
-   * The `updateUser` method will automatically be called after setting the user.
+   * @returns The logger or `undefined` if it is not set.
    **/
-  public withUser(userId: string, attributes?: Attributes): BucketClientClass {
-    ok(
-      typeof userId === "string" && userId.length > 0,
-      "userId must be a string",
-    );
-    ok(
-      attributes === undefined || isObject(attributes),
-      "attributes must be an object",
-    );
+  public get logger() {
+    return this._config.logger;
+  }
 
-    const client = new BucketClientClass(this);
-    if (userId !== this._user?.userId) {
-      client._user = { userId, attrs: attributes };
-    } else {
-      client._user = {
-        userId: this._user.userId,
-        attrs: { ...this._user.attrs, ...attributes },
-      };
+  /**
+   * Returns a new BoundBucketClient with the user/company/otherContext
+   * set to be used in subsequent calls.
+   * For example, for evaluating feature targeting or tracking events.
+   *
+   * @param context - The user/company/otherContext to bind to the client.
+   *
+   * @returns A new client bound with the arguments given.
+   * @throws An error if the user/company is given but their ID is not a string.
+   * @remarks
+   * The `updateUser` / `updateCompany` methods will automatically be called when
+   * the user/company is set respectively.
+   **/
+  public bindClient(context: Context) {
+    const boundClient = new BoundBucketClient(this, context);
+
+    // TODO: batch these updates and send to the bulk endpoint
+    if (context.company) {
+      const { id: _, ...attributes } = context.company;
+      void this.updateCompany(context.company.id, {
+        attributes,
+        meta: { active: false },
+      });
     }
 
-    void client.updateUser();
-
-    return client;
-  }
-
-  /**
-   * Sets the company that is used for feature targeting evaluation.
-   *
-   * @param companyId - The company ID to set.
-   * @param attributes - The attributes of the user (optional).
-   *
-   * @returns A new client with the company set.
-   * @throws An error if the company ID is not a string or the options are invalid.
-   * @remarks
-   * If the company ID is the same as the current company, the attributes will be merged, and
-   * the new attributes will take precedence.
-   *
-   * The `updateCompany` method will automatically be called after setting the company.
-   **/
-  public withCompany(
-    companyId: string,
-    attributes?: Attributes,
-  ): BucketClientClass {
-    ok(
-      typeof companyId === "string" && companyId.length > 0,
-      "companyId must be a string",
-    );
-    ok(
-      attributes === undefined || isObject(attributes),
-      "attributes must be an object",
-    );
-
-    const client = new BucketClientClass(this);
-    if (companyId !== this._company?.companyId) {
-      client._company = { companyId, attrs: attributes };
-    } else {
-      client._company = {
-        companyId: this._company.companyId,
-        attrs: { ...this._company.attrs, ...attributes },
-      };
+    if (context.user) {
+      const { id: _, ...attributes } = context.user;
+      void this.updateUser(context.user.id, {
+        attributes,
+        meta: { active: false },
+      });
     }
-
-    void client.updateCompany();
-
-    return client;
+    return boundClient;
   }
 
   /**
-   * Sets the extra, custom context for the client.
+   * Updates the associated user in Bucket.
    *
-   * @param context - The "extra" context to set.
-   *
-   * @returns A new client with the context set.
-   * @throws An error if the context is not an object or the options are invalid.
-   **/
-  public withOtherContext(context: Record<string, any>): BucketClientClass {
-    ok(isObject(context), "context must be an object");
-
-    const client = new BucketClientClass(this);
-
-    client._otherContext = context;
-
-    return client;
-  }
-
-  /**
-   * Gets the extra, custom context associated with the client.
-   *
-   * @returns The extra, custom context or `undefined` if it is not set.
-   **/
-  public get otherContext() {
-    return this._otherContext;
-  }
-
-  /**
-   * Gets the user associated with the client.
-   *
-   * @returns The user or `undefined` if it is not set.
-   **/
-  public get user() {
-    return this._user;
-  }
-
-  /**
-   * Gets the company associated with the client.
-   *
-   * @returns The company or `undefined` if it is not set.
-   **/
-  public get company() {
-    return this._company;
-  }
-
-  /**
-   * Updates a user in Bucket.
-   *
-   * @param opts.attributes - The additional attributes of the user (optional).
+   * @param opts.attributes - The additional attributes of the company (optional).
    * @param opts.meta - The meta context associated with tracking (optional).
    *
    * @returns A boolean indicating if the request was successful.
-   * @throws An error if the user is not set or the options are invalid.
+   * @throws An error if the company is not set or the options are invalid.
    * @remarks
-   * The user must be set using `withUser` before calling this method.
+   * The company must be set using `withCompany` before calling this method.
+   * If the user is set, the company will be associated with the user.
    **/
-  public async updateUser(opts?: TrackOptions) {
-    ok(isObject(this._user), "user must be set");
+  public async updateUser(userId: string, opts?: TrackOptions) {
+    ok(
+      typeof userId === "string" && userId.length > 0,
+      "companyId must be a string",
+    );
     ok(opts === undefined || isObject(opts), "opts must be an object");
     ok(
       opts?.attributes === undefined || isObject(opts.attributes),
@@ -454,8 +335,8 @@ export class BucketClientClass {
     );
 
     return await this.post("user", {
-      userId: this._user.userId,
-      attributes: { ...this._user.attrs, ...opts?.attributes },
+      userId,
+      attributes: opts?.attributes,
       context: opts?.meta,
     });
   }
@@ -472,8 +353,14 @@ export class BucketClientClass {
    * The company must be set using `withCompany` before calling this method.
    * If the user is set, the company will be associated with the user.
    **/
-  public async updateCompany(opts?: TrackOptions) {
-    ok(isObject(this._company), "company must be set");
+  public async updateCompany(
+    companyId: string,
+    opts: TrackOptions & { userId?: string },
+  ) {
+    ok(
+      typeof companyId === "string" && companyId.length > 0,
+      "companyId must be a string",
+    );
     ok(opts === undefined || isObject(opts), "opts must be an object");
     ok(
       opts?.attributes === undefined || isObject(opts.attributes),
@@ -485,29 +372,37 @@ export class BucketClientClass {
     );
 
     return await this.post("company", {
-      companyId: this._company.companyId,
-      userId: this._user?.userId,
-      attributes: { ...this._company.attrs, ...opts?.attributes },
+      companyId,
+      userId: opts?.userId,
+      attributes: opts?.attributes,
       context: opts?.meta,
     });
   }
 
   /**
    * Tracks an event in Bucket.
-   *
+   
    * @param event - The event to track.
+   * @param userId - The userId of the user who performed the event
    * @param opts.attributes - The attributes of the event (optional).
    * @param opts.meta - The meta context associated with tracking (optional).
+   * @param opts.companyId - Optional company ID for the event (optional).
    *
    * @returns A boolean indicating if the request was successful.
    * @throws An error if the user is not set or the event is invalid or the options are invalid.
    * @remarks
    * If the company is set, the event will be associated with the company.
    **/
-  public async trackFeatureUsage(event: string, opts?: TrackOptions) {
-    ok(isObject(this._user), "user must be set");
+  public async track(
+    userId: string,
+    event: string,
+    opts?: TrackOptions & { companyId?: string },
+  ) {
+    ok(
+      typeof userId === "string" && userId.length > 0,
+      "userId must be a string",
+    );
     ok(typeof event === "string" && event.length > 0, "event must be a string");
-
     ok(opts === undefined || isObject(opts), "opts must be an object");
     ok(
       opts?.attributes === undefined || isObject(opts.attributes),
@@ -517,11 +412,15 @@ export class BucketClientClass {
       opts?.meta === undefined || isObject(opts.meta),
       "meta must be an object",
     );
+    ok(
+      opts?.companyId === undefined || typeof opts.companyId === "string",
+      "companyId must be an string",
+    );
 
     return await this.post("event", {
       event,
-      companyId: this._company?.companyId,
-      userId: this._user?.userId,
+      companyId: opts?.companyId,
+      userId,
       attributes: opts?.attributes,
       context: opts?.meta,
     });
@@ -546,22 +445,10 @@ export class BucketClientClass {
    * @remarks
    * Call `initialize` before calling this method to ensure the feature definitions are cached, no features will be returned otherwise.
    **/
-  public getFeatures(): Readonly<TypedFeatures> {
-    const mergedContext = {
-      user: this._user && {
-        id: this._user.userId,
-        ...this._user.attrs,
-      },
-      company: this._company && {
-        id: this._company.companyId,
-        ...this._company.attrs,
-      },
-      other: this._otherContext,
-    };
-
+  public getFeatures(context: Context): TypedFeatures {
     const featureDefinitions = this.getFeaturesCache().get();
-    let evaluatedFeatures: Record<keyof TypedFeatures, Feature> =
-      this._shared.fallbackFeatures || {};
+    let evaluatedFeatures: Record<keyof TypedFeatures, InternalFeature> =
+      this._config.fallbackFeatures || {};
 
     if (featureDefinitions) {
       const keyToVersionMap = new Map<string, number>(
@@ -569,11 +456,12 @@ export class BucketClientClass {
       );
 
       const evaluated = featureDefinitions.features.map((feature) =>
-        evaluateTargeting({ context: mergedContext, feature }),
+        evaluateTargeting({ context, feature }),
       );
 
+      // TODO: use the bulk endpoint
       evaluated.forEach(async (res) => {
-        await this.sendFeatureEvent({
+        this.sendFeatureEvent({
           action: "evaluate",
           key: res.feature.key,
           targetingVersion: keyToVersionMap.get(res.feature.key),
@@ -581,6 +469,11 @@ export class BucketClientClass {
           evalContext: res.context,
           evalRuleResults: res.ruleEvaluationResults,
           evalMissingFields: res.missingContextFields,
+        }).catch((err) => {
+          this._config.logger?.error(
+            `failed to send evaluate event for "${res.feature.key}"`,
+            err,
+          );
         });
       });
 
@@ -595,12 +488,12 @@ export class BucketClientClass {
             };
             return acc;
           },
-          {} as Record<keyof TypedFeatures, Feature>,
+          {} as Record<keyof TypedFeatures, InternalFeature>,
         );
 
-      this._shared.logger?.debug("evaluated features", evaluatedFeatures);
+      this._config.logger?.debug("evaluated features", evaluatedFeatures);
     } else {
-      this._shared.logger?.warn(
+      this._config.logger?.warn(
         "failed to use feature definitions, there are none cached yet. Using fallback features.",
       );
     }
@@ -611,9 +504,140 @@ export class BucketClientClass {
         key: key,
         targetingVersion: features[key].targetingVersion,
         evalResult: features[key].isEnabled,
+      }).catch((err) => {
+        this._config.logger?.error(
+          `failed to send check event for "${key}": ${err}`,
+          err,
+        );
       });
 
-      return features[key].isEnabled;
+      const feature = features[key];
+
+      return {
+        key,
+        isEnabled: feature?.isEnabled ?? false,
+        track: async () => {
+          const userId = context.user?.id;
+          if (!userId) {
+            this._config.logger?.warn(
+              "feature.track(): no user set, cannot track event",
+            );
+            return;
+          }
+
+          await this.track(userId, key);
+        },
+      };
     });
+  }
+}
+
+/**
+ * A client bound with a specific user, company, and other context.
+ */
+export class BoundBucketClient {
+  private _client: BucketClient;
+  private _context: Context;
+
+  constructor(client: BucketClient, context: Context) {
+    this._client = client;
+
+    this._context = context;
+    this.checkContext(context);
+  }
+
+  private checkContext(context: Context) {
+    ok(isObject(context), "context must be an object");
+    ok(
+      context.user === undefined || typeof context.user?.id === "string",
+      "user.id must be a string if user is given",
+    );
+    ok(
+      context.company === undefined || typeof context.company?.id === "string",
+      "company.id must be a string if company is given",
+    );
+    ok(
+      context.other === undefined || isObject(context.other),
+      "other must be an object if given",
+    );
+  }
+
+  /**
+   * Gets the "other" context associated with the client.
+   *
+   * @returns The "other" context or `undefined` if it is not set.
+   **/
+  public get otherContext() {
+    return this._context.other;
+  }
+
+  /**
+   * Gets the user associated with the client.
+   *
+   * @returns The user or `undefined` if it is not set.
+   **/
+  public get user() {
+    return this._context.user;
+  }
+
+  /**
+   * Gets the company associated with the client.
+   *
+   * @returns The company or `undefined` if it is not set.
+   **/
+  public get company() {
+    return this._context.company;
+  }
+
+  /**
+   * Get features for the user/company/other context bound to this client.
+   *
+   * @returns Features for the given user/company and whether each one is enabled or not
+   */
+  public getFeatures() {
+    return this._client.getFeatures(this._context);
+  }
+
+  /**
+   * Track an event in Bucket.
+   *
+   * @param event - The event to track.
+   * @param opts.attributes - The attributes of the event (optional).
+   * @param opts.meta - The meta context associated with tracking (optional).
+   *
+   * @returns A boolean indicating if the request was successful.
+   * @throws An error if the event is invalid or the options are invalid.
+   */
+  public async track(
+    event: string,
+    opts?: TrackOptions & { companyId?: string },
+  ) {
+    const userId = this._context.user?.id;
+
+    if (!userId) {
+      this._client.logger?.warn("No user set, cannot track event");
+      return false;
+    }
+
+    return await this._client.track(userId, event, opts);
+  }
+
+  /**
+   * Create a new client bound with the additional context.
+   * Note: This performs a shallow merge for user/company/other individually.
+   *
+   * @param context User/company/other context to bind to the client object
+   * @returns new client bound with the additional context
+   */
+  public bindClient({ user, company, other }: Context) {
+    // merge new context into existing
+    const newContext = {
+      ...this._context,
+      user: user ? { ...this._context.user, ...user } : undefined,
+      company: company ? { ...this._context.company, ...company } : undefined,
+      other: { ...this._context.other, ...other },
+    };
+
+    return new BoundBucketClient(this._client, newContext);
   }
 }

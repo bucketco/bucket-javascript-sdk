@@ -5,22 +5,6 @@ __metadata:
   version: 8
   cacheKey: 10c0
 
-"@bucketco/flag-evaluation@npm:~0.0.4":
-  version: 0.0.4
-  resolution: "@bucketco/flag-evaluation@npm:0.0.4"
-  checksum: 10c0/637471cfc754c4520c8b3755d324c5893c52bab0baf0f9db855221490ab1f2736dba7f001818f56ca5ecac7643c25e0f34a4b6215c8056ecb707d8d4a1a45d44
-  languageName: node
-  linkType: hard
-
-"@bucketco/node-sdk@file:../::locator=example%40workspace%3A.":
-  version: 0.1.0
-  resolution: "@bucketco/node-sdk@file:../#../::hash=ae1bb2&locator=example%40workspace%3A."
-  dependencies:
-    "@bucketco/flag-evaluation": "npm:~0.0.4"
-  checksum: 10c0/eed0d9528f05510c13a8094a9696c6e13dc1d69947143ee5620eeeaaad665e5e41ed76fb00d3f14a2083dfb1baa21d9390a81d98d891a9cb9b0e42af8a4b2cbe
-  languageName: node
-  linkType: hard
-
 "@esbuild/aix-ppc64@npm:0.21.5":
   version: 0.21.5
   resolution: "@esbuild/aix-ppc64@npm:0.21.5"
@@ -764,7 +748,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "example@workspace:."
   dependencies:
-    "@bucketco/node-sdk": "file:../"
     "@types/express": "npm:^4.17.21"
     express: "npm:^4.19.2"
     tsx: "npm:^4.16.2"
