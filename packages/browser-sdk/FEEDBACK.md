@@ -11,29 +11,27 @@ The Bucket Browser SDK feedback UI is configured with reasonable defaults, posit
 These settings can be overwritten when initializing the Bucket Browser SDK:
 
 ```javascript
-const bucket = new BucketClient(
-  "bucket-publishable-key",
-  { user: { id: "42" } },
-  {
-    feedback: {
-      ui: {
-        position: POSITION_CONFIG, // See positioning section
-        translations: TRANSLATION_KEYS, // See internationalization section
+const bucket = new BucketClient({
+  publishableKey: "bucket-publishable-key",
+  user: { id: "42" },
+  feedback: {
+    ui: {
+      position: POSITION_CONFIG, // See positioning section
+      translations: TRANSLATION_KEYS, // See internationalization section
 
-        // Enable automated feedback surveys. Default: `true`
-        enableAutoFeedback: boolean,
+      // Enable automated feedback surveys. Default: `true`
+      enableAutoFeedback: boolean,
 
-        /**
-         * Do your own feedback prompt handling or override
-         * default settings at runtime.
-         */
-        autoFeedbackHandler: (promptMessage, handlers) => {
-          // See Automated Feedback Surveys section
-        },
+      /**
+       * Do your own feedback prompt handling or override
+       * default settings at runtime.
+       */
+      autoFeedbackHandler: (promptMessage, handlers) => {
+        // See Automated Feedback Surveys section
       },
     },
   },
-);
+});
 ```
 
 See also:
@@ -55,15 +53,13 @@ The live connection for automated feedback is established when the `BucketClient
 You can disable automated collection in the `BucketClient` constructor:
 
 ```javascript
-const bucket = new BucketClient(
-  "bucket-publishable-key",
-  { user: { id: "42" } },
-  {
-    feedback: {
-      enableAutoFeedback: false,
-    },
+const bucket = new BucketClient({
+  publishableKey: "bucket-publishable-key",
+  user: { id: "42" },
+  feedback: {
+    enableAutoFeedback: false,
   },
-);
+});
 ```
 
 ### Overriding prompt event defaults
@@ -71,29 +67,27 @@ const bucket = new BucketClient(
 If you are not satisfied with the default UI behavior when an automated prompt event arrives, you can can [override the global defaults](#global-feedback-configuration) or intercept and override settings at runtime like this:
 
 ```javascript
-const bucket = new BucketClient(
-  "bucket-publishable-key",
-  {user: {id: "42"}},
-  {
-    feedback: {
-      autoFeedbackHandler: (promptMessage, handlers) => {
-        // Pass your overrides here. Everything is optional
-        handlers.openFeedbackForm({
-          title: promptMessage.question,
+const bucket = new BucketClient({
+  publishableKey: "bucket-publishable-key",
+  user: { id: "42" },
+  feedback: {
+    autoFeedbackHandler: (promptMessage, handlers) => {
+      // Pass your overrides here. Everything is optional
+      handlers.openFeedbackForm({
+        title: promptMessage.question,
 
-          position: POSITION_CONFIG, // See positioning section
-          translations: TRANSLATION_KEYS, // See internationalization section
+        position: POSITION_CONFIG, // See positioning section
+        translations: TRANSLATION_KEYS, // See internationalization section
 
-          // Trigger side effects with the collected data,
-          // for example posting it back into your own CRM
-          onAfterSubmit: (feedback) => {
-            storeFeedbackInCRM({
-              score: feedback.score,
-              comment: feedback.comment,
-            });
-          },
-        });
-      },
+        // Trigger side effects with the collected data,
+        // for example posting it back into your own CRM
+        onAfterSubmit: (feedback) => {
+          storeFeedbackInCRM({
+            score: feedback.score,
+            comment: feedback.comment,
+          });
+        },
+      });
     },
   },
 });
@@ -228,7 +222,7 @@ Popover feedback button example:
 
 ## Internationalization (i18n)
 
-By default, the feedback UI is written in English. However, you can supply your own translations by passing an object to the options to either or both of the `new BucketClient("key", context, options)` or `bucketClient.requestFeedback(options)` calls. These translations will replace the English ones used by the feedback interface. See examples below.
+By default, the feedback UI is written in English. However, you can supply your own translations by passing an object in the options to either or both of the `new BucketClient(options)` or `bucketClient.requestFeedback(options)` calls. These translations will replace the English ones used by the feedback interface. See examples below.
 
 ![image](https://github.com/bucketco/bucket-tracking-sdk/assets/331790/68805b38-e9f6-4de5-9f55-188216983e3c)
 
@@ -239,7 +233,8 @@ See [default english localization keys](./src/feedback/config/defaultTranslation
 If you know the language at page load, you can configure your translation keys while initializing the Bucket Browser SDK:
 
 ```javascript
-new BucketClient("my-publishable-key", context, {
+new BucketClient({
+  publishableKey: "my-publishable-key",
   feedback: {
     ui: {
       translations: {
@@ -285,7 +280,8 @@ When you are collecting feedback through the Bucket automation, you can intercep
 If you set the prompt question in the Bucket app to be one of your own translation keys, you can even get a translated version of the question you want to ask your customer in the feedback UI.
 
 ```javascript
-bucketClient.init("bucket-publishable-key", {
+new BucketClient({
+  publishableKey: "bucket-publishable-key",
   feedback: {
     autoFeedbackHandler: (message, handlers) => {
       const translatedQuestion =
@@ -379,7 +375,8 @@ When using automated feedback surveys, the Bucket service will, when specified, 
 You can intercept this behavior and open your own custom feedback collection form:
 
 ```javascript
-bucketClient.init("bucket-publishable-key", {
+new Bucketclient({
+  publishableKey: "bucket-publishable-key",
   feedback: {
     autoFeedbackHandler: async (promptMessage, handlers) => {
       // This opens your custom UI

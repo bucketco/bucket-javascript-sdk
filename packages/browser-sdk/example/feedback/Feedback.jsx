@@ -13,7 +13,9 @@ export const FeedbackForm = () => {
     };
 
     // Using the Bucket SDK
-    new BucketClient("EXAMPLE_PUBLISHABLE_KEY").feedback(feedbackPayload);
+    new BucketClient({
+      publishableKey: "EXAMPLE_PUBLISHABLE_KEY",
+    }).feedback(feedbackPayload);
 
     /*
     // Using the Bucket API

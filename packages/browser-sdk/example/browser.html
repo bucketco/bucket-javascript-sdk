@@ -17,13 +17,11 @@
 
     <script src="../dist/bucket-browser-sdk.umd.js"></script>
     <script>
-      const bucket = new BucketBrowserSDK.BucketClient(
-        "<your-publishable-key>",
-        {
-          user: { id: "42" },
-          company: { id: "1" },
-        },
-      );
+      const bucket = new BucketBrowserSDK.BucketClient({
+        publishableKey: "<your-publishable-key>",
+        user: { id: "42" },
+        company: { id: "1" },
+      });
 
       bucket.initialize().then(() => {
         console.log("Bucket initialized");

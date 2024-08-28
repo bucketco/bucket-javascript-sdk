@@ -108,7 +108,11 @@ export function BucketProvider({
       void clientRef.current.stop();
     }
 
-    const client = newBucketClient(publishableKey, featureContext, {
+    const client = newBucketClient({
+      publishableKey,
+      user,
+      company,
+      otherContext,
       host: config.host,
       sseHost: config.sseHost,
       features: {

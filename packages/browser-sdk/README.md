@@ -4,7 +4,7 @@ Basic client for Bucket.co. If you're using React, you'll be better off with the
 
 ## Install
 
-The package can be imported or used direclty in a HTML script tag:
+The package can be imported or used directly in a HTML script tag:
 
 A. Import module
 
@@ -21,7 +21,7 @@ const company = {
   plan: "enterprise",
 };
 
-const bucketClient = new BucketClient(publishableKey, { user, company });
+const bucketClient = new BucketClient({ publishableKey, user, company });
 
 await bucketClient.initialize();
 
@@ -44,7 +44,8 @@ See [example/browser.html](example/browser.html) for a working example:
 ```html
 <script src="https://cdn.jsdelivr.net/npm/@bucketco/browser-sdk@1"></script>
 <script>
-  const bucket = new BucketBrowserSDK.BucketClient("123", {
+  const bucket = new BucketBrowserSDK.BucketClient({
+    publishableKey: "publishableKey"
     user: { id: "42" },
     company: { id: "1" },
   });
@@ -86,18 +87,17 @@ Supply these to the constructor call (3rd argument)
 
 ### Feature toggles
 
-Bucket can determine which features are active for a given context. The context is given in the BucketClient constructor.
+Bucket can determine which features are active for a given user/company. The user/company is given in the BucketClient constructor.
 
-The context should take the form of `{ user: { id }, company: { id } }` plus anything additional you want to be able to evaluate feature targeting rules against.
+If you supply `user` or `company` objects, they require at least an `id` property.
+In addition to the `id`, you must also supply anything additional that you want to be able to evaluate feature targeting rules against.
 
 ```ts
-const bucketClient = new BucketClient(
+const bucketClient = new BucketClient({
   publishableKey,
-  context: {
-    user: { id: "user_123", role: "manager" },
-    company: { id: "company_123", plan: "enterprise" },
-  },
-);
+  user: { id: "user_123", role: "manager" },
+  company: { id: "company_123", plan: "enterprise" },
+});
 await bucketClient.initialize()
 
 bucketClient.getFeatures()

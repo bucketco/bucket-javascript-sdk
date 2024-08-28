@@ -1,5 +1,4 @@
 import { FEATURE_EVENTS_PER_MIN } from "../config";
-import { BucketContext } from "../context";
 import { HttpClient } from "../httpClient";
 import { Logger, loggerWithPrefix } from "../logger";
 import RateLimiter from "../rateLimiter";
@@ -118,7 +117,11 @@ export class FeaturesClient {
 
   constructor(
     private httpClient: HttpClient,
-    private context: BucketContext,
+    private context: {
+      user?: Record<string, any>;
+      company?: Record<string, any>;
+      other?: Record<string, any>;
+    },
     logger: Logger,
     options?: FeaturesOptions & {
       cache?: FeatureCache;
