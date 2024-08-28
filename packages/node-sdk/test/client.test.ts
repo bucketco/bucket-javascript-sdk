@@ -698,7 +698,7 @@ describe("BucketClient", () => {
                       partialRolloutThreshold: 0.5,
                       partialRolloutAttribute: "attributeKey",
                       type: "rolloutPercentage" as const,
-                      flagKey: "feature2",
+                      key: "feature2",
                     },
                   ],
                 },
