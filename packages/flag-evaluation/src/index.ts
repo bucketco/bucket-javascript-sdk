@@ -68,7 +68,7 @@ export type ContextFilter = {
 
 export type PercentageRolloutFilter = {
   type: "rolloutPercentage";
-  flagKey: string;
+  key: string;
   partialRolloutAttribute: string;
   partialRolloutThreshold: number;
 };
@@ -186,7 +186,7 @@ function evaluateRecursively(
       }
 
       const hashVal = hashInt(
-        `${filter.flagKey}.${context[filter.partialRolloutAttribute]}`,
+        `${filter.key}.${context[filter.partialRolloutAttribute]}`,
       );
 
       return hashVal < filter.partialRolloutThreshold;

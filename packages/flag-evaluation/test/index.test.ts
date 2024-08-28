@@ -19,7 +19,7 @@ const feature: FeatureData = {
             },
             {
               type: "rolloutPercentage",
-              flagKey: "flag",
+              key: "flag",
               partialRolloutAttribute: "company.id",
               partialRolloutThreshold: 100000,
             },
@@ -50,7 +50,7 @@ describe("evaluate feature targeting integration ", () => {
                 },
                 {
                   type: "rolloutPercentage",
-                  flagKey: "flag",
+                  key: "flag",
                   partialRolloutAttribute: "company.id",
                   partialRolloutThreshold: 99999,
                 },
@@ -172,7 +172,7 @@ describe("evaluate feature targeting integration ", () => {
                 },
                 {
                   type: "rolloutPercentage",
-                  flagKey: "flag",
+                  key: "flag",
                   partialRolloutAttribute: "some_field",
                   partialRolloutThreshold: 99000,
                 },
@@ -225,7 +225,7 @@ describe("evaluate feature targeting integration ", () => {
           {
             filter: {
               type: "rolloutPercentage" as const,
-              flagKey: "myfeature",
+              key: "myfeature",
               partialRolloutAttribute: "happening.id",
               partialRolloutThreshold: 50000,
             },
