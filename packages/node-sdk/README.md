@@ -69,9 +69,10 @@ if (huddle.isEnabled) {
 }
 ```
 
-When you bind a client to a user/company, this data is automatically transferred to Bucket.
-This ensures that you'll have up-to-date information about companies and users and accurate
-targeting information available in Bucket at all time.
+When you bind a client to a user/company, this data is matched against the targeting rules.
+To get accurate targeting, you must ensure that the user/company information provided is sufficient to match against the targeting rules you've created.
+The user/company data is automatically transferred to Bucket. 
+This ensures that you'll have up-to-date information about companies and users and accurate targeting information available in Bucket at all time.
 
 ## High performance feature targeting
 
