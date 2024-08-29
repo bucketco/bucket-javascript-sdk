@@ -50,7 +50,7 @@ const client = new BucketClient({
 await client.initialize();
 ```
 
-Once the client is initialized, one can obtain the evaluated features.
+Once the client is initialized, you can obtain features along with the isEnabled  status to indicate whether the feature is targeted for this user/company:
 
 ```ts
 // configure the client
