@@ -1,4 +1,9 @@
-import { FeaturesClient, FeaturesOptions } from "./feature/features";
+import {
+  APIFeaturesResponse,
+  FeaturesClient,
+  FeaturesOptions,
+} from "./feature/features";
+import maskedProxy from "./feature/maskedProxy";
 import {
   AutoFeedback,
   Feedback,
@@ -69,6 +74,12 @@ const defaultConfig: Config = {
   sseHost: SSE_REALTIME_HOST,
 };
 
+interface Feature {
+  key: string;
+  isEnabled: boolean;
+  track: () => Promise<boolean>;
+}
+
 export class BucketClient {
   private publishableKey: string;
   private context: BucketContext;
@@ -80,6 +91,7 @@ export class BucketClient {
   private autoFeedback: AutoFeedback | undefined;
   private autoFeedbackInit: Promise<void> | undefined;
   private featuresClient: FeaturesClient;
+  private features: Record<string, Feature> = {};
 
   constructor(opts: InitOptions) {
     this.publishableKey = opts.publishableKey;
@@ -119,6 +131,9 @@ export class BucketClient {
       this.logger,
       opts?.features,
     );
+    // call set features to ensure the proxy is set, even if
+    // we haven't received the enabled features yet.
+    this.setFeatures({});
 
     if (
       this.context?.user &&
@@ -157,6 +172,9 @@ export class BucketClient {
 
     await this.featuresClient.initialize();
 
+    const features = this.featuresClient.getFeatures();
+    this.setFeatures(features || {});
+
     if (this.context.user) {
       this.user().catch((e) => {
         this.logger.error("error sending user", e);
@@ -173,6 +191,25 @@ export class BucketClient {
       `initialized with key "${this.publishableKey}" and options`,
       this.config,
     );
+  }
+
+  private setFeatures(features: APIFeaturesResponse) {
+    this.features = maskedProxy(features, (fs, key) => {
+      this.featuresClient
+        .sendCheckEvent({
+          key,
+          version: fs[key]?.targetingVersion,
+          value: fs[key]?.isEnabled ?? false,
+        })
+        .catch((e) => {
+          this.logger.error("error sending feature check event", e);
+        });
+      return {
+        isEnabled: fs[key]?.isEnabled || false,
+        key,
+        track: async () => (await this.track(key))?.ok ?? false,
+      };
+    });
   }
 
   /**
@@ -333,8 +370,8 @@ export class BucketClient {
     }, 1);
   }
 
-  getFeatures() {
-    return this.featuresClient.getFeatures();
+  getFeatures(): Record<string, Feature> {
+    return this.features;
   }
 
   async stop() {

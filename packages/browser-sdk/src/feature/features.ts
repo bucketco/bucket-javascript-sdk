@@ -8,7 +8,6 @@ import {
   isObject,
   parseAPIFeaturesResponse,
 } from "./featureCache";
-import maskedProxy from "./maskedProxy";
 
 export type APIFeatureResponse = {
   key: string;
@@ -18,7 +17,7 @@ export type APIFeatureResponse = {
 
 export type APIFeaturesResponse = Record<string, APIFeatureResponse>;
 
-export type Features = Record<string, boolean>;
+// export type Features = Record<string, boolean>;
 
 export type FeaturesOptions = {
   fallbackFeatures?: string[];
@@ -110,7 +109,7 @@ const localStorageCacheKey = `__bucket_features`;
 
 export class FeaturesClient {
   private cache: FeatureCache;
-  private features: Features | undefined;
+  private features: APIFeaturesResponse | undefined;
   private config: Config;
   private rateLimiter: RateLimiter;
   private logger: Logger;
@@ -151,20 +150,10 @@ export class FeaturesClient {
   }
 
   private setFeatures(features: APIFeaturesResponse) {
-    const proxiedFeatures = maskedProxy(features, (fs, key) => {
-      this.sendCheckEvent({
-        key,
-        version: features[key]?.targetingVersion,
-        value: features[key]?.isEnabled ?? false,
-      }).catch((e) => {
-        this.logger.error("error sending feature check event", e);
-      });
-      return fs[key]?.isEnabled || false;
-    });
-    this.features = proxiedFeatures;
+    this.features = features;
   }
 
-  getFeatures(): Features | undefined {
+  getFeatures(): APIFeaturesResponse | undefined {
     return this.features;
   }
 

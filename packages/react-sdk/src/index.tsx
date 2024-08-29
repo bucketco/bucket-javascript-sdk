@@ -30,11 +30,11 @@ type BucketFeatures = keyof (keyof Features extends never
   ? Record<string, boolean>
   : Features);
 
-export type FeaturesResult = { [k in BucketFeatures]?: boolean };
+// export type FeaturesResult = { [k in BucketFeatures]?: boolean };
 
 type ProviderContextType = {
   features: {
-    features: FeaturesResult;
+    getFeatures: () => Record<string, Features>;
     isLoading: boolean;
   };
 
@@ -48,7 +48,7 @@ type ProviderContextType = {
 
 const ProviderContext = createContext<ProviderContextType>({
   features: {
-    features: {},
+    getFeatures: () => ({}),
     isLoading: false,
   },
 
@@ -87,7 +87,6 @@ export function BucketProvider({
   ...config
 }: BucketProps) {
   const [featuresLoading, setFeaturesLoading] = useState(true);
-  const [features, setFeatures] = useState<FeaturesResult>({});
 
   const clientRef = useRef<BucketClient>();
   const contextKeyRef = useRef<string>();
@@ -126,7 +125,6 @@ export function BucketProvider({
     client
       .initialize()
       .then(() => {
-        setFeatures(client.getFeatures() ?? {});
         setFeaturesLoading(false);
       })
       .catch(() => {
@@ -181,9 +179,13 @@ export function BucketProvider({
     [user?.id, company?.id],
   );
 
+  const getFeatures = useCallback(() => {
+    return clientRef.current?.getFeatures() || {};
+  }, [contextKey]);
+
   const context: ProviderContextType = {
     features: {
-      features,
+      getFeatures,
       isLoading: featuresLoading,
     },
     track,
