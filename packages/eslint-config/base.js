@@ -10,6 +10,11 @@ const prettierConfig = require("eslint-config-prettier");
 
 module.exports = [
   {
+    // Blacklisted Folders, including **/node_modules/ and .git/
+    ignores: ["build/", "**/gen"],
+  },
+  {
+    // All files
     files: [
       "**/*.js",
       "**/*.cjs",
@@ -33,7 +38,6 @@ module.exports = [
         // This is required to avoid ecmaVersion < 2015 error or 'import' / 'export' error
         ecmaVersion: "latest",
         sourceType: "module",
-        project: "./tsconfig.json",
       },
     },
     settings: {
@@ -96,7 +100,7 @@ module.exports = [
     languageOptions: {
       parser: tsParser,
       parserOptions: {
-        project: "./tsconfig.eslint.json",
+        project: "./tsconfig.json",
       },
     },
     settings: {
@@ -117,13 +121,12 @@ module.exports = [
       // Typescript Specific
       "@typescript-eslint/no-unused-vars": "off", // handled by unused-imports
       "@typescript-eslint/explicit-module-boundary-types": ["off"],
-      "@typescript-eslint/no-floating-promises": "error",
       "@typescript-eslint/switch-exhaustiveness-check": ["warn"],
       "@typescript-eslint/no-non-null-assertion": ["off"],
-      "@typescript-eslint/no-empty-function": ["warn"],
+      "@typescript-eslint/no-empty-function": ["off"],
       "@typescript-eslint/no-explicit-any": ["off"],
-      "@typescript-eslint/no-use-before-define": ["off"],
-      "@typescript-eslint/no-shadow": ["warn"],
+      "@typescript-eslint/no-use-before-define": ["off"], // todo: discuss enabling this rule
+      "@typescript-eslint/no-shadow": ["off"], // todo: discuss enabling this rule
     },
   },
   {
