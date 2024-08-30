@@ -17,8 +17,6 @@ export type APIFeatureResponse = {
 
 export type APIFeaturesResponse = Record<string, APIFeatureResponse>;
 
-// export type Features = Record<string, boolean>;
-
 export type FeaturesOptions = {
   fallbackFeatures?: string[];
   timeoutMs?: number;
