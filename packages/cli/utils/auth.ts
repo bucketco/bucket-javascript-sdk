@@ -1,9 +1,8 @@
 import http from "http";
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
-import chalk from "chalk";
 import open from "open";
 
-import { readConfig, writeConfig } from "./config.js";
+import { getConfig, writeConfigFile } from "./config.js";
 import { API_BASE_URL } from "./constants.js";
 
 /**
@@ -15,21 +14,22 @@ export async function authenticateUser() {
       const url = new URL(req.url ?? "/", "http://localhost");
 
       if (url.pathname !== "/") {
-        res.writeHead(404).end("Not Found");
+        res.writeHead(404).end("Invalid path");
         server.close();
-        reject(new Error("Authentication failed"));
+        reject(new Error("Could not authenticate: Invalid path"));
         return;
       }
 
       if (!req.headers.cookie?.includes("session.sig")) {
-        res.writeHead(400).end("No session cookie found");
+        res.writeHead(400).end("Could not authenticate");
         server.close();
-        reject(new Error("Authentication failed: No session cookie"));
+        reject(new Error("Could not authenticate"));
         return;
       }
 
-      res.end("OK");
+      res.end("You can now close this tab.");
       server.close();
+      writeConfigFile("sessionCookies", req.headers.cookie);
       resolve(req.headers.cookie);
     });
 
@@ -45,38 +45,18 @@ export async function authenticateUser() {
   });
 }
 
-let sessionCookies = "";
-
 export function checkAuth() {
-  if (!sessionCookies) {
-    console.log(
-      chalk.red(
-        'You are not authenticated. Please run "bucket auth login" first.',
-      ),
+  if (!getConfig("sessionCookies")) {
+    throw new Error(
+      'You are not authenticated. Please run "bucket auth login" first.',
     );
-    process.exit(1);
   }
 }
 
-export async function saveSessionCookie(cookies: string) {
-  await writeConfig("sessionCookies", cookies);
-  sessionCookies = cookies;
-}
-
-export async function loadSessionCookie() {
-  sessionCookies = await readConfig("sessionCookies");
-}
-
-export function removeSessionCookie() {
-  saveSessionCookie("");
-  sessionCookies = "";
-}
-
-export function getSessionCookie() {
-  return sessionCookies;
-}
-
-export async function authRequest(url: string, options?: AxiosRequestConfig) {
+export async function authRequest<T = Record<string, unknown>>(
+  url: string,
+  options?: AxiosRequestConfig,
+): Promise<T> {
   checkAuth();
   try {
     const response = await axios({
@@ -84,7 +64,7 @@ export async function authRequest(url: string, options?: AxiosRequestConfig) {
       url: `${API_BASE_URL}${url}`,
       headers: {
         ...options?.headers,
-        Cookie: sessionCookies,
+        Cookie: getConfig("sessionCookies"),
       },
     });
     return response.data;
@@ -94,9 +74,9 @@ export async function authRequest(url: string, options?: AxiosRequestConfig) {
       error.response &&
       error.response.status === 401
     ) {
-      console.log(chalk.red("Your session has expired. Please login again."));
-      removeSessionCookie();
-      process.exit(1);
+      writeConfigFile("sessionCookies", undefined);
+      error.message = "Your session has expired. Please login again.";
+      throw error;
     }
     throw error;
   }

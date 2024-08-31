@@ -1,53 +1,55 @@
-import { AxiosError } from "axios";
-import chalk from "chalk";
-
 import { authRequest } from "../utils/auth.js";
-import { genDTS } from "../utils/gen.js";
+import { genDTS, genFeatureKey } from "../utils/gen.js";
 
 type Feature = {
+  id: string;
   name: string;
-  createdAt: string;
+  key: string;
 };
 
-export async function listFeatures(appId: string): Promise<Feature[]> {
-  try {
-    const response = await authRequest(
-      `/apps/${appId}/features?envId=enPa3R6khIKcWA`,
-    );
-    return response.data.map(({ name, createdAt }: Feature) => ({
-      name,
-      createdAt,
-    }));
-  } catch (error) {
-    if (error instanceof AxiosError && error.response) {
-      console.dir(error.response.data, { depth: null });
-    }
-    throw error;
-  }
-}
+type FeatureNamesResponse = Feature[];
 
-export async function createFeature() {
-  // Implement feature creation logic here
-  console.log("Feature creation not implemented yet.");
+export async function listFeatures(appId: string) {
+  const response = await authRequest<FeatureNamesResponse>(
+    `/apps/${appId}/features/names`,
+  );
+  return response.map(({ name, key }) => ({
+    name,
+    key,
+  }));
 }
 
 export async function genFeatureTypes(appId: string) {
-  try {
-    const response = await authRequest(
-      `/apps/${appId}/features?envId=enPa3R6khIKcWA`,
-    );
-    return genDTS(
-      response.data.map(({ flagKey }: { flagKey: string }) => flagKey),
-    ) as string;
-  } catch (error) {
-    if (error instanceof AxiosError && error.response) {
-      console.error(chalk.red("Authentication failed."), error.response.data);
-    }
-    throw error;
-  }
+  const response = await authRequest<FeatureNamesResponse>(
+    `/apps/${appId}/features/names`,
+  );
+  return genDTS(response.map(({ key }) => key));
 }
 
-export async function rolloutFeature() {
-  // Implement feature rollout logic here
-  console.log("Feature rollout not implemented yet.");
+type FeatureResponse = {
+  feature: Feature;
+};
+
+export async function createFeature(
+  appId: string,
+  envId: string,
+  name: string,
+  key: string | undefined,
+) {
+  const features = await listFeatures(appId);
+  const response = await authRequest<FeatureResponse>(
+    `/apps/${appId}/features?envId=${envId}`,
+    {
+      method: "POST",
+      data: {
+        name,
+        key: genFeatureKey(
+          key ?? name,
+          features.map(({ key }) => key),
+        ),
+        source: "event",
+      },
+    },
+  );
+  return response.feature;
 }

@@ -1,20 +1,21 @@
 #!/usr/bin/env node
 import { program } from "commander";
 
-import { appCommand } from "./commands/apps.js";
-import { authCommand } from "./commands/auth.js";
-import { featuresCommand } from "./commands/features.js";
-import { loadSessionCookie } from "./utils/auth.js";
+import { registerAppsCommands } from "./commands/apps.js";
+import { registerAuthCommands } from "./commands/auth.js";
+import { registerEnvsCommands } from "./commands/envs.js";
+import { registerFeaturesCommands } from "./commands/features.js";
+import { readConfigFile } from "./utils/config.js";
 
 async function main() {
-  // Main program
-  program
-    .addCommand(authCommand)
-    .addCommand(appCommand)
-    .addCommand(featuresCommand);
+  // Read the config file
+  await readConfigFile();
 
-  // Load the access token before parsing arguments
-  await loadSessionCookie();
+  // Main program
+  registerAuthCommands(program);
+  registerAppsCommands(program);
+  registerEnvsCommands(program);
+  registerFeaturesCommands(program);
 
   program.parse(process.argv);
 }
