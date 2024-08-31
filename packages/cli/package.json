@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@inquirer/prompts": "^5.3.8",
+    "@sindresorhus/slugify": "^2.2.1",
     "axios": "^1.7.5",
     "chalk": "^5.3.0",
     "commander": "^12.1.0",

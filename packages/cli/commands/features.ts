@@ -6,72 +6,91 @@ import {
   createFeature,
   genFeatureTypes,
   listFeatures,
-  rolloutFeature,
 } from "../services/features.js";
 import { checkAuth } from "../utils/auth.js";
-import { GEN_TYPES_FILE } from "../utils/constants.js";
+import { getConfig } from "../utils/config.js";
+import { CONFIG_FILE, GEN_TYPES_FILE } from "../utils/constants.js";
+import { handleError } from "../utils/error.js";
 
-export const featuresCommand = new Command("features").description(
-  "Manage features",
-);
+export function registerFeaturesCommands(program: Command) {
+  const featuresCommand = new Command("features").description(
+    "Manage features",
+  );
 
-featuresCommand
-  .command("list")
-  .description("List all features")
-  .requiredOption("-a, --appId <appId>", "Get all features in app")
-  .action(async (options) => {
-    checkAuth();
-    try {
-      const features = await listFeatures(options.appId);
-      console.log(chalk.green("Features:"));
-      console.table(features);
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error(chalk.red("Error fetching features:", error.message));
+  featuresCommand
+    .command("list")
+    .description("List all features")
+    .requiredOption(
+      "-a, --appId <appId>",
+      `Get all features in the app. Falls back to appId stored in ${CONFIG_FILE}.`,
+      getConfig("appId"),
+    )
+    .action(async ({ appId }) => {
+      checkAuth();
+      try {
+        const features = await listFeatures(appId);
+        console.log(chalk.green(`Features in ${appId}:`));
+        console.table(features);
+      } catch (error) {
+        handleError(error, "Failed to list features:");
       }
-    }
-  });
+    });
 
-featuresCommand
-  .command("create")
-  .description("Create a new feature")
-  .action(async () => {
-    checkAuth();
-    try {
-      await createFeature();
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error(chalk.red("Error creating feature:", error.message));
+  featuresCommand
+    .command("types")
+    .description("Generate feature types")
+    .requiredOption(
+      "-a, --appId <appId>",
+      `Generate types for features in the app. Falls back to appId stored in ${CONFIG_FILE}.`,
+      getConfig("appId"),
+    )
+    .option(
+      "-o, --out <path>",
+      `Generate types for features at the output path. Falls back to ${GEN_TYPES_FILE}.`,
+      GEN_TYPES_FILE,
+    )
+    .action(async ({ appId, out }) => {
+      checkAuth();
+      try {
+        const types = await genFeatureTypes(appId);
+        await outputFile(out, types);
+        console.log(chalk.green(`Generated features for ${appId}.`));
+      } catch (error) {
+        handleError(error, "Failed to generate feature types:");
       }
-    }
-  });
+    });
 
-featuresCommand
-  .command("types")
-  .description("Generate feature types")
-  .requiredOption("-a, --appId <appId>", "Get all features in app")
-  .action(async (options) => {
-    checkAuth();
-    try {
-      const types = await genFeatureTypes(options.appId);
-      await outputFile(GEN_TYPES_FILE, types);
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error(chalk.red("Error listing feature types:", error.message));
+  featuresCommand
+    .command("create")
+    .description("Create a new feature")
+    .argument("<name>", "Name of the feature")
+    .requiredOption(
+      "-a, --appId <appId>",
+      `Get all features in the app. Falls back to appId stored in ${CONFIG_FILE}.`,
+      getConfig("appId"),
+    )
+    .requiredOption(
+      "-e, --envId <envId>",
+      `Get all features in the env. Falls back to envId stored in ${CONFIG_FILE}.`,
+      getConfig("envId"),
+    )
+    .option(
+      "-k, --key <feature key>",
+      `Create a feature in the app with the given feature key. Falls back to a slug of the feature name.`,
+    )
+    .action(async (name, { appId, envId, key }) => {
+      checkAuth();
+      try {
+        const feature = await createFeature(appId, envId, name, key);
+        console.log(
+          chalk.green(
+            `Created feature ${feature.name} with key ${feature.key}.`,
+          ),
+        );
+      } catch (error) {
+        handleError(error, "Failed to create feature:");
       }
-    }
-  });
+    });
 
-featuresCommand
-  .command("rollout")
-  .description("Rollout a feature")
-  .action(async () => {
-    checkAuth();
-    try {
-      await rolloutFeature();
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error(chalk.red("Error rolling out feature:", error.message));
-      }
-    }
-  });
+  program.addCommand(featuresCommand);
+}
