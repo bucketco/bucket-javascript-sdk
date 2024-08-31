@@ -1,6 +1,7 @@
 import chalk from "chalk";
 import { Command } from "commander";
 import { outputFile } from "fs-extra/esm";
+import ora from "ora";
 
 import {
   createFeature,
@@ -26,12 +27,15 @@ export function registerFeaturesCommands(program: Command) {
       getConfig("appId"),
     )
     .action(async ({ appId }) => {
+      const spinner = ora("Loading features...").start();
       checkAuth();
       try {
         const features = await listFeatures(appId);
+        spinner.succeed();
         console.log(chalk.green(`Features in ${appId}:`));
         console.table(features);
       } catch (error) {
+        spinner.fail();
         handleError(error, "Failed to list features:");
       }
     });
@@ -50,12 +54,15 @@ export function registerFeaturesCommands(program: Command) {
       GEN_TYPES_FILE,
     )
     .action(async ({ appId, out }) => {
+      const spinner = ora("Generating feature types...").start();
       checkAuth();
       try {
         const types = await genFeatureTypes(appId);
         await outputFile(out, types);
+        spinner.succeed();
         console.log(chalk.green(`Generated features for ${appId}.`));
       } catch (error) {
+        spinner.fail();
         handleError(error, "Failed to generate feature types:");
       }
     });
@@ -79,15 +86,18 @@ export function registerFeaturesCommands(program: Command) {
       `Create a feature in the app with the given feature key. Falls back to a slug of the feature name.`,
     )
     .action(async (name, { appId, envId, key }) => {
+      const spinner = ora("Creating feature...").start();
       checkAuth();
       try {
         const feature = await createFeature(appId, envId, name, key);
+        spinner.succeed();
         console.log(
           chalk.green(
             `Created feature ${feature.name} with key ${feature.key}.`,
           ),
         );
       } catch (error) {
+        spinner.fail();
         handleError(error, "Failed to create feature:");
       }
     });

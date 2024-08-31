@@ -1,6 +1,7 @@
 import { select } from "@inquirer/prompts";
 import chalk from "chalk";
 import { Command } from "commander";
+import ora from "ora";
 
 import { listEnvs } from "../services/bootstrap.js";
 import { checkAuth } from "../utils/auth.js";
@@ -20,12 +21,15 @@ export function registerEnvsCommands(program: Command) {
       getConfig("appId"),
     )
     .action(async ({ appId }) => {
+      const spinner = ora("Loading environments...").start();
       checkAuth();
       try {
         const envs = await listEnvs(appId);
+        spinner.succeed();
         console.log(chalk.green(`Available environments for app ${appId}:`));
         console.table(envs);
       } catch (error) {
+        spinner.fail();
         handleError(error, "Failed to list environment:");
       }
     });
@@ -39,10 +43,11 @@ export function registerEnvsCommands(program: Command) {
       getConfig("appId"),
     )
     .action(async ({ appId }) => {
+      const spinner = ora("Loading environments...").start();
       checkAuth();
       try {
         const envs = await listEnvs(appId);
-
+        spinner.succeed();
         const answer = await select({
           message: "Select an environment",
           choices: envs.map(({ id, name }) => ({
@@ -50,9 +55,9 @@ export function registerEnvsCommands(program: Command) {
             value: id,
           })),
         });
-
         await writeConfigFile("envId", answer);
       } catch (error) {
+        spinner.fail();
         handleError(error, "Failed to select environment:");
       }
     });

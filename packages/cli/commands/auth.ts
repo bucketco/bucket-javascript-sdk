@@ -1,5 +1,6 @@
 import chalk from "chalk";
 import { Command } from "commander";
+import ora from "ora";
 
 import { authenticateUser } from "../utils/auth.js";
 import { writeConfigFile } from "../utils/config.js";
@@ -11,13 +12,15 @@ export function registerAuthCommands(program: Command) {
   authCommand
     .command("login")
     .description("Login to Bucket")
-    .requiredOption("-a, --appId <appId>", "Get all features in app")
     .action(async () => {
+      const spinner = ora("Logging in...").start();
       try {
         // Initiate the auth process
         await authenticateUser();
+        spinner.succeed();
         console.log(chalk.green("Logged in successfully!"));
       } catch (error) {
+        spinner.fail();
         handleError(error, "Authentication failed:");
       }
     });
@@ -26,8 +29,15 @@ export function registerAuthCommands(program: Command) {
     .command("logout")
     .description("Logout from Bucket")
     .action(async () => {
-      await writeConfigFile("sessionCookies", undefined);
-      console.log(chalk.green("Logged out successfully!"));
+      const spinner = ora("Logging out...").start();
+      try {
+        await writeConfigFile("sessionCookies", undefined);
+        spinner.succeed();
+        console.log(chalk.green("Logged out successfully!"));
+      } catch (error) {
+        spinner.fail();
+        handleError(error, "Logout failed:");
+      }
     });
 
   program.addCommand(authCommand);
