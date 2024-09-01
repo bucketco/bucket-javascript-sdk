@@ -99,6 +99,11 @@ export function flattenJSON(obj: Record<string, any>): Record<string, any> {
 export function clearFeatureCache() {
   localStorage.clear();
 }
+export interface CheckEvent {
+  key: string;
+  value: boolean;
+  version?: number;
+}
 
 export const FEATURES_STALE_MS = 60000; // turn stale after 60 seconds, optionally reevaluate in the background
 export const FEATURES_EXPIRE_MS = 30 * 24 * 60 * 60 * 1000; // expire entirely after 30 days
@@ -107,7 +112,7 @@ const localStorageCacheKey = `__bucket_features`;
 
 export class FeaturesClient {
   private cache: FeatureCache;
-  private features: APIFeaturesResponse | undefined;
+  private features: APIFeaturesResponse;
   private config: Config;
   private rateLimiter: RateLimiter;
   private logger: Logger;
@@ -125,6 +130,7 @@ export class FeaturesClient {
       rateLimiter?: RateLimiter;
     },
   ) {
+    this.features = {};
     this.logger = loggerWithPrefix(logger, "[Features]");
     this.cache = options?.cache
       ? options.cache
@@ -151,7 +157,7 @@ export class FeaturesClient {
     this.features = features;
   }
 
-  getFeatures(): APIFeaturesResponse | undefined {
+  getFeatures(): APIFeaturesResponse {
     return this.features;
   }
 
@@ -260,22 +266,18 @@ export class FeaturesClient {
    * Send a feature "check" event.
    *
    *
-   * @param feature - The feature to send the event for.
+   * @param checkEvent - The feature to send the event for.
    */
-  async sendCheckEvent(feature: {
-    key: string;
-    value: boolean;
-    version?: number;
-  }) {
-    const rateLimitKey = `${this.fetchParams().toString()}:${feature.key}:${feature.version}:${feature.value}`;
+  async sendCheckEvent(checkEvent: CheckEvent) {
+    const rateLimitKey = `${this.fetchParams().toString()}:${checkEvent.key}:${checkEvent.version}:${checkEvent.value}`;
 
     await this.rateLimiter.rateLimited(rateLimitKey, async () => {
       const payload = {
         action: "check",
-        key: feature.key,
-        targetingVersion: feature.version,
+        key: checkEvent.key,
+        targetingVersion: checkEvent.version,
         evalContext: this.context,
-        evalResult: feature.value,
+        evalResult: checkEvent.value,
       };
 
       this.httpClient
@@ -290,6 +292,6 @@ export class FeaturesClient {
       this.logger.debug(`sent feature event`, payload);
     });
 
-    return feature.value;
+    return checkEvent.value;
   }
 }

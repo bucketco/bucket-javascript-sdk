@@ -14,6 +14,7 @@ import canonicalJSON from "canonical-json";
 import {
   BucketClient,
   BucketContext,
+  Feature,
   FeaturesOptions,
   Feedback,
   FeedbackOptions,
@@ -30,11 +31,9 @@ type BucketFeatures = keyof (keyof Features extends never
   ? Record<string, boolean>
   : Features);
 
-// export type FeaturesResult = { [k in BucketFeatures]?: boolean };
-
 type ProviderContextType = {
   features: {
-    getFeatures: () => Record<string, Features>;
+    getFeature?: (key: string) => Feature;
     isLoading: boolean;
   };
 
@@ -48,7 +47,6 @@ type ProviderContextType = {
 
 const ProviderContext = createContext<ProviderContextType>({
   features: {
-    getFeatures: () => ({}),
     isLoading: false,
   },
 
@@ -179,13 +177,9 @@ export function BucketProvider({
     [user?.id, company?.id],
   );
 
-  const getFeatures = useCallback(() => {
-    return clientRef.current?.getFeatures() || {};
-  }, [contextKey]);
-
   const context: ProviderContextType = {
     features: {
-      getFeatures,
+      getFeature: clientRef.current?.getFeature,
       isLoading: featuresLoading,
     },
     track,
@@ -220,13 +214,13 @@ export function BucketProvider({
  */
 export function useFeature(key: BucketFeatures) {
   const {
-    features: { features, isLoading },
+    features: { getFeature, isLoading },
     track,
   } = useContext<ProviderContextType>(ProviderContext);
 
-  const isEnabled = features[key] ?? false;
-
-  return { isLoading: isLoading, isEnabled, track: () => track(key) };
+  return getFeature
+    ? getFeature(key)
+    : { isLoading, isEnabled: false, track: () => track(key) };
 }
 
 /**

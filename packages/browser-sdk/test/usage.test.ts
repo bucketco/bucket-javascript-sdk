@@ -5,12 +5,14 @@ import {
   beforeEach,
   describe,
   expect,
+  it,
   test,
   vi,
 } from "vitest";
 
 import { BucketClient } from "../src";
 import { API_HOST } from "../src/config";
+import { FeaturesClient } from "../src/feature/features";
 import { FeedbackPromptHandler } from "../src/feedback/feedback";
 import {
   checkPromptMessageCompleted,
@@ -40,6 +42,10 @@ vi.mock("../src/feedback/promptStorage", () => {
 
 // Treat test environment as desktop
 window.innerWidth = 1024;
+
+afterEach(() => {
+  server.resetHandlers();
+});
 
 describe("usage", () => {
   afterEach(() => {
@@ -331,5 +337,82 @@ describe("feedback state management", () => {
       "123",
       new Date(message.showBefore),
     );
+  });
+});
+
+describe(`sends "check" events `, () => {
+  test("getFeatures() does not send `check` events", async () => {
+    vi.spyOn(FeaturesClient.prototype, "sendCheckEvent");
+
+    const client = new BucketClient({
+      publishableKey: KEY,
+      user: { id: "123" },
+    });
+    await client.initialize();
+
+    expect(
+      vi.mocked(FeaturesClient.prototype.sendCheckEvent),
+    ).toHaveBeenCalledTimes(0);
+
+    const featureA = client.getFeatures()?.featureA;
+    expect(featureA.isEnabled).toBe(true);
+    expect(
+      vi.mocked(FeaturesClient.prototype.sendCheckEvent),
+    ).toHaveBeenCalledTimes(0);
+  });
+
+  it(`getFeature() sends check event when accessing "isEnabled"`, async () => {
+    vi.spyOn(FeaturesClient.prototype, "sendCheckEvent");
+
+    const client = new BucketClient({
+      publishableKey: KEY,
+      user: { id: "uid" },
+      company: { id: "cid" },
+    });
+    await client.initialize();
+
+    const featureA = client.getFeature("featureA");
+
+    expect(
+      vi.mocked(FeaturesClient.prototype.sendCheckEvent),
+    ).toHaveBeenCalledTimes(0);
+    expect(featureA.isEnabled).toBe(true);
+
+    expect(
+      vi.mocked(FeaturesClient.prototype.sendCheckEvent),
+    ).toHaveBeenCalledTimes(1);
+    expect(
+      vi.mocked(FeaturesClient.prototype.sendCheckEvent),
+    ).toHaveBeenCalledWith({
+      key: "featureA",
+      value: true,
+      version: 1,
+    });
+  });
+
+  it("sends check event for not-enabled features", async () => {
+    // disabled features don't appear in the API response
+    vi.spyOn(FeaturesClient.prototype, "sendCheckEvent");
+
+    const client = new BucketClient({ publishableKey: KEY });
+    await client.initialize();
+
+    const nonExistentFeature = client.getFeature("non-existent");
+
+    expect(
+      vi.mocked(FeaturesClient.prototype.sendCheckEvent),
+    ).toHaveBeenCalledTimes(0);
+    expect(nonExistentFeature.isEnabled).toBe(false);
+
+    expect(
+      vi.mocked(FeaturesClient.prototype.sendCheckEvent),
+    ).toHaveBeenCalledTimes(1);
+    expect(
+      vi.mocked(FeaturesClient.prototype.sendCheckEvent),
+    ).toHaveBeenCalledWith({
+      value: false,
+      key: "non-existent",
+      version: undefined,
+    });
   });
 });
