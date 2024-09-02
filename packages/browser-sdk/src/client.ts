@@ -1,4 +1,9 @@
-import { FeaturesClient, FeaturesOptions } from "./feature/features";
+import {
+  APIFeaturesResponse,
+  CheckEvent,
+  FeaturesClient,
+  FeaturesOptions,
+} from "./feature/features";
 import {
   AutoFeedback,
   Feedback,
@@ -68,6 +73,11 @@ const defaultConfig: Config = {
   host: API_HOST,
   sseHost: SSE_REALTIME_HOST,
 };
+
+export interface Feature {
+  isEnabled: boolean;
+  track: () => Promise<Response | undefined>;
+}
 
 export class BucketClient {
   private publishableKey: string;
@@ -278,7 +288,7 @@ export class BucketClient {
    *
    * @param options
    */
-  requestFeedback(options: RequestFeedbackOptions) {
+  requestFeedback(options: Omit<RequestFeedbackOptions, "userId">) {
     if (!this.context.user?.id) {
       this.logger.error(
         "`requestFeedback` call ignored. No user context provided at initialization",
@@ -333,10 +343,51 @@ export class BucketClient {
     }, 1);
   }
 
-  getFeatures() {
+  /**
+   * Returns a map of enabled features.
+   * Accessing a feature will *not* send a check event
+   *
+   * @returns Map of features
+   */
+  getFeatures(): APIFeaturesResponse {
     return this.featuresClient.getFeatures();
   }
 
+  /**
+   * Return a feature. Accessing `isEnabled` will automatically send a `check` event.
+   * @returns A feature
+   */
+  getFeature(key: string): Feature {
+    const f = this.getFeatures()[key];
+
+    const fClient = this.featuresClient;
+    const value = f?.isEnabled ?? false;
+
+    return {
+      get isEnabled() {
+        fClient
+          .sendCheckEvent({
+            key: key,
+            version: f?.targetingVersion,
+            value,
+          })
+          .catch(() => {
+            // ignore
+          });
+        return value;
+      },
+      track: () => this.track(key),
+    };
+  }
+
+  sendCheckEvent(checkEvent: CheckEvent) {
+    return this.featuresClient.sendCheckEvent(checkEvent);
+  }
+
+  /**
+   * Stop the SDK. This will stop any automated feedback surveys.
+   *
+   **/
   async stop() {
     if (this.autoFeedback) {
       // ensure fully initialized before stopping

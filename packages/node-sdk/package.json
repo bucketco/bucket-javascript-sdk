@@ -1,6 +1,6 @@
 {
   "name": "@bucketco/node-sdk",
-  "version": "1.0.0-alpha.1",
+  "version": "1.0.0-alpha.2",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -44,6 +44,6 @@
     "vitest": "~1.6.0"
   },
   "dependencies": {
-    "@bucketco/flag-evaluation": "~0.0.5"
+    "@bucketco/flag-evaluation": "~0.0.7"
   }
 }

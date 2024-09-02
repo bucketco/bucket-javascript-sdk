@@ -26,7 +26,8 @@
       bucket.initialize().then(() => {
         console.log("Bucket initialized");
         document.getElementById("loading").style.display = "none";
-        if (bucket.getFeatures().huddle) {
+        const { isEnabled } = bucket.getFeature("huddle");
+        if (isEnabled) {
           // show the start-huddle button
           document.getElementById("start-huddle").style.display = "block";
         }

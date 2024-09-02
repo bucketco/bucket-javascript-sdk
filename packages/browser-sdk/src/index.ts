@@ -1,7 +1,7 @@
-export type { InitOptions } from "./client";
+export type { Feature, InitOptions } from "./client";
 export { BucketClient } from "./client";
 export type { BucketContext, CompanyContext, UserContext } from "./context";
-export type { Features, FeaturesOptions } from "./feature/features";
+export type { CheckEvent, FeaturesOptions } from "./feature/features";
 export type {
   Feedback,
   FeedbackOptions,
