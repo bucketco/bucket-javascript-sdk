@@ -26,8 +26,11 @@ import {
   useTrack,
 } from "../src";
 
+const events: string[] = [];
 const originalConsoleError = console.error.bind(console);
+
 afterEach(() => {
+  events.length = 0;
   console.error = originalConsoleError;
 });
 
@@ -47,8 +50,6 @@ function getProvider(props: Partial<BucketProps> = {}) {
     />
   );
 }
-
-const events: string[] = [];
 
 const server = setupServer(
   http.post(/\/event$/, () => {
