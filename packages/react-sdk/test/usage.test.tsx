@@ -17,7 +17,7 @@ import { BucketClient } from "@bucketco/browser-sdk";
 import { HttpClient } from "@bucketco/browser-sdk/src/httpClient";
 
 import { version } from "../package.json";
-import { BucketProps, BucketProvider, useFeature } from "../src";
+import { BucketProps, BucketProvider, useFeature, useTrack } from "../src";
 
 const originalConsoleError = console.error.bind(console);
 afterEach(() => {
@@ -110,8 +110,6 @@ beforeAll(() => {
   vi.spyOn(BucketClient.prototype, "initialize");
   vi.spyOn(BucketClient.prototype, "getFeatures");
   vi.spyOn(BucketClient.prototype, "stop");
-  vi.spyOn(BucketClient.prototype, "user");
-  vi.spyOn(BucketClient.prototype, "company");
 
   vi.spyOn(HttpClient.prototype, "get");
   vi.spyOn(HttpClient.prototype, "post");
@@ -175,6 +173,23 @@ describe("<BucketProvider />", () => {
     expect(initialize).toHaveBeenCalledOnce();
     expect(BucketClient.prototype.stop).not.toHaveBeenCalledOnce();
   });
+
+  test("calls stop on unmount", () => {
+    const node = getProvider();
+    const initialize = vi.spyOn(BucketClient.prototype, "initialize");
+
+    const x = render(node);
+    x.rerender(node);
+    x.rerender(node);
+    x.rerender(node);
+
+    expect(initialize).toHaveBeenCalledOnce();
+    expect(BucketClient.prototype.stop).not.toHaveBeenCalledOnce();
+
+    x.unmount();
+
+    expect(BucketClient.prototype.stop).toHaveBeenCalledOnce();
+  });
 });
 
 describe("useFeature", () => {
@@ -200,7 +215,23 @@ describe("useFeature", () => {
       isEnabled: false,
       isLoading: false,
       track: expect.any(Function),
-    }),
-      unmount();
+    });
+    unmount();
+  });
+});
+
+describe("useTrack", () => {
+  test("sends track request", async () => {
+    const httpPost = vi.spyOn(HttpClient.prototype, "post");
+
+    const { result, unmount } = renderHook(() => useTrack(), {
+      wrapper: ({ children }) => getProvider({ children }),
+    });
+
+    await result.current("event", { test: "test" });
+
+    expect(httpPost).toHaveBeenCalledWith("/features/events", {});
+
+    unmount();
   });
 });
