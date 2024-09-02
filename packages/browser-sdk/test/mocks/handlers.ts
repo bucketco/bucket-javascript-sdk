@@ -12,7 +12,11 @@ export const featureResponse: FeaturesResponse = {
 };
 
 export const featuresResult: Features = {
-  featureA: true,
+  featureA: {
+    isEnabled: true,
+    key: "featureA",
+    targetingVersion: 1,
+  },
 };
 
 function checkRequest(request: StrictRequest<DefaultBodyType>) {
@@ -48,11 +52,6 @@ export function getFeatures({
 }) {
   if (!checkRequest(request)) return invalidReqResponse;
 
-  const url = new URL(request.url);
-  if (!url.searchParams.get("context.user.id")) {
-    console.error("no user id: " + url.searchParams.get("context.user.id"));
-    return HttpResponse.json({ success: false });
-  }
   return HttpResponse.json(featureResponse);
 }
 

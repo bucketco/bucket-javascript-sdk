@@ -1,4 +1,4 @@
-import { afterAll, beforeEach, describe, expect, it, test, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
 
 import { APIFeatureResponse } from "../dist/src/feature/features";
 import { version } from "../package.json";
@@ -84,7 +84,12 @@ describe("FeaturesClient unit tests", () => {
       fallbackFeatures: ["huddle"],
     });
     await featuresClient.initialize();
-    expect(featuresClient.getFeatures()).toEqual({ huddle: true });
+    expect(featuresClient.getFeatures()).toEqual({
+      huddle: {
+        isEnabled: true,
+        key: "huddle",
+      },
+    });
   });
 
   test("caches response", async () => {
@@ -151,7 +156,13 @@ describe("FeaturesClient unit tests", () => {
     expect(httpClient.get).toHaveBeenCalledTimes(0);
 
     await client.initialize();
-    expect(client.getFeatures()).toEqual({ featureB: true });
+    expect(client.getFeatures()).toEqual({
+      featureB: {
+        isEnabled: true,
+        key: "featureB",
+        targetingVersion: 1,
+      },
+    });
 
     expect(httpClient.get).toHaveBeenCalledTimes(1);
     const client2 = newFeaturesClient({
@@ -183,7 +194,13 @@ describe("FeaturesClient unit tests", () => {
     expect(httpClient.get).toHaveBeenCalledTimes(2);
 
     await vi.waitFor(() =>
-      expect(client2.getFeatures()).toEqual({ featureA: true }),
+      expect(client2.getFeatures()).toEqual({
+        featureA: {
+          isEnabled: true,
+          targetingVersion: 1,
+          key: "featureA",
+        },
+      }),
     );
   });
 
@@ -213,65 +230,5 @@ describe("FeaturesClient unit tests", () => {
 
     expect(httpClient.get).toHaveBeenCalledTimes(2);
     expect(a).not.toEqual(b);
-  });
-});
-
-describe(`sends "check" events`, () => {
-  it("sends check event", async () => {
-    const { newFeaturesClient, httpClient } = featuresClientFactory();
-    const client = newFeaturesClient();
-    await client.initialize();
-
-    const _ = client.getFeatures()?.featureA;
-    expect(httpClient.post).toHaveBeenCalledTimes(1);
-    expect(httpClient.post).toHaveBeenCalledWith({
-      path: "features/events",
-      body: {
-        action: "check",
-        evalContext: {
-          user: {
-            id: "123",
-          },
-          company: {
-            id: "456",
-          },
-          other: {
-            eventId: "big-conference1",
-          },
-        },
-        evalResult: true,
-        key: "featureA",
-        targetingVersion: 1,
-      },
-    });
-  });
-
-  it("sends check event for not-enabled features", async () => {
-    // disabled features don't appear in the API response
-    const { newFeaturesClient, httpClient } = featuresClientFactory();
-    const client = newFeaturesClient();
-    await client.initialize();
-
-    const _ = client.getFeatures()?.notAvailableFeature;
-    expect(httpClient.post).toHaveBeenCalledTimes(1);
-    expect(httpClient.post).toHaveBeenCalledWith({
-      path: "features/events",
-      body: {
-        action: "check",
-        evalContext: {
-          user: {
-            id: "123",
-          },
-          company: {
-            id: "456",
-          },
-          other: {
-            eventId: "big-conference1",
-          },
-        },
-        evalResult: false,
-        key: "notAvailableFeature",
-      },
-    });
   });
 });

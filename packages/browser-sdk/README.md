@@ -25,15 +25,19 @@ const bucketClient = new BucketClient({ publishableKey, user, company });
 
 await bucketClient.initialize();
 
-const { huddle } = bucketClient.getFeatures();
+const { isEnabled, track } = bucketClient.getFeature("huddle");
 
-if (huddle) {
-  // show feature
+if (isEnabled) {
+  // show feature. When retrieving `isEnabled` the client automatically
+  // sends a "check" event for the "huddle" feature which is shown in the
+  // Bucket UI.
+
+  // On usage, call `track` to let Bucket know that a user "used" the feature
+  track();
 }
 
-// on feature usage, send an event using the same feature key
-// to get feature usage tracked automatically.
-// You can also use `track` to send any custom event.
+// `track` just calls `bucketClient.track(<featureKey>)` to send an event using the same feature key
+// You can also use `track` on the client directly to send any custom event.
 bucketClient.track("huddle");
 ```
 
@@ -80,7 +84,6 @@ Supply these to the constructor call (3rd argument)
     fallbackFeatures?: string[]; // Enable these features if unable to contact bucket.co
     timeoutMs?: number; // Timeout for fetching features
     staleWhileRevalidate?: boolean; // Revalidate in the background when cached features turn stale to avoid latency in the UI
-    failureRetryAttempts?: number | false; // Cache a negative response after `failureRetryAttempts` attempts to avoid latency in the UI
   };
 }
 ```
@@ -92,23 +95,18 @@ Bucket can determine which features are active for a given user/company. The use
 If you supply `user` or `company` objects, they require at least an `id` property.
 In addition to the `id`, you must also supply anything additional that you want to be able to evaluate feature targeting rules against.
 
+Attributes cannot be nested (multiple levels) and must be either strings, integers or booleans.
+
+Built-in attributes:
+
+- `name` (display name for user/company)
+
 ```ts
 const bucketClient = new BucketClient({
   publishableKey,
-  user: { id: "user_123", role: "manager" },
-  company: { id: "company_123", plan: "enterprise" },
+  user: { id: "user_123", name: "John Doe", role: "manager" },
+  company: { id: "company_123", "Acme, Inc", plan: "enterprise" },
 });
-await bucketClient.initialize()
-
-bucketClient.getFeatures()
-// {
-//   "huddle": true,
-//   "message": true
-// }
-
-if(bucketClient.getFeatures().huddle) {
-  ...
-}
 ```
 
 ### Qualitative feedback
@@ -173,42 +171,6 @@ The two cookies are:
 
 - `bucket-prompt-${userId}`: store the last automated feedback prompt message ID received to avoid repeating surveys
 - `bucket-token-${userId}`: caching a token used to connect to Bucket's live messaging infrastructure that is used to deliver automated feedback surveys in real time.
-
-### Custom attributes
-
-You can pass attributes as a object literal to the `user`, `company` and `track` methods (2nd argument).
-Attributes cannot be nested (multiple levels) and must be either strings, integers or booleans.
-
-Built-in attributes:
-
-- `name` (display name for user/company)
-
-### Context
-
-You can supply additional `context` to `group`, `user` and `event` calls.
-
-#### context.active
-
-By default, sending `group`, `user` and `event` calls automatically update the given user/company "Last seen" property.
-You can control if "Last seen" should be updated when the events are sent by setting `context.active=false` to avoid updating last seen.
-This is often useful if you have a background job that goes through a set of companies just to update their attributes or similar
-
-```typescript
-// set current company without updating last seen.
-bucket.company("acme_inc", { name: "Acme Inc", plan: "pro" }, "john_doe", {
-  active: false,
-});
-```
-
-### Persisting users
-
-**Usage in the browser** (imported or script tag):
-Once you call `user`, the userId will be persisted so you don't have to supply userId to each subsequent `company` and `track` calls.
-This is practical for client-side usage where a session always is a single user.
-
-**Usage in node.js**
-User persistence is disabled by default when imported in node.js to avoid that companies or events are tied to the wrong user by mistake. This is because your server is (usually) not in a single user context.
-Instead, you should provide the userId to each call, as the 3rd argument to `company` and `track`.
 
 ### Typescript
 

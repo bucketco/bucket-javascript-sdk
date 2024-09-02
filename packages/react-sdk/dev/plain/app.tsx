@@ -14,7 +14,7 @@ declare module "../../src" {
   }
 }
 
-const publishableKey = process.env.PUBLISHABLE_KEY || "";
+const publishableKey = import.meta.env.PUBLISHABLE_KEY || "";
 
 function HuddleFeature() {
   // Type safe feature
