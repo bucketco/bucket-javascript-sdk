@@ -23,4 +23,7 @@ export default defineConfig({
       external: ["react", "react-dom"],
     },
   },
+  server: {
+    open: "/dev/plain/index.html",
+  },
 });
