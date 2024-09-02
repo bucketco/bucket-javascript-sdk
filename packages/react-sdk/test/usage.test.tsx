@@ -17,7 +17,14 @@ import { BucketClient } from "@bucketco/browser-sdk";
 import { HttpClient } from "@bucketco/browser-sdk/src/httpClient";
 
 import { version } from "../package.json";
-import { BucketProps, BucketProvider, useFeature, useTrack } from "../src";
+import {
+  BucketProps,
+  BucketProvider,
+  useFeature,
+  useRequestFeedback,
+  useSendFeedback,
+  useTrack,
+} from "../src";
 
 const originalConsoleError = console.error.bind(console);
 afterEach(() => {
@@ -41,7 +48,27 @@ function getProvider(props: Partial<BucketProps> = {}) {
   );
 }
 
+const events: string[] = [];
+
 const server = setupServer(
+  http.post(/\/event$/, () => {
+    events.push("EVENT");
+    return new HttpResponse(
+      JSON.stringify({
+        success: true,
+      }),
+      { status: 200 },
+    );
+  }),
+  http.post(/\/feedback$/, () => {
+    events.push("FEEDBACK");
+    return new HttpResponse(
+      JSON.stringify({
+        success: true,
+      }),
+      { status: 200 },
+    );
+  }),
   http.get(/\/features\/enabled$/, () => {
     return new HttpResponse(
       JSON.stringify({
@@ -108,7 +135,6 @@ afterAll(() => server.close());
 
 beforeAll(() => {
   vi.spyOn(BucketClient.prototype, "initialize");
-  vi.spyOn(BucketClient.prototype, "getFeatures");
   vi.spyOn(BucketClient.prototype, "stop");
 
   vi.spyOn(HttpClient.prototype, "get");
@@ -193,9 +219,11 @@ describe("<BucketProvider />", () => {
 });
 
 describe("useFeature", () => {
-  test("returns a loading state initially, stops loading once initialized", async () => {
+  test("returns a loading state initially", async () => {
+    let resolve: (r: BucketClient) => void;
     const { result, unmount } = renderHook(() => useFeature("huddle"), {
-      wrapper: ({ children }) => getProvider({ children }),
+      wrapper: ({ children }) =>
+        getProvider({ children, onInitialized: resolve }),
     });
 
     expect(result.current).toStrictEqual({
@@ -204,33 +232,83 @@ describe("useFeature", () => {
       track: expect.any(Function),
     });
 
-    await waitFor(() =>
+    unmount();
+  });
+
+  test("finishes loading", async () => {
+    const { result, unmount } = renderHook(() => useFeature("huddle"), {
+      wrapper: ({ children }) => getProvider({ children }),
+    });
+
+    await waitFor(() => {
       expect(result.current).toStrictEqual({
         isEnabled: false,
         isLoading: false,
         track: expect.any(Function),
-      }),
-    );
-    expect(result.current).toStrictEqual({
-      isEnabled: false,
-      isLoading: false,
-      track: expect.any(Function),
+      });
     });
+
     unmount();
   });
 });
 
 describe("useTrack", () => {
   test("sends track request", async () => {
-    const httpPost = vi.spyOn(HttpClient.prototype, "post");
-
     const { result, unmount } = renderHook(() => useTrack(), {
       wrapper: ({ children }) => getProvider({ children }),
     });
 
-    await result.current("event", { test: "test" });
+    await waitFor(async () => {
+      await result.current("event", { test: "test" });
+      expect(events).toStrictEqual(["EVENT"]);
+    });
 
-    expect(httpPost).toHaveBeenCalledWith("/features/events", {});
+    unmount();
+  });
+});
+
+describe("useSendFeedback", () => {
+  test("sends feedback", async () => {
+    const { result, unmount } = renderHook(() => useSendFeedback(), {
+      wrapper: ({ children }) => getProvider({ children }),
+    });
+
+    await waitFor(async () => {
+      await result.current({
+        featureId: "123",
+        score: 5,
+      });
+      expect(events).toStrictEqual(["FEEDBACK"]);
+    });
+
+    unmount();
+  });
+});
+
+describe("useRequestFeedback", () => {
+  test("sends feedback", async () => {
+    const requestFeedback = vi
+      .spyOn(BucketClient.prototype, "requestFeedback")
+      .mockReturnValue(undefined);
+
+    const { result, unmount } = renderHook(() => useRequestFeedback(), {
+      wrapper: ({ children }) => getProvider({ children }),
+    });
+
+    await waitFor(async () => {
+      result.current({
+        featureId: "123",
+        title: "Test question",
+        companyId: "456",
+      });
+
+      expect(requestFeedback).toHaveBeenCalledOnce();
+      expect(requestFeedback).toHaveBeenCalledWith({
+        companyId: "456",
+        featureId: "123",
+        title: "Test question",
+      });
+    });
 
     unmount();
   });
