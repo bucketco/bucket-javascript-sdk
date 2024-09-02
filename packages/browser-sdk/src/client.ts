@@ -75,33 +75,8 @@ const defaultConfig: Config = {
 };
 
 export interface Feature {
-  key: string;
   isEnabled: boolean;
-  track: () => Promise<boolean>;
-}
-
-class feature {
-  constructor(
-    private client: BucketClient,
-    private sendCheckEvent: (event: CheckEvent) => void,
-    public key: string,
-    private enabled: boolean,
-    private targetingVersion?: number,
-  ) {}
-
-  async track() {
-    return (await this.client.track(this.key))?.ok ?? false;
-  }
-
-  get isEnabled() {
-    this.sendCheckEvent({
-      key: this.key,
-      version: this.targetingVersion,
-      value: this.enabled,
-    });
-
-    return this.enabled;
-  }
+  track: () => Promise<Response | undefined>;
 }
 
 export class BucketClient {
@@ -313,7 +288,7 @@ export class BucketClient {
    *
    * @param options
    */
-  requestFeedback(options: RequestFeedbackOptions) {
+  requestFeedback(options: Omit<RequestFeedbackOptions, "userId">) {
     if (!this.context.user?.id) {
       this.logger.error(
         "`requestFeedback` call ignored. No user context provided at initialization",
@@ -369,7 +344,9 @@ export class BucketClient {
   }
 
   /**
-   * Returns a map of enabled features. Accessing a feature will *not* send a check event
+   * Returns a map of enabled features.
+   * Accessing a feature will *not* send a check event
+   *
    * @returns Map of features
    */
   getFeatures(): APIFeaturesResponse {
@@ -383,15 +360,34 @@ export class BucketClient {
   getFeature(key: string): Feature {
     const f = this.getFeatures()[key];
 
-    return new feature(
-      this,
-      this.featuresClient.sendCheckEvent,
-      key,
-      f?.isEnabled ?? false,
-      f?.targetingVersion,
-    );
+    const fClient = this.featuresClient;
+    const value = f?.isEnabled ?? false;
+
+    return {
+      get isEnabled() {
+        fClient
+          .sendCheckEvent({
+            key: key,
+            version: f?.targetingVersion,
+            value,
+          })
+          .catch(() => {
+            // ignore
+          });
+        return value;
+      },
+      track: () => this.track(key),
+    };
   }
 
+  sendCheckEvent(checkEvent: CheckEvent) {
+    return this.featuresClient.sendCheckEvent(checkEvent);
+  }
+
+  /**
+   * Stop the SDK. This will stop any automated feedback surveys.
+   *
+   **/
   async stop() {
     if (this.autoFeedback) {
       // ensure fully initialized before stopping

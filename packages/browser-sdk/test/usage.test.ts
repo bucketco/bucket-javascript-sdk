@@ -19,6 +19,7 @@ import {
   getAuthToken,
   markPromptMessageCompleted,
 } from "../src/feedback/promptStorage";
+import { HttpClient } from "../src/httpClient";
 import {
   AblySSEChannel,
   closeAblySSEChannel,
@@ -363,6 +364,7 @@ describe(`sends "check" events `, () => {
 
   it(`getFeature() sends check event when accessing "isEnabled"`, async () => {
     vi.spyOn(FeaturesClient.prototype, "sendCheckEvent");
+    vi.spyOn(HttpClient.prototype, "post");
 
     const client = new BucketClient({
       publishableKey: KEY,
@@ -387,6 +389,25 @@ describe(`sends "check" events `, () => {
       key: "featureA",
       value: true,
       version: 1,
+    });
+
+    expect(vi.mocked(HttpClient.prototype.post)).toHaveBeenCalledWith({
+      body: {
+        action: "check",
+        evalContext: {
+          company: {
+            id: "cid",
+          },
+          other: undefined,
+          user: {
+            id: "uid",
+          },
+        },
+        evalResult: true,
+        key: "featureA",
+        targetingVersion: 1,
+      },
+      path: "features/events",
     });
   });
 

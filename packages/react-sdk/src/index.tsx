@@ -3,7 +3,6 @@
 import React, {
   createContext,
   ReactNode,
-  useCallback,
   useContext,
   useEffect,
   useRef,
@@ -14,12 +13,10 @@ import canonicalJSON from "canonical-json";
 import {
   BucketClient,
   BucketContext,
-  Feature,
   FeaturesOptions,
-  Feedback,
   FeedbackOptions,
-  RequestFeedbackOptions,
 } from "@bucketco/browser-sdk";
+import { APIFeaturesResponse } from "@bucketco/browser-sdk/dist/src/feature/features";
 
 import { version } from "../package.json";
 
@@ -32,27 +29,17 @@ type BucketFeatures = keyof (keyof Features extends never
   : Features);
 
 type ProviderContextType = {
-  features: {
-    getFeature?: (key: string) => Feature;
-    isLoading: boolean;
-  };
+  client: BucketClient;
 
-  sendFeedback: (opts: Omit<Feedback, "userId" | "companyId">) => void;
-  requestFeedback: (
-    opts: Omit<RequestFeedbackOptions, "userId" | "companyId">,
-  ) => void;
-
-  track: (eventName: string, attributes?: Record<string, any>) => void;
+  features?: APIFeaturesResponse;
+  isLoading: boolean;
 };
 
 const ProviderContext = createContext<ProviderContextType>({
-  features: {
-    isLoading: false,
-  },
+  client: new BucketClient({ publishableKey: "" }),
 
-  track: () => undefined,
-  sendFeedback: () => undefined,
-  requestFeedback: () => undefined,
+  features: undefined,
+  isLoading: true,
 });
 
 export type BucketProps = BucketContext & {
@@ -85,6 +72,7 @@ export function BucketProvider({
   ...config
 }: BucketProps) {
   const [featuresLoading, setFeaturesLoading] = useState(true);
+  const [features, setFeatures] = useState<APIFeaturesResponse | undefined>();
 
   const clientRef = useRef<BucketClient>();
   const contextKeyRef = useRef<string>();
@@ -123,6 +111,7 @@ export function BucketProvider({
     client
       .initialize()
       .then(() => {
+        setFeatures(client.getFeatures());
         setFeaturesLoading(false);
       })
       .catch(() => {
@@ -133,59 +122,12 @@ export function BucketProvider({
     return () => void client.stop();
   }, [contextKey]);
 
-  const track = useCallback(
-    (eventName: string, attributes?: Record<string, any>) => {
-      if (user?.id === undefined)
-        return () => {
-          console.error("User is required to send events");
-        };
-
-      return clientRef.current?.track(eventName, attributes);
-    },
-    [user?.id, company?.id],
-  );
-
-  const sendFeedback = useCallback(
-    (opts: Omit<Feedback, "userId" | "companyId">) => {
-      if (user?.id === undefined) {
-        console.error("User is required to request feedback");
-        return;
-      }
-
-      return clientRef.current?.feedback({
-        ...opts,
-        userId: String(user.id),
-        companyId: company?.id !== undefined ? String(company.id) : undefined,
-      });
-    },
-    [user?.id, company?.id],
-  );
-
-  const requestFeedback = useCallback(
-    (opts: Omit<RequestFeedbackOptions, "userId" | "companyId">) => {
-      if (user?.id === undefined) {
-        console.error("User is required to request feedback");
-        return;
-      }
-
-      clientRef.current?.requestFeedback({
-        ...opts,
-        userId: String(user.id),
-        companyId: company?.id !== undefined ? String(company.id) : undefined,
-      });
-    },
-    [user?.id, company?.id],
-  );
-
   const context: ProviderContextType = {
-    features: {
-      getFeature: clientRef.current?.getFeature,
-      isLoading: featuresLoading,
-    },
-    track,
-
-    sendFeedback,
-    requestFeedback,
+    client: clientRef.current
+      ? clientRef.current
+      : new BucketClient({ publishableKey }),
+    isLoading: featuresLoading,
+    features,
   };
 
   return (
@@ -213,14 +155,42 @@ export function BucketProvider({
  * ```
  */
 export function useFeature(key: BucketFeatures) {
-  const {
-    features: { getFeature, isLoading },
-    track,
-  } = useContext<ProviderContextType>(ProviderContext);
+  const { features, isLoading, client } =
+    useContext<ProviderContextType>(ProviderContext);
 
-  return getFeature
-    ? getFeature(key)
-    : { isLoading, isEnabled: false, track: () => track(key) };
+  const track = client
+    ? () => client.track(key)
+    : () => {
+        return false;
+      };
+
+  if (!features || !features[key]) {
+    return {
+      isLoading: true,
+      isEnabled: false,
+      track,
+    };
+  }
+
+  const feature = features[key];
+  const enabled = feature?.isEnabled ?? false;
+
+  return {
+    isLoading,
+    track,
+    get isEnabled() {
+      client
+        ?.sendCheckEvent({
+          key,
+          value: enabled,
+          version: feature?.targetingVersion,
+        })
+        .catch(() => {
+          // ignore
+        });
+      return feature?.isEnabled ?? false;
+    },
+  };
 }
 
 /**
@@ -234,7 +204,7 @@ export function useFeature(key: BucketFeatures) {
  */
 export function useTrack() {
   const ctx = useContext<ProviderContextType>(ProviderContext);
-  return ctx.track;
+  return ctx.client.track.bind(ctx.client);
 }
 
 /**
@@ -253,7 +223,8 @@ export function useTrack() {
  * ```
  */
 export function useRequestFeedback() {
-  return useContext<ProviderContextType>(ProviderContext).requestFeedback;
+  const { client } = useContext<ProviderContextType>(ProviderContext);
+  return client.requestFeedback.bind(client);
 }
 
 /**
@@ -274,5 +245,6 @@ export function useRequestFeedback() {
  * ```
  */
 export function useSendFeedback() {
-  return useContext<ProviderContextType>(ProviderContext).sendFeedback;
+  const { client } = useContext<ProviderContextType>(ProviderContext);
+  return client.feedback.bind(client);
 }

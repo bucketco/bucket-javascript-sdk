@@ -15,7 +15,10 @@ export type APIFeatureResponse = {
   targetingVersion?: number;
 };
 
-export type APIFeaturesResponse = Record<string, APIFeatureResponse>;
+export type APIFeaturesResponse = Record<
+  string,
+  APIFeatureResponse | undefined
+>;
 
 export type FeaturesOptions = {
   fallbackFeatures?: string[];
