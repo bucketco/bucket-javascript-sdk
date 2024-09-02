@@ -32,13 +32,17 @@ function featuresClientFactory() {
   return {
     cache,
     httpClient,
-    newFeaturesClient: function newFeaturesClient(options?: FeaturesOptions) {
+    newFeaturesClient: function newFeaturesClient(
+      options?: FeaturesOptions,
+      context?: any,
+    ) {
       return new FeaturesClient(
         httpClient,
         {
           user: { id: "123" },
           company: { id: "456" },
           other: { eventId: "big-conference1" },
+          ...context,
         },
         testLogger,
         {
@@ -67,6 +71,33 @@ describe("FeaturesClient unit tests", () => {
       "context.user.id": "123",
       "context.company.id": "456",
       "context.other.eventId": "big-conference1",
+      publishableKey: "pk",
+    });
+
+    expect(path).toEqual("/features/enabled");
+    expect(timeoutMs).toEqual(5000);
+  });
+
+  test("ignores undefined context", async () => {
+    const { newFeaturesClient, httpClient } = featuresClientFactory();
+    const featuresClient = newFeaturesClient(
+      {},
+      {
+        user: undefined,
+        company: undefined,
+        other: undefined,
+      },
+    );
+    await featuresClient.initialize();
+    expect(featuresClient.getFeatures()).toEqual(featuresResult);
+
+    expect(httpClient.get).toBeCalledTimes(1);
+    const calls = vi.mocked(httpClient.get).mock.calls.at(0);
+    const { params, path, timeoutMs } = calls![0];
+
+    const paramsObj = Object.fromEntries(new URLSearchParams(params));
+    expect(paramsObj).toEqual({
+      "bucket-sdk-version": "browser-sdk/" + version,
       publishableKey: "pk",
     });
 

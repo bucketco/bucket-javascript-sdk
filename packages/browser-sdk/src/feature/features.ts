@@ -92,6 +92,8 @@ export function flattenJSON(obj: Record<string, any>): Record<string, any> {
       for (const flatKey in flat) {
         result[`${key}.${flatKey}`] = flat[flatKey];
       }
+    } else if (typeof obj[key] === "undefined") {
+      continue;
     } else {
       result[key] = obj[key];
     }
