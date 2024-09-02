@@ -931,7 +931,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@bucketco/flag-evaluation@npm:~0.0.5, @bucketco/flag-evaluation@workspace:packages/flag-evaluation":
+"@bucketco/flag-evaluation@npm:~0.0.7, @bucketco/flag-evaluation@workspace:packages/flag-evaluation":
   version: 0.0.0-use.local
   resolution: "@bucketco/flag-evaluation@workspace:packages/flag-evaluation"
   dependencies:
@@ -952,7 +952,7 @@ __metadata:
   dependencies:
     "@babel/core": "npm:~7.24.7"
     "@bucketco/eslint-config": "npm:~0.0.2"
-    "@bucketco/flag-evaluation": "npm:~0.0.5"
+    "@bucketco/flag-evaluation": "npm:~0.0.7"
     "@bucketco/tsconfig": "npm:~0.0.2"
     "@types/node": "npm:~20.14.9"
     "@vitest/coverage-v8": "npm:~1.6.0"
@@ -7897,17 +7897,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"follow-redirects@npm:^1.0.0":
-  version: 1.15.4
-  resolution: "follow-redirects@npm:1.15.4"
-  peerDependenciesMeta:
-    debug:
-      optional: true
-  checksum: 10c0/5f37ed9170c9eb19448c5418fdb0f2b73f644b5364834e70791a76ecc7db215246f9773bbef4852cfae4067764ffc852e047f744b661b0211532155b73556a6a
-  languageName: node
-  linkType: hard
-
-"follow-redirects@npm:^1.15.6":
+"follow-redirects@npm:^1.0.0, follow-redirects@npm:^1.15.6":
   version: 1.15.6
   resolution: "follow-redirects@npm:1.15.6"
   peerDependenciesMeta:
