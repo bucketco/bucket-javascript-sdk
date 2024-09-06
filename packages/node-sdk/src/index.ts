@@ -6,4 +6,5 @@ export type {
   HttpClient,
   Logger,
   TrackingMeta,
+  Context,
 } from "./types";
