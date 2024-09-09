@@ -90,24 +90,51 @@ Supply these to the constructor call (3rd argument)
 
 ### Feature toggles
 
-Bucket can determine which features are active for a given user/company. The user/company is given in the BucketClient constructor.
+Bucket determines which features are active for a given user/company. The user/company is given in the BucketClient constructor.
 
-If you supply `user` or `company` objects, they require at least an `id` property.
+If you supply `user` or `company` objects, they must include at least the `id` property.
 In addition to the `id`, you must also supply anything additional that you want to be able to evaluate feature targeting rules against.
 
 Attributes cannot be nested (multiple levels) and must be either strings, integers or booleans.
 
-Built-in attributes:
-
-- `name` (display name for user/company)
+- `name` is a special attribute and is used to display name for user/company
+- for `user`, `email` is also special and will be highlighted in the Bucket UI if available
 
 ```ts
 const bucketClient = new BucketClient({
   publishableKey,
-  user: { id: "user_123", name: "John Doe", role: "manager" },
-  company: { id: "company_123", "Acme, Inc", plan: "enterprise" },
+  user: { id: "user_123", name: "John Doe", email: "john@acme.com" },
+  company: { id: "company_123", name: "Acme, Inc" },
 });
 ```
+
+To retrieve features along with their targeting information, use `getFeature(key: string)`:
+
+```ts
+const huddles = bucketClient.getFeature("huddles");
+// {
+//   isEnabled: true,
+//   track: () => Promise<Response>
+// }
+```
+
+You can use `getFeatures()` to retrieve all enabled features currently.
+
+```ts
+const features = bucketClient.getFeatures();
+// {
+//   huddles: {
+//     isEnabled: true,
+//     targetingVersion: 42,
+//   }
+// }
+```
+
+`getFeatures()` is meant to be more low-level than `getFeature()` and it typically used
+by down-stream clients, like the React SDK.
+
+Note that accessing `isEnabled` on the object returned by `getFeatures` does not automatically
+generate a `check` event, contrary to the `isEnabled` property on the object return from `getFeature`.
 
 ### Qualitative feedback
 
