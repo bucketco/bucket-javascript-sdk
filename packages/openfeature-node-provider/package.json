@@ -1,6 +1,6 @@
 {
   "name": "@bucketco/openfeature-node-provider",
-  "version": "1.0.0-alpha.3",
+  "version": "0.1.0",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -44,7 +44,7 @@
     "vitest": "~1.6.0"
   },
   "dependencies": {
-    "@bucketco/flag-evaluation": "~0.0.7"
+    "@bucketco/node-sdk": ">=1.0.0"
   },
   "peerDependencies": {
     "@openfeature/server-sdk": ">=1.13.5"
