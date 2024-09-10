@@ -1,5 +1,5 @@
 import { ErrorCode } from "@openfeature/core";
-import { beforeAll, describe, expect, it, vi, Mock } from "vitest";
+import { beforeAll, describe, expect, it, Mock, vi } from "vitest";
 
 import { BucketClient } from "@bucketco/node-sdk";
 
