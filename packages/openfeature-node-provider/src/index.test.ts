@@ -1,5 +1,5 @@
 import { ErrorCode } from "@openfeature/core";
-import { beforeAll, describe, expect,it, Mock, vi } from "vitest";
+import { beforeAll, describe, expect, it, vi, Mock } from "vitest";
 
 import { BucketClient } from "@bucketco/node-sdk";
 
@@ -36,7 +36,7 @@ const bucketContext = {
 describe("BucketNodeProvider", () => {
   let provider: BucketNodeProvider;
 
-  const newBucketClient = BucketClient as Mock<typeof BucketClient>;
+  const newBucketClient = BucketClient as Mock;
   newBucketClient.mockReturnValue(bucketClientMock);
 
   const translatorFn = vi.fn().mockReturnValue(bucketContext);

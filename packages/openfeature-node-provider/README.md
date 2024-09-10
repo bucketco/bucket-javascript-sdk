@@ -1,4 +1,4 @@
-# Bucket Node.js Provider
+# Bucket Node.js OpenFeature Provider
 
 This provider is an OpenFeature implementation for [Bucket](https://bucket.co) feature management service.
 
@@ -55,7 +55,7 @@ const enterpriseFeatureEnabled = await client.getBooleanValue(
 
 ## Translating Evaluation Context
 
-Bucket uses a context object in the following shape:
+Bucket uses a context object of the following shape:
 
 ```ts
 /**
@@ -79,7 +79,7 @@ export type BucketContext = {
 ```
 
 To use the Bucket Node.js OpenFeature provider, you must convert your OpenFeature contexts to Bucket contexts.
-You do that by supplying a context translation function which takes the Open Feature context and returns
+You can achieve this by supplying a context translation function which takes the Open Feature context and returns
 a corresponding Bucket Context:
 
 ```ts
