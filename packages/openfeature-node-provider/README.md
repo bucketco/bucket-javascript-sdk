@@ -30,6 +30,7 @@ The available options can be found in the [Bucket Node.js SDK](https://github.co
 
 ```javascript
 import { BucketNodeProvider } from "@bucketco/openfeature-node-provider";
+import { OpenFeature } from "@openfeature/server-sdk";
 
 const provider = new BucketNodeProvider({ secretKey });
 
