@@ -1,6 +1,6 @@
 # Bucket Node.js OpenFeature Provider
 
-This provider is an OpenFeature implementation for [Bucket](https://bucket.co) feature management service.
+The official OpenFeature Node.js provider for [Bucket](https://bucket.co) feature management service.
 
 ## Installation
 
