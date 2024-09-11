@@ -1,32 +1,44 @@
 import {
+  ErrorCode,
   EvaluationContext,
-  Provider,
   JsonValue,
+  OpenFeatureEventEmitter,
+  Provider,
+  ProviderMetadata,
+  ProviderStatus,
   ResolutionDetails,
   StandardResolutionReasons,
-  ErrorCode,
-  ProviderMetadata,
-  OpenFeatureEventEmitter,
-  ProviderStatus,
-} from '@openfeature/web-sdk';
+} from "@openfeature/web-sdk";
 
-import { BucketClient, InitOptions } from '@bucketco/browser-sdk';
+import { BucketClient, InitOptions } from "@bucketco/browser-sdk";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type ContextTranslationFn = (context?: EvaluationContext) => Record<string, any>;
+export type ContextTranslationFn = (
+  context?: EvaluationContext,
+) => Record<string, any>;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function defaultContextTranslator(context?: EvaluationContext): Record<string, any> {
+export function defaultContextTranslator(
+  context?: EvaluationContext,
+): Record<string, any> {
   if (!context) return {};
   return {
-    user: { id: context['userId'], email: context['email'], name: context['name'] },
-    company: { id: context['companyId'], name: context['companyName'], plan: context['companyPlan'] },
+    user: {
+      id: context["userId"],
+      email: context["email"],
+      name: context["name"],
+    },
+    company: {
+      id: context["companyId"],
+      name: context["companyName"],
+      plan: context["companyPlan"],
+    },
   };
 }
 
 export class BucketBrowserSDKProvider implements Provider {
   readonly metadata: ProviderMetadata = {
-    name: 'bucket-browser-provider',
+    name: "bucket-browser-provider",
   };
 
   private _client?: BucketClient;
@@ -46,7 +58,10 @@ export class BucketBrowserSDKProvider implements Provider {
     return this._status;
   }
 
-  constructor({ contextTranslator, ...opts }: InitOptions & { contextTranslator?: ContextTranslationFn }) {
+  constructor({
+    contextTranslator,
+    ...opts
+  }: InitOptions & { contextTranslator?: ContextTranslationFn }) {
     this._clientOptions = opts;
     this._contextTranslator = contextTranslator || defaultContextTranslator;
   }
@@ -73,11 +88,17 @@ export class BucketBrowserSDKProvider implements Provider {
     return Promise.resolve();
   }
 
-  async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
+  async onContextChange(
+    oldContext: EvaluationContext,
+    newContext: EvaluationContext,
+  ): Promise<void> {
     await this.initialize(newContext);
   }
 
-  resolveBooleanEvaluation(flagKey: string, defaultValue: boolean): ResolutionDetails<boolean> {
+  resolveBooleanEvaluation(
+    flagKey: string,
+    defaultValue: boolean,
+  ): ResolutionDetails<boolean> {
     if (!this._client)
       return {
         value: defaultValue,
@@ -100,7 +121,10 @@ export class BucketBrowserSDKProvider implements Provider {
     } satisfies ResolutionDetails<boolean>;
   }
 
-  resolveNumberEvaluation(flagKey: string, defaultValue: number): ResolutionDetails<number> {
+  resolveNumberEvaluation(
+    flagKey: string,
+    defaultValue: number,
+  ): ResolutionDetails<number> {
     return {
       value: defaultValue,
       errorCode: ErrorCode.TYPE_MISMATCH,
@@ -109,7 +133,10 @@ export class BucketBrowserSDKProvider implements Provider {
     };
   }
 
-  resolveObjectEvaluation<T extends JsonValue>(flagKey: string, defaultValue: T): ResolutionDetails<T> {
+  resolveObjectEvaluation<T extends JsonValue>(
+    flagKey: string,
+    defaultValue: T,
+  ): ResolutionDetails<T> {
     return {
       value: defaultValue,
       errorCode: ErrorCode.TYPE_MISMATCH,
@@ -118,7 +145,10 @@ export class BucketBrowserSDKProvider implements Provider {
     };
   }
 
-  resolveStringEvaluation(flagKey: string, defaultValue: string): ResolutionDetails<string> {
+  resolveStringEvaluation(
+    flagKey: string,
+    defaultValue: string,
+  ): ResolutionDetails<string> {
     return {
       value: defaultValue,
       errorCode: ErrorCode.TYPE_MISMATCH,

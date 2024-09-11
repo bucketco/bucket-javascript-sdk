@@ -1,5 +1,5 @@
 import { Client, OpenFeature } from "@openfeature/web-sdk";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, Mock, vi } from "vitest";
 
 import { BucketClient } from "@bucketco/browser-sdk";
 
@@ -22,13 +22,13 @@ const publishableKey = "your-publishable-key";
 describe("BucketBrowserSDKProvider", () => {
   let provider: BucketBrowserSDKProvider;
   let ofClient: Client;
-  const bucketClientMock: vi.Mocked<BucketClient> = {
+  const bucketClientMock = {
     getFeatures: vi.fn(),
     getFeature: vi.fn(),
     initialize: vi.fn().mockResolvedValue({}),
-  } as unknown as vi.Mocked<BucketClient>;
+  };
 
-  const newBucketClient = BucketClient as vi.Mock;
+  const newBucketClient = BucketClient as Mock;
   newBucketClient.mockReturnValue(bucketClientMock);
 
   beforeAll(() => {
@@ -53,7 +53,7 @@ describe("BucketBrowserSDKProvider", () => {
     });
 
     it("should set the status to READY if initialization succeeds", async () => {
-      bucketClientMock.initialize.mockResolvedValue();
+      bucketClientMock.initialize.mockReturnValue(Promise.resolve());
       await provider.initialize();
       expect(bucketClientMock.initialize).toHaveBeenCalledTimes(1);
       expect(provider.status).toBe("READY");
@@ -109,13 +109,13 @@ describe("BucketBrowserSDKProvider", () => {
 
   describe("onContextChange", () => {
     it("re-initialize client", async () => {
-      const provider = new BucketBrowserSDKProvider({ publishableKey });
-      expect(provider["_client"]).toBeUndefined();
+      const p = new BucketBrowserSDKProvider({ publishableKey });
+      expect(p["_client"]).toBeUndefined();
       expect(newBucketClient).toHaveBeenCalledTimes(0);
 
-      await provider.onContextChange({}, {});
+      await p.onContextChange({}, {});
       expect(newBucketClient).toHaveBeenCalledTimes(1);
-      expect(provider["_client"]).toBeDefined();
+      expect(p["_client"]).toBeDefined();
     });
   });
 });
