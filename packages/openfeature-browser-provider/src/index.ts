@@ -89,7 +89,7 @@ export class BucketBrowserSDKProvider implements Provider {
   }
 
   async onContextChange(
-    oldContext: EvaluationContext,
+    _oldContext: EvaluationContext,
     newContext: EvaluationContext,
   ): Promise<void> {
     await this.initialize(newContext);
@@ -122,7 +122,7 @@ export class BucketBrowserSDKProvider implements Provider {
   }
 
   resolveNumberEvaluation(
-    flagKey: string,
+    _flagKey: string,
     defaultValue: number,
   ): ResolutionDetails<number> {
     return {
@@ -134,7 +134,7 @@ export class BucketBrowserSDKProvider implements Provider {
   }
 
   resolveObjectEvaluation<T extends JsonValue>(
-    flagKey: string,
+    _flagKey: string,
     defaultValue: T,
   ): ResolutionDetails<T> {
     return {
@@ -146,7 +146,7 @@ export class BucketBrowserSDKProvider implements Provider {
   }
 
   resolveStringEvaluation(
-    flagKey: string,
+    _flagKey: string,
     defaultValue: string,
   ): ResolutionDetails<string> {
     return {

@@ -16,26 +16,14 @@ export default defineConfig({
   },
   plugins: [dts({ insertTypesEntry: true })],
   build: {
-    exclude: ["**/node_modules/**", "test/e2e/**"],
+    exclude: ["**/node_modules/**", "test/e2e/**", "**/*.test.ts"],
     sourcemap: true,
     lib: {
       // Could also be a dictionary or array of multiple entry points
       entry: resolve(__dirname, "src/index.ts"),
-      name: "BucketBrowserSDK",
+      name: "BucketOpenFeatureBrowserProvider",
       // the proper extensions will be added
-      fileName: "bucket-browser-sdk",
-    },
-    rollupOptions: {
-      // make sure to externalize deps that shouldn't be bundled
-      // into your library
-      // external: ["vue"],
-      output: {
-        // Provide global variables to use in the UMD build
-        // for externalized deps
-        globals: {
-          BucketClient: "BucketClient",
-        },
-      },
+      fileName: "bucket-openfeature-browser-provider",
     },
   },
 });
