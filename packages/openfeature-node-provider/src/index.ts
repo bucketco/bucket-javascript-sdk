@@ -59,6 +59,10 @@ export class BucketNodeProvider implements Provider {
     name: "bucket-node",
   };
 
+  get client() {
+    return this._client;
+  }
+
   constructor({ contextTranslator, ...opts }: ProviderOptions) {
     this._client = new BucketClient(opts);
     this.contextTranslator = contextTranslator ?? defaultTranslator;
