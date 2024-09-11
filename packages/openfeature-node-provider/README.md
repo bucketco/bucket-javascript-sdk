@@ -46,6 +46,8 @@ const requestContext = {
   companyPlan: req.locals.plan,
 };
 
+const client = OpenFeature.getClient()
+
 const enterpriseFeatureEnabled = await client.getBooleanValue(
   "enterpriseFeature",
   false,
