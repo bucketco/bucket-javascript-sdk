@@ -1,0 +1,10 @@
+{
+  "extends": "@bucketco/tsconfig/library",
+  "compilerOptions": {
+    "outDir": "./dist/",
+    "declarationDir": "./dist/types",
+    "skipLibCheck": true
+  },
+  "include": ["src"],
+  "typeRoots": ["./node_modules/@types", "./types"]
+}

@@ -946,6 +946,15 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@bucketco/node-sdk@npm:>=1.0.0":
+  version: 1.0.0
+  resolution: "@bucketco/node-sdk@npm:1.0.0"
+  dependencies:
+    "@bucketco/flag-evaluation": "npm:~0.0.7"
+  checksum: 10c0/5d16440115dda383b91c2ba0672aa695fb8c804615b270e6313dbb809b4bd8f8ca10a16adb12f613e1fa4e01f47ef5aa3c1c4ddad50540237e83c960b5ac6d01
+  languageName: node
+  linkType: hard
+
 "@bucketco/node-sdk@workspace:packages/node-sdk":
   version: 0.0.0-use.local
   resolution: "@bucketco/node-sdk@workspace:packages/node-sdk"
@@ -965,6 +974,30 @@ __metadata:
     vite: "npm:~5.3.3"
     vite-plugin-dts: "npm:~3.9.1"
     vitest: "npm:~1.6.0"
+  languageName: unknown
+  linkType: soft
+
+"@bucketco/openfeature-node-provider@workspace:packages/openfeature-node-provider":
+  version: 0.0.0-use.local
+  resolution: "@bucketco/openfeature-node-provider@workspace:packages/openfeature-node-provider"
+  dependencies:
+    "@babel/core": "npm:~7.24.7"
+    "@bucketco/eslint-config": "npm:~0.0.2"
+    "@bucketco/node-sdk": "npm:>=1.0.0"
+    "@bucketco/tsconfig": "npm:~0.0.2"
+    "@openfeature/core": "npm:^1.4.0"
+    "@openfeature/server-sdk": "npm:>=1.13.5"
+    "@types/node": "npm:~20.14.9"
+    eslint: "npm:~8.56.0"
+    flush-promises: "npm:~1.0.2"
+    prettier: "npm:~3.3.2"
+    ts-node: "npm:~10.9.2"
+    typescript: "npm:~5.5.3"
+    vite: "npm:~5.3.3"
+    vite-plugin-dts: "npm:~3.9.1"
+    vitest: "npm:~1.6.0"
+  peerDependencies:
+    "@openfeature/server-sdk": ">=1.13.5"
   languageName: unknown
   linkType: soft
 
@@ -2870,6 +2903,22 @@ __metadata:
   version: 2.1.0
   resolution: "@open-draft/until@npm:2.1.0"
   checksum: 10c0/61d3f99718dd86bb393fee2d7a785f961dcaf12f2055f0c693b27f4d0cd5f7a03d498a6d9289773b117590d794a43cd129366fd8e99222e4832f67b1653d54cf
+  languageName: node
+  linkType: hard
+
+"@openfeature/core@npm:^1.4.0":
+  version: 1.4.0
+  resolution: "@openfeature/core@npm:1.4.0"
+  checksum: 10c0/199009a2bb989be12d99c1415ccb6f873f62413ab2a6e03f30c9a5b28a7dd421326186b9e6575ad5d14a505c237f5c0af1dffa1a7190ee57fe364a58db0afd9b
+  languageName: node
+  linkType: hard
+
+"@openfeature/server-sdk@npm:>=1.13.5":
+  version: 1.15.1
+  resolution: "@openfeature/server-sdk@npm:1.15.1"
+  peerDependencies:
+    "@openfeature/core": 1.4.0
+  checksum: 10c0/686d55f0e55e34def1c94b99bf4c1be68767a9aeb4d2e7f878b9cdb7d8fa07f2e145666023c1cd8966577ea214df79dda318414e1619641930648e6a50cd7032
   languageName: node
   linkType: hard
 
