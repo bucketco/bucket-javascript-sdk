@@ -29,7 +29,7 @@ The available options can be found in the [Bucket Node.js SDK](https://github.co
 ### Example using the default configuration
 
 ```javascript
-import { BucketNodeProvider } from "@openfeature/bucket-node-provider";
+import { BucketNodeProvider } from "@bucketco/openfeature-node-provider";
 
 const provider = new BucketNodeProvider({ secretKey });
 
