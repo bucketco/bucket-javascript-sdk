@@ -34,7 +34,7 @@ import { OpenFeature } from "@openfeature/server-sdk";
 
 const provider = new BucketNodeProvider({ secretKey });
 
-OpenFeature.setProvider(provider);
+await OpenFeature.setProviderAndWait(provider);
 
 // set a value to the global context
 OpenFeature.setContext({ region: "us-east-1" });
@@ -108,10 +108,8 @@ const provider = new BucketNodeProvider({ secretKey, contextTranslator });
 OpenFeature.setProvider(provider);
 ```
 
-## Building
+# License
 
-Run `nx package providers-bucket-node` to build the library.
+MIT License
 
-## Running unit tests
-
-Run `nx test providers-bucket-node` to execute the unit tests via [Jest](https://jestjs.io).
+Copyright (c) 2024 Bucket ApS

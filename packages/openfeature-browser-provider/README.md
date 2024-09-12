@@ -9,14 +9,19 @@ If you're using React, you'll be better off with the [Bucket React SDK](https://
 
 ## Installation
 
+The OpenFeature SDK is required as peer dependency.
+
+The minimum required version of `@openfeature/web-sdk` currently is `1.0`.
+
 ```
-$ npm install @bucketco/openfeature-browser-provider
+$ npm install @openfeature/web-sdk @bucketco/openfeature-browser-provider
 ```
 
 ## Sample initialization
 
 ```ts
 import { BucketBrowserProvider } from "@bucketco/openfeature-browser-provider";
+import { OpenFeature } from "@openfeature/web-sdk";
 
 // initialize provider
 const publishableKey = "<your-bucket-publishable-key>";
@@ -24,14 +29,16 @@ const publishableKey = "<your-bucket-publishable-key>";
 const bucketProvider = new BucketBrowserProvider({ publishableKey });
 
 // set open feature provider and get client
-OpenFeature.setProvider(bucketProvider);
+await OpenFeature.setProviderAndWait(bucketProvider);
 const client = OpenFeature.getClient();
 
 // use client
 const boolValue = client.getBooleanValue("huddles", false);
 ```
 
-Bucket only supports boolean values. Initializing the Bucket Browser Provider will
+Bucket only supports boolean values.
+
+Initializing the Bucket Browser Provider will
 also intialize [automatic feedback surveys](https://github.com/bucketco/bucket-javascript-sdk/tree/main/packages/browser-sdk#qualitative-feedback).
 
 ## Context
@@ -68,8 +75,9 @@ await OpenFeature.setContext({ userId: "my-key" });
 # Tracking feature usage
 
 To track feature usage, use the `track` method on the client.
-By default you can use the flag/feature key to designate feature usage
-when calling the `track` method:
+By default you can use the flag/feature key as the event name
+as the first argument to designate feature usage when calling
+the `track` method:
 
 ```ts
 OpenFeature.getClient().client.track("huddle", { voiceHuddle: true });
