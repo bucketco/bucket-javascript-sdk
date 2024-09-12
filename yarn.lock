@@ -2942,6 +2942,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@openfeature/react-sdk@npm:^0.4.5":
+  version: 0.4.5
+  resolution: "@openfeature/react-sdk@npm:0.4.5"
+  peerDependencies:
+    "@openfeature/web-sdk": ^1.2.2
+    react: ">=16.8.0"
+  checksum: 10c0/c9abf17877f0e913e509302da0f18803c313aa85b542b9a2a1719b8889cd304ede14ee24192982a804ccee2a515e0dd69611e1761e9194af1db626e6f06ae9d2
+  languageName: node
+  linkType: hard
+
 "@openfeature/server-sdk@npm:>=1.13.5":
   version: 1.15.1
   resolution: "@openfeature/server-sdk@npm:1.15.1"
@@ -11081,6 +11091,27 @@ __metadata:
   resolution: "nextjs-flag-demo@workspace:packages/react-sdk/dev/nextjs-flag-demo"
   dependencies:
     "@bucketco/react-sdk": "workspace:^"
+    "@types/node": "npm:^20"
+    "@types/react": "npm:^18"
+    "@types/react-dom": "npm:^18"
+    eslint: "npm:^8"
+    eslint-config-next: "npm:14.2.5"
+    next: "npm:14.2.5"
+    postcss: "npm:^8"
+    react: "npm:^18"
+    react-dom: "npm:^18"
+    tailwindcss: "npm:^3.4.1"
+    typescript: "npm:^5"
+  languageName: unknown
+  linkType: soft
+
+"nextjs-openfeature-example@workspace:packages/openfeature-browser-provider/example":
+  version: 0.0.0-use.local
+  resolution: "nextjs-openfeature-example@workspace:packages/openfeature-browser-provider/example"
+  dependencies:
+    "@bucketco/react-sdk": "workspace:^"
+    "@openfeature/react-sdk": "npm:^0.4.5"
+    "@openfeature/web-sdk": "npm:^1.2.3"
     "@types/node": "npm:^20"
     "@types/react": "npm:^18"
     "@types/react-dom": "npm:^18"
