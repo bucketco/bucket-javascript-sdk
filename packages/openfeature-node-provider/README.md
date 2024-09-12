@@ -1,6 +1,6 @@
 # Bucket Node.js OpenFeature Provider
 
-This provider is an OpenFeature implementation for [Bucket](https://bucket.co) feature management service.
+The official OpenFeature Node.js provider for [Bucket](https://bucket.co) feature management service.
 
 ## Installation
 
@@ -30,6 +30,7 @@ The available options can be found in the [Bucket Node.js SDK](https://github.co
 
 ```javascript
 import { BucketNodeProvider } from "@bucketco/openfeature-node-provider";
+import { OpenFeature } from "@openfeature/server-sdk";
 
 const provider = new BucketNodeProvider({ secretKey });
 
@@ -45,6 +46,8 @@ const requestContext = {
   email: req.user.email,
   companyPlan: req.locals.plan,
 };
+
+const client = OpenFeature.getClient();
 
 const enterpriseFeatureEnabled = await client.getBooleanValue(
   "enterpriseFeature",
