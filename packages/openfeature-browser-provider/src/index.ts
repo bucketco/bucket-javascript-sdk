@@ -58,6 +58,10 @@ export class BucketBrowserSDKProvider implements Provider {
     return this._status;
   }
 
+  get client() {
+    return this._client;
+  }
+
   constructor({
     contextTranslator,
     ...opts
