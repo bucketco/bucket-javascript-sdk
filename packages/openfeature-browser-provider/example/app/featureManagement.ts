@@ -18,11 +18,11 @@ export async function initOpenFeature() {
     console.error("No publishable key set for Bucket");
     return;
   }
-  const bucketProvider = new BucketBrowserSDKProvider({ publishableKey });
+  bucketProvider = new BucketBrowserSDKProvider({ publishableKey });
   return OpenFeature.setProviderAndWait(bucketProvider);
 }
 
-function track(event: string, attributes: { [key: string]: any }) {
+export function track(event: string, attributes?: { [key: string]: any }) {
   console.log("Tracking event", event, attributes);
   bucketProvider?.client?.track(event, attributes);
 }

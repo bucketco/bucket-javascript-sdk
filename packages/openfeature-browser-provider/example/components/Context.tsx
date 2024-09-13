@@ -36,8 +36,10 @@ export const Context = () => {
       >
         Update Context
       </button>
-      Open the developer console to see what happens when you update the
-      context.
+      <span className="text-gray-600">
+        Open the developer console to see what happens when you update the
+        context.
+      </span>
     </div>
   );
 };

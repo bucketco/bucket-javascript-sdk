@@ -7,5 +7,5 @@ The purpose of this project is to demonstrate usage integration with the Bucket 
 Run the development server:
 
 ```bash
-yarn dev
+NEXT_PUBLIC_BUCKET_PUBLISHABLE_KEY=<publishable-key> yarn dev
 ```
