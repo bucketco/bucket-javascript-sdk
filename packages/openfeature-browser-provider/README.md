@@ -7,6 +7,8 @@ when people use your features as well as tracking which customers use which feat
 
 If you're using React, you'll be better off with the [Bucket React SDK](https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/react-sdk/README.md) or the [OpenFeature React SDK](https://openfeature.dev/docs/reference/technologies/client/web/react/).
 
+See the `example` folder for how to use the OpenFeature React SDK with Next.js.
+
 ## Installation
 
 The OpenFeature SDK is required as peer dependency.
@@ -39,7 +41,7 @@ const boolValue = client.getBooleanValue("huddles", false);
 Bucket only supports boolean values.
 
 Initializing the Bucket Browser Provider will
-also intialize [automatic feedback surveys](https://github.com/bucketco/bucket-javascript-sdk/tree/main/packages/browser-sdk#qualitative-feedback).
+also initialize [automatic feedback surveys](https://github.com/bucketco/bucket-javascript-sdk/tree/main/packages/browser-sdk#qualitative-feedback).
 
 ## Context
 
@@ -49,6 +51,7 @@ like so:
 
 ```ts
 import { BucketBrowserProvider } from "@bucketco/openfeature-browser-provider";
+import { EvaluationContext, OpenFeature } from "@openfeature/web-sdk";
 
 // initialize provider
 const publishableKey = "<your-bucket-publishable-key>";
@@ -80,7 +83,14 @@ as the first argument to designate feature usage when calling
 the `track` method:
 
 ```ts
-OpenFeature.getClient().client.track("huddle", { voiceHuddle: true });
+import { EvaluationContext, OpenFeature } from "@openfeature/web-sdk";
+import { BucketBrowserProvider } from "@bucketco/openfeature-browser-provider";
+
+const bucketOpenFeatureProvider = new BucketBrowserProvider({
+  publishableKey,
+});
+
+bucketOpenFeatureProvider.client.track("huddle", { voiceHuddle: true });
 ```
 
 # License
