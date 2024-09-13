@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { Flags } from "@/components/Features";
+import { Context } from "@/components/Context";
 
 export default function Home() {
   return (
@@ -24,7 +25,7 @@ export default function Home() {
           </a>
         </div>
       </div>
-
+      <Context />
       <Flags />
     </main>
   );

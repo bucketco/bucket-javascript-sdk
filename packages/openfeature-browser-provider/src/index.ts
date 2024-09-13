@@ -96,6 +96,7 @@ export class BucketBrowserSDKProvider implements Provider {
     _oldContext: EvaluationContext,
     newContext: EvaluationContext,
   ): Promise<void> {
+    console.log("Context changed", newContext);
     await this.initialize(newContext);
   }
 
