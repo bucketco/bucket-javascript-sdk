@@ -29,7 +29,7 @@
   "module": "./dist/bucket-openfeature-browser-provider.mjs",
   "types": "./dist/types/src/index.d.ts",
   "dependencies": {
-    "@bucketco/browser-sdk": "2.0.0"
+    "@bucketco/browser-sdk": ">=2.0.0"
   },
   "devDependencies": {
     "@bucketco/eslint-config": "0.0.2",
