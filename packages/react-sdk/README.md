@@ -22,6 +22,8 @@ If no explicit feature definitions are provided, there will be no types checked 
 **Example:**
 
 ```tsx
+import "@bucketco/react-sdk"
+
 // Define your features by extending the `Features` interface in @bucketco/react-sdk
 declare module "@bucketco/react-sdk" {
   interface Features {
