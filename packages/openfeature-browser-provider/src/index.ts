@@ -24,7 +24,7 @@ export function defaultContextTranslator(
   if (!context) return {};
   return {
     user: {
-      id: context["userId"],
+      id: context["trackingKey"],
       email: context["email"],
       name: context["name"],
     },
@@ -96,7 +96,6 @@ export class BucketBrowserSDKProvider implements Provider {
     _oldContext: EvaluationContext,
     newContext: EvaluationContext,
   ): Promise<void> {
-    console.log("Context changed", newContext);
     await this.initialize(newContext);
   }
 
