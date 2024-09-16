@@ -696,6 +696,40 @@ describe("BucketClient", () => {
     });
   });
 
+  describe("flush", () => {
+    it("should flush all bulk data", async () => {
+      const client = new BucketClient(validOptions);
+
+      await client.updateUser(user.id, { attributes: { age: 2 } });
+      await client.updateUser(user.id, { attributes: { age: 3 } });
+      await client.updateUser(user.id, { attributes: { name: "Jane" } });
+
+      await client.flush();
+
+      expect(httpClient.post).toHaveBeenCalledWith(
+        BULK_ENDPOINT,
+        expectedHeaders,
+        [
+          {
+            type: "user",
+            userId: user.id,
+            attributes: { age: 2 },
+          },
+          {
+            type: "user",
+            userId: user.id,
+            attributes: { age: 3 },
+          },
+          {
+            type: "user",
+            userId: user.id,
+            attributes: { name: "Jane" },
+          },
+        ],
+      );
+    });
+  });
+
   describe("getFeatures", () => {
     let client: BucketClient;
 
