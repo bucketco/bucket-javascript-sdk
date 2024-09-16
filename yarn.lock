@@ -11107,6 +11107,27 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"nextjs-openfeature-example@workspace:packages/openfeature-browser-provider/example":
+  version: 0.0.0-use.local
+  resolution: "nextjs-openfeature-example@workspace:packages/openfeature-browser-provider/example"
+  dependencies:
+    "@bucketco/react-sdk": "workspace:^"
+    "@openfeature/react-sdk": "npm:^0.4.5"
+    "@openfeature/web-sdk": "npm:^1.2.3"
+    "@types/node": "npm:^20"
+    "@types/react": "npm:^18"
+    "@types/react-dom": "npm:^18"
+    eslint: "npm:^8"
+    eslint-config-next: "npm:14.2.5"
+    next: "npm:14.2.5"
+    postcss: "npm:^8"
+    react: "npm:^18"
+    react-dom: "npm:^18"
+    tailwindcss: "npm:^3.4.1"
+    typescript: "npm:^5"
+  languageName: unknown
+  linkType: soft
+
 "nock@npm:^13.4.0":
   version: 13.4.0
   resolution: "nock@npm:13.4.0"
