@@ -5,7 +5,7 @@
   "license": "MIT",
   "workspaces": [
     "packages/*",
-    "packages/react-sdk/dev/*",
+    "packages/react-sdk/examples/*",
     "packages/openfeature-browser-provider/example"
   ],
   "scripts": {
