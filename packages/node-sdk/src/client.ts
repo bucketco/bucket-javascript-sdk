@@ -1,5 +1,6 @@
 import { evaluateTargeting, flattenJSON } from "@bucketco/flag-evaluation";
 
+import BatchBuffer from "./batch-buffer";
 import cache from "./cache";
 import {
   API_HOST,
@@ -11,6 +12,7 @@ import {
 } from "./config";
 import fetchClient from "./fetch-http-client";
 import {
+  Attributes,
   Cache,
   ClientOptions,
   Context,
@@ -19,6 +21,7 @@ import {
   HttpClient,
   InternalFeature,
   Logger,
+  TrackingMeta,
   TrackOptions,
   TypedFeatures,
 } from "./types";
@@ -29,6 +32,31 @@ import {
   maskedProxy,
   ok,
 } from "./utils";
+
+type BulkEvent =
+  | {
+      type: "company";
+      companyId: string;
+      userId?: string;
+      attributes?: Attributes;
+      context?: TrackingMeta;
+    }
+  | {
+      type: "user";
+      userId: string;
+      attributes?: Attributes;
+      context?: TrackingMeta;
+    }
+  | {
+      type: "feature-flag-event";
+      action: "check" | "evaluate";
+      key: string;
+      targetingVersion?: number;
+      evalResult: boolean;
+      evalContext?: Record<string, any>;
+      evalRuleResults?: boolean[];
+      evalMissingFields?: string[];
+    };
 
 /**
  * The SDK client.
@@ -44,6 +72,7 @@ export class BucketClient {
     headers: Record<string, string>;
     fallbackFeatures?: Record<keyof TypedFeatures, InternalFeature>;
     featuresCache?: Cache<FeaturesAPIResponse>;
+    batchBuffer: BatchBuffer<BulkEvent>;
   };
 
   /**
@@ -76,6 +105,10 @@ export class BucketClient {
         Array.isArray(options.fallbackFeatures),
       "fallbackFeatures must be an object",
     );
+    ok(
+      options.batchOptions === undefined || isObject(options.batchOptions),
+      "batchOptions must be an object",
+    );
 
     const features =
       options.fallbackFeatures &&
@@ -90,9 +123,11 @@ export class BucketClient {
         {} as Record<keyof TypedFeatures, InternalFeature>,
       );
 
+    const logger =
+      options.logger && decorateLogger(BUCKET_LOG_PREFIX, options.logger);
+
     this._config = {
-      logger:
-        options.logger && decorateLogger(BUCKET_LOG_PREFIX, options.logger),
+      logger,
       host: options.host || API_HOST,
       headers: {
         "Content-Type": "application/json",
@@ -103,6 +138,11 @@ export class BucketClient {
       refetchInterval: FEATURES_REFETCH_MS,
       staleWarningInterval: FEATURES_REFETCH_MS * 5,
       fallbackFeatures: features,
+      batchBuffer: new BatchBuffer<BulkEvent>({
+        ...options?.batchOptions,
+        flushHandler: (items) => this.sendBulkEvents(items),
+        logger,
+      }),
     };
   }
 
@@ -168,6 +208,23 @@ export class BucketClient {
   }
 
   /**
+   * Sends a batch of events to the Bucket API.
+   * @param events - The events to send.
+   * @throws An error if the the send fails.
+   **/
+  private async sendBulkEvents(events: BulkEvent[]) {
+    ok(
+      Array.isArray(events) && events.length > 0,
+      "events must be a non-empty array",
+    );
+
+    const sent = await this.post("bulk", events);
+    if (!sent) {
+      throw new Error("Failed to send bulk events");
+    }
+  }
+
+  /**
    * Sends a feature event to the Bucket API.
    *
    * Feature events are used to track the evaluation of feature targeting rules.
@@ -177,7 +234,6 @@ export class BucketClient {
    *
    * @param event - The event to send.
    *
-   * @returns A boolean indicating if the request was successful.
    * @throws An error if the event is invalid.
    *
    * @remarks
@@ -228,10 +284,11 @@ export class BucketClient {
         `${event.action}:${contextKey}:${event.key}:${event.targetingVersion}:${event.evalResult}`,
       )
     ) {
-      return false;
+      return;
     }
 
-    return await this.post("features/events", {
+    await this._config.batchBuffer.add({
+      type: "feature-flag-event",
       action: event.action,
       key: event.key,
       targetingVersion: event.targetingVersion,
@@ -288,7 +345,6 @@ export class BucketClient {
   public bindClient(context: Context) {
     const boundClient = new BoundBucketClient(this, context);
 
-    // TODO: batch these updates and send to the bulk endpoint
     if (context.company) {
       const { id: _, ...attributes } = context.company;
       void this.updateCompany(context.company.id, {
@@ -304,6 +360,7 @@ export class BucketClient {
         meta: { active: false },
       });
     }
+
     return boundClient;
   }
 
@@ -313,7 +370,6 @@ export class BucketClient {
    * @param opts.attributes - The additional attributes of the company (optional).
    * @param opts.meta - The meta context associated with tracking (optional).
    *
-   * @returns A boolean indicating if the request was successful.
    * @throws An error if the company is not set or the options are invalid.
    * @remarks
    * The company must be set using `withCompany` before calling this method.
@@ -334,7 +390,8 @@ export class BucketClient {
       "meta must be an object",
     );
 
-    return await this.post("user", {
+    await this._config.batchBuffer.add({
+      type: "user",
       userId,
       attributes: opts?.attributes,
       context: opts?.meta,
@@ -347,7 +404,6 @@ export class BucketClient {
    * @param opts.attributes - The additional attributes of the company (optional).
    * @param opts.meta - The meta context associated with tracking (optional).
    *
-   * @returns A boolean indicating if the request was successful.
    * @throws An error if the company is not set or the options are invalid.
    * @remarks
    * The company must be set using `withCompany` before calling this method.
@@ -371,7 +427,8 @@ export class BucketClient {
       "meta must be an object",
     );
 
-    return await this.post("company", {
+    await this._config.batchBuffer.add({
+      type: "company",
       companyId,
       userId: opts?.userId,
       attributes: opts?.attributes,
@@ -388,7 +445,6 @@ export class BucketClient {
    * @param opts.meta - The meta context associated with tracking (optional).
    * @param opts.companyId - Optional company ID for the event (optional).
    *
-   * @returns A boolean indicating if the request was successful.
    * @throws An error if the user is not set or the event is invalid or the options are invalid.
    * @remarks
    * If the company is set, the event will be associated with the company.
@@ -417,7 +473,7 @@ export class BucketClient {
       "companyId must be an string",
     );
 
-    return await this.post("event", {
+    await this.post("event", {
       event,
       companyId: opts?.companyId,
       userId,
@@ -436,6 +492,17 @@ export class BucketClient {
    **/
   public async initialize() {
     await this.getFeaturesCache().refresh();
+  }
+
+  /**
+   * Flushes the batch buffer.
+   *
+   * @remarks
+   * It is recommended to call this method when the application is shutting down to ensure all events are sent
+   * before the process exits.
+   */
+  public async flush() {
+    await this._config.batchBuffer.flush();
   }
 
   /**
@@ -459,7 +526,6 @@ export class BucketClient {
         evaluateTargeting({ context, feature }),
       );
 
-      // TODO: use the bulk endpoint
       evaluated.forEach(async (res) => {
         this.sendFeatureEvent({
           action: "evaluate",

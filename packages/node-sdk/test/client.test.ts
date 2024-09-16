@@ -1,4 +1,3 @@
-import flushPromises from "flush-promises";
 import {
   afterEach,
   beforeAll,
@@ -14,6 +13,10 @@ import { evaluateTargeting } from "@bucketco/flag-evaluation";
 import { BoundBucketClient, BucketClient } from "../src/client";
 import {
   API_HOST,
+  BATCH_INTERVAL_MS,
+  BATCH_MAX_RETRIES,
+  BATCH_MAX_SIZE,
+  BATCH_RETRY_INTERVAL_MS,
   FEATURE_EVENTS_PER_MIN,
   FEATURES_REFETCH_MS,
   SDK_VERSION,
@@ -23,7 +26,7 @@ import fetchClient from "../src/fetch-http-client";
 import { ClientOptions, FeaturesAPIResponse } from "../src/types";
 import { checkWithinAllottedTimeWindow, clearRateLimiter } from "../src/utils";
 
-const FEATURE_EVENTS_ENDPOINT = "https://api.example.com/features/events";
+const BULK_ENDPOINT = "https://api.example.com/bulk";
 
 vi.mock("@bucketco/flag-evaluation", async (importOriginal) => {
   const original = (await importOriginal()) as any;
@@ -74,6 +77,12 @@ describe("BucketClient", () => {
     logger,
     httpClient,
     fallbackFeatures,
+    batchOptions: {
+      maxSize: 99,
+      intervalMs: 100,
+      maxRetries: 1,
+      retryIntervalMs: 200,
+    },
   };
 
   const expectedHeaders = {
@@ -100,6 +109,13 @@ describe("BucketClient", () => {
       expect(client["_config"].logger).toBeDefined();
       expect(client["_config"].httpClient).toBe(validOptions.httpClient);
       expect(client["_config"].headers).toEqual(expectedHeaders);
+      expect(client["_config"].batchBuffer).toMatchObject({
+        maxSize: 99,
+        intervalMs: 100,
+        maxRetries: 1,
+        retryIntervalMs: 200,
+      });
+
       expect(client["_config"].fallbackFeatures).toEqual({
         key: {
           key: "key",
@@ -145,6 +161,12 @@ describe("BucketClient", () => {
       expect(client["_config"].httpClient).toBe(fetchClient);
       expect(client["_config"].headers).toEqual(expectedHeaders);
       expect(client["_config"].fallbackFeatures).toBeUndefined();
+      expect(client["_config"].batchBuffer).toMatchObject({
+        maxSize: BATCH_MAX_SIZE,
+        intervalMs: BATCH_INTERVAL_MS,
+        maxRetries: BATCH_MAX_RETRIES,
+        retryIntervalMs: BATCH_RETRY_INTERVAL_MS,
+      });
     });
 
     it("should throw an error if options are invalid", () => {
@@ -181,6 +203,14 @@ describe("BucketClient", () => {
 
       invalidOptions = {
         ...validOptions,
+        batchOptions: "invalid" as any,
+      };
+      expect(() => new BucketClient(invalidOptions)).toThrow(
+        "batchOptions must be an object",
+      );
+
+      invalidOptions = {
+        ...validOptions,
         fallbackFeatures: "invalid" as any,
       };
       expect(() => new BucketClient(invalidOptions)).toThrow(
@@ -190,55 +220,70 @@ describe("BucketClient", () => {
   });
 
   describe("bindClient", () => {
+    beforeEach(() => {
+      vi.mocked(httpClient.post).mockResolvedValue({ body: { success: true } });
+    });
+
     const client = new BucketClient(validOptions);
     const context = {
       user,
       company,
     };
 
-    it("should return a new client instance with the user set", () => {
+    it("should return a new client instance with the user set", async () => {
       const newClient = client.bindClient(context);
+      await client.flush();
 
       expect(newClient).toBeInstanceOf(BoundBucketClient);
       expect(newClient).not.toBe(client); // Ensure a new instance is returned
       expect(newClient["_context"]).toEqual(context);
     });
 
-    it("should update user in Bucket when called", () => {
+    it("should update user in Bucket when called", async () => {
       client.bindClient({ user: context.user });
+      await client.flush();
 
       const { id: _, ...attributes } = context.user;
+
       expect(httpClient.post).toHaveBeenCalledWith(
-        "https://api.example.com/user",
+        BULK_ENDPOINT,
         expectedHeaders,
-        {
-          userId: user.id,
-          attributes: attributes,
-          context: {
-            active: false,
+        [
+          {
+            type: "user",
+            userId: user.id,
+            attributes: attributes,
+            context: {
+              active: false,
+            },
           },
-        },
+        ],
       );
-      // no company update
+
       expect(httpClient.post).toHaveBeenCalledOnce();
     });
 
-    it("should update user in Bucket when called", () => {
+    it("should update company in Bucket when called", async () => {
       client.bindClient({ company: context.company });
+      await client.flush();
+
       const { id: _, ...attributes } = context.company;
 
       expect(httpClient.post).toHaveBeenCalledWith(
-        "https://api.example.com/company",
+        BULK_ENDPOINT,
         expectedHeaders,
-        {
-          companyId: company.id,
-          attributes: attributes,
-          context: {
-            active: false,
+        [
+          {
+            type: "company",
+            companyId: company.id,
+            attributes: attributes,
+            context: {
+              active: false,
+            },
           },
-        },
+        ],
       );
-      // no company update
+
       expect(httpClient.post).toHaveBeenCalledOnce();
     });
 
@@ -286,52 +331,57 @@ describe("BucketClient", () => {
       const response = { status: 200, body: { success: true } };
       httpClient.post.mockResolvedValue(response);
 
-      const result = await client.updateUser(user.id, {
+      await client.updateUser(user.id, {
         attributes: { age: 2, brave: false },
         meta: {
           active: true,
         },
       });
 
-      expect(result).toBe(true);
+      await client.flush();
+
       expect(httpClient.post).toHaveBeenCalledWith(
-        "https://api.example.com/user",
+        BULK_ENDPOINT,
         expectedHeaders,
-        {
-          userId: user.id,
-          attributes: { age: 2, brave: false },
-          context: { active: true },
-        },
+        [
+          {
+            type: "user",
+            userId: user.id,
+            attributes: { age: 2, brave: false },
+            context: { active: true },
+          },
+        ],
       );
+
       expect(logger.debug).toHaveBeenCalledWith(
-        expect.stringMatching('post request to "user"'),
+        expect.stringMatching('post request to "bulk"'),
         response,
       );
     });
 
-    it("should return false and log an error if the post request throws", async () => {
+    it("should log an error if the post request throws", async () => {
       const error = new Error("Network error");
       httpClient.post.mockRejectedValue(error);
 
-      const result = await client.updateUser(user.id);
+      await client.updateUser(user.id);
+      await client.flush();
 
-      expect(result).toBe(false);
       expect(logger.error).toHaveBeenCalledWith(
-        expect.stringMatching('post request to "user" failed with error'),
+        expect.stringMatching('post request to "bulk" failed with error'),
         error,
       );
     });
 
-    it("should return false if the API call fails", async () => {
+    it("should log if API call returns false", async () => {
       const response = { status: 200, body: { success: false } };
 
       httpClient.post.mockResolvedValue(response);
 
-      const result = await client.updateUser(user.id);
+      await client.updateUser(user.id);
+      await client.flush();
 
-      expect(result).toBe(false);
       expect(logger.debug).toHaveBeenCalledWith(
-        expect.stringMatching('post request to "user"'),
+        expect.stringMatching('post request to "bulk"'),
         response,
       );
     });
@@ -351,275 +401,275 @@ describe("BucketClient", () => {
     });
   });
 
-  // describe("updateCompany", () => {
-  //   const client = new BucketClient(validOptions).withCompany(
-  //     company.companyId,
-  //     company.attrs,
-  //   );
+  describe("updateCompany", () => {
+    const client = new BucketClient(validOptions).withCompany(
+      company.companyId,
+      company.attrs,
+    );
 
-  //   it("should successfully update the company with merging attributes", async () => {
-  //     const response = { status: 200, body: { success: true } };
+    it("should successfully update the company with merging attributes", async () => {
+      const response = { status: 200, body: { success: true } };
 
-  //     httpClient.post.mockResolvedValue(response);
+      httpClient.post.mockResolvedValue(response);
 
-  //     const result = await client.updateCompany({
-  //       attributes: { employees: 200, bankrupt: false },
-  //       meta: { active: true },
-  //     });
+      const result = await client.updateCompany({
+        attributes: { employees: 200, bankrupt: false },
+        meta: { active: true },
+      });
 
-  //     expect(result).toBe(true);
-  //     expect(httpClient.post).toHaveBeenCalledWith(
-  //       "https://api.example.com/company",
-  //       expectedHeaders,
-  //       {
-  //         companyId: company.companyId,
-  //         attributes: { employees: 200, bankrupt: false, name: "Acme Inc." },
-  //         context: { active: true },
-  //       },
-  //     );
+      expect(result).toBe(true);
+      expect(httpClient.post).toHaveBeenCalledWith(
+        "https://api.example.com/company",
+        expectedHeaders,
+        {
+          companyId: company.companyId,
+          attributes: { employees: 200, bankrupt: false, name: "Acme Inc." },
+          context: { active: true },
+        },
+      );
 
-  //     expect(logger.debug).toHaveBeenCalledWith(
-  //       expect.stringMatching('post request to "company"'),
-  //       response,
-  //     );
-  //   });
+      expect(logger.debug).toHaveBeenCalledWith(
+        expect.stringMatching('post request to "company"'),
+        response,
+      );
+    });
 
-  //   it("should include the user ID as well, if user was set", async () => {
-  //     httpClient.post.mockResolvedValue({
-  //       status: 200,
-  //       body: { success: true },
-  //     });
+    it("should include the user ID as well, if user was set", async () => {
+      httpClient.post.mockResolvedValue({
+        status: 200,
+        body: { success: true },
+      });
 
-  //     const result = await client.withUser(user.userId).updateCompany();
+      const result = await client.withUser(user.userId).updateCompany();
 
-  //     expect(result).toBe(true);
-  //     expect(httpClient.post).toHaveBeenCalledWith(
-  //       "https://api.example.com/company",
-  //       expectedHeaders,
-  //       {
-  //         companyId: company.companyId,
-  //         userId: user.userId,
-  //         attributes: {
-  //           employees: 100,
-  //           name: "Acme Inc.",
-  //         },
-  //       },
-  //     );
-  //   });
+      expect(result).toBe(true);
+      expect(httpClient.post).toHaveBeenCalledWith(
+        "https://api.example.com/company",
+        expectedHeaders,
+        {
+          companyId: company.companyId,
+          userId: user.userId,
+          attributes: {
+            employees: 100,
+            name: "Acme Inc.",
+          },
+        },
+      );
+    });
 
-  //   it("should return false and log an error if the post request throws", async () => {
-  //     const error = new Error("Network error");
-  //     httpClient.post.mockRejectedValue(error);
+    it("should return false and log an error if the post request throws", async () => {
+      const error = new Error("Network error");
+      httpClient.post.mockRejectedValue(error);
 
-  //     const result = await client.updateCompany();
+      const result = await client.updateCompany();
 
-  //     expect(result).toBe(false);
-  //     expect(logger.error).toHaveBeenCalledWith(
-  //       expect.stringMatching('post request to "company" failed with error'),
-  //       error,
-  //     );
-  //   });
+      expect(result).toBe(false);
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.stringMatching('post request to "company" failed with error'),
+        error,
+      );
+    });
 
-  //   it("should return false if the API responds with success: false", async () => {
-  //     const response = {
-  //       status: 200,
-  //       body: { success: false },
-  //     };
-  //     httpClient.post.mockResolvedValue(response);
+    it("should return false if the API responds with success: false", async () => {
+      const response = {
+        status: 200,
+        body: { success: false },
+      };
+      httpClient.post.mockResolvedValue(response);
 
-  //     const result = await client.updateCompany();
+      const result = await client.updateCompany();
 
-  //     expect(result).toBe(false);
-  //     expect(logger.debug).toHaveBeenCalledWith(
-  //       expect.stringMatching('post request to "company"'),
-  //       response,
-  //     );
-  //   });
+      expect(result).toBe(false);
+      expect(logger.debug).toHaveBeenCalledWith(
+        expect.stringMatching('post request to "company"'),
+        response,
+      );
+    });
 
-  //   it("should throw an error if company is not valid", async () => {
-  //     await expect(
-  //       new BucketClient(validOptions).updateCompany(),
-  //     ).rejects.toThrow("company must be set");
+    it("should throw an error if company is not valid", async () => {
+      await expect(
+        new BucketClient(validOptions).updateCompany(),
+      ).rejects.toThrow("company must be set");
 
-  //     await expect(client.updateCompany("bad_opts" as any)).rejects.toThrow(
-  //       "opts must be an object",
-  //     );
+      await expect(client.updateCompany("bad_opts" as any)).rejects.toThrow(
+        "opts must be an object",
+      );
 
-  //     await expect(
-  //       client.updateCompany({
-  //         attributes: "bad_attributes" as any,
-  //       }),
-  //     ).rejects.toThrow("attributes must be an object");
+      await expect(
+        client.updateCompany({
+          attributes: "bad_attributes" as any,
+        }),
+      ).rejects.toThrow("attributes must be an object");
 
-  //     await expect(
-  //       client.updateCompany({
-  //         meta: "bad_meta" as any,
-  //       }),
-  //     ).rejects.toThrow("meta must be an object");
-  //   });
-  // });
+      await expect(
+        client.updateCompany({
+          meta: "bad_meta" as any,
+        }),
+      ).rejects.toThrow("meta must be an object");
+    });
+  });
 
-  // describe("trackFeatureUsage", () => {
-  //   const client = new BucketClient(validOptions).withUser(user.userId);
+  describe("trackFeatureUsage", () => {
+    const client = new BucketClient(validOptions).withUser(user.userId);
 
-  //   it("should successfully track the feature usage", async () => {
-  //     const response = {
-  //       status: 200,
-  //       body: { success: true },
-  //     };
-  //     httpClient.post.mockResolvedValue(response);
+    it("should successfully track the feature usage", async () => {
+      const response = {
+        status: 200,
+        body: { success: true },
+      };
+      httpClient.post.mockResolvedValue(response);
 
-  //     const result = await client.trackFeatureUsage(event.event, {
-  //       attributes: event.attrs,
-  //       meta: { active: true },
-  //     });
+      const result = await client.trackFeatureUsage(event.event, {
+        attributes: event.attrs,
+        meta: { active: true },
+      });
 
-  //     expect(result).toBe(true);
-  //     expect(httpClient.post).toHaveBeenCalledWith(
-  //       "https://api.example.com/event",
-  //       expectedHeaders,
-  //       {
-  //         event: event.event,
-  //         userId: user.userId,
-  //         attributes: event.attrs,
-  //         context: { active: true },
-  //       },
-  //     );
+      expect(result).toBe(true);
+      expect(httpClient.post).toHaveBeenCalledWith(
+        "https://api.example.com/event",
+        expectedHeaders,
+        {
+          event: event.event,
+          userId: user.userId,
+          attributes: event.attrs,
+          context: { active: true },
+        },
+      );
 
-  //     expect(logger.debug).toHaveBeenCalledWith(
-  //       expect.stringMatching('post request to "event"'),
-  //       response,
-  //     );
-  //   });
+      expect(logger.debug).toHaveBeenCalledWith(
+        expect.stringMatching('post request to "event"'),
+        response,
+      );
+    });
 
-  //   it("should successfully track the feature usage including user and company", async () => {
-  //     httpClient.post.mockResolvedValue({
-  //       status: 200,
-  //       body: { success: true },
-  //     });
+    it("should successfully track the feature usage including user and company", async () => {
+      httpClient.post.mockResolvedValue({
+        status: 200,
+        body: { success: true },
+      });
 
-  //     const result = await client
-  //       .withUser(user.userId)
-  //       .withCompany(company.companyId)
-  //       .trackFeatureUsage(event.event);
+      const result = await client
+        .withUser(user.userId)
+        .withCompany(company.companyId)
+        .trackFeatureUsage(event.event);
 
-  //     expect(result).toBe(true);
-  //     expect(httpClient.post).toHaveBeenCalledWith(
-  //       "https://api.example.com/event",
-  //       expectedHeaders,
-  //       {
-  //         event: event.event,
-  //         companyId: company.companyId,
-  //         userId: user.userId,
-  //       },
-  //     );
-  //   });
+      expect(result).toBe(true);
+      expect(httpClient.post).toHaveBeenCalledWith(
+        "https://api.example.com/event",
+        expectedHeaders,
+        {
+          event: event.event,
+          companyId: company.companyId,
+          userId: user.userId,
+        },
+      );
+    });
 
-  //   it("should return false and log an error if the post request fails", async () => {
-  //     const error = new Error("Network error");
-  //     httpClient.post.mockRejectedValue(error);
+    it("should return false and log an error if the post request fails", async () => {
+      const error = new Error("Network error");
+      httpClient.post.mockRejectedValue(error);
 
-  //     const result = await client.trackFeatureUsage(event.event);
+      const result = await client.trackFeatureUsage(event.event);
 
-  //     expect(result).toBe(false);
-  //     expect(logger.error).toHaveBeenCalledWith(
-  //       expect.stringMatching('post request to "event" failed with error'),
-  //       error,
-  //     );
-  //   });
+      expect(result).toBe(false);
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.stringMatching('post request to "event" failed with error'),
+        error,
+      );
+    });
 
-  //   it("should return false if the API call fails", async () => {
-  //     const response = {
-  //       status: 200,
-  //       body: { success: false },
-  //     };
-  //     httpClient.post.mockResolvedValue(response);
+    it("should return false if the API call fails", async () => {
+      const response = {
+        status: 200,
+        body: { success: false },
+      };
+      httpClient.post.mockResolvedValue(response);
 
-  //     const result = await client.trackFeatureUsage(event.event);
+      const result = await client.trackFeatureUsage(event.event);
 
-  //     expect(result).toBe(false);
-  //     expect(logger.debug).toHaveBeenCalledWith(
-  //       expect.stringMatching('post request to "event"'),
-  //       response,
-  //     );
-  //   });
+      expect(result).toBe(false);
+      expect(logger.debug).toHaveBeenCalledWith(
+        expect.stringMatching('post request to "event"'),
+        response,
+      );
+    });
 
-  //   it("should throw an error if user is not set", async () => {
-  //     await expect(
-  //       new BucketClient(validOptions).track("hello"),
-  //     ).rejects.toThrow("user must be set");
-  //   });
+    it("should throw an error if user is not set", async () => {
+      await expect(
+        new BucketClient(validOptions).track("hello"),
+      ).rejects.toThrow("user must be set");
+    });
 
-  //   it("should throw an error if event is invalid", async () => {
-  //     await expect(client.trackFeatureUsage(undefined as any)).rejects.toThrow(
-  //       "event must be a string",
-  //     );
-  //     await expect(client.trackFeatureUsage(1 as any)).rejects.toThrow(
-  //       "event must be a string",
-  //     );
+    it("should throw an error if event is invalid", async () => {
+      await expect(client.trackFeatureUsage(undefined as any)).rejects.toThrow(
+        "event must be a string",
+      );
+      await expect(client.trackFeatureUsage(1 as any)).rejects.toThrow(
+        "event must be a string",
+      );
 
-  //     await expect(
-  //       client.trackFeatureUsage(event.event, "bad_opts" as any),
-  //     ).rejects.toThrow("opts must be an object");
+      await expect(
+        client.trackFeatureUsage(event.event, "bad_opts" as any),
+      ).rejects.toThrow("opts must be an object");
 
-  //     await expect(
-  //       client.trackFeatureUsage(event.event, {
-  //         attributes: "bad_attributes" as any,
-  //       }),
-  //     ).rejects.toThrow("attributes must be an object");
+      await expect(
+        client.trackFeatureUsage(event.event, {
+          attributes: "bad_attributes" as any,
+        }),
+      ).rejects.toThrow("attributes must be an object");
 
-  //     await expect(
-  //       client.trackFeatureUsage(event.event, { meta: "bad_meta" as any }),
-  //     ).rejects.toThrow("meta must be an object");
-  //   });
-  // });
+      await expect(
+        client.trackFeatureUsage(event.event, { meta: "bad_meta" as any }),
+      ).rejects.toThrow("meta must be an object");
+    });
+  });
 
-  // describe("user", () => {
-  //   it("should return the undefined if user was not set", () => {
-  //     const client = new BucketClient(validOptions);
-  //     expect(client.user).toBeUndefined();
-  //   });
+  describe("user", () => {
+    it("should return the undefined if user was not set", () => {
+      const client = new BucketClient(validOptions);
+      expect(client.user).toBeUndefined();
+    });
 
-  //   it("should return the user if user was associated", () => {
-  //     const client = new BucketClient(validOptions).withUser(
-  //       user.userId,
-  //       user.attrs,
-  //     );
+    it("should return the user if user was associated", () => {
+      const client = new BucketClient(validOptions).withUser(
+        user.userId,
+        user.attrs,
+      );
 
-  //     expect(client.user).toEqual(user);
-  //   });
-  // });
+      expect(client.user).toEqual(user);
+    });
+  });
 
-  // describe("company", () => {
-  //   it("should return the undefined if company was not set", () => {
-  //     const client = new BucketClient(validOptions);
-  //     expect(client.company).toBeUndefined();
-  //   });
+  describe("company", () => {
+    it("should return the undefined if company was not set", () => {
+      const client = new BucketClient(validOptions);
+      expect(client.company).toBeUndefined();
+    });
 
-  //   it("should return the user if company was associated", () => {
-  //     const client = new BucketClient(validOptions).withCompany(
-  //       company.companyId,
-  //       company.attrs,
-  //     );
+    it("should return the user if company was associated", () => {
+      const client = new BucketClient(validOptions).withCompany(
+        company.companyId,
+        company.attrs,
+      );
 
-  //     expect(client.company).toEqual(company);
-  //   });
-  // });
+      expect(client.company).toEqual(company);
+    });
+  });
 
-  // describe("otherContext", () => {
-  //   it("should return the undefined if custom context was not set", () => {
-  //     const client = new BucketClient(validOptions);
-  //     expect(client.otherContext).toBeUndefined();
-  //   });
+  describe("otherContext", () => {
+    it("should return the undefined if custom context was not set", () => {
+      const client = new BucketClient(validOptions);
+      expect(client.otherContext).toBeUndefined();
+    });
 
-  //   it("should return the user if custom context was associated", () => {
-  //     const client = new BucketClient(validOptions).withOtherContext(
-  //       otherContext,
-  //     );
+    it("should return the user if custom context was associated", () => {
+      const client = new BucketClient(validOptions).withOtherContext(
+        otherContext,
+      );
 
-  //     expect(client.otherContext).toEqual(otherContext);
-  //   });
-  // });
+      expect(client.otherContext).toEqual(otherContext);
+    });
+  });
 
   describe("initialize", () => {
     it("should initialize the client", async () => {
@@ -765,8 +815,6 @@ describe("BucketClient", () => {
     it("should return evaluated features", async () => {
       httpClient.post.mockClear(); // not interested in updates
 
-      await flushPromises();
-
       await client.initialize();
       const result = client.getFeatures({
         company,
@@ -782,64 +830,58 @@ describe("BucketClient", () => {
         },
       });
 
+      await client.flush();
+
       expect(evaluateTargeting).toHaveBeenCalledTimes(2);
-      expect(httpClient.post).toHaveBeenCalledTimes(3); // For "evaluate" events
+      expect(httpClient.post).toHaveBeenCalledTimes(1);
 
-      expect(httpClient.post).toHaveBeenNthCalledWith(
-        1,
-        FEATURE_EVENTS_ENDPOINT,
+      expect(httpClient.post).toHaveBeenCalledWith(
+        BULK_ENDPOINT,
         expectedHeaders,
-        {
-          action: "evaluate",
-          key: "feature1",
-          targetingVersion: 1,
-          evalContext: {
-            company,
-            user,
-            other: otherContext,
+        [
+          {
+            type: "feature-flag-event",
+            action: "evaluate",
+            key: "feature1",
+            targetingVersion: 1,
+            evalContext: {
+              company,
+              user,
+              other: otherContext,
+            },
+            evalResult: true,
+            evalRuleResults: [true],
+            evalMissingFields: [],
           },
-          evalResult: true,
-          evalRuleResults: [true],
-          evalMissingFields: [],
-        },
-      );
-
-      expect(httpClient.post).toHaveBeenNthCalledWith(
-        2,
-        FEATURE_EVENTS_ENDPOINT,
-        expectedHeaders,
-        {
-          action: "evaluate",
-          key: "feature2",
-          targetingVersion: 2,
-          evalContext: {
-            company,
-            user,
-            other: otherContext,
+          {
+            type: "feature-flag-event",
+            action: "evaluate",
+            key: "feature2",
+            targetingVersion: 2,
+            evalContext: {
+              company,
+              user,
+              other: otherContext,
+            },
+            evalResult: false,
+            evalRuleResults: [false],
+            evalMissingFields: ["something"],
           },
-          evalResult: false,
-          evalRuleResults: [false],
-          evalMissingFields: ["something"],
-        },
-      );
-
-      expect(httpClient.post).toHaveBeenNthCalledWith(
-        3,
-        FEATURE_EVENTS_ENDPOINT,
-        expectedHeaders,
-        {
-          action: "check",
-          key: "feature1",
-          targetingVersion: 1,
-          evalResult: true,
-        },
+          {
+            type: "feature-flag-event",
+            action: "check",
+            key: "feature1",
+            targetingVersion: 1,
+            evalResult: true,
+          },
+        ],
       );
     });
 
     it("should properly define the rate limiter key", async () => {
       await client.initialize();
       client.getFeatures({ user, company, other: otherContext });
-      await flushPromises();
+
       expect(checkWithinAllottedTimeWindow).toHaveBeenCalledWith(
         FEATURE_EVENTS_PER_MIN,
         "evaluate:user.id=user123&user.age=1&user.name=John&company.id=company123&company.employees=100&company.name=Acme+Inc.&other.custom=context&other.key=value:feature1:1:true",
@@ -848,8 +890,10 @@ describe("BucketClient", () => {
 
     it("should return evaluated features when only user is defined", async () => {
       httpClient.post.mockClear(); // not interested in updates
+
       await client.initialize();
       const features = client.getFeatures({ user });
+
       expect(features).toEqual({
         feature1: {
           isEnabled: true,
@@ -857,43 +901,48 @@ describe("BucketClient", () => {
           track: expect.any(Function),
         },
       });
-      await flushPromises();
+
+      await client.flush();
 
       expect(evaluateTargeting).toHaveBeenCalledTimes(2);
-      expect(httpClient.post).toHaveBeenCalledTimes(3); // For 2x "evaluate", 1x "check" events
+      expect(httpClient.post).toHaveBeenCalledTimes(1);
 
-      expect(httpClient.post).toHaveBeenNthCalledWith(
-        1,
-        FEATURE_EVENTS_ENDPOINT,
+      expect(httpClient.post).toHaveBeenCalledWith(
+        BULK_ENDPOINT,
         expectedHeaders,
-        {
-          action: "evaluate",
-          key: "feature1",
-          targetingVersion: 1,
-          evalContext: {
-            user,
+        [
+          {
+            type: "feature-flag-event",
+            action: "evaluate",
+            key: "feature1",
+            targetingVersion: 1,
+            evalContext: {
+              user,
+            },
+            evalResult: true,
+            evalRuleResults: [true],
+            evalMissingFields: [],
           },
-          evalResult: true,
-          evalRuleResults: [true],
-          evalMissingFields: [],
-        },
-      );
-
-      expect(httpClient.post).toHaveBeenNthCalledWith(
-        2,
-        FEATURE_EVENTS_ENDPOINT,
-        expectedHeaders,
-        {
-          action: "evaluate",
-          key: "feature2",
-          targetingVersion: 2,
-          evalContext: {
-            user,
+          {
+            type: "feature-flag-event",
+            action: "evaluate",
+            key: "feature2",
+            targetingVersion: 2,
+            evalContext: {
+              user,
+            },
+            evalResult: false,
+            evalRuleResults: [false],
+            evalMissingFields: ["something"],
           },
-          evalResult: false,
-          evalRuleResults: [false],
-          evalMissingFields: ["something"],
-        },
+          {
+            action: "check",
+            evalResult: true,
+            key: "feature1",
+            targetingVersion: 1,
+            type: "feature-flag-event",
+          },
+        ],
       );
     });
 
@@ -908,43 +957,47 @@ describe("BucketClient", () => {
         },
       });
 
-      await flushPromises();
+      await client.flush();
 
       expect(evaluateTargeting).toHaveBeenCalledTimes(2);
-      expect(httpClient.post).toHaveBeenCalledTimes(3); // For 2x "evaluate", 1x "check" events
+      expect(httpClient.post).toHaveBeenCalledTimes(1);
 
-      expect(httpClient.post).toHaveBeenNthCalledWith(
-        1,
-        FEATURE_EVENTS_ENDPOINT,
+      expect(httpClient.post).toHaveBeenCalledWith(
+        BULK_ENDPOINT,
         expectedHeaders,
-        {
-          action: "evaluate",
-          key: "feature1",
-          targetingVersion: 1,
-          evalContext: {
-            company,
+        [
+          {
+            type: "feature-flag-event",
+            action: "evaluate",
+            key: "feature1",
+            targetingVersion: 1,
+            evalContext: {
+              company,
+            },
+            evalResult: true,
+            evalRuleResults: [true],
+            evalMissingFields: [],
           },
-          evalResult: true,
-          evalRuleResults: [true],
-          evalMissingFields: [],
-        },
-      );
-
-      expect(httpClient.post).toHaveBeenNthCalledWith(
-        2,
-        FEATURE_EVENTS_ENDPOINT,
-        expectedHeaders,
-        {
-          action: "evaluate",
-          key: "feature2",
-          targetingVersion: 2,
-          evalContext: {
-            company,
+          {
+            type: "feature-flag-event",
+            action: "evaluate",
+            key: "feature2",
+            targetingVersion: 2,
+            evalContext: {
+              company,
+            },
+            evalResult: false,
+            evalRuleResults: [false],
+            evalMissingFields: ["something"],
           },
-          evalResult: false,
-          evalRuleResults: [false],
-          evalMissingFields: ["something"],
-        },
+          {
+            action: "check",
+            evalResult: true,
+            key: "feature1",
+            targetingVersion: 1,
+            type: "feature-flag-event",
+          },
+        ],
       );
     });
 
@@ -952,41 +1005,40 @@ describe("BucketClient", () => {
       await client.initialize();
       client.getFeatures({ other: otherContext });
 
+      await client.flush();
+
       expect(evaluateTargeting).toHaveBeenCalledTimes(2);
-      expect(httpClient.post).toHaveBeenCalledTimes(2); // For "evaluate" events
+      expect(httpClient.post).toHaveBeenCalledTimes(1);
 
-      expect(httpClient.post).toHaveBeenNthCalledWith(
-        1,
-        FEATURE_EVENTS_ENDPOINT,
+      expect(httpClient.post).toHaveBeenCalledWith(
+        BULK_ENDPOINT,
         expectedHeaders,
-        {
-          action: "evaluate",
-          key: "feature1",
-          targetingVersion: 1,
-          evalContext: {
-            other: otherContext,
+        [
+          {
+            type: "feature-flag-event",
+            action: "evaluate",
+            key: "feature1",
+            targetingVersion: 1,
+            evalContext: {
+              other: otherContext,
+            },
+            evalResult: true,
+            evalRuleResults: [true],
+            evalMissingFields: [],
           },
-          evalResult: true,
-          evalRuleResults: [true],
-          evalMissingFields: [],
-        },
-      );
-
-      expect(httpClient.post).toHaveBeenNthCalledWith(
-        2,
-        FEATURE_EVENTS_ENDPOINT,
-        expectedHeaders,
-        {
-          action: "evaluate",
-          key: "feature2",
-          targetingVersion: 2,
-          evalContext: {
-            other: otherContext,
+          {
+            type: "feature-flag-event",
+            action: "evaluate",
+            key: "feature2",
+            targetingVersion: 2,
+            evalContext: {
+              other: otherContext,
+            },
+            evalResult: false,
+            evalRuleResults: [false],
+            evalMissingFields: ["something"],
           },
-          evalResult: false,
-          evalRuleResults: [false],
-          evalMissingFields: ["something"],
-        },
+        ],
       );
     });
 
@@ -1011,16 +1063,21 @@ describe("BucketClient", () => {
           "failed to use feature definitions, there are none cached yet. Using fallback features.",
         ),
       );
-      expect(httpClient.post).toHaveBeenCalledTimes(1); // For "evaluate" events
 
+      await client.flush();
+
+      expect(httpClient.post).toHaveBeenCalledTimes(1);
       expect(httpClient.post).toHaveBeenCalledWith(
-        FEATURE_EVENTS_ENDPOINT,
+        BULK_ENDPOINT,
         expectedHeaders,
-        {
-          action: "check",
-          key: "key",
-          evalResult: true,
-        },
+        [
+          {
+            type: "feature-flag-event",
+            action: "check",
+            key: "key",
+            evalResult: true,
+          },
+        ],
       );
     });
 
@@ -1030,12 +1087,10 @@ describe("BucketClient", () => {
       await client.initialize();
       const features = client.getFeatures({});
 
-      await flushPromises();
+      await client.flush();
 
       expect(logger.error).toHaveBeenCalledWith(
-        expect.stringMatching(
-          'post request to "features/events" failed with error',
-        ),
+        expect.stringMatching('post request to "bulk" failed with error'),
         expect.any(Error),
       );
 
@@ -1057,8 +1112,6 @@ describe("BucketClient", () => {
       await client.initialize();
       httpClient.post.mockRejectedValue(new Error("Network error"));
 
-      await flushPromises();
-
       const result = client.getFeatures({});
 
       // Trigger a feature check
@@ -1068,14 +1121,10 @@ describe("BucketClient", () => {
         track: expect.any(Function),
       });
 
-      await flushPromises();
-      await flushPromises();
-      await flushPromises();
+      await client.flush();
 
       expect(logger.error).toHaveBeenCalledWith(
-        expect.stringMatching(
-          'post request to "features/events" failed with error',
-        ),
+        expect.stringMatching('post request to "bulk" failed with error'),
         expect.any(Error),
       );
     });
