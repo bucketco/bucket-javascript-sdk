@@ -19,6 +19,7 @@ import { HttpClient } from "./httpClient";
 import { Logger, loggerWithPrefix, quietConsoleLogger } from "./logger";
 
 const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+const isNode = typeof document === "undefined"; // deno supports "window" but not "document" according to https://remix.run/docs/en/main/guides/gotchas
 
 export type User = {
   userId: string;
@@ -132,6 +133,7 @@ export class BucketClient {
 
     if (
       this.context?.user &&
+      !isNode && // do not prompt on server-side
       feedbackOpts?.enableAutoFeedback !== false // default to on
     ) {
       if (isMobile) {
