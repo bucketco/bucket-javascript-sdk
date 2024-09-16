@@ -9,7 +9,7 @@ The package can be imported or used directly in a HTML script tag:
 A. Import module
 
 ```ts
-import bucket from "@bucketco/browser-sdk";
+import { BucketClient } from "@bucketco/browser-sdk";
 
 const user = {
   id: 42,
@@ -111,7 +111,7 @@ const bucketClient = new BucketClient({
 To retrieve features along with their targeting information, use `getFeature(key: string)`:
 
 ```ts
-const huddles = bucketClient.getFeature("huddles");
+const huddle = bucketClient.getFeature("huddle");
 // {
 //   isEnabled: true,
 //   track: () => Promise<Response>
@@ -123,7 +123,7 @@ You can use `getFeatures()` to retrieve all enabled features currently.
 ```ts
 const features = bucketClient.getFeatures();
 // {
-//   huddles: {
+//   huddle: {
 //     isEnabled: true,
 //     targetingVersion: 42,
 //   }
@@ -135,6 +135,16 @@ by down-stream clients, like the React SDK.
 
 Note that accessing `isEnabled` on the object returned by `getFeatures` does not automatically
 generate a `check` event, contrary to the `isEnabled` property on the object return from `getFeature`.
+
+### Tracking feature usage
+
+The `track` function lets you send events to Bucket to denote feature usage.
+By default Bucket expects event names to align with the feature keys, but
+you can customize it as you wish.
+
+```ts
+bucketClient.track("huddle", { voiceHuddle: true });
+```
 
 ### Qualitative feedback
 
