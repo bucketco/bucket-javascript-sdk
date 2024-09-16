@@ -69,6 +69,18 @@ if (huddle.isEnabled) {
 }
 ```
 
+It is highly recommended that users of this SDK manually call `client.flush()` method on process shutdown. The SDK employs
+a batching technique to minimize the number of calls that are sent to Bucket's servers. During process shutdown, some
+messages could be waiting to be sent, and thus, would be discarded if the buffer is not flushed.
+
+A naive example:
+
+```ts
+["SIGINT", "SIGTERM", "SIGQUIT"].forEach((signal) => {
+  process.on(signal, () => client.flush());
+});
+```
+
 When you bind a client to a user/company, this data is matched against the targeting rules.
 To get accurate targeting, you must ensure that the user/company information provided is sufficient to match against the targeting rules you've created.
 The user/company data is automatically transferred to Bucket.
