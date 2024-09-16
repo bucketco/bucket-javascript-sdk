@@ -426,6 +426,10 @@ export class BucketClient {
       opts?.meta === undefined || isObject(opts.meta),
       "meta must be an object",
     );
+    ok(
+      opts?.userId === undefined || typeof opts.userId === "string",
+      "userId must be a string",
+    );
 
     await this._config.batchBuffer.add({
       type: "company",
@@ -670,8 +674,8 @@ export class BoundBucketClient {
    * @param event - The event to track.
    * @param opts.attributes - The attributes of the event (optional).
    * @param opts.meta - The meta context associated with tracking (optional).
+   * @param opts.companyId - Optional company ID for the event (optional).
    *
-   * @returns A boolean indicating if the request was successful.
    * @throws An error if the event is invalid or the options are invalid.
    */
   public async track(
@@ -681,11 +685,11 @@ export class BoundBucketClient {
     const userId = this._context.user?.id;
 
     if (!userId) {
-      this._client.logger?.warn("No user set, cannot track event");
-      return false;
+      this._client.logger?.warn("no user set, cannot track event");
+      return;
     }
 
-    return await this._client.track(userId, event, opts);
+    await this._client.track(userId, event, opts);
   }
 
   /**
