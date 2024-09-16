@@ -1,6 +1,6 @@
 import express from "express";
 import bucket from "./bucket";
-import { BoundBucketClient } from "../src";
+import { BoundBucketClient } from "../../src";
 
 // Augment the Express types to include the `bucketUser` property on the `res.locals` object
 // This will allow us to access the BucketClient instance in our route handlers

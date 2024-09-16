@@ -1,4 +1,4 @@
-import { BucketClient } from "../src";
+import { BucketClient } from "../../src";
 
 // Extending the Features interface to define the available features
 declare module "../src/types" {
