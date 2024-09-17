@@ -65,38 +65,37 @@ const event = {
 };
 
 const otherContext = { custom: "context", key: "value" };
+const logger = {
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+};
+const httpClient = { post: vi.fn(), get: vi.fn() };
+
+const fallbackFeatures = ["key"];
+
+const validOptions: ClientOptions = {
+  secretKey: "validSecretKeyWithMoreThan22Chars",
+  host: "https://api.example.com",
+  logger,
+  httpClient,
+  fallbackFeatures,
+  batchOptions: {
+    maxSize: 99,
+    intervalMs: 100,
+    maxRetries: 1,
+    retryIntervalMs: 200,
+  },
+};
+
+const expectedHeaders = {
+  [SDK_VERSION_HEADER_NAME]: SDK_VERSION,
+  "Content-Type": "application/json",
+  Authorization: `Bearer ${validOptions.secretKey}`,
+};
 
 describe("BucketClient", () => {
-  const logger = {
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  };
-  const httpClient = { post: vi.fn(), get: vi.fn() };
-
-  const fallbackFeatures = ["key"];
-
-  const validOptions: ClientOptions = {
-    secretKey: "validSecretKeyWithMoreThan22Chars",
-    host: "https://api.example.com",
-    logger,
-    httpClient,
-    fallbackFeatures,
-    batchOptions: {
-      maxSize: 99,
-      intervalMs: 100,
-      maxRetries: 1,
-      retryIntervalMs: 200,
-    },
-  };
-
-  const expectedHeaders = {
-    [SDK_VERSION_HEADER_NAME]: SDK_VERSION,
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${validOptions.secretKey}`,
-  };
-
   afterEach(() => {
     vi.clearAllMocks();
     clearRateLimiter();
@@ -587,6 +586,7 @@ describe("BucketClient", () => {
       const boundClient = client.bindClient({ company });
 
       await boundClient.track("hello");
+
       expect(httpClient.post).not.toHaveBeenCalled();
       expect(logger.warn).toHaveBeenCalledWith(
         expect.stringMatching("no user set, cannot track event"),
@@ -1155,20 +1155,20 @@ describe("BucketClient", () => {
 });
 
 describe("BoundBucketClient", () => {
-  const httpClient = { post: vi.fn(), get: vi.fn() };
-
   beforeAll(() => {
     const response = {
       status: 200,
       body: { success: true },
     };
+
     httpClient.post.mockResolvedValue(response);
   });
 
-  const client = new BucketClient({
-    secretKey: "validSecretKeyWithMoreThan22Chars",
-    httpClient,
+  beforeEach(() => {
+    vi.mocked(httpClient.post).mockClear();
   });
+
+  const client = new BucketClient(validOptions);
 
   it("should create a client instance", () => {
     expect(client).toBeInstanceOf(BucketClient);
@@ -1209,16 +1209,40 @@ describe("BoundBucketClient", () => {
   });
 
   it("should allow using expected methods when bound to user", async () => {
-    const boundClient = client.bindClient({ user: { id: "user" } });
-    expect(boundClient.user).toEqual({ id: "user" });
+    const boundClient = client.bindClient({ user });
+    expect(boundClient.user).toEqual(user);
 
     expect(
-      boundClient.bindClient({ other: { key: "value" } }).otherContext,
-    ).toEqual({
-      key: "value",
-    });
+      boundClient.bindClient({ other: otherContext }).otherContext,
+    ).toEqual(otherContext);
 
     boundClient.getFeatures();
     await boundClient.track("feature");
+
+    expect(httpClient.post).toHaveBeenCalledWith(
+      EVENT_ENDPOINT,
+      expectedHeaders,
+      {
+        event: "feature",
+        userId: "user123",
+      },
+    );
+  });
+
+  it("should add company ID from the context if not explicitly supplied", async () => {
+    const boundClient = client.bindClient({ user, company });
+
+    boundClient.getFeatures();
+    await boundClient.track("feature");
+
+    expect(httpClient.post).toHaveBeenCalledWith(
+      EVENT_ENDPOINT,
+      expectedHeaders,
+      {
+        companyId: "company123",
+        event: "feature",
+        userId: "user123",
+      },
+    );
   });
 });

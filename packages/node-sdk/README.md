@@ -76,8 +76,8 @@ messages could be waiting to be sent, and thus, would be discarded if the buffer
 A naive example:
 
 ```ts
-["SIGINT", "SIGTERM", "SIGQUIT"].forEach((signal) => {
-  process.on(signal, () => client.flush());
+process.on("beforeExit", (code) => {
+  client.flush();
 });
 ```
 

@@ -257,16 +257,6 @@ export type BatchBufferOptions<T> = {
    * The interval in milliseconds at which the buffer is flushed.
    **/
   intervalMs?: number;
-
-  /**
-   * The interval in milliseconds between retry attempts if flushing fails.
-   **/
-  retryIntervalMs?: number;
-
-  /**
-   * The maximum number of retry attempts if flushing fails.
-   **/
-  maxRetries?: number;
 };
 
 /**

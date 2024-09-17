@@ -682,6 +682,8 @@ export class BoundBucketClient {
     event: string,
     opts?: TrackOptions & { companyId?: string },
   ) {
+    ok(opts === undefined || isObject(opts), "opts must be an object");
+
     const userId = this._context.user?.id;
 
     if (!userId) {
@@ -689,7 +691,13 @@ export class BoundBucketClient {
       return;
     }
 
-    await this._client.track(userId, event, opts);
+    await this._client.track(
+      userId,
+      event,
+      opts?.companyId
+        ? opts
+        : { ...opts, companyId: this._context.company?.id },
+    );
   }
 
   /**

@@ -1,9 +1,4 @@
-import {
-  BATCH_INTERVAL_MS,
-  BATCH_MAX_RETRIES,
-  BATCH_MAX_SIZE,
-  BATCH_RETRY_INTERVAL_MS,
-} from "./config";
+import { BATCH_INTERVAL_MS, BATCH_MAX_SIZE } from "./config";
 import { BatchBufferOptions, Logger } from "./types";
 import { isObject, ok } from "./utils";
 
@@ -13,15 +8,11 @@ import { isObject, ok } from "./utils";
  */
 export default class BatchBuffer<T> {
   private buffer: T[] = [];
-  private retryBuffer: { triesLeft: number; item: T }[] = [];
   private flushHandler: (items: T[]) => Promise<void>;
   private logger?: Logger;
   private maxSize: number;
   private intervalMs: number;
-  private retryIntervalMs: number;
-  private maxRetries: number;
   private timer: NodeJS.Timeout | null = null;
-  private retryTimer: NodeJS.Timeout | null = null;
 
   /**
    * Creates a new `BatchBuffer` instance.
@@ -45,24 +36,11 @@ export default class BatchBuffer<T> {
         typeof options.intervalMs !== "number",
       "intervalMs must be greater than 0",
     );
-    ok(
-      (typeof options.retryIntervalMs === "number" &&
-        options.retryIntervalMs > 0) ||
-        typeof options.retryIntervalMs !== "number",
-      "retryIntervalMs must be greater than 0",
-    );
-    ok(
-      (typeof options.maxRetries === "number" && options.maxRetries > 0) ||
-        !options.maxRetries,
-      "maxRetries must be greater than 0",
-    );
 
     this.flushHandler = options.flushHandler;
     this.logger = options.logger;
     this.maxSize = options.maxSize ?? BATCH_MAX_SIZE;
     this.intervalMs = options.intervalMs ?? BATCH_INTERVAL_MS;
-    this.retryIntervalMs = options.retryIntervalMs ?? BATCH_RETRY_INTERVAL_MS;
-    this.maxRetries = options.maxRetries ?? BATCH_MAX_RETRIES;
   }
 
   /**
@@ -74,21 +52,13 @@ export default class BatchBuffer<T> {
     this.buffer.push(item);
 
     if (this.buffer.length >= this.maxSize) {
-      await this.flushBuffer();
+      await this.flush();
     } else if (!this.timer) {
-      this.timer = setTimeout(() => this.flushBuffer(), this.intervalMs);
+      this.timer = setTimeout(() => this.flush(), this.intervalMs);
     }
   }
 
-  /**
-   * Flushes the buffer.
-   */
-  public async flush() {
-    await this.flushBuffer();
-    await this.flushRetryBuffer();
-  }
-
-  private async flushBuffer(): Promise<void> {
+  public async flush(): Promise<void> {
     if (this.timer) {
       clearTimeout(this.timer);
       this.timer = null;
@@ -106,71 +76,12 @@ export default class BatchBuffer<T> {
         count: this.buffer.length,
       });
     } catch (error) {
-      this.logger?.error(
-        "flush of buffered items failed. placing into retry buffer",
-        { error, count: this.buffer.length },
-      );
-
-      this.retryBuffer.push(
-        ...this.buffer.map((item) => ({
-          triesLeft: this.maxRetries,
-          item,
-        })),
-      );
-
-      this.retryTimer =
-        this.retryTimer ||
-        setTimeout(() => this.flushRetryBuffer(), this.retryIntervalMs);
-    } finally {
-      this.buffer = [];
-    }
-  }
-
-  private async flushRetryBuffer(): Promise<void> {
-    if (this.retryTimer) {
-      clearTimeout(this.retryTimer);
-      this.retryTimer = null;
-    }
-
-    if (this.retryBuffer.length === 0) {
-      this.logger?.debug("retry buffer is empty. nothing to flush");
-      return;
-    }
-
-    try {
-      await this.flushHandler(this.retryBuffer.map((entry) => entry.item));
-
-      this.logger?.info("flushed previously failed items", {
-        count: this.retryBuffer.length,
-      });
-
-      this.retryBuffer = [];
-    } catch (error) {
-      this.logger?.error("flushing of previously failed items failed", {
+      this.logger?.error("flush of buffered items failed; discarding items", {
         error,
-        count: this.retryBuffer.length,
+        count: this.buffer.length,
       });
     }
 
-    this.retryBuffer = this.retryBuffer
-      .map(({ triesLeft, item }) => ({
-        triesLeft: triesLeft - 1,
-        item,
-      }))
-      .filter(({ triesLeft }) => triesLeft > 0);
-
-    if (this.retryBuffer.length > 0) {
-      this.logger?.info(
-        "there are still items in the retry buffer. will retry later.",
-        {
-          count: this.retryBuffer.length,
-        },
-      );
-
-      this.retryTimer = setTimeout(
-        () => this.flushRetryBuffer(),
-        this.retryIntervalMs,
-      );
-    }
+    this.buffer = [];
   }
 }

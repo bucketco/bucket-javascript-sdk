@@ -9,12 +9,7 @@ import {
 } from "vitest";
 
 import BatchBuffer from "../src/batch-buffer";
-import {
-  BATCH_INTERVAL_MS,
-  BATCH_MAX_RETRIES,
-  BATCH_MAX_SIZE,
-  BATCH_RETRY_INTERVAL_MS,
-} from "../src/config";
+import { BATCH_INTERVAL_MS, BATCH_MAX_SIZE } from "../src/config";
 import { Logger } from "../src/types";
 
 describe("BatchBuffer", () => {
@@ -72,14 +67,6 @@ describe("BatchBuffer", () => {
             intervalMs: 0,
           } as any),
       ).toThrow("intervalMs must be greater than 0");
-
-      expect(
-        () =>
-          new BatchBuffer({
-            flushHandler: mockFlushHandler,
-            maxRetries: -1,
-          } as any),
-      ).toThrow("maxRetries must be greater than 0");
     });
 
     it("should initialize with specified values", () => {
@@ -87,21 +74,15 @@ describe("BatchBuffer", () => {
         flushHandler: mockFlushHandler,
         maxSize: 22,
         intervalMs: 33,
-        maxRetries: 44,
-        retryIntervalMs: 55,
       });
 
       expect(buffer).toEqual({
         buffer: [],
         flushHandler: mockFlushHandler,
-        retryBuffer: [],
-        retryTimer: null,
         timer: null,
         intervalMs: 33,
         logger: undefined,
-        maxRetries: 44,
         maxSize: 22,
-        retryIntervalMs: 55,
       });
     });
 
@@ -111,11 +92,7 @@ describe("BatchBuffer", () => {
         buffer: [],
         flushHandler: mockFlushHandler,
         intervalMs: BATCH_INTERVAL_MS,
-        maxRetries: BATCH_MAX_RETRIES,
         maxSize: BATCH_MAX_SIZE,
-        retryBuffer: [],
-        retryIntervalMs: BATCH_RETRY_INTERVAL_MS,
-        retryTimer: null,
         timer: null,
       });
     });
@@ -155,7 +132,7 @@ describe("BatchBuffer", () => {
   });
 
   describe("flush", () => {
-    it("should not do anything if there a re no items to flush", async () => {
+    it("should not do anything if there are no items to flush", async () => {
       const buffer = new BatchBuffer({
         flushHandler: mockFlushHandler,
         logger: mockLogger,
@@ -165,50 +142,27 @@ describe("BatchBuffer", () => {
 
       expect(mockFlushHandler).not.toHaveBeenCalled();
 
-      expect(mockLogger.debug).toHaveBeenCalledTimes(2);
-      expect(mockLogger.debug).toHaveBeenNthCalledWith(
-        1,
+      expect(mockLogger.debug).toHaveBeenCalledWith(
         "buffer is empty. nothing to flush",
-      );
-      expect(mockLogger.debug).toHaveBeenNthCalledWith(
-        2,
-        "retry buffer is empty. nothing to flush",
       );
     });
 
-    it("should flush both buffer and retry buffer", async () => {
+    it("should flush buffer", async () => {
       const buffer = new BatchBuffer({
         flushHandler: mockFlushHandler,
         logger: mockLogger,
       });
 
-      const error = new Error("Failed #1");
-      mockFlushHandler.mockRejectedValueOnce(error);
       await buffer.add("item1");
       await buffer.flush();
 
-      expect(mockFlushHandler).toHaveBeenCalledTimes(2);
-      expect(mockFlushHandler).toHaveBeenNthCalledWith(1, ["item1"]);
-      expect(mockFlushHandler).toHaveBeenNthCalledWith(2, ["item1"]);
+      expect(mockFlushHandler).toHaveBeenCalledWith(["item1"]);
+      await buffer.flush();
 
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        "flush of buffered items failed. placing into retry buffer",
-        {
-          count: 1,
-          error,
-        },
-      );
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        "flushed previously failed items",
-        {
-          count: 1,
-        },
-      );
+      expect(mockFlushHandler).toHaveBeenCalledTimes(1);
     });
-  });
 
-  describe("logging", () => {
-    it("should log correctly during flush and retries", async () => {
+    it("should log correctly during flush", async () => {
       const buffer = new BatchBuffer({
         flushHandler: mockFlushHandler,
         logger: mockLogger,
@@ -220,37 +174,6 @@ describe("BatchBuffer", () => {
       expect(mockLogger.info).toHaveBeenCalledWith("flushed buffered items", {
         count: 1,
       });
-    });
-
-    it("should log errors during retries", async () => {
-      mockFlushHandler.mockRejectedValue(new Error("Flush failed"));
-
-      const buffer = new BatchBuffer({
-        flushHandler: mockFlushHandler,
-        logger: mockLogger,
-        maxRetries: 1,
-      });
-
-      await buffer.add("item1");
-      await buffer.flush();
-
-      expect(mockLogger.error).toHaveBeenCalledTimes(2);
-      expect(mockLogger.error).toHaveBeenNthCalledWith(
-        1,
-        "flush of buffered items failed. placing into retry buffer",
-        {
-          count: 1,
-          error: expect.any(Error),
-        },
-      );
-      expect(mockLogger.error).toHaveBeenNthCalledWith(
-        2,
-        "flushing of previously failed items failed",
-        {
-          count: 1,
-          error: expect.any(Error),
-        },
-      );
     });
   });
 
@@ -266,121 +189,6 @@ describe("BatchBuffer", () => {
     beforeEach(() => {
       vi.clearAllTimers();
       mockFlushHandler.mockReset();
-    });
-
-    it("should keep retrying until maxRetries are reached", async () => {
-      const buffer = new BatchBuffer({
-        flushHandler: mockFlushHandler,
-        logger: mockLogger,
-        maxRetries: 3,
-        retryIntervalMs: 100,
-      });
-
-      const errors = Array.from(
-        { length: 4 },
-        (_, i) => new Error(`Failed #${i}`),
-      );
-
-      errors.forEach((error) => mockFlushHandler.mockRejectedValueOnce(error));
-
-      await buffer.add("item1");
-      await buffer.flush();
-
-      await vi.advanceTimersByTimeAsync(300);
-      expect(mockFlushHandler).toHaveBeenCalledTimes(4);
-
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        "there are still items in the retry buffer. will retry later.",
-        {
-          count: 1,
-        },
-      );
-
-      expect(mockLogger.error).toHaveBeenCalledTimes(4);
-      expect(mockLogger.error).toHaveBeenNthCalledWith(
-        1,
-        "flush of buffered items failed. placing into retry buffer",
-        {
-          count: 1,
-          error: errors[0],
-        },
-      );
-      expect(mockLogger.error).toHaveBeenNthCalledWith(
-        2,
-        "flushing of previously failed items failed",
-        {
-          count: 1,
-          error: errors[1],
-        },
-      );
-      expect(mockLogger.error).toHaveBeenNthCalledWith(
-        3,
-        "flushing of previously failed items failed",
-        {
-          count: 1,
-          error: errors[2],
-        },
-      );
-      expect(mockLogger.error).toHaveBeenNthCalledWith(
-        4,
-        "flushing of previously failed items failed",
-        {
-          count: 1,
-          error: errors[3],
-        },
-      );
-
-      expect(buffer["retryTimer"]).toBeNull();
-    });
-
-    it("should keep retrying until the retry succeeds", async () => {
-      const buffer = new BatchBuffer({
-        flushHandler: mockFlushHandler,
-        logger: mockLogger,
-        maxRetries: 3,
-        retryIntervalMs: 100,
-      });
-
-      const errors = Array.from(
-        { length: 2 },
-        (_, i) => new Error(`Failed #${i}`),
-      );
-
-      errors.forEach((error) => mockFlushHandler.mockRejectedValueOnce(error));
-
-      await buffer.add("itemX");
-      await buffer.flush();
-
-      await vi.advanceTimersByTimeAsync(200);
-
-      expect(mockFlushHandler).toHaveBeenCalledTimes(3);
-
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        "there are still items in the retry buffer. will retry later.",
-        {
-          count: 1,
-        },
-      );
-
-      expect(mockLogger.error).toHaveBeenCalledTimes(2);
-      expect(mockLogger.error).toHaveBeenNthCalledWith(
-        1,
-        "flush of buffered items failed. placing into retry buffer",
-        {
-          count: 1,
-          error: errors[0],
-        },
-      );
-      expect(mockLogger.error).toHaveBeenNthCalledWith(
-        2,
-        "flushing of previously failed items failed",
-        {
-          count: 1,
-          error: errors[1],
-        },
-      );
-
-      expect(buffer["retryTimer"]).toBeNull();
     });
 
     it("should start the normal timer when adding first item", async () => {
@@ -421,40 +229,6 @@ describe("BatchBuffer", () => {
       expect(mockLogger.info).toHaveBeenCalledWith("flushed buffered items", {
         count: 2,
       });
-    });
-
-    it("should start the retry timer when normal flush fails", async () => {
-      const buffer = new BatchBuffer({
-        flushHandler: mockFlushHandler,
-        logger: mockLogger,
-        maxSize: 1,
-        retryIntervalMs: 100,
-      });
-
-      mockFlushHandler.mockRejectedValueOnce(new Error("Flush failed"));
-
-      await buffer.add("item1");
-
-      expect(buffer["timer"]).toBeNull();
-      expect(buffer["retryTimer"]).toBeDefined();
-
-      await vi.advanceTimersByTimeAsync(100);
-      expect(buffer["retryTimer"]).toBeNull();
-
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        "flush of buffered items failed. placing into retry buffer",
-        {
-          count: 1,
-          error: expect.any(Error),
-        },
-      );
-
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        "flushed previously failed items",
-        {
-          count: 1,
-        },
-      );
     });
   });
 });
