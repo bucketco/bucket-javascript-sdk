@@ -66,6 +66,10 @@ if (huddle.isEnabled) {
   // this is your feature gated code ...
   // send an event when the feature is used:
   huddle.track();
+
+  // CAUTION: if need the track event to be sent to Bucket as soon as possible,
+  // always call `flush`. It can optionally be awaited to guarantee the sent happened.
+  client.flush();
 }
 ```
 

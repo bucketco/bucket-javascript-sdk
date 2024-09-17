@@ -1,3 +1,4 @@
+import flushPromises from "flush-promises";
 import {
   afterEach,
   beforeAll,
@@ -14,9 +15,7 @@ import { BoundBucketClient, BucketClient } from "../src/client";
 import {
   API_HOST,
   BATCH_INTERVAL_MS,
-  BATCH_MAX_RETRIES,
   BATCH_MAX_SIZE,
-  BATCH_RETRY_INTERVAL_MS,
   FEATURE_EVENTS_PER_MIN,
   FEATURES_REFETCH_MS,
   SDK_VERSION,
@@ -27,7 +26,6 @@ import { ClientOptions, FeaturesAPIResponse } from "../src/types";
 import { checkWithinAllottedTimeWindow, clearRateLimiter } from "../src/utils";
 
 const BULK_ENDPOINT = "https://api.example.com/bulk";
-const EVENT_ENDPOINT = "https://api.example.com/event";
 
 vi.mock("@bucketco/flag-evaluation", async (importOriginal) => {
   const original = (await importOriginal()) as any;
@@ -84,8 +82,6 @@ const validOptions: ClientOptions = {
   batchOptions: {
     maxSize: 99,
     intervalMs: 100,
-    maxRetries: 1,
-    retryIntervalMs: 200,
   },
 };
 
@@ -117,8 +113,6 @@ describe("BucketClient", () => {
       expect(client["_config"].batchBuffer).toMatchObject({
         maxSize: 99,
         intervalMs: 100,
-        maxRetries: 1,
-        retryIntervalMs: 200,
       });
 
       expect(client["_config"].fallbackFeatures).toEqual({
@@ -169,8 +163,6 @@ describe("BucketClient", () => {
       expect(client["_config"].batchBuffer).toMatchObject({
         maxSize: BATCH_MAX_SIZE,
         intervalMs: BATCH_INTERVAL_MS,
-        maxRetries: BATCH_MAX_RETRIES,
-        retryIntervalMs: BATCH_RETRY_INTERVAL_MS,
       });
     });
 
@@ -511,19 +503,30 @@ describe("BucketClient", () => {
         meta: { active: true },
       });
 
+      await client.flush();
       expect(httpClient.post).toHaveBeenCalledWith(
-        EVENT_ENDPOINT,
+        BULK_ENDPOINT,
         expectedHeaders,
-        {
-          event: event.event,
-          userId: user.id,
-          attributes: event.attrs,
-          context: { active: true },
-        },
+        [
+          expect.objectContaining({
+            type: "user",
+          }),
+          {
+            attributes: {
+              key: "value",
+            },
+            context: {
+              active: true,
+            },
+            event: "feature-event",
+            type: "event",
+            userId: "user123",
+          },
+        ],
       );
 
       expect(logger.debug).toHaveBeenCalledWith(
-        expect.stringMatching('post request to "event"'),
+        expect.stringMatching('post request to "bulk"'),
         response,
       );
     });
@@ -540,18 +543,27 @@ describe("BucketClient", () => {
         meta: { active: true },
       });
 
+      await client.flush();
       expect(httpClient.post).toHaveBeenCalledWith(
-        EVENT_ENDPOINT,
+        BULK_ENDPOINT,
         expectedHeaders,
-        {
-          attributes: event.attrs,
-          companyId: company.id,
-          context: {
-            active: true,
+        [
+          expect.objectContaining({
+            type: "user",
+          }),
+          {
+            attributes: {
+              key: "value",
+            },
+            context: {
+              active: true,
+            },
+            event: "feature-event",
+            companyId: "company123",
+            type: "event",
+            userId: "user123",
           },
-          event: event.event,
-          userId: user.id,
-        },
+        ],
       );
     });
 
@@ -560,9 +572,10 @@ describe("BucketClient", () => {
       httpClient.post.mockRejectedValue(error);
 
       await client.bindClient({ user }).track(event.event);
+      await client.flush();
 
       expect(logger.error).toHaveBeenCalledWith(
-        expect.stringMatching('post request to "event" failed with error'),
+        expect.stringMatching('post request to "bulk" failed with error'),
         error,
       );
     });
@@ -572,12 +585,14 @@ describe("BucketClient", () => {
         status: 200,
         body: { success: false },
       };
+
       httpClient.post.mockResolvedValue(response);
 
       await client.bindClient({ user }).track(event.event);
+      await client.flush();
 
       expect(logger.debug).toHaveBeenCalledWith(
-        expect.stringMatching('post request to "event"'),
+        expect.stringMatching('post request to "bulk"'),
         response,
       );
     });
@@ -1164,7 +1179,9 @@ describe("BoundBucketClient", () => {
     httpClient.post.mockResolvedValue(response);
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await flushPromises();
+    await client.flush();
     vi.mocked(httpClient.post).mockClear();
   });
 
@@ -1179,6 +1196,7 @@ describe("BoundBucketClient", () => {
     const companyOverride = { employees: 200, bankrupt: false };
     const otherOverride = { key: "new-value" };
     const other = { key: "value" };
+
     const newClient = client
       .bindClient({
         user,
@@ -1198,16 +1216,6 @@ describe("BoundBucketClient", () => {
     });
   });
 
-  it("should allow using expected methods", async () => {
-    const boundClient = client.bindClient({ other: { key: "value" } });
-    expect(boundClient.otherContext).toEqual({
-      key: "value",
-    });
-
-    await client.initialize();
-    boundClient.getFeatures();
-  });
-
   it("should allow using expected methods when bound to user", async () => {
     const boundClient = client.bindClient({ user });
     expect(boundClient.user).toEqual(user);
@@ -1217,15 +1225,21 @@ describe("BoundBucketClient", () => {
     ).toEqual(otherContext);
 
     boundClient.getFeatures();
+
     await boundClient.track("feature");
+    await client.flush();
 
     expect(httpClient.post).toHaveBeenCalledWith(
-      EVENT_ENDPOINT,
+      BULK_ENDPOINT,
       expectedHeaders,
-      {
-        event: "feature",
-        userId: "user123",
-      },
+      [
+        expect.objectContaining({ type: "user" }),
+        {
+          event: "feature",
+          type: "event",
+          userId: "user123",
+        },
+      ],
     );
   });
 
@@ -1235,14 +1249,31 @@ describe("BoundBucketClient", () => {
     boundClient.getFeatures();
     await boundClient.track("feature");
 
+    await client.flush();
+
     expect(httpClient.post).toHaveBeenCalledWith(
-      EVENT_ENDPOINT,
+      BULK_ENDPOINT,
       expectedHeaders,
-      {
-        companyId: "company123",
-        event: "feature",
-        userId: "user123",
-      },
+      [
+        expect.objectContaining({ type: "company" }),
+        expect.objectContaining({ type: "user" }),
+        {
+          companyId: "company123",
+          event: "feature",
+          type: "event",
+          userId: "user123",
+        },
+      ],
     );
+  });
+
+  it("should allow using expected methods", async () => {
+    const boundClient = client.bindClient({ other: { key: "value" } });
+    expect(boundClient.otherContext).toEqual({
+      key: "value",
+    });
+
+    await client.initialize();
+    boundClient.getFeatures();
   });
 });

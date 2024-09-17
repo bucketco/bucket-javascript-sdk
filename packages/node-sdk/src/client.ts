@@ -56,6 +56,14 @@ type BulkEvent =
       evalContext?: Record<string, any>;
       evalRuleResults?: boolean[];
       evalMissingFields?: string[];
+    }
+  | {
+      type: "event";
+      event: string;
+      companyId?: string;
+      userId: string;
+      attributes?: Attributes;
+      context?: TrackingMeta;
     };
 
 /**
@@ -477,7 +485,8 @@ export class BucketClient {
       "companyId must be an string",
     );
 
-    await this.post("event", {
+    await this._config.batchBuffer.add({
+      type: "event",
       event,
       companyId: opts?.companyId,
       userId,
