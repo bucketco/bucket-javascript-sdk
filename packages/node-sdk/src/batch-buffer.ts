@@ -24,7 +24,7 @@ export default class BatchBuffer<T> {
   private retryTimer: NodeJS.Timeout | null = null;
 
   /**
-   * Creates a new `AccumulatingBuffer` instance.
+   * Creates a new `BatchBuffer` instance.
    * @param options - The options to configure the buffer.
    * @throws If the options are invalid.
    */
