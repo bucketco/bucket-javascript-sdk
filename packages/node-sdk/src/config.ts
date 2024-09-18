@@ -9,3 +9,6 @@ export const BUCKET_LOG_PREFIX = "[Bucket]";
 
 export const FEATURE_EVENTS_PER_MIN = 1;
 export const FEATURES_REFETCH_MS = 60 * 1000; // re-fetch every 60 seconds
+
+export const BATCH_MAX_SIZE = 100;
+export const BATCH_INTERVAL_MS = 60 * 1000;
