@@ -1080,6 +1080,111 @@ describe("BucketClient", () => {
       );
     });
 
+    it("should send `track` with user and company if provided", async () => {
+      await client.initialize();
+      const features = client.getFeatures({ company, user });
+
+      await features["feature1"].track();
+      await client.flush();
+
+      expect(httpClient.post).toHaveBeenCalledTimes(1);
+      expect(httpClient.post).toHaveBeenCalledWith(
+        BULK_ENDPOINT,
+        expectedHeaders,
+        [
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "evaluate",
+            evalContext: {
+              company,
+              user,
+            },
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "evaluate",
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "check",
+          }),
+          {
+            companyId: "company123",
+            event: "feature1",
+            type: "event",
+            userId: "user123",
+          },
+        ],
+      );
+    });
+
+    it("should send `track` with user if provided", async () => {
+      await client.initialize();
+      const features = client.getFeatures({ user });
+
+      await features["feature1"].track();
+      await client.flush();
+
+      expect(httpClient.post).toHaveBeenCalledTimes(1);
+      expect(httpClient.post).toHaveBeenCalledWith(
+        BULK_ENDPOINT,
+        expectedHeaders,
+        [
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "evaluate",
+            evalContext: {
+              user,
+            },
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "evaluate",
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "check",
+          }),
+          {
+            event: "feature1",
+            type: "event",
+            userId: "user123",
+          },
+        ],
+      );
+    });
+
+    it("should not send `track` with company if provided", async () => {
+      await client.initialize();
+      const features = client.getFeatures({ company });
+
+      await features["feature1"].track();
+      await client.flush();
+
+      expect(httpClient.post).toHaveBeenCalledTimes(1);
+      expect(httpClient.post).toHaveBeenCalledWith(
+        BULK_ENDPOINT,
+        expectedHeaders,
+        [
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "evaluate",
+            evalContext: {
+              company,
+            },
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "evaluate",
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "check",
+          }),
+        ],
+      );
+    });
+
     it("should use fallback features when getFeatureDefinitions returns undefined", async () => {
       httpClient.get.mockResolvedValue({
         success: false,

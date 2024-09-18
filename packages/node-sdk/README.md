@@ -79,12 +79,14 @@ messages could be waiting to be sent, and thus, would be discarded if the buffer
 
 A naive example:
 
-```ts
-process.on("beforeExit", (code) => {
-  client.flush();
+````ts
+process.on("SIGINT", () => {
+  console.log("Flushing batch buffer...");
+  client.flush().then(() => {
+    process.exit(0)
+  })
 });
 ```
-
 When you bind a client to a user/company, this data is matched against the targeting rules.
 To get accurate targeting, you must ensure that the user/company information provided is sufficient to match against the targeting rules you've created.
 The user/company data is automatically transferred to Bucket.
@@ -119,7 +121,7 @@ client.updateCompany("company_id", { userId: "user_id" });
 
 // the user started a voice huddle
 client.track("user_id", "huddle", { attributes: { voice: true } });
-```
+````
 
 It's also possible to achieve the same through a bound client in the following manner:
 

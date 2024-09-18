@@ -604,7 +604,7 @@ export class BucketClient {
             return;
           }
 
-          await this.track(userId, key);
+          await this.track(userId, key, { companyId: context.company?.id });
         },
       };
     });
