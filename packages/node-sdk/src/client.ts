@@ -477,19 +477,17 @@ export class BucketClient {
         });
       });
 
-      evaluatedFeatures = evaluated
-        .filter((e) => e.value)
-        .reduce(
-          (acc, res) => {
-            acc[res.feature.key as keyof TypedFeatures] = {
-              key: res.feature.key,
-              isEnabled: res.value,
-              targetingVersion: keyToVersionMap.get(res.feature.key),
-            };
-            return acc;
-          },
-          {} as Record<keyof TypedFeatures, InternalFeature>,
-        );
+      evaluatedFeatures = evaluated.reduce(
+        (acc, res) => {
+          acc[res.feature.key as keyof TypedFeatures] = {
+            key: res.feature.key,
+            isEnabled: res.value,
+            targetingVersion: keyToVersionMap.get(res.feature.key),
+          };
+          return acc;
+        },
+        {} as Record<keyof TypedFeatures, InternalFeature>,
+      );
 
       this._config.logger?.debug("evaluated features", evaluatedFeatures);
     } else {
