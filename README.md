@@ -16,13 +16,26 @@ Client side React SDK
 
 Browser SDK for use in non-React web applications
 
-[Read the docs](packages/browser-sdk/README.md)
+[Read the docs](packages/browser-sdk/README.md) 
 
 ### Node.js SDK
 
 Node.js SDK for use on the server side.
 
 [Read the docs](packages/node-sdk/README.md)
+
+## OpenFeature Browser Provider
+
+Use Bucket with OpenFeature in the browser through the Bucket OpenFeature Browser Provider
+
+[Read the docs](packages/openfeature-browser-provider/README.md)
+
+## OpenFeature Node.js Provider
+
+Use the Bucket with OpenFeature on the server in Node.js through the Bucket OpenFeature Node.js Provider
+
+[Read the docs](packages/openfeature-node-provider/README.md)
+
 
 ## Development
 

@@ -58,8 +58,12 @@ const publishableKey = "<your-bucket-publishable-key>";
 
 const contextTranslator = (context?: EvaluationContext) => {
   return {
-    user: { id: context.userId, name: context.name, email: context.email },
-    company: { id: context.orgId, name: context.orgName },
+    user: {
+      id: context["trackingKey"],
+      name: context["name"],
+      email: context["email"],
+    },
+    company: { id: context["orgId"], name: context["orgName"] },
   };
 };
 
