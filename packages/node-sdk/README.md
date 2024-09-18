@@ -66,9 +66,27 @@ if (huddle.isEnabled) {
   // this is your feature gated code ...
   // send an event when the feature is used:
   huddle.track();
+
+  // CAUTION: if need the track event to be sent to Bucket as soon as possible,
+  // always call `flush`. It can optionally be awaited to guarantee the sent happened.
+  client.flush();
 }
 ```
 
+It is highly recommended that users of this SDK manually call `client.flush()` method on process shutdown. The SDK employs
+a batching technique to minimize the number of calls that are sent to Bucket's servers. During process shutdown, some
+messages could be waiting to be sent, and thus, would be discarded if the buffer is not flushed.
+
+A naive example:
+
+````ts
+process.on("SIGINT", () => {
+  console.log("Flushing batch buffer...");
+  client.flush().then(() => {
+    process.exit(0)
+  })
+});
+```
 When you bind a client to a user/company, this data is matched against the targeting rules.
 To get accurate targeting, you must ensure that the user/company information provided is sufficient to match against the targeting rules you've created.
 The user/company data is automatically transferred to Bucket.
@@ -103,7 +121,7 @@ client.updateCompany("company_id", { userId: "user_id" });
 
 // the user started a voice huddle
 client.track("user_id", "huddle", { attributes: { voice: true } });
-```
+````
 
 It's also possible to achieve the same through a bound client in the following manner:
 
