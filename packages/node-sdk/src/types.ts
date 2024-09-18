@@ -233,6 +233,33 @@ export type Cache<T> = {
 };
 
 /**
+ * Options for configuring the BatchBuffer.
+ *
+ * @template T - The type of items in the buffer.
+ */
+export type BatchBufferOptions<T> = {
+  /**
+   * A function that handles flushing the items in the buffer.
+   **/
+  flushHandler: (items: T[]) => Promise<void>;
+
+  /**
+   * The logger to use for logging (optional).
+   **/
+  logger?: Logger;
+
+  /**
+   * The maximum size of the buffer before it is flushed.
+   **/
+  maxSize?: number;
+
+  /**
+   * The interval in milliseconds at which the buffer is flushed.
+   **/
+  intervalMs?: number;
+};
+
+/**
  * Defines the options for the SDK client.
  *
  **/
@@ -261,6 +288,12 @@ export type ClientOptions = {
    * The HTTP client to use for sending requests (optional). Default is the built-in fetch client.
    **/
   httpClient?: HttpClient;
+
+  /**
+   * The options for the batch buffer (optional).
+   * If not provided, the default options are used.
+   **/
+  batchOptions?: Omit<BatchBufferOptions<any>, "flushHandler" | "logger">;
 };
 
 /**
