@@ -780,10 +780,15 @@ describe("BucketClient", () => {
           isEnabled: true,
           track: expect.any(Function),
         },
+        feature2: {
+          key: "feature2",
+          isEnabled: false,
+          track: expect.any(Function),
+        },
       });
 
       expect(evaluateTargeting).toHaveBeenCalledTimes(2);
-      expect(httpClient.post).toHaveBeenCalledTimes(3); // For "evaluate" events
+      expect(httpClient.post).toHaveBeenCalledTimes(4); // For "evaluate" events
 
       expect(httpClient.post).toHaveBeenNthCalledWith(
         1,
@@ -856,11 +861,16 @@ describe("BucketClient", () => {
           key: "feature1",
           track: expect.any(Function),
         },
+        feature2: {
+          key: "feature2",
+          isEnabled: false,
+          track: expect.any(Function),
+        },
       });
       await flushPromises();
 
       expect(evaluateTargeting).toHaveBeenCalledTimes(2);
-      expect(httpClient.post).toHaveBeenCalledTimes(3); // For 2x "evaluate", 1x "check" events
+      expect(httpClient.post).toHaveBeenCalledTimes(4); // For 3x "evaluate", 1x "check" events
 
       expect(httpClient.post).toHaveBeenNthCalledWith(
         1,
@@ -906,12 +916,17 @@ describe("BucketClient", () => {
           key: "feature1",
           track: expect.any(Function),
         },
+        feature2: {
+          key: "feature2",
+          isEnabled: false,
+          track: expect.any(Function),
+        },
       });
 
       await flushPromises();
 
       expect(evaluateTargeting).toHaveBeenCalledTimes(2);
-      expect(httpClient.post).toHaveBeenCalledTimes(3); // For 2x "evaluate", 1x "check" events
+      expect(httpClient.post).toHaveBeenCalledTimes(4); // For 3x "evaluate", 1x "check" events
 
       expect(httpClient.post).toHaveBeenNthCalledWith(
         1,
@@ -1043,6 +1058,11 @@ describe("BucketClient", () => {
         feature1: {
           key: "feature1",
           isEnabled: true,
+          track: expect.any(Function),
+        },
+        feature2: {
+          key: "feature2",
+          isEnabled: false,
           track: expect.any(Function),
         },
       });
