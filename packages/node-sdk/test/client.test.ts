@@ -866,6 +866,11 @@ describe("BucketClient", () => {
           isEnabled: true,
           track: expect.any(Function),
         },
+        feature2: {
+          key: "feature2",
+          isEnabled: false,
+          track: expect.any(Function),
+        },
       });
 
       await client.flush();
@@ -911,6 +916,13 @@ describe("BucketClient", () => {
             key: "feature1",
             targetingVersion: 1,
             evalResult: true,
+          },
+          {
+            type: "feature-flag-event",
+            action: "check",
+            key: "feature2",
+            targetingVersion: 2,
+            evalResult: false,
           },
         ],
       );
@@ -938,6 +950,11 @@ describe("BucketClient", () => {
           key: "feature1",
           track: expect.any(Function),
         },
+        feature2: {
+          key: "feature2",
+          isEnabled: false,
+          track: expect.any(Function),
+        },
       });
 
       await client.flush();
@@ -974,10 +991,17 @@ describe("BucketClient", () => {
             evalMissingFields: ["something"],
           },
           {
+            type: "feature-flag-event",
             action: "check",
             evalResult: true,
             key: "feature1",
             targetingVersion: 1,
+          },
+          {
+            action: "check",
+            evalResult: false,
+            key: "feature2",
+            targetingVersion: 2,
             type: "feature-flag-event",
           },
         ],
@@ -991,6 +1015,11 @@ describe("BucketClient", () => {
         feature1: {
           isEnabled: true,
           key: "feature1",
+          track: expect.any(Function),
+        },
+        feature2: {
+          key: "feature2",
+          isEnabled: false,
           track: expect.any(Function),
         },
       });
@@ -1029,11 +1058,21 @@ describe("BucketClient", () => {
             evalMissingFields: ["something"],
           },
           {
+            type: "feature-flag-event",
             action: "check",
             evalResult: true,
             key: "feature1",
             targetingVersion: 1,
+          },
+          {
             type: "feature-flag-event",
+            action: "check",
+            evalContext: undefined,
+            evalMissingFields: undefined,
+            evalResult: false,
+            evalRuleResults: undefined,
+            key: "feature2",
+            targetingVersion: 2,
           },
         ],
       );
@@ -1241,6 +1280,11 @@ describe("BucketClient", () => {
         feature1: {
           key: "feature1",
           isEnabled: true,
+          track: expect.any(Function),
+        },
+        feature2: {
+          key: "feature2",
+          isEnabled: false,
           track: expect.any(Function),
         },
       });
