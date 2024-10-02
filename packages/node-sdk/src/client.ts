@@ -16,10 +16,11 @@ import {
   Cache,
   ClientOptions,
   Context,
+  Feature,
   FeatureEvent,
   FeaturesAPIResponse,
   HttpClient,
-  InternalFeature,
+  RawFeature,
   Logger,
   TrackingMeta,
   TrackOptions,
@@ -78,7 +79,7 @@ export class BucketClient {
     refetchInterval: number;
     staleWarningInterval: number;
     headers: Record<string, string>;
-    fallbackFeatures?: Record<keyof TypedFeatures, InternalFeature>;
+    fallbackFeatures?: Record<keyof TypedFeatures, RawFeature>;
     featuresCache?: Cache<FeaturesAPIResponse>;
     batchBuffer: BatchBuffer<BulkEvent>;
   };
@@ -128,7 +129,7 @@ export class BucketClient {
           };
           return acc;
         },
-        {} as Record<keyof TypedFeatures, InternalFeature>,
+        {} as Record<keyof TypedFeatures, RawFeature>,
       );
 
     const logger =
@@ -518,16 +519,9 @@ export class BucketClient {
     await this._config.batchBuffer.flush();
   }
 
-  /**
-   * Gets the evaluated feature for the current context which includes the user, company, and custom context.
-   *
-   * @returns The evaluated features.
-   * @remarks
-   * Call `initialize` before calling this method to ensure the feature definitions are cached, no features will be returned otherwise.
-   **/
-  public getFeatures(context: Context): TypedFeatures {
+  private _getFeatures(context: Context): Record<string, RawFeature> {
     const featureDefinitions = this.getFeaturesCache().get();
-    let evaluatedFeatures: Record<keyof TypedFeatures, InternalFeature> =
+    let evaluatedFeatures: Record<keyof TypedFeatures, RawFeature> =
       this._config.fallbackFeatures || {};
 
     if (featureDefinitions) {
@@ -565,7 +559,7 @@ export class BucketClient {
           };
           return acc;
         },
-        {} as Record<keyof TypedFeatures, InternalFeature>,
+        {} as Record<keyof TypedFeatures, RawFeature>,
       );
 
       this._config.logger?.debug("evaluated features", evaluatedFeatures);
@@ -574,38 +568,67 @@ export class BucketClient {
         "failed to use feature definitions, there are none cached yet. Using fallback features.",
       );
     }
+    return evaluatedFeatures;
+  }
 
-    return maskedProxy(evaluatedFeatures, (features, key) => {
-      void this.sendFeatureEvent({
-        action: "check",
-        key: key,
-        targetingVersion: features[key].targetingVersion,
-        evalResult: features[key].isEnabled,
-      }).catch((err) => {
-        this._config.logger?.error(
-          `failed to send check event for "${key}": ${err}`,
-          err,
-        );
-      });
+  /**
+   * Gets the raw features for the current context which includes the user, company, and custom context.
+   * Using the `isEnabled` property does not send a `check` event to Bucket, as opposed to the `getFeature` method.
+   * Meant for use in serialization of features for transferring to the client-side/browser.
+   *
+   * @returns The evaluated features.
+   * @remarks
+   * Call `initialize` before calling this method to ensure the feature definitions are cached, no features will be returned otherwise.
+   **/
+  public getFeaturesRaw(context: Context) {
+    return this._getFeatures(context);
+  }
 
-      const feature = features[key];
+  /**
+   * Gets the evaluated feature for the current context which includes the user, company, and custom context.
+   * Using the `isEnabled` property sends a `check` event to Bucket.
+   *
+   * @returns The evaluated features.
+   * @remarks
+   * Call `initialize` before calling this method to ensure the feature definitions are cached, no features will be returned otherwise.
+   **/
+  public getFeature(context: Context, key: keyof TypedFeatures) {
+    const features = this._getFeatures(context);
+    const self = this;
+    const feature = features[key];
+    const isEnabled = feature?.isEnabled ?? false;
 
-      return {
-        key,
-        isEnabled: feature?.isEnabled ?? false,
-        track: async () => {
-          const userId = context.user?.id;
-          if (!userId) {
-            this._config.logger?.warn(
-              "feature.track(): no user set, cannot track event",
+    return {
+      get isEnabled() {
+        void self
+          .sendFeatureEvent({
+            action: "check",
+            key: key,
+            targetingVersion: features[key].targetingVersion,
+            evalResult: features[key].isEnabled,
+          })
+          .catch((err) => {
+            self._config.logger?.error(
+              `failed to send check event for "${key}": ${err}`,
+              err,
             );
-            return;
-          }
+          });
 
-          await this.track(userId, key, { companyId: context.company?.id });
-        },
-      };
-    });
+        return isEnabled;
+      },
+      key,
+      track: async () => {
+        const userId = context.user?.id;
+        if (!userId) {
+          this._config.logger?.warn(
+            "feature.track(): no user set, cannot track event",
+          );
+          return;
+        }
+
+        await this.track(userId, key, { companyId: context.company?.id });
+      },
+    };
   }
 }
 

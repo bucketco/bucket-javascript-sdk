@@ -58,7 +58,7 @@ export type FeatureEvent = {
 /**
  * Describes a feature
  */
-export interface InternalFeature {
+export interface RawFeature {
   /**
    * The key of the feature.
    */
