@@ -745,7 +745,7 @@ describe("BucketClient", () => {
     });
   });
 
-  describe("getFeatures", () => {
+  describe("getFeaturesRaw", () => {
     let client: BucketClient;
 
     const featureDefinitions: FeaturesAPIResponse = {
@@ -854,7 +854,7 @@ describe("BucketClient", () => {
       httpClient.post.mockClear(); // not interested in updates
 
       await client.initialize();
-      const result = client.getFeatures({
+      const result = client.getFeaturesRaw({
         company,
         user,
         other: otherContext,
@@ -864,12 +864,12 @@ describe("BucketClient", () => {
         feature1: {
           key: "feature1",
           isEnabled: true,
-          track: expect.any(Function),
+          targetingVersion: 1,
         },
         feature2: {
           key: "feature2",
           isEnabled: false,
-          track: expect.any(Function),
+          targetingVersion: 2,
         },
       });
 
@@ -910,27 +910,13 @@ describe("BucketClient", () => {
             evalRuleResults: [false],
             evalMissingFields: ["something"],
           },
-          {
-            type: "feature-flag-event",
-            action: "check",
-            key: "feature1",
-            targetingVersion: 1,
-            evalResult: true,
-          },
-          {
-            type: "feature-flag-event",
-            action: "check",
-            key: "feature2",
-            targetingVersion: 2,
-            evalResult: false,
-          },
         ],
       );
     });
 
     it("should properly define the rate limiter key", async () => {
       await client.initialize();
-      client.getFeatures({ user, company, other: otherContext });
+      client.getFeaturesRaw({ user, company, other: otherContext });
 
       expect(checkWithinAllottedTimeWindow).toHaveBeenCalledWith(
         FEATURE_EVENTS_PER_MIN,
@@ -942,18 +928,18 @@ describe("BucketClient", () => {
       httpClient.post.mockClear(); // not interested in updates
 
       await client.initialize();
-      const features = client.getFeatures({ user });
+      const features = client.getFeaturesRaw({ user });
 
       expect(features).toEqual({
         feature1: {
           isEnabled: true,
           key: "feature1",
-          track: expect.any(Function),
+          targetingVersion: 1,
         },
         feature2: {
           key: "feature2",
           isEnabled: false,
-          track: expect.any(Function),
+          targetingVersion: 2,
         },
       });
 
@@ -989,20 +975,6 @@ describe("BucketClient", () => {
             evalResult: false,
             evalRuleResults: [false],
             evalMissingFields: ["something"],
-          },
-          {
-            type: "feature-flag-event",
-            action: "check",
-            evalResult: true,
-            key: "feature1",
-            targetingVersion: 1,
-          },
-          {
-            action: "check",
-            evalResult: false,
-            key: "feature2",
-            targetingVersion: 2,
-            type: "feature-flag-event",
           },
         ],
       );
@@ -1010,17 +982,17 @@ describe("BucketClient", () => {
 
     it("should return evaluated features when only company is defined", async () => {
       await client.initialize();
-      const features = client.getFeatures({ company });
+      const features = client.getFeaturesRaw({ company });
       expect(features).toEqual({
         feature1: {
           isEnabled: true,
           key: "feature1",
-          track: expect.any(Function),
+          targetingVersion: 1,
         },
         feature2: {
           key: "feature2",
           isEnabled: false,
-          track: expect.any(Function),
+          targetingVersion: 2,
         },
       });
 
@@ -1057,30 +1029,13 @@ describe("BucketClient", () => {
             evalRuleResults: [false],
             evalMissingFields: ["something"],
           },
-          {
-            type: "feature-flag-event",
-            action: "check",
-            evalResult: true,
-            key: "feature1",
-            targetingVersion: 1,
-          },
-          {
-            type: "feature-flag-event",
-            action: "check",
-            evalContext: undefined,
-            evalMissingFields: undefined,
-            evalResult: false,
-            evalRuleResults: undefined,
-            key: "feature2",
-            targetingVersion: 2,
-          },
         ],
       );
     });
 
     it("should return evaluated features when only other context is defined", async () => {
       await client.initialize();
-      client.getFeatures({ other: otherContext });
+      client.getFeaturesRaw({ other: otherContext });
 
       await client.flush();
 
@@ -1121,10 +1076,12 @@ describe("BucketClient", () => {
 
     it("should send `track` with user and company if provided", async () => {
       await client.initialize();
-      const features = client.getFeatures({ company, user });
+      const feature1 = client.getFeature({ company, user }, "feature1");
 
-      await features["feature1"].track();
+      await feature1.track();
       await client.flush();
+
+      console.log(httpClient.post.mock.calls);
 
       expect(httpClient.post).toHaveBeenCalledTimes(1);
       expect(httpClient.post).toHaveBeenCalledWith(
@@ -1142,10 +1099,6 @@ describe("BucketClient", () => {
           expect.objectContaining({
             type: "feature-flag-event",
             action: "evaluate",
-          }),
-          expect.objectContaining({
-            type: "feature-flag-event",
-            action: "check",
           }),
           {
             companyId: "company123",
@@ -1159,9 +1112,9 @@ describe("BucketClient", () => {
 
     it("should send `track` with user if provided", async () => {
       await client.initialize();
-      const features = client.getFeatures({ user });
+      const feature = client.getFeature({ user }, "feature1");
 
-      await features["feature1"].track();
+      await feature.track();
       await client.flush();
 
       expect(httpClient.post).toHaveBeenCalledTimes(1);
@@ -1180,10 +1133,6 @@ describe("BucketClient", () => {
             type: "feature-flag-event",
             action: "evaluate",
           }),
-          expect.objectContaining({
-            type: "feature-flag-event",
-            action: "check",
-          }),
           {
             event: "feature1",
             type: "event",
@@ -1193,11 +1142,12 @@ describe("BucketClient", () => {
       );
     });
 
-    it("should not send `track` with company if provided", async () => {
+    it("should not send `track` with only company if provided", async () => {
+      // we do not accept track events without a userId
       await client.initialize();
-      const features = client.getFeatures({ company });
+      const feature = client.getFeature({ company }, "feature1");
 
-      await features["feature1"].track();
+      await feature.track();
       await client.flush();
 
       expect(httpClient.post).toHaveBeenCalledTimes(1);
@@ -1216,10 +1166,6 @@ describe("BucketClient", () => {
             type: "feature-flag-event",
             action: "evaluate",
           }),
-          expect.objectContaining({
-            type: "feature-flag-event",
-            action: "check",
-          }),
         ],
       );
     });
@@ -1230,14 +1176,12 @@ describe("BucketClient", () => {
       });
 
       await client.initialize();
-      const result = client.getFeatures({});
+      const result = client.getFeature({ user: { id: "user123" } }, "key");
 
       expect(result).toEqual({
-        key: {
-          key: "key",
-          isEnabled: true,
-          track: expect.any(Function),
-        },
+        key: "key",
+        isEnabled: true,
+        track: expect.any(Function),
       });
 
       expect(logger.warn).toHaveBeenCalledWith(
@@ -1267,7 +1211,7 @@ describe("BucketClient", () => {
       httpClient.post.mockRejectedValueOnce(new Error("Network error"));
 
       await client.initialize();
-      const features = client.getFeatures({});
+      const features = client.getFeaturesRaw({});
 
       await client.flush();
 
@@ -1280,12 +1224,12 @@ describe("BucketClient", () => {
         feature1: {
           key: "feature1",
           isEnabled: true,
-          track: expect.any(Function),
+          targetingVersion: 1,
         },
         feature2: {
           key: "feature2",
           isEnabled: false,
-          track: expect.any(Function),
+          targetingVersion: 2,
         },
       });
     });
@@ -1299,13 +1243,13 @@ describe("BucketClient", () => {
       await client.initialize();
       httpClient.post.mockRejectedValue(new Error("Network error"));
 
-      const result = client.getFeatures({});
+      const result = client.getFeaturesRaw({});
 
       // Trigger a feature check
       expect(result.feature1).toEqual({
         key: "feature1",
         isEnabled: true,
-        track: expect.any(Function),
+        targetingVersion: 1,
       });
 
       await client.flush();
@@ -1373,7 +1317,7 @@ describe("BoundBucketClient", () => {
       boundClient.bindClient({ other: otherContext }).otherContext,
     ).toEqual(otherContext);
 
-    boundClient.getFeatures();
+    boundClient.getFeaturesRaw();
 
     await boundClient.track("feature");
     await client.flush();
@@ -1395,7 +1339,7 @@ describe("BoundBucketClient", () => {
   it("should add company ID from the context if not explicitly supplied", async () => {
     const boundClient = client.bindClient({ user, company });
 
-    boundClient.getFeatures();
+    boundClient.getFeaturesRaw();
     await boundClient.track("feature");
 
     await client.flush();
@@ -1423,6 +1367,6 @@ describe("BoundBucketClient", () => {
     });
 
     await client.initialize();
-    boundClient.getFeatures();
+    boundClient.getFeaturesRaw();
   });
 });

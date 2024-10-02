@@ -691,11 +691,22 @@ export class BoundBucketClient {
 
   /**
    * Get features for the user/company/other context bound to this client.
+   * Meant for use in serialization of features for transferring to the client-side/browser.
    *
    * @returns Features for the given user/company and whether each one is enabled or not
    */
-  public getFeatures() {
-    return this._client.getFeatures(this._context);
+  public getFeaturesRaw() {
+    return this._client.getFeaturesRaw(this._context);
+  }
+
+  /**
+   * Get a specific feature for the user/company/other context bound to this client.
+   * Using the `isEnabled` property sends a `check` event to Bucket.
+   *
+   * @returns Features for the given user/company and whether each one is enabled or not
+   */
+  public getFeature(key: keyof TypedFeatures) {
+    return this._client.getFeature(this._context, key);
   }
 
   /**
