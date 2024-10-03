@@ -16,11 +16,9 @@ import {
   Cache,
   ClientOptions,
   Context,
-  Feature,
   FeatureEvent,
   FeaturesAPIResponse,
   HttpClient,
-  RawFeature,
   Logger,
   TrackingMeta,
   TrackOptions,
@@ -30,9 +28,9 @@ import {
   checkWithinAllottedTimeWindow,
   decorateLogger,
   isObject,
-  maskedProxy,
   ok,
 } from "./utils";
+import { RawFeature } from ".";
 
 type BulkEvent =
   | {
@@ -597,6 +595,7 @@ export class BucketClient {
     const self = this;
     const feature = features[key];
     const isEnabled = feature?.isEnabled ?? false;
+    const targetingVersion = feature?.targetingVersion;
 
     return {
       get isEnabled() {
@@ -604,8 +603,8 @@ export class BucketClient {
           .sendFeatureEvent({
             action: "check",
             key: key,
-            targetingVersion: features[key].targetingVersion,
-            evalResult: features[key].isEnabled,
+            targetingVersion,
+            evalResult: isEnabled,
           })
           .catch((err) => {
             self._config.logger?.error(

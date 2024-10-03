@@ -91,6 +91,72 @@ const expectedHeaders = {
   Authorization: `Bearer ${validOptions.secretKey}`,
 };
 
+const featureDefinitions: FeaturesAPIResponse = {
+  features: [
+    {
+      key: "feature1",
+      targeting: {
+        version: 1,
+        rules: [
+          {
+            filter: {
+              type: "context" as const,
+              field: "company.id",
+              operator: "IS",
+              values: ["company123"],
+            },
+          },
+        ],
+      },
+    },
+    {
+      key: "feature2",
+      targeting: {
+        version: 2,
+        rules: [
+          {
+            filter: {
+              type: "group" as const,
+              operator: "and",
+              filters: [
+                {
+                  type: "context" as const,
+                  field: "company.id",
+                  operator: "IS",
+                  values: ["company123"],
+                },
+                {
+                  partialRolloutThreshold: 0.5,
+                  partialRolloutAttribute: "attributeKey",
+                  type: "rolloutPercentage" as const,
+                  key: "feature2",
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+};
+
+const evaluatedFeatures = [
+  {
+    feature: { key: "feature1", version: 1 },
+    value: true,
+    context: {},
+    ruleEvaluationResults: [true],
+    missingContextFields: [],
+  },
+  {
+    feature: { key: "feature2", version: 2 },
+    value: false,
+    context: {},
+    ruleEvaluationResults: [false],
+    missingContextFields: ["something"],
+  },
+];
+
 describe("BucketClient", () => {
   afterEach(() => {
     vi.clearAllMocks();
@@ -745,74 +811,217 @@ describe("BucketClient", () => {
     });
   });
 
+  describe.only("getFeature", () => {
+    let client: BucketClient;
+    beforeEach(async () => {
+      httpClient.get.mockResolvedValue({
+        status: 200,
+        body: {
+          success: true,
+          ...featureDefinitions,
+        },
+      });
+
+      client = new BucketClient(validOptions);
+
+      vi.mocked(evaluateTargeting).mockImplementation(
+        ({ feature, context }) => {
+          const evalFeature = evaluatedFeatures.find(
+            (f) => f.feature.key === feature.key,
+          )!;
+          const featureDef = featureDefinitions.features.find(
+            (f) => f.key === feature.key,
+          )!;
+
+          return {
+            value: evalFeature.value,
+            feature: featureDef,
+            context: context,
+            ruleEvaluationResults: evalFeature.ruleEvaluationResults,
+            missingContextFields: evalFeature.missingContextFields,
+          };
+        },
+      );
+
+      httpClient.post.mockResolvedValue({
+        status: 200,
+        body: { success: true },
+      });
+    });
+
+    it("returns a feature", async () => {
+      // test that the feature is returned
+      await client.initialize();
+      const feature = client.getFeature(
+        {
+          company,
+          user,
+          other: otherContext,
+        },
+        "feature1",
+      );
+      expect(feature).toEqual({
+        key: "feature1",
+        isEnabled: true,
+        track: expect.any(Function),
+      });
+    });
+
+    it("`track` sends event", async () => {
+      const context = {
+        company,
+        user,
+        other: otherContext,
+      };
+      // test that the feature is returned
+      await client.initialize();
+      const feature = client.getFeature(context, "feature1");
+      await feature.track();
+      await client.flush();
+
+      expect(httpClient.post).toHaveBeenCalledWith(
+        BULK_ENDPOINT,
+        expectedHeaders,
+        [
+          {
+            type: "feature-flag-event",
+            action: "evaluate",
+            key: "feature1",
+            targetingVersion: 1,
+            evalContext: context,
+            evalResult: true,
+            evalRuleResults: [true],
+            evalMissingFields: [],
+          },
+          {
+            type: "feature-flag-event",
+            action: "evaluate",
+            key: "feature2",
+            targetingVersion: 2,
+            evalContext: context,
+            evalResult: false,
+            evalRuleResults: [false],
+            evalMissingFields: ["something"],
+          },
+          {
+            type: "event",
+            event: "feature1",
+            userId: user.id,
+            companyId: company.id,
+          },
+        ],
+      );
+    });
+
+    it("`isEnabled` sends `check` event", async () => {
+      const context = {
+        company,
+        user,
+        other: otherContext,
+      };
+      // test that the feature is returned
+      await client.initialize();
+      const feature = client.getFeature(context, "feature1");
+
+      // trigger `check` event
+      expect(feature.isEnabled).toBe(true);
+
+      await client.flush();
+
+      expect(httpClient.post).toHaveBeenCalledWith(
+        BULK_ENDPOINT,
+        expectedHeaders,
+        [
+          {
+            type: "feature-flag-event",
+            action: "evaluate",
+            key: "feature1",
+            targetingVersion: 1,
+            evalContext: context,
+            evalResult: true,
+            evalRuleResults: [true],
+            evalMissingFields: [],
+          },
+          {
+            type: "feature-flag-event",
+            action: "evaluate",
+            key: "feature2",
+            targetingVersion: 2,
+            evalContext: context,
+            evalResult: false,
+            evalRuleResults: [false],
+            evalMissingFields: ["something"],
+          },
+          {
+            type: "feature-flag-event",
+            action: "check",
+            evalResult: true,
+            targetingVersion: 1,
+            key: "feature1",
+          },
+        ],
+      );
+    });
+
+    it("everything works for unknown feature", async () => {
+      const context = {
+        company,
+        user,
+        other: otherContext,
+      };
+      // test that the feature is returned
+      await client.initialize();
+      const feature = client.getFeature(context, "unknown-feature");
+
+      // trigger `check` event
+      expect(feature.isEnabled).toBe(false);
+      await feature.track();
+
+      await client.flush();
+
+      expect(httpClient.post).toHaveBeenCalledWith(
+        BULK_ENDPOINT,
+        expectedHeaders,
+        [
+          {
+            type: "feature-flag-event",
+            action: "evaluate",
+            key: "feature1",
+            targetingVersion: 1,
+            evalContext: context,
+            evalResult: true,
+            evalRuleResults: [true],
+            evalMissingFields: [],
+          },
+          {
+            type: "feature-flag-event",
+            action: "evaluate",
+            key: "feature2",
+            targetingVersion: 2,
+            evalContext: context,
+            evalResult: false,
+            evalRuleResults: [false],
+            evalMissingFields: ["something"],
+          },
+          {
+            type: "feature-flag-event",
+            action: "check",
+            evalResult: false,
+            key: "unknown-feature",
+          },
+          {
+            type: "event",
+            event: "unknown-feature",
+            userId: user.id,
+            companyId: company.id,
+          },
+        ],
+      );
+    });
+  });
+
   describe("getFeaturesRaw", () => {
     let client: BucketClient;
-
-    const featureDefinitions: FeaturesAPIResponse = {
-      features: [
-        {
-          key: "feature1",
-          targeting: {
-            version: 1,
-            rules: [
-              {
-                filter: {
-                  type: "context" as const,
-                  field: "company.id",
-                  operator: "IS",
-                  values: ["company123"],
-                },
-              },
-            ],
-          },
-        },
-        {
-          key: "feature2",
-          targeting: {
-            version: 2,
-            rules: [
-              {
-                filter: {
-                  type: "group" as const,
-                  operator: "and",
-                  filters: [
-                    {
-                      type: "context" as const,
-                      field: "company.id",
-                      operator: "IS",
-                      values: ["company123"],
-                    },
-                    {
-                      partialRolloutThreshold: 0.5,
-                      partialRolloutAttribute: "attributeKey",
-                      type: "rolloutPercentage" as const,
-                      key: "feature2",
-                    },
-                  ],
-                },
-              },
-            ],
-          },
-        },
-      ],
-    };
-
-    const evaluatedFeatures = [
-      {
-        feature: { key: "feature1", version: 1 },
-        value: true,
-        context: {},
-        ruleEvaluationResults: [true],
-        missingContextFields: [],
-      },
-      {
-        feature: { key: "feature2", version: 2 },
-        value: false,
-        context: {},
-        ruleEvaluationResults: [false],
-        missingContextFields: ["something"],
-      },
-    ];
 
     beforeEach(async () => {
       httpClient.get.mockResolvedValue({
