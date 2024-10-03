@@ -811,7 +811,7 @@ describe("BucketClient", () => {
     });
   });
 
-  describe.only("getFeature", () => {
+  describe("getFeature", () => {
     let client: BucketClient;
     beforeEach(async () => {
       httpClient.get.mockResolvedValue({
