@@ -775,4 +775,11 @@ export class BoundBucketClient {
 
     return new BoundBucketClient(this._client, newContext);
   }
+
+  /**
+   * Flushes the batch buffer.
+   */
+  public async flush() {
+    await this._client.flush();
+  }
 }

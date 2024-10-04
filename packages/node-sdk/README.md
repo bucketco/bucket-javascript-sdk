@@ -60,16 +60,16 @@ const boundClient = client.bindClient({
 });
 
 // get the current features (uses company, user and custom context to evaluate the features).
-const { huddle } = boundClient.getFeatures();
+const { isEnabled, track } = boundClient.getFeature("huddle");
 
-if (huddle.isEnabled) {
+if (isEnabled) {
   // this is your feature gated code ...
   // send an event when the feature is used:
-  huddle.track();
+  track();
 
-  // CAUTION: if need the track event to be sent to Bucket as soon as possible,
-  // always call `flush`. It can optionally be awaited to guarantee the sent happened.
-  client.flush();
+  // CAUTION: if you plan to use the event for automated feedback surveys call `flush` immediately
+  // after `track`. It can optionally be awaited to guarantee the sent happened.
+  boundClient.flush();
 }
 ```
 
