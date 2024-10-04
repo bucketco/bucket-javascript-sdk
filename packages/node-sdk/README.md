@@ -178,13 +178,13 @@ Supply these to the `constructor` of the `BucketClient` class:
 {
   // The secret key used to authenticate with the Bucket API.
   secretKey: string,
-  // The host to send requests to (optional).
+  // Override Bucket server address
   host?: string = "https://front.bucket.co",
   // The logger you can supply. By default no logging is performed.
   logger?: Logger,
   // The custom http client. By default the internal `fetchClient` is used.
   httpClient?: HttpClient = fetchClient,
-  // A list of fallback features that will be enabled the Bucket servers
+  // A list of fallback features that will be enabled if the Bucket servers
   // have not been contacted yet.
   fallbackFeatures?: string[]
 }
