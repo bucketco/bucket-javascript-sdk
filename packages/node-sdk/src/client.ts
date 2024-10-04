@@ -16,6 +16,7 @@ import {
   Cache,
   ClientOptions,
   Context,
+  Feature,
   FeatureEvent,
   FeaturesAPIResponse,
   HttpClient,
@@ -569,40 +570,18 @@ export class BucketClient {
     return evaluatedFeatures;
   }
 
-  /**
-   * Gets the raw features for the current context which includes the user, company, and custom context.
-   * Using the `isEnabled` property does not send a `check` event to Bucket, as opposed to the `getFeature` method.
-   * Meant for use in serialization of features for transferring to the client-side/browser.
-   *
-   * @returns The evaluated features.
-   * @remarks
-   * Call `initialize` before calling this method to ensure the feature definitions are cached, no features will be returned otherwise.
-   **/
-  public getFeaturesRaw(context: Context) {
-    return this._getFeatures(context);
-  }
-
-  /**
-   * Gets the evaluated feature for the current context which includes the user, company, and custom context.
-   * Using the `isEnabled` property sends a `check` event to Bucket.
-   *
-   * @returns The evaluated features.
-   * @remarks
-   * Call `initialize` before calling this method to ensure the feature definitions are cached, no features will be returned otherwise.
-   **/
-  public getFeature(context: Context, key: keyof TypedFeatures) {
-    const features = this._getFeatures(context);
+  private _wrapRawFeature(
+    context: Context,
+    { key, isEnabled, targetingVersion }: RawFeature,
+  ): Feature {
     const self = this;
-    const feature = features[key];
-    const isEnabled = feature?.isEnabled ?? false;
-    const targetingVersion = feature?.targetingVersion;
 
     return {
       get isEnabled() {
         void self
           .sendFeatureEvent({
             action: "check",
-            key: key,
+            key,
             targetingVersion,
             evalResult: isEnabled,
           })
@@ -625,9 +604,47 @@ export class BucketClient {
           return;
         }
 
-        await this.track(userId, key, { companyId: context.company?.id });
+        await this.track(userId, key, {
+          companyId: context.company?.id,
+        });
       },
     };
+  }
+
+  /**
+   * Gets the evaluated feature for the current context which includes the user, company, and custom context.
+   *
+   * @returns The evaluated features.
+   * @remarks
+   * Call `initialize` before calling this method to ensure the feature definitions are cached, no features will be returned otherwise.
+   **/
+  public getFeatures(context: Context): TypedFeatures {
+    const features = this._getFeatures(context);
+    return Object.fromEntries(
+      Object.entries(features).map(([k, v]) => [
+        k as keyof TypedFeatures,
+        this._wrapRawFeature(context, v),
+      ]),
+    );
+  }
+
+  /**
+   * Gets the evaluated feature for the current context which includes the user, company, and custom context.
+   * Using the `isEnabled` property sends a `check` event to Bucket.
+   *
+   * @returns The evaluated features.
+   * @remarks
+   * Call `initialize` before calling this method to ensure the feature definitions are cached, no features will be returned otherwise.
+   **/
+  public getFeature(context: Context, key: keyof TypedFeatures) {
+    const features = this._getFeatures(context);
+    const feature = features[key];
+
+    return this._wrapRawFeature(context, {
+      key,
+      isEnabled: feature?.isEnabled ?? false,
+      targetingVersion: feature?.targetingVersion,
+    });
   }
 }
 
@@ -694,8 +711,8 @@ export class BoundBucketClient {
    *
    * @returns Features for the given user/company and whether each one is enabled or not
    */
-  public getFeaturesRaw() {
-    return this._client.getFeaturesRaw(this._context);
+  public getFeatures() {
+    return this._client.getFeatures(this._context);
   }
 
   /**
