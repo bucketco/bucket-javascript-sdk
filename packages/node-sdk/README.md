@@ -50,7 +50,7 @@ const client = new BucketClient({
 await client.initialize();
 ```
 
-Once the client is initialized, you can obtain features along with the isEnabled status to indicate whether the feature is targeted for this user/company:
+Once the client is initialized, you can obtain features along with the `isEnabled` status to indicate whether the feature is targeted for this user/company:
 
 ```ts
 // configure the client
@@ -59,7 +59,7 @@ const boundClient = client.bindClient({
   company: { id: "acme_inc", name: "Acme, Inc." },
 });
 
-// get the current features (uses company, user and custom context to evaluate the features).
+// get the huddle feature using company, user and custom context to evaluate the targeting.
 const { isEnabled, track } = boundClient.getFeature("huddle");
 
 if (isEnabled) {
@@ -73,24 +73,22 @@ if (isEnabled) {
 }
 ```
 
-It is highly recommended that users of this SDK manually call `client.flush()` method on process shutdown. The SDK employs
-a batching technique to minimize the number of calls that are sent to Bucket's servers. During process shutdown, some
-messages could be waiting to be sent, and thus, would be discarded if the buffer is not flushed.
+You can also use the `getFeatures` method which returns a map of all features:
 
-A naive example:
-
-````ts
-process.on("SIGINT", () => {
-  console.log("Flushing batch buffer...");
-  client.flush().then(() => {
-    process.exit(0)
-  })
-});
+```ts
+// get the current features (uses company, user and custom context to evaluate the features).
+const features = boundClient.getFeatures();
+const bothEnabled =
+  features.huddle?.isEnabled && features.voiceHuddle?.isEnabled;
 ```
-When you bind a client to a user/company, this data is matched against the targeting rules.
-To get accurate targeting, you must ensure that the user/company information provided is sufficient to match against the targeting rules you've created.
-The user/company data is automatically transferred to Bucket.
-This ensures that you'll have up-to-date information about companies and users and accurate targeting information available in Bucket at all time.
+
+When using `getFeatures` be careful not to assume that a feature exists, this could be a dangerous pattern:
+
+```ts
+// warning: if the `huddle` feature does not exist because it wasn't created in Bucket
+// or because the client was unable to reach our servers for some reason, this will cause an exception:
+const { isEnabled } = boundClient.getFeatures()["huddle"];
+```
 
 ## High performance feature targeting
 
@@ -101,6 +99,28 @@ to `getFeatures` (or through `bindClient(..).getFeatures()`). That means the
 `getFeatures` call does not need to contact the Bucket servers once initialize
 has completed. `BucketClient` will continue to periodically download the
 targeting rules from the Bucket servers in the background.
+
+## Flushing
+
+It is highly recommended that users of this SDK manually call `client.flush()` method on process shutdown. The SDK employs
+a batching technique to minimize the number of calls that are sent to Bucket's servers. During process shutdown, some
+messages could be waiting to be sent, and thus, would be discarded if the buffer is not flushed.
+
+A naive example:
+
+```ts
+process.on("SIGINT", () => {
+  console.log("Flushing batch buffer...");
+  client.flush().then(() => {
+    process.exit(0);
+  });
+});
+```
+
+When you bind a client to a user/company, this data is matched against the targeting rules.
+To get accurate targeting, you must ensure that the user/company information provided is sufficient to match against the targeting rules you've created.
+The user/company data is automatically transferred to Bucket.
+This ensures that you'll have up-to-date information about companies and users and accurate targeting information available in Bucket at all time.
 
 ## Tracking custom events and setting custom attributes
 
@@ -121,7 +141,7 @@ client.updateCompany("company_id", { userId: "user_id" });
 
 // the user started a voice huddle
 client.track("user_id", "huddle", { attributes: { voice: true } });
-````
+```
 
 It's also possible to achieve the same through a bound client in the following manner:
 
@@ -214,3 +234,7 @@ through a package manager.
 
 > MIT License
 > Copyright (c) 2024 Bucket ApS
+
+```
+
+```
