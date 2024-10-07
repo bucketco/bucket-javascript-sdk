@@ -574,6 +574,7 @@ export class BucketClient {
     context: Context,
     { key, isEnabled, targetingVersion }: RawFeature,
   ): Feature {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const client = this;
 
     return {
