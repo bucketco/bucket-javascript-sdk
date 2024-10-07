@@ -1334,8 +1334,6 @@ describe("BucketClient", () => {
       await feature1.track();
       await client.flush();
 
-      console.log(httpClient.post.mock.calls);
-
       expect(httpClient.post).toHaveBeenCalledTimes(1);
       expect(httpClient.post).toHaveBeenCalledWith(
         BULK_ENDPOINT,

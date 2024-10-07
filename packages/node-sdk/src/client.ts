@@ -31,7 +31,7 @@ import {
   isObject,
   ok,
 } from "./utils";
-import { RawFeature } from ".";
+import type { RawFeature } from "./types";
 
 type BulkEvent =
   | {
