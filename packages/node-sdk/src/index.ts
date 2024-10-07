@@ -6,5 +6,6 @@ export type {
   Features,
   HttpClient,
   Logger,
+  RawFeature,
   TrackingMeta,
 } from "./types";

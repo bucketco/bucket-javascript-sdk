@@ -34,37 +34,6 @@ export function checkWithinAllottedTimeWindow(
 }
 
 /**
- * Create a read-only masked proxy for the given object that notifies a
- * callback when a property is accessed. The callback is then responsible
- * for returning the masked value for the given property.
- *
- * @param obj - The object to proxy.
- * @param callback - The callback to notify.
- *
- * @returns The proxy object.
- **/
-export function maskedProxy<T extends object, K extends keyof T, O>(
-  obj: T,
-  valueFunc: (target: T, prop: K) => O,
-) {
-  return new Proxy(obj, {
-    get(target: T, prop) {
-      const val = target[prop as K];
-
-      if (val !== undefined) {
-        return valueFunc(target, prop as K);
-      }
-
-      return undefined;
-    },
-    set(_target, prop, _value) {
-      console.error(`Cannot modify property '${String(prop)}' of the object.`);
-      return true;
-    },
-  }) as Readonly<Record<K, O>>;
-}
-
-/**
  * Assert that the given condition is `true`.
  *
  * @param condition - The condition to check.

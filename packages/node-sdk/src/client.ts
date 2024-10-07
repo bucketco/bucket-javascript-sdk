@@ -11,15 +11,16 @@ import {
   SDK_VERSION_HEADER_NAME,
 } from "./config";
 import fetchClient from "./fetch-http-client";
+import type { RawFeature } from "./types";
 import {
   Attributes,
   Cache,
   ClientOptions,
   Context,
+  Feature,
   FeatureEvent,
   FeaturesAPIResponse,
   HttpClient,
-  InternalFeature,
   Logger,
   TrackingMeta,
   TrackOptions,
@@ -29,7 +30,6 @@ import {
   checkWithinAllottedTimeWindow,
   decorateLogger,
   isObject,
-  maskedProxy,
   ok,
 } from "./utils";
 
@@ -78,7 +78,7 @@ export class BucketClient {
     refetchInterval: number;
     staleWarningInterval: number;
     headers: Record<string, string>;
-    fallbackFeatures?: Record<keyof TypedFeatures, InternalFeature>;
+    fallbackFeatures?: Record<keyof TypedFeatures, RawFeature>;
     featuresCache?: Cache<FeaturesAPIResponse>;
     batchBuffer: BatchBuffer<BulkEvent>;
   };
@@ -128,7 +128,7 @@ export class BucketClient {
           };
           return acc;
         },
-        {} as Record<keyof TypedFeatures, InternalFeature>,
+        {} as Record<keyof TypedFeatures, RawFeature>,
       );
 
     const logger =
@@ -518,16 +518,9 @@ export class BucketClient {
     await this._config.batchBuffer.flush();
   }
 
-  /**
-   * Gets the evaluated feature for the current context which includes the user, company, and custom context.
-   *
-   * @returns The evaluated features.
-   * @remarks
-   * Call `initialize` before calling this method to ensure the feature definitions are cached, no features will be returned otherwise.
-   **/
-  public getFeatures(context: Context): TypedFeatures {
+  private _getFeatures(context: Context): Record<string, RawFeature> {
     const featureDefinitions = this.getFeaturesCache().get();
-    let evaluatedFeatures: Record<keyof TypedFeatures, InternalFeature> =
+    let evaluatedFeatures: Record<keyof TypedFeatures, RawFeature> =
       this._config.fallbackFeatures || {};
 
     if (featureDefinitions) {
@@ -565,7 +558,7 @@ export class BucketClient {
           };
           return acc;
         },
-        {} as Record<keyof TypedFeatures, InternalFeature>,
+        {} as Record<keyof TypedFeatures, RawFeature>,
       );
 
       this._config.logger?.debug("evaluated features", evaluatedFeatures);
@@ -574,37 +567,84 @@ export class BucketClient {
         "failed to use feature definitions, there are none cached yet. Using fallback features.",
       );
     }
+    return evaluatedFeatures;
+  }
 
-    return maskedProxy(evaluatedFeatures, (features, key) => {
-      void this.sendFeatureEvent({
-        action: "check",
-        key: key,
-        targetingVersion: features[key].targetingVersion,
-        evalResult: features[key].isEnabled,
-      }).catch((err) => {
-        this._config.logger?.error(
-          `failed to send check event for "${key}": ${err}`,
-          err,
-        );
-      });
+  private _wrapRawFeature(
+    context: Context,
+    { key, isEnabled, targetingVersion }: RawFeature,
+  ): Feature {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const client = this;
 
-      const feature = features[key];
-
-      return {
-        key,
-        isEnabled: feature?.isEnabled ?? false,
-        track: async () => {
-          const userId = context.user?.id;
-          if (!userId) {
-            this._config.logger?.warn(
-              "feature.track(): no user set, cannot track event",
+    return {
+      get isEnabled() {
+        void client
+          .sendFeatureEvent({
+            action: "check",
+            key,
+            targetingVersion,
+            evalResult: isEnabled,
+          })
+          .catch((err) => {
+            client._config.logger?.error(
+              `failed to send check event for "${key}": ${err}`,
+              err,
             );
-            return;
-          }
+          });
 
-          await this.track(userId, key, { companyId: context.company?.id });
-        },
-      };
+        return isEnabled;
+      },
+      key,
+      track: async () => {
+        const userId = context.user?.id;
+        if (!userId) {
+          this._config.logger?.warn(
+            "feature.track(): no user set, cannot track event",
+          );
+          return;
+        }
+
+        await this.track(userId, key, {
+          companyId: context.company?.id,
+        });
+      },
+    };
+  }
+
+  /**
+   * Gets the evaluated feature for the current context which includes the user, company, and custom context.
+   *
+   * @returns The evaluated features.
+   * @remarks
+   * Call `initialize` before calling this method to ensure the feature definitions are cached, no features will be returned otherwise.
+   **/
+  public getFeatures(context: Context): TypedFeatures {
+    const features = this._getFeatures(context);
+    return Object.fromEntries(
+      Object.entries(features).map(([k, v]) => [
+        k as keyof TypedFeatures,
+        this._wrapRawFeature(context, v),
+      ]),
+    );
+  }
+
+  /**
+   * Gets the evaluated feature for the current context which includes the user, company, and custom context.
+   * Using the `isEnabled` property sends a `check` event to Bucket.
+   *
+   * @returns The evaluated features.
+   * @remarks
+   * Call `initialize` before calling this method to ensure the feature definitions are cached, no features will be returned otherwise.
+   **/
+  public getFeature(context: Context, key: keyof TypedFeatures) {
+    const features = this._getFeatures(context);
+    const feature = features[key];
+
+    return this._wrapRawFeature(context, {
+      key,
+      isEnabled: feature?.isEnabled ?? false,
+      targetingVersion: feature?.targetingVersion,
     });
   }
 }
@@ -668,11 +708,22 @@ export class BoundBucketClient {
 
   /**
    * Get features for the user/company/other context bound to this client.
+   * Meant for use in serialization of features for transferring to the client-side/browser.
    *
    * @returns Features for the given user/company and whether each one is enabled or not
    */
   public getFeatures() {
     return this._client.getFeatures(this._context);
+  }
+
+  /**
+   * Get a specific feature for the user/company/other context bound to this client.
+   * Using the `isEnabled` property sends a `check` event to Bucket.
+   *
+   * @returns Features for the given user/company and whether each one is enabled or not
+   */
+  public getFeature(key: keyof TypedFeatures) {
+    return this._client.getFeature(this._context, key);
   }
 
   /**
@@ -724,5 +775,12 @@ export class BoundBucketClient {
     };
 
     return new BoundBucketClient(this._client, newContext);
+  }
+
+  /**
+   * Flushes the batch buffer.
+   */
+  public async flush() {
+    await this._client.flush();
   }
 }
