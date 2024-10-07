@@ -1622,6 +1622,6 @@ describe("BoundBucketClient", () => {
     await client.initialize();
     boundClient.getFeatures();
     boundClient.getFeature("feature1");
-    boundClient.flush();
+    await boundClient.flush();
   });
 });

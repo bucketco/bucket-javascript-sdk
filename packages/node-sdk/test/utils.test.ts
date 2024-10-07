@@ -12,7 +12,6 @@ import {
   checkWithinAllottedTimeWindow,
   decorateLogger,
   isObject,
-  maskedProxy,
   ok,
 } from "../src/utils";
 

@@ -574,11 +574,11 @@ export class BucketClient {
     context: Context,
     { key, isEnabled, targetingVersion }: RawFeature,
   ): Feature {
-    const self = this;
+    const client = this;
 
     return {
       get isEnabled() {
-        void self
+        void client
           .sendFeatureEvent({
             action: "check",
             key,
@@ -586,7 +586,7 @@ export class BucketClient {
             evalResult: isEnabled,
           })
           .catch((err) => {
-            self._config.logger?.error(
+            client._config.logger?.error(
               `failed to send check event for "${key}": ${err}`,
               err,
             );
