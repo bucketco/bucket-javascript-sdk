@@ -2,8 +2,7 @@
   "extends": "@bucketco/tsconfig/library",
   "compilerOptions": {
     "outDir": "./dist/",
-    "declarationDir": "./dist/types",
-    "noUncheckedIndexedAccess": true
+    "declarationDir": "./dist/types"
   },
   "include": ["src"],
   "typeRoots": ["./node_modules/@types", "./types"]
