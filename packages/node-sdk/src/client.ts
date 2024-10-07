@@ -11,6 +11,7 @@ import {
   SDK_VERSION_HEADER_NAME,
 } from "./config";
 import fetchClient from "./fetch-http-client";
+import type { RawFeature } from "./types";
 import {
   Attributes,
   Cache,
@@ -31,7 +32,6 @@ import {
   isObject,
   ok,
 } from "./utils";
-import type { RawFeature } from "./types";
 
 type BulkEvent =
   | {
