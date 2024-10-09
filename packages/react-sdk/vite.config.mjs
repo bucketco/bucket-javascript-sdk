@@ -1,4 +1,5 @@
 import { resolve } from "path";
+import preserveDirectives from "rollup-preserve-directives";
 import { defineConfig } from "vite";
 import dts from "vite-plugin-dts";
 
@@ -9,7 +10,10 @@ export default defineConfig({
   optimizeDeps: {
     include: ["@bucketco/browser-sdk"],
   },
-  plugins: [dts({ insertTypesEntry: true, exclude: ["dev"] })],
+  plugins: [
+    dts({ insertTypesEntry: true, exclude: ["dev"] }),
+    preserveDirectives(),
+  ],
   build: {
     exclude: ["**/node_modules/**", "test/e2e/**", "dev"],
     sourcemap: true,
