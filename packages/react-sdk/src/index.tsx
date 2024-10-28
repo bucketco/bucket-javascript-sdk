@@ -57,6 +57,9 @@ export type BucketProps = BucketContext & {
   sseHost?: string;
   debug?: boolean;
 
+  trackUser?: boolean;
+  trackCompany?: boolean;
+
   // for testing
   newBucketClient?: (
     ...args: ConstructorParameters<typeof BucketClient>
@@ -103,6 +106,10 @@ export function BucketProvider({
       otherContext,
       host: config.host,
       sseHost: config.sseHost,
+
+      trackUser: config.trackUser,
+      trackCompany: config.trackCompany
+
       features: {
         ...featureOptions,
       },

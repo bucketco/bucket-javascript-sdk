@@ -55,6 +55,8 @@ export type PayloadContext = {
 interface Config {
   host: string;
   sseHost: string;
+  trackUser: boolean;
+  trackCompany: boolean;
 }
 
 export interface InitOptions {
@@ -68,11 +70,15 @@ export interface InitOptions {
   feedback?: FeedbackOptions;
   features?: FeaturesOptions;
   sdkVersion?: string;
+  trackUser?: boolean;
+  trackCompany?: boolean;
 }
 
 const defaultConfig: Config = {
   host: API_HOST,
   sseHost: SSE_REALTIME_HOST,
+  trackUser: true,
+  trackCompany: true,
 };
 
 export interface Feature {
@@ -105,6 +111,8 @@ export class BucketClient {
     this.config = {
       host: opts?.host ?? defaultConfig.host,
       sseHost: opts?.sseHost ?? defaultConfig.sseHost,
+      trackUser: opts?.trackUser ?? defaultConfig.trackUser,
+      trackCompany: opts?.trackCompany ?? defaultConfig.trackCompany,
     } satisfies Config;
 
     const feedbackOpts = handleDeprecatedFeedbackOptions(opts?.feedback);
@@ -169,13 +177,13 @@ export class BucketClient {
 
     await this.featuresClient.initialize();
 
-    if (this.context.user) {
+    if (this.context.user && this.config.trackUser) {
       this.user().catch((e) => {
         this.logger.error("error sending user", e);
       });
     }
 
-    if (this.context.company) {
+    if (this.context.company && this.config.trackCompany) {
       this.company().catch((e) => {
         this.logger.error("error sending company", e);
       });

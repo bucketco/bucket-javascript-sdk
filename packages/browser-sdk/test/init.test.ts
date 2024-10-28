@@ -1,5 +1,5 @@
 import { DefaultBodyType, http, StrictRequest } from "msw";
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi, vitest } from "vitest";
 
 import { BucketClient } from "../src";
 
@@ -53,5 +53,37 @@ describe("init", () => {
     await bucketInstance.initialize();
 
     expect(usedSpecialHost).toBe(true);
+  });
+
+  test("automatically does user/company tracking", async () => {
+    const user = vitest.spyOn(BucketClient.prototype as any, "user");
+    const company = vitest.spyOn(BucketClient.prototype as any, "company");
+
+    const bucketInstance = new BucketClient({
+      publishableKey: KEY,
+      user: { id: "foo" },
+      company: { id: "bar" },
+    });
+    await bucketInstance.initialize();
+
+    expect(user).toHaveBeenCalled();
+    expect(company).toHaveBeenCalled();
+  });
+
+  test("can disable user/company tracking", async () => {
+    const user = vitest.spyOn(BucketClient.prototype as any, "user");
+    const company = vitest.spyOn(BucketClient.prototype as any, "company");
+
+    const bucketInstance = new BucketClient({
+      publishableKey: KEY,
+      user: { id: "foo" },
+      host: "https://example.com",
+      trackCompany: false,
+      trackUser: false,
+    });
+    await bucketInstance.initialize();
+
+    expect(user).not.toHaveBeenCalled();
+    expect(company).not.toHaveBeenCalled();
   });
 });

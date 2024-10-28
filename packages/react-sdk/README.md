@@ -80,6 +80,9 @@ import { BucketProvider } from "@bucketco/react-sdk";
   <BucketProvider>
   ```
 
+- `trackUser` (default: `true`): Automatically send user details to Bucket.
+- `trackCompany` (default: `true`): Automatically send company details to Bucket and connect user with company.
+
 ## Hooks
 
 ### `useFeature()`
