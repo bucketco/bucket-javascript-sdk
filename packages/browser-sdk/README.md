@@ -80,8 +80,7 @@ Supply these to the constructor call (3rd argument)
   host?: "https://front.bucket.co",
   sseHost?: "https://livemessaging.bucket.co"
   feedback?: undefined // See FEEDBACK.md
-  trackUser?: true, // automatically notify Bucket servers of user details
-  trackCompany?: true, // automatically notify Bucket servers of company details and connect user with company
+  trackContext?: true, // by default, user/company details are sent to Bucket for use in the UI. Disable when impersonating.
   featureOptions?: {
     fallbackFeatures?: string[]; // Enable these features if unable to contact bucket.co
     timeoutMs?: number; // Timeout for fetching features

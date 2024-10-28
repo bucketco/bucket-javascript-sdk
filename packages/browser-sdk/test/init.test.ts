@@ -78,8 +78,7 @@ describe("init", () => {
       publishableKey: KEY,
       user: { id: "foo" },
       host: "https://example.com",
-      trackCompany: false,
-      trackUser: false,
+      trackContext: false,
     });
     await bucketInstance.initialize();
 
