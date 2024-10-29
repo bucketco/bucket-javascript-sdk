@@ -668,23 +668,23 @@ export class BucketClient {
       context.company = { id: companyId };
     }
     const params = new URLSearchParams(flattenJSON({ context })).toString();
-    return this.get<EvaluatedFeaturesAPIResponse>(
+
+    const res = await this.get<EvaluatedFeaturesAPIResponse>(
       "features/evaluated?" + params,
-    )
-      .then((res) => {
-        return Object.fromEntries(
-          res?.features.map((feature) => {
-            return [
-              feature.key as keyof TypedFeatures,
-              this._wrapRawFeature(context, feature),
-            ];
-          }) || [],
-        );
-      })
-      .catch((err) => {
-        this._config.logger?.error("failed to fetch evaluated features", err);
-        return {};
-      });
+    );
+    if (res) {
+      return Object.fromEntries(
+        res.features.map((feature) => {
+          return [
+            feature.key as keyof TypedFeatures,
+            this._wrapRawFeature(context, feature),
+          ];
+        }) || [],
+      );
+    } else {
+      this._config.logger?.error("failed to fetch evaluated features");
+      return {};
+    }
   }
 }
 
