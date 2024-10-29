@@ -123,6 +123,15 @@ export type FeaturesAPIResponse = {
   features: (FeatureData & { targeting: { version: number } })[];
 };
 
+export type EvaluatedFeaturesAPIResponse = {
+  /** True if request successful */
+  success: boolean;
+  /** True if additional context for user or company was found and used for evaluation on the remote server */
+  remoteContextUsed: boolean;
+  /** The feature definitions */
+  features: RawFeature[];
+};
+
 /**
  * Describes the response of a HTTP client.
  * @typeParam TResponse - The type of the response body.

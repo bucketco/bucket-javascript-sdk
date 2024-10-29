@@ -11,7 +11,7 @@ import {
   SDK_VERSION_HEADER_NAME,
 } from "./config";
 import fetchClient from "./fetch-http-client";
-import type { RawFeature } from "./types";
+import type { EvaluatedFeaturesAPIResponse, RawFeature } from "./types";
 import {
   Attributes,
   Cache,
@@ -646,6 +646,45 @@ export class BucketClient {
       isEnabled: feature?.isEnabled ?? false,
       targetingVersion: feature?.targetingVersion,
     });
+  }
+
+  /**
+   * Gets evaluated features with the usage of remote context.
+   * This method triggers a network request every time it's called.
+   *
+   * @param additionalContext
+   * @returns evaluated features
+   */
+  public async getFeaturesRemote(
+    userId?: string,
+    companyId?: string,
+    additionalContext?: Context,
+  ): Promise<TypedFeatures> {
+    const context = additionalContext || {};
+    if (userId) {
+      context.user = { id: userId };
+    }
+    if (companyId) {
+      context.company = { id: companyId };
+    }
+    const params = new URLSearchParams(flattenJSON({ context })).toString();
+    return this.get<EvaluatedFeaturesAPIResponse>(
+      "features/evaluated?" + params,
+    )
+      .then((res) => {
+        return Object.fromEntries(
+          res?.features.map((feature) => {
+            return [
+              feature.key as keyof TypedFeatures,
+              this._wrapRawFeature(context, feature),
+            ];
+          }) || [],
+        );
+      })
+      .catch((err) => {
+        this._config.logger?.error("failed to fetch evaluated features", err);
+        return {};
+      });
   }
 }
 
