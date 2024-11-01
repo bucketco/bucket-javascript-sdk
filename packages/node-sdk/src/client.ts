@@ -1,7 +1,6 @@
 import { evaluateTargeting, flattenJSON } from "@bucketco/flag-evaluation";
 
 import BatchBuffer from "./batch-buffer";
-import cache from "./cache";
 import {
   API_HOST,
   BUCKET_LOG_PREFIX,
@@ -32,6 +31,8 @@ import {
   isObject,
   ok,
 } from "./utils";
+import cache from "./cache";
+import { initializeOverrides, Overrides } from "./feature-overrides";
 
 type BulkEvent =
   | {
@@ -81,6 +82,8 @@ export class BucketClient {
     fallbackFeatures?: Record<keyof TypedFeatures, RawFeature>;
     featuresCache?: Cache<FeaturesAPIResponse>;
     batchBuffer: BatchBuffer<BulkEvent>;
+    featureOverrides: Overrides;
+    offline: boolean;
   };
 
   /**
@@ -91,8 +94,12 @@ export class BucketClient {
    **/
   constructor(options: ClientOptions) {
     ok(isObject(options), "options must be an object");
+
+    const offline = options.offline || !!process.env.TEST || false;
     ok(
-      typeof options.secretKey === "string" && options.secretKey.length > 22,
+      offline ||
+        (typeof options.secretKey === "string" &&
+          options.secretKey.length > 22),
       "secretKey must be a string",
     );
     ok(
@@ -134,8 +141,17 @@ export class BucketClient {
     const logger =
       options.logger && decorateLogger(BUCKET_LOG_PREFIX, options.logger);
 
+    // if options.featureOverrides is set, use that, otherwise use the default
+    // if NODE_ENV is production an empty object is used
+    // if NODE_ENV is not production, the default is "bucketFeatures.json"
+    const featureOverrides =
+      options.featureOverrides || process.env.NODE_ENV === "production"
+        ? () => ({})
+        : "bucketFeatures.json";
+
     this._config = {
       logger,
+      offline,
       host: options.host || API_HOST,
       headers: {
         "Content-Type": "application/json",
@@ -151,6 +167,7 @@ export class BucketClient {
         flushHandler: (items) => this.sendBulkEvents(items),
         logger,
       }),
+      featureOverrides: initializeOverrides(featureOverrides, logger),
     };
   }
 
@@ -225,6 +242,10 @@ export class BucketClient {
       Array.isArray(events) && events.length > 0,
       "events must be a non-empty array",
     );
+
+    if (this._config.offline) {
+      return;
+    }
 
     const sent = await this.post("bulk", events);
     if (!sent) {
@@ -314,6 +335,10 @@ export class BucketClient {
         this._config.staleWarningInterval,
         this._config.logger,
         async () => {
+          if (this._config.offline) {
+            console.log("offline");
+            return { features: [] };
+          }
           const res = await this.get<FeaturesAPIResponse>("features");
 
           if (!isObject(res) || !Array.isArray(res?.features)) {
@@ -504,6 +529,7 @@ export class BucketClient {
    * Call this method before calling `getFeatures` to ensure the feature definitions are cached.
    **/
   public async initialize() {
+    await this._config.featureOverrides.initialize();
     await this.getFeaturesCache().refresh();
   }
 
@@ -561,6 +587,18 @@ export class BucketClient {
         {} as Record<keyof TypedFeatures, RawFeature>,
       );
 
+      // apply feature overrides
+      const overrides = Object.entries(
+        this._config.featureOverrides.getOverrides(context),
+      ).map(([key, isEnabled]) => [key, { key, isEnabled }]);
+
+      if (overrides.length > 0) {
+        // merge overrides into evaluated features
+        evaluatedFeatures = {
+          ...evaluatedFeatures,
+          ...Object.fromEntries(overrides),
+        };
+      }
       this._config.logger?.debug("evaluated features", evaluatedFeatures);
     } else {
       this._config.logger?.warn(
@@ -646,6 +684,17 @@ export class BucketClient {
       isEnabled: feature?.isEnabled ?? false,
       targetingVersion: feature?.targetingVersion,
     });
+  }
+
+  set featureOverrides(
+    overrides: (
+      context: Context,
+    ) => Partial<Record<keyof TypedFeatures, boolean>>,
+  ) {
+    this._config.featureOverrides = initializeOverrides(
+      overrides,
+      this._config.logger,
+    );
   }
 }
 

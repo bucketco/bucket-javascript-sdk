@@ -22,7 +22,7 @@ import {
   SDK_VERSION_HEADER_NAME,
 } from "../src/config";
 import fetchClient from "../src/fetch-http-client";
-import { ClientOptions, FeaturesAPIResponse } from "../src/types";
+import { ClientOptions, Context, FeaturesAPIResponse } from "../src/types";
 import { checkWithinAllottedTimeWindow, clearRateLimiter } from "../src/utils";
 
 const BULK_ENDPOINT = "https://api.example.com/bulk";
@@ -1509,6 +1509,47 @@ describe("BucketClient", () => {
         expect.stringMatching('post request to "bulk" failed with error'),
         expect.any(Error),
       );
+    });
+
+    it("should use feature overrides", async () => {
+      await client.initialize();
+      const context = { user, company, other: otherContext };
+
+      const prestineResults = client.getFeatures(context);
+      expect(prestineResults).toStrictEqual({
+        feature1: {
+          key: "feature1",
+          isEnabled: true,
+          track: expect.any(Function),
+        },
+        feature2: {
+          key: "feature2",
+          isEnabled: false,
+          track: expect.any(Function),
+        },
+      });
+
+      client.featureOverrides = (_context: Context) => {
+        expect(context).toEqual(context);
+        return {
+          feature1: false,
+          feature2: true,
+        };
+      };
+      const features = client.getFeatures(context);
+
+      expect(features).toStrictEqual({
+        feature1: {
+          key: "feature1",
+          isEnabled: false,
+          track: expect.any(Function),
+        },
+        feature2: {
+          key: "feature2",
+          isEnabled: true,
+          track: expect.any(Function),
+        },
+      });
     });
   });
 });

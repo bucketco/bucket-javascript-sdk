@@ -8,4 +8,5 @@ export type {
   Logger,
   RawFeature,
   TrackingMeta,
+  FeatureOverrides,
 } from "./types";

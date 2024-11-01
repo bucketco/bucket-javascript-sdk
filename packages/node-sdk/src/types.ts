@@ -116,6 +116,11 @@ export type TypedFeatures = keyof Features extends never
   : Record<keyof Features, Feature>;
 
 /**
+ * Describes the feature overrides.
+ */
+export type FeatureOverrides = Partial<Record<keyof TypedFeatures, boolean>>;
+
+/**
  * Describes the response of the features endpoint
  */
 export type FeaturesAPIResponse = {
@@ -294,6 +299,26 @@ export type ClientOptions = {
    * If not provided, the default options are used.
    **/
   batchOptions?: Omit<BatchBufferOptions<any>, "flushHandler" | "logger">;
+
+  /**
+   * If a filename is specified, feature targeting results be overridden with
+   * the values from this file. The file should be a JSON object with feature
+   * keys as keys and boolean values as values.
+   *
+   * If a function is specified, the function will be called with the context
+   * and should return a record of feature keys and boolean values.
+   *
+   * Defaults to "bucketFeatures.json".
+   **/
+  featureOverrides?:
+    | string
+    | ((context: Context) => Partial<Record<keyof TypedFeatures, boolean>>);
+
+  /**
+   * In offline mode, no data is sent or fethed from the the Bucket API.
+   * This is useful for testing or development.
+   */
+  offline?: boolean;
 };
 
 /**
