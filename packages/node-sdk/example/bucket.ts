@@ -10,16 +10,14 @@ declare module "../src/types" {
   }
 }
 
-// if (!process.env.BUCKET_SECRET_KEY) {
-//   throw new Error("BUCKET_SECRET_KEY is required");
-// }
-
 let featureOverrides = (context: Context): FeatureOverrides => {
   return { "delete-todos": true }; // feature keys checked at compile time
 };
 
 // Create a new BucketClient instance with the secret key and default features
 // The default features will be used if the user does not have any features set
+// Create a bucketConfig.json file to configure the client or set environment variables
+// like BUCKET_SECRET_KEY, BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED, etc.
 export default new BucketClient({
   fallbackFeatures: ["show-todos"], // feature keys checked at compile time
   // Optional: Set a logger to log debug information, errors, etc.
