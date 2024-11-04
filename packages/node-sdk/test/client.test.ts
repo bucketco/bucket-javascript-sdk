@@ -1521,19 +1521,19 @@ describe("BucketClient", () => {
         body: {
           success: true,
           remoteContextUsed: true,
-          features: [
-            {
+          features: {
+            feature1: {
               key: "feature1",
               targetingVersion: 1,
               isEnabled: true,
             },
-            {
+            feature2: {
               key: "feature2",
               targetingVersion: 2,
               isEnabled: false,
               missingContextFields: ["something"],
             },
-          ],
+          },
         },
       });
 
