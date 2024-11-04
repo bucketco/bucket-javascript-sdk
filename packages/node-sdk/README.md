@@ -108,7 +108,7 @@ By default, the SDK searches for `bucketConfig.json` in the current working dire
 | Option             | Type                    | Description                                                                                                            | Env Var                                           |
 | ------------------ | ----------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
 | `secretKey`        | string                  | The secret key used for authentication with Bucket's servers.                                                          | BUCKET_SECRET_KEY                                 |
-| `logLevel`         | string                  | The log level for the SDK (e.g., `"info"`, `"warn"`, `"error"`). Default: `info`                                       | BUCKET_LOG_LEVEL                                  |
+| `logLevel`         | string                  | The log level for the SDK (e.g., `"debug"`, `"info"`, `"warn"`, `"error"`). Default: `info`                            | BUCKET_LOG_LEVEL                                  |
 | `offline`          | boolean                 | Operate in offline mode. Default: `false`, except in tests it will default to `true` based off of the `TEST` env. var. | BUCKET_OFFLINE                                    |
 | `host`             | string                  | The host URL for the Bucket servers.                                                                                   | BUCKET_HOST                                       |
 | `featureOverrides` | Record<string, boolean> | An object specifying feature overrides for testing or local development                                                | BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED |
@@ -131,7 +131,12 @@ Note: BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED are comma separated list
 }
 ```
 
-When using a `bucketConfig.json` for local development, make sure you add it to your `.gitignore` file.
+When using a `bucketConfig.json` for local development, make sure you add it to your `.gitignore` file. You can also set these options directly in the `BucketClient` constructor.
+The precedence for configuration options is as follows, listed in the order of importance:
+
+1. options passed along to the constructor directly
+2. environment variable
+3. the config file
 
 ## Flushing
 
@@ -222,26 +227,6 @@ client.updateCompany("acme_inc", {
 
 `bindClient()` updates attributes on the Bucket servers but does not automatically
 update `Last seen`.
-
-### Initialization Options
-
-Supply these to the `constructor` of the `BucketClient` class:
-
-```ts
-{
-  // The secret key used to authenticate with the Bucket API.
-  secretKey: string,
-  // Override Bucket server address
-  host?: string = "https://front.bucket.co",
-  // The logger you can supply. By default no logging is performed.
-  logger?: Logger,
-  // The custom http client. By default the internal `fetchClient` is used.
-  httpClient?: HttpClient = fetchClient,
-  // A list of fallback features that will be enabled if the Bucket servers
-  // have not been contacted yet.
-  fallbackFeatures?: string[]
-}
-```
 
 ### Zero PII
 
