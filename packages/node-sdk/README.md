@@ -107,7 +107,7 @@ If you don't want to provide context each time when evaluating feature flags but
 ```ts
 // Update user and company attributes
 client.updateUser("john_doe", {
-  attributes: { 
+  attributes: {
     name: "John O.",
     role: "admin",
   },
