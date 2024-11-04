@@ -42,7 +42,6 @@ function loadConfigFile(file: string) {
 
   ok(typeof config === "object", "config must be an object");
   const { secretKey, logLevel, offline, host } = config;
-  console.log("secretKey", secretKey);
   ok(
     typeof secretKey === "undefined" || typeof secretKey === "string",
     "secret must be a string",
