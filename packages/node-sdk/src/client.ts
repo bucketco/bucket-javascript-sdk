@@ -706,7 +706,7 @@ export class BucketClient {
   }
 
   public async getFeatureRemote(
-    key: keyof TypedFeatures,
+    key: string,
     userId?: string,
     companyId?: string,
     additionalContext?: Context,
