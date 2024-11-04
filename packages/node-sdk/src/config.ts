@@ -1,5 +1,7 @@
 import { readFileSync } from "fs";
+
 import { version } from "../package.json";
+
 import { Logger } from "./types";
 import { ok } from "./utils";
 
@@ -137,31 +139,31 @@ export function applyLogLevel(logger: Logger, logLevel?: string) {
       };
     case "info":
       return {
-        debug: () => {},
+        debug: () => void 0,
         info: logger.info,
         warn: logger.warn,
         error: logger.error,
       };
     case "warn":
       return {
-        debug: () => {},
-        info: () => {},
+        debug: () => void 0,
+        info: () => void 0,
         warn: logger.warn,
         error: logger.error,
       };
     case "error":
       return {
-        debug: () => {},
-        info: () => {},
-        warn: () => {},
+        debug: () => void 0,
+        info: () => void 0,
+        warn: () => void 0,
         error: logger.error,
       };
     default:
       return {
-        debug: () => {},
-        info: () => {},
-        warn: () => {},
-        error: () => {},
+        debug: () => void 0,
+        info: () => void 0,
+        warn: () => void 0,
+        error: () => void 0,
       };
   }
 }

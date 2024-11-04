@@ -3,10 +3,10 @@ export type {
   Attributes,
   ClientOptions,
   Context,
+  FeatureOverrides,
   Features,
   HttpClient,
   Logger,
   RawFeature,
   TrackingMeta,
-  FeatureOverrides,
 } from "./types";

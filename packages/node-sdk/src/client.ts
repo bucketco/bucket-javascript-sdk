@@ -1,6 +1,9 @@
-import { evaluateTargeting, flattenJSON } from "@bucketco/flag-evaluation";
 import fs from "fs";
+
+import { evaluateTargeting, flattenJSON } from "@bucketco/flag-evaluation";
+
 import BatchBuffer from "./batch-buffer";
+import cache from "./cache";
 import {
   API_HOST,
   applyLogLevel,
@@ -34,7 +37,6 @@ import {
   mergeSkipUndefined,
   ok,
 } from "./utils";
-import cache from "./cache";
 
 const bucketConfigDefaultFile = "bucketConfig.json";
 
@@ -218,7 +220,9 @@ export class BucketClient {
           `invalid response received from server for "${url}"`,
           response,
         );
+        return false;
       }
+      return true;
     } catch (error) {
       this._config.logger?.error(
         `post request to "${url}" failed with error`,
