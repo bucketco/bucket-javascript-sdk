@@ -1511,6 +1511,65 @@ describe("BucketClient", () => {
       );
     });
   });
+
+  describe("getFeaturesRemote", () => {
+    let client: BucketClient;
+
+    beforeEach(async () => {
+      httpClient.get.mockResolvedValue({
+        status: 200,
+        body: {
+          success: true,
+          remoteContextUsed: true,
+          features: {
+            feature1: {
+              key: "feature1",
+              targetingVersion: 1,
+              isEnabled: true,
+            },
+            feature2: {
+              key: "feature2",
+              targetingVersion: 2,
+              isEnabled: false,
+              missingContextFields: ["something"],
+            },
+          },
+        },
+      });
+
+      client = new BucketClient(validOptions);
+    });
+
+    afterEach(() => {
+      httpClient.get.mockClear();
+    });
+
+    it("should return evaluated features", async () => {
+      const result = await client.getFeaturesRemote("c1", "u1", {
+        other: otherContext,
+      });
+
+      expect(result).toEqual({
+        feature1: {
+          key: "feature1",
+          isEnabled: true,
+          track: expect.any(Function),
+        },
+        feature2: {
+          key: "feature2",
+          isEnabled: false,
+          track: expect.any(Function),
+        },
+      });
+
+      expect(httpClient.get).toHaveBeenCalledTimes(1);
+
+      expect(httpClient.get).toHaveBeenCalledWith(
+        "https://api.example.com/features/evaluated?context.other.custom=context&context.other.key=value&context.user.id=c1&context.company.id=u1",
+        expectedHeaders,
+      );
+    });
+  });
 });
 
 describe("BoundBucketClient", () => {
@@ -1521,6 +1580,14 @@ describe("BoundBucketClient", () => {
     };
 
     httpClient.post.mockResolvedValue(response);
+
+    httpClient.get.mockResolvedValue({
+      status: 200,
+      body: {
+        success: true,
+        ...featureDefinitions,
+      },
+    });
   });
 
   beforeEach(async () => {

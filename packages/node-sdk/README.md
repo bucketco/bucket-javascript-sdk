@@ -100,6 +100,33 @@ to `getFeatures` (or through `bindClient(..).getFeatures()`). That means the
 has completed. `BucketClient` will continue to periodically download the
 targeting rules from the Bucket servers in the background.
 
+## Remote flag evaluation with stored context
+
+If you don't want to provide context each time when evaluating feature flags but rather you would like to utilise the attributes you sent to Bucket previously (by calling `updateCompany` and `updateUser`) you can do so by calling `getFeaturesRemote` (or `getFeatureRemote` for a specific feature) with providing just `userId` and `companyId`.These methods will call Bucket's servers and feature flags will be evaluated remotely using the stored attributes.
+
+```ts
+// Update user and company attributes
+client.updateUser("john_doe", {
+  attributes: {
+    name: "John O.",
+    role: "admin",
+  },
+});
+client.updateCompany("acme_inc", {
+  attributes: {
+    name: "Acme, Inc",
+    tier: "premium"
+  },
+});
+
+...
+
+// This will evaluate feature flags with respecting the attributes sent previously
+const features = await client.getFeaturesRemote("acme_inc", "john_doe");
+```
+
+NOTE: User and company attribute updates are processed asynchronously, so there might be a small delay between when attributes are updated and when they are available for evaluation.
+
 ## Flushing
 
 It is highly recommended that users of this SDK manually call `client.flush()` method on process shutdown. The SDK employs
