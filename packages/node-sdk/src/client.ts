@@ -799,6 +799,34 @@ export class BoundBucketClient {
   }
 
   /**
+   * Get remotely evaluated feature for the user/company/other context bound to this client.
+   * 
+   * @returns Features for the given user/company and whether each one is enabled or not
+   */
+  public async getFeaturesRemote() {
+    return await this._client.getFeaturesRemote(
+      this._context.user?.id,
+      this._context.company?.id,
+      this._context,
+    );
+  }
+
+  /**
+   * Get remotely evaluated feature for the user/company/other context bound to this client.
+   * 
+   * @param key 
+   * @returns Feature for the given user/company and key and whether it's enabled or not
+   */
+  public async getFeatureRemote(key: string) {
+    return await this._client.getFeatureRemote(
+      key,
+      this._context.user?.id,
+      this._context.company?.id,
+      this._context,
+    );
+  }
+
+  /**
    * Track an event in Bucket.
    *
    * @param event - The event to track.
