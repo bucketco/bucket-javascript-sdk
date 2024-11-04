@@ -130,6 +130,8 @@ Note: BUCKET_FEATURE_ENABLED, BUCKET_FEATURE_DISABLED are comma separated lists 
 }
 ```
 
+When using a `bucketConfig.json` for local development, make sure you add it to your `.gitignore` file.
+
 ## Flushing
 
 It is highly recommended that users of this SDK manually call `client.flush()` method on process shutdown. The SDK employs
