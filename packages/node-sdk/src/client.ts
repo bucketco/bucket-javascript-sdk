@@ -20,7 +20,6 @@ import type {
   FeatureOverridesFn,
   RawFeature,
 } from "./types";
-
 import {
   Attributes,
   Cache,
