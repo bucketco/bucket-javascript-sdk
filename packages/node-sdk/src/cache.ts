@@ -32,7 +32,6 @@ export default function cache<T>(
     try {
       const newValue = await fn();
       if (newValue === undefined) {
-        logger?.warn("received undefined value from function");
         return;
       }
       cachedValue = newValue;

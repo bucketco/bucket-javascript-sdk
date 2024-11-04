@@ -81,3 +81,17 @@ export function decorateLogger(prefix: string, logger: Logger): Logger {
     },
   };
 }
+
+export function mergeSkipUndefined<T extends object, U extends object>(
+  target: T,
+  source: U,
+): T & U {
+  const newTarget = { ...target };
+  for (const key in source) {
+    if (source[key] === undefined) {
+      continue;
+    }
+    (newTarget as any)[key] = source[key];
+  }
+  return newTarget as T & U;
+}

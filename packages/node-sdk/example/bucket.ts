@@ -21,7 +21,6 @@ let featureOverrides = (context: Context): FeatureOverrides => {
 // Create a new BucketClient instance with the secret key and default features
 // The default features will be used if the user does not have any features set
 export default new BucketClient({
-  secretKey: process.env.BUCKET_SECRET_KEY!,
   fallbackFeatures: ["show-todos"], // feature keys checked at compile time
   // Optional: Set a logger to log debug information, errors, etc.
   logger: console,

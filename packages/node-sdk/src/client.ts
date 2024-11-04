@@ -1,16 +1,18 @@
 import { evaluateTargeting, flattenJSON } from "@bucketco/flag-evaluation";
-
+import fs from "fs";
 import BatchBuffer from "./batch-buffer";
 import {
   API_HOST,
+  applyLogLevel,
   BUCKET_LOG_PREFIX,
   FEATURE_EVENTS_PER_MIN,
   FEATURES_REFETCH_MS,
+  loadConfig,
   SDK_VERSION,
   SDK_VERSION_HEADER_NAME,
 } from "./config";
 import fetchClient from "./fetch-http-client";
-import type { RawFeature } from "./types";
+import type { FeatureOverridesFn, RawFeature } from "./types";
 import {
   Attributes,
   Cache,
@@ -29,10 +31,12 @@ import {
   checkWithinAllottedTimeWindow,
   decorateLogger,
   isObject,
+  mergeSkipUndefined,
   ok,
 } from "./utils";
 import cache from "./cache";
-import { initializeOverrides, Overrides } from "./feature-overrides";
+
+const bucketConfigDefaultFile = "bucketConfig.json";
 
 type BulkEvent =
   | {
@@ -82,8 +86,9 @@ export class BucketClient {
     fallbackFeatures?: Record<keyof TypedFeatures, RawFeature>;
     featuresCache?: Cache<FeaturesAPIResponse>;
     batchBuffer: BatchBuffer<BulkEvent>;
-    featureOverrides: Overrides;
+    featureOverrides: FeatureOverridesFn;
     offline: boolean;
+    configFile?: string;
   };
 
   /**
@@ -95,13 +100,6 @@ export class BucketClient {
   constructor(options: ClientOptions) {
     ok(isObject(options), "options must be an object");
 
-    const offline = options.offline || !!process.env.TEST || false;
-    ok(
-      offline ||
-        (typeof options.secretKey === "string" &&
-          options.secretKey.length > 22),
-      "secretKey must be a string",
-    );
     ok(
       options.host === undefined ||
         (typeof options.host === "string" && options.host.length > 0),
@@ -124,8 +122,40 @@ export class BucketClient {
       options.batchOptions === undefined || isObject(options.batchOptions),
       "batchOptions must be an object",
     );
+    ok(
+      options.configFile === undefined ||
+        typeof options.configFile === "string",
+      "configFile must be a string",
+    );
 
-    const features =
+    if (!options.configFile) {
+      options.configFile =
+        process.env.BUCKET_CONFIG_FILE ?? fs.existsSync(bucketConfigDefaultFile)
+          ? bucketConfigDefaultFile
+          : undefined;
+    }
+
+    const externalConfig = loadConfig(options.configFile);
+    const config = mergeSkipUndefined(externalConfig, options);
+
+    const offline = config.offline ?? (!!process.env.TEST || false);
+    if (!offline) {
+      ok(typeof config.secretKey === "string", "secretKey must be a string");
+      ok(config.secretKey.length > 22, "invalid secretKey specified");
+    }
+
+    // use the supplied logger or apply the log level to the console logger
+    // always decorate the logger with the bucket log prefix
+    const logger = decorateLogger(
+      BUCKET_LOG_PREFIX,
+      options.logger
+        ? options.logger
+        : applyLogLevel(console, config?.logLevel || "info"),
+    );
+
+    // todo: deprecate fallback features in favour of a more operationally
+    //  friendly way of setting fall backs.
+    const fallbackFeatures =
       options.fallbackFeatures &&
       options.fallbackFeatures.reduce(
         (acc, key) => {
@@ -138,36 +168,28 @@ export class BucketClient {
         {} as Record<keyof TypedFeatures, RawFeature>,
       );
 
-    const logger =
-      options.logger && decorateLogger(BUCKET_LOG_PREFIX, options.logger);
-
-    // if options.featureOverrides is set, use that, otherwise use the default
-    // if NODE_ENV is production an empty object is used
-    // if NODE_ENV is not production, the default is "bucketFeatures.json"
-    const featureOverrides =
-      options.featureOverrides || process.env.NODE_ENV === "production"
-        ? () => ({})
-        : "bucketFeatures.json";
-
     this._config = {
       logger,
       offline,
-      host: options.host || API_HOST,
+      host: config.host || API_HOST,
       headers: {
         "Content-Type": "application/json",
         [SDK_VERSION_HEADER_NAME]: SDK_VERSION,
-        ["Authorization"]: `Bearer ${options.secretKey}`,
+        ["Authorization"]: `Bearer ${config.secretKey}`,
       },
       httpClient: options.httpClient || fetchClient,
       refetchInterval: FEATURES_REFETCH_MS,
       staleWarningInterval: FEATURES_REFETCH_MS * 5,
-      fallbackFeatures: features,
+      fallbackFeatures: fallbackFeatures,
       batchBuffer: new BatchBuffer<BulkEvent>({
         ...options?.batchOptions,
         flushHandler: (items) => this.sendBulkEvents(items),
         logger,
       }),
-      featureOverrides: initializeOverrides(featureOverrides, logger),
+      featureOverrides:
+        typeof config.featureOverrides === "function"
+          ? config.featureOverrides
+          : () => config.featureOverrides,
     };
   }
 
@@ -183,17 +205,23 @@ export class BucketClient {
     ok(typeof path === "string" && path.length > 0, "path must be a string");
     ok(typeof body === "object", "body must be an object");
 
+    const url = `${this._config.host}/${path}`;
     try {
       const response = await this._config.httpClient.post<
         TBody,
         { success: boolean }
-      >(`${this._config.host}/${path}`, this._config.headers, body);
+      >(url, this._config.headers, body);
+      this._config.logger?.debug(`post request to "${url}"`, response);
 
-      this._config.logger?.debug(`post request to "${path}"`, response);
-      return response.body?.success === true;
+      if (!isObject(response.body) || response.body.success !== true) {
+        this._config.logger?.warn(
+          `invalid response received from server for "${url}"`,
+          response,
+        );
+      }
     } catch (error) {
       this._config.logger?.error(
-        `post request to "${path}" failed with error`,
+        `post request to "${url}" failed with error`,
         error,
       );
       return false;
@@ -211,13 +239,19 @@ export class BucketClient {
     ok(typeof path === "string" && path.length > 0, "path must be a string");
 
     try {
+      const url = `${this._config.host}/${path}`;
       const response = await this._config.httpClient.get<
         TResponse & { success: boolean }
-      >(`${this._config.host}/${path}`, this._config.headers);
+      >(url, this._config.headers);
 
-      this._config.logger?.debug(`get request to "${path}"`, response);
+      this._config.logger?.debug(`get request to "${url}"`, response);
 
       if (!isObject(response.body) || response.body.success !== true) {
+        this._config.logger?.warn(
+          `invalid response received from server for "${url}"`,
+          response,
+        );
+
         return undefined;
       }
 
@@ -529,7 +563,6 @@ export class BucketClient {
    * Call this method before calling `getFeatures` to ensure the feature definitions are cached.
    **/
   public async initialize() {
-    await this._config.featureOverrides.initialize();
     await this.getFeaturesCache().refresh();
   }
 
@@ -589,7 +622,7 @@ export class BucketClient {
 
       // apply feature overrides
       const overrides = Object.entries(
-        this._config.featureOverrides.getOverrides(context),
+        this._config.featureOverrides(context),
       ).map(([key, isEnabled]) => [key, { key, isEnabled }]);
 
       if (overrides.length > 0) {
@@ -686,15 +719,8 @@ export class BucketClient {
     });
   }
 
-  set featureOverrides(
-    overrides: (
-      context: Context,
-    ) => Partial<Record<keyof TypedFeatures, boolean>>,
-  ) {
-    this._config.featureOverrides = initializeOverrides(
-      overrides,
-      this._config.logger,
-    );
+  set featureOverrides(overrides: FeatureOverridesFn) {
+    this._config.featureOverrides = overrides;
   }
 }
 

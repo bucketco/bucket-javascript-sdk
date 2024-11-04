@@ -100,6 +100,36 @@ to `getFeatures` (or through `bindClient(..).getFeatures()`). That means the
 has completed. `BucketClient` will continue to periodically download the
 targeting rules from the Bucket servers in the background.
 
+## Configuring
+
+The Bucket Node.js SDK can be configured through environment variables or a configuration file on disk.
+By default, the SDK searches for `bucketConfig.json` in the current working directory.
+
+| Option             | Type                    | Description                                                                                                            | Env Var                                         |
+| ------------------ | ----------------------- | ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `secretKey`        | string                  | The secret key used for authentication with Bucket's servers.                                                          | BUCKET_SECRET_KEY                               |
+| `logLevel`         | string                  | The log level for the SDK (e.g., `"info"`, `"warn"`, `"error"`). Default: `info`                                       | BUCKET_LOG_LEVEL                                |
+| `offline`          | boolean                 | Operate in offline mode. Default: `false`, except in tests it will default to `true` based off of the `TEST` env. var. | BUCKET_OFFLINE                                  |
+| `host`             | string                  | The host URL for the Bucket servers.                                                                                   | BUCKET_HOST                                     |
+| `featureOverrides` | Record<string, boolean> | An object specifying feature overrides for testing or local development                                                | BUCKET_FEATURE_ENABLED, BUCKET_FEATURE_DISABLED |
+
+Note: BUCKET_FEATURE_ENABLED, BUCKET_FEATURE_DISABLED are comma separated lists of features which will be enabled or disabled respectively.
+
+`bucketConfig.json` example:
+
+```
+{
+  secretKey: "...",
+  logLevel: "warn",
+  offline: true,
+  host: "https://proxy.slick-demo.com"
+  featureOverrides: {
+    huddles: true,
+    voiceChat: false
+  },
+}
+```
+
 ## Flushing
 
 It is highly recommended that users of this SDK manually call `client.flush()` method on process shutdown. The SDK employs
