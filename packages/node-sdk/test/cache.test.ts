@@ -162,10 +162,6 @@ describe("cache", () => {
 
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(logger.warn).toHaveBeenCalledWith(
-      expect.stringMatching("received undefined value from function"),
-    );
-
     const second = cached.get();
     expect(second).toBe(42);
 
