@@ -15,7 +15,12 @@ import {
   SDK_VERSION_HEADER_NAME,
 } from "./config";
 import fetchClient from "./fetch-http-client";
-import type { FeatureOverridesFn, RawFeature } from "./types";
+import type {
+  EvaluatedFeaturesAPIResponse,
+  FeatureOverridesFn,
+  RawFeature,
+} from "./types";
+
 import {
   Attributes,
   Cache,
@@ -726,6 +731,89 @@ export class BucketClient {
   set featureOverrides(overrides: FeatureOverridesFn) {
     this._config.featureOverrides = overrides;
   }
+
+  private async _getFeaturesRemote(
+    key: string,
+    userId?: string,
+    companyId?: string,
+    additionalContext?: Context,
+  ): Promise<TypedFeatures> {
+    const context = additionalContext || {};
+    if (userId) {
+      context.user = { id: userId };
+    }
+    if (companyId) {
+      context.company = { id: companyId };
+    }
+
+    const params = new URLSearchParams(flattenJSON({ context }));
+    if (key) {
+      params.append("key", key);
+    }
+
+    const res = await this.get<EvaluatedFeaturesAPIResponse>(
+      "features/evaluated?" + params.toString(),
+    );
+
+    if (res) {
+      return Object.fromEntries(
+        Object.entries(res.features).map(([featureKey, feature]) => {
+          return [
+            featureKey as keyof TypedFeatures,
+            this._wrapRawFeature(context, feature),
+          ];
+        }) || [],
+      );
+    } else {
+      this._config.logger?.error("failed to fetch evaluated features");
+      return {};
+    }
+  }
+
+  /**
+   * Gets evaluated features with the usage of remote context.
+   * This method triggers a network request every time it's called.
+   *
+   * @param additionalContext
+   * @returns evaluated features
+   */
+  public async getFeaturesRemote(
+    userId?: string,
+    companyId?: string,
+    additionalContext?: Context,
+  ): Promise<TypedFeatures> {
+    return await this._getFeaturesRemote(
+      "",
+      userId,
+      companyId,
+      additionalContext,
+    );
+  }
+
+  /**
+   * Gets evaluated feature with the usage of remote context.
+   * This method triggers a network request every time it's called.
+   *
+   * @param key
+   * @param userId
+   * @param companyId
+   * @param additionalContext
+   * @returns evaluated feature
+   */
+  public async getFeatureRemote(
+    key: string,
+    userId?: string,
+    companyId?: string,
+    additionalContext?: Context,
+  ): Promise<Feature> {
+    const features = await this._getFeaturesRemote(
+      key,
+      userId,
+      companyId,
+      additionalContext,
+    );
+    return features[key];
+  }
 }
 
 /**
@@ -803,6 +891,34 @@ export class BoundBucketClient {
    */
   public getFeature(key: keyof TypedFeatures) {
     return this._client.getFeature(this._context, key);
+  }
+
+  /**
+   * Get remotely evaluated feature for the user/company/other context bound to this client.
+   *
+   * @returns Features for the given user/company and whether each one is enabled or not
+   */
+  public async getFeaturesRemote() {
+    return await this._client.getFeaturesRemote(
+      this._context.user?.id,
+      this._context.company?.id,
+      this._context,
+    );
+  }
+
+  /**
+   * Get remotely evaluated feature for the user/company/other context bound to this client.
+   *
+   * @param key
+   * @returns Feature for the given user/company and key and whether it's enabled or not
+   */
+  public async getFeatureRemote(key: string) {
+    return await this._client.getFeatureRemote(
+      key,
+      this._context.user?.id,
+      this._context.company?.id,
+      this._context,
+    );
   }
 
   /**
