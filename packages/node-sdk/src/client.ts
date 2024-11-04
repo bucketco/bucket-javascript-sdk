@@ -670,11 +670,12 @@ export class BucketClient {
     const res = await this.get<EvaluatedFeaturesAPIResponse>(
       "features/evaluated?" + params.toString(),
     );
+    console.log(res);
     if (res) {
       return Object.fromEntries(
-        res.features.map((feature) => {
+        Object.entries(res.features).map(([featureKey, feature]) => {
           return [
-            feature.key as keyof TypedFeatures,
+            featureKey as keyof TypedFeatures,
             this._wrapRawFeature(context, feature),
           ];
         }) || [],
