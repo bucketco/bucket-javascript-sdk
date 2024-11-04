@@ -648,14 +648,8 @@ export class BucketClient {
     });
   }
 
-  /**
-   * Gets evaluated features with the usage of remote context.
-   * This method triggers a network request every time it's called.
-   *
-   * @param additionalContext
-   * @returns evaluated features
-   */
-  public async getFeaturesRemote(
+  private async _getFeaturesRemote(
+    key: string,
     userId?: string,
     companyId?: string,
     additionalContext?: Context,
@@ -667,10 +661,14 @@ export class BucketClient {
     if (companyId) {
       context.company = { id: companyId };
     }
-    const params = new URLSearchParams(flattenJSON({ context })).toString();
+
+    const params = new URLSearchParams(flattenJSON({ context }));
+    if (key) {
+      params.append("key", key);
+    }
 
     const res = await this.get<EvaluatedFeaturesAPIResponse>(
-      "features/evaluated?" + params,
+      "features/evaluated?" + params.toString(),
     );
     if (res) {
       return Object.fromEntries(
@@ -685,6 +683,41 @@ export class BucketClient {
       this._config.logger?.error("failed to fetch evaluated features");
       return {};
     }
+  }
+
+  /**
+   * Gets evaluated features with the usage of remote context.
+   * This method triggers a network request every time it's called.
+   *
+   * @param additionalContext
+   * @returns evaluated features
+   */
+  public async getFeaturesRemote(
+    userId?: string,
+    companyId?: string,
+    additionalContext?: Context,
+  ): Promise<TypedFeatures> {
+    return await this._getFeaturesRemote(
+      "",
+      userId,
+      companyId,
+      additionalContext,
+    );
+  }
+
+  public async getFeatureRemote(
+    key: keyof TypedFeatures,
+    userId?: string,
+    companyId?: string,
+    additionalContext?: Context,
+  ): Promise<Feature> {
+    const features = await this._getFeaturesRemote(
+      key,
+      userId,
+      companyId,
+      additionalContext,
+    );
+    return features[key];
   }
 }
 
