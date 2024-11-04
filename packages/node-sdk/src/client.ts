@@ -705,6 +705,16 @@ export class BucketClient {
     );
   }
 
+  /**
+   * Gets evaluated feature with the usage of remote context.
+   * This method triggers a network request every time it's called.
+   *
+   * @param key
+   * @param userId
+   * @param companyId
+   * @param additionalContext
+   * @returns evaluated feature
+   */
   public async getFeatureRemote(
     key: string,
     userId?: string,
