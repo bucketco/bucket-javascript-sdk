@@ -800,7 +800,7 @@ export class BoundBucketClient {
 
   /**
    * Get remotely evaluated feature for the user/company/other context bound to this client.
-   * 
+   *
    * @returns Features for the given user/company and whether each one is enabled or not
    */
   public async getFeaturesRemote() {
@@ -813,8 +813,8 @@ export class BoundBucketClient {
 
   /**
    * Get remotely evaluated feature for the user/company/other context bound to this client.
-   * 
-   * @param key 
+   *
+   * @param key
    * @returns Feature for the given user/company and key and whether it's enabled or not
    */
   public async getFeatureRemote(key: string) {
