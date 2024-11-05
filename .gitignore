@@ -39,3 +39,4 @@ playwright/.cache/
 junit.xml
 
 .next
+eslint-report.json

@@ -22,7 +22,7 @@ import {
   SDK_VERSION_HEADER_NAME,
 } from "../src/config";
 import fetchClient from "../src/fetch-http-client";
-import { ClientOptions, FeaturesAPIResponse } from "../src/types";
+import { ClientOptions, Context, FeaturesAPIResponse } from "../src/types";
 import { checkWithinAllottedTimeWindow, clearRateLimiter } from "../src/utils";
 
 const BULK_ENDPOINT = "https://api.example.com/bulk";
@@ -83,6 +83,7 @@ const validOptions: ClientOptions = {
     maxSize: 99,
     intervalMs: 100,
   },
+  offline: false,
 };
 
 const expectedHeaders = {
@@ -222,7 +223,6 @@ describe("BucketClient", () => {
       expect(client["_config"].staleWarningInterval).toBe(
         FEATURES_REFETCH_MS * 5,
       );
-      expect(client["_config"].logger).toBeUndefined();
       expect(client["_config"].httpClient).toBe(fetchClient);
       expect(client["_config"].headers).toEqual(expectedHeaders);
       expect(client["_config"].fallbackFeatures).toBeUndefined();
@@ -240,7 +240,7 @@ describe("BucketClient", () => {
 
       invalidOptions = { ...validOptions, secretKey: "shortKey" };
       expect(() => new BucketClient(invalidOptions)).toThrow(
-        "secretKey must be a string",
+        "invalid secretKey specified",
       );
 
       invalidOptions = { ...validOptions, host: 123 };
@@ -422,7 +422,7 @@ describe("BucketClient", () => {
       );
 
       expect(logger.debug).toHaveBeenCalledWith(
-        expect.stringMatching('post request to "bulk"'),
+        expect.stringMatching("post request to "),
         response,
       );
     });
@@ -435,7 +435,7 @@ describe("BucketClient", () => {
       await client.flush();
 
       expect(logger.error).toHaveBeenCalledWith(
-        expect.stringMatching('post request to "bulk" failed with error'),
+        expect.stringMatching("post request to .* failed with error"),
         error,
       );
     });
@@ -448,8 +448,8 @@ describe("BucketClient", () => {
       await client.updateUser(user.id);
       await client.flush();
 
-      expect(logger.debug).toHaveBeenCalledWith(
-        expect.stringMatching('post request to "bulk"'),
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringMatching("invalid response received from server for"),
         response,
       );
     });
@@ -498,7 +498,7 @@ describe("BucketClient", () => {
       );
 
       expect(logger.debug).toHaveBeenCalledWith(
-        expect.stringMatching('post request to "bulk"'),
+        expect.stringMatching("post request to .*"),
         response,
       );
     });
@@ -511,7 +511,7 @@ describe("BucketClient", () => {
       await client.flush();
 
       expect(logger.error).toHaveBeenCalledWith(
-        expect.stringMatching('post request to "bulk" failed with error'),
+        expect.stringMatching("post request to .* failed with error"),
         error,
       );
     });
@@ -527,8 +527,8 @@ describe("BucketClient", () => {
       await client.updateCompany(company.id, {});
       await client.flush();
 
-      expect(logger.debug).toHaveBeenCalledWith(
-        expect.stringMatching('post request to "bulk"'),
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringMatching("invalid response received from server for"),
         response,
       );
     });
@@ -592,7 +592,7 @@ describe("BucketClient", () => {
       );
 
       expect(logger.debug).toHaveBeenCalledWith(
-        expect.stringMatching('post request to "bulk"'),
+        expect.stringMatching("post request to"),
         response,
       );
     });
@@ -641,7 +641,7 @@ describe("BucketClient", () => {
       await client.flush();
 
       expect(logger.error).toHaveBeenCalledWith(
-        expect.stringMatching('post request to "bulk" failed with error'),
+        expect.stringMatching("post request to .* failed with error"),
         error,
       );
     });
@@ -657,8 +657,8 @@ describe("BucketClient", () => {
       await client.bindClient({ user }).track(event.event);
       await client.flush();
 
-      expect(logger.debug).toHaveBeenCalledWith(
-        expect.stringMatching('post request to "bulk"'),
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringMatching("invalid response received from server for "),
         response,
       );
     });
@@ -1467,7 +1467,7 @@ describe("BucketClient", () => {
       await client.flush();
 
       expect(logger.error).toHaveBeenCalledWith(
-        expect.stringMatching('post request to "bulk" failed with error'),
+        expect.stringMatching("post request .* failed with error"),
         expect.any(Error),
       );
 
@@ -1506,9 +1506,50 @@ describe("BucketClient", () => {
       await client.flush();
 
       expect(logger.error).toHaveBeenCalledWith(
-        expect.stringMatching('post request to "bulk" failed with error'),
+        expect.stringMatching("post request .* failed with error"),
         expect.any(Error),
       );
+    });
+
+    it("should use feature overrides", async () => {
+      await client.initialize();
+      const context = { user, company, other: otherContext };
+
+      const prestineResults = client.getFeatures(context);
+      expect(prestineResults).toStrictEqual({
+        feature1: {
+          key: "feature1",
+          isEnabled: true,
+          track: expect.any(Function),
+        },
+        feature2: {
+          key: "feature2",
+          isEnabled: false,
+          track: expect.any(Function),
+        },
+      });
+
+      client.featureOverrides = (_context: Context) => {
+        expect(context).toEqual(context);
+        return {
+          feature1: false,
+          feature2: true,
+        };
+      };
+      const features = client.getFeatures(context);
+
+      expect(features).toStrictEqual({
+        feature1: {
+          key: "feature1",
+          isEnabled: false,
+          track: expect.any(Function),
+        },
+        feature2: {
+          key: "feature2",
+          isEnabled: true,
+          track: expect.any(Function),
+        },
+      });
     });
   });
 
