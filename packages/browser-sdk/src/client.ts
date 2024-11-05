@@ -250,9 +250,7 @@ export class BucketClient {
       return;
     }
     if (this.config.impersonating) {
-      this.logger.debug(
-        "'track' call ignored. Tracking is disabled by configuration",
-      );
+      this.logger.debug("'track' call ignored. 'impersonating' is enabled");
       return;
     }
 
