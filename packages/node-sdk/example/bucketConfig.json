@@ -1,0 +1,6 @@
+{
+  "overrides": {
+    "myFeature": true,
+    "myFeatureFalse": false
+  }
+}
