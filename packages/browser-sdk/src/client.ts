@@ -246,11 +246,11 @@ export class BucketClient {
    */
   async track(eventName: string, attributes?: Record<string, any> | null) {
     if (!this.context.user) {
-      this.logger.debug("'track' call ignored. No user context provided");
+      this.logger.warn("'track' call ignored. No user context provided");
       return;
     }
     if (this.config.impersonating) {
-      this.logger.debug("'track' call ignored. 'impersonating' is enabled");
+      this.logger.warn("'track' call ignored. 'impersonating' is enabled");
       return;
     }
 
