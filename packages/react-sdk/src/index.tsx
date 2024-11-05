@@ -56,7 +56,7 @@ export type BucketProps = BucketContext & {
   host?: string;
   sseHost?: string;
   debug?: boolean;
-  impersonating?: boolean;
+  enableTracking?: boolean;
 
   // for testing
   newBucketClient?: (
@@ -105,7 +105,7 @@ export function BucketProvider({
       host: config.host,
       sseHost: config.sseHost,
 
-      impersonating: config.impersonating,
+      enableTracking: config.enableTracking,
 
       features: {
         ...featureOptions,

@@ -55,7 +55,7 @@ export type PayloadContext = {
 interface Config {
   host: string;
   sseHost: string;
-  impersonating: boolean;
+  enableTracking: boolean;
 }
 
 export interface InitOptions {
@@ -69,13 +69,13 @@ export interface InitOptions {
   feedback?: FeedbackOptions;
   features?: FeaturesOptions;
   sdkVersion?: string;
-  impersonating?: boolean;
+  enableTracking?: boolean;
 }
 
 const defaultConfig: Config = {
   host: API_HOST,
   sseHost: SSE_REALTIME_HOST,
-  impersonating: false,
+  enableTracking: true,
 };
 
 export interface Feature {
@@ -108,7 +108,7 @@ export class BucketClient {
     this.config = {
       host: opts?.host ?? defaultConfig.host,
       sseHost: opts?.sseHost ?? defaultConfig.sseHost,
-      impersonating: opts?.impersonating ?? defaultConfig.impersonating,
+      enableTracking: opts?.enableTracking ?? defaultConfig.enableTracking,
     } satisfies Config;
 
     const feedbackOpts = handleDeprecatedFeedbackOptions(opts?.feedback);
@@ -138,8 +138,7 @@ export class BucketClient {
     if (
       this.context?.user &&
       !isNode && // do not prompt on server-side
-      feedbackOpts?.enableAutoFeedback !== false && // default to on
-      !this.config.impersonating // do not prompt if impersonating
+      feedbackOpts?.enableAutoFeedback !== false // default to on
     ) {
       if (isMobile) {
         this.logger.warn(
@@ -174,13 +173,13 @@ export class BucketClient {
 
     await this.featuresClient.initialize();
 
-    if (this.context.user && !this.config.impersonating) {
+    if (this.context.user && this.config.enableTracking) {
       this.user().catch((e) => {
         this.logger.error("error sending user", e);
       });
     }
 
-    if (this.context.company && !this.config.impersonating) {
+    if (this.context.company && this.config.enableTracking) {
       this.company().catch((e) => {
         this.logger.error("error sending company", e);
       });
@@ -249,8 +248,8 @@ export class BucketClient {
       this.logger.warn("'track' call ignored. No user context provided");
       return;
     }
-    if (this.config.impersonating) {
-      this.logger.warn("'track' call ignored. 'impersonating' is enabled");
+    if (!this.config.enableTracking) {
+      this.logger.warn("'track' call ignored. 'enableTracking' is false");
       return;
     }
 

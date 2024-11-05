@@ -80,7 +80,7 @@ import { BucketProvider } from "@bucketco/react-sdk";
   <BucketProvider>
   ```
 
-- `impersonating` (default: `false`): Set to `true` to stop sending tracking events and user/company updates to Bucket. Also stops automated feedback surveys.
+- `enableTracking` (default: `true`): Set to `false` to stop sending tracking events and user/company updates to Bucket.
 
 ## Hooks
 
