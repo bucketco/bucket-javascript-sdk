@@ -80,7 +80,7 @@ import { BucketProvider } from "@bucketco/react-sdk";
   <BucketProvider>
   ```
 
-- `enableTracking` (default: `true`): Set to `false` to stop sending tracking events and user/company updates to Bucket.
+- `enableTracking` (default: `true`): Set to `false` to stop sending tracking events and user/company updates to Bucket. Useful when you're impersonating a user.
 
 ## Hooks
 

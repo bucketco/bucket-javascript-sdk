@@ -80,7 +80,7 @@ Supply these to the constructor call (3rd argument)
   host?: "https://front.bucket.co",
   sseHost?: "https://livemessaging.bucket.co"
   feedback?: undefined // See FEEDBACK.md
-  enableTracking?: true, // set to `false` to stop sending track events and user/company updates to Bucket servers.
+  enableTracking?: true, // set to `false` to stop sending track events and user/company updates to Bucket servers. Useful when you're impersonating a user.
   featureOptions?: {
     fallbackFeatures?: string[]; // Enable these features if unable to contact bucket.co
     timeoutMs?: number; // Timeout for fetching features
