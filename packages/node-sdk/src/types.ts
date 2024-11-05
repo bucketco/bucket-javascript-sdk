@@ -116,11 +116,26 @@ export type TypedFeatures = keyof Features extends never
   : Record<keyof Features, Feature>;
 
 /**
+ * Describes the feature overrides.
+ */
+export type FeatureOverrides = Partial<Record<keyof TypedFeatures, boolean>>;
+export type FeatureOverridesFn = (context: Context) => FeatureOverrides;
+
+/**
  * Describes the response of the features endpoint
  */
 export type FeaturesAPIResponse = {
   /** The feature definitions */
   features: (FeatureData & { targeting: { version: number } })[];
+};
+
+export type EvaluatedFeaturesAPIResponse = {
+  /** True if request successful */
+  success: boolean;
+  /** True if additional context for user or company was found and used for evaluation on the remote server */
+  remoteContextUsed: boolean;
+  /** The feature definitions */
+  features: RawFeature[];
 };
 
 /**
@@ -267,7 +282,7 @@ export type ClientOptions = {
   /**
    * The secret key used to authenticate with the Bucket API.
    **/
-  secretKey: string;
+  secretKey?: string;
 
   /**
    * The host to send requests to (optional).
@@ -275,7 +290,7 @@ export type ClientOptions = {
   host?: string;
 
   /**
-   * The logger to use for logging (optional). Default is no logging.
+   * The logger to use for logging (optional). Default is info level logging to console.
    **/
   logger?: Logger;
 
@@ -294,6 +309,33 @@ export type ClientOptions = {
    * If not provided, the default options are used.
    **/
   batchOptions?: Omit<BatchBufferOptions<any>, "flushHandler" | "logger">;
+
+  /**
+   * If a filename is specified, feature targeting results be overridden with
+   * the values from this file. The file should be a JSON object with feature
+   * keys as keys and boolean values as values.
+   *
+   * If a function is specified, the function will be called with the context
+   * and should return a record of feature keys and boolean values.
+   *
+   * Defaults to "bucketFeatures.json".
+   **/
+  featureOverrides?:
+    | string
+    | ((context: Context) => Partial<Record<keyof TypedFeatures, boolean>>);
+
+  /**
+   * In offline mode, no data is sent or fethed from the the Bucket API.
+   * This is useful for testing or development.
+   */
+  offline?: boolean;
+
+  /**
+   * The path to the config file. If supplied, the config file will be loaded.
+   * Defaults to `bucket.json` when NODE_ENV is not production. Can also be
+   * set through the environment variable BUCKET_CONFIG_FILE.
+   */
+  configFile?: string;
 };
 
 /**

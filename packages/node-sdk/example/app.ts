@@ -23,23 +23,27 @@ app.use((req, res, next) => {
   // The original `bucket` instance is not modified, so we can safely use it in other parts of our application.
   //
   // We also set some attributes on the user and company objects, which will be sent to the Bucket API.
-  const bucketUser = bucket.bindClient({
-    user: {
-      id: req.headers["x-bucket-user-id"] as string,
-      role: req.headers["x-bucket-is-admin"] ? "admin" : "user",
-    },
-    company: {
-      id: req.headers["x-bucket-company-id"] as string,
-      betaUser: !!req.headers["x-bucket-company-beta-user"],
-    },
-  });
+  const user = req.headers["x-bucket-user-id"]
+    ? {
+        id: req.headers["x-bucket-user-id"] as string,
+        role: req.headers["x-bucket-is-admin"] ? "admin" : "user",
+      }
+    : undefined;
+  const company = req.headers["x-bucket-company-id"]
+    ? {
+        id: req.headers["x-bucket-company-id"] as string,
+        betaUser: !!req.headers["x-bucket-company-beta-user"],
+      }
+    : undefined;
+
+  const bucketUser = bucket.bindClient({ user, company });
 
   // Store the BucketClient instance in the `res.locals` object so we can access it in our route handlers
   res.locals.bucketUser = bucketUser;
   next();
 });
 
-const todos = ["Buy milk", "Walk the dog"];
+export const todos = ["Buy milk", "Walk the dog"];
 
 app.get("/", (_req, res) => {
   res.locals.bucketUser.track("Front Page Viewed");
@@ -48,11 +52,10 @@ app.get("/", (_req, res) => {
 
 app.get("/todos", async (_req, res) => {
   // Return todos if the feature is enabled for the user
-  // We use the `getFeatures` method to check if the user has the "show-todos" feature enabled.
+  // We use the `getFeature` method to check if the user has the "show-todos" feature enabled.
   // Note that "show-todos" is a feature that we defined in the `Features` interface in the `bucket.ts` file.
   // and that the indexing for feature name below is type-checked at compile time.
-  const { track, isEnabled } =
-    res.locals.bucketUser.getFeatures()["show-todos"];
+  const { track, isEnabled } = res.locals.bucketUser.getFeature("show-todos");
 
   if (isEnabled) {
     track();
@@ -74,8 +77,7 @@ app.post("/todos", (req, res) => {
     return res.status(400).json({ error: "Invalid todo" });
   }
 
-  const { track, isEnabled } =
-    res.locals.bucketUser.getFeatures()["create-todos"];
+  const { track, isEnabled } = res.locals.bucketUser.getFeature("create-todos");
 
   // Check if the user has the "create-todos" feature enabled
   if (isEnabled) {
@@ -98,8 +100,7 @@ app.delete("/todos/:idx", (req, res) => {
     return res.status(400).json({ error: "Invalid index" });
   }
 
-  const { track, isEnabled } =
-    res.locals.bucketUser.getFeatures()["delete-todos"];
+  const { track, isEnabled } = res.locals.bucketUser.getFeature("delete-todos");
 
   if (isEnabled) {
     todos.splice(idx, 1);

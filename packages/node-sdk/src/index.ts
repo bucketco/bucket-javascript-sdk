@@ -3,6 +3,7 @@ export type {
   Attributes,
   ClientOptions,
   Context,
+  FeatureOverrides,
   Features,
   HttpClient,
   Logger,

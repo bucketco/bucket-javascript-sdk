@@ -1,17 +1,25 @@
+import fs from "fs";
+
 import { evaluateTargeting, flattenJSON } from "@bucketco/flag-evaluation";
 
 import BatchBuffer from "./batch-buffer";
 import cache from "./cache";
 import {
   API_HOST,
+  applyLogLevel,
   BUCKET_LOG_PREFIX,
   FEATURE_EVENTS_PER_MIN,
   FEATURES_REFETCH_MS,
+  loadConfig,
   SDK_VERSION,
   SDK_VERSION_HEADER_NAME,
 } from "./config";
 import fetchClient from "./fetch-http-client";
-import type { RawFeature } from "./types";
+import type {
+  EvaluatedFeaturesAPIResponse,
+  FeatureOverridesFn,
+  RawFeature,
+} from "./types";
 import {
   Attributes,
   Cache,
@@ -30,8 +38,11 @@ import {
   checkWithinAllottedTimeWindow,
   decorateLogger,
   isObject,
+  mergeSkipUndefined,
   ok,
 } from "./utils";
+
+const bucketConfigDefaultFile = "bucketConfig.json";
 
 type BulkEvent =
   | {
@@ -81,6 +92,9 @@ export class BucketClient {
     fallbackFeatures?: Record<keyof TypedFeatures, RawFeature>;
     featuresCache?: Cache<FeaturesAPIResponse>;
     batchBuffer: BatchBuffer<BulkEvent>;
+    featureOverrides: FeatureOverridesFn;
+    offline: boolean;
+    configFile?: string;
   };
 
   /**
@@ -91,10 +105,7 @@ export class BucketClient {
    **/
   constructor(options: ClientOptions) {
     ok(isObject(options), "options must be an object");
-    ok(
-      typeof options.secretKey === "string" && options.secretKey.length > 22,
-      "secretKey must be a string",
-    );
+
     ok(
       options.host === undefined ||
         (typeof options.host === "string" && options.host.length > 0),
@@ -117,8 +128,40 @@ export class BucketClient {
       options.batchOptions === undefined || isObject(options.batchOptions),
       "batchOptions must be an object",
     );
+    ok(
+      options.configFile === undefined ||
+        typeof options.configFile === "string",
+      "configFile must be a string",
+    );
 
-    const features =
+    if (!options.configFile) {
+      options.configFile =
+        process.env.BUCKET_CONFIG_FILE ?? fs.existsSync(bucketConfigDefaultFile)
+          ? bucketConfigDefaultFile
+          : undefined;
+    }
+
+    const externalConfig = loadConfig(options.configFile);
+    const config = mergeSkipUndefined(externalConfig, options);
+
+    const offline = config.offline ?? (!!process.env.TEST || false);
+    if (!offline) {
+      ok(typeof config.secretKey === "string", "secretKey must be a string");
+      ok(config.secretKey.length > 22, "invalid secretKey specified");
+    }
+
+    // use the supplied logger or apply the log level to the console logger
+    // always decorate the logger with the bucket log prefix
+    const logger = decorateLogger(
+      BUCKET_LOG_PREFIX,
+      options.logger
+        ? options.logger
+        : applyLogLevel(console, config?.logLevel || "info"),
+    );
+
+    // todo: deprecate fallback features in favour of a more operationally
+    //  friendly way of setting fall backs.
+    const fallbackFeatures =
       options.fallbackFeatures &&
       options.fallbackFeatures.reduce(
         (acc, key) => {
@@ -131,26 +174,28 @@ export class BucketClient {
         {} as Record<keyof TypedFeatures, RawFeature>,
       );
 
-    const logger =
-      options.logger && decorateLogger(BUCKET_LOG_PREFIX, options.logger);
-
     this._config = {
       logger,
-      host: options.host || API_HOST,
+      offline,
+      host: config.host || API_HOST,
       headers: {
         "Content-Type": "application/json",
         [SDK_VERSION_HEADER_NAME]: SDK_VERSION,
-        ["Authorization"]: `Bearer ${options.secretKey}`,
+        ["Authorization"]: `Bearer ${config.secretKey}`,
       },
       httpClient: options.httpClient || fetchClient,
       refetchInterval: FEATURES_REFETCH_MS,
       staleWarningInterval: FEATURES_REFETCH_MS * 5,
-      fallbackFeatures: features,
+      fallbackFeatures: fallbackFeatures,
       batchBuffer: new BatchBuffer<BulkEvent>({
         ...options?.batchOptions,
         flushHandler: (items) => this.sendBulkEvents(items),
         logger,
       }),
+      featureOverrides:
+        typeof config.featureOverrides === "function"
+          ? config.featureOverrides
+          : () => config.featureOverrides,
     };
   }
 
@@ -166,17 +211,25 @@ export class BucketClient {
     ok(typeof path === "string" && path.length > 0, "path must be a string");
     ok(typeof body === "object", "body must be an object");
 
+    const url = `${this._config.host}/${path}`;
     try {
       const response = await this._config.httpClient.post<
         TBody,
         { success: boolean }
-      >(`${this._config.host}/${path}`, this._config.headers, body);
+      >(url, this._config.headers, body);
+      this._config.logger?.debug(`post request to "${url}"`, response);
 
-      this._config.logger?.debug(`post request to "${path}"`, response);
-      return response.body?.success === true;
+      if (!isObject(response.body) || response.body.success !== true) {
+        this._config.logger?.warn(
+          `invalid response received from server for "${url}"`,
+          response,
+        );
+        return false;
+      }
+      return true;
     } catch (error) {
       this._config.logger?.error(
-        `post request to "${path}" failed with error`,
+        `post request to "${url}" failed with error`,
         error,
       );
       return false;
@@ -194,13 +247,19 @@ export class BucketClient {
     ok(typeof path === "string" && path.length > 0, "path must be a string");
 
     try {
+      const url = `${this._config.host}/${path}`;
       const response = await this._config.httpClient.get<
         TResponse & { success: boolean }
-      >(`${this._config.host}/${path}`, this._config.headers);
+      >(url, this._config.headers);
 
-      this._config.logger?.debug(`get request to "${path}"`, response);
+      this._config.logger?.debug(`get request to "${url}"`, response);
 
       if (!isObject(response.body) || response.body.success !== true) {
+        this._config.logger?.warn(
+          `invalid response received from server for "${url}"`,
+          response,
+        );
+
         return undefined;
       }
 
@@ -225,6 +284,10 @@ export class BucketClient {
       Array.isArray(events) && events.length > 0,
       "events must be a non-empty array",
     );
+
+    if (this._config.offline) {
+      return;
+    }
 
     const sent = await this.post("bulk", events);
     if (!sent) {
@@ -314,6 +377,10 @@ export class BucketClient {
         this._config.staleWarningInterval,
         this._config.logger,
         async () => {
+          if (this._config.offline) {
+            console.log("offline");
+            return { features: [] };
+          }
           const res = await this.get<FeaturesAPIResponse>("features");
 
           if (!isObject(res) || !Array.isArray(res?.features)) {
@@ -561,6 +628,18 @@ export class BucketClient {
         {} as Record<keyof TypedFeatures, RawFeature>,
       );
 
+      // apply feature overrides
+      const overrides = Object.entries(
+        this._config.featureOverrides(context),
+      ).map(([key, isEnabled]) => [key, { key, isEnabled }]);
+
+      if (overrides.length > 0) {
+        // merge overrides into evaluated features
+        evaluatedFeatures = {
+          ...evaluatedFeatures,
+          ...Object.fromEntries(overrides),
+        };
+      }
       this._config.logger?.debug("evaluated features", evaluatedFeatures);
     } else {
       this._config.logger?.warn(
@@ -647,6 +726,93 @@ export class BucketClient {
       targetingVersion: feature?.targetingVersion,
     });
   }
+
+  set featureOverrides(overrides: FeatureOverridesFn) {
+    this._config.featureOverrides = overrides;
+  }
+
+  private async _getFeaturesRemote(
+    key: string,
+    userId?: string,
+    companyId?: string,
+    additionalContext?: Context,
+  ): Promise<TypedFeatures> {
+    const context = additionalContext || {};
+    if (userId) {
+      context.user = { id: userId };
+    }
+    if (companyId) {
+      context.company = { id: companyId };
+    }
+
+    const params = new URLSearchParams(flattenJSON({ context }));
+    if (key) {
+      params.append("key", key);
+    }
+
+    const res = await this.get<EvaluatedFeaturesAPIResponse>(
+      "features/evaluated?" + params.toString(),
+    );
+
+    if (res) {
+      return Object.fromEntries(
+        Object.entries(res.features).map(([featureKey, feature]) => {
+          return [
+            featureKey as keyof TypedFeatures,
+            this._wrapRawFeature(context, feature),
+          ];
+        }) || [],
+      );
+    } else {
+      this._config.logger?.error("failed to fetch evaluated features");
+      return {};
+    }
+  }
+
+  /**
+   * Gets evaluated features with the usage of remote context.
+   * This method triggers a network request every time it's called.
+   *
+   * @param additionalContext
+   * @returns evaluated features
+   */
+  public async getFeaturesRemote(
+    userId?: string,
+    companyId?: string,
+    additionalContext?: Context,
+  ): Promise<TypedFeatures> {
+    return await this._getFeaturesRemote(
+      "",
+      userId,
+      companyId,
+      additionalContext,
+    );
+  }
+
+  /**
+   * Gets evaluated feature with the usage of remote context.
+   * This method triggers a network request every time it's called.
+   *
+   * @param key
+   * @param userId
+   * @param companyId
+   * @param additionalContext
+   * @returns evaluated feature
+   */
+  public async getFeatureRemote(
+    key: string,
+    userId?: string,
+    companyId?: string,
+    additionalContext?: Context,
+  ): Promise<Feature> {
+    const features = await this._getFeaturesRemote(
+      key,
+      userId,
+      companyId,
+      additionalContext,
+    );
+    return features[key];
+  }
 }
 
 /**
@@ -724,6 +890,34 @@ export class BoundBucketClient {
    */
   public getFeature(key: keyof TypedFeatures) {
     return this._client.getFeature(this._context, key);
+  }
+
+  /**
+   * Get remotely evaluated feature for the user/company/other context bound to this client.
+   *
+   * @returns Features for the given user/company and whether each one is enabled or not
+   */
+  public async getFeaturesRemote() {
+    return await this._client.getFeaturesRemote(
+      this._context.user?.id,
+      this._context.company?.id,
+      this._context,
+    );
+  }
+
+  /**
+   * Get remotely evaluated feature for the user/company/other context bound to this client.
+   *
+   * @param key
+   * @returns Feature for the given user/company and key and whether it's enabled or not
+   */
+  public async getFeatureRemote(key: string) {
+    return await this._client.getFeatureRemote(
+      key,
+      this._context.user?.id,
+      this._context.company?.id,
+      this._context,
+    );
   }
 
   /**
