@@ -1,0 +1,9 @@
+{
+  "featureOverrides": {
+    "myFeature": true,
+    "myFeatureFalse": false
+  },
+  "secretKey": "mySecretKey",
+  "offline": true,
+  "host": "http://localhost:3000"
+}
