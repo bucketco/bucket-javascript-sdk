@@ -56,6 +56,7 @@ export type BucketProps = BucketContext & {
   host?: string;
   sseHost?: string;
   debug?: boolean;
+  enableTracking?: boolean;
 
   // for testing
   newBucketClient?: (
@@ -103,6 +104,9 @@ export function BucketProvider({
       otherContext,
       host: config.host,
       sseHost: config.sseHost,
+
+      enableTracking: config.enableTracking,
+
       features: {
         ...featureOptions,
       },
