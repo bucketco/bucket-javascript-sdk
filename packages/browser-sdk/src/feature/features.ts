@@ -24,6 +24,8 @@ export type FeaturesOptions = {
   fallbackFeatures?: string[];
   timeoutMs?: number;
   staleWhileRevalidate?: boolean;
+  staleTimeMs?: number;
+  expireTimeMs?: number;
 };
 
 type Config = {
@@ -110,7 +112,6 @@ export interface CheckEvent {
   version?: number;
 }
 
-export const FEATURES_STALE_MS = 60000; // turn stale after 60 seconds, optionally reevaluate in the background
 export const FEATURES_EXPIRE_MS = 30 * 24 * 60 * 60 * 1000; // expire entirely after 30 days
 
 const localStorageCacheKey = `__bucket_features`;
@@ -144,8 +145,8 @@ export class FeaturesClient {
             get: () => localStorage.getItem(localStorageCacheKey),
             set: (value) => localStorage.setItem(localStorageCacheKey, value),
           },
-          staleTimeMs: FEATURES_STALE_MS,
-          expireTimeMs: FEATURES_EXPIRE_MS,
+          staleTimeMs: options?.staleTimeMs ?? 0,
+          expireTimeMs: options?.expireTimeMs ?? FEATURES_EXPIRE_MS,
         });
     this.config = { ...DEFAULT_FEATURES_CONFIG, ...options };
     this.rateLimiter =
