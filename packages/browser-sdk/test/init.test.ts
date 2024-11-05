@@ -71,7 +71,7 @@ describe("init", () => {
     expect(company).toHaveBeenCalled();
   });
 
-  test("can disable tracking", async () => {
+  test("impersonate disables tracking and auto. feedback surveys", async () => {
     const post = vitest.spyOn(HttpClient.prototype as any, "post");
 
     const bucketInstance = new BucketClient({
