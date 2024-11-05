@@ -138,8 +138,8 @@ export class BucketClient {
     if (
       this.context?.user &&
       !isNode && // do not prompt on server-side
-      feedbackOpts?.enableAutoFeedback !== false && // default to on)
-      !this.config.impersonating // do not prompt if tracking is disabled
+      feedbackOpts?.enableAutoFeedback !== false && // default to on
+      !this.config.impersonating // do not prompt if impersonating
     ) {
       if (isMobile) {
         this.logger.warn(
