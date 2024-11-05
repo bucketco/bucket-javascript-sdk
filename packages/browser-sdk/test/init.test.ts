@@ -2,6 +2,7 @@ import { DefaultBodyType, http, StrictRequest } from "msw";
 import { beforeEach, describe, expect, test, vi, vitest } from "vitest";
 
 import { BucketClient } from "../src";
+import { HttpClient } from "../src/httpClient";
 
 import { getFeatures } from "./mocks/handlers";
 import { server } from "./mocks/server";
@@ -70,19 +71,18 @@ describe("init", () => {
     expect(company).toHaveBeenCalled();
   });
 
-  test("can disable user/company tracking", async () => {
-    const user = vitest.spyOn(BucketClient.prototype as any, "user");
-    const company = vitest.spyOn(BucketClient.prototype as any, "company");
+  test("can disable tracking", async () => {
+    const post = vitest.spyOn(HttpClient.prototype as any, "post");
 
     const bucketInstance = new BucketClient({
       publishableKey: KEY,
       user: { id: "foo" },
       host: "https://example.com",
-      trackContext: false,
+      impersonating: true,
     });
     await bucketInstance.initialize();
+    await bucketInstance.track("test");
 
-    expect(user).not.toHaveBeenCalled();
-    expect(company).not.toHaveBeenCalled();
+    expect(post).not.toHaveBeenCalled();
   });
 });

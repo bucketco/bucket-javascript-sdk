@@ -159,7 +159,7 @@ describe("<BucketProvider />", () => {
       company: { id: "123", name: "test" },
       user: { id: "456", name: "test" },
       otherContext: { test: "test" },
-      trackContext: false,
+      impersonating: true,
       newBucketClient,
     });
 
@@ -182,7 +182,7 @@ describe("<BucketProvider />", () => {
         host: "https://test.com",
         logger: undefined,
         sseHost: "https://test.com",
-        trackContext: false,
+        impersonating: true,
         feedback: undefined,
         features: {},
         sdkVersion: `react-sdk/${version}`,

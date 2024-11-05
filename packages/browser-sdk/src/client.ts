@@ -55,7 +55,7 @@ export type PayloadContext = {
 interface Config {
   host: string;
   sseHost: string;
-  trackContext: boolean;
+  impersonating: boolean;
 }
 
 export interface InitOptions {
@@ -69,13 +69,13 @@ export interface InitOptions {
   feedback?: FeedbackOptions;
   features?: FeaturesOptions;
   sdkVersion?: string;
-  trackContext?: boolean;
+  impersonating?: boolean;
 }
 
 const defaultConfig: Config = {
   host: API_HOST,
   sseHost: SSE_REALTIME_HOST,
-  trackContext: true,
+  impersonating: false,
 };
 
 export interface Feature {
@@ -108,7 +108,7 @@ export class BucketClient {
     this.config = {
       host: opts?.host ?? defaultConfig.host,
       sseHost: opts?.sseHost ?? defaultConfig.sseHost,
-      trackContext: opts?.trackContext ?? defaultConfig.trackContext,
+      impersonating: opts?.impersonating ?? defaultConfig.impersonating,
     } satisfies Config;
 
     const feedbackOpts = handleDeprecatedFeedbackOptions(opts?.feedback);
@@ -138,7 +138,8 @@ export class BucketClient {
     if (
       this.context?.user &&
       !isNode && // do not prompt on server-side
-      feedbackOpts?.enableAutoFeedback !== false // default to on
+      feedbackOpts?.enableAutoFeedback !== false && // default to on)
+      !this.config.impersonating // do not prompt if tracking is disabled
     ) {
       if (isMobile) {
         this.logger.warn(
@@ -173,22 +174,17 @@ export class BucketClient {
 
     await this.featuresClient.initialize();
 
-    if (this.context.user && this.config.trackContext) {
+    if (this.context.user && !this.config.impersonating) {
       this.user().catch((e) => {
         this.logger.error("error sending user", e);
       });
     }
 
-    if (this.context.company && this.config.trackContext) {
+    if (this.context.company && !this.config.impersonating) {
       this.company().catch((e) => {
         this.logger.error("error sending company", e);
       });
     }
-
-    this.logger.debug(
-      `initialized with key "${this.publishableKey}" and options`,
-      this.config,
-    );
   }
 
   /**
@@ -250,7 +246,13 @@ export class BucketClient {
    */
   async track(eventName: string, attributes?: Record<string, any> | null) {
     if (!this.context.user) {
-      this.logger.debug("'track' call ignore. No user context provided");
+      this.logger.debug("'track' call ignored. No user context provided");
+      return;
+    }
+    if (this.config.impersonating) {
+      this.logger.debug(
+        "'track' call ignored. Tracking is disabled by configuration",
+      );
       return;
     }
 

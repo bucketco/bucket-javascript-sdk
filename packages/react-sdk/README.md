@@ -80,7 +80,7 @@ import { BucketProvider } from "@bucketco/react-sdk";
   <BucketProvider>
   ```
 
-- `trackContext` (default: `true`): Automatically send user/company details to Bucket. Disable when impersonating another user.
+- `impersonating` (default: `false`): Disables sending tracking events and user/company updates to Bucket and disabled automated feedback surveys. Set to `true` when impersonating another user.
 
 ## Hooks
 
