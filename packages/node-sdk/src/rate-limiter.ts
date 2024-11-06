@@ -1,6 +1,5 @@
 import { clearInterval } from "timers";
 
-import { RateLimiter } from "./types";
 import { ok } from "./utils";
 
 /**
@@ -8,24 +7,16 @@ import { ok } from "./utils";
  *
  * @typeparam TKey - The type of the key.
  * @param windowSizeMs - The length of the time window in milliseconds.
- * @param eventLimit - The number of events allowed per time window.
  *
  * @returns The rate limiter.
  **/
-export function newRateLimiter(
-  windowSizeMs: number,
-  eventLimit: number,
-): RateLimiter<string> {
+export function newRateLimiter(windowSizeMs: number) {
   ok(
     typeof windowSizeMs == "number" && windowSizeMs > 0,
     "windowSizeMs must be greater than 0",
   );
-  ok(
-    typeof eventLimit == "number" && eventLimit > 0,
-    "eventLimit must be greater than 0",
-  );
 
-  let eventsByKey: { [key: string]: number[] } = {};
+  let lastAllowedTimestampsByKey: { [key: string]: number } = {};
   let clearIntervalId: NodeJS.Timeout | undefined;
 
   function clear(all: boolean): void {
@@ -35,16 +26,16 @@ export function newRateLimiter(
     }
 
     if (all) {
-      eventsByKey = {};
+      lastAllowedTimestampsByKey = {};
     } else {
       const expiredAfter = Date.now() - windowSizeMs;
+      const keys = Object.keys(lastAllowedTimestampsByKey);
 
-      for (const key in eventsByKey) {
-        const events = eventsByKey[key];
-        const last = events.length ? events[events.length - 1] : undefined;
+      for (const key in keys) {
+        const lastAllowedTimestamp = lastAllowedTimestampsByKey[key];
 
-        if (last && last < expiredAfter) {
-          delete eventsByKey[key];
+        if (lastAllowedTimestamp < expiredAfter) {
+          delete lastAllowedTimestampsByKey[key];
         }
       }
     }
@@ -56,27 +47,17 @@ export function newRateLimiter(
 
     const now = Date.now();
 
-    if (!eventsByKey[key]) {
-      eventsByKey[key] = [];
+    const lastAllowedTimestamp = lastAllowedTimestampsByKey[key];
+    if (lastAllowedTimestamp && lastAllowedTimestamp >= now - windowSizeMs) {
+      return false;
     }
 
-    const events = eventsByKey[key];
-
-    while (events.length && now - events[0] > windowSizeMs) {
-      events.shift();
-    }
-
-    const limitExceeded = events.length >= eventLimit;
-
-    if (!limitExceeded) {
-      events.push(now);
-    }
-
-    return !limitExceeded;
+    lastAllowedTimestampsByKey[key] = now;
+    return true;
   }
 
   return {
     clear,
     isAllowed,
-  } satisfies RateLimiter<string>;
+  };
 }

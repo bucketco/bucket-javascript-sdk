@@ -248,30 +248,6 @@ export type Cache<T> = {
 };
 
 /**
- * A rate limiter to limit the rate of requests.
- *
- * @typeParam T - The type of the value.
- **/
-export type RateLimiter<TKey> = {
-  /**
-   * Check if the key is within the allotted time window.
-   *
-   * @param key - The key to check.
-   * @returns `true` if the key is within the allotted time window, `false` otherwise.
-   **/
-  isAllowed: (key: TKey) => boolean;
-
-  /**
-   * Clear the rate limiter's cache of keys that have not been used recently.
-   *
-   * @param all - If `true`, clear all keys. If `false` or `undefined`, clear only keys that have not been used recently.
-   *
-   * This could be called periodically to clear old keys.
-   * **/
-  clear(all?: boolean): void;
-};
-
-/**
  * Options for configuring the BatchBuffer.
  *
  * @template T - The type of items in the buffer.

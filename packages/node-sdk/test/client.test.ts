@@ -16,7 +16,6 @@ import {
   API_HOST,
   BATCH_INTERVAL_MS,
   BATCH_MAX_SIZE,
-  FEATURE_EVENT_RATE_LIMITER_LIMIT,
   FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
   FEATURES_REFETCH_MS,
   SDK_VERSION,
@@ -286,7 +285,6 @@ describe("BucketClient", () => {
       expect(client["_config"].rateLimiter).toBeDefined();
       expect(newRateLimiter).toHaveBeenCalledWith(
         FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
-        FEATURE_EVENT_RATE_LIMITER_LIMIT,
       );
     });
   });
