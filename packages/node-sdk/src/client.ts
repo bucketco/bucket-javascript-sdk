@@ -19,7 +19,6 @@ import { newRateLimiter } from "./rate-limiter";
 import type {
   EvaluatedFeaturesAPIResponse,
   FeatureOverridesFn,
-  RateLimiter,
   RawFeature,
 } from "./types";
 import {
@@ -89,7 +88,7 @@ export class BucketClient {
     featuresCache?: Cache<FeaturesAPIResponse>;
     batchBuffer: BatchBuffer<BulkEvent>;
     featureOverrides: FeatureOverridesFn;
-    rateLimiter: RateLimiter<string>;
+    rateLimiter: ReturnType<typeof newRateLimiter>;
     offline: boolean;
     configFile?: string;
   };
