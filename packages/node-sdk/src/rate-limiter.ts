@@ -1,3 +1,5 @@
+import { clearInterval } from "timers";
+
 import { RateLimiter } from "./types";
 import { ok } from "./utils";
 
@@ -23,15 +25,35 @@ export function newRateLimiter(
     "eventLimit must be greater than 0",
   );
 
-  const eventsByKey: { [key: string]: number[] } = {};
+  let eventsByKey: { [key: string]: number[] } = {};
+  let clearIntervalId: NodeJS.Timeout | undefined;
 
-  function clear() {
-    for (const key in eventsByKey) {
-      delete eventsByKey[key];
+  function clear(all: boolean): void {
+    if (clearIntervalId) {
+      clearInterval(clearIntervalId);
+      clearIntervalId = undefined;
+    }
+
+    if (all) {
+      eventsByKey = {};
+    } else {
+      const expiredAfter = Date.now() - windowSizeMs;
+
+      for (const key in eventsByKey) {
+        const events = eventsByKey[key];
+        const last = events.length ? events[events.length - 1] : undefined;
+
+        if (last && last < expiredAfter) {
+          delete eventsByKey[key];
+        }
+      }
     }
   }
 
   function isAllowed(key: string): boolean {
+    clearIntervalId =
+      clearIntervalId || setInterval(() => clear(false), windowSizeMs);
+
     const now = Date.now();
 
     if (!eventsByKey[key]) {

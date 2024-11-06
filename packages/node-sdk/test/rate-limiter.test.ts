@@ -1,5 +1,6 @@
 import {
   afterAll,
+  afterEach,
   beforeAll,
   beforeEach,
   describe,
@@ -16,7 +17,7 @@ describe("rateLimiter", () => {
   });
 
   beforeEach(() => {
-    vi.advanceTimersByTime(600000); // Advance time by 10 minutes
+    vi.advanceTimersByTime(10 * 60 * 1000); // Advance time by 10 minutes
   });
 
   afterAll(() => {
@@ -58,5 +59,62 @@ describe("rateLimiter", () => {
       expect(limiter.isAllowed("key1")).toBe(false);
       expect(limiter.isAllowed("key1")).toBe(false);
     });
+  });
+
+  describe("clear", () => {
+    let rateLimiter: ReturnType<typeof newRateLimiter>;
+    const windowSizeMs = 1000;
+
+    beforeEach(() => {
+      rateLimiter = newRateLimiter(windowSizeMs, 1);
+    });
+
+    afterEach(() => {
+      rateLimiter.clear(true);
+    });
+
+    it("should clear all events when 'all' is true", () => {
+      expect(rateLimiter.isAllowed("key1")).toBe(true);
+      expect(rateLimiter.isAllowed("key2")).toBe(true);
+      expect(rateLimiter.isAllowed("key1")).toBe(false);
+      expect(rateLimiter.isAllowed("key2")).toBe(false);
+
+      rateLimiter.clear(true);
+
+      expect(rateLimiter.isAllowed("key1")).toBe(true);
+      expect(rateLimiter.isAllowed("key2")).toBe(true);
+    });
+
+    it("should clear expired events when 'all' is false, but keep non-expired", () => {
+      expect(rateLimiter.isAllowed("key1")).toBe(true);
+
+      vi.setSystemTime(new Date().getTime() + windowSizeMs + 1);
+      expect(rateLimiter.isAllowed("key2")).toBe(true);
+
+      rateLimiter.clear(false);
+
+      expect(rateLimiter.isAllowed("key1")).toBe(true);
+      expect(rateLimiter.isAllowed("key2")).toBe(false);
+    });
+  });
+
+  it("should periodically clean up expired keys", () => {
+    const windowSizeMs = 1000;
+
+    const rateLimiter = newRateLimiter(windowSizeMs, 1);
+
+    rateLimiter.isAllowed("key1");
+    vi.advanceTimersByTime(windowSizeMs);
+    expect(rateLimiter.isAllowed("key1")).toBe(false);
+
+    vi.advanceTimersByTime(windowSizeMs + 1);
+    expect(rateLimiter.isAllowed("key1")).toBe(true);
+
+    rateLimiter.isAllowed("key2");
+
+    vi.advanceTimersByTime(windowSizeMs + 1);
+
+    expect(rateLimiter.isAllowed("key1")).toBe(true);
+    expect(rateLimiter.isAllowed("key2")).toBe(true);
   });
 });

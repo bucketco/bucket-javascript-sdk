@@ -262,11 +262,13 @@ export type RateLimiter<TKey> = {
   isAllowed: (key: TKey) => boolean;
 
   /**
-   * Clear the rate limiter.
+   * Clear the rate limiter's cache of keys that have not been used recently.
+   *
+   * @param all - If `true`, clear all keys. If `false` or `undefined`, clear only keys that have not been used recently.
    *
    * This could be called periodically to clear old keys.
    * **/
-  clear(): void;
+  clear(all?: boolean): void;
 };
 
 /**
