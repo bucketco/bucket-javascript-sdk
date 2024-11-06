@@ -16,14 +16,15 @@ import {
   API_HOST,
   BATCH_INTERVAL_MS,
   BATCH_MAX_SIZE,
-  FEATURE_EVENTS_PER_MIN,
+  FEATURE_EVENT_RATE_LIMITER_LIMIT,
+  FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
   FEATURES_REFETCH_MS,
   SDK_VERSION,
   SDK_VERSION_HEADER_NAME,
 } from "../src/config";
 import fetchClient from "../src/fetch-http-client";
+import { newRateLimiter } from "../src/rate-limiter";
 import { ClientOptions, Context, FeaturesAPIResponse } from "../src/types";
-import { checkWithinAllottedTimeWindow, clearRateLimiter } from "../src/utils";
 
 const BULK_ENDPOINT = "https://api.example.com/bulk";
 
@@ -35,13 +36,12 @@ vi.mock("@bucketco/flag-evaluation", async (importOriginal) => {
   };
 });
 
-vi.mock("../src/utils", async (importOriginal) => {
+vi.mock("../src/rate-limiter", async (importOriginal) => {
   const original = (await importOriginal()) as any;
+
   return {
     ...original,
-    checkWithinAllottedTimeWindow: vi.fn(
-      original.checkWithinAllottedTimeWindow,
-    ),
+    newRateLimiter: vi.fn(original.newRateLimiter),
   };
 });
 
@@ -161,7 +161,6 @@ const evaluatedFeatures = [
 describe("BucketClient", () => {
   afterEach(() => {
     vi.clearAllMocks();
-    clearRateLimiter();
   });
 
   describe("constructor (with options)", () => {
@@ -278,6 +277,16 @@ describe("BucketClient", () => {
       };
       expect(() => new BucketClient(invalidOptions)).toThrow(
         "fallbackFeatures must be an object",
+      );
+    });
+
+    it("should create a new feature events ratelimiter", () => {
+      const client = new BucketClient(validOptions);
+
+      expect(client["_config"].rateLimiter).toBeDefined();
+      expect(newRateLimiter).toHaveBeenCalledWith(
+        FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
+        FEATURE_EVENT_RATE_LIMITER_LIMIT,
       );
     });
   });
@@ -1138,11 +1147,12 @@ describe("BucketClient", () => {
     });
 
     it("should properly define the rate limiter key", async () => {
+      const isAllowedSpy = vi.spyOn(client["_config"].rateLimiter, "isAllowed");
+
       await client.initialize();
       client.getFeatures({ user, company, other: otherContext });
 
-      expect(checkWithinAllottedTimeWindow).toHaveBeenCalledWith(
-        FEATURE_EVENTS_PER_MIN,
+      expect(isAllowedSpy).toHaveBeenCalledWith(
         "evaluate:user.id=user123&user.age=1&user.name=John&company.id=company123&company.employees=100&company.name=Acme+Inc.&other.custom=context&other.key=value:feature1:1:true",
       );
     });
