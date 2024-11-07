@@ -72,7 +72,7 @@ See [example/browser.html](example/browser.html) for a working example:
 
 ### Init options
 
-Supply these to the constructor call (3rd argument)
+Supply these to the constructor call:
 
 ```ts
 {
@@ -85,6 +85,8 @@ Supply these to the constructor call (3rd argument)
     fallbackFeatures?: string[]; // Enable these features if unable to contact bucket.co
     timeoutMs?: number; // Timeout for fetching features
     staleWhileRevalidate?: boolean; // Revalidate in the background when cached features turn stale to avoid latency in the UI
+    staleTimeMs?: // at initialization time features are loaded from the cache unless they have gone stale. Defaults to 0 which means the cache is disabled. Increase in the case of a non-SPA.
+    expireTimeMs?: // In case we're unable to fetch features from Bucket, cached/stale features will be used instead until they expire after  `expireTimeMs`.
   };
 }
 ```
