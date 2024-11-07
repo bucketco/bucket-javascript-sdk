@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { decorateLogger, isObject, mergeSkipUndefined, ok } from "../src/utils";
+import {
+  decorateLogger,
+  isObject,
+  mergeSkipUndefined,
+  ok,
+} from "../src/utils";
 
 describe("isObject", () => {
   it("should return true for an object", () => {

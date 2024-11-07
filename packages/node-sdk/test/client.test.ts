@@ -290,16 +290,17 @@ describe("BucketClient", () => {
   });
 
   describe("bindClient", () => {
-    beforeEach(() => {
-      vi.mocked(httpClient.post).mockResolvedValue({ body: { success: true } });
-    });
-
     const client = new BucketClient(validOptions);
     const context = {
       user,
       company,
       other: otherContext,
     };
+
+    beforeEach(() => {
+      vi.mocked(httpClient.post).mockResolvedValue({ body: { success: true } });
+      client["_config"].rateLimiter.clear(true);
+    });
 
     it("should return a new client instance with the `user`, `company` and `other` set", async () => {
       const newClient = client.bindClient(context);
@@ -581,6 +582,10 @@ describe("BucketClient", () => {
 
   describe("track", () => {
     const client = new BucketClient(validOptions);
+
+    beforeEach(() => {
+      client["_config"].rateLimiter.clear(true);
+    });
 
     it("should successfully track the feature usage", async () => {
       const response = {
@@ -1773,6 +1778,10 @@ describe("BoundBucketClient", () => {
     });
   });
 
+  beforeEach(async () => {
+    client["_config"].rateLimiter.clear(true);
+  });
+
   it("should allow using expected methods when bound to user", async () => {
     const boundClient = client.bindClient({ user });
     expect(boundClient.user).toEqual(user);
@@ -1790,7 +1799,6 @@ describe("BoundBucketClient", () => {
       BULK_ENDPOINT,
       expectedHeaders,
       [
-        expect.objectContaining({ type: "user" }),
         expect.objectContaining({ type: "user" }),
         {
           event: "feature",
@@ -1813,8 +1821,6 @@ describe("BoundBucketClient", () => {
       BULK_ENDPOINT,
       expectedHeaders,
       [
-        expect.objectContaining({ type: "company" }),
-        expect.objectContaining({ type: "user" }),
         expect.objectContaining({ type: "company" }),
         expect.objectContaining({ type: "user" }),
         {

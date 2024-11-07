@@ -389,7 +389,12 @@ export class BucketClient {
     }
 
     const promises: Promise<void>[] = [];
-    if (context.company) {
+    if (
+      context.company &&
+      this._config.rateLimiter.isAllowed(
+        JSON.stringify(context.company, null, 0),
+      )
+    ) {
       const { id: _, ...attributes } = context.company;
       promises.push(
         this.updateCompany(context.company.id, {
@@ -399,7 +404,10 @@ export class BucketClient {
       );
     }
 
-    if (context.user) {
+    if (
+      context.user &&
+      this._config.rateLimiter.isAllowed(JSON.stringify(context.user, null, 0))
+    ) {
       const { id: _, ...attributes } = context.user;
       promises.push(
         this.updateUser(context.user.id, {
