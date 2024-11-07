@@ -1833,6 +1833,22 @@ describe("BoundBucketClient", () => {
     );
   });
 
+  it("should disable tracking withig the client if `enableTracking` is `false`", async () => {
+    const boundClient = client.bindClient({
+      user,
+      company,
+      enableTracking: false,
+    });
+
+    const { track } = boundClient.getFeature("feature2");
+    await track();
+    await boundClient.track("feature1");
+
+    await client.flush();
+
+    expect(httpClient.post).not.toHaveBeenCalled();
+  });
+
   it("should allow using expected methods", async () => {
     const boundClient = client.bindClient({ other: { key: "value" } });
     expect(boundClient.otherContext).toEqual({
