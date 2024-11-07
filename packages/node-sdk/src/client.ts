@@ -366,6 +366,59 @@ export class BucketClient {
     });
   }
 
+  /**
+   * Updates the context in Bucket (if needed).
+   * This method should be used before requesting feature flags or binding a client.
+   *
+   * @param context - The context to update.
+   */
+  private async syncContext(context: Context) {
+    ok(isObject(context), "context must be an object");
+    ok(
+      typeof context.enableTracking === "boolean" ||
+        context.enableTracking === undefined,
+      "enableTracking must be a boolean",
+    );
+
+    if (context.enableTracking === false) {
+      this._config.logger?.debug(
+        "feature.syncContext(): tracking disabled from context, not updating user/company",
+      );
+
+      return;
+    }
+
+    const promises: Promise<void>[] = [];
+    if (context.company) {
+      const { id: _, ...attributes } = context.company;
+      promises.push(
+        this.updateCompany(context.company.id, {
+          attributes,
+          meta: { active: false },
+        }),
+      );
+    }
+
+    if (context.user) {
+      const { id: _, ...attributes } = context.user;
+      promises.push(
+        this.updateUser(context.user.id, {
+          attributes,
+          meta: { active: false },
+        }),
+      );
+    }
+
+    if (promises.length > 0) {
+      await Promise.all(promises);
+    }
+  }
+
+  /**
+   * Gets the features cache.
+   *
+   * @returns The features cache.
+   **/
   private getFeaturesCache() {
     if (!this._config.featuresCache) {
       this._config.featuresCache = cache<FeaturesAPIResponse>(
@@ -414,25 +467,7 @@ export class BucketClient {
    * the user/company is set respectively.
    **/
   public bindClient(context: Context) {
-    const boundClient = new BoundBucketClient(this, context);
-
-    if (context.company) {
-      const { id: _, ...attributes } = context.company;
-      void this.updateCompany(context.company.id, {
-        attributes,
-        meta: { active: false },
-      });
-    }
-
-    if (context.user) {
-      const { id: _, ...attributes } = context.user;
-      void this.updateUser(context.user.id, {
-        attributes,
-        meta: { active: false },
-      });
-    }
-
-    return boundClient;
+    return new BoundBucketClient(this, context);
   }
 
   /**
@@ -582,6 +617,12 @@ export class BucketClient {
   }
 
   private _getFeatures(context: Context): Record<string, RawFeature> {
+    void this.syncContext(context);
+
+    if (context.enableTracking !== undefined) {
+      context = { ...context, enableTracking: undefined };
+    }
+
     const featureDefinitions = this.getFeaturesCache().get();
     let evaluatedFeatures: Record<keyof TypedFeatures, RawFeature> =
       this._config.fallbackFeatures || {};
@@ -592,7 +633,10 @@ export class BucketClient {
       );
 
       const evaluated = featureDefinitions.features.map((feature) =>
-        evaluateTargeting({ context, feature }),
+        evaluateTargeting({
+          context,
+          feature,
+        }),
       );
 
       evaluated.forEach(async (res) => {
@@ -649,6 +693,25 @@ export class BucketClient {
     context: Context,
     { key, isEnabled, targetingVersion }: RawFeature,
   ): Feature {
+    ok(isObject(context), "context must be an object");
+    ok(
+      context.user === undefined || isObject(context.user),
+      "context.user must be an object",
+    );
+    ok(
+      context.company === undefined || isObject(context.company),
+      "context.company must be an object",
+    );
+    ok(
+      context.other === undefined || isObject(context.other),
+      "context.other must be an object",
+    );
+    ok(
+      context.enableTracking === undefined ||
+        typeof context.enableTracking === "boolean",
+      "context.enableTracking must be a boolean",
+    );
+
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const client = this;
 
@@ -680,9 +743,15 @@ export class BucketClient {
           return;
         }
 
-        await this.track(userId, key, {
-          companyId: context.company?.id,
-        });
+        if (context.enableTracking !== false) {
+          await this.track(userId, key, {
+            companyId: context.company?.id,
+          });
+        } else {
+          this._config.logger?.debug(
+            "feature.track(): tracking disabled from context, not tracking event",
+          );
+        }
       },
     };
   }
@@ -819,10 +888,11 @@ export class BoundBucketClient {
   private _context: Context;
 
   constructor(client: BucketClient, context: Context) {
-    this._client = client;
-
-    this._context = context;
     this.checkContext(context);
+
+    this._client = client;
+    this._context = context;
+    void this._client["syncContext"](context);
   }
 
   private checkContext(context: Context) {
@@ -838,6 +908,11 @@ export class BoundBucketClient {
     ok(
       context.other === undefined || isObject(context.other),
       "other must be an object if given",
+    );
+    ok(
+      context.enableTracking === undefined ||
+        typeof context.enableTracking === "boolean",
+      "enableTracking must be a boolean if given",
     );
   }
 
@@ -955,13 +1030,14 @@ export class BoundBucketClient {
    * @param context User/company/other context to bind to the client object
    * @returns new client bound with the additional context
    */
-  public bindClient({ user, company, other }: Context) {
+  public bindClient({ user, company, other, enableTracking }: Context) {
     // merge new context into existing
     const newContext = {
       ...this._context,
       user: user ? { ...this._context.user, ...user } : undefined,
       company: company ? { ...this._context.company, ...company } : undefined,
       other: { ...this._context.other, ...other },
+      enableTracking: enableTracking ?? this._context.enableTracking,
     };
 
     return new BoundBucketClient(this._client, newContext);

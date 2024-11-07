@@ -325,7 +325,7 @@ export type ClientOptions = {
     | ((context: Context) => Partial<Record<keyof TypedFeatures, boolean>>);
 
   /**
-   * In offline mode, no data is sent or fethed from the the Bucket API.
+   * In offline mode, no data is sent or fetched from the the Bucket API.
    * This is useful for testing or development.
    */
   offline?: boolean;
@@ -371,4 +371,10 @@ export type Context = {
    * The other context. This is used for any additional context that is not related to user or company.
    */
   other?: Record<string, any>;
+
+  /**
+   * Whether tracking is enabled. If tracking is disabled, no events are sent to the Bucket API.
+   * Default is `true`.
+   **/
+  enableTracking?: boolean;
 };
