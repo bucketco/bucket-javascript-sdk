@@ -1022,6 +1022,13 @@ export class BoundBucketClient {
       return;
     }
 
+    if (this._context.enableTracking === false) {
+      this._client.logger?.debug(
+        "tracking disabled for this bound client, not tracking event",
+      );
+      return;
+    }
+
     await this._client.track(
       userId,
       event,
