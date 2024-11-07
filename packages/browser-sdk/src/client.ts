@@ -273,16 +273,20 @@ export class BucketClient {
    * @returns
    */
   async feedback(payload: Feedback) {
-    const userId =
-      payload.userId ||
-      (this.context.user?.id ? String(this.context.user?.id) : undefined);
-    const companyId =
-      payload.companyId ||
-      (this.context.company?.id ? String(this.context.company?.id) : undefined);
+    const {
+      userId = this.context.user?.id
+        ? String(this.context.user?.id)
+        : undefined,
+      companyId = this.context.company?.id
+        ? String(this.context.company?.id)
+        : undefined,
+      ...rest
+    } = payload;
+
     return await feedback(this.httpClient, this.logger, {
       userId,
       companyId,
-      ...payload,
+      ...rest,
     });
   }
 
@@ -293,29 +297,40 @@ export class BucketClient {
    *
    * @param options
    */
-  requestFeedback(options: Omit<RequestFeedbackOptions, "userId">) {
+  requestFeedback(options: RequestFeedbackOptions) {
     if (!this.context.user?.id) {
       this.logger.error(
-        "`requestFeedback` call ignored. No user context provided at initialization",
+        "`requestFeedback` call ignored. No `user` context provided at initialization",
+      );
+      return;
+    }
+
+    const featureId = "featureId" in options ? options.featureId : undefined;
+    const featureKey = "featureKey" in options ? options.featureKey : undefined;
+
+    if (!featureId && !featureKey) {
+      this.logger.error(
+        "`requestFeedback` call ignored. No `featureId` or `featureKey` provided",
       );
       return;
     }
 
     const feedbackData = {
-      featureId: options.featureId,
+      featureId,
+      featureKey,
       companyId:
         options.companyId ||
         (this.context.company?.id
           ? String(this.context.company?.id)
           : undefined),
       source: "widget" as const,
-    };
+    } as Feedback;
 
     // Wait a tick before opening the feedback form,
     // to prevent the same click from closing it.
     setTimeout(() => {
       feedbackLib.openFeedbackForm({
-        key: options.featureId,
+        key: (featureKey || featureId)!,
         title: options.title,
         position: options.position || this.requestFeedbackOptions.position,
         translations:

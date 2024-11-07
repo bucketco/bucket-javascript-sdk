@@ -52,13 +52,26 @@ export function handleDeprecatedFeedbackOptions(
   };
 }
 
-export interface RequestFeedbackOptions
-  extends Omit<OpenFeedbackFormOptions, "key" | "onSubmit"> {
-  /**
-   * Bucket feature ID
-   */
-  featureId: string;
+type FeatureIdentifier =
+  | {
+      /**
+       * Bucket feature ID.
+       *
+       * @deprecated use `feedbackId` instead.
+       */
+      featureId: string;
+    }
+  | {
+      /**
+       * Bucket feature key.
+       */
+      featureKey: string;
+    };
 
+export type RequestFeedbackOptions = Omit<
+  OpenFeedbackFormOptions,
+  "key" | "onSubmit"
+> & {
   /**
    * User ID from your own application.
    */
@@ -80,18 +93,13 @@ export interface RequestFeedbackOptions
    * @param data.
    */
   onAfterSubmit?: (data: FeedbackSubmission) => void;
-}
+} & FeatureIdentifier;
 
 export type Feedback = {
   /**
    * Bucket feedback ID
    */
   feedbackId?: string;
-
-  /**
-   * Bucket feature ID
-   */
-  featureId: string;
 
   /**
    * User ID from your own application.
@@ -142,7 +150,7 @@ export type Feedback = {
    * - `sdk` - Feedback submitted via `feedback`
    */
   source?: "prompt" | "sdk" | "widget";
-};
+} & FeatureIdentifier;
 
 export type FeedbackPrompt = {
   question: string;
@@ -165,7 +173,7 @@ export type FeedbackPromptReplyHandler = <T extends FeedbackPromptReply | null>(
 
 export type FeedbackPromptHandlerOpenFeedbackFormOptions = Omit<
   RequestFeedbackOptions,
-  "featureId" | "userId" | "companyId" | "onClose" | "onDismiss"
+  "featureId" | "featureKey" | "userId" | "companyId" | "onClose" | "onDismiss"
 >;
 
 export type FeedbackPromptHandlerCallbacks = {
@@ -200,12 +208,24 @@ export async function feedback(
   payload: Feedback,
 ) {
   if (!payload.score && !payload.comment) {
-    logger.error("either 'score' or 'comment' must be provided");
+    logger.error(
+      "`feedback` call ignored, either `score` or `comment` must be provided",
+    );
     return;
   }
 
   if (!payload.userId) {
-    logger.error("`feedback` call ignored, no user id given");
+    logger.error("`feedback` call ignored, no `userId` provided");
+    return;
+  }
+
+  const featureId = "featureId" in payload ? payload.featureId : undefined;
+  const featureKey = "featureKey" in payload ? payload.featureKey : undefined;
+
+  if (!featureId && !featureKey) {
+    logger.error(
+      "`feedback` call ignored. Neither `featureId` nor `featureKey` have been provided",
+    );
     return;
   }
 
@@ -213,12 +233,15 @@ export async function feedback(
   const feedbackPayload = {
     ...payload,
     source: payload.source ?? "sdk",
+    featureId,
+    key: featureKey,
   };
 
   const res = await httpClient.post({
     path: `/feedback`,
     body: feedbackPayload,
   });
+
   logger.debug(`sent feedback`, res);
   return res;
 }
