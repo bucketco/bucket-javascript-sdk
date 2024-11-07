@@ -20,24 +20,24 @@ export function newRateLimiter(windowSizeMs: number) {
   let clearIntervalId: NodeJS.Timeout | undefined;
 
   function clear(all: boolean): void {
-    if (clearIntervalId) {
-      clearInterval(clearIntervalId);
-      clearIntervalId = undefined;
-    }
-
     if (all) {
       lastAllowedTimestampsByKey = {};
     } else {
-      const expiredAfter = Date.now() - windowSizeMs;
+      const expireBeforeTimestamp = Date.now() - windowSizeMs;
       const keys = Object.keys(lastAllowedTimestampsByKey);
 
       for (const key in keys) {
         const lastAllowedTimestamp = lastAllowedTimestampsByKey[key];
 
-        if (lastAllowedTimestamp < expiredAfter) {
+        if (lastAllowedTimestamp < expireBeforeTimestamp) {
           delete lastAllowedTimestampsByKey[key];
         }
       }
+    }
+
+    if (!Object.keys(lastAllowedTimestampsByKey).length && clearIntervalId) {
+      clearInterval(clearIntervalId);
+      clearIntervalId = undefined;
     }
   }
 
