@@ -234,6 +234,7 @@ export async function feedback(
   // set default source to sdk
   const feedbackPayload = {
     ...payload,
+    featureKey: undefined,
     source: payload.source ?? "sdk",
     featureId,
     key: featureKey,
