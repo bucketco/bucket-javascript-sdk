@@ -175,7 +175,7 @@ declare global {
 
 // Add express middleware
 app.use((req, res, next) => {
-  // Extract the user and company IDs from the request headers
+  // Extract the user and company IDs from the request
   // You'll want to use a proper authentication and identification
   // mechanism in a real-world application
   const user = {
