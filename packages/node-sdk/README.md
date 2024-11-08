@@ -26,6 +26,9 @@ in **Bucket.co**.
 > information that is often sensitive and thus should not be used in
 > client-side applications.
 
+Create a `bucket.ts` file containing the following and set up the
+BUCKET_SECRET_KEY environment variable:
+
 ```ts
 import { BucketClient } from "@bucketco/node-sdk";
 
@@ -34,14 +37,14 @@ import { BucketClient } from "@bucketco/node-sdk";
 //
 // We recommend that only one global instance of `client` should be created
 // to avoid multiple round-trips to our servers.
-const client = new BucketClient({
-  secretKey: "sec_prod_xxxxxxxxxxxxxxxxxxxxx",
-});
+export const bucketClient = new BucketClient();
 
 // Initialize the client and begin fetching feature targeting definitions.
 // You must call this method prior to any calls to `getFeatures()`,
 // otherwise an empty object will be returned.
-await client.initialize();
+client.initialize().then({
+  console.log("Bucket initialized!")
+})
 ```
 
 Once the client is initialized, you can obtain features along with the `isEnabled` status to indicate whether the feature is targeted for this user/company:
@@ -157,7 +160,7 @@ A popular way to integrate the Bucket Node.js SDK is through an express middlewa
 ```typescript
 import bucket from "./bucket";
 import express from "express";
-import { BoundBucketClient } from "../src";
+import { BoundBucketClient } from "@bucketco/node-sdk";
 
 // Augment the Express types to include the `boundBucketClient` property on the `res.locals` object
 // This will allow us to access the BucketClient instance in our route handlers
