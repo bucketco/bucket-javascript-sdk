@@ -53,7 +53,7 @@ describe("usage", () => {
     vi.clearAllMocks();
   });
 
-  test("golden path - register user, company, send event, send feedback, get features", async () => {
+  test("golden path - register `user`, `company`, send `event`, send `feedback`, get `features`", async () => {
     const bucketInstance = new BucketClient({
       publishableKey: KEY,
       user: { id: "foo " },
@@ -73,6 +73,23 @@ describe("usage", () => {
 
     const features = bucketInstance.getFeatures();
     expect(features).toEqual(featuresResult);
+  });
+
+  test("accepts `featureKey` instead of `featureId` for manual feedback", async () => {
+    const bucketInstance = new BucketClient({
+      publishableKey: KEY,
+      user: { id: "foo" },
+      company: { id: "bar" },
+    });
+
+    await bucketInstance.initialize();
+
+    await bucketInstance.feedback({
+      featureKey: "feature-key",
+      score: 5,
+      question: "What's up?",
+      promptedQuestion: "How are you?",
+    });
   });
 });
 
@@ -356,7 +373,8 @@ describe(`sends "check" events `, () => {
     ).toHaveBeenCalledTimes(0);
 
     const featureA = client.getFeatures()?.featureA;
-    expect(featureA.isEnabled).toBe(true);
+
+    expect(featureA?.isEnabled).toBe(true);
     expect(
       vi.mocked(FeaturesClient.prototype.sendCheckEvent),
     ).toHaveBeenCalledTimes(0);
