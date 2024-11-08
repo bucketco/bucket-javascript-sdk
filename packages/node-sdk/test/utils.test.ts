@@ -1,19 +1,6 @@
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import {
-  checkWithinAllottedTimeWindow,
-  decorateLogger,
-  isObject,
-  ok,
-} from "../src/utils";
+import { decorateLogger, isObject, mergeSkipUndefined, ok } from "../src/utils";
 
 describe("isObject", () => {
   it("should return true for an object", () => {
@@ -55,50 +42,6 @@ describe("ok", () => {
   });
 });
 
-describe("checkWithinAllottedTimeWindow", () => {
-  beforeAll(() => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
-  });
-
-  beforeEach(() => {
-    vi.advanceTimersByTime(600000); // Advance time by 10 minutes
-  });
-
-  afterAll(() => {
-    vi.useRealTimers();
-  });
-
-  it("should rate limit and report expected results", () => {
-    for (let i = 0; i < 5; i++) {
-      const res = checkWithinAllottedTimeWindow(5, "key");
-      expect(res).toBe(true);
-    }
-    for (let i = 0; i < 5; i++) {
-      const res = checkWithinAllottedTimeWindow(5, "key");
-      expect(res).toBe(false);
-    }
-  });
-
-  it("should reset the limit after a minute", () => {
-    for (let i = 0; i < 12; i++) {
-      const res = checkWithinAllottedTimeWindow(5, "key");
-      expect(res).toBe(i <= 4 || i >= 11);
-
-      vi.advanceTimersByTime(6000); // Advance time by 6 seconds
-    }
-  });
-
-  it("should measure events separately by key", () => {
-    expect(checkWithinAllottedTimeWindow(1, "key1")).toBe(true);
-    expect(checkWithinAllottedTimeWindow(1, "key2")).toBe(true);
-
-    vi.advanceTimersByTime(10000);
-
-    expect(checkWithinAllottedTimeWindow(1, "key1")).toBe(false);
-    expect(checkWithinAllottedTimeWindow(1, "key1")).toBe(false);
-  });
-});
-
 describe("decorateLogger", () => {
   it("should decorate the logger", () => {
     const logger = {
@@ -130,5 +73,42 @@ describe("decorateLogger", () => {
     expect(() => decorateLogger("", 0 as any)).toThrowError(
       "logger must be an object",
     );
+  });
+});
+
+describe("mergeSkipUndefined", () => {
+  it("merges two objects with no undefined values", () => {
+    const target = { a: 1, b: 2 };
+    const source = { b: 3, c: 4 };
+    const result = mergeSkipUndefined(target, source);
+    expect(result).toEqual({ a: 1, b: 3, c: 4 });
+  });
+
+  it("merges two objects where the source has undefined values", () => {
+    const target = { a: 1, b: 2 };
+    const source = { b: undefined, c: 4 };
+    const result = mergeSkipUndefined(target, source);
+    expect(result).toEqual({ a: 1, b: 2, c: 4 });
+  });
+
+  it("merges two objects where the target has undefined values", () => {
+    const target = { a: 1, b: undefined };
+    const source = { b: 3, c: 4 };
+    const result = mergeSkipUndefined(target, source);
+    expect(result).toEqual({ a: 1, b: 3, c: 4 });
+  });
+
+  it("merges two objects where both have undefined values", () => {
+    const target = { a: 1, b: undefined };
+    const source = { b: undefined, c: 4 };
+    const result = mergeSkipUndefined(target, source);
+    expect(result).toEqual({ a: 1, c: 4 });
+  });
+
+  it("merges two empty objects", () => {
+    const target = {};
+    const source = {};
+    const result = mergeSkipUndefined(target, source);
+    expect(result).toEqual({});
   });
 });
