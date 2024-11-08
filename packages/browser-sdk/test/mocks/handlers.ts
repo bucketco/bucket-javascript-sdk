@@ -93,7 +93,12 @@ export const handlers = [
   http.post("https://front.bucket.co/feedback", async ({ request }) => {
     if (!checkRequest(request)) return invalidReqResponse;
     const data = await request.json();
-    if (!data || !data["userId"] || typeof data["score"] !== "number") {
+    if (
+      !data ||
+      !data["userId"] ||
+      typeof data["score"] !== "number" ||
+      (!data["featureId"] && !data["featureKey"])
+    ) {
       return new HttpResponse(null, { status: 400 });
     }
 
