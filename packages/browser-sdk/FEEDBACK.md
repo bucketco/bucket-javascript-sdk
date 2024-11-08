@@ -59,7 +59,7 @@ browser, but you can intercept the request and override this behavior.
 The live connection for automated feedback is established when the
 `BucketClient` is initialized.
 
-### Disabling Automated Feedback Surveys
+### Disabling automated feedback surveys
 
 You can disable automated collection in the `BucketClient` constructor:
 
@@ -319,7 +319,7 @@ bucketClient.requestFeedback({
 })
 ```
 
-### Automated feedback surveys i18n
+### Translations
 
 When you are collecting feedback through the Bucket automation, you can intercept
 the default prompt handling and override the defaults.
