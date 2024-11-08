@@ -10,6 +10,7 @@ import {
   feedback,
   FeedbackOptions as FeedbackOptions,
   handleDeprecatedFeedbackOptions,
+  RequestFeedbackData,
   RequestFeedbackOptions,
 } from "./feedback/feedback";
 import * as feedbackLib from "./feedback/ui";
@@ -297,7 +298,7 @@ export class BucketClient {
    *
    * @param options
    */
-  requestFeedback(options: RequestFeedbackOptions) {
+  requestFeedback(options: RequestFeedbackData) {
     if (!this.context.user?.id) {
       this.logger.error(
         "`requestFeedback` call ignored. No `user` context provided at initialization",

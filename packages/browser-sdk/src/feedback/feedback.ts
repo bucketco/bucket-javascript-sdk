@@ -68,15 +68,10 @@ type FeatureIdentifier =
       featureKey: string;
     };
 
-export type RequestFeedbackOptions = Omit<
+export type RequestFeedbackData = Omit<
   OpenFeedbackFormOptions,
   "key" | "onSubmit"
 > & {
-  /**
-   * User ID from your own application.
-   */
-  userId: string;
-
   /**
    * Company ID from your own application.
    */
@@ -94,6 +89,13 @@ export type RequestFeedbackOptions = Omit<
    */
   onAfterSubmit?: (data: FeedbackSubmission) => void;
 } & FeatureIdentifier;
+
+export type RequestFeedbackOptions = RequestFeedbackData & {
+  /**
+   * User ID from your own application.
+   */
+  userId: string;
+};
 
 export type Feedback = {
   /**
