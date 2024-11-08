@@ -162,7 +162,7 @@ import bucket from "./bucket";
 import express from "express";
 import { BoundBucketClient } from "@bucketco/node-sdk";
 
-// Augment the Express types to include the `boundBucketClient` property on the `res.locals` object
+// Augment the Express types to include a `boundBucketClient` property on the `res.locals` object
 // This will allow us to access the BucketClient instance in our route handlers
 // without having to pass it around manually
 declare global {
@@ -178,7 +178,16 @@ app.use((req, res, next) => {
   // Extract the user and company IDs from the request headers
   // You'll want to use a proper authentication and identification
   // mechanism in a real-world application
-  const { user, company } = extractBucketContextFromHeader(req);
+  const user = {
+    id: req.user?.id,
+    name: req.user?.name
+    email: req.user?.email
+  }
+
+  const company = {
+    id: req.user?.companyId
+    name: req.user?.companyName
+  }
 
   // Create a new BoundBucketClient instance by calling the `bindClient` method on a `BucketClient` instance
   // This will create a new instance that is bound to the user/company given.
