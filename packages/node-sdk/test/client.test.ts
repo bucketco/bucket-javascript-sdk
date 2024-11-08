@@ -164,7 +164,18 @@ describe("BucketClient", () => {
     clearRateLimiter();
   });
 
-  describe("constructor (with options)", () => {
+  describe("constructor", () => {
+    it("should initialize with no options", async () => {
+      const secretKeyEnv = process.env.BUCKET_SECRET_KEY;
+      process.env.BUCKET_SECRET_KEY = "validSecretKeyWithMoreThan22Chars";
+      try {
+        const bucketInstance = new BucketClient();
+        expect(bucketInstance).toBeInstanceOf(BucketClient);
+      } finally {
+        process.env.BUCKET_SECRET_KEY = secretKeyEnv;
+      }
+    });
+
     it("should create a client instance with valid options", () => {
       const client = new BucketClient(validOptions);
 
