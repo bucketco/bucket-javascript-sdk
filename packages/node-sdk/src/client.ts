@@ -95,11 +95,12 @@ export class BucketClient {
 
   /**
    * Creates a new SDK client.
+   * See README for configuration options.
    *
    * @param options - The options for the client or an existing client to clone.
    * @throws An error if the options are invalid.
    **/
-  constructor(options: ClientOptions) {
+  constructor(options: ClientOptions = {}) {
     ok(isObject(options), "options must be an object");
 
     ok(
