@@ -30,18 +30,12 @@ in **Bucket.co**.
 import { BucketClient } from "@bucketco/node-sdk";
 
 // Create a new instance of the client with the secret key. Additional options
-// are available, such as supplying a logger, fallback features and
-// other custom properties.
-//
-// Fallback features are used in the situation when the server-side
-// features are not yet loaded or there are issues retrieving them.
-// See "Initialization Options" below for more information.
+// are available, such as supplying a logger and other custom properties.
 //
 // We recommend that only one global instance of `client` should be created
 // to avoid multiple round-trips to our servers.
 const client = new BucketClient({
   secretKey: "sec_prod_xxxxxxxxxxxxxxxxxxxxx",
-  fallbackFeatures: ["huddle", "voice-huddle"],
 });
 
 // Initialize the client and begin fetching feature targeting definitions.
@@ -137,6 +131,75 @@ The precedence for configuration options is as follows, listed in the order of i
 1. options passed along to the constructor directly
 2. environment variable
 3. the config file
+
+## Type safe feature flags
+
+To get type checked feature flags, add the list of flags to your `bucket.ts` file.
+Any feature look ups will now be checked against the list you maintain.
+
+```typescript
+// Extending the Features interface to define the available features
+declare module "@bucketco/node-sdk" {
+  interface Features {
+    "show-todos": boolean;
+    "create-todos": boolean;
+    "delete-todos": boolean;
+  }
+}
+```
+
+![Type check failed](docs/type-check-failed.png "Type check failed")
+
+## Using with Express
+
+A popular way to integrate the Bucket Node.js SDK is through an express middleware.
+
+```typescript
+import bucket from "./bucket";
+import express from "express";
+import { BoundBucketClient } from "../src";
+
+// Augment the Express types to include the `boundBucketClient` property on the `res.locals` object
+// This will allow us to access the BucketClient instance in our route handlers
+// without having to pass it around manually
+declare global {
+  namespace Express {
+    interface Locals {
+      boundBucketClient: BoundBucketClient;
+    }
+  }
+}
+
+// Add express middleware
+app.use((req, res, next) => {
+  // Extract the user and company IDs from the request headers
+  // You'll want to use a proper authentication and identification
+  // mechanism in a real-world application
+  const { user, company } = extractBucketContextFromHeader(req);
+
+  // Create a new BoundBucketClient instance by calling the `bindClient` method on a `BucketClient` instance
+  // This will create a new instance that is bound to the user/company given.
+  const boundBucketClient = bucket.bindClient({ user, company });
+
+  // Store the BoundBucketClient instance in the `res.locals` object so we can access it in our route handlers
+  res.locals.boundBucketClient = boundBucketClient;
+  next();
+});
+
+// Now use res.locals.boundBucketClient in your handlers
+app.get("/todos", async (_req, res) => {
+  const { track, isEnabled } = res.locals.bucketUser.getFeature("show-todos");
+
+  if (!isEnabled) {
+    res.status(403).send({"error": "feature inaccessible"})
+    return
+  }
+
+  ...
+}
+```
+
+See [example/app.ts](example/app.ts) for a full example.
 
 ## Remote flag evaluation with stored context
 

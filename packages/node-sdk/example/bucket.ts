@@ -19,7 +19,6 @@ let featureOverrides = (context: Context): FeatureOverrides => {
 // Create a bucketConfig.json file to configure the client or set environment variables
 // like BUCKET_SECRET_KEY, BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED, etc.
 export default new BucketClient({
-  fallbackFeatures: ["show-todos"], // feature keys checked at compile time
   // Optional: Set a logger to log debug information, errors, etc.
   logger: console,
   featureOverrides, // Optional: Set feature overrides
