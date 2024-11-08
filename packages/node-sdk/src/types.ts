@@ -371,10 +371,4 @@ export type Context = {
    * The other context. This is used for any additional context that is not related to user or company.
    */
   other?: Record<string, any>;
-
-  /**
-   * Whether tracking is enabled. If tracking is disabled, no events are sent to the Bucket API.
-   * Default is `true`.
-   **/
-  enableTracking?: boolean;
 };

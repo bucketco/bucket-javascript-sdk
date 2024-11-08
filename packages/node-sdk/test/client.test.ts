@@ -432,6 +432,10 @@ describe("BucketClient", () => {
   describe("updateUser", () => {
     const client = new BucketClient(validOptions);
 
+    beforeEach(() => {
+      client["_config"].rateLimiter.clear(true);
+    });
+
     it("should successfully update the user", async () => {
       const response = { status: 200, body: { success: true } };
       httpClient.post.mockResolvedValue(response);
@@ -508,6 +512,10 @@ describe("BucketClient", () => {
 
   describe("updateCompany", () => {
     const client = new BucketClient(validOptions);
+
+    beforeEach(() => {
+      client["_config"].rateLimiter.clear(true);
+    });
 
     it("should successfully update the company with replacing attributes", async () => {
       const response = { status: 200, body: { success: true } };
@@ -1157,6 +1165,8 @@ describe("BucketClient", () => {
         },
       );
 
+      client["_config"].rateLimiter.clear(true);
+
       httpClient.post.mockResolvedValue({
         status: 200,
         body: { success: true },
@@ -1751,14 +1761,15 @@ describe("BoundBucketClient", () => {
       },
     });
   });
+  const client = new BucketClient(validOptions);
 
   beforeEach(async () => {
     await flushPromises();
     await client.flush();
-    vi.mocked(httpClient.post).mockClear();
-  });
 
-  const client = new BucketClient(validOptions);
+    vi.mocked(httpClient.post).mockClear();
+    client["_config"].rateLimiter.clear(true);
+  });
 
   it("should create a client instance", () => {
     expect(client).toBeInstanceOf(BucketClient);
@@ -1787,10 +1798,6 @@ describe("BoundBucketClient", () => {
       company: { ...company, ...companyOverride },
       other: { ...other, ...otherOverride },
     });
-  });
-
-  beforeEach(async () => {
-    client["_config"].rateLimiter.clear(true);
   });
 
   it("should allow using expected methods when bound to user", async () => {
@@ -1844,7 +1851,7 @@ describe("BoundBucketClient", () => {
     );
   });
 
-  it("should disable tracking withig the client if `enableTracking` is `false`", async () => {
+  it("should disable tracking within the client if `enableTracking` is `false`", async () => {
     const boundClient = client.bindClient({
       user,
       company,

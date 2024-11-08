@@ -73,6 +73,17 @@ type BulkEvent =
     };
 
 /**
+ * A context with tracking option.
+ **/
+type ContextWithTracking = Context & {
+  /**
+   * Enable tracking for the context.
+   * If set to `false`, tracking will be disabled for the context. Default is `true`.
+   */
+  enableTracking?: boolean;
+};
+
+/**
  * The SDK client.
  *
  **/
@@ -373,15 +384,17 @@ export class BucketClient {
    *
    * @param context - The context to update.
    */
-  private async syncContext(context: Context) {
+  private async syncContext({
+    enableTracking,
+    ...context
+  }: ContextWithTracking) {
     ok(isObject(context), "context must be an object");
     ok(
-      typeof context.enableTracking === "boolean" ||
-        context.enableTracking === undefined,
+      enableTracking === undefined || typeof enableTracking === "boolean",
       "enableTracking must be a boolean",
     );
 
-    if (context.enableTracking === false) {
+    if (enableTracking === false) {
       this._config.logger?.debug(
         "feature.syncContext(): tracking disabled from context, not updating user/company",
       );
@@ -390,12 +403,7 @@ export class BucketClient {
     }
 
     const promises: Promise<void>[] = [];
-    if (
-      context.company &&
-      this._config.rateLimiter.isAllowed(
-        JSON.stringify(context.company, null, 0),
-      )
-    ) {
+    if (context.company) {
       const { id: _, ...attributes } = context.company;
       promises.push(
         this.updateCompany(context.company.id, {
@@ -405,10 +413,7 @@ export class BucketClient {
       );
     }
 
-    if (
-      context.user &&
-      this._config.rateLimiter.isAllowed(JSON.stringify(context.user, null, 0))
-    ) {
+    if (context.user) {
       const { id: _, ...attributes } = context.user;
       promises.push(
         this.updateUser(context.user.id, {
@@ -475,7 +480,7 @@ export class BucketClient {
    * The `updateUser` / `updateCompany` methods will automatically be called when
    * the user/company is set respectively.
    **/
-  public bindClient(context: Context) {
+  public bindClient(context: ContextWithTracking) {
     return new BoundBucketClient(this, context);
   }
 
@@ -505,12 +510,14 @@ export class BucketClient {
       "meta must be an object",
     );
 
-    await this._config.batchBuffer.add({
-      type: "user",
-      userId,
-      attributes: opts?.attributes,
-      context: opts?.meta,
-    });
+    if (this._config.rateLimiter.isAllowed(JSON.stringify(opts, null, 0))) {
+      await this._config.batchBuffer.add({
+        type: "user",
+        userId,
+        attributes: opts?.attributes,
+        context: opts?.meta,
+      });
+    }
   }
 
   /**
@@ -526,7 +533,7 @@ export class BucketClient {
    **/
   public async updateCompany(
     companyId: string,
-    opts: TrackOptions & { userId?: string },
+    opts?: TrackOptions & { userId?: string },
   ) {
     ok(
       typeof companyId === "string" && companyId.length > 0,
@@ -546,13 +553,15 @@ export class BucketClient {
       "userId must be a string",
     );
 
-    await this._config.batchBuffer.add({
-      type: "company",
-      companyId,
-      userId: opts?.userId,
-      attributes: opts?.attributes,
-      context: opts?.meta,
-    });
+    if (this._config.rateLimiter.isAllowed(JSON.stringify(opts, null, 0))) {
+      await this._config.batchBuffer.add({
+        type: "company",
+        companyId,
+        userId: opts?.userId,
+        attributes: opts?.attributes,
+        context: opts?.meta,
+      });
+    }
   }
 
   /**
@@ -625,12 +634,11 @@ export class BucketClient {
     await this._config.batchBuffer.flush();
   }
 
-  private _getFeatures(context: Context): Record<string, RawFeature> {
-    void this.syncContext(context);
-
-    if (context.enableTracking !== undefined) {
-      context = { ...context, enableTracking: undefined };
-    }
+  private _getFeatures({
+    enableTracking,
+    ...context
+  }: ContextWithTracking): Record<string, RawFeature> {
+    void this.syncContext({ enableTracking, ...context });
 
     const featureDefinitions = this.getFeaturesCache().get();
     let evaluatedFeatures: Record<keyof TypedFeatures, RawFeature> =
@@ -699,7 +707,7 @@ export class BucketClient {
   }
 
   private _wrapRawFeature(
-    context: Context,
+    { enableTracking, ...context }: ContextWithTracking,
     { key, isEnabled, targetingVersion }: RawFeature,
   ): Feature {
     ok(isObject(context), "context must be an object");
@@ -716,8 +724,7 @@ export class BucketClient {
       "context.other must be an object",
     );
     ok(
-      context.enableTracking === undefined ||
-        typeof context.enableTracking === "boolean",
+      enableTracking === undefined || typeof enableTracking === "boolean",
       "context.enableTracking must be a boolean",
     );
 
@@ -752,7 +759,7 @@ export class BucketClient {
           return;
         }
 
-        if (context.enableTracking !== false) {
+        if (enableTracking !== false) {
           await this.track(userId, key, {
             companyId: context.company?.id,
           });
@@ -768,11 +775,12 @@ export class BucketClient {
   /**
    * Gets the evaluated feature for the current context which includes the user, company, and custom context.
    *
+   * @param context - The context to evaluate the features for.
    * @returns The evaluated features.
    * @remarks
    * Call `initialize` before calling this method to ensure the feature definitions are cached, no features will be returned otherwise.
    **/
-  public getFeatures(context: Context): TypedFeatures {
+  public getFeatures(context: ContextWithTracking): TypedFeatures {
     const features = this._getFeatures(context);
     return Object.fromEntries(
       Object.entries(features).map(([k, v]) => [
@@ -790,7 +798,7 @@ export class BucketClient {
    * @remarks
    * Call `initialize` before calling this method to ensure the feature definitions are cached, no features will be returned otherwise.
    **/
-  public getFeature(context: Context, key: keyof TypedFeatures) {
+  public getFeature(context: ContextWithTracking, key: keyof TypedFeatures) {
     const features = this._getFeatures(context);
     const feature = features[key];
 
@@ -894,17 +902,19 @@ export class BucketClient {
  */
 export class BoundBucketClient {
   private _client: BucketClient;
-  private _context: Context;
+  private _context: ContextWithTracking;
 
-  constructor(client: BucketClient, context: Context) {
+  constructor(client: BucketClient, context: ContextWithTracking) {
     this.checkContext(context);
 
     this._client = client;
     this._context = context;
+
+    console.log("BoundBucketClient", this._context);
     void this._client["syncContext"](context);
   }
 
-  private checkContext(context: Context) {
+  private checkContext(context: ContextWithTracking) {
     ok(isObject(context), "context must be an object");
     ok(
       context.user === undefined || typeof context.user?.id === "string",
@@ -1046,9 +1056,14 @@ export class BoundBucketClient {
    * @param context User/company/other context to bind to the client object
    * @returns new client bound with the additional context
    */
-  public bindClient({ user, company, other, enableTracking }: Context) {
+  public bindClient({
+    user,
+    company,
+    other,
+    enableTracking,
+  }: ContextWithTracking) {
     // merge new context into existing
-    const newContext = {
+    const boundConfig = {
       ...this._context,
       user: user ? { ...this._context.user, ...user } : undefined,
       company: company ? { ...this._context.company, ...company } : undefined,
@@ -1056,7 +1071,7 @@ export class BoundBucketClient {
       enableTracking: enableTracking ?? this._context.enableTracking,
     };
 
-    return new BoundBucketClient(this._client, newContext);
+    return new BoundBucketClient(this._client, boundConfig);
   }
 
   /**
