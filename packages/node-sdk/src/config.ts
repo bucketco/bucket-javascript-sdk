@@ -12,7 +12,8 @@ export const API_TIMEOUT_MS = 5000;
 
 export const BUCKET_LOG_PREFIX = "[Bucket]";
 
-export const FEATURE_EVENTS_PER_MIN = 1;
+export const FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS = 60 * 1000;
+
 export const FEATURES_REFETCH_MS = 60 * 1000; // re-fetch every 60 seconds
 
 export const BATCH_MAX_SIZE = 100;
