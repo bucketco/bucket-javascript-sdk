@@ -16,7 +16,7 @@ import {
   FeaturesOptions,
   Feedback,
   FeedbackOptions,
-  RequestFeedbackOptions,
+  RequestFeedbackData,
 } from "@bucketco/browser-sdk";
 import { APIFeaturesResponse } from "@bucketco/browser-sdk/dist/src/feature/features";
 
@@ -229,8 +229,7 @@ export function useTrack() {
  */
 export function useRequestFeedback() {
   const { client } = useContext<ProviderContextType>(ProviderContext);
-  return (options: Omit<RequestFeedbackOptions, "userId">) =>
-    client?.requestFeedback(options);
+  return (options: RequestFeedbackData) => client?.requestFeedback(options);
 }
 
 /**
@@ -253,5 +252,5 @@ export function useRequestFeedback() {
 export function useSendFeedback() {
   const { client } = useContext<ProviderContextType>(ProviderContext);
   return (opts: Omit<Feedback, "userId" | "companyId">) =>
-    client?.feedback(opts);
+    client?.feedback(opts as Feedback);
 }

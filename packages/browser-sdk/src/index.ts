@@ -5,6 +5,7 @@ export type { CheckEvent, FeaturesOptions } from "./feature/features";
 export type {
   Feedback,
   FeedbackOptions,
+  RequestFeedbackData,
   RequestFeedbackOptions,
 } from "./feedback/feedback";
 export type { DEFAULT_TRANSLATIONS } from "./feedback/ui/config/defaultTranslations";
