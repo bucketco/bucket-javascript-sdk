@@ -144,7 +144,7 @@ export class BucketClient {
     const externalConfig = loadConfig(options.configFile);
     const config = mergeSkipUndefined(externalConfig, options);
 
-    const offline = config.offline ?? (!!process.env.TEST || false);
+    const offline = config.offline ?? process.env.NODE_ENV === "test";
     if (!offline) {
       ok(typeof config.secretKey === "string", "secretKey must be a string");
       ok(config.secretKey.length > 22, "invalid secretKey specified");
