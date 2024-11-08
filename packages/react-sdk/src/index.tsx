@@ -14,9 +14,9 @@ import {
   BucketClient,
   BucketContext,
   FeaturesOptions,
-  Feedback,
   FeedbackOptions,
   RequestFeedbackData,
+  UnassignedFeedback,
 } from "@bucketco/browser-sdk";
 import { APIFeaturesResponse } from "@bucketco/browser-sdk/dist/src/feature/features";
 
@@ -251,6 +251,5 @@ export function useRequestFeedback() {
  */
 export function useSendFeedback() {
   const { client } = useContext<ProviderContextType>(ProviderContext);
-  return (opts: Omit<Feedback, "userId" | "companyId">) =>
-    client?.feedback(opts as Feedback);
+  return (opts: UnassignedFeedback) => client?.feedback(opts);
 }

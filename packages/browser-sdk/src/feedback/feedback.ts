@@ -97,21 +97,11 @@ export type RequestFeedbackOptions = RequestFeedbackData & {
   userId: string;
 };
 
-export type Feedback = {
+export type UnassignedFeedback = {
   /**
    * Bucket feedback ID
    */
   feedbackId?: string;
-
-  /**
-   * User ID from your own application.
-   */
-  userId?: string;
-
-  /**
-   * Company ID from your own application.
-   */
-  companyId?: string;
 
   /**
    * The question that was presented to the user.
@@ -153,6 +143,18 @@ export type Feedback = {
    */
   source?: "prompt" | "sdk" | "widget";
 } & FeatureIdentifier;
+
+export type Feedback = UnassignedFeedback & {
+  /**
+   * User ID from your own application.
+   */
+  userId?: string;
+
+  /**
+   * Company ID from your own application.
+   */
+  companyId?: string;
+};
 
 export type FeedbackPrompt = {
   question: string;

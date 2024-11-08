@@ -274,20 +274,17 @@ export class BucketClient {
    * @returns
    */
   async feedback(payload: Feedback) {
-    const {
-      userId = this.context.user?.id
-        ? String(this.context.user?.id)
-        : undefined,
-      companyId = this.context.company?.id
-        ? String(this.context.company?.id)
-        : undefined,
-      ...rest
-    } = payload;
+    const userId =
+      payload.userId ||
+      (this.context.user?.id ? String(this.context.user?.id) : undefined);
+    const companyId =
+      payload.companyId ||
+      (this.context.company?.id ? String(this.context.company?.id) : undefined);
 
     return await feedback(this.httpClient, this.logger, {
       userId,
       companyId,
-      ...rest,
+      ...payload,
     });
   }
 
