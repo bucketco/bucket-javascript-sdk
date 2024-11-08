@@ -8,13 +8,14 @@ import {
   API_HOST,
   applyLogLevel,
   BUCKET_LOG_PREFIX,
-  FEATURE_EVENTS_PER_MIN,
+  FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
   FEATURES_REFETCH_MS,
   loadConfig,
   SDK_VERSION,
   SDK_VERSION_HEADER_NAME,
 } from "./config";
 import fetchClient from "./fetch-http-client";
+import { newRateLimiter } from "./rate-limiter";
 import type {
   EvaluatedFeaturesAPIResponse,
   FeatureOverridesFn,
@@ -34,13 +35,7 @@ import {
   TrackOptions,
   TypedFeatures,
 } from "./types";
-import {
-  checkWithinAllottedTimeWindow,
-  decorateLogger,
-  isObject,
-  mergeSkipUndefined,
-  ok,
-} from "./utils";
+import { decorateLogger, isObject, mergeSkipUndefined, ok } from "./utils";
 
 const bucketConfigDefaultFile = "bucketConfig.json";
 
@@ -93,6 +88,7 @@ export class BucketClient {
     featuresCache?: Cache<FeaturesAPIResponse>;
     batchBuffer: BatchBuffer<BulkEvent>;
     featureOverrides: FeatureOverridesFn;
+    rateLimiter: ReturnType<typeof newRateLimiter>;
     offline: boolean;
     configFile?: string;
   };
@@ -184,6 +180,7 @@ export class BucketClient {
         [SDK_VERSION_HEADER_NAME]: SDK_VERSION,
         ["Authorization"]: `Bearer ${config.secretKey}`,
       },
+      rateLimiter: newRateLimiter(FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS),
       httpClient: options.httpClient || fetchClient,
       refetchInterval: FEATURES_REFETCH_MS,
       staleWarningInterval: FEATURES_REFETCH_MS * 5,
@@ -351,8 +348,7 @@ export class BucketClient {
     ).toString();
 
     if (
-      !checkWithinAllottedTimeWindow(
-        FEATURE_EVENTS_PER_MIN,
+      !this._config.rateLimiter.isAllowed(
         `${event.action}:${contextKey}:${event.key}:${event.targetingVersion}:${event.evalResult}`,
       )
     ) {

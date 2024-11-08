@@ -1,38 +1,5 @@
 import { Logger } from "./types";
 
-const oneMinute = 60 * 1000;
-
-let eventsByKey: Record<string, number[]> = {};
-
-export function clearRateLimiter() {
-  eventsByKey = {};
-}
-
-export function checkWithinAllottedTimeWindow(
-  eventsPerMinute: number,
-  key: string,
-): boolean {
-  const now = Date.now();
-
-  if (!eventsByKey[key]) {
-    eventsByKey[key] = [];
-  }
-
-  const events = eventsByKey[key];
-
-  while (events.length && now - events[0] > oneMinute) {
-    events.shift();
-  }
-
-  const limitExceeded = events.length >= eventsPerMinute;
-
-  if (!limitExceeded) {
-    events.push(now);
-  }
-
-  return !limitExceeded;
-}
-
 /**
  * Assert that the given condition is `true`.
  *
@@ -82,6 +49,12 @@ export function decorateLogger(prefix: string, logger: Logger): Logger {
   };
 }
 
+/** Merge two objects, skipping `undefined` values.
+ *
+ * @param target - The target object.
+ * @param source - The source object.
+ * @returns The merged object.
+ **/
 export function mergeSkipUndefined<T extends object, U extends object>(
   target: T,
   source: U,
