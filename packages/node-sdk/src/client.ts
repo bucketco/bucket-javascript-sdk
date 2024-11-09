@@ -93,6 +93,8 @@ export class BucketClient {
     configFile?: string;
   };
 
+  private _initialize: () => Promise<void>;
+
   /**
    * Creates a new SDK client.
    * See README for configuration options.
@@ -577,9 +579,18 @@ export class BucketClient {
    *
    * @remarks
    * Call this method before calling `getFeatures` to ensure the feature definitions are cached.
+   * If the client is already initializing or initialized the same promise will be returned.
    **/
   public async initialize() {
-    await this.getFeaturesCache().refresh();
+    if (this._initialize) {
+      return this._initialize;
+    }
+    // need this to convert to () => Promise<void>
+    this._initialize = async () => {
+      await this.getFeaturesCache().refresh();
+    };
+    await this._initialize();
+    return;
   }
 
   /**
