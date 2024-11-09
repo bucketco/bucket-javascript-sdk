@@ -594,66 +594,74 @@ export class BucketClient {
   }
 
   private _getFeatures(context: Context): Record<string, RawFeature> {
-    const featureDefinitions = this.getFeaturesCache().get();
     let evaluatedFeatures: Record<keyof TypedFeatures, RawFeature> =
       this._config.fallbackFeatures || {};
 
-    if (featureDefinitions) {
-      const keyToVersionMap = new Map<string, number>(
-        featureDefinitions.features.map((f) => [f.key, f.targeting.version]),
-      );
-
-      const evaluated = featureDefinitions.features.map((feature) =>
-        evaluateTargeting({ context, feature }),
-      );
-
-      evaluated.forEach(async (res) => {
-        this.sendFeatureEvent({
-          action: "evaluate",
-          key: res.feature.key,
-          targetingVersion: keyToVersionMap.get(res.feature.key),
-          evalResult: res.value,
-          evalContext: res.context,
-          evalRuleResults: res.ruleEvaluationResults,
-          evalMissingFields: res.missingContextFields,
-        }).catch((err) => {
-          this._config.logger?.error(
-            `failed to send evaluate event for "${res.feature.key}"`,
-            err,
-          );
-        });
-      });
-
-      evaluatedFeatures = evaluated.reduce(
-        (acc, res) => {
-          acc[res.feature.key as keyof TypedFeatures] = {
-            key: res.feature.key,
-            isEnabled: res.value,
-            targetingVersion: keyToVersionMap.get(res.feature.key),
-          };
-          return acc;
-        },
-        {} as Record<keyof TypedFeatures, RawFeature>,
-      );
-
-      // apply feature overrides
-      const overrides = Object.entries(
-        this._config.featureOverrides(context),
-      ).map(([key, isEnabled]) => [key, { key, isEnabled }]);
-
-      if (overrides.length > 0) {
-        // merge overrides into evaluated features
-        evaluatedFeatures = {
-          ...evaluatedFeatures,
-          ...Object.fromEntries(overrides),
-        };
-      }
-      this._config.logger?.debug("evaluated features", evaluatedFeatures);
+    let featureDefinitions: FeaturesAPIResponse["features"];
+    if (this._config.offline) {
+      featureDefinitions = [];
     } else {
-      this._config.logger?.warn(
-        "failed to use feature definitions, there are none cached yet. Using fallback features.",
-      );
+      const fetchedFeatures = this.getFeaturesCache().get();
+      if (!fetchedFeatures) {
+        this._config.logger?.warn(
+          "failed to use feature definitions, there are none cached yet. Using fallback features.",
+        );
+        return this._config.fallbackFeatures || {};
+      }
+      featureDefinitions = fetchedFeatures.features;
     }
+
+    const keyToVersionMap = new Map<string, number>(
+      featureDefinitions.map((f) => [f.key, f.targeting.version]),
+    );
+
+    const evaluated = featureDefinitions.map((feature) =>
+      evaluateTargeting({ context, feature }),
+    );
+
+    evaluated.forEach(async (res) => {
+      this.sendFeatureEvent({
+        action: "evaluate",
+        key: res.feature.key,
+        targetingVersion: keyToVersionMap.get(res.feature.key),
+        evalResult: res.value,
+        evalContext: res.context,
+        evalRuleResults: res.ruleEvaluationResults,
+        evalMissingFields: res.missingContextFields,
+      }).catch((err) => {
+        this._config.logger?.error(
+          `failed to send evaluate event for "${res.feature.key}"`,
+          err,
+        );
+      });
+    });
+
+    evaluatedFeatures = evaluated.reduce(
+      (acc, res) => {
+        acc[res.feature.key as keyof TypedFeatures] = {
+          key: res.feature.key,
+          isEnabled: res.value,
+          targetingVersion: keyToVersionMap.get(res.feature.key),
+        };
+        return acc;
+      },
+      {} as Record<keyof TypedFeatures, RawFeature>,
+    );
+
+    // apply feature overrides
+    const overrides = Object.entries(
+      this._config.featureOverrides(context),
+    ).map(([key, isEnabled]) => [key, { key, isEnabled }]);
+
+    if (overrides.length > 0) {
+      // merge overrides into evaluated features
+      evaluatedFeatures = {
+        ...evaluatedFeatures,
+        ...Object.fromEntries(overrides),
+      };
+    }
+    this._config.logger?.debug("evaluated features", evaluatedFeatures);
+
     return evaluatedFeatures;
   }
 

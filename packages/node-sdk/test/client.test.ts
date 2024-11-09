@@ -1636,7 +1636,7 @@ describe("BucketClient", () => {
 
     beforeEach(async () => {
       client = new BucketClient({ offline: true });
-      await client.initialize();
+      // no need to initialize in `offline` mode
     });
 
     it("should send not send, fetch or log anything", async () => {
