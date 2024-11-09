@@ -1630,6 +1630,27 @@ describe("BucketClient", () => {
       );
     });
   });
+
+  describe("offline mode", () => {
+    let client: BucketClient;
+
+    beforeEach(async () => {
+      client = new BucketClient({ offline: true });
+      await client.initialize();
+    });
+
+    it("should send not send, fetch or log anything", async () => {
+      client.getFeatures({});
+
+      expect(httpClient.get).toHaveBeenCalledTimes(0);
+      expect(httpClient.post).toHaveBeenCalledTimes(0);
+
+      expect(logger.debug).toHaveBeenCalledTimes(0);
+      expect(logger.info).toHaveBeenCalledTimes(0);
+      expect(logger.warn).toHaveBeenCalledTimes(0);
+      expect(logger.error).toHaveBeenCalledTimes(0);
+    });
+  });
 });
 
 describe("BoundBucketClient", () => {

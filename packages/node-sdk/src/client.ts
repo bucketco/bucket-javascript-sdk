@@ -283,10 +283,6 @@ export class BucketClient {
       "events must be a non-empty array",
     );
 
-    if (this._config.offline) {
-      return;
-    }
-
     const sent = await this.post("bulk", events);
     if (!sent) {
       throw new Error("Failed to send bulk events");
@@ -347,6 +343,10 @@ export class BucketClient {
       flattenJSON(event.evalContext || {}),
     ).toString();
 
+    if (this._config.offline) {
+      return;
+    }
+
     if (
       !this._config.rateLimiter.isAllowed(
         `${event.action}:${contextKey}:${event.key}:${event.targetingVersion}:${event.evalResult}`,
@@ -375,7 +375,6 @@ export class BucketClient {
         this._config.logger,
         async () => {
           if (this._config.offline) {
-            console.log("offline");
             return { features: [] };
           }
           const res = await this.get<FeaturesAPIResponse>("features");
@@ -462,6 +461,10 @@ export class BucketClient {
       "meta must be an object",
     );
 
+    if (this._config.offline) {
+      return;
+    }
+
     await this._config.batchBuffer.add({
       type: "user",
       userId,
@@ -502,6 +505,10 @@ export class BucketClient {
       opts?.userId === undefined || typeof opts.userId === "string",
       "userId must be a string",
     );
+
+    if (this._config.offline) {
+      return;
+    }
 
     await this._config.batchBuffer.add({
       type: "company",
@@ -548,6 +555,10 @@ export class BucketClient {
       opts?.companyId === undefined || typeof opts.companyId === "string",
       "companyId must be an string",
     );
+
+    if (this._config.offline) {
+      return;
+    }
 
     await this._config.batchBuffer.add({
       type: "event",
