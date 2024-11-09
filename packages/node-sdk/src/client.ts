@@ -374,9 +374,6 @@ export class BucketClient {
         this._config.staleWarningInterval,
         this._config.logger,
         async () => {
-          if (this._config.offline) {
-            return { features: [] };
-          }
           const res = await this.get<FeaturesAPIResponse>("features");
 
           if (!isObject(res) || !Array.isArray(res?.features)) {
