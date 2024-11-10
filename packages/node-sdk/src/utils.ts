@@ -1,4 +1,4 @@
-import { Logger } from "./types";
+import { Logger, LogLevel } from "./types";
 
 /**
  * Assert that the given condition is `true`.
@@ -22,6 +22,48 @@ export function isObject(item: any): item is Record<string, any> {
   return (item && typeof item === "object" && !Array.isArray(item)) || false;
 }
 
+export type LogFn = (message: string, ...args: any[]) => void;
+export function decorate(prefix: string, fn: LogFn): LogFn {
+  return (message: string, ...args: any[]) => {
+    fn(`${prefix} ${message}`, ...args);
+  };
+}
+
+export function applyLogLevel(logger: Logger, logLevel: LogLevel) {
+  switch (logLevel?.toLocaleUpperCase()) {
+    case "DEBUG":
+      return {
+        debug: decorate("[debug]", logger.debug),
+        info: decorate("[info]", logger.info),
+        warn: decorate("[warn]", logger.warn),
+        error: decorate("[error]", logger.error),
+      };
+    case "INFO":
+      return {
+        debug: () => void 0,
+        info: decorate("[info]", logger.info),
+        warn: decorate("[warn]", logger.warn),
+        error: decorate("[error]", logger.error),
+      };
+    case "WARN":
+      return {
+        debug: () => void 0,
+        info: () => void 0,
+        warn: decorate("[warn]", logger.warn),
+        error: decorate("[error]", logger.error),
+      };
+    case "ERROR":
+      return {
+        debug: () => void 0,
+        info: () => void 0,
+        warn: () => void 0,
+        error: decorate("[error]", logger.error),
+      };
+    default:
+      throw new Error(`invalid log level: ${logLevel}`);
+  }
+}
+
 /**
  * Decorate the messages of a given logger with the given prefix.
  *
@@ -34,18 +76,10 @@ export function decorateLogger(prefix: string, logger: Logger): Logger {
   ok(typeof logger === "object", "logger must be an object");
 
   return {
-    debug: (message: string, ...args: any[]) => {
-      logger.debug(`${prefix} ${message}`, ...args);
-    },
-    info: (message: string, ...args: any[]) => {
-      logger.info(`${prefix} ${message}`, ...args);
-    },
-    warn: (message: string, ...args: any[]) => {
-      logger.warn(`${prefix} ${message}`, ...args);
-    },
-    error: (message: string, ...args: any[]) => {
-      logger.error(`${prefix} ${message}`, ...args);
-    },
+    debug: decorate(prefix, logger.debug),
+    info: decorate(prefix, logger.info),
+    warn: decorate(prefix, logger.warn),
+    error: decorate(prefix, logger.error),
   };
 }
 

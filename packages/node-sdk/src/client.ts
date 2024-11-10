@@ -6,12 +6,10 @@ import BatchBuffer from "./batch-buffer";
 import cache from "./cache";
 import {
   API_HOST,
-  applyLogLevel,
   BUCKET_LOG_PREFIX,
   FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
   FEATURES_REFETCH_MS,
   loadConfig,
-  LogLevel,
   SDK_VERSION,
   SDK_VERSION_HEADER_NAME,
 } from "./config";
@@ -36,7 +34,13 @@ import {
   TrackOptions,
   TypedFeatures,
 } from "./types";
-import { decorateLogger, isObject, mergeSkipUndefined, ok } from "./utils";
+import {
+  applyLogLevel,
+  decorateLogger,
+  isObject,
+  mergeSkipUndefined,
+  ok,
+} from "./utils";
 
 const bucketConfigDefaultFile = "bucketConfig.json";
 
@@ -572,6 +576,7 @@ export class BucketClient {
    **/
   public async initialize() {
     await this.getFeaturesCache().refresh();
+    this._config.logger?.info("Bucket initialized");
   }
 
   /**

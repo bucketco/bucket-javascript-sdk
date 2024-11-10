@@ -1,5 +1,4 @@
 import { FeatureData } from "@bucketco/flag-evaluation";
-import { LogLevel } from "./config";
 
 /**
  * Describes the meta context associated with tracking.
@@ -378,3 +377,6 @@ export type Context = {
    */
   other?: Record<string, any>;
 };
+
+export const LOG_LEVELS = ["DEBUG", "INFO", "WARN", "ERROR"] as const;
+export type LogLevel = (typeof LOG_LEVELS)[number];

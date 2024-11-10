@@ -2,8 +2,8 @@ import { readFileSync } from "fs";
 
 import { version } from "../package.json";
 
-import { Logger } from "./types";
 import { ok } from "./utils";
+import { LOG_LEVELS } from "./types";
 
 export const API_HOST = "https://front.bucket.co";
 export const SDK_VERSION_HEADER_NAME = "bucket-sdk-version";
@@ -124,42 +124,4 @@ export function loadConfig(file?: string) {
       ...envConfig.featureOverrides,
     },
   };
-}
-
-const LOG_LEVELS = ["DEBUG", "INFO", "WARN", "ERROR"] as const;
-export type LogLevel = (typeof LOG_LEVELS)[number];
-
-export function applyLogLevel(logger: Logger, logLevel: LogLevel) {
-  switch (logLevel?.toLocaleUpperCase()) {
-    case "DEBUG":
-      return {
-        debug: logger.debug,
-        info: logger.info,
-        warn: logger.warn,
-        error: logger.error,
-      };
-    case "INFO":
-      return {
-        debug: () => void 0,
-        info: logger.info,
-        warn: logger.warn,
-        error: logger.error,
-      };
-    case "WARN":
-      return {
-        debug: () => void 0,
-        info: () => void 0,
-        warn: logger.warn,
-        error: logger.error,
-      };
-    case "ERROR":
-      return {
-        debug: () => void 0,
-        info: () => void 0,
-        warn: () => void 0,
-        error: logger.error,
-      };
-    default:
-      throw new Error(`invalid log level: ${logLevel}`);
-  }
 }
