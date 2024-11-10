@@ -49,7 +49,7 @@ function loadConfigFile(file: string) {
   );
   ok(
     typeof logLevel === "undefined" ||
-      (typeof logLevel === "string" && LOG_LEVELS.includes(logLevel)),
+      (typeof logLevel === "string" && LOG_LEVELS.includes(logLevel as any)),
     `logLevel must one of ${LOG_LEVELS.join(", ")}`,
   );
   ok(
@@ -126,32 +126,33 @@ export function loadConfig(file?: string) {
   };
 }
 
-const LOG_LEVELS = ["DEBUG", "INFO", "WARN", "ERROR"];
+const LOG_LEVELS = ["DEBUG", "INFO", "WARN", "ERROR"] as const;
+export type LogLevel = (typeof LOG_LEVELS)[number];
 
-export function applyLogLevel(logger: Logger, logLevel?: string) {
-  switch (logLevel) {
-    case "debug":
+export function applyLogLevel(logger: Logger, logLevel: LogLevel) {
+  switch (logLevel?.toLocaleUpperCase()) {
+    case "DEBUG":
       return {
         debug: logger.debug,
         info: logger.info,
         warn: logger.warn,
         error: logger.error,
       };
-    case "info":
+    case "INFO":
       return {
         debug: () => void 0,
         info: logger.info,
         warn: logger.warn,
         error: logger.error,
       };
-    case "warn":
+    case "WARN":
       return {
         debug: () => void 0,
         info: () => void 0,
         warn: logger.warn,
         error: logger.error,
       };
-    case "error":
+    case "ERROR":
       return {
         debug: () => void 0,
         info: () => void 0,
@@ -159,11 +160,6 @@ export function applyLogLevel(logger: Logger, logLevel?: string) {
         error: logger.error,
       };
     default:
-      return {
-        debug: () => void 0,
-        info: () => void 0,
-        warn: () => void 0,
-        error: () => void 0,
-      };
+      throw new Error(`invalid log level: ${logLevel}`);
   }
 }

@@ -1,4 +1,5 @@
 import { FeatureData } from "@bucketco/flag-evaluation";
+import { LogLevel } from "./config";
 
 /**
  * Describes the meta context associated with tracking.
@@ -293,6 +294,11 @@ export type ClientOptions = {
    * The logger to use for logging (optional). Default is info level logging to console.
    **/
   logger?: Logger;
+
+  /**
+   * Use the console logger, but set a log level. Ineffective if a custom logger is provided.
+   **/
+  logLevel?: LogLevel;
 
   /**
    * The features to "enable" as fallbacks when the API is unavailable (optional).

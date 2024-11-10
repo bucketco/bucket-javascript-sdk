@@ -11,6 +11,7 @@ import {
   FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
   FEATURES_REFETCH_MS,
   loadConfig,
+  LogLevel,
   SDK_VERSION,
   SDK_VERSION_HEADER_NAME,
 } from "./config";
@@ -153,7 +154,10 @@ export class BucketClient {
       BUCKET_LOG_PREFIX,
       options.logger
         ? options.logger
-        : applyLogLevel(console, config?.logLevel || "info"),
+        : applyLogLevel(
+            console,
+            options.logLevel ?? config?.logLevel ?? "INFO",
+          ),
     );
 
     // todo: deprecate fallback features in favour of a more operationally
@@ -375,7 +379,6 @@ export class BucketClient {
         this._config.logger,
         async () => {
           if (this._config.offline) {
-            console.log("offline");
             return { features: [] };
           }
           const res = await this.get<FeaturesAPIResponse>("features");
