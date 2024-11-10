@@ -7,7 +7,6 @@ import {
   expect,
   it,
   vi,
-  vitest,
 } from "vitest";
 
 import { evaluateTargeting } from "@bucketco/flag-evaluation";
