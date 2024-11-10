@@ -153,16 +153,12 @@ export class BucketClient {
     }
 
     // use the supplied logger or apply the log level to the console logger
-    // always decorate the logger with the bucket log prefix
-    const logger = decorateLogger(
-      BUCKET_LOG_PREFIX,
-      options.logger
-        ? options.logger
-        : applyLogLevel(
-            console,
-            options.logLevel ?? config?.logLevel ?? "INFO",
-          ),
-    );
+    const logger = options.logger
+      ? options.logger
+      : applyLogLevel(
+          decorateLogger(BUCKET_LOG_PREFIX, console),
+          options.logLevel ?? config?.logLevel ?? "INFO",
+        );
 
     // todo: deprecate fallback features in favour of a more operationally
     //  friendly way of setting fall backs.
