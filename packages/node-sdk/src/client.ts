@@ -576,7 +576,9 @@ export class BucketClient {
    * Call this method before calling `getFeatures` to ensure the feature definitions are cached.
    **/
   public async initialize() {
-    await this.getFeaturesCache().refresh();
+    if (!this._config.offline) {
+      await this.getFeaturesCache().refresh();
+    }
   }
 
   /**
@@ -591,9 +593,6 @@ export class BucketClient {
   }
 
   private _getFeatures(context: Context): Record<string, RawFeature> {
-    let evaluatedFeatures: Record<keyof TypedFeatures, RawFeature> =
-      this._config.fallbackFeatures || {};
-
     let featureDefinitions: FeaturesAPIResponse["features"];
     if (this._config.offline) {
       featureDefinitions = [];
@@ -633,7 +632,7 @@ export class BucketClient {
       });
     });
 
-    evaluatedFeatures = evaluated.reduce(
+    let evaluatedFeatures = evaluated.reduce(
       (acc, res) => {
         acc[res.feature.key as keyof TypedFeatures] = {
           key: res.feature.key,
