@@ -129,6 +129,8 @@ To get type checked feature flags, add the list of flags to your `bucket.ts` fil
 Any feature look ups will now be checked against the list you maintain.
 
 ```typescript
+import { BucketClient } from "@bucketco/node-sdk";
+
 // Extending the Features interface to define the available features
 declare module "@bucketco/node-sdk" {
   interface Features {
@@ -137,6 +139,14 @@ declare module "@bucketco/node-sdk" {
     "delete-todos": boolean;
   }
 }
+
+export const bucketClient = new BucketClient();
+
+bucketClient.initialize().then({
+  console.log("Bucket initialized!")
+  bucketClient.getFeature("invalid-feature") // feature doesn't exist
+})
+
 ```
 
 ![Type check failed](docs/type-check-failed.png "Type check failed")
