@@ -37,6 +37,7 @@ import {
 import {
   applyLogLevel,
   decorateLogger,
+  hashObject,
   isObject,
   mergeSkipUndefined,
   ok,
@@ -364,7 +365,13 @@ export class BucketClient {
 
     if (
       !this._config.rateLimiter.isAllowed(
-        `${event.action}:${contextKey}:${event.key}:${event.targetingVersion}:${event.evalResult}`,
+        hashObject({
+          action: event.action,
+          key: event.key,
+          targetingVersion: event.targetingVersion,
+          evalResult: event.evalResult,
+          contextKey,
+        }),
       )
     ) {
       return;
@@ -513,7 +520,7 @@ export class BucketClient {
       return;
     }
 
-    if (this._config.rateLimiter.isAllowed(JSON.stringify(opts, null, 0))) {
+    if (this._config.rateLimiter.isAllowed(hashObject({ ...opts, userId }))) {
       await this._config.batchBuffer.add({
         type: "user",
         userId,
@@ -560,7 +567,9 @@ export class BucketClient {
       return;
     }
 
-    if (this._config.rateLimiter.isAllowed(JSON.stringify(opts, null, 0))) {
+    if (
+      this._config.rateLimiter.isAllowed(hashObject({ ...opts, companyId }))
+    ) {
       await this._config.batchBuffer.add({
         type: "company",
         companyId,

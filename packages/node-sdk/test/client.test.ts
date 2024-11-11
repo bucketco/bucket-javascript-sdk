@@ -1262,7 +1262,7 @@ describe("BucketClient", () => {
       client.getFeatures({ user, company, other: otherContext });
 
       expect(isAllowedSpy).toHaveBeenCalledWith(
-        "evaluate:user.id=user123&user.age=1&user.name=John&company.id=company123&company.employees=100&company.name=Acme+Inc.&other.custom=context&other.key=value:feature1:1:true",
+        "f1e5f547723da57ad12375f304e44ed6f74c744e",
       );
     });
 

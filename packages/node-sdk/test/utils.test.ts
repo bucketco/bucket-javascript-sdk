@@ -1,6 +1,13 @@
+import { createHash } from "crypto";
 import { describe, expect, it, vi } from "vitest";
 
-import { decorateLogger, isObject, mergeSkipUndefined, ok } from "../src/utils";
+import {
+  decorateLogger,
+  hashObject,
+  isObject,
+  mergeSkipUndefined,
+  ok,
+} from "../src/utils";
 
 describe("isObject", () => {
   it("should return true for an object", () => {
@@ -110,5 +117,66 @@ describe("mergeSkipUndefined", () => {
     const source = {};
     const result = mergeSkipUndefined(target, source);
     expect(result).toEqual({});
+  });
+});
+
+describe("hashObject", () => {
+  it("should throw if the given value is not an object", () => {
+    expect(() => hashObject(null as any)).toThrowError(
+      "validation failed: obj must be an object",
+    );
+
+    expect(() => hashObject("string" as any)).toThrowError(
+      "validation failed: obj must be an object",
+    );
+
+    expect(() => hashObject([1, 2, 3] as any)).toThrowError(
+      "validation failed: obj must be an object",
+    );
+  });
+
+  it("should return consistent hash for same object content", () => {
+    const obj = { name: "Alice", age: 30 };
+    const hash1 = hashObject(obj);
+    const hash2 = hashObject({ age: 30, name: "Alice" }); // different key order
+    expect(hash1).toBe(hash2);
+  });
+
+  it("should return different hash for different objects", () => {
+    const obj1 = { name: "Alice", age: 30 };
+    const obj2 = { name: "Bob", age: 25 };
+    const hash1 = hashObject(obj1);
+    const hash2 = hashObject(obj2);
+    expect(hash1).not.toBe(hash2);
+  });
+
+  it("should correctly hash nested objects", () => {
+    const obj = { user: { name: "Alice", details: { age: 30, active: true } } };
+    const hash = hashObject(obj);
+
+    const expectedHash = createHash("sha1");
+    expectedHash.update("user");
+    expectedHash.update("details");
+    expectedHash.update("active");
+    expectedHash.update("true");
+    expectedHash.update("age");
+    expectedHash.update("30");
+    expectedHash.update("name");
+    expectedHash.update("Alice");
+
+    expect(hash).toBe(expectedHash.digest("hex"));
+  });
+
+  it("should hash arrays within objects", () => {
+    const obj = { numbers: [1, 2, 3] };
+    const hash = hashObject(obj);
+
+    const expectedHash = createHash("sha1");
+    expectedHash.update("numbers");
+    expectedHash.update("1");
+    expectedHash.update("2");
+    expectedHash.update("3");
+
+    expect(hash).toBe(expectedHash.digest("hex"));
   });
 });
