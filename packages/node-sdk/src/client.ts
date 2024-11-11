@@ -580,14 +580,10 @@ export class BucketClient {
    * Call this method before calling `getFeatures` to ensure the feature definitions are cached.
    **/
   public async initialize() {
-<<<<<<< HEAD
-    await this.getFeaturesCache().refresh();
-    this._config.logger?.info("Bucket initialized");
-=======
     if (!this._config.offline) {
       await this.getFeaturesCache().refresh();
     }
->>>>>>> main
+    this._config.logger?.info("Bucket initialized");
   }
 
   /**
