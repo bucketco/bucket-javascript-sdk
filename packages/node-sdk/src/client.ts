@@ -694,22 +694,26 @@ export class BucketClient {
         }),
       );
 
-      evaluated.forEach(async (res) => {
-        this.sendFeatureEvent({
-          action: "evaluate",
-          key: res.feature.key,
-          targetingVersion: keyToVersionMap.get(res.feature.key),
-          evalResult: res.value,
-          evalContext: res.context,
-          evalRuleResults: res.ruleEvaluationResults,
-          evalMissingFields: res.missingContextFields,
-        }).catch((err) => {
-          this._config.logger?.error(
-            `failed to send evaluate event for "${res.feature.key}"`,
-            err,
-          );
+      if (enableTracking) {
+        evaluated.forEach(async (res) => {
+          try {
+            await this.sendFeatureEvent({
+              action: "evaluate",
+              key: res.feature.key,
+              targetingVersion: keyToVersionMap.get(res.feature.key),
+              evalResult: res.value,
+              evalContext: res.context,
+              evalRuleResults: res.ruleEvaluationResults,
+              evalMissingFields: res.missingContextFields,
+            });
+          } catch (err) {
+            this._config.logger?.error(
+              `failed to send evaluate event for "${res.feature.key}"`,
+              err,
+            );
+          }
         });
-      });
+      }
 
       evaluatedFeatures = evaluated.reduce(
         (acc, res) => {
@@ -745,42 +749,26 @@ export class BucketClient {
     { enableTracking = true, ...context }: ContextWithTracking,
     { key, isEnabled, targetingVersion }: RawFeature,
   ): Feature {
-    ok(isObject(context), "context must be an object");
-    ok(
-      context.user === undefined || isObject(context.user),
-      "context.user must be an object",
-    );
-    ok(
-      context.company === undefined || isObject(context.company),
-      "context.company must be an object",
-    );
-    ok(
-      context.other === undefined || isObject(context.other),
-      "context.other must be an object",
-    );
-    ok(
-      enableTracking === undefined || typeof enableTracking === "boolean",
-      "context.enableTracking must be a boolean",
-    );
-
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const client = this;
 
     return {
       get isEnabled() {
-        void client
-          .sendFeatureEvent({
-            action: "check",
-            key,
-            targetingVersion,
-            evalResult: isEnabled,
-          })
-          .catch((err) => {
-            client._config.logger?.error(
-              `failed to send check event for "${key}": ${err}`,
-              err,
-            );
-          });
+        if (enableTracking) {
+          void client
+            .sendFeatureEvent({
+              action: "check",
+              key,
+              targetingVersion,
+              evalResult: isEnabled,
+            })
+            .catch((err) => {
+              client._config.logger?.error(
+                `failed to send check event for "${key}": ${err}`,
+                err,
+              );
+            });
+        }
 
         return isEnabled;
       },
@@ -794,7 +782,7 @@ export class BucketClient {
           return;
         }
 
-        if (enableTracking !== false) {
+        if (enableTracking) {
           await this.track(userId, key, {
             companyId: context.company?.id,
           });
@@ -871,6 +859,9 @@ export class BucketClient {
       context.company = { id: companyId };
     }
 
+    const contextWithTracking = { ...context, enableTracking: true };
+    checkContextWithTracking(contextWithTracking);
+
     const params = new URLSearchParams(flattenJSON({ context }));
     if (key) {
       params.append("key", key);
@@ -885,7 +876,7 @@ export class BucketClient {
         Object.entries(res.features).map(([featureKey, feature]) => {
           return [
             featureKey as keyof TypedFeatures,
-            this._wrapRawFeature({ ...context, enableTracking: true }, feature),
+            this._wrapRawFeature(contextWithTracking, feature),
           ];
         }) || [],
       );
