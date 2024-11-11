@@ -26,9 +26,9 @@ in **Bucket.co**.
 > information that is often sensitive and thus should not be used in
 > client-side applications.
 
-Bucket will load settings through the various environment variables automatically (see [Configuring](#configuring) below). 
+Bucket will load settings through the various environment variables automatically (see [Configuring](#configuring) below).
 
-1. Find the Bucket secret key for your development environment on https://app.bucket.co 
+1. Find the Bucket secret key for your development environment on https://app.bucket.co
 2. Set `BUCKET_SECRET_KEY` in your `.env` file
 3. Create a `bucket.ts` file containing the following:
 
@@ -72,7 +72,6 @@ if (isEnabled) {
   boundClient.flush();
 }
 ```
-
 
 ## High performance feature targeting
 
