@@ -26,8 +26,11 @@ in **Bucket.co**.
 > information that is often sensitive and thus should not be used in
 > client-side applications.
 
-Create a `bucket.ts` file containing the following and set up the
-BUCKET_SECRET_KEY environment variable:
+Bucket will load settings through the various environment variables automatically (see [Configuring](#configuring) below). 
+
+1. Find the Bucket secret key for your development environment on https://app.bucket.co 
+2. Set `BUCKET_SECRET_KEY` in your `.env` file
+3. Create a `bucket.ts` file containing the following:
 
 ```ts
 import { BucketClient } from "@bucketco/node-sdk";
@@ -42,7 +45,7 @@ export const bucketClient = new BucketClient();
 // Initialize the client and begin fetching feature targeting definitions.
 // You must call this method prior to any calls to `getFeatures()`,
 // otherwise an empty object will be returned.
-client.initialize().then({
+bucketClient.initialize().then({
   console.log("Bucket initialized!")
 })
 ```
@@ -51,7 +54,7 @@ Once the client is initialized, you can obtain features along with the `isEnable
 
 ```ts
 // configure the client
-const boundClient = client.bindClient({
+const boundClient = bucketClient.bindClient({
   user: { id: "john_doe", name: "John Doe" },
   company: { id: "acme_inc", name: "Acme, Inc." },
 });
@@ -70,22 +73,6 @@ if (isEnabled) {
 }
 ```
 
-You can also use the `getFeatures` method which returns a map of all features:
-
-```ts
-// get the current features (uses company, user and custom context to evaluate the features).
-const features = boundClient.getFeatures();
-const bothEnabled =
-  features.huddle?.isEnabled && features.voiceHuddle?.isEnabled;
-```
-
-When using `getFeatures` be careful not to assume that a feature exists, this could be a dangerous pattern:
-
-```ts
-// warning: if the `huddle` feature does not exist because it wasn't created in Bucket
-// or because the client was unable to reach our servers for some reason, this will cause an exception:
-const { isEnabled } = boundClient.getFeatures()["huddle"];
-```
 
 ## High performance feature targeting
 
@@ -99,7 +86,9 @@ targeting rules from the Bucket servers in the background.
 
 ## Configuring
 
-The Bucket Node.js SDK can be configured through environment variables or a configuration file on disk.
+The Bucket Node.js SDK can be configured through environment variables, a configuration file on disk
+or by passing options to the `BucketClient` constructor.
+
 By default, the SDK searches for `bucketConfig.json` in the current working directory.
 
 | Option             | Type                    | Description                                                                                                                                                         | Env Var                                           |
