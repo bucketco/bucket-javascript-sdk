@@ -1639,7 +1639,7 @@ describe("BucketClient", () => {
         ...validOptions,
         offline: true,
       });
-      client.initialize();
+      await client.initialize();
     });
 
     it("should send not send or fetch anything", async () => {
