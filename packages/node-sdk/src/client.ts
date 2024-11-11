@@ -89,6 +89,15 @@ type ContextWithTracking = Context & {
   enableTracking?: boolean;
 };
 
+// used to validate that
+// - IDs are strings
+// - id's are given if user/company objects are set
+type CheckedContext = Context & {
+  user?: { id: string };
+} & {
+  company?: { id: string };
+};
+
 /**
  * The SDK client.
  *
@@ -399,7 +408,10 @@ export class BucketClient {
     enableTracking = true,
     ...context
   }: ContextWithTracking) {
-    checkContextWithTracking({ enableTracking, ...context });
+    const checkedContext = checkContextWithTracking({
+      enableTracking,
+      ...context,
+    });
 
     if (!enableTracking) {
       this._config.logger?.debug(
@@ -410,20 +422,20 @@ export class BucketClient {
     }
 
     const promises: Promise<void>[] = [];
-    if (context.company) {
-      const { id: _, ...attributes } = context.company;
+    if (checkedContext.company) {
+      const { id: _, ...attributes } = checkedContext.company;
       promises.push(
-        this.updateCompany(context.company.id, {
+        this.updateCompany(checkedContext.company.id, {
           attributes,
           meta: { active: false },
         }),
       );
     }
 
-    if (context.user) {
-      const { id: _, ...attributes } = context.user;
+    if (checkedContext.user) {
+      const { id: _, ...attributes } = checkedContext.user;
       promises.push(
-        this.updateUser(context.user.id, {
+        this.updateUser(checkedContext.user.id, {
           attributes,
           meta: { active: false },
         }),
@@ -469,6 +481,12 @@ export class BucketClient {
   public get logger() {
     return this._config.logger;
   }
+
+  // // takes a user-facing Context and returns context with a undefined user/company object or
+  // // guaranteed user.id / company.id
+  // private validateContext(context: Context): ValidatedContext {
+
+  // }
 
   /**
    * Returns a new BoundBucketClient with the user/company/otherContext
@@ -751,6 +769,10 @@ export class BucketClient {
   ): Feature {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const client = this;
+    const validContext = checkContextWithTracking({
+      enableTracking,
+      ...context,
+    });
 
     return {
       get isEnabled() {
@@ -774,8 +796,8 @@ export class BucketClient {
       },
       key,
       track: async () => {
-        const userId = context.user?.id;
-        if (!userId) {
+        const userId = validContext.user?.id;
+        if (typeof userId === "undefined") {
           this._config.logger?.warn(
             "feature.track(): no user set, cannot track event",
           );
@@ -784,7 +806,7 @@ export class BucketClient {
 
         if (enableTracking) {
           await this.track(userId, key, {
-            companyId: context.company?.id,
+            companyId: validContext.company?.id,
           });
         } else {
           this._config.logger?.debug(
@@ -937,15 +959,19 @@ export class BucketClient {
  */
 export class BoundBucketClient {
   private _client: BucketClient;
-  private _options: ContextWithTracking;
+  private _options: CheckedContext & { enableTracking: boolean };
 
-  constructor(client: BucketClient, options: ContextWithTracking) {
-    checkContextWithTracking(options);
-
+  constructor(
+    client: BucketClient,
+    { enableTracking = true, ...context }: ContextWithTracking,
+  ) {
     this._client = client;
-    this._options = options;
+    this._options = {
+      enableTracking,
+      ...checkContextWithTracking({ enableTracking, ...context }),
+    };
 
-    void this._client["syncContext"](options);
+    void this._client["syncContext"](this._options);
   }
 
   /**
@@ -1073,7 +1099,7 @@ export class BoundBucketClient {
     user,
     company,
     other,
-    enableTracking = true,
+    enableTracking,
   }: ContextWithTracking) {
     // merge new context into existing
     const boundConfig = {
@@ -1095,7 +1121,9 @@ export class BoundBucketClient {
   }
 }
 
-function checkContextWithTracking(context: ContextWithTracking) {
+function checkContextWithTracking(
+  context: ContextWithTracking,
+): CheckedContext {
   ok(isObject(context), "context must be an object");
   ok(
     context.user === undefined || typeof context.user?.id === "string",
@@ -1113,4 +1141,18 @@ function checkContextWithTracking(context: ContextWithTracking) {
     typeof context.enableTracking === "boolean",
     "enableTracking must be a boolean",
   );
+
+  const userId = context.user?.id;
+  const companyId = context.user?.id;
+  return {
+    user:
+      typeof userId !== "undefined"
+        ? { ...context.user, id: String(userId) }
+        : undefined,
+    company:
+      typeof companyId !== "undefined"
+        ? { ...context.company, id: String(companyId) }
+        : undefined,
+    other: context.other,
+  };
 }

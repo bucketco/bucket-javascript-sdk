@@ -365,13 +365,22 @@ export type TrackOptions = {
  **/
 export type Context = {
   /**
-   * The user context. If the user is set, the user ID is required.
+   * The user context. If no `id` key is set, the whole object is ignored.
    */
-  user?: { id: string; [k: string]: any };
+  user?: {
+    id: string | number | undefined;
+    name?: string | undefined;
+    email?: string | undefined;
+    [k: string]: any;
+  };
   /**
-   * The company context. If the company is set, the company ID is required.
+   * The company context. If no `id` key is set, the whole object is ignored.
    */
-  company?: { id: string; [k: string]: any };
+  company?: {
+    id: string | number | undefined;
+    name?: string | undefined;
+    [k: string]: any;
+  };
   /**
    * The other context. This is used for any additional context that is not related to user or company.
    */
