@@ -2,8 +2,8 @@ import { readFileSync } from "fs";
 
 import { version } from "../package.json";
 
-import { ok } from "./utils";
 import { LOG_LEVELS } from "./types";
+import { ok } from "./utils";
 
 export const API_HOST = "https://front.bucket.co";
 export const SDK_VERSION_HEADER_NAME = "bucket-sdk-version";
