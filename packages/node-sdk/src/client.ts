@@ -283,10 +283,6 @@ export class BucketClient {
       "events must be a non-empty array",
     );
 
-    if (this._config.offline) {
-      return;
-    }
-
     const sent = await this.post("bulk", events);
     if (!sent) {
       throw new Error("Failed to send bulk events");
@@ -347,6 +343,10 @@ export class BucketClient {
       flattenJSON(event.evalContext || {}),
     ).toString();
 
+    if (this._config.offline) {
+      return;
+    }
+
     if (
       !this._config.rateLimiter.isAllowed(
         `${event.action}:${contextKey}:${event.key}:${event.targetingVersion}:${event.evalResult}`,
@@ -374,10 +374,6 @@ export class BucketClient {
         this._config.staleWarningInterval,
         this._config.logger,
         async () => {
-          if (this._config.offline) {
-            console.log("offline");
-            return { features: [] };
-          }
           const res = await this.get<FeaturesAPIResponse>("features");
 
           if (!isObject(res) || !Array.isArray(res?.features)) {
@@ -462,6 +458,10 @@ export class BucketClient {
       "meta must be an object",
     );
 
+    if (this._config.offline) {
+      return;
+    }
+
     await this._config.batchBuffer.add({
       type: "user",
       userId,
@@ -502,6 +502,10 @@ export class BucketClient {
       opts?.userId === undefined || typeof opts.userId === "string",
       "userId must be a string",
     );
+
+    if (this._config.offline) {
+      return;
+    }
 
     await this._config.batchBuffer.add({
       type: "company",
@@ -549,6 +553,10 @@ export class BucketClient {
       "companyId must be an string",
     );
 
+    if (this._config.offline) {
+      return;
+    }
+
     await this._config.batchBuffer.add({
       type: "event",
       event,
@@ -568,7 +576,9 @@ export class BucketClient {
    * Call this method before calling `getFeatures` to ensure the feature definitions are cached.
    **/
   public async initialize() {
-    await this.getFeaturesCache().refresh();
+    if (!this._config.offline) {
+      await this.getFeaturesCache().refresh();
+    }
   }
 
   /**
@@ -583,66 +593,71 @@ export class BucketClient {
   }
 
   private _getFeatures(context: Context): Record<string, RawFeature> {
-    const featureDefinitions = this.getFeaturesCache().get();
-    let evaluatedFeatures: Record<keyof TypedFeatures, RawFeature> =
-      this._config.fallbackFeatures || {};
-
-    if (featureDefinitions) {
-      const keyToVersionMap = new Map<string, number>(
-        featureDefinitions.features.map((f) => [f.key, f.targeting.version]),
-      );
-
-      const evaluated = featureDefinitions.features.map((feature) =>
-        evaluateTargeting({ context, feature }),
-      );
-
-      evaluated.forEach(async (res) => {
-        this.sendFeatureEvent({
-          action: "evaluate",
-          key: res.feature.key,
-          targetingVersion: keyToVersionMap.get(res.feature.key),
-          evalResult: res.value,
-          evalContext: res.context,
-          evalRuleResults: res.ruleEvaluationResults,
-          evalMissingFields: res.missingContextFields,
-        }).catch((err) => {
-          this._config.logger?.error(
-            `failed to send evaluate event for "${res.feature.key}"`,
-            err,
-          );
-        });
-      });
-
-      evaluatedFeatures = evaluated.reduce(
-        (acc, res) => {
-          acc[res.feature.key as keyof TypedFeatures] = {
-            key: res.feature.key,
-            isEnabled: res.value,
-            targetingVersion: keyToVersionMap.get(res.feature.key),
-          };
-          return acc;
-        },
-        {} as Record<keyof TypedFeatures, RawFeature>,
-      );
-
-      // apply feature overrides
-      const overrides = Object.entries(
-        this._config.featureOverrides(context),
-      ).map(([key, isEnabled]) => [key, { key, isEnabled }]);
-
-      if (overrides.length > 0) {
-        // merge overrides into evaluated features
-        evaluatedFeatures = {
-          ...evaluatedFeatures,
-          ...Object.fromEntries(overrides),
-        };
-      }
-      this._config.logger?.debug("evaluated features", evaluatedFeatures);
+    let featureDefinitions: FeaturesAPIResponse["features"];
+    if (this._config.offline) {
+      featureDefinitions = [];
     } else {
-      this._config.logger?.warn(
-        "failed to use feature definitions, there are none cached yet. Using fallback features.",
-      );
+      const fetchedFeatures = this.getFeaturesCache().get();
+      if (!fetchedFeatures) {
+        this._config.logger?.warn(
+          "failed to use feature definitions, there are none cached yet. Using fallback features.",
+        );
+        return this._config.fallbackFeatures || {};
+      }
+      featureDefinitions = fetchedFeatures.features;
     }
+
+    const keyToVersionMap = new Map<string, number>(
+      featureDefinitions.map((f) => [f.key, f.targeting.version]),
+    );
+
+    const evaluated = featureDefinitions.map((feature) =>
+      evaluateTargeting({ context, feature }),
+    );
+
+    evaluated.forEach(async (res) => {
+      this.sendFeatureEvent({
+        action: "evaluate",
+        key: res.feature.key,
+        targetingVersion: keyToVersionMap.get(res.feature.key),
+        evalResult: res.value,
+        evalContext: res.context,
+        evalRuleResults: res.ruleEvaluationResults,
+        evalMissingFields: res.missingContextFields,
+      }).catch((err) => {
+        this._config.logger?.error(
+          `failed to send evaluate event for "${res.feature.key}"`,
+          err,
+        );
+      });
+    });
+
+    let evaluatedFeatures = evaluated.reduce(
+      (acc, res) => {
+        acc[res.feature.key as keyof TypedFeatures] = {
+          key: res.feature.key,
+          isEnabled: res.value,
+          targetingVersion: keyToVersionMap.get(res.feature.key),
+        };
+        return acc;
+      },
+      {} as Record<keyof TypedFeatures, RawFeature>,
+    );
+
+    // apply feature overrides
+    const overrides = Object.entries(
+      this._config.featureOverrides(context),
+    ).map(([key, isEnabled]) => [key, { key, isEnabled }]);
+
+    if (overrides.length > 0) {
+      // merge overrides into evaluated features
+      evaluatedFeatures = {
+        ...evaluatedFeatures,
+        ...Object.fromEntries(overrides),
+      };
+    }
+    this._config.logger?.debug("evaluated features", evaluatedFeatures);
+
     return evaluatedFeatures;
   }
 
