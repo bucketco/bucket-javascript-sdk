@@ -26,28 +26,25 @@ in **Bucket.co**.
 > information that is often sensitive and thus should not be used in
 > client-side applications.
 
+Create a `bucket.ts` file containing the following and set up the
+BUCKET_SECRET_KEY environment variable:
+
 ```typescript
 import { BucketClient } from "@bucketco/node-sdk";
 
 // Create a new instance of the client with the secret key. Additional options
-// are available, such as supplying a logger, fallback features and
-// other custom properties.
-//
-// Fallback features are used in the situation when the server-side
-// features are not yet loaded or there are issues retrieving them.
-// See "Initialization Options" below for more information.
+// are available, such as supplying a logger and other custom properties.
 //
 // We recommend that only one global instance of `client` should be created
 // to avoid multiple round-trips to our servers.
-const client = new BucketClient({
-  secretKey: "sec_prod_xxxxxxxxxxxxxxxxxxxxx",
-  fallbackFeatures: ["huddle", "voice-huddle"],
-});
+export const bucketClient = new BucketClient();
 
 // Initialize the client and begin fetching feature targeting definitions.
 // You must call this method prior to any calls to `getFeatures()`,
 // otherwise an empty object will be returned.
-await client.initialize();
+client.initialize().then({
+  console.log("Bucket initialized!")
+})
 ```
 
 Once the client is initialized, you can obtain features along with the `isEnabled`
@@ -147,7 +144,7 @@ in the current working directory.
 | Option             | Type                    | Description                                                                                                                                                         | Env Var                                           |
 | ------------------ | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
 | `secretKey`        | string                  | The secret key used for authentication with Bucket's servers.                                                                                                       | BUCKET_SECRET_KEY                                 |
-| `logLevel`         | string                  | The log level for the SDK (e.g., `"debug"`, `"info"`, `"warn"`, `"error"`). Default: `info`                                                                         | BUCKET_LOG_LEVEL                                  |
+| `logLevel`         | string                  | The log level for the SDK (e.g., `"DEBUG"`, `"INFO"`, `"WARN"`, `"ERROR"`). Default: `INFO`                                                                         | BUCKET_LOG_LEVEL                                  |
 | `offline`          | boolean                 | Operate in offline mode. Default: `false`, except in tests it will default to `true` based off of the `TEST` env. var.                                              | BUCKET_OFFLINE                                    |
 | `host`             | string                  | The host URL for the Bucket servers.                                                                                                                                | BUCKET_HOST                                       |
 | `featureOverrides` | Record<string, boolean> | An object specifying feature overrides for testing or local development. See [example/app.test.ts](example/app.test.ts) for how to use `featureOverrides` in tests. | BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED |
@@ -178,6 +175,87 @@ order of importance:
 1. Options passed along to the constructor directly,
 2. Environment variable,
 3. The config file.
+
+## Type safe feature flags
+
+To get type checked feature flags, add the list of flags to your `bucket.ts` file.
+Any feature look ups will now be checked against the list you maintain.
+
+```typescript
+// Extending the Features interface to define the available features
+declare module "@bucketco/node-sdk" {
+  interface Features {
+    "show-todos": boolean;
+    "create-todos": boolean;
+    "delete-todos": boolean;
+  }
+}
+```
+
+![Type check failed](docs/type-check-failed.png "Type check failed")
+
+## Using with Express
+
+A popular way to integrate the Bucket Node.js SDK is through an express middleware.
+
+```typescript
+import bucket from "./bucket";
+import express from "express";
+import { BoundBucketClient } from "@bucketco/node-sdk";
+
+// Augment the Express types to include a `boundBucketClient` property on the
+// `res.locals` object.
+// This will allow us to access the BucketClient instance in our route handlers
+// without having to pass it around manually
+declare global {
+  namespace Express {
+    interface Locals {
+      boundBucketClient: BoundBucketClient;
+    }
+  }
+}
+
+// Add express middleware
+app.use((req, res, next) => {
+  // Extract the user and company IDs from the request
+  // You'll want to use a proper authentication and identification
+  // mechanism in a real-world application
+  const user = {
+    id: req.user?.id,
+    name: req.user?.name
+    email: req.user?.email
+  }
+
+  const company = {
+    id: req.user?.companyId
+    name: req.user?.companyName
+  }
+
+  // Create a new BoundBucketClient instance by calling the `bindClient`
+  // method on a `BucketClient` instance
+  // This will create a new instance that is bound to the user/company given.
+  const boundBucketClient = bucket.bindClient({ user, company });
+
+  // Store the BoundBucketClient instance in the `res.locals` object so we
+  // can access it in our route handlers
+  res.locals.boundBucketClient = boundBucketClient;
+  next();
+});
+
+// Now use res.locals.boundBucketClient in your handlers
+app.get("/todos", async (_req, res) => {
+  const { track, isEnabled } = res.locals.bucketUser.getFeature("show-todos");
+
+  if (!isEnabled) {
+    res.status(403).send({"error": "feature inaccessible"})
+    return
+  }
+
+  ...
+}
+```
+
+See [example/app.ts](example/app.ts) for a full example.
 
 ## Remote flag evaluation with stored context
 

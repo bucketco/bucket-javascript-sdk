@@ -6,7 +6,6 @@ import BatchBuffer from "./batch-buffer";
 import cache from "./cache";
 import {
   API_HOST,
-  applyLogLevel,
   BUCKET_LOG_PREFIX,
   FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
   FEATURES_REFETCH_MS,
@@ -35,7 +34,13 @@ import {
   TrackOptions,
   TypedFeatures,
 } from "./types";
-import { decorateLogger, isObject, mergeSkipUndefined, ok } from "./utils";
+import {
+  applyLogLevel,
+  decorateLogger,
+  isObject,
+  mergeSkipUndefined,
+  ok,
+} from "./utils";
 
 const bucketConfigDefaultFile = "bucketConfig.json";
 
@@ -159,13 +164,12 @@ export class BucketClient {
     }
 
     // use the supplied logger or apply the log level to the console logger
-    // always decorate the logger with the bucket log prefix
-    const logger = decorateLogger(
-      BUCKET_LOG_PREFIX,
-      options.logger
-        ? options.logger
-        : applyLogLevel(console, config?.logLevel || "info"),
-    );
+    const logger = options.logger
+      ? options.logger
+      : applyLogLevel(
+          decorateLogger(BUCKET_LOG_PREFIX, console),
+          options.logLevel ?? config?.logLevel ?? "INFO",
+        );
 
     // todo: deprecate fallback features in favour of a more operationally
     //  friendly way of setting fall backs.
@@ -294,10 +298,6 @@ export class BucketClient {
       "events must be a non-empty array",
     );
 
-    if (this._config.offline) {
-      return;
-    }
-
     const sent = await this.post("bulk", events);
     if (!sent) {
       throw new Error("Failed to send bulk events");
@@ -357,6 +357,10 @@ export class BucketClient {
     const contextKey = new URLSearchParams(
       flattenJSON(event.evalContext || {}),
     ).toString();
+
+    if (this._config.offline) {
+      return;
+    }
 
     if (
       !this._config.rateLimiter.isAllowed(
@@ -440,10 +444,6 @@ export class BucketClient {
         this._config.staleWarningInterval,
         this._config.logger,
         async () => {
-          if (this._config.offline) {
-            console.log("offline");
-            return { features: [] };
-          }
           const res = await this.get<FeaturesAPIResponse>("features");
 
           if (!isObject(res) || !Array.isArray(res?.features)) {
@@ -510,6 +510,10 @@ export class BucketClient {
       "meta must be an object",
     );
 
+    if (this._config.offline) {
+      return;
+    }
+
     if (this._config.rateLimiter.isAllowed(JSON.stringify(opts, null, 0))) {
       await this._config.batchBuffer.add({
         type: "user",
@@ -552,6 +556,10 @@ export class BucketClient {
       opts?.userId === undefined || typeof opts.userId === "string",
       "userId must be a string",
     );
+
+    if (this._config.offline) {
+      return;
+    }
 
     if (this._config.rateLimiter.isAllowed(JSON.stringify(opts, null, 0))) {
       await this._config.batchBuffer.add({
@@ -601,6 +609,10 @@ export class BucketClient {
       "companyId must be an string",
     );
 
+    if (this._config.offline) {
+      return;
+    }
+
     await this._config.batchBuffer.add({
       type: "event",
       event,
@@ -620,7 +632,10 @@ export class BucketClient {
    * Call this method before calling `getFeatures` to ensure the feature definitions are cached.
    **/
   public async initialize() {
-    await this.getFeaturesCache().refresh();
+    if (!this._config.offline) {
+      await this.getFeaturesCache().refresh();
+    }
+    this._config.logger?.info("Bucket initialized");
   }
 
   /**
@@ -640,16 +655,31 @@ export class BucketClient {
   }: ContextWithTracking): Record<string, RawFeature> {
     void this.syncContext({ enableTracking, ...context });
 
-    const featureDefinitions = this.getFeaturesCache().get();
+    let featureDefinitions: FeaturesAPIResponse["features"];
+
+    if (this._config.offline) {
+      featureDefinitions = [];
+    } else {
+      const fetchedFeatures = this.getFeaturesCache().get();
+      if (!fetchedFeatures) {
+        this._config.logger?.warn(
+          "failed to use feature definitions, there are none cached yet. Using fallback features.",
+        );
+        return this._config.fallbackFeatures || {};
+      }
+
+      featureDefinitions = fetchedFeatures.features;
+    }
+
     let evaluatedFeatures: Record<keyof TypedFeatures, RawFeature> =
       this._config.fallbackFeatures || {};
 
     if (featureDefinitions) {
       const keyToVersionMap = new Map<string, number>(
-        featureDefinitions.features.map((f) => [f.key, f.targeting.version]),
+        featureDefinitions.map((f) => [f.key, f.targeting.version]),
       );
 
-      const evaluated = featureDefinitions.features.map((feature) =>
+      const evaluated = featureDefinitions.map((feature) =>
         evaluateTargeting({
           context,
           feature,
@@ -698,11 +728,8 @@ export class BucketClient {
         };
       }
       this._config.logger?.debug("evaluated features", evaluatedFeatures);
-    } else {
-      this._config.logger?.warn(
-        "failed to use feature definitions, there are none cached yet. Using fallback features.",
-      );
     }
+
     return evaluatedFeatures;
   }
 

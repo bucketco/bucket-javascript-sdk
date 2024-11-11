@@ -1742,6 +1742,25 @@ describe("BucketClient", () => {
       );
     });
   });
+
+  describe("offline mode", () => {
+    let client: BucketClient;
+
+    beforeEach(async () => {
+      client = new BucketClient({
+        ...validOptions,
+        offline: true,
+      });
+      await client.initialize();
+    });
+
+    it("should send not send or fetch anything", async () => {
+      client.getFeatures({});
+
+      expect(httpClient.get).toHaveBeenCalledTimes(0);
+      expect(httpClient.post).toHaveBeenCalledTimes(0);
+    });
+  });
 });
 
 describe("BoundBucketClient", () => {

@@ -2,7 +2,7 @@ import { readFileSync } from "fs";
 
 import { version } from "../package.json";
 
-import { Logger } from "./types";
+import { LOG_LEVELS } from "./types";
 import { ok } from "./utils";
 
 export const API_HOST = "https://front.bucket.co";
@@ -49,7 +49,7 @@ function loadConfigFile(file: string) {
   );
   ok(
     typeof logLevel === "undefined" ||
-      (typeof logLevel === "string" && LOG_LEVELS.includes(logLevel)),
+      (typeof logLevel === "string" && LOG_LEVELS.includes(logLevel as any)),
     `logLevel must one of ${LOG_LEVELS.join(", ")}`,
   );
   ok(
@@ -124,46 +124,4 @@ export function loadConfig(file?: string) {
       ...envConfig.featureOverrides,
     },
   };
-}
-
-const LOG_LEVELS = ["DEBUG", "INFO", "WARN", "ERROR"];
-
-export function applyLogLevel(logger: Logger, logLevel?: string) {
-  switch (logLevel) {
-    case "debug":
-      return {
-        debug: logger.debug,
-        info: logger.info,
-        warn: logger.warn,
-        error: logger.error,
-      };
-    case "info":
-      return {
-        debug: () => void 0,
-        info: logger.info,
-        warn: logger.warn,
-        error: logger.error,
-      };
-    case "warn":
-      return {
-        debug: () => void 0,
-        info: () => void 0,
-        warn: logger.warn,
-        error: logger.error,
-      };
-    case "error":
-      return {
-        debug: () => void 0,
-        info: () => void 0,
-        warn: () => void 0,
-        error: logger.error,
-      };
-    default:
-      return {
-        debug: () => void 0,
-        info: () => void 0,
-        warn: () => void 0,
-        error: () => void 0,
-      };
-  }
 }
