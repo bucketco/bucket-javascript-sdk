@@ -6,7 +6,6 @@ import BatchBuffer from "./batch-buffer";
 import cache from "./cache";
 import {
   API_HOST,
-  applyLogLevel,
   BUCKET_LOG_PREFIX,
   FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
   FEATURES_REFETCH_MS,
@@ -35,7 +34,13 @@ import {
   TrackOptions,
   TypedFeatures,
 } from "./types";
-import { decorateLogger, isObject, mergeSkipUndefined, ok } from "./utils";
+import {
+  applyLogLevel,
+  decorateLogger,
+  isObject,
+  mergeSkipUndefined,
+  ok,
+} from "./utils";
 
 const bucketConfigDefaultFile = "bucketConfig.json";
 
@@ -148,13 +153,12 @@ export class BucketClient {
     }
 
     // use the supplied logger or apply the log level to the console logger
-    // always decorate the logger with the bucket log prefix
-    const logger = decorateLogger(
-      BUCKET_LOG_PREFIX,
-      options.logger
-        ? options.logger
-        : applyLogLevel(console, config?.logLevel || "info"),
-    );
+    const logger = options.logger
+      ? options.logger
+      : applyLogLevel(
+          decorateLogger(BUCKET_LOG_PREFIX, console),
+          options.logLevel ?? config?.logLevel ?? "INFO",
+        );
 
     // todo: deprecate fallback features in favour of a more operationally
     //  friendly way of setting fall backs.
@@ -579,6 +583,7 @@ export class BucketClient {
     if (!this._config.offline) {
       await this.getFeaturesCache().refresh();
     }
+    this._config.logger?.info("Bucket initialized");
   }
 
   /**

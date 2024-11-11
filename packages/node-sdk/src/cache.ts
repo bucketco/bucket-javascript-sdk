@@ -63,7 +63,7 @@ export default function cache<T>(
       refreshPromise = update();
     }
     await refreshPromise;
-
+    logger?.info("refreshed cached features");
     return get();
   };
 

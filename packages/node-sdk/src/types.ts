@@ -295,6 +295,11 @@ export type ClientOptions = {
   logger?: Logger;
 
   /**
+   * Use the console logger, but set a log level. Ineffective if a custom logger is provided.
+   **/
+  logLevel?: LogLevel;
+
+  /**
    * The features to "enable" as fallbacks when the API is unavailable (optional).
    **/
   fallbackFeatures?: (keyof TypedFeatures)[];
@@ -372,3 +377,6 @@ export type Context = {
    */
   other?: Record<string, any>;
 };
+
+export const LOG_LEVELS = ["DEBUG", "INFO", "WARN", "ERROR"] as const;
+export type LogLevel = (typeof LOG_LEVELS)[number];
