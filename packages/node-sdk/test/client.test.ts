@@ -323,7 +323,10 @@ describe("BucketClient", () => {
 
       expect(newClient).toBeInstanceOf(BoundBucketClient);
       expect(newClient).not.toBe(client); // Ensure a new instance is returned
-      expect(newClient["_context"]).toEqual(context);
+      expect(newClient["_options"]).toEqual({
+        enableTracking: true,
+        ...context,
+      });
     });
 
     it("should update user in Bucket when called", async () => {
@@ -425,7 +428,7 @@ describe("BucketClient", () => {
     it("should throw an error if `enableTracking` is invalid", () => {
       expect(() =>
         client.bindClient({ enableTracking: "bad_attributes" as any }),
-      ).toThrow("validation failed: enableTracking must be a boolean if given");
+      ).toThrow("validation failed: enableTracking must be a boolean");
     });
   });
 
@@ -986,11 +989,11 @@ describe("BucketClient", () => {
     });
 
     it("`track` sends limited events when `enableTracking` is `false`", async () => {
-      const context: Context = {
+      const context = {
         company,
         user,
         other: otherContext,
-        enableTracking: false,
+        enableTracking: false as boolean | undefined,
       };
 
       // test that the feature is returned
@@ -1030,11 +1033,11 @@ describe("BucketClient", () => {
     });
 
     it("`isEnabled` sends `check` event", async () => {
-      const context: Context = {
+      const context = {
         company,
         user,
         other: otherContext,
-        enableTracking: false,
+        enableTracking: false as boolean | undefined,
       };
       // test that the feature is returned
       await client.initialize();
@@ -1812,10 +1815,11 @@ describe("BoundBucketClient", () => {
         other: otherOverride,
       });
 
-    expect(newClient["_context"]).toEqual({
+    expect(newClient["_options"]).toEqual({
       user: { ...user, ...userOverride },
       company: { ...company, ...companyOverride },
       other: { ...other, ...otherOverride },
+      enableTracking: true,
     });
   });
 
