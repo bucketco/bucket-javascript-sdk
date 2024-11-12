@@ -86,7 +86,7 @@ interface ContextWithTracking extends Context {
    * Enable tracking for the context.
    * If set to `false`, tracking will be disabled for the context. Default is `true`.
    */
-  enableTracking: boolean;
+  enableTracking?: boolean;
 }
 
 // used to validate that
@@ -404,16 +404,10 @@ export class BucketClient {
    *
    * @param context - The context to update.
    */
-  private async syncContext({
-    enableTracking = true,
-    ...context
-  }: ContextWithTracking) {
-    const checkedContext = checkContextWithTracking({
-      enableTracking,
-      ...context,
-    });
+  private async syncContext(options: Context & { enableTracking: boolean }) {
+    const checkedContext = checkContextWithTracking(options);
 
-    if (!enableTracking) {
+    if (!options.enableTracking) {
       this._config.logger?.debug(
         "tracking disabled, not updating user/company",
       );
@@ -669,11 +663,10 @@ export class BucketClient {
     await this._config.batchBuffer.flush();
   }
 
-  private _getFeatures({
-    enableTracking = true,
-    ...context
-  }: ContextWithTracking): Record<string, RawFeature> {
-    void this.syncContext({ enableTracking, ...context });
+  private _getFeatures(
+    options: Context & { enableTracking: boolean },
+  ): Record<string, RawFeature> {
+    void this.syncContext(options);
     let featureDefinitions: FeaturesAPIResponse["features"];
 
     if (this._config.offline) {
@@ -693,6 +686,8 @@ export class BucketClient {
     const keyToVersionMap = new Map<string, number>(
       featureDefinitions.map((f) => [f.key, f.targeting.version]),
     );
+
+    const { enableTracking, ...context } = options;
 
     const evaluated = featureDefinitions.map((feature) =>
       evaluateTargeting({
@@ -752,19 +747,16 @@ export class BucketClient {
   }
 
   private _wrapRawFeature(
-    { enableTracking = true, ...context }: ContextWithTracking,
+    options: Context & { enableTracking: boolean },
     { key, isEnabled, targetingVersion }: RawFeature,
   ): Feature {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const client = this;
-    const validContext = checkContextWithTracking({
-      enableTracking,
-      ...context,
-    });
+    const validContext = checkContextWithTracking(options);
 
     return {
       get isEnabled() {
-        if (enableTracking) {
+        if (options.enableTracking) {
           void client
             .sendFeatureEvent({
               action: "check",
@@ -790,7 +782,7 @@ export class BucketClient {
           return;
         }
 
-        if (enableTracking) {
+        if (options.enableTracking) {
           await this.track(userId, key, {
             companyId: validContext.company?.id,
           });
@@ -813,7 +805,10 @@ export class BucketClient {
     enableTracking = true,
     ...context
   }: ContextWithTracking): TypedFeatures {
-    const features = this._getFeatures({ ...context, enableTracking });
+    const features = this._getFeatures({
+      ...context,
+      enableTracking: enableTracking ?? true,
+    });
     return Object.fromEntries(
       Object.entries(features).map(([k, v]) => [
         k as keyof TypedFeatures,
@@ -948,7 +943,7 @@ export class BoundBucketClient {
   constructor(client: BucketClient, options: ContextWithTracking) {
     this._client = client;
     this._options = {
-      enableTracking: options.enableTracking,
+      enableTracking: options.enableTracking ?? true,
       ...checkContextWithTracking(options), // use checked context
     };
 

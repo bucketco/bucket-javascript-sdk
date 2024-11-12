@@ -422,8 +422,10 @@ describe("BucketClient", () => {
     it("should allow context without id", () => {
       const c = client.bindClient({
         user: { id: undefined, name: "userName" },
+        company: { id: undefined, name: "companyName" },
       });
       expect(c.user).toBeUndefined();
+      expect(c.company).toBeUndefined();
     });
   });
 
