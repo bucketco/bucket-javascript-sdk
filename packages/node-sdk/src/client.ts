@@ -482,12 +482,6 @@ export class BucketClient {
     return this._config.logger;
   }
 
-  // // takes a user-facing Context and returns context with a undefined user/company object or
-  // // guaranteed user.id / company.id
-  // private validateContext(context: Context): ValidatedContext {
-
-  // }
-
   /**
    * Returns a new BoundBucketClient with the user/company/otherContext
    * set to be used in subsequent calls.
