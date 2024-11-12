@@ -93,31 +93,8 @@ be a dangerous pattern:
 const { isEnabled } = boundClient.getFeatures()["huddle"];
 ```
 
-## Opting out of tracking
-
-There are use cases in which one does not want to be sending `user`, `company` and
-`track` events to Bucket.co. These are usually cases where one is impersonating
-another user in the system and does not want to interfere with the data being
-collected by Bucket.
-
-To disable tracking, bind the client using `bindClient()` as follows:
-
-```typescript
-// bind the client to a given user and company and set `enableTracking` to `false`.
-const boundClient = client.bindClient({ user, company, enableTracking: false });
-
-boundClient.track("some event"); // this will not actually send the event to Bucket.
-
-// the following code will not update the `user` nor `company` in Bucket and will
-// not send `track` events either.
-const { isEnabled, track } = boundClient.getFeature("user-menu");
-if (isEnabled) {
-  track();
-}
-```
-
 Another way way to disable tracking without employing a bound client is to call `getFeature()`
-or `getFeatures()` by supplying `enableTracking: false` in the context passed to
+or `getFeatures()` by supplying `enableTracking: false` in the arguments passed to
 these functions.
 
 > [!NOTE]
@@ -290,6 +267,29 @@ const features = await client.getFeaturesRemote("acme_inc", "john_doe");
 NOTE: User and company attribute updates are processed asynchronously, so there might
 be a small delay between when attributes are updated and when they are available
 for evaluation.
+
+## Opting out of tracking
+
+There are use cases in which you not want to be sending `user`, `company` and
+`track` events to Bucket.co. These are usually cases where you could be impersonating
+another user in the system and do not want to interfere with the data being
+collected by Bucket.
+
+To disable tracking, bind the client using `bindClient()` as follows:
+
+```typescript
+// binds the client to a given user and company and set `enableTracking` to `false`.
+const boundClient = client.bindClient({ user, company, enableTracking: false });
+
+boundClient.track("some event"); // this will not actually send the event to Bucket.
+
+// the following code will not update the `user` nor `company` in Bucket and will
+// not send `track` events either.
+const { isEnabled, track } = boundClient.getFeature("user-menu");
+if (isEnabled) {
+  track();
+}
+```
 
 ## Flushing
 

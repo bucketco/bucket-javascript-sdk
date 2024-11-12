@@ -81,13 +81,13 @@ type BulkEvent =
 /**
  * A context with tracking option.
  **/
-type ContextWithTracking = Context & {
+interface ContextWithTracking extends Context {
   /**
    * Enable tracking for the context.
    * If set to `false`, tracking will be disabled for the context. Default is `true`.
    */
-  enableTracking?: boolean;
-};
+  enableTracking: boolean;
+}
 
 /**
  * The SDK client.
@@ -403,7 +403,7 @@ export class BucketClient {
 
     if (!enableTracking) {
       this._config.logger?.debug(
-        "feature.syncContext(): tracking disabled from context, not updating user/company",
+        "tracking disabled, not updating user/company",
       );
 
       return;
@@ -662,7 +662,6 @@ export class BucketClient {
     ...context
   }: ContextWithTracking): Record<string, RawFeature> {
     void this.syncContext({ enableTracking, ...context });
-
     let featureDefinitions: FeaturesAPIResponse["features"];
 
     if (this._config.offline) {
@@ -675,72 +674,61 @@ export class BucketClient {
         );
         return this._config.fallbackFeatures || {};
       }
-
       featureDefinitions = fetchedFeatures.features;
     }
 
-    let evaluatedFeatures: Record<keyof TypedFeatures, RawFeature> =
-      this._config.fallbackFeatures || {};
+    const keyToVersionMap = new Map<string, number>(
+      featureDefinitions.map((f) => [f.key, f.targeting.version]),
+    );
 
-    if (featureDefinitions) {
-      const keyToVersionMap = new Map<string, number>(
-        featureDefinitions.map((f) => [f.key, f.targeting.version]),
-      );
+    const evaluated = featureDefinitions.map((feature) =>
+      evaluateTargeting({ context, feature }),
+    );
 
-      const evaluated = featureDefinitions.map((feature) =>
-        evaluateTargeting({
-          context,
-          feature,
-        }),
-      );
-
-      if (enableTracking) {
-        evaluated.forEach(async (res) => {
-          try {
-            await this.sendFeatureEvent({
-              action: "evaluate",
-              key: res.feature.key,
-              targetingVersion: keyToVersionMap.get(res.feature.key),
-              evalResult: res.value,
-              evalContext: res.context,
-              evalRuleResults: res.ruleEvaluationResults,
-              evalMissingFields: res.missingContextFields,
-            });
-          } catch (err) {
-            this._config.logger?.error(
-              `failed to send evaluate event for "${res.feature.key}"`,
-              err,
-            );
-          }
+    if (enableTracking) {
+      evaluated.forEach(async (res) => {
+        this.sendFeatureEvent({
+          action: "evaluate",
+          key: res.feature.key,
+          targetingVersion: keyToVersionMap.get(res.feature.key),
+          evalResult: res.value,
+          evalContext: res.context,
+          evalRuleResults: res.ruleEvaluationResults,
+          evalMissingFields: res.missingContextFields,
+        }).catch((err) => {
+          this._config.logger?.error(
+            `failed to send evaluate event for "${res.feature.key}"`,
+            err,
+          );
         });
-      }
-
-      evaluatedFeatures = evaluated.reduce(
-        (acc, res) => {
-          acc[res.feature.key as keyof TypedFeatures] = {
-            key: res.feature.key,
-            isEnabled: res.value,
-            targetingVersion: keyToVersionMap.get(res.feature.key),
-          };
-          return acc;
-        },
-        {} as Record<keyof TypedFeatures, RawFeature>,
-      );
-
-      // apply feature overrides
-      const overrides = Object.entries(
-        this._config.featureOverrides(context),
-      ).map(([key, isEnabled]) => [key, { key, isEnabled }]);
-
-      if (overrides.length > 0) {
-        // merge overrides into evaluated features
-        evaluatedFeatures = {
-          ...evaluatedFeatures,
-          ...Object.fromEntries(overrides),
-        };
-      }
-      this._config.logger?.debug("evaluated features", evaluatedFeatures);
+      });
     }
+
+    let evaluatedFeatures = evaluated.reduce(
+      (acc, res) => {
+        acc[res.feature.key as keyof TypedFeatures] = {
+          key: res.feature.key,
+          isEnabled: res.value,
+          targetingVersion: keyToVersionMap.get(res.feature.key),
+        };
+        return acc;
+      },
+      {} as Record<keyof TypedFeatures, RawFeature>,
+    );
+
+    // apply feature overrides
+    const overrides = Object.entries(
+      this._config.featureOverrides(context),
+    ).map(([key, isEnabled]) => [key, { key, isEnabled }]);
+
+    if (overrides.length > 0) {
+      // merge overrides into evaluated features
+      evaluatedFeatures = {
+        ...evaluatedFeatures,
+        ...Object.fromEntries(overrides),
+      };
+    }
+    this._config.logger?.debug("evaluated features", evaluatedFeatures);
 
     return evaluatedFeatures;
   }
@@ -787,9 +775,7 @@ export class BucketClient {
             companyId: context.company?.id,
           });
         } else {
-          this._config.logger?.debug(
-            "feature.track(): tracking disabled from context, not tracking event",
-          );
+          this._config.logger?.debug("tracking disabled, not tracking event");
         }
       },
     };
@@ -1046,7 +1032,7 @@ export class BoundBucketClient {
       return;
     }
 
-    if (this._options.enableTracking === false) {
+    if (!this._options.enableTracking) {
       this._client.logger?.debug(
         "tracking disabled for this bound client, not tracking event",
       );
@@ -1073,8 +1059,8 @@ export class BoundBucketClient {
     user,
     company,
     other,
-    enableTracking = true,
-  }: ContextWithTracking) {
+    enableTracking,
+  }: Context & { enableTracking?: boolean }) {
     // merge new context into existing
     const boundConfig = {
       ...this._options,
