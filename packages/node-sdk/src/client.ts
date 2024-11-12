@@ -91,7 +91,7 @@ interface ContextWithTracking extends Context {
 
 // used to validate that
 // - IDs are strings
-// - id's are given if user/company objects are set
+// - IDs are given if user/company objects are set
 type CheckedContext = Context & {
   user?: { id: string };
 } & {
