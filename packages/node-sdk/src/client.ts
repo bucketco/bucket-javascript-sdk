@@ -89,6 +89,10 @@ interface ContextWithTracking extends Context {
   enableTracking?: boolean;
 }
 
+// internal type used for carrying around context + config which guarentees
+// enableTracking being set
+type PartialClientOptions = CheckedContext & { enableTracking: boolean };
+
 // used to validate that
 // - IDs are strings
 // - IDs are given if user/company objects are set
@@ -404,9 +408,7 @@ export class BucketClient {
    *
    * @param context - The context to update.
    */
-  private async syncContext(options: Context & { enableTracking: boolean }) {
-    const checkedContext = checkContextWithTracking(options);
-
+  private async syncContext(options: PartialClientOptions) {
     if (!options.enableTracking) {
       this._config.logger?.debug(
         "tracking disabled, not updating user/company",
@@ -416,20 +418,20 @@ export class BucketClient {
     }
 
     const promises: Promise<void>[] = [];
-    if (checkedContext.company) {
-      const { id: _, ...attributes } = checkedContext.company;
+    if (options.company) {
+      const { id: _, ...attributes } = options.company;
       promises.push(
-        this.updateCompany(checkedContext.company.id, {
+        this.updateCompany(options.company.id, {
           attributes,
           meta: { active: false },
         }),
       );
     }
 
-    if (checkedContext.user) {
-      const { id: _, ...attributes } = checkedContext.user;
+    if (options.user) {
+      const { id: _, ...attributes } = options.user;
       promises.push(
-        this.updateUser(checkedContext.user.id, {
+        this.updateUser(options.user.id, {
           attributes,
           meta: { active: false },
         }),
@@ -664,7 +666,7 @@ export class BucketClient {
   }
 
   private _getFeatures(
-    options: Context & { enableTracking: boolean },
+    options: PartialClientOptions,
   ): Record<string, RawFeature> {
     void this.syncContext(options);
     let featureDefinitions: FeaturesAPIResponse["features"];
@@ -747,16 +749,18 @@ export class BucketClient {
   }
 
   private _wrapRawFeature(
-    options: Context & { enableTracking: boolean },
+    {
+      enableTracking,
+      ...checkedContext
+    }: { enableTracking: boolean } & CheckedContext,
     { key, isEnabled, targetingVersion }: RawFeature,
   ): Feature {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const client = this;
-    const validContext = checkContextWithTracking(options);
 
     return {
       get isEnabled() {
-        if (options.enableTracking) {
+        if (enableTracking) {
           void client
             .sendFeatureEvent({
               action: "check",
@@ -776,15 +780,14 @@ export class BucketClient {
       },
       key,
       track: async () => {
-        const userId = validContext.user?.id;
-        if (typeof userId === "undefined") {
+        if (typeof checkedContext.user === "undefined") {
           this._config.logger?.warn("no user set, cannot track event");
           return;
         }
 
-        if (options.enableTracking) {
-          await this.track(userId, key, {
-            companyId: validContext.company?.id,
+        if (enableTracking) {
+          await this.track(checkedContext.user.id, key, {
+            companyId: checkedContext.company?.id,
           });
         } else {
           this._config.logger?.debug("tracking disabled, not tracking event");
@@ -805,14 +808,19 @@ export class BucketClient {
     enableTracking = true,
     ...context
   }: ContextWithTracking): TypedFeatures {
-    const features = this._getFeatures({
+    const checkedContext = checkContextWithTracking({
+      enableTracking,
       ...context,
+    });
+
+    const features = this._getFeatures({
+      ...checkedContext,
       enableTracking: enableTracking ?? true,
     });
     return Object.fromEntries(
       Object.entries(features).map(([k, v]) => [
         k as keyof TypedFeatures,
-        this._wrapRawFeature({ ...context, enableTracking }, v),
+        this._wrapRawFeature({ ...checkedContext, enableTracking }, v),
       ]),
     );
   }
@@ -829,11 +837,18 @@ export class BucketClient {
     { enableTracking = true, ...context }: ContextWithTracking,
     key: keyof TypedFeatures,
   ) {
-    const features = this._getFeatures({ ...context, enableTracking });
+    const checkedContext = checkContextWithTracking({
+      enableTracking,
+      ...context,
+    });
+    const features = this._getFeatures({
+      ...checkedContext,
+      enableTracking,
+    });
     const feature = features[key];
 
     return this._wrapRawFeature(
-      { enableTracking, ...context },
+      { enableTracking, ...checkedContext },
       {
         key,
         isEnabled: feature?.isEnabled ?? false,
@@ -860,8 +875,10 @@ export class BucketClient {
       context.company = { id: companyId };
     }
 
-    const contextWithTracking = { ...context, enableTracking: true };
-    checkContextWithTracking(contextWithTracking);
+    const checkedContext = checkContextWithTracking({
+      ...context,
+      enableTracking: true,
+    });
 
     const params = new URLSearchParams(flattenJSON({ context }));
     if (key) {
@@ -877,7 +894,7 @@ export class BucketClient {
         Object.entries(res.features).map(([featureKey, feature]) => {
           return [
             featureKey as keyof TypedFeatures,
-            this._wrapRawFeature(contextWithTracking, feature),
+            this._wrapRawFeature(checkedContext, feature),
           ];
         }) || [],
       );
@@ -940,11 +957,14 @@ export class BoundBucketClient {
   private _client: BucketClient;
   private _options: CheckedContext & { enableTracking: boolean };
 
-  constructor(client: BucketClient, options: ContextWithTracking) {
+  constructor(
+    client: BucketClient,
+    { enableTracking = true, ...context }: ContextWithTracking,
+  ) {
     this._client = client;
     this._options = {
-      enableTracking: options.enableTracking ?? true,
-      ...checkContextWithTracking(options), // use checked context
+      enableTracking,
+      ...checkContextWithTracking({ enableTracking, ...context }), // use checked context
     };
 
     void this._client["syncContext"](this._options);

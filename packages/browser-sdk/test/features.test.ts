@@ -1,6 +1,5 @@
 import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
 
-import { APIFeatureResponse } from "../dist/src/feature/features";
 import { version } from "../package.json";
 import {
   FEATURES_EXPIRE_MS,
@@ -167,7 +166,7 @@ describe("FeaturesClient unit tests", () => {
           isEnabled: true,
           key: "featureB",
           targetingVersion: 1,
-        } satisfies APIFeatureResponse,
+        },
       },
     };
 
@@ -212,7 +211,7 @@ describe("FeaturesClient unit tests", () => {
               isEnabled: true,
               key: "featureA",
               targetingVersion: 1,
-            } satisfies APIFeatureResponse,
+            },
           },
         }),
     } as Response);
