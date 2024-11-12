@@ -95,7 +95,7 @@ export const handlers = [
     if (!checkRequest(request)) return invalidReqResponse;
     const data = await request.json();
 
-    if (typeof data !== "object" || !data || !data || !data["userId"]) {
+    if (typeof data !== "object" || !data || !data["userId"]) {
       return new HttpResponse(null, { status: 400 });
     }
 
