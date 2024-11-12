@@ -1120,12 +1120,24 @@ function checkContextWithTracking(
 ): CheckedContext {
   ok(isObject(context), "context must be an object");
   ok(
-    context.user === undefined || typeof context.user?.id === "string",
-    "user.id must be a string if user is given",
+    typeof context.user === "undefined" || isObject(context.user),
+    "user must be an object if given",
   );
   ok(
-    context.company === undefined || typeof context.company?.id === "string",
-    "company.id must be a string if company is given",
+    typeof context.user?.id === "undefined" ||
+      typeof context.user?.id === "string" ||
+      typeof context.user?.id === "number",
+    "user.id must be a string or number if given",
+  );
+  ok(
+    typeof context.company === "undefined" || isObject(context.company),
+    "company must be an object if given",
+  );
+  ok(
+    typeof context.company?.id === "undefined" ||
+      typeof context.company?.id === "string" ||
+      typeof context.company?.id === "number",
+    "company.id must be a string or number if given",
   );
   ok(
     context.other === undefined || isObject(context.other),
@@ -1137,7 +1149,7 @@ function checkContextWithTracking(
   );
 
   const userId = context.user?.id;
-  const companyId = context.user?.id;
+  const companyId = context.company?.id;
   return {
     user:
       typeof userId !== "undefined"

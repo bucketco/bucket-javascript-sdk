@@ -392,30 +392,18 @@ describe("BucketClient", () => {
     it("should throw an error if `user` is invalid", () => {
       expect(() =>
         client.bindClient({ user: "bad_attributes" as any }),
-      ).toThrow("validation failed: user.id must be a string if user is given");
-      expect(() =>
-        client.bindClient({ user: { id: undefined as any } }),
-      ).toThrow("validation failed: user.id must be a string if user is given");
-      expect(() => client.bindClient({ user: { id: 1 as any } })).toThrow(
-        "validation failed: user.id must be a string if user is given",
+      ).toThrow("validation failed: user must be an object if given");
+      expect(() => client.bindClient({ user: { id: {} as any } })).toThrow(
+        "validation failed: user.id must be a string or number if given",
       );
     });
 
     it("should throw an error if `company` is invalid", () => {
       expect(() =>
         client.bindClient({ company: "bad_attributes" as any }),
-      ).toThrow(
-        "validation failed: company.id must be a string if company is given",
-      );
-
-      expect(() =>
-        client.bindClient({ company: { id: undefined as any } }),
-      ).toThrow(
-        "validation failed: company.id must be a string if company is given",
-      );
-
-      expect(() => client.bindClient({ company: { id: 1 as any } })).toThrow(
-        "validation failed: company.id must be a string if company is given",
+      ).toThrow("validation failed: company must be an object if given");
+      expect(() => client.bindClient({ company: { id: {} as any } })).toThrow(
+        "validation failed: company.id must be a string or number if given",
       );
     });
 
@@ -429,6 +417,13 @@ describe("BucketClient", () => {
       expect(() =>
         client.bindClient({ enableTracking: "bad_attributes" as any }),
       ).toThrow("validation failed: enableTracking must be a boolean");
+    });
+
+    it("should allow context without id", () => {
+      const c = client.bindClient({
+        user: { id: undefined, name: "userName" },
+      });
+      expect(c.user).toBeUndefined();
     });
   });
 
