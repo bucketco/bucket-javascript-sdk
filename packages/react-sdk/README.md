@@ -45,7 +45,7 @@ import { BucketProvider } from "@bucketco/react-sdk";
 
 <BucketProvider
   publishableKey="{YOUR_PUBLISHABLE_KEY}"
-  company={{ id: "acme_inc" }}
+  company={{ id: "acme_inc", plan: "pro" }}
   user={{ id: "john doe" }}
   loadingComponent={<Loading />}
   fallbackFeatures={["huddle"]}
@@ -57,7 +57,7 @@ import { BucketProvider } from "@bucketco/react-sdk";
 - `publishableKey` is used to connect the provider to an _environment_ on Bucket. Find your `publishableKey` under `Activity` on https://app.bucket.co.
 - `company`, `user` and `otherContext` make up the _context_ that is used to determine if a feature is enabled or not. `company` and `user` contexts are automatically transmitted to Bucket servers so the Bucket app can show you which companies have access to which features etc.
 
-  If you specify `company` and/or `user` they must have at least the `id` property plus anything additional you want to be able to evaluate feature targeting against. See "Managing Bucket context" below.
+  If you specify `company` and/or `user` they must have at least the `id` property, othewise they will be ignored in their entirety. You should also supply anything additional you want to be able to evaluate feature targeting against.
 
 - `fallbackFeatures` is a list of strings which specify which features to consider enabled if the SDK is unable to fetch features.
 - `loadingComponent` lets you specify an React component to be rendered instead of the children while the Bucket provider is initializing. If you want more control over loading screens, `useFeature()` returns `isLoading` which you can use to customize the loading experience:
