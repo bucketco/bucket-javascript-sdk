@@ -109,7 +109,7 @@ export const handlers = [
     if (
       typeof data !== "object" ||
       !data ||
-      !("userId" in data) ||
+      !data["userId"] ||
       typeof data["score"] !== "number" ||
       (!data["featureId"] && !data["featureKey"])
     ) {

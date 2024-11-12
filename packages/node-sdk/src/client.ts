@@ -81,13 +81,13 @@ type BulkEvent =
 /**
  * A context with tracking option.
  **/
-type ContextWithTracking = Context & {
+interface ContextWithTracking extends Context {
   /**
    * Enable tracking for the context.
    * If set to `false`, tracking will be disabled for the context. Default is `true`.
    */
-  enableTracking?: boolean;
-};
+  enableTracking: boolean;
+}
 
 // used to validate that
 // - IDs are strings
@@ -674,7 +674,6 @@ export class BucketClient {
     ...context
   }: ContextWithTracking): Record<string, RawFeature> {
     void this.syncContext({ enableTracking, ...context });
-
     let featureDefinitions: FeaturesAPIResponse["features"];
 
     if (this._config.offline) {
@@ -792,9 +791,7 @@ export class BucketClient {
       track: async () => {
         const userId = validContext.user?.id;
         if (typeof userId === "undefined") {
-          this._config.logger?.warn(
-            "feature.track(): no user set, cannot track event",
-          );
+          this._config.logger?.warn("no user set, cannot track event");
           return;
         }
 
@@ -804,7 +801,7 @@ export class BucketClient {
           });
         } else {
           this._config.logger?.debug(
-            "feature.track(): tracking disabled from context, not tracking event",
+            "tracking disabled from context, not tracking event",
           );
         }
       },
@@ -955,14 +952,11 @@ export class BoundBucketClient {
   private _client: BucketClient;
   private _options: CheckedContext & { enableTracking: boolean };
 
-  constructor(
-    client: BucketClient,
-    { enableTracking = true, ...context }: ContextWithTracking,
-  ) {
+  constructor(client: BucketClient, options: ContextWithTracking) {
     this._client = client;
     this._options = {
-      enableTracking,
-      ...checkContextWithTracking({ enableTracking, ...context }),
+      enableTracking: options.enableTracking,
+      ...checkContextWithTracking(options), // use checked context
     };
 
     void this._client["syncContext"](this._options);
@@ -1066,7 +1060,7 @@ export class BoundBucketClient {
       return;
     }
 
-    if (this._options.enableTracking === false) {
+    if (!this._options.enableTracking) {
       this._client.logger?.debug(
         "tracking disabled for this bound client, not tracking event",
       );
@@ -1094,7 +1088,7 @@ export class BoundBucketClient {
     company,
     other,
     enableTracking,
-  }: ContextWithTracking) {
+  }: Context & { enableTracking?: boolean }) {
     // merge new context into existing
     const boundConfig = {
       ...this._options,
