@@ -415,7 +415,7 @@ export class BucketClient {
 
     if (!enableTracking) {
       this._config.logger?.debug(
-        "tracking disabled from context, not updating user/company",
+        "tracking disabled, not updating user/company",
       );
 
       return;
@@ -795,9 +795,7 @@ export class BucketClient {
             companyId: validContext.company?.id,
           });
         } else {
-          this._config.logger?.debug(
-            "tracking disabled from context, not tracking event",
-          );
+          this._config.logger?.debug("tracking disabled, not tracking event");
         }
       },
     };
