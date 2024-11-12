@@ -1,6 +1,7 @@
 import { DefaultBodyType, http, HttpResponse, StrictRequest } from "msw";
 
-import { Features, FeaturesResponse } from "../../src/feature/features";
+import { Features } from "../../../node-sdk/src/types";
+import { FeaturesResponse } from "../../src/feature/features";
 
 export const testChannel = "testChannel";
 
@@ -60,7 +61,12 @@ export const handlers = [
     if (!checkRequest(request)) return invalidReqResponse;
 
     const data = await request.json();
-    if (!data || !data["userId"] || !data["attributes"]) {
+    if (
+      typeof data !== "object" ||
+      !data ||
+      !data["userId"] ||
+      !data["attributes"]
+    ) {
       return new HttpResponse(null, { status: 400 });
     }
 
@@ -71,7 +77,13 @@ export const handlers = [
   http.post("https://front.bucket.co/company", async ({ request }) => {
     if (!checkRequest(request)) return invalidReqResponse;
     const data = await request.json();
-    if (!data || !data["companyId"] || !data["attributes"]) {
+
+    if (
+      typeof data !== "object" ||
+      !data ||
+      !data["companyId"] ||
+      !data["attributes"]
+    ) {
       return new HttpResponse(null, { status: 400 });
     }
 
@@ -82,7 +94,8 @@ export const handlers = [
   http.post("https://front.bucket.co/event", async ({ request }) => {
     if (!checkRequest(request)) return invalidReqResponse;
     const data = await request.json();
-    if (!data || !data["userId"]) {
+
+    if (typeof data !== "object" || !data || !data || !data["userId"]) {
       return new HttpResponse(null, { status: 400 });
     }
 
@@ -94,8 +107,9 @@ export const handlers = [
     if (!checkRequest(request)) return invalidReqResponse;
     const data = await request.json();
     if (
+      typeof data !== "object" ||
       !data ||
-      !data["userId"] ||
+      !("userId" in data) ||
       typeof data["score"] !== "number" ||
       (!data["featureId"] && !data["featureKey"])
     ) {

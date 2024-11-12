@@ -6,7 +6,7 @@ export interface CompanyContext {
 
 export interface UserContext {
   id: string | number | undefined;
-  name: string | undefined;
+  name?: string | undefined;
   email?: string | undefined;
   [key: string]: string | number | undefined;
 }

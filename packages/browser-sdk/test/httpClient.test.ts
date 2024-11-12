@@ -1,3 +1,5 @@
+import { expect, test } from "vitest";
+
 import { HttpClient } from "../src/httpClient";
 
 const cases = [

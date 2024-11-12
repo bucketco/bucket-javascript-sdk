@@ -27,7 +27,7 @@ function pick<T>(options: T[]): T {
 
 async function getOpenedWidgetContainer(
   page: Page,
-  initOptions: InitOptions = {},
+  initOptions: Omit<InitOptions, "publishableKey"> = {},
 ) {
   await page.goto("http://localhost:8001/test/e2e/empty.html");
 

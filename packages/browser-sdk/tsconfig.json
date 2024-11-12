@@ -8,6 +8,6 @@
     "declarationDir": "./dist/types",
     "skipLibCheck": true
   },
-  "include": ["src", "dev"],
+  "include": ["src", "test", "dev"],
   "typeRoots": ["./node_modules/@types", "./types"]
 }
