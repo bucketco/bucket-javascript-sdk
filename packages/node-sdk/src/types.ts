@@ -330,7 +330,7 @@ export type ClientOptions = {
     | ((context: Context) => Partial<Record<keyof TypedFeatures, boolean>>);
 
   /**
-   * In offline mode, no data is sent or fethed from the the Bucket API.
+   * In offline mode, no data is sent or fetched from the the Bucket API.
    * This is useful for testing or development.
    */
   offline?: boolean;

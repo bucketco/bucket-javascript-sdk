@@ -29,7 +29,7 @@ in **Bucket.co**.
 Create a `bucket.ts` file containing the following and set up the
 BUCKET_SECRET_KEY environment variable:
 
-```ts
+```typescript
 import { BucketClient } from "@bucketco/node-sdk";
 
 // Create a new instance of the client with the secret key. Additional options
@@ -47,16 +47,18 @@ client.initialize().then({
 })
 ```
 
-Once the client is initialized, you can obtain features along with the `isEnabled` status to indicate whether the feature is targeted for this user/company:
+Once the client is initialized, you can obtain features along with the `isEnabled`
+status to indicate whether the feature is targeted for this user/company:
 
-```ts
+```typescript
 // configure the client
 const boundClient = client.bindClient({
   user: { id: "john_doe", name: "John Doe" },
   company: { id: "acme_inc", name: "Acme, Inc." },
 });
 
-// get the huddle feature using company, user and custom context to evaluate the targeting.
+// get the huddle feature using company, user and custom context to
+// evaluate the targeting.
 const { isEnabled, track } = boundClient.getFeature("huddle");
 
 if (isEnabled) {
@@ -64,28 +66,41 @@ if (isEnabled) {
   // send an event when the feature is used:
   track();
 
-  // CAUTION: if you plan to use the event for automated feedback surveys call `flush` immediately
-  // after `track`. It can optionally be awaited to guarantee the sent happened.
+  // CAUTION: if you plan to use the event for automated feedback surveys
+  // call `flush` immediately after `track`. It can optionally be awaited
+  // to guarantee the sent happened.
   boundClient.flush();
 }
 ```
 
 You can also use the `getFeatures` method which returns a map of all features:
 
-```ts
-// get the current features (uses company, user and custom context to evaluate the features).
+```typescript
+// get the current features (uses company, user and custom context to
+// evaluate the features).
 const features = boundClient.getFeatures();
 const bothEnabled =
   features.huddle?.isEnabled && features.voiceHuddle?.isEnabled;
 ```
 
-When using `getFeatures` be careful not to assume that a feature exists, this could be a dangerous pattern:
+When using `getFeatures` be careful not to assume that a feature exists, this could
+be a dangerous pattern:
 
 ```ts
 // warning: if the `huddle` feature does not exist because it wasn't created in Bucket
-// or because the client was unable to reach our servers for some reason, this will cause an exception:
+// or because the client was unable to reach our servers for some reason, this will
+// cause an exception:
 const { isEnabled } = boundClient.getFeatures()["huddle"];
 ```
+
+Another way way to disable tracking without employing a bound client is to call `getFeature()`
+or `getFeatures()` by supplying `enableTracking: false` in the arguments passed to
+these functions.
+
+> [!NOTE]
+> Note, however, that calling `track`, `updateCompany` or `updateUser` in the `BucketClient`
+> will still send tracking data. As such, it is always recommended to use `bindClient`
+> when using this SDK.
 
 ## High performance feature targeting
 
@@ -99,8 +114,9 @@ targeting rules from the Bucket servers in the background.
 
 ## Configuring
 
-The Bucket Node.js SDK can be configured through environment variables or a configuration file on disk.
-By default, the SDK searches for `bucketConfig.json` in the current working directory.
+The Bucket `Node.js` SDK can be configured through environment variables or a
+configuration file on disk. By default, the SDK searches for `bucketConfig.json`
+in the current working directory.
 
 | Option             | Type                    | Description                                                                                                                                                         | Env Var                                           |
 | ------------------ | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
@@ -115,7 +131,7 @@ Note: BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED are comma separated list
 
 `bucketConfig.json` example:
 
-```
+```json
 {
   secretKey: "...",
   logLevel: "warn",
@@ -128,12 +144,14 @@ Note: BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED are comma separated list
 }
 ```
 
-When using a `bucketConfig.json` for local development, make sure you add it to your `.gitignore` file. You can also set these options directly in the `BucketClient` constructor.
-The precedence for configuration options is as follows, listed in the order of importance:
+When using a `bucketConfig.json` for local development, make sure you add it to your
+`.gitignore` file. You can also set these options directly in the `BucketClient`
+constructor. The precedence for configuration options is as follows, listed in the
+order of importance:
 
-1. options passed along to the constructor directly
-2. environment variable
-3. the config file
+1. Options passed along to the constructor directly,
+2. Environment variable,
+3. The config file.
 
 ## Type safe feature flags
 
@@ -162,7 +180,8 @@ import bucket from "./bucket";
 import express from "express";
 import { BoundBucketClient } from "@bucketco/node-sdk";
 
-// Augment the Express types to include a `boundBucketClient` property on the `res.locals` object
+// Augment the Express types to include a `boundBucketClient` property on the
+// `res.locals` object.
 // This will allow us to access the BucketClient instance in our route handlers
 // without having to pass it around manually
 declare global {
@@ -189,11 +208,13 @@ app.use((req, res, next) => {
     name: req.user?.companyName
   }
 
-  // Create a new BoundBucketClient instance by calling the `bindClient` method on a `BucketClient` instance
+  // Create a new BoundBucketClient instance by calling the `bindClient`
+  // method on a `BucketClient` instance
   // This will create a new instance that is bound to the user/company given.
   const boundBucketClient = bucket.bindClient({ user, company });
 
-  // Store the BoundBucketClient instance in the `res.locals` object so we can access it in our route handlers
+  // Store the BoundBucketClient instance in the `res.locals` object so we
+  // can access it in our route handlers
   res.locals.boundBucketClient = boundBucketClient;
   next();
 });
@@ -215,9 +236,14 @@ See [example/app.ts](example/app.ts) for a full example.
 
 ## Remote flag evaluation with stored context
 
-If you don't want to provide context each time when evaluating feature flags but rather you would like to utilise the attributes you sent to Bucket previously (by calling `updateCompany` and `updateUser`) you can do so by calling `getFeaturesRemote` (or `getFeatureRemote` for a specific feature) with providing just `userId` and `companyId`.These methods will call Bucket's servers and feature flags will be evaluated remotely using the stored attributes.
+If you don't want to provide context each time when evaluating feature flags but
+rather you would like to utilise the attributes you sent to Bucket previously
+(by calling `updateCompany` and `updateUser`) you can do so by calling `getFeaturesRemote`
+(or `getFeatureRemote` for a specific feature) with providing just `userId` and `companyId`.
+These methods will call Bucket's servers and feature flags will be evaluated remotely
+using the stored attributes.
 
-```ts
+```typescript
 // Update user and company attributes
 client.updateUser("john_doe", {
   attributes: {
@@ -225,30 +251,57 @@ client.updateUser("john_doe", {
     role: "admin",
   },
 });
+
 client.updateCompany("acme_inc", {
   attributes: {
     name: "Acme, Inc",
     tier: "premium"
   },
 });
-
 ...
 
 // This will evaluate feature flags with respecting the attributes sent previously
 const features = await client.getFeaturesRemote("acme_inc", "john_doe");
 ```
 
-NOTE: User and company attribute updates are processed asynchronously, so there might be a small delay between when attributes are updated and when they are available for evaluation.
+NOTE: User and company attribute updates are processed asynchronously, so there might
+be a small delay between when attributes are updated and when they are available
+for evaluation.
+
+## Opting out of tracking
+
+There are use cases in which you not want to be sending `user`, `company` and
+`track` events to Bucket.co. These are usually cases where you could be impersonating
+another user in the system and do not want to interfere with the data being
+collected by Bucket.
+
+To disable tracking, bind the client using `bindClient()` as follows:
+
+```typescript
+// binds the client to a given user and company and set `enableTracking` to `false`.
+const boundClient = client.bindClient({ user, company, enableTracking: false });
+
+boundClient.track("some event"); // this will not actually send the event to Bucket.
+
+// the following code will not update the `user` nor `company` in Bucket and will
+// not send `track` events either.
+const { isEnabled, track } = boundClient.getFeature("user-menu");
+if (isEnabled) {
+  track();
+}
+```
 
 ## Flushing
 
-It is highly recommended that users of this SDK manually call `client.flush()` method on process shutdown. The SDK employs
-a batching technique to minimize the number of calls that are sent to Bucket's servers. During process shutdown, some
-messages could be waiting to be sent, and thus, would be discarded if the buffer is not flushed.
+It is highly recommended that users of this SDK manually call `client.flush()`
+method on process shutdown. The SDK employs a batching technique to minimize
+the number of calls that are sent to Bucket's servers. During process shutdown,
+some messages could be waiting to be sent, and thus, would be discarded if the
+buffer is not flushed.
 
 A naive example:
 
-```ts
+```typescript
 process.on("SIGINT", () => {
   console.log("Flushing batch buffer...");
   client.flush().then(() => {
@@ -257,21 +310,23 @@ process.on("SIGINT", () => {
 });
 ```
 
-When you bind a client to a user/company, this data is matched against the targeting rules.
-To get accurate targeting, you must ensure that the user/company information provided is sufficient to match against the targeting rules you've created.
-The user/company data is automatically transferred to Bucket.
-This ensures that you'll have up-to-date information about companies and users and accurate targeting information available in Bucket at all time.
+When you bind a client to a user/company, this data is matched against the
+targeting rules. To get accurate targeting, you must ensure that the user/company
+information provided is sufficient to match against the targeting rules you've
+created. The user/company data is automatically transferred to Bucket. This ensures
+that you'll have up-to-date information about companies and users and accurate
+targeting information available in Bucket at all time.
 
 ## Tracking custom events and setting custom attributes
 
-Tracking allows events and updating user/company attributes in Bucket. For example, if a
-customer changes their plan, you'll want Bucket to know about it in order to continue to
-provide up-do-date targeting information in the Bucket interface.
+Tracking allows events and updating user/company attributes in Bucket.
+For example, if a customer changes their plan, you'll want Bucket to know about it,
+in order to continue to provide up-do-date targeting information in the Bucket interface.
 
-The following example shows how to register a new user, associate it with a company and
-finally update the plan they are on.
+The following example shows how to register a new user, associate it with a company
+and finally update the plan they are on.
 
-```ts
+```typescript
 // registers the user with Bucket using the provided unique ID, and
 // providing a set of custom attributes (can be anything)
 client.updateUser("user_id", {
@@ -285,7 +340,7 @@ client.track("user_id", "huddle", { attributes: { voice: true } });
 
 It's also possible to achieve the same through a bound client in the following manner:
 
-```ts
+```typescript
 const boundClient = client.bindClient({
   user: { id: "user_id", longTimeUser: true, payingCustomer: false },
   company: { id: "company_id" },
@@ -315,7 +370,7 @@ attributes but not their activity.
 
 Example:
 
-```ts
+```typescript
 client.updateUser("john_doe", {
   attributes: { name: "John O." },
   meta: { active: true },
@@ -339,7 +394,7 @@ information). If, however, you're using e.g. email address as userId, but prefer
 not to send any PII to Bucket, you can hash the sensitive data before sending
 it to Bucket:
 
-```ts
+```typescript
 import { sha256 } from 'crypto-hash';
 
 client.updateUser({ userId: await sha256("john_doe"), ... });
@@ -354,7 +409,3 @@ through a package manager.
 
 > MIT License
 > Copyright (c) 2024 Bucket ApS
-
-```
-
-```

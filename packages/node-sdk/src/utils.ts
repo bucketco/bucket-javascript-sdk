@@ -1,3 +1,5 @@
+import { createHash, Hash } from "crypto";
+
 import { Logger, LogLevel } from "./types";
 
 /**
@@ -101,4 +103,51 @@ export function mergeSkipUndefined<T extends object, U extends object>(
     (newTarget as any)[key] = source[key];
   }
   return newTarget as T & U;
+}
+
+function updateSha1Hash(hash: Hash, value: any) {
+  if (value === null) {
+    hash.update("null");
+  } else {
+    switch (typeof value) {
+      case "object":
+        if (Array.isArray(value)) {
+          for (const item of value) {
+            updateSha1Hash(hash, item);
+          }
+        } else {
+          for (const key of Object.keys(value).sort()) {
+            hash.update(key);
+            updateSha1Hash(hash, value[key]);
+          }
+        }
+        break;
+      case "string":
+        hash.update(value);
+        break;
+      case "number":
+      case "boolean":
+      case "symbol":
+      case "bigint":
+        hash.update(value.toString());
+        break;
+      default:
+        break;
+    }
+  }
+}
+
+/** Hash an object using SHA1.
+ *
+ * @param obj - The object to hash.
+ *
+ * @returns The SHA1 hash of the object.
+ **/
+export function hashObject(obj: Record<string, any>): string {
+  ok(isObject(obj), "obj must be an object");
+
+  const hash = createHash("sha1");
+  updateSha1Hash(hash, obj);
+
+  return hash.digest("hex");
 }
