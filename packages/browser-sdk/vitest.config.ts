@@ -6,6 +6,6 @@ export default defineConfig({
     root: __dirname,
     setupFiles: ["./vitest.setup.ts"],
     environment: "jsdom",
-    exclude: ["**/node_modules/**", "test/e2e/**"],
+    exclude: ["**/node_modules/**", "test/e2e/**", "dist/**"],
   },
 });

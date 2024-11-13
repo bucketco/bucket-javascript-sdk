@@ -6,6 +6,7 @@ import {
   describe,
   expect,
   it,
+  test,
   vi,
 } from "vitest";
 
@@ -392,30 +393,18 @@ describe("BucketClient", () => {
     it("should throw an error if `user` is invalid", () => {
       expect(() =>
         client.bindClient({ user: "bad_attributes" as any }),
-      ).toThrow("validation failed: user.id must be a string if user is given");
-      expect(() =>
-        client.bindClient({ user: { id: undefined as any } }),
-      ).toThrow("validation failed: user.id must be a string if user is given");
-      expect(() => client.bindClient({ user: { id: 1 as any } })).toThrow(
-        "validation failed: user.id must be a string if user is given",
+      ).toThrow("validation failed: user must be an object if given");
+      expect(() => client.bindClient({ user: { id: {} as any } })).toThrow(
+        "validation failed: user.id must be a string or number if given",
       );
     });
 
     it("should throw an error if `company` is invalid", () => {
       expect(() =>
         client.bindClient({ company: "bad_attributes" as any }),
-      ).toThrow(
-        "validation failed: company.id must be a string if company is given",
-      );
-
-      expect(() =>
-        client.bindClient({ company: { id: undefined as any } }),
-      ).toThrow(
-        "validation failed: company.id must be a string if company is given",
-      );
-
-      expect(() => client.bindClient({ company: { id: 1 as any } })).toThrow(
-        "validation failed: company.id must be a string if company is given",
+      ).toThrow("validation failed: company must be an object if given");
+      expect(() => client.bindClient({ company: { id: {} as any } })).toThrow(
+        "validation failed: company.id must be a string or number if given",
       );
     });
 
@@ -430,6 +419,15 @@ describe("BucketClient", () => {
         client.bindClient({ enableTracking: "bad_attributes" as any }),
       ).toThrow("validation failed: enableTracking must be a boolean");
     });
+
+    it("should allow context without id", () => {
+      const c = client.bindClient({
+        user: { id: undefined, name: "userName" },
+        company: { id: undefined, name: "companyName" },
+      });
+      expect(c.user?.id).toBeUndefined();
+      expect(c.company?.id).toBeUndefined();
+    });
   });
 
   describe("updateUser", () => {
@@ -439,11 +437,15 @@ describe("BucketClient", () => {
       client["_config"].rateLimiter.clear(true);
     });
 
-    it("should successfully update the user", async () => {
+    // try with both string and number IDs
+    test.each([
+      { id: "user123", age: 1, name: "John" },
+      { id: 42, age: 1, name: "John" },
+    ])("should successfully update the user", async (testUser) => {
       const response = { status: 200, body: { success: true } };
       httpClient.post.mockResolvedValue(response);
 
-      await client.updateUser(user.id, {
+      await client.updateUser(testUser.id, {
         attributes: { age: 2, brave: false },
         meta: {
           active: true,
@@ -458,7 +460,7 @@ describe("BucketClient", () => {
         [
           {
             type: "user",
-            userId: user.id,
+            userId: testUser.id,
             attributes: { age: 2, brave: false },
             context: { active: true },
           },
@@ -520,12 +522,14 @@ describe("BucketClient", () => {
       client["_config"].rateLimiter.clear(true);
     });
 
-    it("should successfully update the company with replacing attributes", async () => {
+    test.each([
+      { id: "company123", employees: 100, name: "Acme Inc." },
+      { id: 42, employees: 100, name: "Acme Inc." },
+    ])(`should successfully update the company`, async (testCompany) => {
       const response = { status: 200, body: { success: true } };
-
       httpClient.post.mockResolvedValue(response);
 
-      await client.updateCompany(company.id, {
+      await client.updateCompany(testCompany.id, {
         attributes: { employees: 200, bankrupt: false },
         meta: { active: true },
       });
@@ -538,7 +542,7 @@ describe("BucketClient", () => {
         [
           {
             type: "company",
-            companyId: company.id,
+            companyId: testCompany.id,
             attributes: { employees: 200, bankrupt: false },
             context: { active: true },
           },
@@ -609,14 +613,17 @@ describe("BucketClient", () => {
       client["_config"].rateLimiter.clear(true);
     });
 
-    it("should successfully track the feature usage", async () => {
+    test.each([
+      { id: "user123", age: 1, name: "John" },
+      { id: 42, age: 1, name: "John" },
+    ])("should successfully track the feature usage", async (testUser) => {
       const response = {
         status: 200,
         body: { success: true },
       };
       httpClient.post.mockResolvedValue(response);
 
-      await client.bindClient({ user }).track(event.event, {
+      await client.bindClient({ user: testUser, company }).track(event.event, {
         attributes: event.attrs,
         meta: { active: true },
       });
@@ -626,6 +633,9 @@ describe("BucketClient", () => {
         BULK_ENDPOINT,
         expectedHeaders,
         [
+          expect.objectContaining({
+            type: "company",
+          }),
           expect.objectContaining({
             type: "user",
           }),
@@ -638,7 +648,8 @@ describe("BucketClient", () => {
             },
             event: "feature-event",
             type: "event",
-            userId: "user123",
+            userId: testUser.id,
+            companyId: company.id,
           },
         ],
       );
@@ -656,7 +667,7 @@ describe("BucketClient", () => {
       });
 
       await client.bindClient({ user }).track(event.event, {
-        companyId: company.id,
+        companyId: "otherCompanyId",
         attributes: event.attrs,
         meta: { active: true },
       });
@@ -677,7 +688,7 @@ describe("BucketClient", () => {
               active: true,
             },
             event: "feature-event",
-            companyId: "company123",
+            companyId: "otherCompanyId",
             type: "event",
             userId: "user123",
           },

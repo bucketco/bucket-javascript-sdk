@@ -9,16 +9,13 @@ import {
   parseAPIFeaturesResponse,
 } from "./featureCache";
 
-export type APIFeatureResponse = {
+export type RawFeature = {
   key: string;
   isEnabled: boolean;
   targetingVersion?: number;
 };
 
-export type APIFeaturesResponse = Record<
-  string,
-  APIFeatureResponse | undefined
->;
+export type RawFeatures = Record<string, RawFeature | undefined>;
 
 export type FeaturesOptions = {
   fallbackFeatures?: string[];
@@ -64,7 +61,7 @@ export function mergeDeep(
 
 export type FeaturesResponse = {
   success: boolean;
-  features: APIFeaturesResponse;
+  features: RawFeatures;
 };
 
 export function validateFeaturesResponse(response: any) {
@@ -118,7 +115,7 @@ const localStorageCacheKey = `__bucket_features`;
 
 export class FeaturesClient {
   private cache: FeatureCache;
-  private features: APIFeaturesResponse;
+  private features: RawFeatures;
   private config: Config;
   private rateLimiter: RateLimiter;
   private logger: Logger;
@@ -159,11 +156,11 @@ export class FeaturesClient {
     this.setFeatures(features);
   }
 
-  private setFeatures(features: APIFeaturesResponse) {
+  private setFeatures(features: RawFeatures) {
     this.features = features;
   }
 
-  getFeatures(): APIFeaturesResponse {
+  getFeatures(): RawFeatures {
     return this.features;
   }
 
@@ -179,7 +176,7 @@ export class FeaturesClient {
     return params;
   }
 
-  private async maybeFetchFeatures(): Promise<APIFeaturesResponse | undefined> {
+  private async maybeFetchFeatures(): Promise<RawFeatures | undefined> {
     const cacheKey = this.fetchParams().toString();
     const cachedItem = this.cache.get(cacheKey);
 
@@ -229,10 +226,10 @@ export class FeaturesClient {
         isEnabled: true,
       };
       return acc;
-    }, {} as APIFeaturesResponse);
+    }, {} as RawFeatures);
   }
 
-  public async fetchFeatures(): Promise<APIFeaturesResponse | undefined> {
+  public async fetchFeatures(): Promise<RawFeatures | undefined> {
     const params = this.fetchParams();
     try {
       const res = await this.httpClient.get({

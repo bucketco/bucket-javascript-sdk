@@ -53,11 +53,20 @@ bucketClient.initialize().then({
 Once the client is initialized, you can obtain features along with the `isEnabled`
 status to indicate whether the feature is targeted for this user/company:
 
+_Note_: If `user.id` or `company.id` is not given, the whole `user` or `company` object is ignored.
+
 ```typescript
 // configure the client
 const boundClient = bucketClient.bindClient({
-  user: { id: "john_doe", name: "John Doe" },
-  company: { id: "acme_inc", name: "Acme, Inc." },
+  user: {
+    id: "john_doe",
+    name: "John Doe",
+    email: "john@acme.com",
+  },
+  company: {
+    id: "acme_inc",
+    name: "Acme, Inc.",
+  },
 });
 
 // get the huddle feature using company, user and custom context to
