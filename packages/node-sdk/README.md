@@ -97,13 +97,13 @@ const bothEnabled =
 
 ## High performance feature targeting
 
-The Bucket Node SDK contacts the Bucket servers when you call `initialize`
+The Bucket Node SDK contacts the Bucket servers when you call `initialize()`
 and downloads the features with their targeting rules.
 These rules are then matched against the user/company information you provide
 to `getFeatures()` (or through `bindClient(..).getFeatures()`). That means the
-`getFeatures()` call does not need to contact the Bucket servers once initialize
-has completed. `BucketClient` will continue to periodically download the
-targeting rules from the Bucket servers in the background.
+`getFeatures()` call does not need to contact the Bucket servers once
+`initialize()` has completed. `BucketClient` will continue to periodically
+download the targeting rules from the Bucket servers in the background.
 
 ## Configuring
 
@@ -300,13 +300,13 @@ or `getFeatures()` by supplying `enableTracking: false` in the arguments passed 
 these functions.
 
 > [!NOTE]
-> Note, however, that calling `track`, `updateCompany` or `updateUser` in the `BucketClient`
-> will still send tracking data. As such, it is always recommended to use `bindClient`
+> Note, however, that calling `track()`, `updateCompany()` or `updateUser()` in the `BucketClient`
+> will still send tracking data. As such, it is always recommended to use `bindClient()`
 > when using this SDK.
 
 ## Flushing
 
-It is highly recommended that users of this SDK manually call `client.flush()`
+It is highly recommended that users of this SDK manually call `flush()`
 method on process shutdown. The SDK employs a batching technique to minimize
 the number of calls that are sent to Bucket's servers. During process shutdown,
 some messages could be waiting to be sent, and thus, would be discarded if the
