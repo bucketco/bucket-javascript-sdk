@@ -6,6 +6,7 @@ import {
   describe,
   expect,
   it,
+  test,
   vi,
 } from "vitest";
 
@@ -424,8 +425,8 @@ describe("BucketClient", () => {
         user: { id: undefined, name: "userName" },
         company: { id: undefined, name: "companyName" },
       });
-      expect(c.user).toBeUndefined();
-      expect(c.company).toBeUndefined();
+      expect(c.user?.id).toBeUndefined();
+      expect(c.company?.id).toBeUndefined();
     });
   });
 
@@ -436,7 +437,11 @@ describe("BucketClient", () => {
       client["_config"].rateLimiter.clear(true);
     });
 
-    it("should successfully update the user", async () => {
+    // try with both string and number IDs
+    test.each([
+      { id: "user123", age: 1, name: "John" },
+      { id: 42, age: 1, name: "John" },
+    ])("should successfully update the user", async (user) => {
       const response = { status: 200, body: { success: true } };
       httpClient.post.mockResolvedValue(response);
 
@@ -517,9 +522,11 @@ describe("BucketClient", () => {
       client["_config"].rateLimiter.clear(true);
     });
 
-    it("should successfully update the company with replacing attributes", async () => {
+    test.each([
+      { id: "company123", employees: 100, name: "Acme Inc." },
+      { id: 42, employees: 100, name: "Acme Inc." },
+    ])(`should successfully update the company`, async (company) => {
       const response = { status: 200, body: { success: true } };
-
       httpClient.post.mockResolvedValue(response);
 
       await client.updateCompany(company.id, {
@@ -606,14 +613,17 @@ describe("BucketClient", () => {
       client["_config"].rateLimiter.clear(true);
     });
 
-    it("should successfully track the feature usage", async () => {
+    test.each([
+      { id: "user123", age: 1, name: "John" },
+      { id: 42, age: 1, name: "John" },
+    ])("should successfully track the feature usage", async (user) => {
       const response = {
         status: 200,
         body: { success: true },
       };
       httpClient.post.mockResolvedValue(response);
 
-      await client.bindClient({ user }).track(event.event, {
+      await client.bindClient({ user, company }).track(event.event, {
         attributes: event.attrs,
         meta: { active: true },
       });
@@ -623,6 +633,9 @@ describe("BucketClient", () => {
         BULK_ENDPOINT,
         expectedHeaders,
         [
+          expect.objectContaining({
+            type: "company",
+          }),
           expect.objectContaining({
             type: "user",
           }),
@@ -635,7 +648,8 @@ describe("BucketClient", () => {
             },
             event: "feature-event",
             type: "event",
-            userId: "user123",
+            userId: user.id,
+            companyId: company.id,
           },
         ],
       );
@@ -653,7 +667,7 @@ describe("BucketClient", () => {
       });
 
       await client.bindClient({ user }).track(event.event, {
-        companyId: company.id,
+        companyId: "otherCompanyId",
         attributes: event.attrs,
         meta: { active: true },
       });
@@ -674,7 +688,7 @@ describe("BucketClient", () => {
               active: true,
             },
             event: "feature-event",
-            companyId: "company123",
+            companyId: "otherCompanyId",
             type: "event",
             userId: "user123",
           },
