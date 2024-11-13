@@ -37,9 +37,9 @@ import {
 } from "./types";
 import {
   applyLogLevel,
-  idOk,
   decorateLogger,
   hashObject,
+  idOk,
   isObject,
   mergeSkipUndefined,
   ok,
