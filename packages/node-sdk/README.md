@@ -81,8 +81,8 @@ if (isEnabled) {
 The Bucket Node SDK contacts the Bucket servers when you call `initialize`
 and downloads the features with their targeting rules.
 These rules are then matched against the user/company information you provide
-to `getFeatures` (or through `bindClient(..).getFeatures()`). That means the
-`getFeatures` call does not need to contact the Bucket servers once initialize
+to `getFeatures()` (or through `bindClient(..).getFeatures()`). That means the
+`getFeatures()` call does not need to contact the Bucket servers once initialize
 has completed. `BucketClient` will continue to periodically download the
 targeting rules from the Bucket servers in the background.
 
