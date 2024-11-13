@@ -536,7 +536,7 @@ export class BucketClient {
    **/
   public async updateCompany(
     companyId: string | number,
-    opts?: TrackOptions & { userId?: string },
+    opts?: TrackOptions & { userId?: string | number },
   ) {
     assertId(companyId, "companyId");
     ok(opts === undefined || isObject(opts), "opts must be an object");
@@ -548,10 +548,9 @@ export class BucketClient {
       opts?.meta === undefined || isObject(opts.meta),
       "meta must be an object",
     );
-    ok(
-      opts?.userId === undefined || typeof opts.userId === "string",
-      "userId must be a string",
-    );
+    if (typeof opts?.userId !== "undefined") {
+      assertId(opts?.userId, "userId");
+    }
 
     if (this._config.offline) {
       return;
@@ -1086,22 +1085,18 @@ function checkContextWithTracking(
     typeof context.user === "undefined" || isObject(context.user),
     "user must be an object if given",
   );
-  ok(
-    typeof context.user?.id === "undefined" ||
-      typeof context.user?.id === "string" ||
-      typeof context.user?.id === "number",
-    "user.id must be a string or number if given",
-  );
+  if (typeof context.user?.id !== "undefined") {
+    assertId(context.user.id, "user.id");
+  }
+
   ok(
     typeof context.company === "undefined" || isObject(context.company),
     "company must be an object if given",
   );
-  ok(
-    typeof context.company?.id === "undefined" ||
-      typeof context.company?.id === "string" ||
-      typeof context.company?.id === "number",
-    "company.id must be a string or number if given",
-  );
+  if (typeof context.company?.id !== "undefined") {
+    assertId(context.company.id, "company.id");
+  }
+
   ok(
     context.other === undefined || isObject(context.other),
     "other must be an object if given",
