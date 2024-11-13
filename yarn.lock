@@ -1007,8 +1007,8 @@ __metadata:
     "@bucketco/eslint-config": "npm:~0.0.2"
     "@bucketco/node-sdk": "npm:>=1.0.0"
     "@bucketco/tsconfig": "npm:~0.0.2"
-    "@openfeature/core": "npm:^1.4.0"
-    "@openfeature/server-sdk": "npm:>=1.13.5"
+    "@openfeature/core": "npm:^1.5.0"
+    "@openfeature/server-sdk": "npm:>=1.16.1"
     "@types/node": "npm:~20.14.9"
     eslint: "npm:~8.56.0"
     flush-promises: "npm:~1.0.2"
@@ -1019,7 +1019,7 @@ __metadata:
     vite-plugin-dts: "npm:~3.9.1"
     vitest: "npm:~1.6.0"
   peerDependencies:
-    "@openfeature/server-sdk": ">=1.13.5"
+    "@openfeature/server-sdk": ">=1.16.1"
   languageName: unknown
   linkType: soft
 
@@ -2775,10 +2775,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@openfeature/core@npm:^1.4.0":
-  version: 1.4.0
-  resolution: "@openfeature/core@npm:1.4.0"
-  checksum: 10c0/199009a2bb989be12d99c1415ccb6f873f62413ab2a6e03f30c9a5b28a7dd421326186b9e6575ad5d14a505c237f5c0af1dffa1a7190ee57fe364a58db0afd9b
+"@openfeature/core@npm:^1.5.0":
+  version: 1.5.0
+  resolution: "@openfeature/core@npm:1.5.0"
+  checksum: 10c0/6b455dac3bb2da3519e43c4fbf69c0d8b4e6aa9b566cc29fe574913f2b4b50134ca62c5ddb28d2e6c8222fbc96873b6187a29f3657c19008ea8910b9e564f87d
   languageName: node
   linkType: hard
 
@@ -2792,12 +2792,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@openfeature/server-sdk@npm:>=1.13.5":
-  version: 1.15.1
-  resolution: "@openfeature/server-sdk@npm:1.15.1"
+"@openfeature/server-sdk@npm:>=1.16.1":
+  version: 1.16.2
+  resolution: "@openfeature/server-sdk@npm:1.16.2"
   peerDependencies:
-    "@openfeature/core": 1.4.0
-  checksum: 10c0/686d55f0e55e34def1c94b99bf4c1be68767a9aeb4d2e7f878b9cdb7d8fa07f2e145666023c1cd8966577ea214df79dda318414e1619641930648e6a50cd7032
+    "@openfeature/core": ^1.5.0
+  checksum: 10c0/6ccb162e880ab17095bfcd3358e0f3bfa7b3ddbd1961386d861ccc5eb14fed98df50a254cb2f259646ac46335c4e3c497284d7a56f2b5b0309ce8311d0f546bd
   languageName: node
   linkType: hard
 

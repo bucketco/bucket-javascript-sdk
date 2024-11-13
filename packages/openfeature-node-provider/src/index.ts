@@ -8,6 +8,8 @@ import {
   ResolutionDetails,
   ServerProviderStatus,
   StandardResolutionReasons,
+  Tracking,
+  TrackingEventDetails,
 } from "@openfeature/server-sdk";
 
 import {
@@ -44,7 +46,7 @@ const defaultTranslator = (context: EvaluationContext): BucketContext => {
   };
 };
 
-export class BucketNodeProvider implements Provider {
+export class BucketNodeProvider implements Provider, Tracking {
   public readonly events = new OpenFeatureEventEmitter();
 
   private _client: BucketClient;
@@ -66,6 +68,11 @@ export class BucketNodeProvider implements Provider {
   constructor({ contextTranslator, ...opts }: ProviderOptions) {
     this._client = new BucketClient(opts);
     this.contextTranslator = contextTranslator ?? defaultTranslator;
+  }
+
+  public async initialize(): Promise<void> {
+    await this._client.initialize();
+    this.status = ServerProviderStatus.READY;
   }
 
   resolveBooleanEvaluation(
@@ -127,8 +134,24 @@ export class BucketNodeProvider implements Provider {
     });
   }
 
-  public async initialize(): Promise<void> {
-    await this._client.initialize();
-    this.status = ServerProviderStatus.READY;
+  track(
+    trackingEventName: string,
+    context?: EvaluationContext,
+    trackingEventDetails?: TrackingEventDetails,
+  ): void {
+    const translatedContext = context
+      ? this.contextTranslator(context)
+      : undefined;
+
+    const userId = translatedContext?.user?.id;
+    if (!userId) {
+      this._client.logger?.warn("No user ID provided for tracking event");
+      return;
+    }
+
+    void this._client.track(userId!, trackingEventName, {
+      attributes: trackingEventDetails,
+      companyId: translatedContext?.company?.id,
+    });
   }
 }
