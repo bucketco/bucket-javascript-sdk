@@ -1,6 +1,6 @@
 import { createHash, Hash } from "crypto";
 
-import { Logger, LogLevel } from "./types";
+import { IdType, Logger, LogLevel } from "./types";
 
 /**
  * Assert that the given condition is `true`.
@@ -13,8 +13,10 @@ export function ok(condition: boolean, message: string): asserts condition {
     throw new Error(`validation failed: ${message}`);
   }
 }
-
-export function assertId(id: string | number, entity: string) {
+/**
+ * Assert that the given values is a valid user/company id
+ **/
+export function idOk(id: IdType, entity: string) {
   ok(
     (typeof id === "string" && id.length > 0) || typeof id === "number",
     `${entity} must be a string or number if given`,

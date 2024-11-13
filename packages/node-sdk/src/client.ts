@@ -18,6 +18,7 @@ import { newRateLimiter } from "./rate-limiter";
 import type {
   EvaluatedFeaturesAPIResponse,
   FeatureOverridesFn,
+  IdType,
   RawFeature,
 } from "./types";
 import {
@@ -36,7 +37,7 @@ import {
 } from "./types";
 import {
   applyLogLevel,
-  assertId,
+  idOk,
   decorateLogger,
   hashObject,
   isObject,
@@ -49,14 +50,14 @@ const bucketConfigDefaultFile = "bucketConfig.json";
 type BulkEvent =
   | {
       type: "company";
-      companyId: string | number;
-      userId?: string | number;
+      companyId: IdType;
+      userId?: IdType;
       attributes?: Attributes;
       context?: TrackingMeta;
     }
   | {
       type: "user";
-      userId: string | number;
+      userId: IdType;
       attributes?: Attributes;
       context?: TrackingMeta;
     }
@@ -73,8 +74,8 @@ type BulkEvent =
   | {
       type: "event";
       event: string;
-      companyId?: string | number;
-      userId: string | number;
+      companyId?: IdType;
+      userId: IdType;
       attributes?: Attributes;
       context?: TrackingMeta;
     };
@@ -497,8 +498,8 @@ export class BucketClient {
    * The company must be set using `withCompany` before calling this method.
    * If the user is set, the company will be associated with the user.
    **/
-  public async updateUser(userId: string | number, opts?: TrackOptions) {
-    assertId(userId, "userId");
+  public async updateUser(userId: IdType, opts?: TrackOptions) {
+    idOk(userId, "userId");
     ok(opts === undefined || isObject(opts), "opts must be an object");
     ok(
       opts?.attributes === undefined || isObject(opts.attributes),
@@ -535,10 +536,10 @@ export class BucketClient {
    * If the user is set, the company will be associated with the user.
    **/
   public async updateCompany(
-    companyId: string | number,
-    opts?: TrackOptions & { userId?: string | number },
+    companyId: IdType,
+    opts?: TrackOptions & { userId?: IdType },
   ) {
-    assertId(companyId, "companyId");
+    idOk(companyId, "companyId");
     ok(opts === undefined || isObject(opts), "opts must be an object");
     ok(
       opts?.attributes === undefined || isObject(opts.attributes),
@@ -549,7 +550,7 @@ export class BucketClient {
       "meta must be an object",
     );
     if (typeof opts?.userId !== "undefined") {
-      assertId(opts?.userId, "userId");
+      idOk(opts?.userId, "userId");
     }
 
     if (this._config.offline) {
@@ -583,11 +584,11 @@ export class BucketClient {
    * If the company is set, the event will be associated with the company.
    **/
   public async track(
-    userId: string | number,
+    userId: IdType,
     event: string,
-    opts?: TrackOptions & { companyId?: string | number },
+    opts?: TrackOptions & { companyId?: IdType },
   ) {
-    assertId(userId, "userId");
+    idOk(userId, "userId");
     ok(typeof event === "string" && event.length > 0, "event must be a string");
     ok(opts === undefined || isObject(opts), "opts must be an object");
     ok(
@@ -599,7 +600,7 @@ export class BucketClient {
       "meta must be an object",
     );
     if (opts?.companyId !== undefined) {
-      assertId(opts?.companyId, "companyId");
+      idOk(opts?.companyId, "companyId");
     }
 
     if (this._config.offline) {
@@ -823,8 +824,8 @@ export class BucketClient {
 
   private async _getFeaturesRemote(
     key: string,
-    userId?: string | number,
-    companyId?: string | number,
+    userId?: IdType,
+    companyId?: IdType,
     additionalContext?: Context,
   ): Promise<TypedFeatures> {
     const context = additionalContext || {};
@@ -873,8 +874,8 @@ export class BucketClient {
    * @returns evaluated features
    */
   public async getFeaturesRemote(
-    userId?: string | number,
-    companyId?: string | number,
+    userId?: IdType,
+    companyId?: IdType,
     additionalContext?: Context,
   ): Promise<TypedFeatures> {
     return await this._getFeaturesRemote(
@@ -897,8 +898,8 @@ export class BucketClient {
    */
   public async getFeatureRemote(
     key: string,
-    userId?: string | number,
-    companyId?: string | number,
+    userId?: IdType,
+    companyId?: IdType,
     additionalContext?: Context,
   ): Promise<Feature> {
     const features = await this._getFeaturesRemote(
@@ -1086,7 +1087,7 @@ function checkContextWithTracking(
     "user must be an object if given",
   );
   if (typeof context.user?.id !== "undefined") {
-    assertId(context.user.id, "user.id");
+    idOk(context.user.id, "user.id");
   }
 
   ok(
@@ -1094,7 +1095,7 @@ function checkContextWithTracking(
     "company must be an object if given",
   );
   if (typeof context.company?.id !== "undefined") {
-    assertId(context.company.id, "company.id");
+    idOk(context.company.id, "company.id");
   }
 
   ok(
