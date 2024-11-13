@@ -5,6 +5,7 @@ import {
   FEATURES_EXPIRE_MS,
   FeaturesClient,
   FeaturesOptions,
+  RawFeature,
 } from "../src/feature/features";
 import { HttpClient } from "../src/httpClient";
 
@@ -166,7 +167,7 @@ describe("FeaturesClient unit tests", () => {
           isEnabled: true,
           key: "featureB",
           targetingVersion: 1,
-        },
+        } satisfies RawFeature,
       },
     };
 
@@ -191,7 +192,7 @@ describe("FeaturesClient unit tests", () => {
         isEnabled: true,
         key: "featureB",
         targetingVersion: 1,
-      },
+      } satisfies RawFeature,
     });
 
     expect(httpClient.get).toHaveBeenCalledTimes(1);
