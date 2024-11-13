@@ -26,8 +26,11 @@ in **Bucket.co**.
 > information that is often sensitive and thus should not be used in
 > client-side applications.
 
-Create a `bucket.ts` file containing the following and set up the
-BUCKET_SECRET_KEY environment variable:
+Bucket will load settings through the various environment variables automatically (see [Configuring](#configuring) below).
+
+1. Find the Bucket secret key for your development environment on https://app.bucket.co
+2. Set `BUCKET_SECRET_KEY` in your `.env` file
+3. Create a `bucket.ts` file containing the following:
 
 ```typescript
 import { BucketClient } from "@bucketco/node-sdk";
@@ -42,7 +45,7 @@ export const bucketClient = new BucketClient();
 // Initialize the client and begin fetching feature targeting definitions.
 // You must call this method prior to any calls to `getFeatures()`,
 // otherwise an empty object will be returned.
-client.initialize().then({
+bucketClient.initialize().then({
   console.log("Bucket initialized!")
 })
 ```
@@ -54,9 +57,16 @@ _Note_: If `user.id` or `company.id` is not given, the whole `user` or `company`
 
 ```typescript
 // configure the client
-const boundClient = client.bindClient({
-  user: { id: "john_doe", name: "John Doe", email: "john@acme.com" },
-  company: { id: "acme_inc", name: "Acme, Inc." },
+const boundClient = bucketClient.bindClient({
+  user: {
+    id: "john_doe",
+    name: "John Doe",
+    email: "john@acme.com",
+  },
+  company: {
+    id: "acme_inc",
+    name: "Acme, Inc.",
+  },
 });
 
 // get the huddle feature using company, user and custom context to
@@ -75,7 +85,7 @@ if (isEnabled) {
 }
 ```
 
-You can also use the `getFeatures` method which returns a map of all features:
+You can also use the `getFeatures()` method which returns a map of all features:
 
 ```typescript
 // get the current features (uses company, user and custom context to
@@ -85,40 +95,22 @@ const bothEnabled =
   features.huddle?.isEnabled && features.voiceHuddle?.isEnabled;
 ```
 
-When using `getFeatures` be careful not to assume that a feature exists, this could
-be a dangerous pattern:
-
-```ts
-// warning: if the `huddle` feature does not exist because it wasn't created in Bucket
-// or because the client was unable to reach our servers for some reason, this will
-// cause an exception:
-const { isEnabled } = boundClient.getFeatures()["huddle"];
-```
-
-Another way way to disable tracking without employing a bound client is to call `getFeature()`
-or `getFeatures()` by supplying `enableTracking: false` in the arguments passed to
-these functions.
-
-> [!NOTE]
-> Note, however, that calling `track`, `updateCompany` or `updateUser` in the `BucketClient`
-> will still send tracking data. As such, it is always recommended to use `bindClient`
-> when using this SDK.
-
 ## High performance feature targeting
 
-The Bucket Node SDK contacts the Bucket servers when you call `initialize`
+The Bucket Node SDK contacts the Bucket servers when you call `initialize()`
 and downloads the features with their targeting rules.
 These rules are then matched against the user/company information you provide
-to `getFeatures` (or through `bindClient(..).getFeatures()`). That means the
-`getFeatures` call does not need to contact the Bucket servers once initialize
-has completed. `BucketClient` will continue to periodically download the
-targeting rules from the Bucket servers in the background.
+to `getFeatures()` (or through `bindClient(..).getFeatures()`). That means the
+`getFeatures()` call does not need to contact the Bucket servers once
+`initialize()` has completed. `BucketClient` will continue to periodically
+download the targeting rules from the Bucket servers in the background.
 
 ## Configuring
 
-The Bucket `Node.js` SDK can be configured through environment variables or a
-configuration file on disk. By default, the SDK searches for `bucketConfig.json`
-in the current working directory.
+The Bucket `Node.js` SDK can be configured through environment variables,
+a configuration file on disk or by passing options to the `BucketClient`
+constructor. By default, the SDK searches for `bucketConfig.json` in the
+current working directory.
 
 | Option             | Type                    | Description                                                                                                                                                         | Env Var                                           |
 | ------------------ | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
@@ -161,6 +153,8 @@ To get type checked feature flags, add the list of flags to your `bucket.ts` fil
 Any feature look ups will now be checked against the list you maintain.
 
 ```typescript
+import { BucketClient } from "@bucketco/node-sdk";
+
 // Extending the Features interface to define the available features
 declare module "@bucketco/node-sdk" {
   interface Features {
@@ -169,6 +163,14 @@ declare module "@bucketco/node-sdk" {
     "delete-todos": boolean;
   }
 }
+
+export const bucketClient = new BucketClient();
+
+bucketClient.initialize().then({
+  console.log("Bucket initialized!")
+  bucketClient.getFeature("invalid-feature") // feature doesn't exist
+})
+
 ```
 
 ![Type check failed](docs/type-check-failed.png "Type check failed")
@@ -293,9 +295,18 @@ if (isEnabled) {
 }
 ```
 
+Another way way to disable tracking without employing a bound client is to call `getFeature()`
+or `getFeatures()` by supplying `enableTracking: false` in the arguments passed to
+these functions.
+
+> [!NOTE]
+> Note, however, that calling `track()`, `updateCompany()` or `updateUser()` in the `BucketClient`
+> will still send tracking data. As such, it is always recommended to use `bindClient()`
+> when using this SDK.
+
 ## Flushing
 
-It is highly recommended that users of this SDK manually call `client.flush()`
+It is highly recommended that users of this SDK manually call `flush()`
 method on process shutdown. The SDK employs a batching technique to minimize
 the number of calls that are sent to Bucket's servers. During process shutdown,
 some messages could be waiting to be sent, and thus, would be discarded if the
