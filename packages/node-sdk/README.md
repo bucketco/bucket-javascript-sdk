@@ -76,6 +76,16 @@ if (isEnabled) {
 }
 ```
 
+You can also use the `getFeatures()` method which returns a map of all features:
+
+```typescript
+// get the current features (uses company, user and custom context to
+// evaluate the features).
+const features = boundClient.getFeatures();
+const bothEnabled =
+  features.huddle?.isEnabled && features.voiceHuddle?.isEnabled;
+```
+
 ## High performance feature targeting
 
 The Bucket Node SDK contacts the Bucket servers when you call `initialize`
