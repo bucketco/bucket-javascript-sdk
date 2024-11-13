@@ -290,7 +290,7 @@ describe("BucketClient", () => {
       );
     });
 
-    it("should create a new feature events ratelimiter", () => {
+    it("should create a new feature events rate-limiter", () => {
       const client = new BucketClient(validOptions);
 
       expect(client["_config"].rateLimiter).toBeDefined();
@@ -301,10 +301,6 @@ describe("BucketClient", () => {
   });
 
   describe("bindClient", () => {
-    beforeEach(() => {
-      vi.mocked(httpClient.post).mockResolvedValue({ body: { success: true } });
-    });
-
     const client = new BucketClient(validOptions);
     const context = {
       user,
@@ -312,7 +308,12 @@ describe("BucketClient", () => {
       other: otherContext,
     };
 
-    it("should return a new client instance with the user, company and other set", async () => {
+    beforeEach(() => {
+      vi.mocked(httpClient.post).mockResolvedValue({ body: { success: true } });
+      client["_config"].rateLimiter.clear(true);
+    });
+
+    it("should return a new client instance with the `user`, `company` and `other` set", async () => {
       const newClient = client.bindClient(context);
       await client.flush();
 
@@ -322,7 +323,10 @@ describe("BucketClient", () => {
 
       expect(newClient).toBeInstanceOf(BoundBucketClient);
       expect(newClient).not.toBe(client); // Ensure a new instance is returned
-      expect(newClient["_context"]).toEqual(context);
+      expect(newClient["_options"]).toEqual({
+        enableTracking: true,
+        ...context,
+      });
     });
 
     it("should update user in Bucket when called", async () => {
@@ -373,7 +377,19 @@ describe("BucketClient", () => {
       expect(httpClient.post).toHaveBeenCalledOnce();
     });
 
-    it("should throw an error if user is invalid", () => {
+    it("should not update `company` or `user` in Bucket when `enableTracking` is `false`", async () => {
+      client.bindClient({
+        user: context.user,
+        company: context.company,
+        enableTracking: false,
+      });
+
+      await client.flush();
+
+      expect(httpClient.post).not.toHaveBeenCalled();
+    });
+
+    it("should throw an error if `user` is invalid", () => {
       expect(() =>
         client.bindClient({ user: "bad_attributes" as any }),
       ).toThrow("validation failed: user.id must be a string if user is given");
@@ -385,7 +401,7 @@ describe("BucketClient", () => {
       );
     });
 
-    it("should throw an error if company is invalid", () => {
+    it("should throw an error if `company` is invalid", () => {
       expect(() =>
         client.bindClient({ company: "bad_attributes" as any }),
       ).toThrow(
@@ -403,15 +419,25 @@ describe("BucketClient", () => {
       );
     });
 
-    it("should throw an error if other is invalid", () => {
+    it("should throw an error if `other` is invalid", () => {
       expect(() =>
         client.bindClient({ other: "bad_attributes" as any }),
       ).toThrow("validation failed: other must be an object");
+    });
+
+    it("should throw an error if `enableTracking` is invalid", () => {
+      expect(() =>
+        client.bindClient({ enableTracking: "bad_attributes" as any }),
+      ).toThrow("validation failed: enableTracking must be a boolean");
     });
   });
 
   describe("updateUser", () => {
     const client = new BucketClient(validOptions);
+
+    beforeEach(() => {
+      client["_config"].rateLimiter.clear(true);
+    });
 
     it("should successfully update the user", async () => {
       const response = { status: 200, body: { success: true } };
@@ -489,6 +515,10 @@ describe("BucketClient", () => {
 
   describe("updateCompany", () => {
     const client = new BucketClient(validOptions);
+
+    beforeEach(() => {
+      client["_config"].rateLimiter.clear(true);
+    });
 
     it("should successfully update the company with replacing attributes", async () => {
       const response = { status: 200, body: { success: true } };
@@ -574,6 +604,10 @@ describe("BucketClient", () => {
 
   describe("track", () => {
     const client = new BucketClient(validOptions);
+
+    beforeEach(() => {
+      client["_config"].rateLimiter.clear(true);
+    });
 
     it("should successfully track the feature usage", async () => {
       const response = {
@@ -878,6 +912,7 @@ describe("BucketClient", () => {
         },
         "feature1",
       );
+
       expect(feature).toEqual({
         key: "feature1",
         isEnabled: true,
@@ -885,7 +920,7 @@ describe("BucketClient", () => {
       });
     });
 
-    it("`track` sends event", async () => {
+    it("`track` sends all expected events when `enableTracking` is `true`", async () => {
       const context = {
         company,
         user,
@@ -893,7 +928,10 @@ describe("BucketClient", () => {
       };
       // test that the feature is returned
       await client.initialize();
-      const feature = client.getFeature(context, "feature1");
+      const feature = client.getFeature(
+        { ...context, enableTracking: true },
+        "feature1",
+      );
       await feature.track();
       await client.flush();
 
@@ -901,6 +939,28 @@ describe("BucketClient", () => {
         BULK_ENDPOINT,
         expectedHeaders,
         [
+          {
+            attributes: {
+              employees: 100,
+              name: "Acme Inc.",
+            },
+            companyId: "company123",
+            context: {
+              active: false,
+            },
+            type: "company",
+          },
+          {
+            attributes: {
+              age: 1,
+              name: "John",
+            },
+            context: {
+              active: false,
+            },
+            type: "user",
+            userId: "user123",
+          },
           {
             type: "feature-flag-event",
             action: "evaluate",
@@ -937,6 +997,7 @@ describe("BucketClient", () => {
         user,
         other: otherContext,
       };
+
       // test that the feature is returned
       await client.initialize();
       const feature = client.getFeature(context, "feature1");
@@ -950,26 +1011,18 @@ describe("BucketClient", () => {
         BULK_ENDPOINT,
         expectedHeaders,
         [
-          {
+          expect.objectContaining({ type: "company" }),
+          expect.objectContaining({ type: "user" }),
+          expect.objectContaining({
             type: "feature-flag-event",
             action: "evaluate",
             key: "feature1",
-            targetingVersion: 1,
-            evalContext: context,
-            evalResult: true,
-            evalRuleResults: [true],
-            evalMissingFields: [],
-          },
-          {
+          }),
+          expect.objectContaining({
             type: "feature-flag-event",
             action: "evaluate",
             key: "feature2",
-            targetingVersion: 2,
-            evalContext: context,
-            evalResult: false,
-            evalRuleResults: [false],
-            evalMissingFields: ["something"],
-          },
+          }),
           {
             type: "feature-flag-event",
             action: "check",
@@ -981,8 +1034,8 @@ describe("BucketClient", () => {
       );
     });
 
-    it("everything works for unknown feature", async () => {
-      const context = {
+    it("everything works for unknown features", async () => {
+      const context: Context = {
         company,
         user,
         other: otherContext,
@@ -994,13 +1047,18 @@ describe("BucketClient", () => {
       // trigger `check` event
       expect(feature.isEnabled).toBe(false);
       await feature.track();
-
       await client.flush();
 
       expect(httpClient.post).toHaveBeenCalledWith(
         BULK_ENDPOINT,
         expectedHeaders,
         [
+          expect.objectContaining({
+            type: "company",
+          }),
+          expect.objectContaining({
+            type: "user",
+          }),
           {
             type: "feature-flag-event",
             action: "evaluate",
@@ -1071,6 +1129,8 @@ describe("BucketClient", () => {
         },
       );
 
+      client["_config"].rateLimiter.clear(true);
+
       httpClient.post.mockResolvedValue({
         status: 200,
         body: { success: true },
@@ -1109,6 +1169,8 @@ describe("BucketClient", () => {
         BULK_ENDPOINT,
         expectedHeaders,
         [
+          expect.objectContaining({ type: "company" }),
+          expect.objectContaining({ type: "user" }),
           {
             type: "feature-flag-event",
             action: "evaluate",
@@ -1162,7 +1224,7 @@ describe("BucketClient", () => {
       client.getFeatures({ user, company, other: otherContext });
 
       expect(isAllowedSpy).toHaveBeenCalledWith(
-        "evaluate:user.id=user123&user.age=1&user.name=John&company.id=company123&company.employees=100&company.name=Acme+Inc.&other.custom=context&other.key=value:feature1:1:true",
+        "f1e5f547723da57ad12375f304e44ed6f74c744e",
       );
     });
 
@@ -1194,6 +1256,7 @@ describe("BucketClient", () => {
         BULK_ENDPOINT,
         expectedHeaders,
         [
+          expect.objectContaining({ type: "user" }),
           {
             type: "feature-flag-event",
             action: "evaluate",
@@ -1263,6 +1326,7 @@ describe("BucketClient", () => {
         BULK_ENDPOINT,
         expectedHeaders,
         [
+          expect.objectContaining({ type: "company" }),
           {
             type: "feature-flag-event",
             action: "evaluate",
@@ -1303,6 +1367,30 @@ describe("BucketClient", () => {
           },
         ],
       );
+    });
+
+    it("should not send flag events when `enableTracking` is `false`", async () => {
+      await client.initialize();
+      const features = client.getFeatures({ company, enableTracking: false });
+
+      // expect will trigger the `isEnabled` getter and send a `check` event
+      expect(features).toEqual({
+        feature1: {
+          isEnabled: true,
+          key: "feature1",
+          track: expect.any(Function),
+        },
+        feature2: {
+          key: "feature2",
+          isEnabled: false,
+          track: expect.any(Function),
+        },
+      });
+
+      await client.flush();
+
+      expect(evaluateTargeting).toHaveBeenCalledTimes(2);
+      expect(httpClient.post).not.toHaveBeenCalled();
     });
 
     it("should return evaluated features when only other context is defined", async () => {
@@ -1359,6 +1447,12 @@ describe("BucketClient", () => {
         expectedHeaders,
         [
           expect.objectContaining({
+            type: "company",
+          }),
+          expect.objectContaining({
+            type: "user",
+          }),
+          expect.objectContaining({
             type: "feature-flag-event",
             action: "evaluate",
             evalContext: {
@@ -1393,6 +1487,9 @@ describe("BucketClient", () => {
         expectedHeaders,
         [
           expect.objectContaining({
+            type: "user",
+          }),
+          expect.objectContaining({
             type: "feature-flag-event",
             action: "evaluate",
             evalContext: {
@@ -1426,6 +1523,9 @@ describe("BucketClient", () => {
         expectedHeaders,
         [
           expect.objectContaining({
+            type: "company",
+          }),
+          expect.objectContaining({
             type: "feature-flag-event",
             action: "evaluate",
             evalContext: {
@@ -1440,13 +1540,16 @@ describe("BucketClient", () => {
       );
     });
 
-    it("should use fallback features when getFeatureDefinitions returns undefined", async () => {
+    it("should use fallback features when `getFeatureDefinitions` returns `undefined`", async () => {
       httpClient.get.mockResolvedValue({
         success: false,
       });
 
       await client.initialize();
-      const result = client.getFeature({ user: { id: "user123" } }, "key");
+      const result = client.getFeature(
+        { user: { id: "user123" }, enableTracking: true },
+        "key",
+      );
 
       expect(result).toEqual({
         key: "key",
@@ -1467,6 +1570,7 @@ describe("BucketClient", () => {
         BULK_ENDPOINT,
         expectedHeaders,
         [
+          expect.objectContaining({ type: "user" }),
           {
             type: "feature-flag-event",
             action: "check",
@@ -1668,14 +1772,15 @@ describe("BoundBucketClient", () => {
       },
     });
   });
+  const client = new BucketClient(validOptions);
 
   beforeEach(async () => {
     await flushPromises();
     await client.flush();
-    vi.mocked(httpClient.post).mockClear();
-  });
 
-  const client = new BucketClient(validOptions);
+    vi.mocked(httpClient.post).mockClear();
+    client["_config"].rateLimiter.clear(true);
+  });
 
   it("should create a client instance", () => {
     expect(client).toBeInstanceOf(BucketClient);
@@ -1699,10 +1804,11 @@ describe("BoundBucketClient", () => {
         other: otherOverride,
       });
 
-    expect(newClient["_context"]).toEqual({
+    expect(newClient["_options"]).toEqual({
       user: { ...user, ...userOverride },
       company: { ...company, ...companyOverride },
       other: { ...other, ...otherOverride },
+      enableTracking: true,
     });
   });
 
@@ -1755,6 +1861,22 @@ describe("BoundBucketClient", () => {
         },
       ],
     );
+  });
+
+  it("should disable tracking within the client if `enableTracking` is `false`", async () => {
+    const boundClient = client.bindClient({
+      user,
+      company,
+      enableTracking: false,
+    });
+
+    const { track } = boundClient.getFeature("feature2");
+    await track();
+    await boundClient.track("feature1");
+
+    await client.flush();
+
+    expect(httpClient.post).not.toHaveBeenCalled();
   });
 
   it("should allow using expected methods", async () => {
