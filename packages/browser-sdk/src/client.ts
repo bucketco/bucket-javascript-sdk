@@ -1,8 +1,8 @@
 import {
-  APIFeaturesResponse,
   CheckEvent,
   FeaturesClient,
   FeaturesOptions,
+  RawFeatures,
 } from "./feature/features";
 import {
   AutoFeedback,
@@ -367,7 +367,7 @@ export class BucketClient {
    *
    * @returns Map of features
    */
-  getFeatures(): APIFeaturesResponse {
+  getFeatures(): RawFeatures {
     return this.featuresClient.getFeatures();
   }
 

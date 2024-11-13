@@ -1,4 +1,4 @@
-import { APIFeaturesResponse } from "./features";
+import { RawFeatures } from "./features";
 
 interface StorageItem {
   get(): string | null;
@@ -8,18 +8,18 @@ interface StorageItem {
 interface cacheEntry {
   expireAt: number;
   staleAt: number;
-  features: APIFeaturesResponse;
+  features: RawFeatures;
 }
 
 // Parse and validate an API feature response
 export function parseAPIFeaturesResponse(
   featuresInput: any,
-): APIFeaturesResponse | undefined {
+): RawFeatures | undefined {
   if (!isObject(featuresInput)) {
     return;
   }
 
-  const features: APIFeaturesResponse = {};
+  const features: RawFeatures = {};
   for (const key in featuresInput) {
     const feature = featuresInput[key];
     if (
@@ -39,7 +39,7 @@ export function parseAPIFeaturesResponse(
 }
 
 export interface CacheResult {
-  features: APIFeaturesResponse;
+  features: RawFeatures;
   stale: boolean;
 }
 
@@ -67,7 +67,7 @@ export class FeatureCache {
     {
       features,
     }: {
-      features: APIFeaturesResponse;
+      features: RawFeatures;
     },
   ) {
     let cacheData: CacheData = {};
