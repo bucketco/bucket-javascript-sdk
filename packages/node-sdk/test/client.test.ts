@@ -441,11 +441,11 @@ describe("BucketClient", () => {
     test.each([
       { id: "user123", age: 1, name: "John" },
       { id: 42, age: 1, name: "John" },
-    ])("should successfully update the user", async (user) => {
+    ])("should successfully update the user", async (testUser) => {
       const response = { status: 200, body: { success: true } };
       httpClient.post.mockResolvedValue(response);
 
-      await client.updateUser(user.id, {
+      await client.updateUser(testUser.id, {
         attributes: { age: 2, brave: false },
         meta: {
           active: true,
@@ -460,7 +460,7 @@ describe("BucketClient", () => {
         [
           {
             type: "user",
-            userId: user.id,
+            userId: testUser.id,
             attributes: { age: 2, brave: false },
             context: { active: true },
           },
@@ -525,11 +525,11 @@ describe("BucketClient", () => {
     test.each([
       { id: "company123", employees: 100, name: "Acme Inc." },
       { id: 42, employees: 100, name: "Acme Inc." },
-    ])(`should successfully update the company`, async (company) => {
+    ])(`should successfully update the company`, async (testCompany) => {
       const response = { status: 200, body: { success: true } };
       httpClient.post.mockResolvedValue(response);
 
-      await client.updateCompany(company.id, {
+      await client.updateCompany(testCompany.id, {
         attributes: { employees: 200, bankrupt: false },
         meta: { active: true },
       });
@@ -542,7 +542,7 @@ describe("BucketClient", () => {
         [
           {
             type: "company",
-            companyId: company.id,
+            companyId: testCompany.id,
             attributes: { employees: 200, bankrupt: false },
             context: { active: true },
           },
@@ -616,14 +616,14 @@ describe("BucketClient", () => {
     test.each([
       { id: "user123", age: 1, name: "John" },
       { id: 42, age: 1, name: "John" },
-    ])("should successfully track the feature usage", async (user) => {
+    ])("should successfully track the feature usage", async (testUser) => {
       const response = {
         status: 200,
         body: { success: true },
       };
       httpClient.post.mockResolvedValue(response);
 
-      await client.bindClient({ user, company }).track(event.event, {
+      await client.bindClient({ user: testUser, company }).track(event.event, {
         attributes: event.attrs,
         meta: { active: true },
       });
@@ -648,7 +648,7 @@ describe("BucketClient", () => {
             },
             event: "feature-event",
             type: "event",
-            userId: user.id,
+            userId: testUser.id,
             companyId: company.id,
           },
         ],
