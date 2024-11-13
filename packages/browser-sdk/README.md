@@ -95,7 +95,7 @@ Supply these to the constructor call:
 
 Bucket determines which features are active for a given user/company. The user/company is given in the BucketClient constructor.
 
-If you supply `user` or `company` objects, they must include at least the `id` property.
+If you supply `user` or `company` objects, they must include at least the `id` property otherwise they will be ignored in their entirety.
 In addition to the `id`, you must also supply anything additional that you want to be able to evaluate feature targeting rules against.
 
 Attributes cannot be nested (multiple levels) and must be either strings, integers or booleans.

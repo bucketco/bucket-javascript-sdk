@@ -25,6 +25,7 @@ describe("init", () => {
     const bucketInstance = new BucketClient({
       publishableKey: KEY,
       user: { id: 42 },
+      company: { id: 42 },
       logger,
     });
     const spyInit = vi.spyOn(bucketInstance, "initialize");

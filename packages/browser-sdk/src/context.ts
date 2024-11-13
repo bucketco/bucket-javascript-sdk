@@ -1,11 +1,14 @@
 export interface CompanyContext {
-  id: string | number;
-  [key: string]: string | number;
+  id: string | number | undefined;
+  name?: string | undefined;
+  [key: string]: string | number | undefined;
 }
 
 export interface UserContext {
-  id: string | number;
-  [key: string]: string | number;
+  id: string | number | undefined;
+  name?: string | undefined;
+  email?: string | undefined;
+  [key: string]: string | number | undefined;
 }
 
 export interface BucketContext {

@@ -15,10 +15,10 @@ import {
   BucketContext,
   FeaturesOptions,
   FeedbackOptions,
+  RawFeatures,
   RequestFeedbackData,
   UnassignedFeedback,
 } from "@bucketco/browser-sdk";
-import { APIFeaturesResponse } from "@bucketco/browser-sdk/dist/src/feature/features";
 
 import { version } from "../package.json";
 
@@ -33,7 +33,7 @@ type BucketFeatures = keyof (keyof Features extends never
 type ProviderContextType = {
   client?: BucketClient;
   features: {
-    features: APIFeaturesResponse;
+    features: RawFeatures;
     isLoading: boolean;
   };
 };
@@ -76,7 +76,7 @@ export function BucketProvider({
   ...config
 }: BucketProps) {
   const [featuresLoading, setFeaturesLoading] = useState(true);
-  const [features, setFeatures] = useState<APIFeaturesResponse>({});
+  const [features, setFeatures] = useState<RawFeatures>({});
 
   const clientRef = useRef<BucketClient>();
   const contextKeyRef = useRef<string>();
