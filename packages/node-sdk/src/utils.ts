@@ -14,6 +14,13 @@ export function ok(condition: boolean, message: string): asserts condition {
   }
 }
 
+export function assertId(id: string | number, entity: string) {
+  ok(
+    (typeof id === "string" && id.length > 0) || typeof id === "number",
+    `${entity} must be a string or number`,
+  );
+}
+
 /**
  * Check if the given item is an object.
  *

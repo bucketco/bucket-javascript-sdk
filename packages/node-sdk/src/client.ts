@@ -36,6 +36,7 @@ import {
 } from "./types";
 import {
   applyLogLevel,
+  assertId,
   decorateLogger,
   hashObject,
   isObject,
@@ -395,7 +396,7 @@ export class BucketClient {
    *
    * @param context - The context to update.
    */
-  private async syncContext(options: ContextWithTracking) {
+  private async syncContext(options: { enableTracking: boolean } & Context) {
     if (!options.enableTracking) {
       this._config.logger?.debug(
         "tracking disabled, not updating user/company",
@@ -497,11 +498,7 @@ export class BucketClient {
    * If the user is set, the company will be associated with the user.
    **/
   public async updateUser(userId: string | number, opts?: TrackOptions) {
-    ok(
-      (typeof userId === "string" && userId.length > 0) ||
-        typeof userId === "number",
-      "companyId must be a string",
-    );
+    assertId(userId, "userId");
     ok(opts === undefined || isObject(opts), "opts must be an object");
     ok(
       opts?.attributes === undefined || isObject(opts.attributes),
@@ -541,11 +538,7 @@ export class BucketClient {
     companyId: string | number,
     opts?: TrackOptions & { userId?: string },
   ) {
-    ok(
-      (typeof companyId === "string" && companyId.length > 0) ||
-        typeof companyId === "number",
-      "companyId must be a string",
-    );
+    assertId(companyId, "companyId");
     ok(opts === undefined || isObject(opts), "opts must be an object");
     ok(
       opts?.attributes === undefined || isObject(opts.attributes),
@@ -595,11 +588,7 @@ export class BucketClient {
     event: string,
     opts?: TrackOptions & { companyId?: string | number },
   ) {
-    ok(
-      (typeof userId === "string" && userId.length > 0) ||
-        typeof userId === "number",
-      "userId must be a string",
-    );
+    assertId(userId, "userId");
     ok(typeof event === "string" && event.length > 0, "event must be a string");
     ok(opts === undefined || isObject(opts), "opts must be an object");
     ok(
@@ -610,10 +599,9 @@ export class BucketClient {
       opts?.meta === undefined || isObject(opts.meta),
       "meta must be an object",
     );
-    ok(
-      opts?.companyId === undefined || typeof opts.companyId === "string",
-      "companyId must be an string",
-    );
+    if (opts?.companyId !== undefined) {
+      assertId(opts?.companyId, "companyId");
+    }
 
     if (this._config.offline) {
       return;
@@ -656,8 +644,10 @@ export class BucketClient {
   }
 
   private _getFeatures(
-    options: ContextWithTracking,
+    options: { enableTracking: boolean } & Context,
   ): Record<string, RawFeature> {
+    checkContextWithTracking(options);
+
     void this.syncContext(options);
     let featureDefinitions: FeaturesAPIResponse["features"];
 
@@ -679,7 +669,7 @@ export class BucketClient {
       featureDefinitions.map((f) => [f.key, f.targeting.version]),
     );
 
-    const { enableTracking, ...context } = options;
+    const { enableTracking = true, ...context } = options;
 
     const evaluated = featureDefinitions.map((feature) =>
       evaluateTargeting({
@@ -739,7 +729,7 @@ export class BucketClient {
   }
 
   private _wrapRawFeature(
-    options: ContextWithTracking,
+    options: { enableTracking: boolean } & Context,
     { key, isEnabled, targetingVersion }: RawFeature,
   ): Feature {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -796,8 +786,6 @@ export class BucketClient {
     ...context
   }: ContextWithTracking): TypedFeatures {
     const options = { enableTracking, ...context };
-    checkContextWithTracking(options);
-
     const features = this._getFeatures(options);
     return Object.fromEntries(
       Object.entries(features).map(([k, v]) => [
@@ -820,7 +808,6 @@ export class BucketClient {
     key: keyof TypedFeatures,
   ) {
     const options = { enableTracking, ...context };
-    checkContextWithTracking(options);
     const features = this._getFeatures(options);
     const feature = features[key];
 
@@ -849,10 +836,11 @@ export class BucketClient {
       context.company = { id: companyId };
     }
 
-    checkContextWithTracking({
+    const contextWithTracking = {
       ...context,
       enableTracking: true,
-    });
+    };
+    checkContextWithTracking(contextWithTracking);
 
     const params = new URLSearchParams(flattenJSON({ context }));
     if (key) {
@@ -868,7 +856,7 @@ export class BucketClient {
         Object.entries(res.features).map(([featureKey, feature]) => {
           return [
             featureKey as keyof TypedFeatures,
-            this._wrapRawFeature({ enableTracking: true, ...context }, feature),
+            this._wrapRawFeature(contextWithTracking, feature),
           ];
         }) || [],
       );
@@ -1090,7 +1078,9 @@ export class BoundBucketClient {
   }
 }
 
-function checkContextWithTracking(context: ContextWithTracking) {
+function checkContextWithTracking(
+  context: ContextWithTracking,
+): asserts context is ContextWithTracking & { enableTracking: boolean } {
   ok(isObject(context), "context must be an object");
   ok(
     typeof context.user === "undefined" || isObject(context.user),
