@@ -4,6 +4,8 @@ Basic client for Bucket.co. If you're using React, you'll be better off with the
 
 ## Install
 
+First find your `publishableKey` under [environment settings](https://app.bucket.co/envs/current/settings/app-environments) in Bucket.
+
 The package can be imported or used directly in a HTML script tag:
 
 A. Import module
