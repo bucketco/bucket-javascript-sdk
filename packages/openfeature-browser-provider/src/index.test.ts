@@ -26,6 +26,7 @@ describe("BucketBrowserSDKProvider", () => {
     getFeatures: vi.fn(),
     getFeature: vi.fn(),
     initialize: vi.fn().mockResolvedValue({}),
+    track: vi.fn(),
   };
 
   const newBucketClient = BucketClient as Mock;
@@ -104,6 +105,19 @@ describe("BucketBrowserSDKProvider", () => {
       ofClient.getBooleanDetails(testFlagKey, false);
       expect(bucketClientMock.getFeatures).toHaveBeenCalled();
       expect(bucketClientMock.getFeature).toHaveBeenCalledWith(testFlagKey);
+    });
+  });
+
+  describe("track", () => {
+    it("calls the client correctly for track calls", async () => {
+      const testEvent = "testEvent";
+      await provider.initialize();
+
+      ofClient.track(testEvent, { key: "value" });
+      expect(bucketClientMock.track).toHaveBeenCalled();
+      expect(bucketClientMock.track).toHaveBeenCalledWith(testEvent, {
+        key: "value",
+      });
     });
   });
 
