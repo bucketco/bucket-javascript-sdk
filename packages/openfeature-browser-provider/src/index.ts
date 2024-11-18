@@ -8,6 +8,8 @@ import {
   ProviderStatus,
   ResolutionDetails,
   StandardResolutionReasons,
+  Tracking,
+  TrackingEventDetails,
 } from "@openfeature/web-sdk";
 
 import { BucketClient, InitOptions } from "@bucketco/browser-sdk";
@@ -36,7 +38,7 @@ export function defaultContextTranslator(
   };
 }
 
-export class BucketBrowserSDKProvider implements Provider {
+export class BucketBrowserSDKProvider implements Provider, Tracking {
   readonly metadata: ProviderMetadata = {
     name: "bucket-browser-provider",
   };
@@ -159,5 +161,14 @@ export class BucketBrowserSDKProvider implements Provider {
       reason: StandardResolutionReasons.ERROR,
       errorMessage: "Bucket doesn't support string flags",
     };
+  }
+
+  track(
+    trackingEventName: string,
+    trackingEventDetails?: TrackingEventDetails,
+  ): void {
+    this._client?.track(trackingEventName, trackingEventDetails).catch((e) => {
+      this._clientOptions.logger?.error("error tracking event", e);
+    });
   }
 }
