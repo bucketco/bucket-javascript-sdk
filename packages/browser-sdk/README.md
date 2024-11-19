@@ -51,7 +51,7 @@ See [example/browser.html](example/browser.html) for a working example:
 <script src="https://cdn.jsdelivr.net/npm/@bucketco/browser-sdk@2"></script>
 <script>
   const bucket = new BucketBrowserSDK.BucketClient({
-    publishableKey: "publishableKey"
+    publishableKey: "publishableKey",
     user: { id: "42" },
     company: { id: "1" },
   });
