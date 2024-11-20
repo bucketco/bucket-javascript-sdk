@@ -946,16 +946,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@bucketco/node-sdk@npm:>=1.0.0":
-  version: 1.0.0
-  resolution: "@bucketco/node-sdk@npm:1.0.0"
-  dependencies:
-    "@bucketco/flag-evaluation": "npm:~0.0.7"
-  checksum: 10c0/5d16440115dda383b91c2ba0672aa695fb8c804615b270e6313dbb809b4bd8f8ca10a16adb12f613e1fa4e01f47ef5aa3c1c4ddad50540237e83c960b5ac6d01
-  languageName: node
-  linkType: hard
-
-"@bucketco/node-sdk@workspace:packages/node-sdk":
+"@bucketco/node-sdk@npm:>=1.4.2, @bucketco/node-sdk@workspace:packages/node-sdk":
   version: 0.0.0-use.local
   resolution: "@bucketco/node-sdk@workspace:packages/node-sdk"
   dependencies:
@@ -984,8 +975,8 @@ __metadata:
     "@bucketco/browser-sdk": "npm:^2.0.0"
     "@bucketco/eslint-config": "npm:0.0.2"
     "@bucketco/tsconfig": "npm:0.0.2"
-    "@openfeature/core": "npm:1.3.0"
-    "@openfeature/web-sdk": "npm:^1.2.3"
+    "@openfeature/core": "npm:1.5.0"
+    "@openfeature/web-sdk": "npm:^1.3.0"
     "@types/node": "npm:^20.14.0"
     eslint: "npm:^8.57.0"
     jsdom: "npm:^24.1.0"
@@ -995,7 +986,7 @@ __metadata:
     vite-plugin-dts: "npm:^4.0.0-beta.1"
     vitest: "npm:^2.0.4"
   peerDependencies:
-    "@openfeature/web-sdk": ">=1"
+    "@openfeature/web-sdk": ">=1.3"
   languageName: unknown
   linkType: soft
 
@@ -1005,10 +996,10 @@ __metadata:
   dependencies:
     "@babel/core": "npm:~7.24.7"
     "@bucketco/eslint-config": "npm:~0.0.2"
-    "@bucketco/node-sdk": "npm:>=1.0.0"
+    "@bucketco/node-sdk": "npm:>=1.4.2"
     "@bucketco/tsconfig": "npm:~0.0.2"
-    "@openfeature/core": "npm:^1.4.0"
-    "@openfeature/server-sdk": "npm:>=1.13.5"
+    "@openfeature/core": "npm:^1.5.0"
+    "@openfeature/server-sdk": "npm:>=1.16.1"
     "@types/node": "npm:~20.14.9"
     eslint: "npm:~8.56.0"
     flush-promises: "npm:~1.0.2"
@@ -1019,7 +1010,7 @@ __metadata:
     vite-plugin-dts: "npm:~3.9.1"
     vitest: "npm:~1.6.0"
   peerDependencies:
-    "@openfeature/server-sdk": ">=1.13.5"
+    "@openfeature/server-sdk": ">=1.16.1"
   languageName: unknown
   linkType: soft
 
@@ -2768,17 +2759,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@openfeature/core@npm:1.3.0":
-  version: 1.3.0
-  resolution: "@openfeature/core@npm:1.3.0"
-  checksum: 10c0/48760b65d259d73d80ed5b3e03d5f4f604dfbe4a86561c0fb9c1b56d8a659ddead3c60260259ddca50d70c82d5dc181da5499d8a129b7bdcfeec0892e9865a0c
-  languageName: node
-  linkType: hard
-
-"@openfeature/core@npm:^1.4.0":
-  version: 1.4.0
-  resolution: "@openfeature/core@npm:1.4.0"
-  checksum: 10c0/199009a2bb989be12d99c1415ccb6f873f62413ab2a6e03f30c9a5b28a7dd421326186b9e6575ad5d14a505c237f5c0af1dffa1a7190ee57fe364a58db0afd9b
+"@openfeature/core@npm:1.5.0, @openfeature/core@npm:^1.5.0":
+  version: 1.5.0
+  resolution: "@openfeature/core@npm:1.5.0"
+  checksum: 10c0/6b455dac3bb2da3519e43c4fbf69c0d8b4e6aa9b566cc29fe574913f2b4b50134ca62c5ddb28d2e6c8222fbc96873b6187a29f3657c19008ea8910b9e564f87d
   languageName: node
   linkType: hard
 
@@ -2792,12 +2776,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@openfeature/server-sdk@npm:>=1.13.5":
-  version: 1.15.1
-  resolution: "@openfeature/server-sdk@npm:1.15.1"
+"@openfeature/server-sdk@npm:>=1.16.1":
+  version: 1.16.2
+  resolution: "@openfeature/server-sdk@npm:1.16.2"
   peerDependencies:
-    "@openfeature/core": 1.4.0
-  checksum: 10c0/686d55f0e55e34def1c94b99bf4c1be68767a9aeb4d2e7f878b9cdb7d8fa07f2e145666023c1cd8966577ea214df79dda318414e1619641930648e6a50cd7032
+    "@openfeature/core": ^1.5.0
+  checksum: 10c0/6ccb162e880ab17095bfcd3358e0f3bfa7b3ddbd1961386d861ccc5eb14fed98df50a254cb2f259646ac46335c4e3c497284d7a56f2b5b0309ce8311d0f546bd
   languageName: node
   linkType: hard
 
@@ -2807,6 +2791,15 @@ __metadata:
   peerDependencies:
     "@openfeature/core": 1.3.0
   checksum: 10c0/f988d91ba3832a134685d106d54e32e9eff001976ecbcb6be0d48f1ed8b0ecb182948d3a043709413d855bc9379891051e6aefa708a1772f7d30bb7ce0701da5
+  languageName: node
+  linkType: hard
+
+"@openfeature/web-sdk@npm:^1.3.0":
+  version: 1.3.2
+  resolution: "@openfeature/web-sdk@npm:1.3.2"
+  peerDependencies:
+    "@openfeature/core": ^1.5.0
+  checksum: 10c0/7e20bfb19bec3061045a37a52d9d6fb1631908bf6cba1ff925cfbcccb978a75939a20f6411766abce22a1d1ad61e2d6d12b3d73c982efd78c07e19efb0176bd3
   languageName: node
   linkType: hard
 
