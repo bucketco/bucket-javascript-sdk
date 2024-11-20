@@ -148,7 +148,7 @@ describe("BucketNodeProvider", () => {
       expect(bucketClientMock.flush).toHaveBeenCalledTimes(1);
     });
   });
-  
+
   describe("track", () => {
     it("should track", async () => {
       expect(translatorFn).toHaveBeenCalledTimes(0);
