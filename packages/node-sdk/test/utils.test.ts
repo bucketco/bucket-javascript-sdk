@@ -183,6 +183,17 @@ describe("hashObject", () => {
 });
 
 describe("once()", () => {
+  it("should call the function only once with void return value", () => {
+    const fn = vi.fn();
+    const onceFn = once(fn);
+
+    onceFn();
+    onceFn();
+    onceFn();
+
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
   it("should call the function only once", () => {
     const fn = vi.fn().mockReturnValue(1);
     const onceFn = once(fn);
