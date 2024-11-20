@@ -8,7 +8,6 @@ import {
   ResolutionDetails,
   ServerProviderStatus,
   StandardResolutionReasons,
-  Tracking,
   TrackingEventDetails,
 } from "@openfeature/server-sdk";
 
