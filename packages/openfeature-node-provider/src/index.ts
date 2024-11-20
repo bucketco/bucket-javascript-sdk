@@ -131,4 +131,8 @@ export class BucketNodeProvider implements Provider {
     await this._client.initialize();
     this.status = ServerProviderStatus.READY;
   }
+
+  public async onClose(): Promise<void> {
+    await this._client.flush();
+  }
 }
