@@ -145,9 +145,7 @@ export class BucketNodeProvider implements Provider {
 
     void this._client.track(String(userId), trackingEventName, {
       attributes: trackingEventDetails,
-      companyId: translatedContext?.company?.id
-        ? String(translatedContext?.company?.id)
-        : undefined,
+      companyId: translatedContext?.company?.id?.toString(),
     });
   }
 }
