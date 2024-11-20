@@ -18,6 +18,7 @@ import { newRateLimiter } from "./rate-limiter";
 import type {
   EvaluatedFeaturesAPIResponse,
   FeatureOverridesFn,
+  IdType,
   RawFeature,
 } from "./types";
 import {
@@ -38,6 +39,7 @@ import {
   applyLogLevel,
   decorateLogger,
   hashObject,
+  idOk,
   isObject,
   mergeSkipUndefined,
   ok,
@@ -49,14 +51,14 @@ const bucketConfigDefaultFile = "bucketConfig.json";
 type BulkEvent =
   | {
       type: "company";
-      companyId: string | number;
-      userId?: string | number;
+      companyId: IdType;
+      userId?: IdType;
       attributes?: Attributes;
       context?: TrackingMeta;
     }
   | {
       type: "user";
-      userId: string | number;
+      userId: IdType;
       attributes?: Attributes;
       context?: TrackingMeta;
     }
@@ -73,8 +75,8 @@ type BulkEvent =
   | {
       type: "event";
       event: string;
-      companyId?: string | number;
-      userId: string | number;
+      companyId?: IdType;
+      userId: IdType;
       attributes?: Attributes;
       context?: TrackingMeta;
     };
@@ -396,7 +398,7 @@ export class BucketClient {
    *
    * @param context - The context to update.
    */
-  private async syncContext(options: ContextWithTracking) {
+  private async syncContext(options: { enableTracking: boolean } & Context) {
     if (!options.enableTracking) {
       this._config.logger?.debug(
         "tracking disabled, not updating user/company",
@@ -497,12 +499,8 @@ export class BucketClient {
    * The company must be set using `withCompany` before calling this method.
    * If the user is set, the company will be associated with the user.
    **/
-  public async updateUser(userId: string | number, opts?: TrackOptions) {
-    ok(
-      (typeof userId === "string" && userId.length > 0) ||
-        typeof userId === "number",
-      "companyId must be a string",
-    );
+  public async updateUser(userId: IdType, opts?: TrackOptions) {
+    idOk(userId, "userId");
     ok(opts === undefined || isObject(opts), "opts must be an object");
     ok(
       opts?.attributes === undefined || isObject(opts.attributes),
@@ -539,14 +537,10 @@ export class BucketClient {
    * If the user is set, the company will be associated with the user.
    **/
   public async updateCompany(
-    companyId: string | number,
-    opts?: TrackOptions & { userId?: string },
+    companyId: IdType,
+    opts?: TrackOptions & { userId?: IdType },
   ) {
-    ok(
-      (typeof companyId === "string" && companyId.length > 0) ||
-        typeof companyId === "number",
-      "companyId must be a string",
-    );
+    idOk(companyId, "companyId");
     ok(opts === undefined || isObject(opts), "opts must be an object");
     ok(
       opts?.attributes === undefined || isObject(opts.attributes),
@@ -556,10 +550,9 @@ export class BucketClient {
       opts?.meta === undefined || isObject(opts.meta),
       "meta must be an object",
     );
-    ok(
-      opts?.userId === undefined || typeof opts.userId === "string",
-      "userId must be a string",
-    );
+    if (typeof opts?.userId !== "undefined") {
+      idOk(opts?.userId, "userId");
+    }
 
     if (this._config.offline) {
       return;
@@ -592,15 +585,11 @@ export class BucketClient {
    * If the company is set, the event will be associated with the company.
    **/
   public async track(
-    userId: string | number,
+    userId: IdType,
     event: string,
-    opts?: TrackOptions & { companyId?: string | number },
+    opts?: TrackOptions & { companyId?: IdType },
   ) {
-    ok(
-      (typeof userId === "string" && userId.length > 0) ||
-        typeof userId === "number",
-      "userId must be a string",
-    );
+    idOk(userId, "userId");
     ok(typeof event === "string" && event.length > 0, "event must be a string");
     ok(opts === undefined || isObject(opts), "opts must be an object");
     ok(
@@ -611,10 +600,9 @@ export class BucketClient {
       opts?.meta === undefined || isObject(opts.meta),
       "meta must be an object",
     );
-    ok(
-      opts?.companyId === undefined || typeof opts.companyId === "string",
-      "companyId must be an string",
-    );
+    if (opts?.companyId !== undefined) {
+      idOk(opts?.companyId, "companyId");
+    }
 
     if (this._config.offline) {
       return;
@@ -663,8 +651,10 @@ export class BucketClient {
   }
 
   private _getFeatures(
-    options: ContextWithTracking,
+    options: { enableTracking: boolean } & Context,
   ): Record<string, RawFeature> {
+    checkContextWithTracking(options);
+
     void this.syncContext(options);
     let featureDefinitions: FeaturesAPIResponse["features"];
 
@@ -686,7 +676,7 @@ export class BucketClient {
       featureDefinitions.map((f) => [f.key, f.targeting.version]),
     );
 
-    const { enableTracking, ...context } = options;
+    const { enableTracking = true, ...context } = options;
 
     const evaluated = featureDefinitions.map((feature) =>
       evaluateTargeting({
@@ -746,7 +736,7 @@ export class BucketClient {
   }
 
   private _wrapRawFeature(
-    options: ContextWithTracking,
+    options: { enableTracking: boolean } & Context,
     { key, isEnabled, targetingVersion }: RawFeature,
   ): Feature {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -803,8 +793,6 @@ export class BucketClient {
     ...context
   }: ContextWithTracking): TypedFeatures {
     const options = { enableTracking, ...context };
-    checkContextWithTracking(options);
-
     const features = this._getFeatures(options);
     return Object.fromEntries(
       Object.entries(features).map(([k, v]) => [
@@ -827,7 +815,6 @@ export class BucketClient {
     key: keyof TypedFeatures,
   ) {
     const options = { enableTracking, ...context };
-    checkContextWithTracking(options);
     const features = this._getFeatures(options);
     const feature = features[key];
 
@@ -844,8 +831,8 @@ export class BucketClient {
 
   private async _getFeaturesRemote(
     key: string,
-    userId?: string | number,
-    companyId?: string | number,
+    userId?: IdType,
+    companyId?: IdType,
     additionalContext?: Context,
   ): Promise<TypedFeatures> {
     const context = additionalContext || {};
@@ -856,10 +843,11 @@ export class BucketClient {
       context.company = { id: companyId };
     }
 
-    checkContextWithTracking({
+    const contextWithTracking = {
       ...context,
       enableTracking: true,
-    });
+    };
+    checkContextWithTracking(contextWithTracking);
 
     const params = new URLSearchParams(flattenJSON({ context }));
     if (key) {
@@ -875,7 +863,7 @@ export class BucketClient {
         Object.entries(res.features).map(([featureKey, feature]) => {
           return [
             featureKey as keyof TypedFeatures,
-            this._wrapRawFeature({ enableTracking: true, ...context }, feature),
+            this._wrapRawFeature(contextWithTracking, feature),
           ];
         }) || [],
       );
@@ -893,8 +881,8 @@ export class BucketClient {
    * @returns evaluated features
    */
   public async getFeaturesRemote(
-    userId?: string | number,
-    companyId?: string | number,
+    userId?: IdType,
+    companyId?: IdType,
     additionalContext?: Context,
   ): Promise<TypedFeatures> {
     return await this._getFeaturesRemote(
@@ -917,8 +905,8 @@ export class BucketClient {
    */
   public async getFeatureRemote(
     key: string,
-    userId?: string | number,
-    companyId?: string | number,
+    userId?: IdType,
+    companyId?: IdType,
     additionalContext?: Context,
   ): Promise<Feature> {
     const features = await this._getFeaturesRemote(
@@ -1097,28 +1085,26 @@ export class BoundBucketClient {
   }
 }
 
-function checkContextWithTracking(context: ContextWithTracking) {
+function checkContextWithTracking(
+  context: ContextWithTracking,
+): asserts context is ContextWithTracking & { enableTracking: boolean } {
   ok(isObject(context), "context must be an object");
   ok(
     typeof context.user === "undefined" || isObject(context.user),
     "user must be an object if given",
   );
-  ok(
-    typeof context.user?.id === "undefined" ||
-      typeof context.user?.id === "string" ||
-      typeof context.user?.id === "number",
-    "user.id must be a string or number if given",
-  );
+  if (typeof context.user?.id !== "undefined") {
+    idOk(context.user.id, "user.id");
+  }
+
   ok(
     typeof context.company === "undefined" || isObject(context.company),
     "company must be an object if given",
   );
-  ok(
-    typeof context.company?.id === "undefined" ||
-      typeof context.company?.id === "string" ||
-      typeof context.company?.id === "number",
-    "company.id must be a string or number if given",
-  );
+  if (typeof context.company?.id !== "undefined") {
+    idOk(context.company.id, "company.id");
+  }
+
   ok(
     context.other === undefined || isObject(context.other),
     "other must be an object if given",
