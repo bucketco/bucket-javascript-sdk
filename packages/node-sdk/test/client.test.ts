@@ -819,6 +819,8 @@ describe("BucketClient", () => {
       vi.spyOn(client as any, "getFeaturesCache").mockReturnValue(cache);
 
       await client.initialize();
+      await client.initialize();
+      await client.initialize();
 
       expect(cache.refresh).toHaveBeenCalledTimes(1);
       expect(cache.get).not.toHaveBeenCalled();

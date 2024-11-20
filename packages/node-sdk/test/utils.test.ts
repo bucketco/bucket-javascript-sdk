@@ -7,6 +7,7 @@ import {
   isObject,
   mergeSkipUndefined,
   ok,
+  once,
 } from "../src/utils";
 
 describe("isObject", () => {
@@ -178,5 +179,29 @@ describe("hashObject", () => {
     expectedHash.update("3");
 
     expect(hash).toBe(expectedHash.digest("hex"));
+  });
+});
+
+describe("once()", () => {
+  it("should call the function only once with void return value", () => {
+    const fn = vi.fn();
+    const onceFn = once(fn);
+
+    onceFn();
+    onceFn();
+    onceFn();
+
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
+  it("should call the function only once", () => {
+    const fn = vi.fn().mockReturnValue(1);
+    const onceFn = once(fn);
+
+    expect(onceFn()).toBe(1);
+    expect(onceFn()).toBe(1);
+    expect(onceFn()).toBe(1);
+
+    expect(fn).toHaveBeenCalledTimes(1);
   });
 });

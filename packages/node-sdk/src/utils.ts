@@ -160,3 +160,18 @@ export function hashObject(obj: Record<string, any>): string {
 
   return hash.digest("hex");
 }
+
+export function once<T extends () => ReturnType<T>>(
+  fn: T,
+): () => ReturnType<T> {
+  let called = false;
+  let returned: ReturnType<T> | undefined;
+  return function (): ReturnType<T> {
+    if (called) {
+      return returned!;
+    }
+    returned = fn();
+    called = true;
+    return returned;
+  };
+}

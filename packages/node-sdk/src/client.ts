@@ -43,6 +43,7 @@ import {
   isObject,
   mergeSkipUndefined,
   ok,
+  once,
 } from "./utils";
 
 const bucketConfigDefaultFile = "bucketConfig.json";
@@ -617,6 +618,13 @@ export class BucketClient {
     });
   }
 
+  private _initialize = once(async () => {
+    if (!this._config.offline) {
+      await this.getFeaturesCache().refresh();
+    }
+    this._config.logger?.info("Bucket initialized");
+  });
+
   /**
    * Initializes the client by caching the features definitions.
    *
@@ -624,12 +632,11 @@ export class BucketClient {
    *
    * @remarks
    * Call this method before calling `getFeatures` to ensure the feature definitions are cached.
+   * The client will ignore subsequent calls to this method.
    **/
   public async initialize() {
-    if (!this._config.offline) {
-      await this.getFeaturesCache().refresh();
-    }
-    this._config.logger?.info("Bucket initialized");
+    await this._initialize();
+    return;
   }
 
   /**
