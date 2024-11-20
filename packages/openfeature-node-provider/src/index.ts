@@ -148,4 +148,8 @@ export class BucketNodeProvider implements Provider {
       companyId: translatedContext?.company?.id?.toString(),
     });
   }
+
+  public async onClose(): Promise<void> {
+    await this._client.flush();
+  }
 }
