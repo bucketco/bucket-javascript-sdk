@@ -1,5 +1,5 @@
 import { ErrorCode } from "@openfeature/core";
-import { beforeAll, describe, expect, it, Mock, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, Mock, vi } from "vitest";
 
 import { BucketClient } from "@bucketco/node-sdk";
 
@@ -18,6 +18,7 @@ vi.mock("@bucketco/node-sdk", () => {
 const bucketClientMock = {
   getFeatures: vi.fn(),
   initialize: vi.fn().mockResolvedValue({}),
+  track: vi.fn(),
 };
 
 const secretKey = "sec_fakeSecretKey______"; // must be 23 characters long
@@ -32,6 +33,10 @@ const bucketContext = {
   user: { id: "42" },
   company: { id: "99" },
 };
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
 describe("BucketNodeProvider", () => {
   let provider: BucketNodeProvider;
@@ -50,6 +55,10 @@ describe("BucketNodeProvider", () => {
   });
 
   it("calls the constructor", () => {
+    provider = new BucketNodeProvider({
+      secretKey,
+      contextTranslator: translatorFn,
+    });
     expect(newBucketClient).toHaveBeenCalledTimes(1);
     expect(newBucketClient).toHaveBeenCalledWith({ secretKey });
   });
@@ -129,6 +138,22 @@ describe("BucketNodeProvider", () => {
       expect(result.errorMessage).toEqual(
         `Bucket doesn't support object flags`,
       );
+    });
+  });
+
+  describe("track", () => {
+    it("should track", async () => {
+      expect(translatorFn).toHaveBeenCalledTimes(0);
+      provider.track("event", context, {
+        action: "click",
+      });
+      expect(translatorFn).toHaveBeenCalledTimes(1);
+      expect(translatorFn).toHaveBeenCalledWith(context);
+      expect(bucketClientMock.track).toHaveBeenCalledTimes(1);
+      expect(bucketClientMock.track).toHaveBeenCalledWith("42", "event", {
+        attributes: { action: "click" },
+        companyId: bucketContext.company.id,
+      });
     });
   });
 });
