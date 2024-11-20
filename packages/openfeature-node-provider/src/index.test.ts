@@ -18,6 +18,7 @@ vi.mock("@bucketco/node-sdk", () => {
 const bucketClientMock = {
   getFeatures: vi.fn(),
   initialize: vi.fn().mockResolvedValue({}),
+  flush: vi.fn(),
 };
 
 const secretKey = "sec_fakeSecretKey______"; // must be 23 characters long
@@ -129,6 +130,13 @@ describe("BucketNodeProvider", () => {
       expect(result.errorMessage).toEqual(
         `Bucket doesn't support object flags`,
       );
+    });
+  });
+
+  describe("onClose", () => {
+    it("calls flush", async () => {
+      await provider.onClose();
+      expect(bucketClientMock.flush).toHaveBeenCalledTimes(1);
     });
   });
 });
