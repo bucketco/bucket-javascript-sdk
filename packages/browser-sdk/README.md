@@ -48,10 +48,10 @@ B. Script tag (client-side directly in html)
 See [example/browser.html](example/browser.html) for a working example:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@bucketco/browser-sdk@1"></script>
+<script src="https://cdn.jsdelivr.net/npm/@bucketco/browser-sdk@2"></script>
 <script>
   const bucket = new BucketBrowserSDK.BucketClient({
-    publishableKey: "publishableKey"
+    publishableKey: "publishableKey",
     user: { id: "42" },
     company: { id: "1" },
   });
