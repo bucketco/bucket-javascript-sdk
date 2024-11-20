@@ -523,8 +523,13 @@ describe("BucketClient", () => {
     });
 
     test.each([
-      { id: "company123", employees: 100, name: "Acme Inc." },
-      { id: 42, employees: 100, name: "Acme Inc." },
+      {
+        id: "company123",
+        employees: 100,
+        name: "Acme Inc.",
+        userId: "user123",
+      },
+      { id: 42, employees: 100, name: "Acme Inc.", userId: 42 },
     ])(`should successfully update the company`, async (testCompany) => {
       const response = { status: 200, body: { success: true } };
       httpClient.post.mockResolvedValue(response);
@@ -532,6 +537,7 @@ describe("BucketClient", () => {
       await client.updateCompany(testCompany.id, {
         attributes: { employees: 200, bankrupt: false },
         meta: { active: true },
+        userId: testCompany.userId,
       });
 
       await client.flush();
@@ -545,6 +551,7 @@ describe("BucketClient", () => {
             companyId: testCompany.id,
             attributes: { employees: 200, bankrupt: false },
             context: { active: true },
+            userId: testCompany.userId,
           },
         ],
       );
@@ -599,10 +606,6 @@ describe("BucketClient", () => {
       await expect(
         client.updateCompany(company.id, { meta: "bad_meta" as any }),
       ).rejects.toThrow("meta must be an object");
-
-      await expect(
-        client.updateCompany(company.id, { userId: 676 as any }),
-      ).rejects.toThrow("userId must be a string");
     });
   });
 
