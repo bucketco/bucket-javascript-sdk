@@ -223,16 +223,15 @@ describe("<BucketProvider />", () => {
 
 describe("useFeature", () => {
   test("returns a loading state initially", async () => {
-    let resolve: (r: BucketClient) => void;
     const { result, unmount } = renderHook(() => useFeature("huddle"), {
-      wrapper: ({ children }) =>
-        getProvider({ children, onInitialized: resolve }),
+      wrapper: ({ children }) => getProvider({ children }),
     });
 
     expect(result.current).toStrictEqual({
       isEnabled: false,
       isLoading: true,
       track: expect.any(Function),
+      requestFeedback: expect.any(Function),
     });
 
     unmount();
@@ -248,6 +247,7 @@ describe("useFeature", () => {
         isEnabled: false,
         isLoading: false,
         track: expect.any(Function),
+        requestFeedback: expect.any(Function),
       });
     });
 

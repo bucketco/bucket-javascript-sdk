@@ -73,6 +73,13 @@ describe("usage", () => {
 
     const features = bucketInstance.getFeatures();
     expect(features).toEqual(featuresResult);
+
+    const featureId1 = bucketInstance.getFeature("featureId1");
+    expect(featureId1).toEqual({
+      isEnabled: false,
+      track: expect.any(Function),
+      requestFeedback: expect.any(Function),
+    });
   });
 
   test("accepts `featureKey` instead of `featureId` for manual feedback", async () => {
@@ -455,6 +462,49 @@ describe(`sends "check" events `, () => {
       value: false,
       key: "non-existent",
       version: undefined,
+    });
+  });
+
+  describe("getFeature", async () => {
+    it("calls client.track with the featureId", async () => {
+      const client = new BucketClient({ publishableKey: KEY });
+      await client.initialize();
+
+      const featureId1 = client.getFeature("featureId1");
+      expect(featureId1).toEqual({
+        isEnabled: false,
+        track: expect.any(Function),
+        requestFeedback: expect.any(Function),
+      });
+
+      vi.spyOn(client, "track");
+
+      await featureId1.track();
+
+      expect(client.track).toHaveBeenCalledWith("featureId1");
+    });
+
+    it("calls client.requestFeedback with the featureId", async () => {
+      const client = new BucketClient({ publishableKey: KEY });
+      await client.initialize();
+
+      const featureId1 = client.getFeature("featureId1");
+      expect(featureId1).toEqual({
+        isEnabled: false,
+        track: expect.any(Function),
+        requestFeedback: expect.any(Function),
+      });
+
+      vi.spyOn(client, "requestFeedback");
+
+      featureId1.requestFeedback({
+        title: "Feedback",
+      });
+
+      expect(client.requestFeedback).toHaveBeenCalledWith({
+        featureKey: "featureId1",
+        title: "Feedback",
+      });
     });
   });
 });

@@ -92,7 +92,7 @@ Returns the state of a given features for the current context.
 import { useFeature } from "@bucketco/react-sdk";
 
 function StartHuddleButton() {
-  const { isLoading, isEnabled, track } = useFeature("huddle");
+  const { isLoading, isEnabled, track, requestFeedback } = useFeature("huddle");
 
   if (isLoading) {
     return <Loading />;
@@ -102,7 +102,16 @@ function StartHuddleButton() {
     return null;
   }
 
-  return <Button onClick={() => track()} />;
+  return (
+    <>
+      <button onClick={track}>Start huddle!</button>
+      <button
+        onClick={() => requestFeedback({ title: "How do you like Huddles?" })}
+      >
+        Give feedback!
+      </button>
+    </>
+  );
 }
 ```
 
