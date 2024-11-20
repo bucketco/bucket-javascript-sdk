@@ -34,11 +34,11 @@ if (isEnabled) {
   // sends a "check" event for the "huddle" feature which is shown in the
   // Bucket UI.
 
-  // On usage, call `track` to let Bucket know that a user "used" the feature
+  // On usage, call `track` to let Bucket know that a user interacted with the feature
   track();
 
   // Use `requestFeedback` to create "Send feedback" buttons easily for specific
-  // features
+  // features. This is not related to `track` and you can call them individually.
   requestFeedback({ title: "Tell us what you think of Huddles" });
 }
 
