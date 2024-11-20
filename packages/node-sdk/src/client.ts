@@ -41,6 +41,7 @@ import {
   isObject,
   mergeSkipUndefined,
   ok,
+  once,
 } from "./utils";
 
 const bucketConfigDefaultFile = "bucketConfig.json";
@@ -109,8 +110,6 @@ export class BucketClient {
     offline: boolean;
     configFile?: string;
   };
-
-  private _initialize: (() => Promise<void>) | undefined = undefined;
 
   /**
    * Creates a new SDK client.
@@ -631,6 +630,13 @@ export class BucketClient {
     });
   }
 
+  private _initialize = once(async () => {
+    if (!this._config.offline) {
+      await this.getFeaturesCache().refresh();
+    }
+    this._config.logger?.info("Bucket initialized");
+  });
+
   /**
    * Initializes the client by caching the features definitions.
    *
@@ -641,17 +647,7 @@ export class BucketClient {
    * If the client is already initializing or initialized the same promise will be returned.
    **/
   public async initialize() {
-    if (this._initialize) {
-      return this._initialize;
-    }
-    // need this to convert to () => Promise<void>
-    this._initialize = async () => {
-      if (!this._config.offline) {
-        await this.getFeaturesCache().refresh();
-      }
-    };
     await this._initialize();
-    this._config.logger?.info("Bucket initialized");
     return;
   }
 

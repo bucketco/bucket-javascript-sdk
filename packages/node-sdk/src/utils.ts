@@ -151,3 +151,16 @@ export function hashObject(obj: Record<string, any>): string {
 
   return hash.digest("hex");
 }
+
+export function once<T extends () => ReturnType<T>>(
+  fn: T,
+): () => ReturnType<T> {
+  let called: ReturnType<T> | undefined;
+  return function (): ReturnType<T> {
+    if (called) {
+      return called;
+    }
+    called = fn();
+    return called;
+  };
+}
