@@ -644,7 +644,7 @@ export class BucketClient {
    *
    * @remarks
    * Call this method before calling `getFeatures` to ensure the feature definitions are cached.
-   * If the client is already initializing or initialized the same promise will be returned.
+   * The client will ignore subsequent calls to this method.
    **/
   public async initialize() {
     await this._initialize();
