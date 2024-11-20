@@ -23,22 +23,17 @@ type ProviderOptions = ClientOptions & {
 };
 
 const defaultTranslator = (context: EvaluationContext): BucketContext => {
-  const userId = context.targetingKey ?? context["id"];
-  const user = userId
-    ? {
-        id: String(userId),
-        name: context["name"]?.toString(),
-        email: context["email"]?.toString(),
-        country: context["country"]?.toString(),
-      }
-    : undefined;
+  const user = {
+    id: context.targetingKey ?? context["id"]?.toString(),
+    name: context["name"]?.toString(),
+    email: context["email"]?.toString(),
+    country: context["country"]?.toString(),
+  };
 
-  const company = context["companyId"]
-    ? {
-        id: String(context["companyId"]),
-        name: context["companyName"],
-      }
-    : undefined;
+  const company = {
+    id: context["companyId"]?.toString(),
+    name: context["companyName"]?.toString(),
+  };
 
   return {
     user,
@@ -46,7 +41,7 @@ const defaultTranslator = (context: EvaluationContext): BucketContext => {
   };
 };
 
-export class BucketNodeProvider implements Provider, Tracking {
+export class BucketNodeProvider implements Provider {
   public readonly events = new OpenFeatureEventEmitter();
 
   private _client: BucketClient;
@@ -149,9 +144,11 @@ export class BucketNodeProvider implements Provider, Tracking {
       return;
     }
 
-    void this._client.track(userId!, trackingEventName, {
+    void this._client.track(String(userId), trackingEventName, {
       attributes: trackingEventDetails,
-      companyId: translatedContext?.company?.id,
+      companyId: translatedContext?.company?.id
+        ? String(translatedContext?.company?.id)
+        : undefined,
     });
   }
 }

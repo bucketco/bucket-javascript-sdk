@@ -8,7 +8,6 @@ import {
   ProviderStatus,
   ResolutionDetails,
   StandardResolutionReasons,
-  Tracking,
   TrackingEventDetails,
 } from "@openfeature/web-sdk";
 
@@ -38,7 +37,7 @@ export function defaultContextTranslator(
   };
 }
 
-export class BucketBrowserSDKProvider implements Provider, Tracking {
+export class BucketBrowserSDKProvider implements Provider {
   readonly metadata: ProviderMetadata = {
     name: "bucket-browser-provider",
   };
@@ -165,8 +164,13 @@ export class BucketBrowserSDKProvider implements Provider, Tracking {
 
   track(
     trackingEventName: string,
+    _context?: EvaluationContext,
     trackingEventDetails?: TrackingEventDetails,
   ): void {
+    if (!this._client) {
+      this._clientOptions.logger?.error("client not initialized");
+    }
+
     this._client?.track(trackingEventName, trackingEventDetails).catch((e) => {
       this._clientOptions.logger?.error("error tracking event", e);
     });

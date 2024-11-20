@@ -44,7 +44,7 @@
     "vitest": "~1.6.0"
   },
   "dependencies": {
-    "@bucketco/node-sdk": ">=1.0.0"
+    "@bucketco/node-sdk": ">=1.4.2"
   },
   "peerDependencies": {
     "@openfeature/server-sdk": ">=1.16.1"
