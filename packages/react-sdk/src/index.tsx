@@ -167,12 +167,16 @@ export function useFeature(key: BucketFeatures) {
   } = useContext<ProviderContextType>(ProviderContext);
 
   const track = () => client?.track(key);
+  const requestFeedback = (
+    opts: Omit<RequestFeedbackData, "featureKey" | "featureId">,
+  ) => client?.requestFeedback({ ...opts, featureKey: key });
 
   if (isLoading) {
     return {
       isLoading,
       isEnabled: false,
       track,
+      requestFeedback,
     };
   }
 
@@ -182,6 +186,7 @@ export function useFeature(key: BucketFeatures) {
   return {
     isLoading,
     track,
+    requestFeedback,
     get isEnabled() {
       client
         ?.sendCheckEvent({
