@@ -164,12 +164,14 @@ export function hashObject(obj: Record<string, any>): string {
 export function once<T extends () => ReturnType<T>>(
   fn: T,
 ): () => ReturnType<T> {
-  let called: ReturnType<T> | undefined;
+  let called = false;
+  let returned: ReturnType<T> | undefined;
   return function (): ReturnType<T> {
     if (called) {
-      return called;
+      return returned!;
     }
-    called = fn();
-    return called;
+    returned = fn();
+    called = true;
+    return returned;
   };
 }
