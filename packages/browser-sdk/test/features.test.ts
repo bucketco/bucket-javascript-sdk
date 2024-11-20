@@ -1,11 +1,11 @@
 import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
 
-import { APIFeatureResponse } from "../dist/src/feature/features";
 import { version } from "../package.json";
 import {
   FEATURES_EXPIRE_MS,
   FeaturesClient,
   FeaturesOptions,
+  RawFeature,
 } from "../src/feature/features";
 import { HttpClient } from "../src/httpClient";
 
@@ -167,7 +167,7 @@ describe("FeaturesClient unit tests", () => {
           isEnabled: true,
           key: "featureB",
           targetingVersion: 1,
-        } satisfies APIFeatureResponse,
+        } satisfies RawFeature,
       },
     };
 
@@ -192,7 +192,7 @@ describe("FeaturesClient unit tests", () => {
         isEnabled: true,
         key: "featureB",
         targetingVersion: 1,
-      },
+      } satisfies RawFeature,
     });
 
     expect(httpClient.get).toHaveBeenCalledTimes(1);
@@ -212,7 +212,7 @@ describe("FeaturesClient unit tests", () => {
               isEnabled: true,
               key: "featureA",
               targetingVersion: 1,
-            } satisfies APIFeatureResponse,
+            },
           },
         }),
     } as Response);

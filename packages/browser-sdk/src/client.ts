@@ -1,8 +1,8 @@
 import {
-  APIFeaturesResponse,
   CheckEvent,
   FeaturesClient,
   FeaturesOptions,
+  RawFeatures,
 } from "./feature/features";
 import {
   AutoFeedback,
@@ -101,8 +101,8 @@ export class BucketClient {
     this.logger =
       opts?.logger ?? loggerWithPrefix(quietConsoleLogger, "[Bucket]");
     this.context = {
-      user: opts?.user,
-      company: opts?.company,
+      user: opts?.user?.id ? opts.user : undefined,
+      company: opts?.company?.id ? opts.company : undefined,
       otherContext: opts?.otherContext,
     };
 
@@ -367,7 +367,7 @@ export class BucketClient {
    *
    * @returns Map of features
    */
-  getFeatures(): APIFeaturesResponse {
+  getFeatures(): RawFeatures {
     return this.featuresClient.getFeatures();
   }
 

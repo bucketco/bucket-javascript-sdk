@@ -1,4 +1,6 @@
-import { Logger } from "./types";
+import { createHash, Hash } from "crypto";
+
+import { Logger, LogLevel } from "./types";
 
 /**
  * Assert that the given condition is `true`.
@@ -22,6 +24,48 @@ export function isObject(item: any): item is Record<string, any> {
   return (item && typeof item === "object" && !Array.isArray(item)) || false;
 }
 
+export type LogFn = (message: string, ...args: any[]) => void;
+export function decorate(prefix: string, fn: LogFn): LogFn {
+  return (message: string, ...args: any[]) => {
+    fn(`${prefix} ${message}`, ...args);
+  };
+}
+
+export function applyLogLevel(logger: Logger, logLevel: LogLevel) {
+  switch (logLevel?.toLocaleUpperCase()) {
+    case "DEBUG":
+      return {
+        debug: decorate("[debug]", logger.debug),
+        info: decorate("[info]", logger.info),
+        warn: decorate("[warn]", logger.warn),
+        error: decorate("[error]", logger.error),
+      };
+    case "INFO":
+      return {
+        debug: () => void 0,
+        info: decorate("[info]", logger.info),
+        warn: decorate("[warn]", logger.warn),
+        error: decorate("[error]", logger.error),
+      };
+    case "WARN":
+      return {
+        debug: () => void 0,
+        info: () => void 0,
+        warn: decorate("[warn]", logger.warn),
+        error: decorate("[error]", logger.error),
+      };
+    case "ERROR":
+      return {
+        debug: () => void 0,
+        info: () => void 0,
+        warn: () => void 0,
+        error: decorate("[error]", logger.error),
+      };
+    default:
+      throw new Error(`invalid log level: ${logLevel}`);
+  }
+}
+
 /**
  * Decorate the messages of a given logger with the given prefix.
  *
@@ -34,18 +78,10 @@ export function decorateLogger(prefix: string, logger: Logger): Logger {
   ok(typeof logger === "object", "logger must be an object");
 
   return {
-    debug: (message: string, ...args: any[]) => {
-      logger.debug(`${prefix} ${message}`, ...args);
-    },
-    info: (message: string, ...args: any[]) => {
-      logger.info(`${prefix} ${message}`, ...args);
-    },
-    warn: (message: string, ...args: any[]) => {
-      logger.warn(`${prefix} ${message}`, ...args);
-    },
-    error: (message: string, ...args: any[]) => {
-      logger.error(`${prefix} ${message}`, ...args);
-    },
+    debug: decorate(prefix, logger.debug),
+    info: decorate(prefix, logger.info),
+    warn: decorate(prefix, logger.warn),
+    error: decorate(prefix, logger.error),
   };
 }
 
@@ -67,4 +103,51 @@ export function mergeSkipUndefined<T extends object, U extends object>(
     (newTarget as any)[key] = source[key];
   }
   return newTarget as T & U;
+}
+
+function updateSha1Hash(hash: Hash, value: any) {
+  if (value === null) {
+    hash.update("null");
+  } else {
+    switch (typeof value) {
+      case "object":
+        if (Array.isArray(value)) {
+          for (const item of value) {
+            updateSha1Hash(hash, item);
+          }
+        } else {
+          for (const key of Object.keys(value).sort()) {
+            hash.update(key);
+            updateSha1Hash(hash, value[key]);
+          }
+        }
+        break;
+      case "string":
+        hash.update(value);
+        break;
+      case "number":
+      case "boolean":
+      case "symbol":
+      case "bigint":
+        hash.update(value.toString());
+        break;
+      default:
+        break;
+    }
+  }
+}
+
+/** Hash an object using SHA1.
+ *
+ * @param obj - The object to hash.
+ *
+ * @returns The SHA1 hash of the object.
+ **/
+export function hashObject(obj: Record<string, any>): string {
+  ok(isObject(obj), "obj must be an object");
+
+  const hash = createHash("sha1");
+  updateSha1Hash(hash, obj);
+
+  return hash.digest("hex");
 }

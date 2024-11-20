@@ -209,7 +209,10 @@ describe("feedback state management", () => {
     server.use(
       http.post(`${API_HOST}/feedback/prompt-events`, async ({ request }) => {
         const body = await request.json();
-        if (body) events.push(String(body["action"]));
+        if (!(body && typeof body === "object" && "action" in body)) {
+          throw new Error("invalid request");
+        }
+        events.push(String(body["action"]));
         return HttpResponse.json({ success: true });
       }),
     );

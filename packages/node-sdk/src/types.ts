@@ -295,6 +295,11 @@ export type ClientOptions = {
   logger?: Logger;
 
   /**
+   * Use the console logger, but set a log level. Ineffective if a custom logger is provided.
+   **/
+  logLevel?: LogLevel;
+
+  /**
    * The features to "enable" as fallbacks when the API is unavailable (optional).
    **/
   fallbackFeatures?: (keyof TypedFeatures)[];
@@ -325,7 +330,7 @@ export type ClientOptions = {
     | ((context: Context) => Partial<Record<keyof TypedFeatures, boolean>>);
 
   /**
-   * In offline mode, no data is sent or fethed from the the Bucket API.
+   * In offline mode, no data is sent or fetched from the the Bucket API.
    * This is useful for testing or development.
    */
   offline?: boolean;
@@ -360,15 +365,27 @@ export type TrackOptions = {
  **/
 export type Context = {
   /**
-   * The user context. If the user is set, the user ID is required.
+   * The user context. If no `id` key is set, the whole object is ignored.
    */
-  user?: { id: string; [k: string]: any };
+  user?: {
+    id: string | number | undefined;
+    name?: string | undefined;
+    email?: string | undefined;
+    [k: string]: any;
+  };
   /**
-   * The company context. If the company is set, the company ID is required.
+   * The company context. If no `id` key is set, the whole object is ignored.
    */
-  company?: { id: string; [k: string]: any };
+  company?: {
+    id: string | number | undefined;
+    name?: string | undefined;
+    [k: string]: any;
+  };
   /**
    * The other context. This is used for any additional context that is not related to user or company.
    */
   other?: Record<string, any>;
 };
+
+export const LOG_LEVELS = ["DEBUG", "INFO", "WARN", "ERROR"] as const;
+export type LogLevel = (typeof LOG_LEVELS)[number];

@@ -28,7 +28,7 @@ const userId = "foo";
 const channel = "channel";
 
 function createSSEChannel(callback: (message: any) => void = vi.fn()) {
-  const httpClient = new HttpClient(KEY, "https://front.bucket.co");
+  const httpClient = new HttpClient(KEY);
   const sse = new AblySSEChannel(
     userId,
     channel,
