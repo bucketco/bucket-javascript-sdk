@@ -82,6 +82,9 @@ const defaultConfig: Config = {
 export interface Feature {
   isEnabled: boolean;
   track: () => Promise<Response | undefined>;
+  requestFeedback: (
+    options: Omit<RequestFeedbackData, "featureKey" | "featureId">,
+  ) => void;
 }
 
 export class BucketClient {
@@ -395,6 +398,14 @@ export class BucketClient {
         return value;
       },
       track: () => this.track(key),
+      requestFeedback: (
+        options: Omit<RequestFeedbackData, "featureKey" | "featureId">,
+      ) => {
+        this.requestFeedback({
+          featureKey: key,
+          ...options,
+        });
+      },
     };
   }
 
