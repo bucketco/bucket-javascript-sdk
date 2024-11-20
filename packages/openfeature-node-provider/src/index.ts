@@ -8,6 +8,7 @@ import {
   ResolutionDetails,
   ServerProviderStatus,
   StandardResolutionReasons,
+  TrackingEventDetails,
 } from "@openfeature/server-sdk";
 
 import {
@@ -21,22 +22,17 @@ type ProviderOptions = ClientOptions & {
 };
 
 const defaultTranslator = (context: EvaluationContext): BucketContext => {
-  const userId = context.targetingKey ?? context["id"];
-  const user = userId
-    ? {
-        id: String(userId),
-        name: context["name"]?.toString(),
-        email: context["email"]?.toString(),
-        country: context["country"]?.toString(),
-      }
-    : undefined;
+  const user = {
+    id: context.targetingKey ?? context["id"]?.toString(),
+    name: context["name"]?.toString(),
+    email: context["email"]?.toString(),
+    country: context["country"]?.toString(),
+  };
 
-  const company = context["companyId"]
-    ? {
-        id: String(context["companyId"]),
-        name: context["companyName"],
-      }
-    : undefined;
+  const company = {
+    id: context["companyId"]?.toString(),
+    name: context["companyName"]?.toString(),
+  };
 
   return {
     user,
@@ -66,6 +62,11 @@ export class BucketNodeProvider implements Provider {
   constructor({ contextTranslator, ...opts }: ProviderOptions) {
     this._client = new BucketClient(opts);
     this.contextTranslator = contextTranslator ?? defaultTranslator;
+  }
+
+  public async initialize(): Promise<void> {
+    await this._client.initialize();
+    this.status = ServerProviderStatus.READY;
   }
 
   resolveBooleanEvaluation(
@@ -127,9 +128,25 @@ export class BucketNodeProvider implements Provider {
     });
   }
 
-  public async initialize(): Promise<void> {
-    await this._client.initialize();
-    this.status = ServerProviderStatus.READY;
+  track(
+    trackingEventName: string,
+    context?: EvaluationContext,
+    trackingEventDetails?: TrackingEventDetails,
+  ): void {
+    const translatedContext = context
+      ? this.contextTranslator(context)
+      : undefined;
+
+    const userId = translatedContext?.user?.id;
+    if (!userId) {
+      this._client.logger?.warn("No user ID provided for tracking event");
+      return;
+    }
+
+    void this._client.track(String(userId), trackingEventName, {
+      attributes: trackingEventDetails,
+      companyId: translatedContext?.company?.id?.toString(),
+    });
   }
 
   public async onClose(): Promise<void> {

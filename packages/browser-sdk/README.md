@@ -27,20 +27,28 @@ const bucketClient = new BucketClient({ publishableKey, user, company });
 
 await bucketClient.initialize();
 
-const { isEnabled, track } = bucketClient.getFeature("huddle");
+const { isEnabled, track, requestFeedback } = bucketClient.getFeature("huddle");
 
 if (isEnabled) {
   // show feature. When retrieving `isEnabled` the client automatically
   // sends a "check" event for the "huddle" feature which is shown in the
   // Bucket UI.
 
-  // On usage, call `track` to let Bucket know that a user "used" the feature
+  // On usage, call `track` to let Bucket know that a user interacted with the feature
   track();
+
+  // Use `requestFeedback` to create "Send feedback" buttons easily for specific
+  // features. This is not related to `track` and you can call them individually.
+  requestFeedback({ title: "Tell us what you think of Huddles" });
 }
 
 // `track` just calls `bucketClient.track(<featureKey>)` to send an event using the same feature key
 // You can also use `track` on the client directly to send any custom event.
 bucketClient.track("huddle");
+
+// similarly, `requestFeedback` just calls `bucketClient.requestFeedback({featureKey: <featureKey>})`
+// which you can also call directly:
+bucketClient.requestFeedback({ featureKey: "huddle" });
 ```
 
 B. Script tag (client-side directly in html)
@@ -48,10 +56,10 @@ B. Script tag (client-side directly in html)
 See [example/browser.html](example/browser.html) for a working example:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@bucketco/browser-sdk@1"></script>
+<script src="https://cdn.jsdelivr.net/npm/@bucketco/browser-sdk@2"></script>
 <script>
   const bucket = new BucketBrowserSDK.BucketClient({
-    publishableKey: "publishableKey"
+    publishableKey: "publishableKey",
     user: { id: "42" },
     company: { id: "1" },
   });

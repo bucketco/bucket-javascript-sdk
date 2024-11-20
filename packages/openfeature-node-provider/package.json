@@ -31,8 +31,8 @@
     "@babel/core": "~7.24.7",
     "@bucketco/eslint-config": "~0.0.2",
     "@bucketco/tsconfig": "~0.0.2",
-    "@openfeature/core": "^1.4.0",
-    "@openfeature/server-sdk": ">=1.13.5",
+    "@openfeature/core": "^1.5.0",
+    "@openfeature/server-sdk": ">=1.16.1",
     "@types/node": "~20.14.9",
     "eslint": "~8.56.0",
     "flush-promises": "~1.0.2",
@@ -44,9 +44,9 @@
     "vitest": "~1.6.0"
   },
   "dependencies": {
-    "@bucketco/node-sdk": ">=1.0.0"
+    "@bucketco/node-sdk": ">=1.4.2"
   },
   "peerDependencies": {
-    "@openfeature/server-sdk": ">=1.13.5"
+    "@openfeature/server-sdk": ">=1.16.1"
   }
 }
