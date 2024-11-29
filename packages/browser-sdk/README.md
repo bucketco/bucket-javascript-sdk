@@ -128,7 +128,7 @@ const huddle = bucketClient.getFeature("huddle");
 // {
 //   isEnabled: true,
 //   track: () => Promise<Response>
-//   requestFeedback: () => void
+//   requestFeedback: (options: RequestFeedbackData) => void
 // }
 ```
 
