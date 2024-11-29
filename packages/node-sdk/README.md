@@ -134,7 +134,7 @@ Note: BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED are comma separated list
   featureOverrides: {
     huddles: true,
     voiceChat: false
-  },
+  }
 }
 ```
 
