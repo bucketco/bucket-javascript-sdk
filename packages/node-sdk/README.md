@@ -127,14 +127,14 @@ Note: BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED are comma separated list
 
 ```json
 {
-  secretKey: "...",
-  logLevel: "warn",
-  offline: true,
-  host: "https://proxy.slick-demo.com"
-  featureOverrides: {
-    huddles: true,
-    voiceChat: false
-  },
+  "secretKey": "...",
+  "logLevel": "warn",
+  "offline": true,
+  "host": "https://proxy.slick-demo.com",
+  "featureOverrides": {
+    "huddles": true,
+    "voiceChat": false
+  }
 }
 ```
 
