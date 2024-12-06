@@ -7,6 +7,7 @@ import { Close } from "./icons/Close";
 import {
   arrow,
   autoUpdate,
+  flip,
   offset,
   shift,
   useFloating,
@@ -60,6 +61,12 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
     transform: false,
     whileElementsMounted: autoUpdate,
     middleware: [
+      flip({
+        padding: 10,
+        mainAxis: true,
+        crossAxis: true,
+        fallbackAxisSideDirection: "end",
+      }),
       shift(),
       offset(8),
       arrow({
