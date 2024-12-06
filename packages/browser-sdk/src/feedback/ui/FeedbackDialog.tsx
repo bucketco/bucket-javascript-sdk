@@ -6,6 +6,7 @@ import { useTimer } from "./hooks/useTimer";
 import { Close } from "./icons/Close";
 import {
   arrow,
+  autoPlacement,
   autoUpdate,
   offset,
   shift,
@@ -62,6 +63,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
     middleware: [
       shift(),
       offset(8),
+      autoPlacement(),
       arrow({
         element: arrowRef,
       }),
