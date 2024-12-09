@@ -3,7 +3,7 @@ import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import open from "open";
 
 import { getConfig, writeConfigFile } from "./config.js";
-import { API_BASE_URL } from "./constants.js";
+import { API_BASE_URL, loginUrl } from "./constants.js";
 
 /**
  * @return {Promise<string>}
@@ -13,32 +13,44 @@ export async function authenticateUser() {
     const server = http.createServer((req, res) => {
       const url = new URL(req.url ?? "/", "http://localhost");
 
-      if (url.pathname !== "/") {
+      if (url.pathname !== "/cli-login") {
         res.writeHead(404).end("Invalid path");
         server.close();
         reject(new Error("Could not authenticate: Invalid path"));
         return;
       }
 
-      if (!req.headers.cookie?.includes("session.sig")) {
+      // Handle preflight request
+      if (req.method === "OPTIONS") {
+        res.writeHead(200, {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "POST",
+          "Access-Control-Allow-Headers": "Authorization",
+        });
+        res.end();
+        return;
+      }
+
+      if (!req.headers.authorization?.startsWith("Bearer ")) {
         res.writeHead(400).end("Could not authenticate");
         server.close();
         reject(new Error("Could not authenticate"));
         return;
       }
 
+      const token = req.headers.authorization.slice("Bearer ".length);
+
       res.end("You can now close this tab.");
       server.close();
-      writeConfigFile("sessionCookies", req.headers.cookie);
-      resolve(req.headers.cookie);
+      writeConfigFile("token", token);
+      resolve(token);
     });
 
     server.listen();
     const address = server.address();
     if (address && typeof address === "object") {
       const port = address.port;
-      const redirect = `http://localhost:${port}`;
-      open(`${API_BASE_URL}/auth/google?redirect=${redirect}`, {
+      open(loginUrl(port), {
         newInstance: true,
       });
     }
@@ -46,7 +58,7 @@ export async function authenticateUser() {
 }
 
 export function checkAuth() {
-  if (!getConfig("sessionCookies")) {
+  if (!getConfig("token")) {
     throw new Error(
       'You are not authenticated. Please run "bucket auth login" first.',
     );
@@ -64,7 +76,7 @@ export async function authRequest<T = Record<string, unknown>>(
       url: `${API_BASE_URL}${url}`,
       headers: {
         ...options?.headers,
-        Cookie: getConfig("sessionCookies"),
+        Authorization: "Bearer " + getConfig("token"),
       },
     });
     return response.data;
@@ -74,7 +86,7 @@ export async function authRequest<T = Record<string, unknown>>(
       error.response &&
       error.response.status === 401
     ) {
-      writeConfigFile("sessionCookies", undefined);
+      writeConfigFile("token", undefined);
       error.message = "Your session has expired. Please login again.";
       throw error;
     }
