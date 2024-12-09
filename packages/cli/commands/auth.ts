@@ -31,7 +31,7 @@ export function registerAuthCommands(program: Command) {
     .action(async () => {
       const spinner = ora("Logging out...").start();
       try {
-        await writeConfigFile("sessionCookies", undefined);
+        await writeConfigFile("token", undefined);
         spinner.succeed();
         console.log(chalk.green("Logged out successfully!"));
       } catch (error) {

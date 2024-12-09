@@ -3,7 +3,7 @@ import { readJson, writeJson } from "fs-extra/esm";
 import { CONFIG_FILE } from "./constants.js";
 
 type Config = {
-  sessionCookies?: string;
+  token?: string;
   appId?: string;
   envId?: string;
 };
