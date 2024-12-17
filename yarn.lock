@@ -889,7 +889,7 @@ __metadata:
     "@bucketco/eslint-config": "npm:0.0.2"
     "@bucketco/tsconfig": "npm:0.0.2"
     "@floating-ui/dom": "npm:^1.6.8"
-    "@playwright/test": "npm:^1.49.1"
+    "@playwright/test": "npm:^1.48.0"
     "@types/node": "npm:^20.14.0"
     "@types/webpack": "npm:^5.28.5"
     canonical-json: "npm:^0.0.4"
@@ -2821,7 +2821,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@playwright/test@npm:^1.49.1":
+"@playwright/test@npm:^1.48.0":
   version: 1.49.1
   resolution: "@playwright/test@npm:1.49.1"
   dependencies:

@@ -38,7 +38,7 @@
   "devDependencies": {
     "@bucketco/eslint-config": "0.0.2",
     "@bucketco/tsconfig": "0.0.2",
-    "@playwright/test": "^1.49.1",
+    "@playwright/test": "^1.48.0",
     "@types/node": "^20.14.0",
     "@types/webpack": "^5.28.5",
     "css-loader": "^6.9.0",
