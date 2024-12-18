@@ -111,7 +111,7 @@ function StartHuddleButton() {
             title: "How do you like Huddles?",
             position: {
               type: "POPOVER",
-        anchor: e.currentTarget as HTMLElement,
+              anchor: e.currentTarget as HTMLElement,
             },
           })
         }
