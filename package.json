@@ -6,7 +6,8 @@
   "workspaces": [
     "packages/*",
     "packages/react-sdk/dev/*",
-    "packages/openfeature-browser-provider/example"
+    "packages/openfeature-browser-provider/example",
+    "packages/node-sdk/examples/plainNode"
   ],
   "scripts": {
     "dev": "lerna run dev --parallel",
