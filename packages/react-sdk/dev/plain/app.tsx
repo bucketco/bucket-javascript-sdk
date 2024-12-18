@@ -157,11 +157,16 @@ function Feedback() {
     <div>
       <h2>Feedback</h2>
       <button
-        onClick={() => {
+        onClick={(e) =>
           requestFeedback({
-            featureId: "fe123",
-          });
-        }}
+            title: "How do you like Huddles?",
+            featureKey: "huddle",
+            position: {
+              type: "POPOVER",
+              anchor: e.target as HTMLElement,
+            },
+          })
+        }
       >
         Request feedback
       </button>

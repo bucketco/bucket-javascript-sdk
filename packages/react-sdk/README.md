@@ -106,7 +106,15 @@ function StartHuddleButton() {
     <>
       <button onClick={track}>Start huddle!</button>
       <button
-        onClick={() => requestFeedback({ title: "How do you like Huddles?" })}
+        onClick={(e) =>
+          requestFeedback({
+            title: "How do you like Huddles?",
+            position: {
+              type: "POPOVER",
+              anchor: e.target as HTMLElement,
+            },
+          })
+        }
       >
         Give feedback!
       </button>
@@ -139,15 +147,28 @@ function StartHuddle() {
 `useRequestFeedback()` returns a function that lets you open up a dialog to ask for feedback on a specific feature.
 See [Automated Feedback Surveys](https://docs.bucket.co/product-handbook/live-satisfaction) for how to do this automatically, without code.
 
-```ts
+When using the `useRequestFeedback` you must pass the feature key to `requestFeedback`.
+The example below shows how to use `position` to ensure the popover appears next to the "Give feedback!" button.
+
+```tsx
 import { useTrackEvent } from "@bucketco/react-sdk";
 
 const requestFeedback = useRequestFeedback();
 
-requestFeedback({
-  featureId: "bucket-feature-id",
-  title: "How satisfied are you with file uploads?",
-});
+<button
+  onClick={(e) =>
+    requestFeedback({
+      featureKey: "huddle-feature-key",
+      title: "How satisfied are you with file uploads?",
+      position: {
+        type: "POPOVER",
+        anchor: e.target as HTMLElement,
+      },
+    })
+  }
+>
+  Give feedback!
+</button>;
 ```
 
 See https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/browser-sdk/FEEDBACK.md#manual-feedback-collection for more information on `requestFeedback`
