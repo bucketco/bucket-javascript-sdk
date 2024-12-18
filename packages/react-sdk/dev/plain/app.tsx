@@ -163,7 +163,7 @@ function Feedback() {
             featureKey: "huddle",
             position: {
               type: "POPOVER",
-              anchor: e.target as HTMLElement,
+              anchor: e.currentTarget as HTMLElement,
             },
           })
         }
