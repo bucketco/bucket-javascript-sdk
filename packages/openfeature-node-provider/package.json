@@ -26,14 +26,7 @@
     "access": "public"
   },
   "main": "./dist/src/index.js",
-  "types": "./dist/types/src/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/src/index.js",
-      "require": "./dist/src/index.js",
-      "types": "./dist/types/src/index.d.ts"
-    }
-  },
+  "types": "./dist/types/index.d.ts",
   "devDependencies": {
     "@babel/core": "~7.24.7",
     "@bucketco/eslint-config": "~0.0.2",

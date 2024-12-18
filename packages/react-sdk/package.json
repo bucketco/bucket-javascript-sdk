@@ -24,7 +24,8 @@
   "files": [
     "dist"
   ],
-  "main": "./dist/bucket-react-sdk.mjs",
+  "main": "./dist/bucket-react-sdk.umd.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "import": "./dist/bucket-react-sdk.mjs",
@@ -32,7 +33,6 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "types": "./dist/index.d.ts",
   "dependencies": {
     "@bucketco/browser-sdk": "2.4.0",
     "canonical-json": "^0.0.4"
