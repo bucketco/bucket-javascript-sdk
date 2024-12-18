@@ -1,6 +1,6 @@
 {
   "name": "@bucketco/openfeature-browser-provider",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "packageManager": "yarn@4.1.1",
   "license": "MIT",
   "repository": {
