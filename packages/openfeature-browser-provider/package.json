@@ -26,8 +26,14 @@
     "dist"
   ],
   "main": "./dist/bucket-openfeature-browser-provider.umd.js",
-  "module": "./dist/bucket-openfeature-browser-provider.mjs",
-  "types": "./dist/types/src/index.d.ts",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/bucket-openfeature-browser-provider.mjs",
+      "require": "./dist/bucket-openfeature-browser-provider.umd.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "dependencies": {
     "@bucketco/browser-sdk": "2.4.0"
   },
