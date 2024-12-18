@@ -162,7 +162,7 @@ const requestFeedback = useRequestFeedback();
       title: "How satisfied are you with file uploads?",
       position: {
         type: "POPOVER",
-        anchor: e.target as HTMLElement,
+        anchor: e.currentTarget as HTMLElement,
       },
     })
   }
