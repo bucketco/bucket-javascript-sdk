@@ -26,12 +26,12 @@
     "dist"
   ],
   "main": "./dist/bucket-openfeature-browser-provider.umd.js",
-  "types": "./dist/types/src/index.d.ts",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "import": "./dist/bucket-openfeature-browser-provider.mjs",
       "require": "./dist/bucket-openfeature-browser-provider.umd.js",
-      "types": "./dist/types/src/index.d.ts"
+      "types": "./dist/index.d.ts"
     }
   },
   "dependencies": {
