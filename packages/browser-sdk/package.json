@@ -27,8 +27,14 @@
     "dist"
   ],
   "main": "./dist/bucket-browser-sdk.umd.js",
-  "module": "./dist/bucket-browser-sdk.mjs",
   "types": "./dist/types/src/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/bucket-browser-sdk.mjs",
+      "require": "./dist/bucket-browser-sdk.umd.js",
+      "types": "./dist/types/src/index.d.ts"
+    }
+  },
   "dependencies": {
     "@floating-ui/dom": "^1.6.8",
     "canonical-json": "^0.0.4",
