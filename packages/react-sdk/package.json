@@ -28,6 +28,7 @@
   "exports": {
     ".": {
       "import": "./dist/bucket-react-sdk.mjs",
+      "require": "./dist/bucket-react-sdk.umd.js",
       "types": "./dist/index.d.ts"
     }
   },
