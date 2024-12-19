@@ -21,10 +21,15 @@ export default defineConfig({
       entry: resolve(__dirname, "src/index.tsx"),
       name: "BucketReactSDK",
       fileName: "bucket-react-sdk",
-      formats: ["es"],
+      formats: ["es", "umd"],
     },
     rollupOptions: {
       external: ["react", "react-dom"],
+      output: {
+        globals: {
+          react: "React",
+        },
+      },
     },
   },
   server: {
