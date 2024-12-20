@@ -1749,6 +1749,17 @@ describe("BucketClient", () => {
         expectedHeaders,
       );
     });
+
+    it("should return evaluated features2", async () => {
+      await client.getFeaturesRemote();
+
+      expect(httpClient.get).toHaveBeenCalledTimes(1);
+
+      expect(httpClient.get).toHaveBeenCalledWith(
+        "https://api.example.com/features/evaluated?context.other.custom=context&context.other.key=value&context.user.id=c1&context.company.id=u1",
+        expectedHeaders,
+      );
+    });
   });
 
   describe("offline mode", () => {
@@ -1905,5 +1916,102 @@ describe("BoundBucketClient", () => {
     boundClient.getFeatures();
     boundClient.getFeature("feature1");
     await boundClient.flush();
+  });
+
+  describe("getFeaturesRemote", () => {
+    beforeEach(async () => {
+      httpClient.get.mockResolvedValue({
+        status: 200,
+        body: {
+          success: true,
+          remoteContextUsed: true,
+          features: {
+            feature1: {
+              key: "feature1",
+              targetingVersion: 1,
+              isEnabled: true,
+            },
+            feature2: {
+              key: "feature2",
+              targetingVersion: 2,
+              isEnabled: false,
+              missingContextFields: ["something"],
+            },
+          },
+        },
+      });
+    });
+
+    afterEach(() => {
+      httpClient.get.mockClear();
+    });
+
+    it("should return evaluated features", async () => {
+      const data = {
+        organisation: {
+          id: 1,
+          name: "StarApps",
+          description:
+            "StarApps\nDok Noord 4D / 101\n9000 GENT\nBTW BE0758.840.403\nBelgium",
+          emailSlug: "dennissa",
+          bankAccountId: 34,
+          forwardDocumentsTo: "cashfeed_tester@starapps.com",
+          forwardOnStatus: null,
+          createdAt: "2024-05-17T09:51:47.151Z",
+          updatedAt: "2024-10-24T14:44:18.401Z",
+        },
+        user: {
+          id: 1,
+          name: "Nicolas Van Eenaeme",
+          email: "nicolas@starapps.com",
+          emailVerified: true,
+          picture:
+            "https://lh3.googleusercontent.com/a/ACg8ocKBVwuDARz_evR2iihFMfmJq1xqgxu040_Dt5f8nixvwJpVt5w=s96-c",
+          provider: "GOOGLE",
+          providerId: "115529272537836978633",
+          createdAt: "2024-05-17T09:51:47.156Z",
+          updatedAt: "2024-11-15T10:56:14.519Z",
+          permissions: [{}, {}],
+        },
+      };
+
+      const getFeatureContext = () => ({
+        user: data.user
+          ? {
+              id: String(data.user.id), // Must be a string
+              name: data.user.name || undefined,
+              email: data.user.email,
+            }
+          : undefined,
+        company: {
+          id: String(data.organisation.id), // Must be a string
+          name: data.organisation.name,
+        },
+      });
+
+      const boundClient = client.bindClient(getFeatureContext());
+
+      const result = await boundClient.getFeaturesRemote();
+
+      expect(result).toEqual({
+        feature1: {
+          key: "feature1",
+          isEnabled: true,
+          track: expect.any(Function),
+        },
+        feature2: {
+          key: "feature2",
+          isEnabled: false,
+          track: expect.any(Function),
+        },
+      });
+
+      expect(httpClient.get).toHaveBeenCalledTimes(1);
+
+      expect(httpClient.get).toHaveBeenCalledWith(
+        "https://api.example.com/features/evaluated?context.other.custom=context&context.other.key=value&context.user.id=c1&context.company.id=u1",
+        expectedHeaders,
+      );
+    });
   });
 });
