@@ -73,6 +73,11 @@ export interface RawFeature {
    * The version of the targeting used to evaluate if the feature is enabled (optional).
    */
   targetingVersion?: number;
+
+  /**
+   * The missing fields in the evaluation context (optional).
+   */
+  missingContextFields?: string[];
 }
 
 /**

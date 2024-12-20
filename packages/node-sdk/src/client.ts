@@ -650,6 +650,40 @@ export class BucketClient {
     await this._config.batchBuffer.flush();
   }
 
+  /**
+   * Warns if any features have targeting rules that require context fields that are missing.
+   *
+   * @param features - The features to check.
+   */
+  private warnMissingFeatureContextFields(
+    context: Context,
+    features: { key: string; missingContextFields?: string[] }[],
+  ) {
+    features.forEach(({ key, missingContextFields }) => {
+      if (missingContextFields?.length) {
+        if (
+          !this._config.rateLimiter.isAllowed(
+            hashObject({
+              key,
+              missingContextFields,
+              context,
+            }),
+          )
+        ) {
+          return;
+        }
+
+        const missingFieldsStr = missingContextFields
+          .map((field) => `"${field}"`)
+          .join(", ");
+
+        this._config.logger?.warn(
+          `feature "${key}" has targeting rules that require the following context fields: ${missingFieldsStr}`,
+        );
+      }
+    });
+  }
+
   private _getFeatures(
     options: { enableTracking: boolean } & Context,
   ): Record<string, RawFeature> {
@@ -683,6 +717,14 @@ export class BucketClient {
         context,
         feature,
       }),
+    );
+
+    this.warnMissingFeatureContextFields(
+      context,
+      evaluated.map(({ feature: { key }, missingContextFields }) => ({
+        key,
+        missingContextFields,
+      })),
     );
 
     if (enableTracking) {
@@ -794,6 +836,7 @@ export class BucketClient {
   }: ContextWithTracking): TypedFeatures {
     const options = { enableTracking, ...context };
     const features = this._getFeatures(options);
+
     return Object.fromEntries(
       Object.entries(features).map(([k, v]) => [
         k as keyof TypedFeatures,
@@ -849,16 +892,24 @@ export class BucketClient {
     };
     checkContextWithTracking(contextWithTracking);
 
-    const params = new URLSearchParams(flattenJSON({ context }));
+    const params = new URLSearchParams(
+      Object.keys(context).length ? flattenJSON({ context }) : undefined,
+    );
+
     if (key) {
       params.append("key", key);
     }
+    const paramsString = params.size ? `?${params.toString()}` : "";
 
     const res = await this.get<EvaluatedFeaturesAPIResponse>(
-      "features/evaluated?" + params.toString(),
+      "features/evaluated" + paramsString,
     );
 
     if (res) {
+      this.warnMissingFeatureContextFields(
+        context,
+        Object.values(res.features),
+      );
       return Object.fromEntries(
         Object.entries(res.features).map(([featureKey, feature]) => {
           return [
@@ -991,11 +1042,8 @@ export class BoundBucketClient {
    * @returns Features for the given user/company and whether each one is enabled or not
    */
   public async getFeaturesRemote() {
-    return await this._client.getFeaturesRemote(
-      this._options.user?.id,
-      this._options.company?.id,
-      this._options,
-    );
+    const { enableTracking: _, ...context } = this._options;
+    return await this._client.getFeaturesRemote(undefined, undefined, context);
   }
 
   /**
@@ -1005,11 +1053,12 @@ export class BoundBucketClient {
    * @returns Feature for the given user/company and key and whether it's enabled or not
    */
   public async getFeatureRemote(key: string) {
+    const { enableTracking: _, ...context } = this._options;
     return await this._client.getFeatureRemote(
       key,
-      this._options.user?.id,
-      this._options.company?.id,
-      this._options,
+      undefined,
+      undefined,
+      context,
     );
   }
 
