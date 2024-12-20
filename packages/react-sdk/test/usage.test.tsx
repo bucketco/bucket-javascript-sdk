@@ -14,7 +14,6 @@ import {
 } from "vitest";
 
 import { BucketClient } from "@bucketco/browser-sdk";
-import { HttpClient } from "@bucketco/browser-sdk/src/httpClient";
 
 import { version } from "../package.json";
 import {
@@ -137,9 +136,6 @@ afterAll(() => server.close());
 beforeAll(() => {
   vi.spyOn(BucketClient.prototype, "initialize");
   vi.spyOn(BucketClient.prototype, "stop");
-
-  vi.spyOn(HttpClient.prototype, "get");
-  vi.spyOn(HttpClient.prototype, "post");
 });
 
 beforeEach(() => {
