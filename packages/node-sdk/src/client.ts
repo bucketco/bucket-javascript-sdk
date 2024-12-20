@@ -234,9 +234,15 @@ export class BucketClient {
         TBody,
         { success: boolean }
       >(url, this._config.headers, body);
+
       this._config.logger?.debug(`post request to "${url}"`, response);
 
-      if (!isObject(response.body) || response.body.success !== true) {
+      if (
+        !isObject(response.body) ||
+        response.body.success !== true ||
+        response.status < 200 ||
+        response.status >= 400
+      ) {
         this._config.logger?.warn(
           `invalid response received from server for "${url}"`,
           response,
@@ -271,7 +277,12 @@ export class BucketClient {
 
       this._config.logger?.debug(`get request to "${url}"`, response);
 
-      if (!isObject(response.body) || response.body.success !== true) {
+      if (
+        !isObject(response.body) ||
+        response.body.success !== true ||
+        response.status < 200 ||
+        response.status >= 400
+      ) {
         this._config.logger?.warn(
           `invalid response received from server for "${url}"`,
           response,
