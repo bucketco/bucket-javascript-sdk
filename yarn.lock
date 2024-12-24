@@ -943,7 +943,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@bucketco/flag-evaluation@npm:~0.0.7, @bucketco/flag-evaluation@workspace:packages/flag-evaluation":
+"@bucketco/flag-evaluation@npm:~1.0.0, @bucketco/flag-evaluation@workspace:packages/flag-evaluation":
   version: 0.0.0-use.local
   resolution: "@bucketco/flag-evaluation@workspace:packages/flag-evaluation"
   dependencies:
@@ -964,7 +964,7 @@ __metadata:
   dependencies:
     "@babel/core": "npm:~7.24.7"
     "@bucketco/eslint-config": "npm:~0.0.2"
-    "@bucketco/flag-evaluation": "npm:~0.0.7"
+    "@bucketco/flag-evaluation": "npm:~1.0.0"
     "@bucketco/tsconfig": "npm:~0.0.2"
     "@types/node": "npm:~20.14.9"
     "@vitest/coverage-v8": "npm:~1.6.0"

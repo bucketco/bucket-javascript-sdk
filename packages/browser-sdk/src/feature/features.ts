@@ -38,27 +38,6 @@ export const DEFAULT_FEATURES_CONFIG: Config = {
 };
 
 // Deep merge two objects.
-export function mergeDeep(
-  target: Record<string, any>,
-  ...sources: Record<string, any>[]
-): Record<string, any> {
-  if (!sources.length) return target;
-  const source = sources.shift();
-
-  if (isObject(target) && isObject(source)) {
-    for (const key in source) {
-      if (isObject(source[key])) {
-        if (!target[key]) Object.assign(target, { [key]: {} });
-        mergeDeep(target[key], source[key]);
-      } else {
-        Object.assign(target, { [key]: source[key] });
-      }
-    }
-  }
-
-  return mergeDeep(target, ...sources);
-}
-
 export type FeaturesResponse = {
   success: boolean;
   features: RawFeatures;
@@ -91,18 +70,13 @@ export function flattenJSON(obj: Record<string, any>): Record<string, any> {
       for (const flatKey in flat) {
         result[`${key}.${flatKey}`] = flat[flatKey];
       }
-    } else if (typeof obj[key] === "undefined") {
-      continue;
-    } else {
+    } else if (typeof obj[key] !== "undefined") {
       result[key] = obj[key];
     }
   }
   return result;
 }
 
-export function clearFeatureCache() {
-  localStorage.clear();
-}
 export interface CheckEvent {
   key: string;
   value: boolean;
@@ -118,7 +92,7 @@ export class FeaturesClient {
   private features: RawFeatures;
   private config: Config;
   private rateLimiter: RateLimiter;
-  private logger: Logger;
+  private readonly logger: Logger;
 
   constructor(
     private httpClient: HttpClient,
@@ -156,77 +130,8 @@ export class FeaturesClient {
     this.setFeatures(features);
   }
 
-  private setFeatures(features: RawFeatures) {
-    this.features = features;
-  }
-
   getFeatures(): RawFeatures {
     return this.features;
-  }
-
-  private fetchParams() {
-    const flattenedContext = flattenJSON({ context: this.context });
-    const params = new URLSearchParams(flattenedContext);
-    // publishableKey should be part of the cache key
-    params.append("publishableKey", this.httpClient.publishableKey);
-
-    // sort the params to ensure that the URL is the same for the same context
-    params.sort();
-
-    return params;
-  }
-
-  private async maybeFetchFeatures(): Promise<RawFeatures | undefined> {
-    const cacheKey = this.fetchParams().toString();
-    const cachedItem = this.cache.get(cacheKey);
-
-    if (cachedItem) {
-      if (!cachedItem.stale) return cachedItem.features;
-
-      // serve successful stale cache if `staleWhileRevalidate` is enabled
-      if (this.config.staleWhileRevalidate) {
-        // re-fetch in the background, but immediately return last successful value
-        this.fetchFeatures()
-          .then((features) => {
-            if (!features) return;
-
-            this.cache.set(cacheKey, {
-              features,
-            });
-            this.setFeatures(features);
-          })
-          .catch(() => {
-            // we don't care about the result, we just want to re-fetch
-          });
-        return cachedItem.features;
-      }
-    }
-
-    // if there's no cached item or there is a stale one but `staleWhileRevalidate` is disabled
-    // try fetching a new one
-    const fetchedFeatures = await this.fetchFeatures();
-
-    if (fetchedFeatures) {
-      this.cache.set(cacheKey, {
-        features: fetchedFeatures,
-      });
-
-      return fetchedFeatures;
-    }
-
-    if (cachedItem) {
-      // fetch failed, return stale cache
-      return cachedItem.features;
-    }
-
-    // fetch failed, nothing cached => return fallbacks
-    return this.config.fallbackFeatures.reduce((acc, key) => {
-      acc[key] = {
-        key,
-        isEnabled: true,
-      };
-      return acc;
-    }, {} as RawFeatures);
   }
 
   public async fetchFeatures(): Promise<RawFeatures | undefined> {
@@ -296,5 +201,74 @@ export class FeaturesClient {
     });
 
     return checkEvent.value;
+  }
+
+  private setFeatures(features: RawFeatures) {
+    this.features = features;
+  }
+
+  private fetchParams() {
+    const flattenedContext = flattenJSON({ context: this.context });
+    const params = new URLSearchParams(flattenedContext);
+    // publishableKey should be part of the cache key
+    params.append("publishableKey", this.httpClient.publishableKey);
+
+    // sort the params to ensure that the URL is the same for the same context
+    params.sort();
+
+    return params;
+  }
+
+  private async maybeFetchFeatures(): Promise<RawFeatures | undefined> {
+    const cacheKey = this.fetchParams().toString();
+    const cachedItem = this.cache.get(cacheKey);
+
+    if (cachedItem) {
+      if (!cachedItem.stale) return cachedItem.features;
+
+      // serve successful stale cache if `staleWhileRevalidate` is enabled
+      if (this.config.staleWhileRevalidate) {
+        // re-fetch in the background, but immediately return last successful value
+        this.fetchFeatures()
+          .then((features) => {
+            if (!features) return;
+
+            this.cache.set(cacheKey, {
+              features,
+            });
+            this.setFeatures(features);
+          })
+          .catch(() => {
+            // we don't care about the result, we just want to re-fetch
+          });
+        return cachedItem.features;
+      }
+    }
+
+    // if there's no cached item or there is a stale one but `staleWhileRevalidate` is disabled
+    // try fetching a new one
+    const fetchedFeatures = await this.fetchFeatures();
+
+    if (fetchedFeatures) {
+      this.cache.set(cacheKey, {
+        features: fetchedFeatures,
+      });
+
+      return fetchedFeatures;
+    }
+
+    if (cachedItem) {
+      // fetch failed, return stale cache
+      return cachedItem.features;
+    }
+
+    // fetch failed, nothing cached => return fallbacks
+    return this.config.fallbackFeatures.reduce((acc, key) => {
+      acc[key] = {
+        key,
+        isEnabled: true,
+      };
+      return acc;
+    }, {} as RawFeatures);
   }
 }
