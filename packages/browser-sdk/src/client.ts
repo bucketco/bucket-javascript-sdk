@@ -18,6 +18,7 @@ import { API_HOST, SSE_REALTIME_HOST } from "./config";
 import { BucketContext, CompanyContext, UserContext } from "./context";
 import { HttpClient } from "./httpClient";
 import { Logger, loggerWithPrefix, quietConsoleLogger } from "./logger";
+import { openToolbar } from "./toolbar";
 
 const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 const isNode = typeof document === "undefined"; // deno supports "window" but not "document" according to https://remix.run/docs/en/main/guides/gotchas
@@ -59,7 +60,37 @@ interface Config {
   enableTracking: boolean;
 }
 
-export interface InitOptions {
+type DataType =
+  | "boolean"
+  | "string"
+  | "number"
+  | "object"
+  | "array"
+  | { [key: string]: DataType }
+  | ["string"]
+  | { key: "bleh"; config: { val: "boolean" } }; // enum?
+
+type FeatureDefinition =
+  | boolean
+  | {
+      config?: DataType;
+      access?: boolean;
+    };
+
+export interface FeatureDefinitions {
+  [key: string]: FeatureDefinition;
+}
+
+type PickFlag<T> = DataType & { key: T };
+
+type Extract2<T> = T extends { key: "bleh" } ? T : never;
+
+// keyof also resolved into `number` so we add the `& string`
+type FeatureKey = keyof FeatureDefinitions & string;
+
+export interface InitOptions<
+  FeatureDefs extends FeatureDefinitions = FeatureDefinitions,
+> {
   publishableKey: string;
   user?: UserContext;
   company?: CompanyContext;
@@ -69,8 +100,10 @@ export interface InitOptions {
   sseHost?: string;
   feedback?: FeedbackOptions;
   features?: FeaturesOptions;
+  featureDefinitions?: FeatureDefs;
   sdkVersion?: string;
   enableTracking?: boolean;
+  showToolbar?: boolean;
 }
 
 const defaultConfig: Config = {
@@ -87,7 +120,9 @@ export interface Feature {
   ) => void;
 }
 
-export class BucketClient {
+export class BucketClient<
+  FeatureDefs extends FeatureDefinitions = FeatureDefinitions,
+> extends EventTarget {
   private publishableKey: string;
   private context: BucketContext;
   private config: Config;
@@ -95,12 +130,21 @@ export class BucketClient {
   private logger: Logger;
   private httpClient: HttpClient;
 
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  private featureDefs: FeatureDefs | {};
+  private featureIsEnabledOverrides: Record<FeatureKey, boolean>;
+  private showToolbar: boolean;
+
   private autoFeedback: AutoFeedback | undefined;
   private autoFeedbackInit: Promise<void> | undefined;
   private featuresClient: FeaturesClient;
 
-  constructor(opts: InitOptions) {
+  constructor(opts: InitOptions<FeatureDefs>) {
+    super();
     this.publishableKey = opts.publishableKey;
+    this.featureDefs = opts.featureDefinitions ?? {};
+    this.showToolbar = opts.showToolbar ?? false;
+    this.featureIsEnabledOverrides = {};
     this.logger =
       opts?.logger ?? loggerWithPrefix(quietConsoleLogger, "[Bucket]");
     this.context = {
@@ -186,6 +230,13 @@ export class BucketClient {
     if (this.context.company && this.config.enableTracking) {
       this.company().catch((e) => {
         this.logger.error("error sending company", e);
+      });
+    }
+
+    if (this.showToolbar) {
+      this.logger.info("showing toolbar");
+      openToolbar({
+        bucketClient: this,
       });
     }
   }
@@ -276,7 +327,7 @@ export class BucketClient {
    * @param options
    * @returns
    */
-  async feedback(payload: Feedback) {
+  async feedback(payload: Feedback & { featureKey?: FeatureKey }) {
     const userId =
       payload.userId ||
       (this.context.user?.id ? String(this.context.user?.id) : undefined);
@@ -298,7 +349,7 @@ export class BucketClient {
    *
    * @param options
    */
-  requestFeedback(options: RequestFeedbackData) {
+  requestFeedback(options: RequestFeedbackData & { featureKey?: FeatureKey }) {
     if (!this.context.user?.id) {
       this.logger.error(
         "`requestFeedback` call ignored. No `user` context provided at initialization",
@@ -367,20 +418,32 @@ export class BucketClient {
   /**
    * Returns a map of enabled features.
    * Accessing a feature will *not* send a check event
+   * and it does not take any feature overrides into account.
    *
    * @returns Map of features
    */
   getFeatures(): RawFeatures {
-    return this.featuresClient.getFeatures();
+    const features = this.featuresClient.getFeatures();
+    for (const key in this.featureDefs) {
+      if (key in features) continue;
+      features[key] = {
+        key,
+        isEnabled: false,
+        targetingVersion: 0,
+      };
+    }
+    return features as RawFeatures & FeatureDefs;
   }
 
   /**
    * Return a feature. Accessing `isEnabled` will automatically send a `check` event.
    * @returns A feature
    */
-  getFeature(key: string): Feature {
+  getFeature(key: FeatureKey): Feature {
     const f = this.getFeatures()[key];
 
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const bClient = this;
     const fClient = this.featuresClient;
     const value = f?.isEnabled ?? false;
 
@@ -388,14 +451,14 @@ export class BucketClient {
       get isEnabled() {
         fClient
           .sendCheckEvent({
-            key: key,
+            key: String(key),
             version: f?.targetingVersion,
             value,
           })
           .catch(() => {
             // ignore
           });
-        return value;
+        return bClient.featureIsEnabledOverrides[key] ?? value;
       },
       track: () => this.track(key),
       requestFeedback: (
@@ -407,6 +470,22 @@ export class BucketClient {
         });
       },
     };
+  }
+
+  setEnabledOverride(key: FeatureKey, value: boolean | null) {
+    if (!(typeof value === "boolean" || value === null)) {
+      throw new Error("setEnabledOverride: value must be boolean or null");
+    }
+    if (value === null) {
+      delete this.featureIsEnabledOverrides[key];
+    } else {
+      this.featureIsEnabledOverrides[key] = value;
+    }
+    this.dispatchEvent(new Event("featuresChanged"));
+  }
+
+  getEnabledOverride(key: FeatureKey): boolean | null {
+    return this.featureIsEnabledOverrides[key] ?? null;
   }
 
   sendCheckEvent(checkEvent: CheckEvent) {

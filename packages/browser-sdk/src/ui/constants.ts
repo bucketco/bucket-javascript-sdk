@@ -1,4 +1,5 @@
 export const feedbackContainerId = "bucket-feedback-dialog-container";
+export const toolbarContainerId = "bucket-toolbar-dialog-container";
 
 // see https://developer.mozilla.org/en-US/docs/Web/API/Element#events
 export const propagatedEvents = [

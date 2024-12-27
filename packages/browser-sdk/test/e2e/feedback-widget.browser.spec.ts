@@ -6,7 +6,7 @@ import { DEFAULT_TRANSLATIONS } from "../../src/feedback/ui/config/defaultTransl
 import {
   feedbackContainerId,
   propagatedEvents,
-} from "../../src/feedback/ui/constants";
+} from "../../src/ui/constants";
 import { FeedbackTranslations } from "../../src/feedback/ui/types";
 
 const KEY = randomUUID();

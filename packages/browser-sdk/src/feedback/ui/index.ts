@@ -1,10 +1,12 @@
 import { h, render } from "preact";
 
-import { feedbackContainerId, propagatedEvents } from "./constants";
-import { FeedbackDialog } from "./FeedbackDialog";
-import { FeedbackPosition, OpenFeedbackFormOptions } from "./types";
+import { feedbackContainerId, propagatedEvents } from "../../ui/constants";
+import { Position } from "../../ui/types";
 
-export const DEFAULT_POSITION: FeedbackPosition = {
+import { FeedbackDialog } from "./FeedbackDialog";
+import { OpenFeedbackFormOptions } from "./types";
+
+export const DEFAULT_POSITION: Position = {
   type: "DIALOG",
   placement: "bottom-right",
 };

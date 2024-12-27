@@ -1,0 +1,9 @@
+:bucket-feature-manager-popover {
+  width: 300px;
+  height: 200px;
+  position: absolute;
+  inset: unset;
+  bottom: 5px;
+  right: 5px;
+  margin: 0;
+}

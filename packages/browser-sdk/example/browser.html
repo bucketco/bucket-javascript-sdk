@@ -22,20 +22,32 @@
 
     <script src="../dist/bucket-browser-sdk.umd.js"></script>
     <script>
+      const features = {
+        huddles: true,
+      };
+
       const bucket = new BucketBrowserSDK.BucketClient({
         publishableKey,
         user: { id: "42" },
         company: { id: "1" },
+        showToolbar: true,
+        featureDefinitions: features,
       });
 
       bucket.initialize().then(() => {
         console.log("Bucket initialized");
         document.getElementById("loading").style.display = "none";
-        const { isEnabled, track, requestFeedback } =
-          bucket.getFeature("huddles");
+      });
+
+      bucket.addEventListener("featuresChanged", () => {
+        const { isEnabled } = bucket.getFeature("huddles");
+        console.log("Features changed", isEnabled);
         if (isEnabled) {
           // show the start-huddle button
           document.getElementById("start-huddle").style.display = "block";
+        } else {
+          // hide the start-huddle button
+          document.getElementById("start-huddle").style.display = "none";
         }
       });
     </script>

@@ -15,5 +15,5 @@ export type {
   UnassignedFeedback,
 } from "./feedback/feedback";
 export type { DEFAULT_TRANSLATIONS } from "./feedback/ui/config/defaultTranslations";
-export { feedbackContainerId, propagatedEvents } from "./feedback/ui/constants";
 export type { FeedbackTranslations } from "./feedback/ui/types";
+export { feedbackContainerId, propagatedEvents } from "./ui/constants";
