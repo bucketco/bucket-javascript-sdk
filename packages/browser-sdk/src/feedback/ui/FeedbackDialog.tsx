@@ -36,12 +36,12 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
   onSubmit,
   onScoreSubmit,
 }) => {
-  const close = useCallback(() => {
-    const dialog = refs.floating.current as HTMLDialogElement | null;
-    dialog?.close();
-    autoClose.stop();
-    onClose?.();
-  }, [onClose]);
+  // const close = useCallback(() => {
+  //   const dialog = refs.floating.current as HTMLDialogElement | null;
+  //   dialog?.close();
+  //   autoClose.stop();
+  //   onClose?.();
+  // }, [onClose]);
 
   const [feedbackId, setFeedbackId] = useState<string | undefined>(undefined);
   const [scoreState, setScoreState] = useState<
@@ -77,12 +77,15 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
 
   return (
     <>
+      <style dangerouslySetInnerHTML={{ __html: styles }}></style>
       <Dialog
+        open={true}
         containerId={feedbackContainerId}
         key={key}
         position={position}
-        styles={styles}
-        DialogContent={({ close, dismiss }) => (
+        onClose={onClose}
+        onDismiss={onDismiss}
+        DialogContent={({ dismiss }) => (
           <>
             <FeedbackForm
               t={{ ...DEFAULT_TRANSLATIONS, ...translations }}

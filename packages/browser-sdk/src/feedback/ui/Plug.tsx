@@ -6,7 +6,7 @@ export const Plug: FunctionComponent = () => {
   return (
     <footer class="plug">
       <a href="https://bucket.co" target="_blank">
-        Powered by <Logo /> Bucket
+        Powered by <Logo height="10px" width="10px" /> Bucket
       </a>
     </footer>
   );

@@ -1,8 +1,6 @@
 import { Fragment, FunctionComponent, h } from "preact";
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
-import { Offset } from "../../ui/types";
-
 import {
   arrow,
   autoUpdate,
@@ -12,42 +10,45 @@ import {
   useFloating,
 } from "./packages/floating-ui-preact-dom";
 import { Position } from "./types";
+import { parseUnanchoredPosition } from "./utils";
 
 type CssPosition = Partial<
   Record<"top" | "left" | "right" | "bottom", number | string>
 >;
 
 export interface OpenDialogOptions {
-  key: string;
-
   /**
    * Control the placement and behavior of the dialog.
    */
   position: Position;
+
+  strategy?: "fixed" | "absolute";
+
+  open: boolean;
 
   onClose?: () => void;
   onDismiss?: () => void;
 
   containerId: string;
 
-  styles: string;
-
   DialogContent: preact.FunctionComponent<{
     close: () => void;
-    onClose: () => void;
+    onClose?: () => void;
     dismiss: () => void;
   }>;
 }
 
 export const Dialog: FunctionComponent<OpenDialogOptions> = ({
   position,
+  open,
   onClose,
   onDismiss,
   containerId,
   DialogContent,
-  styles,
+  strategy,
 }) => {
   const arrowRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const anchor = position.type === "POPOVER" ? position.anchor : null;
   const {
     refs,
@@ -58,6 +59,7 @@ export const Dialog: FunctionComponent<OpenDialogOptions> = ({
     elements: {
       reference: anchor,
     },
+    strategy,
     transform: false,
     whileElementsMounted: autoUpdate,
     middleware: [
@@ -77,35 +79,7 @@ export const Dialog: FunctionComponent<OpenDialogOptions> = ({
 
   let unanchoredPosition: CssPosition = {};
   if (position.type === "DIALOG") {
-    const offsetY = parseOffset(position.offset?.y);
-    const offsetX = parseOffset(position.offset?.x);
-
-    switch (position.placement) {
-      case "top-left":
-        unanchoredPosition = {
-          top: offsetY,
-          left: offsetX,
-        };
-        break;
-      case "top-right":
-        unanchoredPosition = {
-          top: offsetY,
-          right: offsetX,
-        };
-        break;
-      case "bottom-left":
-        unanchoredPosition = {
-          bottom: offsetY,
-          left: offsetX,
-        };
-        break;
-      case "bottom-right":
-        unanchoredPosition = {
-          bottom: offsetY,
-          right: offsetX,
-        };
-        break;
-    }
+    unanchoredPosition = parseUnanchoredPosition(position);
   }
 
   const { x: arrowX, y: arrowY } = middlewareData.arrow ?? {};
@@ -185,11 +159,23 @@ export const Dialog: FunctionComponent<OpenDialogOptions> = ({
     };
   }, [position.type, close]);
 
+  function setDiagRef(node: HTMLDialogElement | null) {
+    refs.setFloating(node);
+    dialogRef.current = node;
+  }
+
+  useEffect(() => {
+    if (open) {
+      if (dialogRef.current && !dialogRef.current.hasAttribute("open")) {
+        dialogRef.current[position.type === "MODAL" ? "showModal" : "show"]();
+      }
+    }
+  }, [dialogRef, open, position.type]);
+
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: styles }}></style>
       <dialog
-        ref={refs.setFloating}
+        ref={setDiagRef}
         class={[
           "dialog",
           position.type === "MODAL"
@@ -201,7 +187,7 @@ export const Dialog: FunctionComponent<OpenDialogOptions> = ({
         ].join(" ")}
         style={anchor ? floatingStyles : unanchoredPosition}
       >
-        <DialogContent close={close} dismiss={dismiss} />
+        <DialogContent close={close} dismiss={dismiss} onClose={onClose} />
 
         {anchor && (
           <div
@@ -214,10 +200,3 @@ export const Dialog: FunctionComponent<OpenDialogOptions> = ({
     </>
   );
 };
-
-function parseOffset(offsetInput?: Offset["x"] | Offset["y"]) {
-  if (offsetInput === undefined) return "1rem";
-  if (typeof offsetInput === "number") return offsetInput + "px";
-
-  return offsetInput;
-}

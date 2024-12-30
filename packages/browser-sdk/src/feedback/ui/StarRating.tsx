@@ -6,7 +6,12 @@ import { Neutral } from "../../ui/icons/Neutral";
 import { Satisfied } from "../../ui/icons/Satisfied";
 import { VeryDissatisfied } from "../../ui/icons/VeryDissatisfied";
 import { VerySatisfied } from "../../ui/icons/VerySatisfied";
-import { arrow, offset, useFloating } from "../../ui/packages/floating-ui-preact-dom";
+import {
+  arrow,
+  offset,
+  useFloating,
+} from "../../ui/packages/floating-ui-preact-dom";
+
 import { FeedbackTranslations } from "./types";
 
 const scores = [

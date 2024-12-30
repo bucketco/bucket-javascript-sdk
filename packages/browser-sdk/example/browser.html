@@ -13,9 +13,18 @@
       const publishableKey = urlParams.get("publishableKey");
       const featureKey = urlParams.get("featureKey") ?? "huddles";
     </script>
+    <style>
+      #start-huddle {
+        border: 1px solid black;
+        padding: 10px;
+      }
+    </style>
     <div id="start-huddle" style="display: none">
+      Start huddle!<br />
       <button onClick="bucket.track(featureKey)">Click me</button>
-      <button onClick="bucket.requestFeedback({featureKey})">
+      <button
+        onClick="bucket.requestFeedback({featureKey, position: {type: 'POPOVER', anchor: event.currentTarget}})"
+      >
         Give feedback!
       </button>
     </div>
@@ -30,7 +39,10 @@
         publishableKey,
         user: { id: "42" },
         company: { id: "1" },
-        showToolbar: true,
+        toolbar: {
+          show: true,
+          position: "bottom-right",
+        },
         featureDefinitions: features,
       });
 
@@ -41,7 +53,6 @@
 
       bucket.addEventListener("featuresChanged", () => {
         const { isEnabled } = bucket.getFeature("huddles");
-        console.log("Features changed", isEnabled);
         if (isEnabled) {
           // show the start-huddle button
           document.getElementById("start-huddle").style.display = "block";

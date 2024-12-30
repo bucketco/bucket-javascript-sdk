@@ -1,46 +1,131 @@
-// import SimpleSelect from "@/common/components/SimpleSelect";
-// import SimpleTable from "@/common/components/SimpleTable";
-// import { useFeature, useFeatures } from "@/common/hooks/useFeatureFlags";
-
 import { h } from "preact";
+import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { BucketClient } from "../client";
+import { toolbarContainerId } from "../ui/constants";
+import { Dialog } from "../ui/Dialog";
 import { Logo } from "../ui/icons/Logo";
+import { Offset, Placement } from "../ui/types";
+import { parseUnanchoredPosition } from "../ui/utils";
 
+import { Switch } from "./Switch";
 import styles from "./Toolbar.css?inline";
+
+export interface ToolbarPosition {
+  placement: Placement;
+  offset?: Offset;
+}
+
+type Feature = {
+  key: string;
+  isEnabled: boolean;
+  localOverride: boolean | null;
+};
 
 export default function Toolbar({
   bucketClient,
+  position,
 }: {
   bucketClient: BucketClient;
+  position: ToolbarPosition;
 }) {
-  return (
-    <div>
-      <style dangerouslySetInnerHTML={{ __html: styles }}></style>
+  const [toolbarOpen, setToolbarOpen] = useState(false);
+  const toggleToolbarRef = useRef<HTMLDivElement>(null);
+  const [features, setFeatures] = useState<Feature[]>([]);
 
-      <div id="bucketToolbar" onClick={}>
-        <Logo />
-      </div>
-      <div id="bucketToolbarPopover">
-        <FeatureTable bucketClient={bucketClient} />
-      </div>
+  const toggleToolbar = useCallback(() => {
+    setToolbarOpen((prev) => !prev);
+  }, [setToolbarOpen]);
+
+  function updateFeatures() {
+    const rawFeatures = bucketClient.getFeatures();
+    setFeatures(
+      Object.values(rawFeatures)
+        .filter((f) => f !== undefined)
+        .map((feature) => ({
+          key: feature.key,
+          localOverride: bucketClient.getEnabledOverride(feature?.key),
+          isEnabled: feature.isEnabled,
+        })),
+    );
+  }
+
+  useEffect(() => {
+    updateFeatures();
+    bucketClient.addEventListener("featuresChanged", updateFeatures);
+    return () => {
+      bucketClient.removeEventListener("featuresChanged", updateFeatures);
+    };
+  }, [bucketClient]);
+
+  return (
+    <div id="toolbarRoot">
+      <style dangerouslySetInnerHTML={{ __html: styles }}></style>
+      <ToolbarToggle
+        innerRef={toggleToolbarRef}
+        position={position}
+        onClick={toggleToolbar}
+      />
+      <Dialog
+        strategy="fixed"
+        open={toolbarOpen}
+        DialogContent={() => (
+          <div id="bucketToolbarPopover">
+            <FeatureTable
+              features={features}
+              setEnabledOverride={bucketClient.setEnabledOverride.bind(
+                bucketClient,
+              )}
+            />
+          </div>
+        )}
+        containerId={toolbarContainerId}
+        position={{
+          type: "POPOVER",
+          anchor: toggleToolbarRef.current,
+        }}
+      />
+    </div>
+  );
+}
+
+function ToolbarToggle({
+  position,
+  onClick,
+  innerRef,
+}: {
+  position: ToolbarPosition;
+  onClick: () => void;
+  innerRef: React.RefObject<HTMLDivElement>;
+  children?: preact.VNode;
+}) {
+  const offsets = parseUnanchoredPosition(position);
+  return (
+    <div
+      ref={innerRef}
+      id="bucketToolbarToggle"
+      onClick={onClick}
+      style={{ cursor: "pointer", ...offsets }}
+    >
+      <Logo height="13px" width="13px" />
     </div>
   );
 }
 
 function Reset({
-  bucketClient,
+  setEnabledOverride,
   featureKey,
 }: {
-  bucketClient: BucketClient;
+  setEnabledOverride: (key: string, value: boolean | null) => void;
   featureKey: string;
 }) {
   return (
     <a
-      href="#"
+      href=""
+      class="reset"
       onClick={(e) => {
         e.preventDefault();
-        bucketClient.setEnabledOverride(featureKey, null);
+        setEnabledOverride(featureKey, null);
       }}
     >
       reset
@@ -48,30 +133,38 @@ function Reset({
   );
 }
 
-function FeatureTable({ bucketClient }: { bucketClient: BucketClient }) {
-  const features = bucketClient.getFeatures();
-
+function FeatureTable({
+  features,
+  setEnabledOverride,
+}: {
+  features: {
+    key: string;
+    localOverride: boolean | null;
+    isEnabled: boolean;
+  }[];
+  setEnabledOverride: (key: string, value: boolean | null) => void;
+}) {
   return (
     <table>
       <tbody>
         {Object.values(features).map((feature) => (
-          <tr>
+          <tr key={feature!.key}>
             <td>{feature!.key}</td>
             <td>
-              {bucketClient.getEnabledOverride(feature!.key) !== null ? (
-                <Reset bucketClient={bucketClient} featureKey={feature!.key} />
+              {feature?.localOverride !== null ? (
+                <Reset
+                  setEnabledOverride={setEnabledOverride}
+                  featureKey={feature!.key}
+                />
               ) : null}
             </td>
 
             <td>
-              <input
-                type="checkbox"
-                checked={bucketClient.getFeature(feature!.key).isEnabled}
+              <Switch
+                onColor="var(--brand300)"
+                isOn={feature!.isEnabled || feature?.localOverride === true}
                 onChange={(e) =>
-                  bucketClient.setEnabledOverride(
-                    feature!.key,
-                    e.currentTarget.checked,
-                  )
+                  setEnabledOverride(feature!.key, e.currentTarget.checked)
                 }
               />
             </td>
@@ -81,107 +174,3 @@ function FeatureTable({ bucketClient }: { bucketClient: BucketClient }) {
     </table>
   );
 }
-
-/*
-    <Popover placement="left-start">
-      <PopoverTrigger>
-        <IconButton
-          _hover={{ color: useColorModeValue("gray.800", "gray.200") }}
-          aria-label="feature targeting manager"
-          color={hasLocalOverrides ? activeColor : "dimmed"}
-          icon={
-            hasLocalOverrides ? (
-              <RiFlag2Fill size={16} />
-            ) : (
-              <RiFlag2Line size={16} />
-            )
-          }
-          size="md"
-          variant="ghost"
-          isRound
-        />
-      </PopoverTrigger>
-      <PopoverContent w="auto">
-        <PopoverArrow />
-        <PopoverBody fontSize="sm" p={2}>
-          <SimpleTable
-            columns={["Feature key", "Remote", "Env", "Override?", "", "Final"]}
-            rows={availableFeatures ?? []}
-            rowTemplate={(key) => <SingleFeature key={key} featureKey={key} />}
-            size="sm"
-          />
-          <Button
-            isDisabled={!hasLocalOverrides}
-            m={3}
-            mb={2}
-            size="xs"
-            variant="outline"
-            onClick={() => resetLocalOverrides()}
-          >
-            Reset overrides
-          </Button>
-        </PopoverBody>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-function SingleFeature({
-  featureKey,
-}: {
-  featureKey: keyof AvailableFeatures;
-}) {
-  const { isEnabled, values, updateLocalOverride } = useFeature(featureKey);
-
-  return (
-    <Tr>
-      <Td fontWeight="medium" minW="200px">
-        {featureKey}
-      </Td>
-      <Td>
-        <FormatValue value={values.evaluation} />
-      </Td>
-      <Td>
-        <FormatValue value={values.envVar} />
-      </Td>
-      <Td>
-        <SimpleSelect
-          options={[
-            {
-              label: <FormatValue label="enable" value={true} />,
-              value: "enable",
-            },
-            {
-              label: <FormatValue label="disable" value={false} />,
-              value: "disable",
-            },
-            {
-              label: <FormatValue label="unset" value={null} />,
-              value: "unset",
-            },
-          ]}
-          size="xs"
-          value={
-            values.override === null
-              ? "unset"
-              : values.override
-                ? "enable"
-                : "disable"
-          }
-          w={20}
-          onChange={(val) => {
-            const newValue = val === "unset" ? null : val === "enable";
-            updateLocalOverride(newValue);
-          }}
-        />
-      </Td>
-      <Td color="dimmed">
-        <RiArrowRightLine size={16} />
-      </Td>
-      <Td>
-        <FormatValue value={isEnabled} />
-      </Td>
-    </Tr>
-  );
-}
-*/

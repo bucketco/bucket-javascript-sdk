@@ -213,6 +213,7 @@ export function App() {
         featureOptions={{
           fallbackFeatures: ["huddle"],
         }}
+        features={myFeatures}
       >
         <Demos />
         {}

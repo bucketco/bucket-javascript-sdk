@@ -1,5 +1,10 @@
-export type { Feature, InitOptions } from "./client";
-export { BucketClient } from "./client";
+export type {
+  Feature,
+  FeatureDefinitions,
+  InitOptions,
+  ToolbarOptions,
+} from "./client";
+export { BucketClient, defineFeatures } from "./client";
 export type { BucketContext, CompanyContext, UserContext } from "./context";
 export type {
   CheckEvent,

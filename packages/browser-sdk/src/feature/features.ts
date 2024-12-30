@@ -13,6 +13,7 @@ export type RawFeature = {
   key: string;
   isEnabled: boolean;
   targetingVersion?: number;
+  config?: any;
 };
 
 export type RawFeatures = Record<string, RawFeature | undefined>;

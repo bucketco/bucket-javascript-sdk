@@ -2,6 +2,7 @@ import {
   CheckEvent,
   FeaturesClient,
   FeaturesOptions,
+  RawFeature,
   RawFeatures,
 } from "./feature/features";
 import {
@@ -14,11 +15,12 @@ import {
   RequestFeedbackOptions,
 } from "./feedback/feedback";
 import * as feedbackLib from "./feedback/ui";
+import { ToolbarPosition } from "./toolbar/Toolbar";
 import { API_HOST, SSE_REALTIME_HOST } from "./config";
 import { BucketContext, CompanyContext, UserContext } from "./context";
 import { HttpClient } from "./httpClient";
 import { Logger, loggerWithPrefix, quietConsoleLogger } from "./logger";
-import { openToolbar } from "./toolbar";
+import { showToolbarToggle } from "./toolbar";
 
 const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 const isNode = typeof document === "undefined"; // deno supports "window" but not "document" according to https://remix.run/docs/en/main/guides/gotchas
@@ -67,26 +69,73 @@ type DataType =
   | "object"
   | "array"
   | { [key: string]: DataType }
-  | ["string"]
-  | { key: "bleh"; config: { val: "boolean" } }; // enum?
+  | ["string"];
+// | { key: "bleh"; config: { val: "boolean" } }; // enum?
 
-type FeatureDefinition =
-  | boolean
-  | {
-      config?: DataType;
-      access?: boolean;
-    };
+type FeatureDefinition = Readonly<{
+  key: string;
+  config?: DataType;
+  access?: boolean;
+}>;
 
-export interface FeatureDefinitions {
-  [key: string]: FeatureDefinition;
+export type FeatureDefinitions = Readonly<Array<string | FeatureDefinition>>;
+
+export function defineFeatures<T extends FeatureDefinitions>(features: T): T {
+  return features;
 }
 
-type PickFlag<T> = DataType & { key: T };
+type ToType<T> = T extends "boolean"
+  ? boolean
+  : T extends "string"
+    ? string
+    : T extends "number"
+      ? number
+      : T extends "object"
+        ? object
+        : T extends "array"
+          ? any[]
+          : T extends object
+            ? { [K in keyof T]: ToType<T[K]> }
+            : undefined;
 
-type Extract2<T> = T extends { key: "bleh" } ? T : never;
+type FeatureKey<Defs extends FeatureDefinitions> =
+  | Extract<Defs[number], { key: string }>["key"]
+  | Extract<Defs[number], string>;
 
-// keyof also resolved into `number` so we add the `& string`
-type FeatureKey = keyof FeatureDefinitions & string;
+type ToConfigType<
+  U extends FeatureDefinitions,
+  Key extends FeatureKey<U>,
+> = ToType<
+  Extract<U, { key: Key }> extends { config: infer C } ? C : undefined
+>;
+
+type Keys<Defs extends FeatureDefinitions> =
+  | Extract<Defs[number], { key: string }>["key"]
+  | Extract<Defs[number], string>;
+
+type GetFeature<Defs extends FeatureDefinitions, T extends Keys<Defs>> = {
+  track: () => Promise<Response | undefined>;
+  requestFeedback: (
+    options: Omit<RequestFeedbackData, "featureKey" | "featureId">,
+  ) => void;
+} & (Extract<Defs[number], string> extends T // figure out `access`
+  ? { isEnabled: boolean }
+  : Extract<Defs[number], { key: T }> extends { access: false }
+    ? unknown
+    : { isEnabled: boolean }) &
+  // extend with {config: ...} if its enabled
+  (ToConfigType<Defs, T> extends undefined
+    ? unknown
+    : {
+        config: ToConfigType<Defs, T>;
+      });
+
+export type ToolbarOptions =
+  | boolean
+  | {
+      show?: boolean;
+      position?: ToolbarPosition;
+    };
 
 export interface InitOptions<
   FeatureDefs extends FeatureDefinitions = FeatureDefinitions,
@@ -103,7 +152,7 @@ export interface InitOptions<
   featureDefinitions?: FeatureDefs;
   sdkVersion?: string;
   enableTracking?: boolean;
-  showToolbar?: boolean;
+  toolbar?: ToolbarOptions;
 }
 
 const defaultConfig: Config = {
@@ -120,6 +169,14 @@ export interface Feature {
   ) => void;
 }
 
+function shouldShowToolbar(opts?: ToolbarOptions) {
+  return (
+    opts === true ||
+    (typeof opts === "object" && opts.show === true) ||
+    window?.location?.hostname === "localhost"
+  );
+}
+
 export class BucketClient<
   FeatureDefs extends FeatureDefinitions = FeatureDefinitions,
 > extends EventTarget {
@@ -132,8 +189,7 @@ export class BucketClient<
 
   // eslint-disable-next-line @typescript-eslint/ban-types
   private featureDefs: FeatureDefs | {};
-  private featureIsEnabledOverrides: Record<FeatureKey, boolean>;
-  private showToolbar: boolean;
+  private featureAccessOverrides: Record<string, boolean> = {};
 
   private autoFeedback: AutoFeedback | undefined;
   private autoFeedbackInit: Promise<void> | undefined;
@@ -143,8 +199,7 @@ export class BucketClient<
     super();
     this.publishableKey = opts.publishableKey;
     this.featureDefs = opts.featureDefinitions ?? {};
-    this.showToolbar = opts.showToolbar ?? false;
-    this.featureIsEnabledOverrides = {};
+    this.featureAccessOverrides;
     this.logger =
       opts?.logger ?? loggerWithPrefix(quietConsoleLogger, "[Bucket]");
     this.context = {
@@ -204,6 +259,15 @@ export class BucketClient<
         );
       }
     }
+
+    if (shouldShowToolbar(opts.toolbar)) {
+      this.logger.info("opening toolbar toggler");
+      showToolbarToggle({
+        bucketClient: this as unknown as BucketClient,
+        position:
+          typeof opts.toolbar === "object" ? opts.toolbar.position : undefined,
+      });
+    }
   }
 
   /**
@@ -230,13 +294,6 @@ export class BucketClient<
     if (this.context.company && this.config.enableTracking) {
       this.company().catch((e) => {
         this.logger.error("error sending company", e);
-      });
-    }
-
-    if (this.showToolbar) {
-      this.logger.info("showing toolbar");
-      openToolbar({
-        bucketClient: this,
       });
     }
   }
@@ -327,7 +384,7 @@ export class BucketClient<
    * @param options
    * @returns
    */
-  async feedback(payload: Feedback & { featureKey?: FeatureKey }) {
+  async feedback(payload: Feedback & { featureKey?: FeatureKey<FeatureDefs> }) {
     const userId =
       payload.userId ||
       (this.context.user?.id ? String(this.context.user?.id) : undefined);
@@ -349,7 +406,9 @@ export class BucketClient<
    *
    * @param options
    */
-  requestFeedback(options: RequestFeedbackData & { featureKey?: FeatureKey }) {
+  requestFeedback(
+    options: RequestFeedbackData & { featureKey?: FeatureKey<FeatureDefs> },
+  ) {
     if (!this.context.user?.id) {
       this.logger.error(
         "`requestFeedback` call ignored. No `user` context provided at initialization",
@@ -423,23 +482,36 @@ export class BucketClient<
    * @returns Map of features
    */
   getFeatures(): RawFeatures {
-    const features = this.featuresClient.getFeatures();
+    // copy this before we update it
+    const features = { ...this.featuresClient.getFeatures() } as Record<
+      string,
+      (RawFeature & { localOverride: boolean | null }) | undefined
+    >;
     for (const key in this.featureDefs) {
       if (key in features) continue;
       features[key] = {
         key,
         isEnabled: false,
         targetingVersion: 0,
+        localOverride: null,
       };
     }
-    return features as RawFeatures & FeatureDefs;
+
+    for (const key in features) {
+      if (!features[key]) continue;
+      features[key].localOverride = this.getEnabledOverride(key);
+    }
+
+    return features;
   }
 
   /**
    * Return a feature. Accessing `isEnabled` will automatically send a `check` event.
    * @returns A feature
    */
-  getFeature(key: FeatureKey): Feature {
+  getFeature(
+    key: FeatureKey<FeatureDefs>,
+  ): GetFeature<FeatureDefs, FeatureKey<FeatureDefs>> {
     const f = this.getFeatures()[key];
 
     // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -448,6 +520,7 @@ export class BucketClient<
     const value = f?.isEnabled ?? false;
 
     return {
+      config: f?.config,
       get isEnabled() {
         fClient
           .sendCheckEvent({
@@ -458,7 +531,7 @@ export class BucketClient<
           .catch(() => {
             // ignore
           });
-        return bClient.featureIsEnabledOverrides[key] ?? value;
+        return bClient.featureAccessOverrides[key] ?? value;
       },
       track: () => this.track(key),
       requestFeedback: (
@@ -472,20 +545,20 @@ export class BucketClient<
     };
   }
 
-  setEnabledOverride(key: FeatureKey, value: boolean | null) {
+  setEnabledOverride(key: FeatureKey<FeatureDefs>, value: boolean | null) {
     if (!(typeof value === "boolean" || value === null)) {
       throw new Error("setEnabledOverride: value must be boolean or null");
     }
     if (value === null) {
-      delete this.featureIsEnabledOverrides[key];
+      delete this.featureAccessOverrides[key];
     } else {
-      this.featureIsEnabledOverrides[key] = value;
+      this.featureAccessOverrides[key] = value;
     }
     this.dispatchEvent(new Event("featuresChanged"));
   }
 
-  getEnabledOverride(key: FeatureKey): boolean | null {
-    return this.featureIsEnabledOverrides[key] ?? null;
+  getEnabledOverride(key: FeatureKey<FeatureDefs>): boolean | null {
+    return this.featureAccessOverrides[key] ?? null;
   }
 
   sendCheckEvent(checkEvent: CheckEvent) {

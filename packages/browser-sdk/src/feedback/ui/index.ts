@@ -56,10 +56,4 @@ export function openFeedbackForm(options: OpenFeedbackFormOptions): void {
   }
 
   render(h(FeedbackDialog, { ...options, position }), shadowRoot);
-
-  const dialog = shadowRoot.querySelector("dialog");
-
-  if (dialog && !dialog.hasAttribute("open")) {
-    dialog[position.type === "MODAL" ? "showModal" : "show"]();
-  }
 }

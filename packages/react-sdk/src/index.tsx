@@ -17,6 +17,7 @@ import {
   FeedbackOptions,
   RawFeatures,
   RequestFeedbackData,
+  ToolbarOptions,
   UnassignedFeedback,
 } from "@bucketco/browser-sdk";
 
@@ -57,6 +58,8 @@ export type BucketProps = BucketContext & {
   sseHost?: string;
   debug?: boolean;
   enableTracking?: boolean;
+  toolbar?: ToolbarOptions;
+  features: Features;
 
   // for testing
   newBucketClient?: (
