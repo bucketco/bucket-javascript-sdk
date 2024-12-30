@@ -883,6 +883,7 @@ describe("BucketClient", () => {
     let client: BucketClient;
     beforeEach(async () => {
       httpClient.get.mockResolvedValue({
+        ok: true,
         status: 200,
         body: {
           success: true,
@@ -1117,6 +1118,7 @@ describe("BucketClient", () => {
 
     beforeEach(async () => {
       httpClient.get.mockResolvedValue({
+        ok: true,
         status: 200,
         body: {
           success: true,
@@ -1148,6 +1150,7 @@ describe("BucketClient", () => {
       client["_config"].rateLimiter.clear(true);
 
       httpClient.post.mockResolvedValue({
+        ok: true,
         status: 200,
         body: { success: true },
       });
@@ -1714,6 +1717,7 @@ describe("BucketClient", () => {
 
     beforeEach(async () => {
       httpClient.get.mockResolvedValue({
+        ok: true,
         status: 200,
         body: {
           success: true,
@@ -1773,7 +1777,7 @@ describe("BucketClient", () => {
       expect(httpClient.get).toHaveBeenCalledTimes(1);
 
       expect(httpClient.get).toHaveBeenCalledWith(
-        "https://api.example.com/features/evaluated",
+        "https://api.example.com/features/evaluated?",
         expectedHeaders,
       );
     });
@@ -1791,6 +1795,7 @@ describe("BucketClient", () => {
 
     beforeEach(async () => {
       httpClient.get.mockResolvedValue({
+        ok: true,
         status: 200,
         body: {
           success: true,
@@ -2011,6 +2016,7 @@ describe("BoundBucketClient", () => {
     beforeEach(async () => {
       httpClient.get.mockClear();
       httpClient.get.mockResolvedValue({
+        ok: true,
         status: 200,
         body: {
           success: true,
