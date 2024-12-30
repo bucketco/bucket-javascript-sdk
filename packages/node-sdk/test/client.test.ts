@@ -10,9 +10,9 @@ import {
   vi,
 } from "vitest";
 
-import { evaluateTargeting } from "@bucketco/flag-evaluation";
+import { evaluateFeatureRules } from "@bucketco/flag-evaluation";
 
-import { BoundBucketClient, BucketClient } from "../src/client";
+import { BoundBucketClient, BucketClient } from "../src";
 import {
   API_HOST,
   BATCH_INTERVAL_MS,
@@ -32,7 +32,7 @@ vi.mock("@bucketco/flag-evaluation", async (importOriginal) => {
   const original = (await importOriginal()) as any;
   return {
     ...original,
-    evaluateTargeting: vi.fn(),
+    evaluateFeatureRules: vi.fn(),
   };
 });
 
@@ -893,18 +893,15 @@ describe("BucketClient", () => {
 
       client = new BucketClient(validOptions);
 
-      vi.mocked(evaluateTargeting).mockImplementation(
-        ({ feature, context }) => {
+      vi.mocked(evaluateFeatureRules).mockImplementation(
+        ({ featureKey, context }) => {
           const evalFeature = evaluatedFeatures.find(
-            (f) => f.feature.key === feature.key,
-          )!;
-          const featureDef = featureDefinitions.features.find(
-            (f) => f.key === feature.key,
+            (f) => f.feature.key === featureKey,
           )!;
 
           return {
             value: evalFeature.value,
-            feature: featureDef,
+            featureKey,
             context: context,
             ruleEvaluationResults: evalFeature.ruleEvaluationResults,
             missingContextFields: evalFeature.missingContextFields,
@@ -1128,18 +1125,15 @@ describe("BucketClient", () => {
 
       client = new BucketClient(validOptions);
 
-      vi.mocked(evaluateTargeting).mockImplementation(
-        ({ feature, context }) => {
+      vi.mocked(evaluateFeatureRules).mockImplementation(
+        ({ featureKey, context }) => {
           const evalFeature = evaluatedFeatures.find(
-            (f) => f.feature.key === feature.key,
-          )!;
-          const featureDef = featureDefinitions.features.find(
-            (f) => f.key === feature.key,
+            (f) => f.feature.key === featureKey,
           )!;
 
           return {
             value: evalFeature.value,
-            feature: featureDef,
+            featureKey,
             context: context,
             ruleEvaluationResults: evalFeature.ruleEvaluationResults,
             missingContextFields: evalFeature.missingContextFields,
@@ -1181,7 +1175,7 @@ describe("BucketClient", () => {
 
       await client.flush();
 
-      expect(evaluateTargeting).toHaveBeenCalledTimes(2);
+      expect(evaluateFeatureRules).toHaveBeenCalledTimes(2);
       expect(httpClient.post).toHaveBeenCalledTimes(1);
 
       expect(httpClient.post).toHaveBeenCalledWith(
@@ -1285,7 +1279,7 @@ describe("BucketClient", () => {
 
       await client.flush();
 
-      expect(evaluateTargeting).toHaveBeenCalledTimes(2);
+      expect(evaluateFeatureRules).toHaveBeenCalledTimes(2);
       expect(httpClient.post).toHaveBeenCalledTimes(1);
 
       expect(httpClient.post).toHaveBeenCalledWith(
@@ -1355,7 +1349,7 @@ describe("BucketClient", () => {
 
       await client.flush();
 
-      expect(evaluateTargeting).toHaveBeenCalledTimes(2);
+      expect(evaluateFeatureRules).toHaveBeenCalledTimes(2);
       expect(httpClient.post).toHaveBeenCalledTimes(1);
 
       expect(httpClient.post).toHaveBeenCalledWith(
@@ -1425,7 +1419,7 @@ describe("BucketClient", () => {
 
       await client.flush();
 
-      expect(evaluateTargeting).toHaveBeenCalledTimes(2);
+      expect(evaluateFeatureRules).toHaveBeenCalledTimes(2);
       expect(httpClient.post).not.toHaveBeenCalled();
     });
 
@@ -1435,7 +1429,7 @@ describe("BucketClient", () => {
 
       await client.flush();
 
-      expect(evaluateTargeting).toHaveBeenCalledTimes(2);
+      expect(evaluateFeatureRules).toHaveBeenCalledTimes(2);
       expect(httpClient.post).toHaveBeenCalledTimes(1);
 
       expect(httpClient.post).toHaveBeenCalledWith(
@@ -1674,8 +1668,8 @@ describe("BucketClient", () => {
       await client.initialize();
       const context = { user, company, other: otherContext };
 
-      const prestineResults = client.getFeatures(context);
-      expect(prestineResults).toStrictEqual({
+      const pristineResults = client.getFeatures(context);
+      expect(pristineResults).toStrictEqual({
         feature1: {
           key: "feature1",
           isEnabled: true,
