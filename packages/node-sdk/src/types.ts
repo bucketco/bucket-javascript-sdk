@@ -1,4 +1,4 @@
-import { FeatureData } from "@bucketco/flag-evaluation";
+import { RuleFilter } from "@bucketco/flag-evaluation";
 
 /**
  * Describes the meta context associated with tracking.
@@ -122,11 +122,24 @@ export type FeatureOverrides = Partial<Record<keyof TypedFeatures, boolean>>;
 export type FeatureOverridesFn = (context: Context) => FeatureOverrides;
 
 /**
+ * Describes a specific feature in the API response
+ */
+type FeatureAPIResponse = {
+  key: string;
+  targeting: {
+    version: number;
+    rules: {
+      filter: RuleFilter;
+    }[];
+  };
+};
+
+/**
  * Describes the response of the features endpoint
  */
 export type FeaturesAPIResponse = {
   /** The feature definitions */
-  features: (FeatureData & { targeting: { version: number } })[];
+  features: FeatureAPIResponse[];
 };
 
 export type EvaluatedFeaturesAPIResponse = {

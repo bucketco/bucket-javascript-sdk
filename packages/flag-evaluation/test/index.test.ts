@@ -1,101 +1,99 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
-import { evaluate, evaluateTargeting, FeatureData, hashInt } from "../src";
+import {
+  evaluate,
+  evaluateFeatureRules,
+  EvaluationParams,
+  flattenJSON,
+  hashInt,
+  unflattenJSON,
+} from "../src";
 
-const feature: FeatureData = {
-  key: "feature",
-  targeting: {
-    rules: [
-      {
-        filter: {
-          type: "group",
-          operator: "and",
-          filters: [
-            {
-              type: "context",
-              field: "company.id",
-              operator: "IS",
-              values: ["company1"],
-            },
-            {
-              type: "rolloutPercentage",
-              key: "flag",
-              partialRolloutAttribute: "company.id",
-              partialRolloutThreshold: 100000,
-            },
-          ],
-        },
-      },
-    ],
-  },
-};
-
-describe("evaluate feature targeting integration ", () => {
-  it("evaluates all kinds of filters", async () => {
-    // Feature with context filter targeting, rollout percentage AND and OR groups, negation and constant filters
-    const featureWithAllFilterTypes: FeatureData = {
-      key: "feature",
-      targeting: {
-        rules: [
+const feature = {
+  featureKey: "feature",
+  rules: [
+    {
+      value: true,
+      filter: {
+        type: "group",
+        operator: "and",
+        filters: [
           {
-            filter: {
-              type: "group",
-              operator: "and",
-              filters: [
-                {
-                  type: "context",
-                  field: "company.id",
-                  operator: "IS",
-                  values: ["company1"],
-                },
-                {
-                  type: "rolloutPercentage",
-                  key: "flag",
-                  partialRolloutAttribute: "company.id",
-                  partialRolloutThreshold: 99999,
-                },
-                {
-                  type: "group",
-                  operator: "or",
-                  filters: [
-                    {
-                      type: "context",
-                      field: "company.id",
-                      operator: "IS",
-                      values: ["company2"],
-                    },
-                    {
-                      type: "negation",
-                      filter: {
-                        type: "context",
-                        field: "company.id",
-                        operator: "IS",
-                        values: ["company3"],
-                      },
-                    },
-                  ],
-                },
-                {
-                  type: "negation",
-                  filter: {
-                    type: "constant",
-                    value: false,
-                  },
-                },
-              ],
-            },
+            type: "context",
+            field: "company.id",
+            operator: "IS",
+            values: ["company1"],
+          },
+          {
+            type: "rolloutPercentage",
+            key: "flag",
+            partialRolloutAttribute: "company.id",
+            partialRolloutThreshold: 100000,
           },
         ],
       },
-    };
+    },
+  ],
+} satisfies Omit<EvaluationParams<true>, "context">;
 
-    const context = {
-      "company.id": "company1",
-    };
-
-    const res = evaluateTargeting({
-      feature: featureWithAllFilterTypes,
-      context,
+describe("evaluate feature targeting integration ", () => {
+  it("evaluates all kinds of filters", async () => {
+    const res = evaluateFeatureRules({
+      featureKey: "feature",
+      rules: [
+        {
+          value: true,
+          filter: {
+            type: "group",
+            operator: "and",
+            filters: [
+              {
+                type: "context",
+                field: "company.id",
+                operator: "IS",
+                values: ["company1"],
+              },
+              {
+                type: "rolloutPercentage",
+                key: "flag",
+                partialRolloutAttribute: "company.id",
+                partialRolloutThreshold: 99999,
+              },
+              {
+                type: "group",
+                operator: "or",
+                filters: [
+                  {
+                    type: "context",
+                    field: "company.id",
+                    operator: "IS",
+                    values: ["company2"],
+                  },
+                  {
+                    type: "negation",
+                    filter: {
+                      type: "context",
+                      field: "company.id",
+                      operator: "IS",
+                      values: ["company3"],
+                    },
+                  },
+                ],
+              },
+              {
+                type: "negation",
+                filter: {
+                  type: "constant",
+                  value: false,
+                },
+              },
+            ],
+          },
+        },
+      ],
+      context: {
+        "company.id": "company1",
+      },
     });
 
     expect(res).toEqual({
@@ -103,7 +101,7 @@ describe("evaluate feature targeting integration ", () => {
       context: {
         "company.id": "company1",
       },
-      feature: featureWithAllFilterTypes,
+      featureKey: "feature",
       missingContextFields: [],
       reason: "rule #0 matched",
       ruleEvaluationResults: [true],
@@ -111,8 +109,8 @@ describe("evaluate feature targeting integration ", () => {
   });
 
   it("evaluates flag when there's no matching rule", async () => {
-    const res = evaluateTargeting({
-      feature,
+    const res = evaluateFeatureRules({
+      ...feature,
       context: {
         company: {
           id: "wrong value",
@@ -121,11 +119,11 @@ describe("evaluate feature targeting integration ", () => {
     });
 
     expect(res).toEqual({
-      value: false,
+      value: undefined,
       context: {
         "company.id": "wrong value",
       },
-      feature,
+      featureKey: "feature",
       missingContextFields: [],
       reason: "no matched rules",
       ruleEvaluationResults: [false],
@@ -138,16 +136,18 @@ describe("evaluate feature targeting integration ", () => {
         id: "company1",
       },
     };
-    const res = evaluateTargeting({
-      feature,
+
+    const res = evaluateFeatureRules({
+      ...feature,
       context,
     });
+
     expect(res).toEqual({
       value: true,
       context: {
         "company.id": "company1",
       },
-      feature,
+      featureKey: "feature",
       missingContextFields: [],
       reason: "rule #0 matched",
       ruleEvaluationResults: [true],
@@ -155,36 +155,31 @@ describe("evaluate feature targeting integration ", () => {
   });
 
   it("evaluates flag with missing values", async () => {
-    const featureWithSegmentRule: FeatureData = {
-      key: "feature",
-      targeting: {
-        rules: [
-          {
-            filter: {
-              type: "group",
-              operator: "and",
-              filters: [
-                {
-                  type: "context",
-                  field: "some_field",
-                  operator: "IS",
-                  values: [""],
-                },
-                {
-                  type: "rolloutPercentage",
-                  key: "flag",
-                  partialRolloutAttribute: "some_field",
-                  partialRolloutThreshold: 99000,
-                },
-              ],
-            },
+    const res = evaluateFeatureRules({
+      featureKey: "feature",
+      rules: [
+        {
+          value: { custom: "value" },
+          filter: {
+            type: "group",
+            operator: "and",
+            filters: [
+              {
+                type: "context",
+                field: "some_field",
+                operator: "IS",
+                values: [""],
+              },
+              {
+                type: "rolloutPercentage",
+                key: "flag",
+                partialRolloutAttribute: "some_field",
+                partialRolloutThreshold: 99000,
+              },
+            ],
           },
-        ],
-      },
-    };
-
-    const res = evaluateTargeting({
-      feature: featureWithSegmentRule,
+        },
+      ],
       context: {
         some_field: "",
       },
@@ -194,8 +189,8 @@ describe("evaluate feature targeting integration ", () => {
       context: {
         some_field: "",
       },
-      value: true,
-      feature: featureWithSegmentRule,
+      value: { custom: "value" },
+      featureKey: "feature",
       missingContextFields: [],
       reason: "rule #0 matched",
       ruleEvaluationResults: [true],
@@ -203,44 +198,42 @@ describe("evaluate feature targeting integration ", () => {
   });
 
   it("returns list of missing context keys ", async () => {
-    const res = evaluateTargeting({
-      feature: feature,
+    const res = evaluateFeatureRules({
+      ...feature,
       context: {},
     });
+
     expect(res).toEqual({
       context: {},
-      value: false,
+      value: undefined,
       reason: "no matched rules",
-      feature,
+      featureKey: "feature",
       missingContextFields: ["company.id"],
       ruleEvaluationResults: [false],
     });
   });
 
   it("fails evaluation and includes key in missing keys when rollout attribute is missing from context", async () => {
-    const myfeature = {
-      key: "myfeature",
-      targeting: {
-        rules: [
-          {
-            filter: {
-              type: "rolloutPercentage" as const,
-              key: "myfeature",
-              partialRolloutAttribute: "happening.id",
-              partialRolloutThreshold: 50000,
-            },
+    const res = evaluateFeatureRules({
+      featureKey: "myfeature",
+      rules: [
+        {
+          value: 123,
+          filter: {
+            type: "rolloutPercentage" as const,
+            key: "myfeature",
+            partialRolloutAttribute: "happening.id",
+            partialRolloutThreshold: 50000,
           },
-        ],
-      },
-    };
-    const res = evaluateTargeting({
-      feature: myfeature,
+        },
+      ],
       context: {},
     });
+
     expect(res).toEqual({
-      feature: myfeature,
+      featureKey: "myfeature",
       context: {},
-      value: false,
+      value: undefined,
       reason: "no matched rules",
       missingContextFields: ["happening.id"],
       ruleEvaluationResults: [false],
@@ -364,4 +357,246 @@ describe("rollout hash", () => {
       expect(res).toEqual(expected);
     });
   }
+});
+
+describe("flattenJSON", () => {
+  it("should handle an empty object correctly", () => {
+    const input = {};
+    const output = flattenJSON(input);
+
+    expect(output).toEqual({});
+  });
+
+  it("should flatten a simple object", () => {
+    const input = {
+      a: {
+        b: "value",
+      },
+    };
+
+    const output = flattenJSON(input);
+
+    expect(output).toEqual({
+      "a.b": "value",
+    });
+  });
+
+  it("should flatten nested objects", () => {
+    const input = {
+      a: {
+        b: {
+          c: {
+            d: "value",
+          },
+        },
+      },
+    };
+
+    const output = flattenJSON(input);
+
+    expect(output).toEqual({
+      "a.b.c.d": "value",
+    });
+  });
+
+  it("should handle mixed data types", () => {
+    const input = {
+      a: {
+        b: "string",
+        c: 123,
+        d: true,
+      },
+    };
+
+    const output = flattenJSON(input);
+
+    expect(output).toEqual({
+      "a.b": "string",
+      "a.c": 123,
+      "a.d": true,
+    });
+  });
+
+  it("should flatten arrays", () => {
+    const input = {
+      a: ["value1", "value2", "value3"],
+    };
+
+    const output = flattenJSON(input);
+
+    expect(output).toEqual({
+      "a.0": "value1",
+      "a.1": "value2",
+      "a.2": "value3",
+    });
+  });
+
+  it("should handle empty arrays", () => {
+    const input = {
+      a: [],
+    };
+
+    const output = flattenJSON(input);
+
+    expect(output).toEqual({
+      a: [],
+    });
+  });
+
+  it("should correctly flatten mixed structures involving arrays and objects", () => {
+    const input = {
+      a: {
+        b: ["value1", { nested: "value2" }, "value3"],
+      },
+    };
+
+    const output = flattenJSON(input);
+
+    expect(output).toEqual({
+      "a.b.0": "value1",
+      "a.b.1.nested": "value2",
+      "a.b.2": "value3",
+    });
+  });
+
+  it("should flatten deeply nested objects", () => {
+    const input = {
+      level1: {
+        level2: {
+          level3: {
+            key: "value",
+            anotherKey: "anotherValue",
+          },
+        },
+        singleKey: "test",
+      },
+    };
+
+    const output = flattenJSON(input);
+
+    expect(output).toEqual({
+      "level1.level2.level3.key": "value",
+      "level1.level2.level3.anotherKey": "anotherValue",
+      "level1.singleKey": "test",
+    });
+  });
+
+  it("should handle objects with empty values", () => {
+    const input = {
+      a: {
+        b: "",
+      },
+    };
+
+    const output = flattenJSON(input);
+
+    expect(output).toEqual({
+      "a.b": "",
+    });
+  });
+});
+
+describe("unflattenJSON", () => {
+  it("should handle an empty object correctly", () => {
+    const input = {};
+    const output = unflattenJSON(input);
+
+    expect(output).toEqual({});
+  });
+
+  it("should convert a flat object with one level deep keys to a nested object", () => {
+    const input = {
+      "a.b.c": "value",
+      "x.y": "anotherValue",
+    };
+
+    const output = unflattenJSON(input);
+
+    expect(output).toEqual({
+      a: {
+        b: { c: "value" },
+      },
+      x: {
+        y: "anotherValue",
+      },
+    });
+  });
+
+  it("should not handle arrays properly", () => {
+    const input = {
+      "arr.0": "first",
+      "arr.1": "second",
+      "arr.2": "third",
+    };
+
+    const output = unflattenJSON(input);
+
+    expect(output).toEqual({
+      arr: {
+        "0": "first",
+        "1": "second",
+        "2": "third",
+      },
+    });
+  });
+
+  it("should handle mixed data types in flat JSON", () => {
+    const input = {
+      "a.b": "string",
+      "a.c": 123,
+      "a.d": true,
+    };
+
+    const output = unflattenJSON(input);
+
+    expect(output).toEqual({
+      a: {
+        b: "string",
+        c: 123,
+        d: true,
+      },
+    });
+  });
+
+  it("should correctly handle scenarios with overlapping keys (ignore)", () => {
+    const input = {
+      "a.b": "value1",
+      "a.b.c": "value2",
+    };
+
+    const output = unflattenJSON(input);
+    expect(output).toEqual({ a: { b: "value1" } });
+  });
+
+  it("should unflatten nested objects correctly", () => {
+    const input = {
+      "level1.level2.level3": "deepValue",
+      "level1.level2.key": 10,
+      "level1.singleKey": "test",
+    };
+
+    const output = unflattenJSON(input);
+
+    expect(output).toEqual({
+      level1: {
+        level2: {
+          level3: "deepValue",
+          key: 10,
+        },
+        singleKey: "test",
+      },
+    });
+  });
+
+  it("should handle a scenario where a key is an empty string", () => {
+    const input = {
+      "": "rootValue",
+    };
+
+    const output = unflattenJSON(input);
+
+    expect(output).toEqual({
+      "": "rootValue",
+    });
+  });
 });
