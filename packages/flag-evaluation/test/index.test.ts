@@ -558,13 +558,14 @@ describe("unflattenJSON", () => {
     });
   });
 
-  it("should correctly handle scenarios with overlapping keys", () => {
+  it("should correctly handle scenarios with overlapping keys (ignore)", () => {
     const input = {
       "a.b": "value1",
       "a.b.c": "value2",
     };
 
-    expect(() => unflattenJSON(input)).toThrow("overlapping keys");
+    const output = unflattenJSON(input);
+    expect(output).toEqual({ a: { b: "value1" } });
   });
 
   it("should unflatten nested objects correctly", () => {

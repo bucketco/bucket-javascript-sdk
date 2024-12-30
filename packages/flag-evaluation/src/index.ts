@@ -1,4 +1,3 @@
-import assert from "node:assert";
 import { createHash } from "node:crypto";
 
 /**
@@ -239,8 +238,9 @@ export function unflattenJSON(data: Record<string, any>): Record<string, any> {
     const keys = i.split(".");
     keys.reduce((acc, key, index) => {
       if (index === keys.length - 1) {
-        assert(typeof acc === "object", "overlapping keys");
-        acc[key] = data[i];
+        if (typeof acc === "object") {
+          acc[key] = data[i];
+        }
       } else if (!acc[key]) {
         acc[key] = {};
       }
