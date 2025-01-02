@@ -117,7 +117,7 @@ current working directory.
 | `secretKey`        | string                  | The secret key used for authentication with Bucket's servers.                                                                                                       | BUCKET_SECRET_KEY                                 |
 | `logLevel`         | string                  | The log level for the SDK (e.g., `"DEBUG"`, `"INFO"`, `"WARN"`, `"ERROR"`). Default: `INFO`                                                                         | BUCKET_LOG_LEVEL                                  |
 | `offline`          | boolean                 | Operate in offline mode. Default: `false`, except in tests it will default to `true` based off of the `TEST` env. var.                                              | BUCKET_OFFLINE                                    |
-| `host`             | string                  | The host URL for the Bucket servers.                                                                                                                                | BUCKET_HOST                                       |
+| `apiBaseUrl`       | string                  | The base API URL for the Bucket servers.                                                                                                                            | BUCKET_API_BASE_URL                               |
 | `featureOverrides` | Record<string, boolean> | An object specifying feature overrides for testing or local development. See [example/app.test.ts](example/app.test.ts) for how to use `featureOverrides` in tests. | BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED |
 | `configFile`       | string                  | Load this config file from disk. Default: `bucketConfig.json`                                                                                                       | BUCKET_CONFIG_FILE                                |
 
@@ -130,7 +130,7 @@ Note: BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED are comma separated list
   "secretKey": "...",
   "logLevel": "warn",
   "offline": true,
-  "host": "https://proxy.slick-demo.com",
+  "apiBaseUrl": "https://proxy.slick-demo.com",
   "featureOverrides": {
     "huddles": true,
     "voiceChat": false
