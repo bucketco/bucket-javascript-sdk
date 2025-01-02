@@ -197,9 +197,7 @@ export class BucketClient {
    *
    * @param user
    */
-  public async updateUser(user: {
-    [key: string]: string | number | undefined;
-  }) {
+  async updateUser(user: { [key: string]: string | number | undefined }) {
     if (user.id && user.id !== this.context.user?.id) {
       this.logger.warn(
         "ignoring attempt to update the user ID. Re-initialize the BucketClient with a new user ID instead.",
@@ -223,9 +221,7 @@ export class BucketClient {
    *
    * @param company
    */
-  public async updateCompany(company: {
-    [key: string]: string | number | undefined;
-  }) {
+  async updateCompany(company: { [key: string]: string | number | undefined }) {
     if (company.id && company.id !== this.context.company?.id) {
       this.logger.warn(
         "ignoring attempt to update the company ID. Re-initialize the BucketClient with a new company ID instead.",
@@ -248,7 +244,7 @@ export class BucketClient {
    *
    * @param company
    */
-  public async updateOtherContext(otherContext: {
+  async updateOtherContext(otherContext: {
     [key: string]: string | number | undefined;
   }) {
     this.context.otherContext = {
@@ -267,7 +263,7 @@ export class BucketClient {
    * @param callback this will be called when the features are updated.
    * @param options passed as-is to addEventListener
    */
-  public onFeaturesUpdated(cb: () => void) {
+  onFeaturesUpdated(cb: () => void) {
     return this.featuresClient.onUpdated(cb);
   }
 
