@@ -14,5 +14,5 @@ export interface UserContext {
 export interface BucketContext {
   company?: CompanyContext;
   user?: UserContext;
-  otherContext?: Record<string, string | number>;
+  otherContext?: Record<string, string | number | undefined>;
 }

@@ -160,6 +160,23 @@ you can customize it as you wish.
 bucketClient.track("huddle", { voiceHuddle: true });
 ```
 
+### Updating user/company/other context
+
+Attributes given for the user/company/other context in the BucketClient constructor can be updated for use in feature targeting evaluation with the `updateUser()`, `updateCompany()` and `updateOtherContext()` methods.
+They return a promise which resolves once the features have been re-evaluated follow the update of the attributes.
+
+The following shows how to let users self-opt-in for a new feature. The feature must have the rule `voiceHuddleOptIn IS true` set in the Bucket UI.
+
+```ts
+// toggle opt-in for the voiceHuddle feature:
+const { isEnabled } = bucketClient.getFeature("voiceHuddle");
+// this toggles the feature on/off. The promise returns once feature targeting has been
+// re-evaluated.
+await bucketClient.updateUser({ voiceHuddleOptIn: (!isEnabled).toString() });
+```
+
+Note that user/company attributes are also stored remotely on the Bucket servers and will automatically be used to evaluate feature targeting if the page is refreshed.
+
 ### Qualitative feedback
 
 Bucket can collect qualitative feedback from your users in the form of a [Customer Satisfaction Score](https://en.wikipedia.org/wiki/Customer_satisfaction) and a comment.

@@ -58,9 +58,16 @@ describe("FeaturesClient unit tests", () => {
   test("fetches features", async () => {
     const { newFeaturesClient, httpClient } = featuresClientFactory();
     const featuresClient = newFeaturesClient();
+
+    let updated = false;
+    featuresClient.onUpdated(() => {
+      updated = true;
+    });
+
     await featuresClient.initialize();
     expect(featuresClient.getFeatures()).toEqual(featuresResult);
 
+    expect(updated).toBe(true);
     expect(httpClient.get).toBeCalledTimes(1);
     const calls = vi.mocked(httpClient.get).mock.calls.at(0);
     const { params, path, timeoutMs } = calls![0];

@@ -190,7 +190,28 @@ sendFeedback({
 });
 ```
 
-See https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/browser-sdk/FEEDBACK.md#manual-feedback-collection for more information on `sendFeedback`
+### `useUpdateUser()`, `useUpdateCompany()` and `useUpdateOtherContext()`
+
+`useUpdateUser()`, `useUpdateCompany()` and `useUpdateOtherContext()` all return
+a function that lets you update the attributes for the currently set user/company.
+
+Updates made to user/company are stored remotely and are used automatically
+for evaluating feature targeting in the future, while "other" context is only
+used in the current session.
+
+This is only useful for updating attributes for the already set user/company.
+If you want to change the user.id or company.id, you need to update the props
+given the `BucketProvider` instead.
+
+```ts
+import { useUpdateUser } from "@bucketco/react-sdk";
+
+const updateUser = useUpdateUser();
+
+updateUser({
+  huddlesOptIn: "true",
+});
+```
 
 # Content Security Policy (CSP)
 
