@@ -35,76 +35,6 @@ export class AblySSEChannel {
     this.logger = loggerWithPrefix(logger, "[SSE]");
   }
 
-  public disconnect() {
-    if (!this.isOpen) {
-      this.logger.warn("channel connection already closed");
-      return;
-    }
-
-    if (this.eventSource) {
-      this.eventSource.close();
-      this.eventSource = null;
-
-      this.logger.debug("channel connection closed");
-    }
-
-    this.isOpen = false;
-  }
-
-  public open(options?: { retryInterval?: number; retryCount?: number }) {
-    const retryInterval = options?.retryInterval ?? 1000 * 30;
-    const retryCount = options?.retryCount ?? 3;
-    let retriesRemaining = retryCount;
-
-    const tryConnect = async () => {
-      try {
-        await this.connect();
-        retriesRemaining = retryCount;
-      } catch (e) {
-        if (retriesRemaining > 0) {
-          this.logger.warn(
-            `failed to connect, ${retriesRemaining} retries remaining`,
-            e,
-          );
-        } else {
-          this.logger.warn(`failed to connect, no retries remaining`, e);
-        }
-      }
-    };
-
-    void tryConnect();
-
-    this.retryInterval = setInterval(() => {
-      if (!this.isConnected() && this.retryInterval) {
-        if (retriesRemaining <= 0) {
-          clearInterval(this.retryInterval);
-          this.retryInterval = null;
-          return;
-        }
-
-        retriesRemaining--;
-        void tryConnect();
-      }
-    }, retryInterval);
-  }
-
-  public close() {
-    if (this.retryInterval) {
-      clearInterval(this.retryInterval);
-      this.retryInterval = null;
-    }
-
-    this.disconnect();
-  }
-
-  public isActive() {
-    return !!this.retryInterval;
-  }
-
-  public isConnected() {
-    return this.isOpen && !!this.eventSource;
-  }
-
   private async refreshTokenRequest() {
     const params = new URLSearchParams({ userId: this.userId });
     const res = await this.httpClient.get({
@@ -265,6 +195,76 @@ export class AblySSEChannel {
     } finally {
       this.isOpen = !!this.eventSource;
     }
+  }
+
+  public disconnect() {
+    if (!this.isOpen) {
+      this.logger.warn("channel connection already closed");
+      return;
+    }
+
+    if (this.eventSource) {
+      this.eventSource.close();
+      this.eventSource = null;
+
+      this.logger.debug("channel connection closed");
+    }
+
+    this.isOpen = false;
+  }
+
+  public open(options?: { retryInterval?: number; retryCount?: number }) {
+    const retryInterval = options?.retryInterval ?? 1000 * 30;
+    const retryCount = options?.retryCount ?? 3;
+    let retriesRemaining = retryCount;
+
+    const tryConnect = async () => {
+      try {
+        await this.connect();
+        retriesRemaining = retryCount;
+      } catch (e) {
+        if (retriesRemaining > 0) {
+          this.logger.warn(
+            `failed to connect, ${retriesRemaining} retries remaining`,
+            e,
+          );
+        } else {
+          this.logger.warn(`failed to connect, no retries remaining`, e);
+        }
+      }
+    };
+
+    void tryConnect();
+
+    this.retryInterval = setInterval(() => {
+      if (!this.isConnected() && this.retryInterval) {
+        if (retriesRemaining <= 0) {
+          clearInterval(this.retryInterval);
+          this.retryInterval = null;
+          return;
+        }
+
+        retriesRemaining--;
+        void tryConnect();
+      }
+    }, retryInterval);
+  }
+
+  public close() {
+    if (this.retryInterval) {
+      clearInterval(this.retryInterval);
+      this.retryInterval = null;
+    }
+
+    this.disconnect();
+  }
+
+  public isActive() {
+    return !!this.retryInterval;
+  }
+
+  public isConnected() {
+    return this.isOpen && !!this.eventSource;
   }
 }
 
