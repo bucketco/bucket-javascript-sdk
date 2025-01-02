@@ -27,12 +27,16 @@ export class AblySSEChannel {
   constructor(
     private userId: string,
     private channel: string,
-    private sseHost: string,
+    private sseBaseUrl: string,
     private messageHandler: (message: any) => void,
     private httpClient: HttpClient,
     logger: Logger,
   ) {
     this.logger = loggerWithPrefix(logger, "[SSE]");
+
+    if (!this.sseBaseUrl.endsWith("/")) {
+      this.sseBaseUrl += "/";
+    }
   }
 
   private async refreshTokenRequest() {
@@ -70,8 +74,8 @@ export class AblySSEChannel {
     }
 
     const url = new URL(
-      `/keys/${encodeURIComponent(tokenRequest.keyName)}/requestToken`,
-      this.sseHost,
+      `keys/${encodeURIComponent(tokenRequest.keyName)}/requestToken`,
+      this.sseBaseUrl,
     );
 
     const res = await fetch(url, {
@@ -180,7 +184,7 @@ export class AblySSEChannel {
 
       if (!token) return;
 
-      const url = new URL("/sse", this.sseHost);
+      const url = new URL("sse", this.sseBaseUrl);
       url.searchParams.append("v", "1.2");
       url.searchParams.append("accessToken", token);
       url.searchParams.append("channels", this.channel);
@@ -274,7 +278,7 @@ export function openAblySSEChannel({
   channel,
   callback,
   httpClient,
-  sseHost,
+  sseBaseUrl,
   logger,
 }: {
   userId: string;
@@ -282,12 +286,12 @@ export function openAblySSEChannel({
   callback: (req: object) => void;
   httpClient: HttpClient;
   logger: Logger;
-  sseHost: string;
+  sseBaseUrl: string;
 }) {
   const sse = new AblySSEChannel(
     userId,
     channel,
-    sseHost,
+    sseBaseUrl,
     callback,
     httpClient,
     logger,

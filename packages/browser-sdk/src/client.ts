@@ -14,7 +14,7 @@ import {
   RequestFeedbackOptions,
 } from "./feedback/feedback";
 import * as feedbackLib from "./feedback/ui";
-import { API_HOST, SSE_REALTIME_HOST } from "./config";
+import { API_BASE_URL, SSE_REALTIME_BASE_URL } from "./config";
 import { BucketContext, CompanyContext, UserContext } from "./context";
 import { HttpClient } from "./httpClient";
 import { Logger, loggerWithPrefix, quietConsoleLogger } from "./logger";
@@ -54,8 +54,8 @@ export type PayloadContext = {
 };
 
 interface Config {
-  host: string;
-  sseHost: string;
+  apiBaseUrl: string;
+  sseBaseUrl: string;
   enableTracking: boolean;
 }
 
@@ -65,8 +65,21 @@ export interface InitOptions {
   company?: CompanyContext;
   otherContext?: Record<string, any>;
   logger?: Logger;
+
+  /**
+   * @deprecated
+   * Use `apiBaseUrl` instead.
+   */
   host?: string;
+  apiBaseUrl?: string;
+
+  /**
+   * @deprecated
+   * Use `sseBaseUrl` instead.
+   */
   sseHost?: string;
+  sseBaseUrl?: string;
+
   feedback?: FeedbackOptions;
   features?: FeaturesOptions;
   sdkVersion?: string;
@@ -74,8 +87,8 @@ export interface InitOptions {
 }
 
 const defaultConfig: Config = {
-  host: API_HOST,
-  sseHost: SSE_REALTIME_HOST,
+  apiBaseUrl: API_BASE_URL,
+  sseBaseUrl: SSE_REALTIME_BASE_URL,
   enableTracking: true,
 };
 
@@ -110,8 +123,8 @@ export class BucketClient {
     };
 
     this.config = {
-      host: opts?.host ?? defaultConfig.host,
-      sseHost: opts?.sseHost ?? defaultConfig.sseHost,
+      apiBaseUrl: opts?.apiBaseUrl ?? opts?.host ?? defaultConfig.apiBaseUrl,
+      sseBaseUrl: opts?.sseBaseUrl ?? opts?.sseHost ?? defaultConfig.sseBaseUrl,
       enableTracking: opts?.enableTracking ?? defaultConfig.enableTracking,
     } satisfies Config;
 
@@ -123,7 +136,7 @@ export class BucketClient {
     };
 
     this.httpClient = new HttpClient(this.publishableKey, {
-      baseUrl: this.config.host,
+      baseUrl: this.config.apiBaseUrl,
       sdkVersion: opts?.sdkVersion,
     });
 
@@ -150,7 +163,7 @@ export class BucketClient {
         );
       } else {
         this.autoFeedback = new AutoFeedback(
-          this.config.sseHost,
+          this.config.sseBaseUrl,
           this.logger,
           this.httpClient,
           feedbackOpts?.autoFeedbackHandler,
