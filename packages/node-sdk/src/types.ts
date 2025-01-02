@@ -11,7 +11,7 @@ export type TrackingMeta = {
 };
 
 /**
- * Describes the attributes of an user, company or event.
+ * Describes the attributes of a user, company or event.
  **/
 export type Attributes = Record<string, any>;
 
@@ -73,6 +73,11 @@ export interface RawFeature {
    * The version of the targeting used to evaluate if the feature is enabled (optional).
    */
   targetingVersion?: number;
+
+  /**
+   * The missing fields in the evaluation context (optional).
+   */
+  missingContextFields?: string[];
 }
 
 /**
@@ -161,6 +166,11 @@ export type HttpClientResponse<TResponse> = {
    * The status code of the response.
    **/
   status: number;
+
+  /**
+   * Indicates that the request succeeded.
+   **/
+  ok: boolean;
 
   /**
    * The body of the response if available.

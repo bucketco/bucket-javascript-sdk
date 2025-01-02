@@ -16,7 +16,7 @@ describe("fetchClient", () => {
 
   it("should make a POST request and return the response", async () => {
     const body = { key: "value" };
-    const response = { status: 200, body: { success: true } };
+    const response = { ok: true, status: 200, body: { success: true } };
 
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -46,7 +46,7 @@ describe("fetchClient", () => {
   });
 
   it("should make a GET request and return the response", async () => {
-    const response = { status: 200, body: { success: true } };
+    const response = { ok: true, status: 200, body: { success: true } };
 
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -109,7 +109,11 @@ describe("fetchClient", () => {
   });
 
   it("should handle POST non-20x responses", async () => {
-    const response = { status: 400, body: { error: "Something went wrong" } };
+    const response = {
+      ok: false,
+      status: 400,
+      body: { error: "Something went wrong" },
+    };
 
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,
@@ -123,7 +127,11 @@ describe("fetchClient", () => {
   });
 
   it("should handle GET non-20x responses", async () => {
-    const response = { status: 400, body: { error: "Something went wrong" } };
+    const response = {
+      ok: false,
+      status: 400,
+      body: { error: "Something went wrong" },
+    };
 
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,

@@ -25,7 +25,11 @@ const fetchClient: HttpClient = {
     });
 
     const json = await response.json();
-    return { status: response.status, body: json as TResponse };
+    return {
+      ok: response.ok,
+      status: response.status,
+      body: json as TResponse,
+    };
   },
 
   get: async <TResponse>(url: string, headers: Record<string, string>) => {
@@ -39,7 +43,11 @@ const fetchClient: HttpClient = {
     });
 
     const json = await response.json();
-    return { status: response.status, body: json as TResponse };
+    return {
+      ok: response.ok,
+      status: response.status,
+      body: json as TResponse,
+    };
   },
 };
 
