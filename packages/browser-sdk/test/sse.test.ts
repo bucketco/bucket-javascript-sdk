@@ -14,7 +14,7 @@ import { server } from "./mocks/server";
 import { testLogger } from "./testLogger";
 
 const KEY = "123";
-const sseHost = "https://ssehost.com";
+const sseHost = "https://ssehost.com/path";
 const tokenRequest = {
   keyName: "key-name",
   other: "other",
@@ -29,7 +29,7 @@ const channel = "channel";
 
 function createSSEChannel(callback: (message: any) => void = vi.fn()) {
   const httpClient = new HttpClient(KEY);
-  const sse = new AblySSEChannel(
+  return new AblySSEChannel(
     userId,
     channel,
     sseHost,
@@ -37,7 +37,6 @@ function createSSEChannel(callback: (message: any) => void = vi.fn()) {
     httpClient,
     testLogger,
   );
-  return sse;
 }
 
 Object.defineProperty(window, "EventSource", {
@@ -91,6 +90,24 @@ describe("connection handling", () => {
   afterEach(() => {
     vi.clearAllMocks();
     vi.mocked(getAuthToken).mockReturnValue(undefined);
+  });
+
+  test("appends /sse to the sseHost", async () => {
+    const sse = createSSEChannel();
+    const addEventListener = vi.fn();
+
+    vi.mocked(window.EventSource).mockReturnValue({
+      addEventListener,
+    } as any);
+
+    setupAuthNock(true);
+    setupTokenNock(true);
+
+    await sse.connect();
+
+    const lastCall = vi.mocked(window.EventSource).mock.calls[0][0];
+
+    expect(lastCall.toString()).toMatch(`${sseHost}/sse`);
   });
 
   test("rejects if auth endpoint is not success", async () => {
