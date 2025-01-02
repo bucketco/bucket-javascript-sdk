@@ -191,57 +191,6 @@ export class BucketClient {
   }
 
   /**
-   * Send attributes to Bucket for the current user
-   */
-  private async user() {
-    if (!this.context.user) {
-      this.logger.warn(
-        "`user` call ignored. No user context provided at initialization",
-      );
-      return;
-    }
-
-    const { id, ...attributes } = this.context.user;
-    const payload: User = {
-      userId: String(id),
-      attributes,
-    };
-    const res = await this.httpClient.post({ path: `/user`, body: payload });
-    this.logger.debug(`sent user`, res);
-    return res;
-  }
-
-  /**
-   * Send attributes to Bucket for the current company.
-   */
-  private async company() {
-    if (!this.context.user) {
-      this.logger.warn(
-        "`company` call ignored. No user context provided at initialization",
-      );
-      return;
-    }
-
-    if (!this.context.company) {
-      this.logger.warn(
-        "`company` call ignored. No company context provided at initialization",
-      );
-      return;
-    }
-
-    const { id, ...attributes } = this.context.company;
-    const payload: Company = {
-      userId: String(this.context.user.id),
-      companyId: String(id),
-      attributes,
-    };
-
-    const res = await this.httpClient.post({ path: `/company`, body: payload });
-    this.logger.debug(`sent company`, res);
-    return res;
-  }
-
-  /**
    * Update the user context.
    * @description Performs a shallow merge with the existing user context.
    * Updates to the user ID will be ignored.
@@ -354,8 +303,8 @@ export class BucketClient {
   /**
    * Submit user feedback to Bucket. Must include either `score` or `comment`, or both.
    *
-   * @param options
    * @returns
+   * @param payload
    */
   async feedback(payload: Feedback) {
     const userId =
@@ -509,5 +458,56 @@ export class BucketClient {
     }
 
     this.featuresClient.stop();
+  }
+
+  /**
+   * Send attributes to Bucket for the current user
+   */
+  private async user() {
+    if (!this.context.user) {
+      this.logger.warn(
+        "`user` call ignored. No user context provided at initialization",
+      );
+      return;
+    }
+
+    const { id, ...attributes } = this.context.user;
+    const payload: User = {
+      userId: String(id),
+      attributes,
+    };
+    const res = await this.httpClient.post({ path: `/user`, body: payload });
+    this.logger.debug(`sent user`, res);
+    return res;
+  }
+
+  /**
+   * Send attributes to Bucket for the current company.
+   */
+  private async company() {
+    if (!this.context.user) {
+      this.logger.warn(
+        "`company` call ignored. No user context provided at initialization",
+      );
+      return;
+    }
+
+    if (!this.context.company) {
+      this.logger.warn(
+        "`company` call ignored. No company context provided at initialization",
+      );
+      return;
+    }
+
+    const { id, ...attributes } = this.context.company;
+    const payload: Company = {
+      userId: String(this.context.user.id),
+      companyId: String(id),
+      attributes,
+    };
+
+    const res = await this.httpClient.post({ path: `/company`, body: payload });
+    this.logger.debug(`sent company`, res);
+    return res;
   }
 }

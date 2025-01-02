@@ -12,7 +12,7 @@
     "@bucketco/react-sdk": "workspace:^",
     "@openfeature/react-sdk": "^0.4.5",
     "@openfeature/web-sdk": "^1.2.3",
-    "next": "14.2.10",
+    "next": "14.2.15",
     "react": "^18",
     "react-dom": "^18"
   },
