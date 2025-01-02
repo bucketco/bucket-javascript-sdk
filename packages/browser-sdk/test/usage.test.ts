@@ -11,7 +11,7 @@ import {
 } from "vitest";
 
 import { BucketClient } from "../src";
-import { API_HOST } from "../src/config";
+import { API_BASE_URL } from "../src/config";
 import { FeaturesClient } from "../src/feature/features";
 import { FeedbackPromptHandler } from "../src/feedback/feedback";
 import {
@@ -143,7 +143,7 @@ describe("feedback prompting", () => {
     });
 
     server.use(
-      http.post(`${API_HOST}/feedback/prompting-init`, () => {
+      http.post(`${API_BASE_URL}/feedback/prompting-init`, () => {
         throw new Error("should not be called");
       }),
     );
@@ -162,7 +162,7 @@ describe("feedback prompting", () => {
 
   test("does not initiate feedback prompting if server does not agree", async () => {
     server.use(
-      http.post(`${API_HOST}/feedback/prompting-init`, () => {
+      http.post(`${API_BASE_URL}/feedback/prompting-init`, () => {
         return HttpResponse.json({ success: false });
       }),
     );
@@ -214,14 +214,17 @@ describe("feedback state management", () => {
     });
     events = [];
     server.use(
-      http.post(`${API_HOST}/feedback/prompt-events`, async ({ request }) => {
-        const body = await request.json();
-        if (!(body && typeof body === "object" && "action" in body)) {
-          throw new Error("invalid request");
-        }
-        events.push(String(body["action"]));
-        return HttpResponse.json({ success: true });
-      }),
+      http.post(
+        `${API_BASE_URL}/feedback/prompt-events`,
+        async ({ request }) => {
+          const body = await request.json();
+          if (!(body && typeof body === "object" && "action" in body)) {
+            throw new Error("invalid request");
+          }
+          events.push(String(body["action"]));
+          return HttpResponse.json({ success: true });
+        },
+      ),
     );
   });
 
