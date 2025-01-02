@@ -150,8 +150,8 @@ describe("<BucketProvider />", () => {
 
     const provider = getProvider({
       publishableKey: "KEY",
-      host: "https://test.com",
-      sseHost: "https://test.com",
+      apiBaseUrl: "https://test.com",
+      sseBaseUrl: "https://test.com",
       company: { id: "123", name: "test" },
       user: { id: "456", name: "test" },
       otherContext: { test: "test" },
@@ -175,9 +175,11 @@ describe("<BucketProvider />", () => {
         otherContext: {
           test: "test",
         },
-        host: "https://test.com",
+        apiBaseUrl: "https://test.com",
+        host: undefined,
         logger: undefined,
-        sseHost: "https://test.com",
+        sseBaseUrl: "https://test.com",
+        sseHost: undefined,
         enableTracking: false,
         feedback: undefined,
         features: {},

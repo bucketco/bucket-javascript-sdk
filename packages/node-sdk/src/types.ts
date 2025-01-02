@@ -298,9 +298,15 @@ export type ClientOptions = {
   secretKey?: string;
 
   /**
-   * The host to send requests to (optional).
+   * @deprecated
+   * Use `apiBaseUrl` instead.
    **/
   host?: string;
+
+  /**
+   * The host to send requests to (optional).
+   **/
+  apiBaseUrl?: string;
 
   /**
    * The logger to use for logging (optional). Default is info level logging to console.

@@ -53,8 +53,19 @@ export type BucketProps = BucketContext & {
   children?: ReactNode;
   loadingComponent?: ReactNode;
   feedback?: FeedbackOptions;
+  /**
+   * @deprecated
+   * Use `apiBaseUrl` instead.
+   */
   host?: string;
+  apiBaseUrl?: string;
+
+  /**
+   * @deprecated
+   * Use `sseBaseUrl` instead.
+   */
   sseHost?: string;
+  sseBaseUrl?: string;
   debug?: boolean;
   enableTracking?: boolean;
 
@@ -102,8 +113,11 @@ export function BucketProvider({
       user,
       company,
       otherContext,
+
       host: config.host,
+      apiBaseUrl: config.apiBaseUrl,
       sseHost: config.sseHost,
+      sseBaseUrl: config.sseBaseUrl,
 
       enableTracking: config.enableTracking,
 
