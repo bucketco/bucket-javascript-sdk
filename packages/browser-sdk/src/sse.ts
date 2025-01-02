@@ -35,37 +35,6 @@ export class AblySSEChannel {
     this.logger = loggerWithPrefix(logger, "[SSE]");
   }
 
-  public async connect() {
-    if (this.isOpen) {
-      this.logger.warn("channel connection already open");
-      return;
-    }
-
-    this.isOpen = true;
-    try {
-      const token = await this.refreshToken();
-
-      if (!token) return;
-
-      const url = new URL(this.sseHost);
-      url.pathname = `${url.pathname.replace(/\/$/, "")}/sse`;
-      url.searchParams.append("v", "1.2");
-      url.searchParams.append("accessToken", token);
-      url.searchParams.append("channels", this.channel);
-      url.searchParams.append("rewind", "1");
-
-      this.eventSource = new EventSource(url);
-
-      this.eventSource.addEventListener("error", (e) => this.onError(e));
-      this.eventSource.addEventListener("open", (e) => this.onOpen(e));
-      this.eventSource.addEventListener("message", (m) => this.onMessage(m));
-
-      this.logger.debug("channel connection opened");
-    } finally {
-      this.isOpen = !!this.eventSource;
-    }
-  }
-
   public disconnect() {
     if (!this.isOpen) {
       this.logger.warn("channel connection already closed");
@@ -265,6 +234,37 @@ export class AblySSEChannel {
 
   private onOpen(e: Event) {
     this.logger.debug("event source connection opened", e);
+  }
+
+  public async connect() {
+    if (this.isOpen) {
+      this.logger.warn("channel connection already open");
+      return;
+    }
+
+    this.isOpen = true;
+    try {
+      const token = await this.refreshToken();
+
+      if (!token) return;
+
+      const url = new URL(this.sseHost);
+      url.pathname = `${url.pathname.replace(/\/$/, "")}/sse`;
+      url.searchParams.append("v", "1.2");
+      url.searchParams.append("accessToken", token);
+      url.searchParams.append("channels", this.channel);
+      url.searchParams.append("rewind", "1");
+
+      this.eventSource = new EventSource(url);
+
+      this.eventSource.addEventListener("error", (e) => this.onError(e));
+      this.eventSource.addEventListener("open", (e) => this.onOpen(e));
+      this.eventSource.addEventListener("message", (m) => this.onMessage(m));
+
+      this.logger.debug("channel connection opened");
+    } finally {
+      this.isOpen = !!this.eventSource;
+    }
   }
 }
 
