@@ -15,6 +15,8 @@ export type RawFeature = {
   targetingVersion?: number;
 };
 
+const FEATURES_UPDATED_EVENT = "features-updated";
+
 export type RawFeatures = Record<string, RawFeature | undefined>;
 
 export type FeaturesOptions = {
@@ -109,6 +111,12 @@ export interface CheckEvent {
   version?: number;
 }
 
+type context = {
+  user?: Record<string, any>;
+  company?: Record<string, any>;
+  other?: Record<string, any>;
+};
+
 export const FEATURES_EXPIRE_MS = 30 * 24 * 60 * 60 * 1000; // expire entirely after 30 days
 
 const localStorageCacheKey = `__bucket_features`;
@@ -120,13 +128,12 @@ export class FeaturesClient {
   private rateLimiter: RateLimiter;
   private logger: Logger;
 
+  private eventTarget = new EventTarget();
+  private abortController: AbortController = new AbortController();
+
   constructor(
     private httpClient: HttpClient,
-    private context: {
-      user?: Record<string, any>;
-      company?: Record<string, any>;
-      other?: Record<string, any>;
-    },
+    private context: context,
     logger: Logger,
     options?: FeaturesOptions & {
       cache?: FeatureCache;
@@ -156,8 +163,42 @@ export class FeaturesClient {
     this.setFeatures(features);
   }
 
+  async setContext(context: context) {
+    this.context = context;
+    await this.initialize();
+  }
+
   private setFeatures(features: RawFeatures) {
     this.features = features;
+    this.eventTarget.dispatchEvent(new Event(FEATURES_UPDATED_EVENT));
+  }
+
+  /**
+   * Stop the client.
+   */
+  public stop() {
+    this.abortController.abort();
+  }
+
+  /**
+   * Register a callback to be called when the features are updated.
+   * Features are not guaranteed to have actually changed when the callback is called.
+   *
+   * @param callback this will be called when the features are updated.
+   * @param options passed as-is to addEventListener, except the abort signal is not supported.
+   * @returns a function that can be called to remove the listener
+   */
+  onUpdated(callback: () => void, options?: AddEventListenerOptions | boolean) {
+    this.eventTarget.addEventListener(FEATURES_UPDATED_EVENT, callback, {
+      signal: this.abortController.signal,
+    });
+    return () => {
+      this.eventTarget.removeEventListener(
+        FEATURES_UPDATED_EVENT,
+        callback,
+        options,
+      );
+    };
   }
 
   getFeatures(): RawFeatures {

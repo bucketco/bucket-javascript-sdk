@@ -242,6 +242,87 @@ export class BucketClient {
   }
 
   /**
+   * Update the user context.
+   * @description Performs a shallow merge with the existing user context.
+   * Updates to the user ID will be ignored.
+   *
+   * @param user
+   */
+  public async updateUser(user: {
+    [key: string]: string | number | undefined;
+  }) {
+    if (user.id && user.id !== this.context.user?.id) {
+      this.logger.warn(
+        "ignoring attempt to update the user ID. Re-initialize the BucketClient with a new user ID instead.",
+      );
+      return;
+    }
+
+    this.context.user = {
+      ...this.context.user,
+      ...user,
+      id: user.id ?? this.context.user?.id,
+    };
+    void this.user();
+    await this.featuresClient.setContext(this.context);
+  }
+
+  /**
+   * Update the company context.
+   * Performs a shallow merge with the existing company context.
+   * Updates to the company ID will be ignored.
+   *
+   * @param company
+   */
+  public async updateCompany(company: {
+    [key: string]: string | number | undefined;
+  }) {
+    if (company.id && company.id !== this.context.company?.id) {
+      this.logger.warn(
+        "ignoring attempt to update the company ID. Re-initialize the BucketClient with a new company ID instead.",
+      );
+      return;
+    }
+    this.context.company = {
+      ...this.context.company,
+      ...company,
+      id: company.id ?? this.context.company?.id,
+    };
+    void this.company();
+    await this.featuresClient.setContext(this.context);
+  }
+
+  /**
+   * Update the company context.
+   * Performs a shallow merge with the existing company context.
+   * Updates to the company ID will be ignored.
+   *
+   * @param company
+   */
+  public async updateOtherContext(otherContext: {
+    [key: string]: string | number | undefined;
+  }) {
+    this.context.otherContext = {
+      ...this.context.otherContext,
+      ...otherContext,
+    };
+    await this.featuresClient.setContext(this.context);
+  }
+
+  /**
+   * Register a callback to be called when the features are updated.
+   * Features are not guaranteed to have actually changed when the callback is called.
+   *
+   * Calling `client.stop()` will remove all listeners added here.
+   *
+   * @param callback this will be called when the features are updated.
+   * @param options passed as-is to addEventListener
+   */
+  public onFeaturesUpdated(cb: () => void) {
+    return this.featuresClient.onUpdated(cb);
+  }
+
+  /**
    * Track an event in Bucket.
    *
    * @param eventName The name of the event
@@ -414,7 +495,10 @@ export class BucketClient {
   }
 
   /**
-   * Stop the SDK. This will stop any automated feedback surveys.
+   * Stop the SDK.
+   * This will stop any automated feedback surveys.
+   * It will also stop the features client, including removing
+   * any onFeaturesUpdated listeners.
    *
    **/
   async stop() {
@@ -423,5 +507,7 @@ export class BucketClient {
       await this.autoFeedbackInit;
       this.autoFeedback.stop();
     }
+
+    this.featuresClient.stop();
   }
 }
