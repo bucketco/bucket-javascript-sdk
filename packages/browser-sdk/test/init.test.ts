@@ -50,7 +50,7 @@ describe("init", () => {
     const bucketInstance = new BucketClient({
       publishableKey: KEY,
       user: { id: "foo" },
-      host: "https://example.com",
+      apiBaseUrl: "https://example.com",
     });
     await bucketInstance.initialize();
 
@@ -78,7 +78,7 @@ describe("init", () => {
     const bucketInstance = new BucketClient({
       publishableKey: KEY,
       user: { id: "foo" },
-      host: "https://example.com",
+      apiBaseUrl: "https://example.com",
       enableTracking: false,
       feedback: {
         enableAutoFeedback: false,
