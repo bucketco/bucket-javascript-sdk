@@ -17,7 +17,8 @@ declare module "../../src" {
   }
 }
 
-const publishableKey = import.meta.env.PUBLISHABLE_KEY || "";
+const publishableKey = import.meta.env.VITE_PUBLISHABLE_KEY || "";
+const host = import.meta.env.VITE_BUCKET_HOST || "http://localhost:3000";
 
 function HuddleFeature() {
   // Type safe feature
@@ -59,7 +60,10 @@ function UpdateContext() {
   return (
     <div>
       <h2>Update context</h2>
-
+      <div>
+        Update the context by editing the textarea. User/company IDs cannot be
+        changed here.
+      </div>
       <table>
         <tbody>
           <tr>
@@ -180,6 +184,13 @@ function FeatureOptIn() {
   return (
     <div>
       <h2>Feature opt-in</h2>
+      <div style={{ display: "flex", flexFlow: "column" }}></div>
+      <div>
+        Create a <code>huddle</code> feature and set a rule:{" "}
+        <code>optInHuddles IS TRUE</code>. Hit the checkbox below to opt-in/out
+        of the feature.
+      </div>
+
       <label htmlFor="huddlesOptIn">Opt-in to Huddle feature</label>
       <input
         disabled={sendingUpdate}
@@ -209,6 +220,7 @@ export function App() {
       company={initialCompany}
       user={initialUser}
       otherContext={initialOtherContext}
+      host={host}
     >
       <Demos />
       {}
