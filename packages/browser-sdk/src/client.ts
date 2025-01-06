@@ -70,7 +70,6 @@ type DataType =
   | "array"
   | { [key: string]: DataType }
   | ["string"];
-// | { key: "bleh"; config: { val: "boolean" } }; // enum?
 
 type FeatureDefinition = Readonly<{
   key: string;
@@ -98,7 +97,7 @@ type ToType<T> = T extends "boolean"
             ? { [K in keyof T]: ToType<T[K]> }
             : undefined;
 
-type FeatureKey<Defs extends FeatureDefinitions> =
+export type FeatureKey<Defs extends FeatureDefinitions> =
   | Extract<Defs[number], { key: string }>["key"]
   | Extract<Defs[number], string>;
 

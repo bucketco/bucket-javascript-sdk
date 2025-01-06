@@ -13,6 +13,8 @@ import canonicalJSON from "canonical-json";
 import {
   BucketClient,
   BucketContext,
+  FeatureDefinitions,
+  FeatureKey,
   FeaturesOptions,
   FeedbackOptions,
   RawFeatures,
@@ -163,7 +165,9 @@ export function BucketProvider({
  * }
  * ```
  */
-export function useFeature(key: BucketFeatures) {
+export function useFeature<Defs extends FeatureDefinitions>(
+  key: FeatureKey<Defs>,
+) {
   const {
     features: { features, isLoading },
     client,

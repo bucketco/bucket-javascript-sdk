@@ -2,17 +2,22 @@ import React, { createContext, useContext, useState } from "react";
 
 import {
   BucketProvider,
-  useFeature,
+  Features,
+  useFeature as bucketUseFeature,
   useRequestFeedback,
   useTrack,
 } from "../../src";
 
-// Extending the Features interface to define the available features
-declare module "../../src" {
-  interface Features {
-    huddle: boolean;
-  }
-}
+// type bleh = {
+//   bleh: boolean;
+// };
+
+// // Extending the Features interface to define the available features
+// declare module "../../src" {
+//   interface Features extends bleh {
+//     huddle: boolean;
+//   }
+// }
 
 const publishableKey = import.meta.env.PUBLISHABLE_KEY || "";
 

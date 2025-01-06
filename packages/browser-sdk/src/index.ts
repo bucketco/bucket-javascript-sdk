@@ -1,6 +1,7 @@
 export type {
   Feature,
   FeatureDefinitions,
+  FeatureKey,
   InitOptions,
   ToolbarOptions,
 } from "./client";
