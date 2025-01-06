@@ -14,7 +14,7 @@ import {
   RequestFeedbackOptions,
 } from "./feedback/feedback";
 import * as feedbackLib from "./feedback/ui";
-import { API_HOST, SSE_REALTIME_HOST } from "./config";
+import { API_BASE_URL, SSE_REALTIME_BASE_URL } from "./config";
 import { BucketContext, CompanyContext, UserContext } from "./context";
 import { HttpClient } from "./httpClient";
 import { Logger, loggerWithPrefix, quietConsoleLogger } from "./logger";
@@ -54,8 +54,8 @@ export type PayloadContext = {
 };
 
 interface Config {
-  host: string;
-  sseHost: string;
+  apiBaseUrl: string;
+  sseBaseUrl: string;
   enableTracking: boolean;
 }
 
@@ -65,8 +65,21 @@ export interface InitOptions {
   company?: CompanyContext;
   otherContext?: Record<string, any>;
   logger?: Logger;
+
+  /**
+   * @deprecated
+   * Use `apiBaseUrl` instead.
+   */
   host?: string;
+  apiBaseUrl?: string;
+
+  /**
+   * @deprecated
+   * Use `sseBaseUrl` instead.
+   */
   sseHost?: string;
+  sseBaseUrl?: string;
+
   feedback?: FeedbackOptions;
   features?: FeaturesOptions;
   sdkVersion?: string;
@@ -74,8 +87,8 @@ export interface InitOptions {
 }
 
 const defaultConfig: Config = {
-  host: API_HOST,
-  sseHost: SSE_REALTIME_HOST,
+  apiBaseUrl: API_BASE_URL,
+  sseBaseUrl: SSE_REALTIME_BASE_URL,
   enableTracking: true,
 };
 
@@ -110,8 +123,8 @@ export class BucketClient {
     };
 
     this.config = {
-      host: opts?.host ?? defaultConfig.host,
-      sseHost: opts?.sseHost ?? defaultConfig.sseHost,
+      apiBaseUrl: opts?.apiBaseUrl ?? opts?.host ?? defaultConfig.apiBaseUrl,
+      sseBaseUrl: opts?.sseBaseUrl ?? opts?.sseHost ?? defaultConfig.sseBaseUrl,
       enableTracking: opts?.enableTracking ?? defaultConfig.enableTracking,
     } satisfies Config;
 
@@ -123,7 +136,7 @@ export class BucketClient {
     };
 
     this.httpClient = new HttpClient(this.publishableKey, {
-      baseUrl: this.config.host,
+      baseUrl: this.config.apiBaseUrl,
       sdkVersion: opts?.sdkVersion,
     });
 
@@ -150,7 +163,7 @@ export class BucketClient {
         );
       } else {
         this.autoFeedback = new AutoFeedback(
-          this.config.sseHost,
+          this.config.sseBaseUrl,
           this.logger,
           this.httpClient,
           feedbackOpts?.autoFeedbackHandler,
@@ -188,6 +201,83 @@ export class BucketClient {
         this.logger.error("error sending company", e);
       });
     }
+  }
+
+  /**
+   * Update the user context.
+   * @description Performs a shallow merge with the existing user context.
+   * Attempting to update the user ID will log a warning and be ignored.
+   *
+   * @param user
+   */
+  async updateUser(user: { [key: string]: string | number | undefined }) {
+    if (user.id && user.id !== this.context.user?.id) {
+      this.logger.warn(
+        "ignoring attempt to update the user ID. Re-initialize the BucketClient with a new user ID instead.",
+      );
+      return;
+    }
+
+    this.context.user = {
+      ...this.context.user,
+      ...user,
+      id: user.id ?? this.context.user?.id,
+    };
+    void this.user();
+    await this.featuresClient.setContext(this.context);
+  }
+
+  /**
+   * Update the company context.
+   * Performs a shallow merge with the existing company context.
+   * Attempting to update the company ID will log a warning and be ignored.
+   *
+   * @param company
+   */
+  async updateCompany(company: { [key: string]: string | number | undefined }) {
+    if (company.id && company.id !== this.context.company?.id) {
+      this.logger.warn(
+        "ignoring attempt to update the company ID. Re-initialize the BucketClient with a new company ID instead.",
+      );
+      return;
+    }
+    this.context.company = {
+      ...this.context.company,
+      ...company,
+      id: company.id ?? this.context.company?.id,
+    };
+    void this.company();
+    await this.featuresClient.setContext(this.context);
+  }
+
+  /**
+   * Update the company context.
+   * Performs a shallow merge with the existing company context.
+   * Updates to the company ID will be ignored.
+   *
+   * @param company
+   */
+  async updateOtherContext(otherContext: {
+    [key: string]: string | number | undefined;
+  }) {
+    this.context.otherContext = {
+      ...this.context.otherContext,
+      ...otherContext,
+    };
+    await this.featuresClient.setContext(this.context);
+  }
+
+  /**
+   * Register a callback to be called when the features are updated.
+   * Features are not guaranteed to have actually changed when the callback is called.
+   *
+   * Calling `client.stop()` will remove all listeners added here.
+   *
+   * @param callback this will be called when the features are updated.
+   * @param options passed as-is to addEventListener
+   */
+  onFeaturesUpdated(cb: () => void) {
+    return this.featuresClient.onUpdated(cb);
   }
 
   /**
@@ -363,7 +453,10 @@ export class BucketClient {
   }
 
   /**
-   * Stop the SDK. This will stop any automated feedback surveys.
+   * Stop the SDK.
+   * This will stop any automated feedback surveys.
+   * It will also stop the features client, including removing
+   * any onFeaturesUpdated listeners.
    *
    **/
   async stop() {
@@ -372,6 +465,8 @@ export class BucketClient {
       await this.autoFeedbackInit;
       this.autoFeedback.stop();
     }
+
+    this.featuresClient.stop();
   }
 
   /**

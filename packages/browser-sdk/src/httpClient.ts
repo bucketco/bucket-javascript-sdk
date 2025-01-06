@@ -1,4 +1,4 @@
-import { API_HOST, SDK_VERSION, SDK_VERSION_HEADER_NAME } from "./config";
+import { API_BASE_URL, SDK_VERSION, SDK_VERSION_HEADER_NAME } from "./config";
 
 export interface HttpClientOptions {
   baseUrl?: string;
@@ -6,14 +6,14 @@ export interface HttpClientOptions {
 }
 
 export class HttpClient {
-  private baseUrl: string;
-  private sdkVersion: string;
+  private readonly baseUrl: string;
+  private readonly sdkVersion: string;
 
   constructor(
     public publishableKey: string,
     opts: HttpClientOptions = {},
   ) {
-    this.baseUrl = opts.baseUrl ?? API_HOST;
+    this.baseUrl = opts.baseUrl ?? API_BASE_URL;
 
     // Ensure baseUrl ends with a trailing slash so subsequent
     // path concatenation works as expected
