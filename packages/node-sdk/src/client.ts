@@ -250,7 +250,7 @@ export class BucketClient {
    * set to be used in subsequent calls.
    * For example, for evaluating feature targeting or tracking events.
    *
-   * @param enableTracking
+   * @param enableTracking - Whether to track feature.
    * @param context - The user/company/otherContext to bind to the client.
    *
    * @returns A new client bound with the arguments given.
@@ -354,7 +354,7 @@ export class BucketClient {
 
    * @param event - The event to track.
    * @param userId - The userId of the user who performed the event
-   * @param opts
+   * @param opts - The options.
    * @param opts.attributes - The attributes of the event (optional).
    * @param opts.meta - The meta context associated with tracking (optional).
    * @param opts.companyId - Optional company ID for the event (optional).
@@ -425,6 +425,7 @@ export class BucketClient {
   /**
    * Gets the evaluated feature for the current context which includes the user, company, and custom context.
    *
+   * @param enableTracking - Whether to track feature.
    * @param context - The context to evaluate the features for.
    * @returns The evaluated features.
    * @remarks
@@ -436,6 +437,7 @@ export class BucketClient {
   }: ContextWithTracking): TypedFeatures {
     const options = { enableTracking, ...context };
     const features = this._getFeatures(options);
+
     return Object.fromEntries(
       Object.entries(features).map(([k, v]) => [
         k as keyof TypedFeatures,
@@ -541,9 +543,10 @@ export class BucketClient {
         TBody,
         { success: boolean }
       >(url, this._config.headers, body);
+
       this._config.logger?.debug(`post request to "${url}"`, response);
 
-      if (!isObject(response.body) || response.body.success !== true) {
+      if (!response.ok || !isObject(response.body) || !response.body.success) {
         this._config.logger?.warn(
           `invalid response received from server for "${url}"`,
           response,
@@ -578,7 +581,7 @@ export class BucketClient {
 
       this._config.logger?.debug(`get request to "${url}"`, response);
 
-      if (!isObject(response.body) || !response.body.success) {
+      if (!response.ok || !isObject(response.body) || !response.body.success) {
         this._config.logger?.warn(
           `invalid response received from server for "${url}"`,
           response,
@@ -601,7 +604,7 @@ export class BucketClient {
   /**
    * Sends a batch of events to the Bucket API.
    * @param events - The events to send.
-   * @throws An error if the the send fails.
+   * @throws An error if the send fails.
    **/
   private async sendBulkEvents(events: BulkEvent[]) {
     ok(
@@ -766,6 +769,41 @@ export class BucketClient {
     return this._config.featuresCache;
   }
 
+  /**
+   * Warns if any features have targeting rules that require context fields that are missing.
+   *
+   * @param options - The options.
+   * @param features - The features to check.
+   */
+  private warnMissingFeatureContextFields(
+    options: Context,
+    features: { key: string; missingContextFields?: string[] }[],
+  ) {
+    features.forEach(({ key, missingContextFields }) => {
+      if (missingContextFields?.length) {
+        if (
+          !this._config.rateLimiter.isAllowed(
+            hashObject({
+              key,
+              missingContextFields,
+              options,
+            }),
+          )
+        ) {
+          return;
+        }
+
+        const missingFieldsStr = missingContextFields
+          .map((field) => `"${field}"`)
+          .join(", ");
+
+        this._config.logger?.warn(
+          `feature "${key}" has targeting rules that require the following context fields: ${missingFieldsStr}`,
+        );
+      }
+    });
+  }
+
   private _getFeatures(
     options: { enableTracking: boolean } & Context,
   ): Record<string, RawFeature> {
@@ -800,6 +838,14 @@ export class BucketClient {
         rules: feature.targeting.rules.map((r) => ({ ...r, value: true })),
         context,
       }),
+    );
+
+    this.warnMissingFeatureContextFields(
+      context,
+      evaluated.map(({ featureKey, missingContextFields }) => ({
+        key: featureKey,
+        missingContextFields,
+      })),
     );
 
     if (enableTracking) {
@@ -917,16 +963,23 @@ export class BucketClient {
     };
     checkContextWithTracking(contextWithTracking);
 
-    const params = new URLSearchParams(flattenJSON({ context }));
+    const params = new URLSearchParams(
+      Object.keys(context).length ? flattenJSON({ context }) : undefined,
+    );
+
     if (key) {
       params.append("key", key);
     }
 
     const res = await this.get<EvaluatedFeaturesAPIResponse>(
-      "features/evaluated?" + params.toString(),
+      `features/evaluated?${params}`,
     );
 
     if (res) {
+      this.warnMissingFeatureContextFields(
+        context,
+        Object.values(res.features),
+      );
       return Object.fromEntries(
         Object.entries(res.features).map(([featureKey, feature]) => {
           return [
@@ -946,8 +999,8 @@ export class BucketClient {
  * A client bound with a specific user, company, and other context.
  */
 export class BoundBucketClient {
-  private _client: BucketClient;
-  private _options: ContextWithTracking;
+  private readonly _client: BucketClient;
+  private readonly _options: ContextWithTracking;
 
   constructor(
     client: BucketClient,
@@ -1014,11 +1067,8 @@ export class BoundBucketClient {
    * @returns Features for the given user/company and whether each one is enabled or not
    */
   public async getFeaturesRemote() {
-    return await this._client.getFeaturesRemote(
-      this._options.user?.id,
-      this._options.company?.id,
-      this._options,
-    );
+    const { enableTracking: _, ...context } = this._options;
+    return await this._client.getFeaturesRemote(undefined, undefined, context);
   }
 
   /**
@@ -1028,11 +1078,12 @@ export class BoundBucketClient {
    * @returns Feature for the given user/company and key and whether it's enabled or not
    */
   public async getFeatureRemote(key: string) {
+    const { enableTracking: _, ...context } = this._options;
     return await this._client.getFeatureRemote(
       key,
-      this._options.user?.id,
-      this._options.company?.id,
-      this._options,
+      undefined,
+      undefined,
+      context,
     );
   }
 
