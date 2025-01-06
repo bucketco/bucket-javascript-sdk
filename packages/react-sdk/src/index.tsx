@@ -92,7 +92,7 @@ export function BucketProvider({
     }
     contextKeyRef.current = contextKey;
 
-    // on update of contextKey and on mount
+    // on update of contextKey and on unmount
     if (clientRef.current) {
       void clientRef.current.stop();
     }
@@ -115,18 +115,19 @@ export function BucketProvider({
       sdkVersion: SDK_VERSION,
     });
     clientRef.current = client;
+
+    client.onFeaturesUpdated(() => {
+      setFeatures(client.getFeatures());
+    });
+
     client
       .initialize()
       .then(() => {
-        setFeatures(client.getFeatures());
         setFeaturesLoading(false);
       })
       .catch(() => {
         // initialize cannot actually throw, but this fixes lint warnings
       });
-
-    // on umount
-    return () => void client.stop();
   }, [contextKey]);
 
   const context: ProviderContextType = {
@@ -257,4 +258,61 @@ export function useRequestFeedback() {
 export function useSendFeedback() {
   const { client } = useContext<ProviderContextType>(ProviderContext);
   return (opts: UnassignedFeedback) => client?.feedback(opts);
+}
+
+/**
+ * Returns a function to update the current user's information.
+ * For example, if the user changed role or opted into a beta-feature.
+ *
+ * The method returned is a function which returns a promise that
+ * resolves when after the features have been updated as a result
+ * of the user update.
+ *
+ * ```ts
+ * const updateUser = useUpdateUser();
+ * updateUser({ optInHuddles: "true" }).then(() => console.log("Features updated"));
+ * ```
+ */
+export function useUpdateUser() {
+  const { client } = useContext<ProviderContextType>(ProviderContext);
+  return (opts: { [key: string]: string | number | undefined }) =>
+    client?.updateUser(opts);
+}
+
+/**
+ * Returns a function to update the current company's information.
+ * For example, if the company changed plan or opted into a beta-feature.
+ *
+ * The method returned is a function which returns a promise that
+ * resolves when after the features have been updated as a result
+ * of the company update.
+ *
+ * ```ts
+ * const updateCompany = useUpdateCompany();
+ * updateCompany({ plan: "enterprise" }).then(() => console.log("Features updated"));
+ *
+ */
+export function useUpdateCompany() {
+  const { client } = useContext<ProviderContextType>(ProviderContext);
+  return (opts: { [key: string]: string | number | undefined }) =>
+    client?.updateCompany(opts);
+}
+
+/**
+ * Returns a function to update the "other" context information.
+ * For example, if the user changed workspace, you can set the workspace id here.
+ *
+ * The method returned is a function which returns a promise that
+ * resolves when after the features have been updated as a result
+ * of the update to the "other" context.
+ *
+ * ```ts
+ * const updateOtherContext = useUpdateOtherContext();
+ * updateOtherContext({ workspaceId: newWorkspaceId })
+ *   .then(() => console.log("Features updated"));
+ */
+export function useUpdateOtherContext() {
+  const { client } = useContext<ProviderContextType>(ProviderContext);
+  return (opts: { [key: string]: string | number | undefined }) =>
+    client?.updateOtherContext(opts);
 }
