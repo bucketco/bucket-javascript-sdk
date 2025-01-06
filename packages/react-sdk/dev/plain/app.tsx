@@ -169,7 +169,15 @@ function Demos() {
       <h1>React SDK</h1>
 
       <HuddleFeature />
+
+      <h2>Feature opt-in</h2>
+      <div>
+        Create a <code>huddle</code> feature and set a rule:{" "}
+        <code>optin-huddles IS TRUE</code>. Hit the checkbox below to opt-in/out
+        of the feature.
+      </div>
       <FeatureOptIn featureKey={"huddles"} featureName={"Huddles"} />
+
       <UpdateContext />
       <Feedback />
       <SendEvent />
@@ -199,7 +207,7 @@ function FeatureOptIn({
         onChange={() => {
           setSendingUpdate(true);
           updateUser({
-            [`optIn-${featureKey}`]: isEnabled ? "false" : "true",
+            [`optin-${featureKey}`]: isEnabled ? "false" : "true",
           })?.then(() => {
             setSendingUpdate(false);
           });
