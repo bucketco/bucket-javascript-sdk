@@ -193,7 +193,7 @@ export class BucketClient {
   /**
    * Update the user context.
    * @description Performs a shallow merge with the existing user context.
-   * Updates to the user ID will be ignored.
+   * Attempting to update the user ID will log a warning and be ignored.
    *
    * @param user
    */
@@ -217,7 +217,7 @@ export class BucketClient {
   /**
    * Update the company context.
    * Performs a shallow merge with the existing company context.
-   * Updates to the company ID will be ignored.
+   * Attempting to update the company ID will log a warning and be ignored.
    *
    * @param company
    */
