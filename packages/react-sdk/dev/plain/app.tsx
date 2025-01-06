@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
 import {
-  BucketFeatures,
+  FeatureKey,
   BucketProvider,
   useFeature,
   useRequestFeedback,
@@ -181,7 +181,7 @@ function FeatureOptIn({
   featureKey,
   featureName,
 }: {
-  featureKey: BucketFeatures;
+  featureKey: FeatureKey;
   featureName: string;
 }) {
   const updateUser = useUpdateUser();
