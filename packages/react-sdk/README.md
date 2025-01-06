@@ -106,7 +106,15 @@ function StartHuddleButton() {
     <>
       <button onClick={track}>Start huddle!</button>
       <button
-        onClick={() => requestFeedback({ title: "How do you like Huddles?" })}
+        onClick={(e) =>
+          requestFeedback({
+            title: "How do you like Huddles?",
+            position: {
+              type: "POPOVER",
+              anchor: e.currentTarget as HTMLElement,
+            },
+          })
+        }
       >
         Give feedback!
       </button>
@@ -139,15 +147,28 @@ function StartHuddle() {
 `useRequestFeedback()` returns a function that lets you open up a dialog to ask for feedback on a specific feature.
 See [Automated Feedback Surveys](https://docs.bucket.co/product-handbook/live-satisfaction) for how to do this automatically, without code.
 
-```ts
+When using the `useRequestFeedback` you must pass the feature key to `requestFeedback`.
+The example below shows how to use `position` to ensure the popover appears next to the "Give feedback!" button.
+
+```tsx
 import { useTrackEvent } from "@bucketco/react-sdk";
 
 const requestFeedback = useRequestFeedback();
 
-requestFeedback({
-  featureId: "bucket-feature-id",
-  title: "How satisfied are you with file uploads?",
-});
+<button
+  onClick={(e) =>
+    requestFeedback({
+      featureKey: "huddle-feature-key",
+      title: "How satisfied are you with file uploads?",
+      position: {
+        type: "POPOVER",
+        anchor: e.currentTarget as HTMLElement,
+      },
+    })
+  }
+>
+  Give feedback!
+</button>;
 ```
 
 See https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/browser-sdk/FEEDBACK.md#manual-feedback-collection for more information on `requestFeedback`
@@ -169,7 +190,28 @@ sendFeedback({
 });
 ```
 
-See https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/browser-sdk/FEEDBACK.md#manual-feedback-collection for more information on `sendFeedback`
+### `useUpdateUser()`, `useUpdateCompany()` and `useUpdateOtherContext()`
+
+`useUpdateUser()`, `useUpdateCompany()` and `useUpdateOtherContext()` all return
+a function that lets you update the attributes for the currently set user/company.
+
+Updates made to user/company are stored remotely and are used automatically
+for evaluating feature targeting in the future, while "other" context is only
+used in the current session.
+
+This is only useful for updating attributes for the already set user/company.
+If you want to change the user.id or company.id, you need to update the props
+given the `BucketProvider` instead.
+
+```ts
+import { useUpdateUser } from "@bucketco/react-sdk";
+
+const updateUser = useUpdateUser();
+
+updateUser({
+  huddlesOptIn: "true",
+});
+```
 
 # Content Security Policy (CSP)
 

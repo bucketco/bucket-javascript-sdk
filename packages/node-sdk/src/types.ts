@@ -1,4 +1,4 @@
-import { FeatureData } from "@bucketco/flag-evaluation";
+import { RuleFilter } from "@bucketco/flag-evaluation";
 
 /**
  * Describes the meta context associated with tracking.
@@ -11,7 +11,7 @@ export type TrackingMeta = {
 };
 
 /**
- * Describes the attributes of an user, company or event.
+ * Describes the attributes of a user, company or event.
  **/
 export type Attributes = Record<string, any>;
 
@@ -73,6 +73,11 @@ export interface RawFeature {
    * The version of the targeting used to evaluate if the feature is enabled (optional).
    */
   targetingVersion?: number;
+
+  /**
+   * The missing fields in the evaluation context (optional).
+   */
+  missingContextFields?: string[];
 }
 
 /**
@@ -122,11 +127,24 @@ export type FeatureOverrides = Partial<Record<keyof TypedFeatures, boolean>>;
 export type FeatureOverridesFn = (context: Context) => FeatureOverrides;
 
 /**
+ * Describes a specific feature in the API response
+ */
+type FeatureAPIResponse = {
+  key: string;
+  targeting: {
+    version: number;
+    rules: {
+      filter: RuleFilter;
+    }[];
+  };
+};
+
+/**
  * Describes the response of the features endpoint
  */
 export type FeaturesAPIResponse = {
   /** The feature definitions */
-  features: (FeatureData & { targeting: { version: number } })[];
+  features: FeatureAPIResponse[];
 };
 
 export type EvaluatedFeaturesAPIResponse = {
@@ -148,6 +166,11 @@ export type HttpClientResponse<TResponse> = {
    * The status code of the response.
    **/
   status: number;
+
+  /**
+   * Indicates that the request succeeded.
+   **/
+  ok: boolean;
 
   /**
    * The body of the response if available.
@@ -285,9 +308,15 @@ export type ClientOptions = {
   secretKey?: string;
 
   /**
-   * The host to send requests to (optional).
+   * @deprecated
+   * Use `apiBaseUrl` instead.
    **/
   host?: string;
+
+  /**
+   * The host to send requests to (optional).
+   **/
+  apiBaseUrl?: string;
 
   /**
    * The logger to use for logging (optional). Default is info level logging to console.

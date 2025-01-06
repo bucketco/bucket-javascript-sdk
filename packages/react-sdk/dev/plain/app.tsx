@@ -1,12 +1,18 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { useState } from "react";
 
 import {
   BucketProvider,
   Features,
   useFeature as bucketUseFeature,
+  useFeature,
   useRequestFeedback,
   useTrack,
+  useUpdateCompany,
+  useUpdateOtherContext,
+  useUpdateUser,
 } from "../../src";
+
+const myFeatures = ["huddle"] as const;
 
 // type bleh = {
 //   bleh: boolean;
@@ -19,7 +25,8 @@ import {
 //   }
 // }
 
-const publishableKey = import.meta.env.PUBLISHABLE_KEY || "";
+const publishableKey = import.meta.env.VITE_PUBLISHABLE_KEY || "";
+const host = import.meta.env.VITE_BUCKET_HOST || "http://localhost:3000";
 
 function HuddleFeature() {
   // Type safe feature
@@ -48,10 +55,12 @@ const initialOtherContext = {
 };
 
 function UpdateContext() {
-  const { user, company, otherContext, setContext } =
-    useContext(SessionContext);
-  const [newCompany, setNewCompany] = useState(JSON.stringify(initialCompany));
+  const updateUser = useUpdateUser();
+  const updateCompany = useUpdateCompany();
+  const updateOtherContext = useUpdateOtherContext();
+
   const [newUser, setNewUser] = useState(JSON.stringify(initialUser));
+  const [newCompany, setNewCompany] = useState(JSON.stringify(initialCompany));
   const [newOtherContext, setNewOtherContext] = useState(
     JSON.stringify(initialOtherContext),
   );
@@ -59,7 +68,10 @@ function UpdateContext() {
   return (
     <div>
       <h2>Update context</h2>
-
+      <div>
+        Update the context by editing the textarea. User/company IDs cannot be
+        changed here.
+      </div>
       <table>
         <tbody>
           <tr>
@@ -70,15 +82,7 @@ function UpdateContext() {
               ></textarea>
             </td>
             <td>
-              <button
-                onClick={() => {
-                  setContext({
-                    user,
-                    other: otherContext,
-                    company: JSON.parse(newCompany),
-                  });
-                }}
-              >
+              <button onClick={() => updateCompany(JSON.parse(newCompany))}>
                 Update company
               </button>
             </td>
@@ -91,15 +95,7 @@ function UpdateContext() {
               ></textarea>
             </td>
             <td>
-              <button
-                onClick={() =>
-                  setContext({
-                    user: JSON.parse(newUser),
-                    other: otherContext,
-                    company,
-                  })
-                }
-              >
+              <button onClick={() => updateUser(JSON.parse(newUser))}>
                 Update user
               </button>
             </td>
@@ -113,13 +109,7 @@ function UpdateContext() {
             </td>
             <td>
               <button
-                onClick={() =>
-                  setContext({
-                    user,
-                    other: JSON.parse(newOtherContext),
-                    company,
-                  })
-                }
+                onClick={() => updateOtherContext(JSON.parse(newOtherContext))}
               >
                 Update other context
               </button>
@@ -162,11 +152,16 @@ function Feedback() {
     <div>
       <h2>Feedback</h2>
       <button
-        onClick={() => {
+        onClick={(e) =>
           requestFeedback({
-            featureId: "fe123",
-          });
-        }}
+            title: "How do you like Huddles?",
+            featureKey: "huddle",
+            position: {
+              type: "POPOVER",
+              anchor: e.currentTarget as HTMLElement,
+            },
+          })
+        }
       >
         Request feedback
       </button>
@@ -181,7 +176,7 @@ function Demos() {
       <h1>React SDK</h1>
 
       <HuddleFeature />
-
+      <FeatureOptIn />
       <UpdateContext />
       <Feedback />
       <SendEvent />
@@ -189,40 +184,53 @@ function Demos() {
   );
 }
 
-const SessionContext = createContext({
-  user: initialUser,
-  company: initialCompany,
-  otherContext: initialOtherContext,
-  setContext: (_: any) => {},
-});
-
-export function App() {
-  const [context, setContext] = useState({
-    user: initialUser,
-    company: initialCompany,
-    otherContext: initialOtherContext,
-  });
-
-  const { user, company, otherContext } = context;
+function FeatureOptIn() {
+  const updateUser = useUpdateUser();
+  const [sendingUpdate, setSendingUpdate] = useState(false);
+  const huddles = useFeature("huddle");
 
   return (
-    <SessionContext.Provider value={{ setContext, ...context }}>
-      <BucketProvider
-        publishableKey={publishableKey}
-        feedback={{
-          enableLiveSatisfaction: true,
+    <div>
+      <h2>Feature opt-in</h2>
+      <div style={{ display: "flex", flexFlow: "column" }}></div>
+      <div>
+        Create a <code>huddle</code> feature and set a rule:{" "}
+        <code>optInHuddles IS TRUE</code>. Hit the checkbox below to opt-in/out
+        of the feature.
+      </div>
+
+      <label htmlFor="huddlesOptIn">Opt-in to Huddle feature</label>
+      <input
+        disabled={sendingUpdate}
+        id="huddlesOptIn"
+        type="checkbox"
+        checked={huddles.isEnabled}
+        onChange={() => {
+          setSendingUpdate(true);
+          updateUser({
+            optInHuddles: huddles.isEnabled ? "false" : "true",
+          })?.then(() => {
+            setSendingUpdate(false);
+          });
         }}
-        company={company}
-        user={user}
-        otherContext={otherContext}
-        featureOptions={{
-          fallbackFeatures: ["huddle"],
-        }}
-        features={myFeatures}
-      >
-        <Demos />
-        {}
-      </BucketProvider>
-    </SessionContext.Provider>
+    </div>
+  );
+}
+
+export function App() {
+  return (
+    <BucketProvider
+      publishableKey={publishableKey}
+      feedback={{
+        enableLiveSatisfaction: true,
+      }}
+      company={initialCompany}
+      user={initialUser}
+      otherContext={initialOtherContext}
+      features={myFeatures}
+      apiBaseUrl={host}
+    >
+      <Demos />
+    </BucketProvider>
   );
 }

@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import { expect, test } from "@playwright/test";
 
-import { API_HOST } from "../../src/config";
+import { API_BASE_URL } from "../../src/config";
 
 const KEY = randomUUID();
 
@@ -11,7 +11,7 @@ test("Acceptance", async ({ page }) => {
   const successfulRequests: string[] = [];
 
   // Mock API calls with assertions
-  await page.route(`${API_HOST}/features/enabled*`, async (route) => {
+  await page.route(`${API_BASE_URL}/features/enabled*`, async (route) => {
     successfulRequests.push("FEATURES");
     await route.fulfill({
       status: 200,
@@ -22,7 +22,7 @@ test("Acceptance", async ({ page }) => {
     });
   });
 
-  await page.route(`${API_HOST}/user`, async (route) => {
+  await page.route(`${API_BASE_URL}/user`, async (route) => {
     expect(route.request().method()).toEqual("POST");
     expect(route.request().postDataJSON()).toMatchObject({
       userId: "foo",
@@ -38,7 +38,7 @@ test("Acceptance", async ({ page }) => {
     });
   });
 
-  await page.route(`${API_HOST}/company`, async (route) => {
+  await page.route(`${API_BASE_URL}/company`, async (route) => {
     expect(route.request().method()).toEqual("POST");
     expect(route.request().postDataJSON()).toMatchObject({
       userId: "foo",
@@ -55,7 +55,7 @@ test("Acceptance", async ({ page }) => {
     });
   });
 
-  await page.route(`${API_HOST}/event`, async (route) => {
+  await page.route(`${API_BASE_URL}/event`, async (route) => {
     expect(route.request().method()).toEqual("POST");
     expect(route.request().postDataJSON()).toMatchObject({
       userId: "foo",
@@ -73,7 +73,7 @@ test("Acceptance", async ({ page }) => {
     });
   });
 
-  await page.route(`${API_HOST}/feedback`, async (route) => {
+  await page.route(`${API_BASE_URL}/feedback`, async (route) => {
     expect(route.request().method()).toEqual("POST");
     expect(route.request().postDataJSON()).toMatchObject({
       userId: "foo",

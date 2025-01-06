@@ -10,11 +10,11 @@ import {
   vi,
 } from "vitest";
 
-import { evaluateTargeting } from "@bucketco/flag-evaluation";
+import { evaluateFeatureRules } from "@bucketco/flag-evaluation";
 
-import { BoundBucketClient, BucketClient } from "../src/client";
+import { BoundBucketClient, BucketClient } from "../src";
 import {
-  API_HOST,
+  API_BASE_URL,
   BATCH_INTERVAL_MS,
   BATCH_MAX_SIZE,
   FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
@@ -32,7 +32,7 @@ vi.mock("@bucketco/flag-evaluation", async (importOriginal) => {
   const original = (await importOriginal()) as any;
   return {
     ...original,
-    evaluateTargeting: vi.fn(),
+    evaluateFeatureRules: vi.fn(),
   };
 });
 
@@ -75,7 +75,7 @@ const fallbackFeatures = ["key"];
 
 const validOptions: ClientOptions = {
   secretKey: "validSecretKeyWithMoreThan22Chars",
-  host: "https://api.example.com",
+  apiBaseUrl: "https://api.example.com/",
   logger,
   httpClient,
   fallbackFeatures,
@@ -179,7 +179,7 @@ describe("BucketClient", () => {
       const client = new BucketClient(validOptions);
 
       expect(client).toBeInstanceOf(BucketClient);
-      expect(client["_config"].host).toBe("https://api.example.com");
+      expect(client["_config"].apiBaseUrl).toBe("https://api.example.com/");
       expect(client["_config"].refetchInterval).toBe(FEATURES_REFETCH_MS);
       expect(client["_config"].staleWarningInterval).toBe(
         FEATURES_REFETCH_MS * 5,
@@ -228,7 +228,7 @@ describe("BucketClient", () => {
         secretKey: "validSecretKeyWithMoreThan22Chars",
       });
 
-      expect(client["_config"].host).toBe(API_HOST);
+      expect(client["_config"].apiBaseUrl).toBe(API_BASE_URL);
       expect(client["_config"].refetchInterval).toBe(FEATURES_REFETCH_MS);
       expect(client["_config"].staleWarningInterval).toBe(
         FEATURES_REFETCH_MS * 5,
@@ -299,6 +299,30 @@ describe("BucketClient", () => {
         FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
       );
     });
+
+    it.each([
+      ["https://api.example.com", "https://api.example.com/bulk"],
+      ["https://api.example.com/", "https://api.example.com/bulk"],
+      ["https://api.example.com/path", "https://api.example.com/path/bulk"],
+      ["https://api.example.com/path/", "https://api.example.com/path/bulk"],
+    ])(
+      "should build the URLs correctly %s -> %s",
+      async (apiBaseUrl, expectedUrl) => {
+        const client = new BucketClient({
+          ...validOptions,
+          apiBaseUrl,
+        });
+
+        await client.updateUser("user_id");
+        await client.flush();
+
+        expect(httpClient.post).toHaveBeenCalledWith(
+          expectedUrl,
+          expect.any(Object),
+          expect.any(Object),
+        );
+      },
+    );
   });
 
   describe("bindClient", () => {
@@ -883,6 +907,7 @@ describe("BucketClient", () => {
     let client: BucketClient;
     beforeEach(async () => {
       httpClient.get.mockResolvedValue({
+        ok: true,
         status: 200,
         body: {
           success: true,
@@ -892,18 +917,15 @@ describe("BucketClient", () => {
 
       client = new BucketClient(validOptions);
 
-      vi.mocked(evaluateTargeting).mockImplementation(
-        ({ feature, context }) => {
+      vi.mocked(evaluateFeatureRules).mockImplementation(
+        ({ featureKey, context }) => {
           const evalFeature = evaluatedFeatures.find(
-            (f) => f.feature.key === feature.key,
-          )!;
-          const featureDef = featureDefinitions.features.find(
-            (f) => f.key === feature.key,
+            (f) => f.feature.key === featureKey,
           )!;
 
           return {
             value: evalFeature.value,
-            feature: featureDef,
+            featureKey,
             context: context,
             ruleEvaluationResults: evalFeature.ruleEvaluationResults,
             missingContextFields: evalFeature.missingContextFields,
@@ -1117,6 +1139,7 @@ describe("BucketClient", () => {
 
     beforeEach(async () => {
       httpClient.get.mockResolvedValue({
+        ok: true,
         status: 200,
         body: {
           success: true,
@@ -1126,18 +1149,15 @@ describe("BucketClient", () => {
 
       client = new BucketClient(validOptions);
 
-      vi.mocked(evaluateTargeting).mockImplementation(
-        ({ feature, context }) => {
+      vi.mocked(evaluateFeatureRules).mockImplementation(
+        ({ featureKey, context }) => {
           const evalFeature = evaluatedFeatures.find(
-            (f) => f.feature.key === feature.key,
-          )!;
-          const featureDef = featureDefinitions.features.find(
-            (f) => f.key === feature.key,
+            (f) => f.feature.key === featureKey,
           )!;
 
           return {
             value: evalFeature.value,
-            feature: featureDef,
+            featureKey,
             context: context,
             ruleEvaluationResults: evalFeature.ruleEvaluationResults,
             missingContextFields: evalFeature.missingContextFields,
@@ -1148,6 +1168,7 @@ describe("BucketClient", () => {
       client["_config"].rateLimiter.clear(true);
 
       httpClient.post.mockResolvedValue({
+        ok: true,
         status: 200,
         body: { success: true },
       });
@@ -1178,7 +1199,7 @@ describe("BucketClient", () => {
 
       await client.flush();
 
-      expect(evaluateTargeting).toHaveBeenCalledTimes(2);
+      expect(evaluateFeatureRules).toHaveBeenCalledTimes(2);
       expect(httpClient.post).toHaveBeenCalledTimes(1);
 
       expect(httpClient.post).toHaveBeenCalledWith(
@@ -1233,6 +1254,23 @@ describe("BucketClient", () => {
       );
     });
 
+    it("should warn about missing context fields", async () => {
+      httpClient.post.mockClear();
+
+      await client.initialize();
+      client.getFeatures({
+        company,
+        user,
+        other: otherContext,
+      });
+
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringMatching(
+          'feature "feature2" has targeting rules that require the following context fields: "something"',
+        ),
+      );
+    });
+
     it("should properly define the rate limiter key", async () => {
       const isAllowedSpy = vi.spyOn(client["_config"].rateLimiter, "isAllowed");
 
@@ -1265,7 +1303,7 @@ describe("BucketClient", () => {
 
       await client.flush();
 
-      expect(evaluateTargeting).toHaveBeenCalledTimes(2);
+      expect(evaluateFeatureRules).toHaveBeenCalledTimes(2);
       expect(httpClient.post).toHaveBeenCalledTimes(1);
 
       expect(httpClient.post).toHaveBeenCalledWith(
@@ -1335,7 +1373,7 @@ describe("BucketClient", () => {
 
       await client.flush();
 
-      expect(evaluateTargeting).toHaveBeenCalledTimes(2);
+      expect(evaluateFeatureRules).toHaveBeenCalledTimes(2);
       expect(httpClient.post).toHaveBeenCalledTimes(1);
 
       expect(httpClient.post).toHaveBeenCalledWith(
@@ -1405,7 +1443,7 @@ describe("BucketClient", () => {
 
       await client.flush();
 
-      expect(evaluateTargeting).toHaveBeenCalledTimes(2);
+      expect(evaluateFeatureRules).toHaveBeenCalledTimes(2);
       expect(httpClient.post).not.toHaveBeenCalled();
     });
 
@@ -1415,7 +1453,7 @@ describe("BucketClient", () => {
 
       await client.flush();
 
-      expect(evaluateTargeting).toHaveBeenCalledTimes(2);
+      expect(evaluateFeatureRules).toHaveBeenCalledTimes(2);
       expect(httpClient.post).toHaveBeenCalledTimes(1);
 
       expect(httpClient.post).toHaveBeenCalledWith(
@@ -1654,8 +1692,8 @@ describe("BucketClient", () => {
       await client.initialize();
       const context = { user, company, other: otherContext };
 
-      const prestineResults = client.getFeatures(context);
-      expect(prestineResults).toStrictEqual({
+      const pristineResults = client.getFeatures(context);
+      expect(pristineResults).toStrictEqual({
         feature1: {
           key: "feature1",
           isEnabled: true,
@@ -1697,6 +1735,7 @@ describe("BucketClient", () => {
 
     beforeEach(async () => {
       httpClient.get.mockResolvedValue({
+        ok: true,
         status: 200,
         body: {
           success: true,
@@ -1747,6 +1786,88 @@ describe("BucketClient", () => {
       expect(httpClient.get).toHaveBeenCalledWith(
         "https://api.example.com/features/evaluated?context.other.custom=context&context.other.key=value&context.user.id=c1&context.company.id=u1",
         expectedHeaders,
+      );
+    });
+
+    it("should not try to append the context if it's empty", async () => {
+      await client.getFeaturesRemote();
+
+      expect(httpClient.get).toHaveBeenCalledTimes(1);
+
+      expect(httpClient.get).toHaveBeenCalledWith(
+        "https://api.example.com/features/evaluated?",
+        expectedHeaders,
+      );
+    });
+
+    it("should warn if missing context fields", async () => {
+      await client.getFeaturesRemote();
+      expect(logger.warn).toHaveBeenCalledWith(
+        'feature "feature2" has targeting rules that require the following context fields: "something"',
+      );
+    });
+  });
+
+  describe("getFeatureRemote", () => {
+    let client: BucketClient;
+
+    beforeEach(async () => {
+      httpClient.get.mockResolvedValue({
+        ok: true,
+        status: 200,
+        body: {
+          success: true,
+          remoteContextUsed: true,
+          features: {
+            feature1: {
+              key: "feature1",
+              targetingVersion: 1,
+              isEnabled: true,
+              missingContextFields: ["one", "two"],
+            },
+          },
+        },
+      });
+
+      client = new BucketClient(validOptions);
+    });
+
+    afterEach(() => {
+      httpClient.get.mockClear();
+    });
+
+    it("should return evaluated feature", async () => {
+      const result = await client.getFeatureRemote("feature1", "c1", "u1", {
+        other: otherContext,
+      });
+
+      expect(result).toEqual({
+        key: "feature1",
+        isEnabled: true,
+        track: expect.any(Function),
+      });
+
+      expect(httpClient.get).toHaveBeenCalledTimes(1);
+
+      expect(httpClient.get).toHaveBeenCalledWith(
+        "https://api.example.com/features/evaluated?context.other.custom=context&context.other.key=value&context.user.id=c1&context.company.id=u1&key=feature1",
+        expectedHeaders,
+      );
+    });
+
+    it("should not try to append the context if it's empty", async () => {
+      await client.getFeatureRemote("feature1");
+
+      expect(httpClient.get).toHaveBeenCalledWith(
+        "https://api.example.com/features/evaluated?key=feature1",
+        expectedHeaders,
+      );
+    });
+
+    it("should warn if missing context fields", async () => {
+      await client.getFeatureRemote("feature1");
+      expect(logger.warn).toHaveBeenCalledWith(
+        'feature "feature1" has targeting rules that require the following context fields: "one", "two"',
       );
     });
   });
@@ -1902,8 +2023,90 @@ describe("BoundBucketClient", () => {
     });
 
     await client.initialize();
+
     boundClient.getFeatures();
     boundClient.getFeature("feature1");
+
     await boundClient.flush();
+  });
+
+  describe("getFeatureRemote/getFeaturesRemote", () => {
+    beforeEach(async () => {
+      httpClient.get.mockClear();
+      httpClient.get.mockResolvedValue({
+        ok: true,
+        status: 200,
+        body: {
+          success: true,
+          remoteContextUsed: true,
+          features: {
+            feature1: {
+              key: "feature1",
+              targetingVersion: 1,
+              isEnabled: true,
+            },
+            feature2: {
+              key: "feature2",
+              targetingVersion: 2,
+              isEnabled: false,
+              missingContextFields: ["something"],
+            },
+          },
+        },
+      });
+    });
+
+    it("should return evaluated features", async () => {
+      const boundClient = client.bindClient({
+        user,
+        company,
+        other: otherContext,
+      });
+
+      const result = await boundClient.getFeaturesRemote();
+
+      expect(result).toEqual({
+        feature1: {
+          key: "feature1",
+          isEnabled: true,
+          track: expect.any(Function),
+        },
+        feature2: {
+          key: "feature2",
+          isEnabled: false,
+          track: expect.any(Function),
+        },
+      });
+
+      expect(httpClient.get).toHaveBeenCalledTimes(1);
+
+      expect(httpClient.get).toHaveBeenCalledWith(
+        "https://api.example.com/features/evaluated?context.user.id=user123&context.user.age=1&context.user.name=John&context.company.id=company123&context.company.employees=100&context.company.name=Acme+Inc.&context.other.custom=context&context.other.key=value",
+        expectedHeaders,
+      );
+    });
+
+    it("should return evaluated feature", async () => {
+      const boundClient = client.bindClient({
+        user,
+        company,
+        other: otherContext,
+      });
+
+      const result = await boundClient.getFeatureRemote("feature1");
+
+      expect(result).toEqual({
+        key: "feature1",
+        isEnabled: true,
+        track: expect.any(Function),
+      });
+
+      expect(httpClient.get).toHaveBeenCalledTimes(1);
+
+      expect(httpClient.get).toHaveBeenCalledWith(
+        "https://api.example.com/features/evaluated?context.user.id=user123&context.user.age=1&context.user.name=John&context.company.id=company123&context.company.employees=100&context.company.name=Acme+Inc.&context.other.custom=context&context.other.key=value&key=feature1",
+        expectedHeaders,
+      );
+    });
   });
 });

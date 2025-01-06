@@ -14,8 +14,8 @@ import {
   processPromptMessage,
 } from "./prompts";
 import { getAuthToken } from "./promptStorage";
-import { DEFAULT_POSITION } from "./ui";
 import * as feedbackLib from "./ui";
+import { DEFAULT_POSITION } from "./ui";
 
 export type Key = string;
 
@@ -256,7 +256,7 @@ export class AutoFeedback {
   private sseChannel: AblySSEChannel | null = null;
 
   constructor(
-    private sseHost: string,
+    private sseBaseUrl: string,
     private logger: Logger,
     private httpClient: HttpClient,
     private feedbackPromptHandler: FeedbackPromptHandler = createDefaultFeedbackPromptHandler(),
@@ -287,7 +287,7 @@ export class AutoFeedback {
         callback: (message) =>
           this.handleFeedbackPromptRequest(this.userId, message),
         logger: this.logger,
-        sseHost: this.sseHost,
+        sseBaseUrl: this.sseBaseUrl,
       });
       this.logger.debug(`auto. feedback connection established`);
     } catch (e) {

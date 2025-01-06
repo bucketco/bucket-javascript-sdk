@@ -1,11 +1,11 @@
 import fs from "fs";
 
-import { evaluateTargeting, flattenJSON } from "@bucketco/flag-evaluation";
+import { evaluateFeatureRules, flattenJSON } from "@bucketco/flag-evaluation";
 
 import BatchBuffer from "./batch-buffer";
 import cache from "./cache";
 import {
-  API_HOST,
+  API_BASE_URL,
   BUCKET_LOG_PREFIX,
   FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
   FEATURES_REFETCH_MS,
@@ -99,7 +99,7 @@ interface ContextWithTracking extends Context {
 export class BucketClient {
   private _config: {
     logger?: Logger;
-    host: string;
+    apiBaseUrl: string;
     httpClient: HttpClient;
     refetchInterval: number;
     staleWarningInterval: number;
@@ -112,6 +112,12 @@ export class BucketClient {
     offline: boolean;
     configFile?: string;
   };
+  private _initialize = once(async () => {
+    if (!this._config.offline) {
+      await this.getFeaturesCache().refresh();
+    }
+    this._config.logger?.info("Bucket initialized");
+  });
 
   /**
    * Creates a new SDK client.
@@ -127,6 +133,12 @@ export class BucketClient {
       options.host === undefined ||
         (typeof options.host === "string" && options.host.length > 0),
       "host must be a string",
+    );
+    ok(
+      options.apiBaseUrl === undefined ||
+        (typeof options.apiBaseUrl === "string" &&
+          options.apiBaseUrl.length > 0),
+      "apiBaseUrl must be a string",
     );
     ok(
       options.logger === undefined || isObject(options.logger),
@@ -193,7 +205,7 @@ export class BucketClient {
     this._config = {
       logger,
       offline,
-      host: config.host || API_HOST,
+      apiBaseUrl: (config.apiBaseUrl ?? config.host) || API_BASE_URL,
       headers: {
         "Content-Type": "application/json",
         [SDK_VERSION_HEADER_NAME]: SDK_VERSION,
@@ -214,6 +226,303 @@ export class BucketClient {
           ? config.featureOverrides
           : () => config.featureOverrides,
     };
+
+    if (!new URL(this._config.apiBaseUrl).pathname.endsWith("/")) {
+      this._config.apiBaseUrl += "/";
+    }
+  }
+
+  /**
+   * Gets the logger associated with the client.
+   *
+   * @returns The logger or `undefined` if it is not set.
+   **/
+  public get logger() {
+    return this._config.logger;
+  }
+
+  set featureOverrides(overrides: FeatureOverridesFn) {
+    this._config.featureOverrides = overrides;
+  }
+
+  /**
+   * Returns a new BoundBucketClient with the user/company/otherContext
+   * set to be used in subsequent calls.
+   * For example, for evaluating feature targeting or tracking events.
+   *
+   * @param enableTracking - Whether to track feature.
+   * @param context - The user/company/otherContext to bind to the client.
+   *
+   * @returns A new client bound with the arguments given.
+   * @throws An error if the user/company is given but their ID is not a string.
+   * @remarks
+   * The `updateUser` / `updateCompany` methods will automatically be called when
+   * the user/company is set respectively.
+   **/
+  public bindClient({
+    enableTracking = true,
+    ...context
+  }: ContextWithTracking) {
+    return new BoundBucketClient(this, { enableTracking, ...context });
+  }
+
+  /**
+   * Updates the associated user in Bucket.
+   *
+   * @param opts.attributes - The additional attributes of the company (optional).
+   * @param opts.meta - The meta context associated with tracking (optional).
+   *
+   * @throws An error if the company is not set or the options are invalid.
+   * @remarks
+   * The company must be set using `withCompany` before calling this method.
+   * If the user is set, the company will be associated with the user.
+   **/
+  public async updateUser(userId: IdType, opts?: TrackOptions) {
+    idOk(userId, "userId");
+    ok(opts === undefined || isObject(opts), "opts must be an object");
+    ok(
+      opts?.attributes === undefined || isObject(opts.attributes),
+      "attributes must be an object",
+    );
+    ok(
+      opts?.meta === undefined || isObject(opts.meta),
+      "meta must be an object",
+    );
+
+    if (this._config.offline) {
+      return;
+    }
+
+    if (this._config.rateLimiter.isAllowed(hashObject({ ...opts, userId }))) {
+      await this._config.batchBuffer.add({
+        type: "user",
+        userId,
+        attributes: opts?.attributes,
+        context: opts?.meta,
+      });
+    }
+  }
+
+  /**
+   * Updates the associated company in Bucket.
+   *
+   * @param opts.attributes - The additional attributes of the company (optional).
+   * @param opts.meta - The meta context associated with tracking (optional).
+   *
+   * @throws An error if the company is not set or the options are invalid.
+   * @remarks
+   * The company must be set using `withCompany` before calling this method.
+   * If the user is set, the company will be associated with the user.
+   **/
+  public async updateCompany(
+    companyId: IdType,
+    opts?: TrackOptions & { userId?: IdType },
+  ) {
+    idOk(companyId, "companyId");
+    ok(opts === undefined || isObject(opts), "opts must be an object");
+    ok(
+      opts?.attributes === undefined || isObject(opts.attributes),
+      "attributes must be an object",
+    );
+    ok(
+      opts?.meta === undefined || isObject(opts.meta),
+      "meta must be an object",
+    );
+    if (typeof opts?.userId !== "undefined") {
+      idOk(opts?.userId, "userId");
+    }
+
+    if (this._config.offline) {
+      return;
+    }
+
+    if (
+      this._config.rateLimiter.isAllowed(hashObject({ ...opts, companyId }))
+    ) {
+      await this._config.batchBuffer.add({
+        type: "company",
+        companyId,
+        userId: opts?.userId,
+        attributes: opts?.attributes,
+        context: opts?.meta,
+      });
+    }
+  }
+
+  /**
+   * Tracks an event in Bucket.
+
+   * @param event - The event to track.
+   * @param userId - The userId of the user who performed the event
+   * @param opts - The options.
+   * @param opts.attributes - The attributes of the event (optional).
+   * @param opts.meta - The meta context associated with tracking (optional).
+   * @param opts.companyId - Optional company ID for the event (optional).
+   *
+   * @throws An error if the user is not set or the event is invalid or the options are invalid.
+   * @remarks
+   * If the company is set, the event will be associated with the company.
+   **/
+  public async track(
+    userId: IdType,
+    event: string,
+    opts?: TrackOptions & { companyId?: IdType },
+  ) {
+    idOk(userId, "userId");
+    ok(typeof event === "string" && event.length > 0, "event must be a string");
+    ok(opts === undefined || isObject(opts), "opts must be an object");
+    ok(
+      opts?.attributes === undefined || isObject(opts.attributes),
+      "attributes must be an object",
+    );
+    ok(
+      opts?.meta === undefined || isObject(opts.meta),
+      "meta must be an object",
+    );
+    if (opts?.companyId !== undefined) {
+      idOk(opts?.companyId, "companyId");
+    }
+
+    if (this._config.offline) {
+      return;
+    }
+
+    await this._config.batchBuffer.add({
+      type: "event",
+      event,
+      companyId: opts?.companyId,
+      userId,
+      attributes: opts?.attributes,
+      context: opts?.meta,
+    });
+  }
+
+  /**
+   * Initializes the client by caching the features definitions.
+   *
+   * @returns void
+   *
+   * @remarks
+   * Call this method before calling `getFeatures` to ensure the feature definitions are cached.
+   * The client will ignore subsequent calls to this method.
+   **/
+  public async initialize() {
+    await this._initialize();
+    return;
+  }
+
+  /**
+   * Flushes the batch buffer.
+   *
+   * @remarks
+   * It is recommended to call this method when the application is shutting down to ensure all events are sent
+   * before the process exits.
+   */
+  public async flush() {
+    await this._config.batchBuffer.flush();
+  }
+
+  /**
+   * Gets the evaluated feature for the current context which includes the user, company, and custom context.
+   *
+   * @param enableTracking - Whether to track feature.
+   * @param context - The context to evaluate the features for.
+   * @returns The evaluated features.
+   * @remarks
+   * Call `initialize` before calling this method to ensure the feature definitions are cached, no features will be returned otherwise.
+   **/
+  public getFeatures({
+    enableTracking = true,
+    ...context
+  }: ContextWithTracking): TypedFeatures {
+    const options = { enableTracking, ...context };
+    const features = this._getFeatures(options);
+
+    return Object.fromEntries(
+      Object.entries(features).map(([k, v]) => [
+        k as keyof TypedFeatures,
+        this._wrapRawFeature(options, v),
+      ]),
+    );
+  }
+
+  /**
+   * Gets the evaluated feature for the current context which includes the user, company, and custom context.
+   * Using the `isEnabled` property sends a `check` event to Bucket.
+   *
+   * @returns The evaluated features.
+   * @remarks
+   * Call `initialize` before calling this method to ensure the feature definitions are cached, no features will be returned otherwise.
+   **/
+  public getFeature(
+    { enableTracking = true, ...context }: ContextWithTracking,
+    key: keyof TypedFeatures,
+  ) {
+    const options = { enableTracking, ...context };
+    const features = this._getFeatures(options);
+    const feature = features[key];
+
+    return this._wrapRawFeature(options, {
+      key,
+      isEnabled: feature?.isEnabled ?? false,
+      targetingVersion: feature?.targetingVersion,
+    });
+  }
+
+  /**
+   * Gets evaluated features with the usage of remote context.
+   * This method triggers a network request every time it's called.
+   *
+   * @param userId
+   * @param companyId
+   * @param additionalContext
+   * @returns evaluated features
+   */
+  public async getFeaturesRemote(
+    userId?: IdType,
+    companyId?: IdType,
+    additionalContext?: Context,
+  ): Promise<TypedFeatures> {
+    return await this._getFeaturesRemote(
+      "",
+      userId,
+      companyId,
+      additionalContext,
+    );
+  }
+
+  /**
+   * Gets evaluated feature with the usage of remote context.
+   * This method triggers a network request every time it's called.
+   *
+   * @param key
+   * @param userId
+   * @param companyId
+   * @param additionalContext
+   * @returns evaluated feature
+   */
+  public async getFeatureRemote(
+    key: string,
+    userId?: IdType,
+    companyId?: IdType,
+    additionalContext?: Context,
+  ): Promise<Feature> {
+    const features = await this._getFeaturesRemote(
+      key,
+      userId,
+      companyId,
+      additionalContext,
+    );
+    return features[key];
+  }
+
+  private buildUrl(path: string) {
+    if (path.startsWith("/")) {
+      path = path.slice(1);
+    }
+
+    const url = new URL(path, this._config.apiBaseUrl);
+    return url.toString();
   }
 
   /**
@@ -228,15 +537,16 @@ export class BucketClient {
     ok(typeof path === "string" && path.length > 0, "path must be a string");
     ok(typeof body === "object", "body must be an object");
 
-    const url = `${this._config.host}/${path}`;
+    const url = this.buildUrl(path);
     try {
       const response = await this._config.httpClient.post<
         TBody,
         { success: boolean }
       >(url, this._config.headers, body);
+
       this._config.logger?.debug(`post request to "${url}"`, response);
 
-      if (!isObject(response.body) || response.body.success !== true) {
+      if (!response.ok || !isObject(response.body) || !response.body.success) {
         this._config.logger?.warn(
           `invalid response received from server for "${url}"`,
           response,
@@ -264,14 +574,14 @@ export class BucketClient {
     ok(typeof path === "string" && path.length > 0, "path must be a string");
 
     try {
-      const url = `${this._config.host}/${path}`;
+      const url = this.buildUrl(path);
       const response = await this._config.httpClient.get<
         TResponse & { success: boolean }
       >(url, this._config.headers);
 
       this._config.logger?.debug(`get request to "${url}"`, response);
 
-      if (!isObject(response.body) || response.body.success !== true) {
+      if (!response.ok || !isObject(response.body) || !response.body.success) {
         this._config.logger?.warn(
           `invalid response received from server for "${url}"`,
           response,
@@ -294,7 +604,7 @@ export class BucketClient {
   /**
    * Sends a batch of events to the Bucket API.
    * @param events - The events to send.
-   * @throws An error if the the send fails.
+   * @throws An error if the send fails.
    **/
   private async sendBulkEvents(events: BulkEvent[]) {
     ok(
@@ -396,7 +706,7 @@ export class BucketClient {
    * Updates the context in Bucket (if needed).
    * This method should be used before requesting feature flags or binding a client.
    *
-   * @param context - The context to update.
+   * @param options
    */
   private async syncContext(options: { enableTracking: boolean } & Context) {
     if (!options.enableTracking) {
@@ -460,194 +770,38 @@ export class BucketClient {
   }
 
   /**
-   * Gets the logger associated with the client.
+   * Warns if any features have targeting rules that require context fields that are missing.
    *
-   * @returns The logger or `undefined` if it is not set.
-   **/
-  public get logger() {
-    return this._config.logger;
-  }
-
-  /**
-   * Returns a new BoundBucketClient with the user/company/otherContext
-   * set to be used in subsequent calls.
-   * For example, for evaluating feature targeting or tracking events.
-   *
-   * @param context - The user/company/otherContext to bind to the client.
-   *
-   * @returns A new client bound with the arguments given.
-   * @throws An error if the user/company is given but their ID is not a string.
-   * @remarks
-   * The `updateUser` / `updateCompany` methods will automatically be called when
-   * the user/company is set respectively.
-   **/
-  public bindClient({
-    enableTracking = true,
-    ...context
-  }: ContextWithTracking) {
-    return new BoundBucketClient(this, { enableTracking, ...context });
-  }
-
-  /**
-   * Updates the associated user in Bucket.
-   *
-   * @param opts.attributes - The additional attributes of the company (optional).
-   * @param opts.meta - The meta context associated with tracking (optional).
-   *
-   * @throws An error if the company is not set or the options are invalid.
-   * @remarks
-   * The company must be set using `withCompany` before calling this method.
-   * If the user is set, the company will be associated with the user.
-   **/
-  public async updateUser(userId: IdType, opts?: TrackOptions) {
-    idOk(userId, "userId");
-    ok(opts === undefined || isObject(opts), "opts must be an object");
-    ok(
-      opts?.attributes === undefined || isObject(opts.attributes),
-      "attributes must be an object",
-    );
-    ok(
-      opts?.meta === undefined || isObject(opts.meta),
-      "meta must be an object",
-    );
-
-    if (this._config.offline) {
-      return;
-    }
-
-    if (this._config.rateLimiter.isAllowed(hashObject({ ...opts, userId }))) {
-      await this._config.batchBuffer.add({
-        type: "user",
-        userId,
-        attributes: opts?.attributes,
-        context: opts?.meta,
-      });
-    }
-  }
-
-  /**
-   * Updates the associated company in Bucket.
-   *
-   * @param opts.attributes - The additional attributes of the company (optional).
-   * @param opts.meta - The meta context associated with tracking (optional).
-   *
-   * @throws An error if the company is not set or the options are invalid.
-   * @remarks
-   * The company must be set using `withCompany` before calling this method.
-   * If the user is set, the company will be associated with the user.
-   **/
-  public async updateCompany(
-    companyId: IdType,
-    opts?: TrackOptions & { userId?: IdType },
-  ) {
-    idOk(companyId, "companyId");
-    ok(opts === undefined || isObject(opts), "opts must be an object");
-    ok(
-      opts?.attributes === undefined || isObject(opts.attributes),
-      "attributes must be an object",
-    );
-    ok(
-      opts?.meta === undefined || isObject(opts.meta),
-      "meta must be an object",
-    );
-    if (typeof opts?.userId !== "undefined") {
-      idOk(opts?.userId, "userId");
-    }
-
-    if (this._config.offline) {
-      return;
-    }
-
-    if (
-      this._config.rateLimiter.isAllowed(hashObject({ ...opts, companyId }))
-    ) {
-      await this._config.batchBuffer.add({
-        type: "company",
-        companyId,
-        userId: opts?.userId,
-        attributes: opts?.attributes,
-        context: opts?.meta,
-      });
-    }
-  }
-
-  /**
-   * Tracks an event in Bucket.
-   
-   * @param event - The event to track.
-   * @param userId - The userId of the user who performed the event
-   * @param opts.attributes - The attributes of the event (optional).
-   * @param opts.meta - The meta context associated with tracking (optional).
-   * @param opts.companyId - Optional company ID for the event (optional).
-   *
-   * @throws An error if the user is not set or the event is invalid or the options are invalid.
-   * @remarks
-   * If the company is set, the event will be associated with the company.
-   **/
-  public async track(
-    userId: IdType,
-    event: string,
-    opts?: TrackOptions & { companyId?: IdType },
-  ) {
-    idOk(userId, "userId");
-    ok(typeof event === "string" && event.length > 0, "event must be a string");
-    ok(opts === undefined || isObject(opts), "opts must be an object");
-    ok(
-      opts?.attributes === undefined || isObject(opts.attributes),
-      "attributes must be an object",
-    );
-    ok(
-      opts?.meta === undefined || isObject(opts.meta),
-      "meta must be an object",
-    );
-    if (opts?.companyId !== undefined) {
-      idOk(opts?.companyId, "companyId");
-    }
-
-    if (this._config.offline) {
-      return;
-    }
-
-    await this._config.batchBuffer.add({
-      type: "event",
-      event,
-      companyId: opts?.companyId,
-      userId,
-      attributes: opts?.attributes,
-      context: opts?.meta,
-    });
-  }
-
-  private _initialize = once(async () => {
-    if (!this._config.offline) {
-      await this.getFeaturesCache().refresh();
-    }
-    this._config.logger?.info("Bucket initialized");
-  });
-
-  /**
-   * Initializes the client by caching the features definitions.
-   *
-   * @returns void
-   *
-   * @remarks
-   * Call this method before calling `getFeatures` to ensure the feature definitions are cached.
-   * The client will ignore subsequent calls to this method.
-   **/
-  public async initialize() {
-    await this._initialize();
-    return;
-  }
-
-  /**
-   * Flushes the batch buffer.
-   *
-   * @remarks
-   * It is recommended to call this method when the application is shutting down to ensure all events are sent
-   * before the process exits.
+   * @param options - The options.
+   * @param features - The features to check.
    */
-  public async flush() {
-    await this._config.batchBuffer.flush();
+  private warnMissingFeatureContextFields(
+    options: Context,
+    features: { key: string; missingContextFields?: string[] }[],
+  ) {
+    features.forEach(({ key, missingContextFields }) => {
+      if (missingContextFields?.length) {
+        if (
+          !this._config.rateLimiter.isAllowed(
+            hashObject({
+              key,
+              missingContextFields,
+              options,
+            }),
+          )
+        ) {
+          return;
+        }
+
+        const missingFieldsStr = missingContextFields
+          .map((field) => `"${field}"`)
+          .join(", ");
+
+        this._config.logger?.warn(
+          `feature "${key}" has targeting rules that require the following context fields: ${missingFieldsStr}`,
+        );
+      }
+    });
   }
 
   private _getFeatures(
@@ -679,10 +833,19 @@ export class BucketClient {
     const { enableTracking = true, ...context } = options;
 
     const evaluated = featureDefinitions.map((feature) =>
-      evaluateTargeting({
+      evaluateFeatureRules({
+        featureKey: feature.key,
+        rules: feature.targeting.rules.map((r) => ({ ...r, value: true })),
         context,
-        feature,
       }),
+    );
+
+    this.warnMissingFeatureContextFields(
+      context,
+      evaluated.map(({ featureKey, missingContextFields }) => ({
+        key: featureKey,
+        missingContextFields,
+      })),
     );
 
     if (enableTracking) {
@@ -690,16 +853,16 @@ export class BucketClient {
         try {
           await this.sendFeatureEvent({
             action: "evaluate",
-            key: res.feature.key,
-            targetingVersion: keyToVersionMap.get(res.feature.key),
-            evalResult: res.value,
+            key: res.featureKey,
+            targetingVersion: keyToVersionMap.get(res.featureKey),
+            evalResult: res.value ?? false,
             evalContext: res.context,
             evalRuleResults: res.ruleEvaluationResults,
             evalMissingFields: res.missingContextFields,
           });
         } catch (err) {
           this._config.logger?.error(
-            `failed to send evaluate event for "${res.feature.key}"`,
+            `failed to send evaluate event for "${res.featureKey}"`,
             err,
           );
         }
@@ -708,10 +871,10 @@ export class BucketClient {
 
     let evaluatedFeatures = evaluated.reduce(
       (acc, res) => {
-        acc[res.feature.key as keyof TypedFeatures] = {
-          key: res.feature.key,
-          isEnabled: res.value,
-          targetingVersion: keyToVersionMap.get(res.feature.key),
+        acc[res.featureKey as keyof TypedFeatures] = {
+          key: res.featureKey,
+          isEnabled: res.value ?? false,
+          targetingVersion: keyToVersionMap.get(res.featureKey),
         };
         return acc;
       },
@@ -780,55 +943,6 @@ export class BucketClient {
     };
   }
 
-  /**
-   * Gets the evaluated feature for the current context which includes the user, company, and custom context.
-   *
-   * @param context - The context to evaluate the features for.
-   * @returns The evaluated features.
-   * @remarks
-   * Call `initialize` before calling this method to ensure the feature definitions are cached, no features will be returned otherwise.
-   **/
-  public getFeatures({
-    enableTracking = true,
-    ...context
-  }: ContextWithTracking): TypedFeatures {
-    const options = { enableTracking, ...context };
-    const features = this._getFeatures(options);
-    return Object.fromEntries(
-      Object.entries(features).map(([k, v]) => [
-        k as keyof TypedFeatures,
-        this._wrapRawFeature(options, v),
-      ]),
-    );
-  }
-
-  /**
-   * Gets the evaluated feature for the current context which includes the user, company, and custom context.
-   * Using the `isEnabled` property sends a `check` event to Bucket.
-   *
-   * @returns The evaluated features.
-   * @remarks
-   * Call `initialize` before calling this method to ensure the feature definitions are cached, no features will be returned otherwise.
-   **/
-  public getFeature(
-    { enableTracking = true, ...context }: ContextWithTracking,
-    key: keyof TypedFeatures,
-  ) {
-    const options = { enableTracking, ...context };
-    const features = this._getFeatures(options);
-    const feature = features[key];
-
-    return this._wrapRawFeature(options, {
-      key,
-      isEnabled: feature?.isEnabled ?? false,
-      targetingVersion: feature?.targetingVersion,
-    });
-  }
-
-  set featureOverrides(overrides: FeatureOverridesFn) {
-    this._config.featureOverrides = overrides;
-  }
-
   private async _getFeaturesRemote(
     key: string,
     userId?: IdType,
@@ -849,16 +963,23 @@ export class BucketClient {
     };
     checkContextWithTracking(contextWithTracking);
 
-    const params = new URLSearchParams(flattenJSON({ context }));
+    const params = new URLSearchParams(
+      Object.keys(context).length ? flattenJSON({ context }) : undefined,
+    );
+
     if (key) {
       params.append("key", key);
     }
 
     const res = await this.get<EvaluatedFeaturesAPIResponse>(
-      "features/evaluated?" + params.toString(),
+      `features/evaluated?${params}`,
     );
 
     if (res) {
+      this.warnMissingFeatureContextFields(
+        context,
+        Object.values(res.features),
+      );
       return Object.fromEntries(
         Object.entries(res.features).map(([featureKey, feature]) => {
           return [
@@ -872,59 +993,14 @@ export class BucketClient {
       return {};
     }
   }
-
-  /**
-   * Gets evaluated features with the usage of remote context.
-   * This method triggers a network request every time it's called.
-   *
-   * @param additionalContext
-   * @returns evaluated features
-   */
-  public async getFeaturesRemote(
-    userId?: IdType,
-    companyId?: IdType,
-    additionalContext?: Context,
-  ): Promise<TypedFeatures> {
-    return await this._getFeaturesRemote(
-      "",
-      userId,
-      companyId,
-      additionalContext,
-    );
-  }
-
-  /**
-   * Gets evaluated feature with the usage of remote context.
-   * This method triggers a network request every time it's called.
-   *
-   * @param key
-   * @param userId
-   * @param companyId
-   * @param additionalContext
-   * @returns evaluated feature
-   */
-  public async getFeatureRemote(
-    key: string,
-    userId?: IdType,
-    companyId?: IdType,
-    additionalContext?: Context,
-  ): Promise<Feature> {
-    const features = await this._getFeaturesRemote(
-      key,
-      userId,
-      companyId,
-      additionalContext,
-    );
-    return features[key];
-  }
 }
 
 /**
  * A client bound with a specific user, company, and other context.
  */
 export class BoundBucketClient {
-  private _client: BucketClient;
-  private _options: ContextWithTracking;
+  private readonly _client: BucketClient;
+  private readonly _options: ContextWithTracking;
 
   constructor(
     client: BucketClient,
@@ -991,11 +1067,8 @@ export class BoundBucketClient {
    * @returns Features for the given user/company and whether each one is enabled or not
    */
   public async getFeaturesRemote() {
-    return await this._client.getFeaturesRemote(
-      this._options.user?.id,
-      this._options.company?.id,
-      this._options,
-    );
+    const { enableTracking: _, ...context } = this._options;
+    return await this._client.getFeaturesRemote(undefined, undefined, context);
   }
 
   /**
@@ -1005,11 +1078,12 @@ export class BoundBucketClient {
    * @returns Feature for the given user/company and key and whether it's enabled or not
    */
   public async getFeatureRemote(key: string) {
+    const { enableTracking: _, ...context } = this._options;
     return await this._client.getFeatureRemote(
       key,
-      this._options.user?.id,
-      this._options.company?.id,
-      this._options,
+      undefined,
+      undefined,
+      context,
     );
   }
 
@@ -1017,6 +1091,7 @@ export class BoundBucketClient {
    * Track an event in Bucket.
    *
    * @param event - The event to track.
+   * @param opts
    * @param opts.attributes - The attributes of the event (optional).
    * @param opts.meta - The meta context associated with tracking (optional).
    * @param opts.companyId - Optional company ID for the event (optional).

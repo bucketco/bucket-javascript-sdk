@@ -13,7 +13,7 @@ describe("config tests", () => {
       },
       secretKey: "mySecretKey",
       offline: true,
-      host: "http://localhost:3000",
+      apiBaseUrl: "http://localhost:3000",
     });
   });
 
@@ -34,7 +34,7 @@ describe("config tests", () => {
       },
       secretKey: "mySecretKeyFromEnv",
       offline: true,
-      host: "http://localhost:4999",
+      apiBaseUrl: "http://localhost:4999",
     });
   });
 });
