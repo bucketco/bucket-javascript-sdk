@@ -85,20 +85,20 @@ See [example/browser.html](example/browser.html) for a working example:
 Supply these to the constructor call:
 
 ```ts
-{
-  logger: console, // by default only logs warn/error, by passing `console` you'll log everything
-  host?: "https://front.bucket.co",
-  sseHost?: "https://livemessaging.bucket.co"
-  feedback?: undefined // See FEEDBACK.md
-  enableTracking?: true, // set to `false` to stop sending track events and user/company updates to Bucket servers. Useful when you're impersonating a user.
+type Configuration = {
+  logger: console; // by default only logs warn/error, by passing `console` you'll log everything
+  apiBaseUrl?: "https://front.bucket.co";
+  sseBaseUrl?: "https://livemessaging.bucket.co";
+  feedback?: undefined; // See FEEDBACK.md
+  enableTracking?: true; // set to `false` to stop sending track events and user/company updates to Bucket servers. Useful when you're impersonating a user.
   featureOptions?: {
     fallbackFeatures?: string[]; // Enable these features if unable to contact bucket.co
     timeoutMs?: number; // Timeout for fetching features
     staleWhileRevalidate?: boolean; // Revalidate in the background when cached features turn stale to avoid latency in the UI
-    staleTimeMs?: // at initialization time features are loaded from the cache unless they have gone stale. Defaults to 0 which means the cache is disabled. Increase in the case of a non-SPA.
-    expireTimeMs?: // In case we're unable to fetch features from Bucket, cached/stale features will be used instead until they expire after  `expireTimeMs`.
+    staleTimeMs?: number; // at initialization time features are loaded from the cache unless they have gone stale. Defaults to 0 which means the cache is disabled. Increase in the case of a non-SPA.
+    expireTimeMs?: number; // In case we're unable to fetch features from Bucket, cached/stale features will be used instead until they expire after  `expireTimeMs`.
   };
-}
+};
 ```
 
 ### Feature toggles
