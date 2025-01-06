@@ -26,7 +26,7 @@ export interface Features {}
 
 const SDK_VERSION = `react-sdk/${version}`;
 
-type BucketFeatures = keyof (keyof Features extends never
+export type BucketFeatures = keyof (keyof Features extends never
   ? Record<string, boolean>
   : Features);
 
