@@ -5,7 +5,7 @@ import { version } from "../package.json";
 import { LOG_LEVELS } from "./types";
 import { ok } from "./utils";
 
-export const API_HOST = "https://front.bucket.co";
+export const API_BASE_URL = "https://front.bucket.co";
 export const SDK_VERSION_HEADER_NAME = "bucket-sdk-version";
 export const SDK_VERSION = `node-sdk/${version}`;
 export const API_TIMEOUT_MS = 5000;
@@ -42,10 +42,15 @@ function loadConfigFile(file: string) {
   const config = JSON.parse(configJson);
 
   ok(typeof config === "object", "config must be an object");
-  const { secretKey, logLevel, offline, host } = config;
+  const { secretKey, logLevel, offline, host, apiBaseUrl } = config;
+
   ok(
     typeof secretKey === "undefined" || typeof secretKey === "string",
     "secret must be a string",
+  );
+  ok(
+    typeof apiBaseUrl === "undefined" || typeof apiBaseUrl === "string",
+    "apiBaseUrl must be a string",
   );
   ok(
     typeof logLevel === "undefined" ||
@@ -62,7 +67,7 @@ function loadConfigFile(file: string) {
     secretKey,
     logLevel,
     offline,
-    host,
+    apiBaseUrl: host ?? apiBaseUrl,
   };
 }
 
@@ -71,7 +76,7 @@ function loadEnvVars() {
   const enabledFeatures = process.env.BUCKET_FEATURES_ENABLED;
   const disabledFeatures = process.env.BUCKET_FEATURES_DISABLED;
   const logLevel = process.env.BUCKET_LOG_LEVEL;
-  const host = process.env.BUCKET_HOST;
+  const apiBaseUrl = process.env.BUCKET_API_BASE_URL ?? process.env.BUCKET_HOST;
   const offline =
     process.env.BUCKET_OFFLINE !== undefined
       ? ["true", "on"].includes(process.env.BUCKET_OFFLINE)
@@ -103,7 +108,7 @@ function loadEnvVars() {
     };
   }
 
-  return { secretKey, featureOverrides, logLevel, offline, host };
+  return { secretKey, featureOverrides, logLevel, offline, apiBaseUrl };
 }
 
 export function loadConfig(file?: string) {
@@ -118,7 +123,7 @@ export function loadConfig(file?: string) {
     secretKey: envConfig.secretKey || fileConfig?.secretKey,
     logLevel: envConfig.logLevel || fileConfig?.logLevel,
     offline: envConfig.offline ?? fileConfig?.offline,
-    host: envConfig.host ?? fileConfig?.host,
+    apiBaseUrl: envConfig.apiBaseUrl ?? fileConfig?.apiBaseUrl,
     featureOverrides: {
       ...fileConfig?.featureOverrides,
       ...envConfig.featureOverrides,

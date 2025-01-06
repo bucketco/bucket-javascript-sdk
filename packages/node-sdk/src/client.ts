@@ -5,7 +5,7 @@ import { evaluateFeatureRules, flattenJSON } from "@bucketco/flag-evaluation";
 import BatchBuffer from "./batch-buffer";
 import cache from "./cache";
 import {
-  API_HOST,
+  API_BASE_URL,
   BUCKET_LOG_PREFIX,
   FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
   FEATURES_REFETCH_MS,
@@ -99,7 +99,7 @@ interface ContextWithTracking extends Context {
 export class BucketClient {
   private _config: {
     logger?: Logger;
-    host: string;
+    apiBaseUrl: string;
     httpClient: HttpClient;
     refetchInterval: number;
     staleWarningInterval: number;
@@ -133,6 +133,12 @@ export class BucketClient {
       options.host === undefined ||
         (typeof options.host === "string" && options.host.length > 0),
       "host must be a string",
+    );
+    ok(
+      options.apiBaseUrl === undefined ||
+        (typeof options.apiBaseUrl === "string" &&
+          options.apiBaseUrl.length > 0),
+      "apiBaseUrl must be a string",
     );
     ok(
       options.logger === undefined || isObject(options.logger),
@@ -199,7 +205,7 @@ export class BucketClient {
     this._config = {
       logger,
       offline,
-      host: config.host || API_HOST,
+      apiBaseUrl: (config.apiBaseUrl ?? config.host) || API_BASE_URL,
       headers: {
         "Content-Type": "application/json",
         [SDK_VERSION_HEADER_NAME]: SDK_VERSION,
@@ -220,6 +226,10 @@ export class BucketClient {
           ? config.featureOverrides
           : () => config.featureOverrides,
     };
+
+    if (!new URL(this._config.apiBaseUrl).pathname.endsWith("/")) {
+      this._config.apiBaseUrl += "/";
+    }
   }
 
   /**
@@ -506,6 +516,15 @@ export class BucketClient {
     return features[key];
   }
 
+  private buildUrl(path: string) {
+    if (path.startsWith("/")) {
+      path = path.slice(1);
+    }
+
+    const url = new URL(path, this._config.apiBaseUrl);
+    return url.toString();
+  }
+
   /**
    * Sends a POST request to the specified path.
    *
@@ -518,7 +537,7 @@ export class BucketClient {
     ok(typeof path === "string" && path.length > 0, "path must be a string");
     ok(typeof body === "object", "body must be an object");
 
-    const url = `${this._config.host}/${path}`;
+    const url = this.buildUrl(path);
     try {
       const response = await this._config.httpClient.post<
         TBody,
@@ -555,7 +574,7 @@ export class BucketClient {
     ok(typeof path === "string" && path.length > 0, "path must be a string");
 
     try {
-      const url = `${this._config.host}/${path}`;
+      const url = this.buildUrl(path);
       const response = await this._config.httpClient.get<
         TResponse & { success: boolean }
       >(url, this._config.headers);
