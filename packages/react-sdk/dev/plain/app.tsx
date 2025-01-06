@@ -213,6 +213,7 @@ function FeatureOptIn() {
             setSendingUpdate(false);
           });
         }}
+      />
     </div>
   );
 }
