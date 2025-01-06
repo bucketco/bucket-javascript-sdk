@@ -14,7 +14,7 @@ import { evaluateFeatureRules } from "@bucketco/flag-evaluation";
 
 import { BoundBucketClient, BucketClient } from "../src";
 import {
-  API_HOST,
+  API_BASE_URL,
   BATCH_INTERVAL_MS,
   BATCH_MAX_SIZE,
   FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
@@ -75,7 +75,7 @@ const fallbackFeatures = ["key"];
 
 const validOptions: ClientOptions = {
   secretKey: "validSecretKeyWithMoreThan22Chars",
-  host: "https://api.example.com",
+  apiBaseUrl: "https://api.example.com/",
   logger,
   httpClient,
   fallbackFeatures,
@@ -179,7 +179,7 @@ describe("BucketClient", () => {
       const client = new BucketClient(validOptions);
 
       expect(client).toBeInstanceOf(BucketClient);
-      expect(client["_config"].host).toBe("https://api.example.com");
+      expect(client["_config"].apiBaseUrl).toBe("https://api.example.com/");
       expect(client["_config"].refetchInterval).toBe(FEATURES_REFETCH_MS);
       expect(client["_config"].staleWarningInterval).toBe(
         FEATURES_REFETCH_MS * 5,
@@ -228,7 +228,7 @@ describe("BucketClient", () => {
         secretKey: "validSecretKeyWithMoreThan22Chars",
       });
 
-      expect(client["_config"].host).toBe(API_HOST);
+      expect(client["_config"].apiBaseUrl).toBe(API_BASE_URL);
       expect(client["_config"].refetchInterval).toBe(FEATURES_REFETCH_MS);
       expect(client["_config"].staleWarningInterval).toBe(
         FEATURES_REFETCH_MS * 5,
@@ -299,6 +299,30 @@ describe("BucketClient", () => {
         FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
       );
     });
+
+    it.each([
+      ["https://api.example.com", "https://api.example.com/bulk"],
+      ["https://api.example.com/", "https://api.example.com/bulk"],
+      ["https://api.example.com/path", "https://api.example.com/path/bulk"],
+      ["https://api.example.com/path/", "https://api.example.com/path/bulk"],
+    ])(
+      "should build the URLs correctly %s -> %s",
+      async (apiBaseUrl, expectedUrl) => {
+        const client = new BucketClient({
+          ...validOptions,
+          apiBaseUrl,
+        });
+
+        await client.updateUser("user_id");
+        await client.flush();
+
+        expect(httpClient.post).toHaveBeenCalledWith(
+          expectedUrl,
+          expect.any(Object),
+          expect.any(Object),
+        );
+      },
+    );
   });
 
   describe("bindClient", () => {
