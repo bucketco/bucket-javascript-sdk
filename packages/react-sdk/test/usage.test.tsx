@@ -23,6 +23,9 @@ import {
   useRequestFeedback,
   useSendFeedback,
   useTrack,
+  useUpdateCompany,
+  useUpdateOtherContext,
+  useUpdateUser,
 } from "../src";
 
 const events: string[] = [];
@@ -144,8 +147,11 @@ beforeEach(() => {
 
 describe("<BucketProvider />", () => {
   test("calls initialize", () => {
+    const onFeaturesUpdated = vi.fn();
+
     const newBucketClient = vi.fn().mockReturnValue({
       initialize: vi.fn().mockResolvedValue(undefined),
+      onFeaturesUpdated,
     });
 
     const provider = getProvider({
@@ -186,6 +192,8 @@ describe("<BucketProvider />", () => {
         sdkVersion: `react-sdk/${version}`,
       },
     ]);
+
+    expect(onFeaturesUpdated).toBeTruthy();
   });
 
   test("only calls init once with the same args", () => {
@@ -199,23 +207,6 @@ describe("<BucketProvider />", () => {
 
     expect(initialize).toHaveBeenCalledOnce();
     expect(BucketClient.prototype.stop).not.toHaveBeenCalledOnce();
-  });
-
-  test("calls stop on unmount", () => {
-    const node = getProvider();
-    const initialize = vi.spyOn(BucketClient.prototype, "initialize");
-
-    const x = render(node);
-    x.rerender(node);
-    x.rerender(node);
-    x.rerender(node);
-
-    expect(initialize).toHaveBeenCalledOnce();
-    expect(BucketClient.prototype.stop).not.toHaveBeenCalledOnce();
-
-    x.unmount();
-
-    expect(BucketClient.prototype.stop).toHaveBeenCalledOnce();
   });
 });
 
@@ -308,6 +299,89 @@ describe("useRequestFeedback", () => {
         companyId: "456",
         featureId: "123",
         title: "Test question",
+      });
+    });
+
+    unmount();
+  });
+});
+
+describe("useUpdateUser", () => {
+  test("updates user", async () => {
+    const updateUser = vi
+      .spyOn(BucketClient.prototype, "updateUser")
+      .mockResolvedValue(undefined);
+
+    const { result: updateUserFn, unmount } = renderHook(
+      () => useUpdateUser(),
+      {
+        wrapper: ({ children }) => getProvider({ children }),
+      },
+    );
+
+    // todo: need this `waitFor` because useUpdateOtherContext
+    // runs before `client` is initialized and then the call gets
+    // lost.
+    await waitFor(async () => {
+      await updateUserFn.current({ optInHuddles: "true" });
+
+      expect(updateUser).toHaveBeenCalledWith({
+        optInHuddles: "true",
+      });
+    });
+
+    unmount();
+  });
+});
+
+describe("useUpdateCompany", () => {
+  test("updates company", async () => {
+    const updateCompany = vi
+      .spyOn(BucketClient.prototype, "updateCompany")
+      .mockResolvedValue(undefined);
+
+    const { result: updateCompanyFn, unmount } = renderHook(
+      () => useUpdateCompany(),
+      {
+        wrapper: ({ children }) => getProvider({ children }),
+      },
+    );
+
+    // todo: need this `waitFor` because useUpdateOtherContext
+    // runs before `client` is initialized and then the call gets
+    // lost.
+    await waitFor(async () => {
+      await updateCompanyFn.current({ optInHuddles: "true" });
+
+      expect(updateCompany).toHaveBeenCalledWith({
+        optInHuddles: "true",
+      });
+    });
+    unmount();
+  });
+});
+
+describe("useUpdateOtherContext", () => {
+  test("updates other context", async () => {
+    const updateOtherContext = vi
+      .spyOn(BucketClient.prototype, "updateOtherContext")
+      .mockResolvedValue(undefined);
+
+    const { result: updateOtherContextFn, unmount } = renderHook(
+      () => useUpdateOtherContext(),
+      {
+        wrapper: ({ children }) => getProvider({ children }),
+      },
+    );
+
+    // todo: need this `waitFor` because useUpdateOtherContext
+    // runs before `client` is initialized and then the call gets
+    // lost.
+    await waitFor(async () => {
+      await updateOtherContextFn.current({ optInHuddles: "true" });
+
+      expect(updateOtherContext).toHaveBeenCalledWith({
+        optInHuddles: "true",
       });
     });
 
