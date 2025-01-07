@@ -301,7 +301,7 @@ export class BucketClient {
 
   /**
    * Update the user context.
-   * @description Performs a shallow merge with the existing user context.
+   * Performs a shallow merge with the existing user context.
    * Attempting to update the user ID will log a warning and be ignored.
    *
    * @param user
