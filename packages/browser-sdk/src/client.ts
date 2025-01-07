@@ -190,7 +190,7 @@ export interface Feature {
   ) => void;
 }
 /**
- * BucketClient serves as an http client
+ * BucketClient lets you interact with the Bucket API.
  *
  */
 export class BucketClient {

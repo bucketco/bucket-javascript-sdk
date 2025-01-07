@@ -28,13 +28,6 @@ jobs:
           repository: bucketco/docs
           ssh-key: ${{ secrets.DOCS_DEPLOY_KEY }}
           path: bucket-docs
-      - name: Create a new branch
-        run: |
-          cd bucket-docs
-          current_commit=$(git rev-parse HEAD)
-          new_branch="update-docs-$current_commit"
-          git checkout -b "$new_branch"
-          echo "new_branch=$new_branch" >> $GITHUB_ENV
       - name: Copy generated docs to docs repo
         run: |
           rm -rf bucket-docs/sdk-docs
@@ -46,5 +39,5 @@ jobs:
           git config user.email "github-actions[bot]@bucket.co"
           git add sdk-docs
           git commit -m "Update documentation"
-          git push --set-upstream origin "$new_branch"
+          git push
   
