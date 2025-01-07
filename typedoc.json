@@ -11,6 +11,7 @@
     "entryPoints": ["src/index.ts*"]
   },
 
+  "readme": "none",
   "disableSources": true,
   "outputs": [
     {
