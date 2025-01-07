@@ -34,6 +34,7 @@ jobs:
           current_commit=$(git rev-parse HEAD)
           new_branch="update-docs-$current_commit"
           git checkout -b "$new_branch"
+          echo "new_branch=$new_branch" >> $GITHUB_ENV
       - name: Copy generated docs to docs repo
         run: |
           rm -rf bucket-docs/sdk-docs
