@@ -1,0 +1,65 @@
+{
+  "$schema": "https://typedoc-plugin-markdown.org/schema.json",
+
+  "entryPointStrategy": "packages",
+  "entryPoints": [
+    "packages/browser-sdk/",
+    // "packages/react-sdk/",
+    "packages/node-sdk/"
+  ],
+  "packageOptions": {
+    "entryPoints": ["src/index.ts*"]
+  },
+
+  "disableSources": true,
+  "outputs": [
+    {
+      "name": "markdown",
+      "path": "./dist/docs",
+    },
+  ],
+  "navigation": {
+    "includeCategories": false,
+    "includeGroups": false,
+    "includeFolders": false,
+    "excludeReferences": true
+  },
+  "categorizeByGroup": false,
+  "groupReferencesByType": true,
+  "commentStyle": "block",
+
+  "outputFileStrategy": "members",
+  "membersWithOwnFile": [],
+
+  "plugin": ["typedoc-plugin-markdown"],
+
+  "useCodeBlocks": true,
+
+  "expandObjects": true,
+  "expandParameters": true,
+
+  "typeDeclarationVisibility": "verbose",
+  
+  "indexFormat": "htmlTable",
+  "parametersFormat": "htmlTable",
+  "interfacePropertiesFormat": "htmlTable",
+  "classPropertiesFormat": "htmlTable",
+  "enumMembersFormat": "htmlTable",
+  "propertyMembersFormat": "htmlTable",
+  "typeDeclarationFormat": "htmlTable",
+
+  "hideGroupHeadings": true,
+  "hideBreadcrumbs": true,
+  "hidePageTitle": true,
+  "hidePageHeader": true,
+  
+  "tableColumnSettings": {
+    "hideDefaults": false,
+    "hideInherited": true,
+    "hideModifiers": false,
+    "hideOverrides": false,
+    "hideSources": true,
+    "hideValues": false,
+    "leftAlignHeaders": false
+  }
+}

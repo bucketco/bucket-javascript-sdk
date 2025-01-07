@@ -10,10 +10,23 @@ export type {
 export type {
   Feedback,
   FeedbackOptions,
-  RequestFeedbackData,
+  FeedbackPrompt,
+  FeedbackPromptHandler,
+  FeedbackPromptHandlerCallbacks,
+  FeedbackPromptHandlerOpenFeedbackFormOptions,
+  FeedbackPromptReply,
+  FeedbackPromptReplyHandler,
   RequestFeedbackOptions,
-  UnassignedFeedback,
 } from "./feedback/feedback";
 export type { DEFAULT_TRANSLATIONS } from "./feedback/ui/config/defaultTranslations";
 export { feedbackContainerId, propagatedEvents } from "./feedback/ui/constants";
-export type { FeedbackTranslations } from "./feedback/ui/types";
+export type {
+  FeedbackPlacement,
+  FeedbackPosition,
+  FeedbackScoreSubmission,
+  FeedbackSubmission,
+  FeedbackTranslations,
+  Offset,
+  OnScoreSubmitResult,
+} from "./feedback/ui/types";
+export type { Logger } from "./logger";
