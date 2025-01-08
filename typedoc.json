@@ -26,7 +26,7 @@
     "excludeReferences": true
   },
   "categorizeByGroup": false,
-  "groupReferencesByType": true,
+  "groupReferencesByType": false,
   "commentStyle": "block",
 
   "outputFileStrategy": "members",
@@ -49,7 +49,7 @@
   "propertyMembersFormat": "htmlTable",
   "typeDeclarationFormat": "htmlTable",
 
-  "hideGroupHeadings": true,
+  "hideGroupHeadings": false,
   "hideBreadcrumbs": true,
   "hidePageTitle": false,
   "hidePageHeader": true,
