@@ -28,7 +28,7 @@ The available options can be found in the [Bucket Node.js SDK](https://github.co
 
 ### Example using the default configuration
 
-```javascript
+```typescript
 import { BucketNodeProvider } from "@bucketco/openfeature-node-provider";
 import { OpenFeature } from "@openfeature/server-sdk";
 
@@ -108,8 +108,32 @@ const provider = new BucketNodeProvider({ secretKey, contextTranslator });
 OpenFeature.setProvider(provider);
 ```
 
+## Tracking feature adoption
+
+The Bucket OpenFeature provider supports the OpenFeature Tracking API.
+It's straight forward to start sending tracking events through OpenFeature.
+
+Simply call "track" on the
+
+```ts
+import { BucketNodeProvider } from "@bucketco/openfeature-node-provider";
+import { OpenFeature } from "@openfeature/server-sdk";
+
+const provider = new BucketNodeProvider({ secretKey });
+
+await OpenFeature.setProviderAndWait(provider);
+
+const client = OpenFeature.getClient();
+
+const enterpriseFeatureEnabled = await client.track("huddles");
+```
+
 # License
 
 MIT License
 
 Copyright (c) 2024 Bucket ApS
+
+```
+
+```
