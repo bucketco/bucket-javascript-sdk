@@ -8,6 +8,7 @@ export type {
   RawFeatures,
 } from "./feature/features";
 export type {
+  FeatureIdentifier,
   Feedback,
   FeedbackOptions,
   FeedbackPrompt,
@@ -30,5 +31,6 @@ export type {
   FeedbackTranslations,
   Offset,
   OnScoreSubmitResult,
+  OpenFeedbackFormOptions,
 } from "./feedback/ui/types";
 export type { Logger } from "./logger";

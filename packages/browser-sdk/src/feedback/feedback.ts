@@ -69,7 +69,7 @@ export function handleDeprecatedFeedbackOptions(
   };
 }
 
-type FeatureIdentifier =
+export type FeatureIdentifier =
   | {
       /**
        * Bucket feature ID.

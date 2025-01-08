@@ -350,8 +350,6 @@ export class BucketClient {
    * Update the company context.
    * Performs a shallow merge with the existing company context.
    * Updates to the company ID will be ignored.
-   *
-   * @param company
    */
   async updateOtherContext(otherContext: {
     [key: string]: string | number | undefined;
@@ -369,8 +367,7 @@ export class BucketClient {
    *
    * Calling `client.stop()` will remove all listeners added here.
    *
-   * @param callback this will be called when the features are updated.
-   * @param options passed as-is to addEventListener
+   * @param cb this will be called when the features are updated.
    */
   onFeaturesUpdated(cb: () => void) {
     return this.featuresClient.onUpdated(cb);
@@ -409,7 +406,6 @@ export class BucketClient {
    * Submit user feedback to Bucket. Must include either `score` or `comment`, or both.
    *
    * @returns
-   * @param payload
    */
   async feedback(payload: Feedback) {
     const userId =

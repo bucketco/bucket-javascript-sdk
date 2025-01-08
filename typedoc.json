@@ -5,7 +5,7 @@
   "entryPoints": [
     "packages/browser-sdk/",
     // "packages/react-sdk/",
-    "packages/node-sdk/"
+    // "packages/node-sdk/"
   ],
   "packageOptions": {
     "entryPoints": ["src/index.ts*"]
