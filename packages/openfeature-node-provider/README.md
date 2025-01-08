@@ -113,7 +113,7 @@ OpenFeature.setProvider(provider);
 The Bucket OpenFeature provider supports the OpenFeature Tracking API.
 It's straight forward to start sending tracking events through OpenFeature.
 
-Simply call "track" on the
+Simply call the "track" method on the OpenFeature client:
 
 ```ts
 import { BucketNodeProvider } from "@bucketco/openfeature-node-provider";
@@ -125,7 +125,11 @@ await OpenFeature.setProviderAndWait(provider);
 
 const client = OpenFeature.getClient();
 
-const enterpriseFeatureEnabled = await client.track("huddles");
+// `evaluationContext` is whatever you use to evaluate features based off
+const enterpriseFeatureEnabled = await client.track(
+  "huddles",
+  evaluationContext,
+);
 ```
 
 # License
