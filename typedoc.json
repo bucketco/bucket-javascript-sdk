@@ -51,7 +51,7 @@
 
   "hideGroupHeadings": true,
   "hideBreadcrumbs": true,
-  "hidePageTitle": true,
+  "hidePageTitle": false,
   "hidePageHeader": true,
   
   "tableColumnSettings": {
