@@ -32,7 +32,7 @@
   "outputFileStrategy": "members",
   "membersWithOwnFile": [],
 
-  "plugin": ["typedoc-plugin-markdown"],
+  "plugin": ["typedoc-plugin-markdown", "typedoc-plugin-frontmatter"],
 
   "useCodeBlocks": true,
 
@@ -62,5 +62,26 @@
     "hideSources": true,
     "hideValues": false,
     "leftAlignHeaders": false
+  },
+
+  "frontmatterGlobals": {
+    "layout": {
+      "visible": true,
+    },
+    "title": {
+      "visible": true,
+    },
+    "description": {
+      "visible": false,
+    },
+    "tableOfContents": {
+      "visible": true,
+    },
+    "outline": {
+      "visible": true,
+    },
+    "pagination": {
+      "visible": true,
+    }
   }
 }
