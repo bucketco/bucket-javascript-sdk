@@ -119,7 +119,7 @@ current working directory.
 | `logLevel`         | string                  | The log level for the SDK (e.g., `"DEBUG"`, `"INFO"`, `"WARN"`, `"ERROR"`). Default: `INFO`                                                                         | BUCKET_LOG_LEVEL                                  |
 | `offline`          | boolean                 | Operate in offline mode. Default: `false`, except in tests it will default to `true` based off of the `TEST` env. var.                                              | BUCKET_OFFLINE                                    |
 | `apiBaseUrl`       | string                  | The base API URL for the Bucket servers.                                                                                                                            | BUCKET_API_BASE_URL                               |
-| `featureOverrides` | Record<string, boolean> | An object specifying feature overrides for testing or local development. See [example/app.test.ts](example/app.test.ts) for how to use `featureOverrides` in tests. | BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED |
+| `featureOverrides` | Record<string, boolean> | An object specifying feature overrides for testing or local development. See [example/app.test.ts](https://github.com/bucketco/bucket-javascript-sdk/tree/main/packages/browser-sdk/example/app.test.ts) for how to use `featureOverrides` in tests. | BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED |
 | `configFile`       | string                  | Load this config file from disk. Default: `bucketConfig.json`                                                                                                       | BUCKET_CONFIG_FILE                                |
 
 Note: BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED are comma separated lists of features which will be enabled or disabled respectively.
@@ -237,7 +237,7 @@ app.get("/todos", async (_req, res) => {
 }
 ```
 
-See [example/app.ts](example/app.ts) for a full example.
+See [example/app.ts](https://github.com/bucketco/bucket-javascript-sdk/tree/main/packages/node-sdk/example/app.ts) for a full example.
 
 ## Remote flag evaluation with stored context
 

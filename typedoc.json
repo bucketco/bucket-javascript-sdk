@@ -21,7 +21,7 @@
     {
       "name": "json",
       "path": "./dist/docs/docs.json"
-  },
+    },
   ],
   "navigation": {
     "includeCategories": false,

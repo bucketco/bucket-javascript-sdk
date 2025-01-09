@@ -269,7 +269,7 @@ See examples below.
 
 ![image](https://github.com/bucketco/bucket-tracking-sdk/assets/331790/68805b38-e9f6-4de5-9f55-188216983e3c)
 
-See [default English localization keys](./src/feedback/config/defaultTranslations.tsx)
+See [default English localization keys](https://github.com/bucketco/bucket-javascript-sdk/tree/main/packages/browser-sdk/src/feedback/ui/config/defaultTranslations.tsx)
 for a reference of what translation keys can be supplied.
 
 ### Static language configuration
@@ -389,7 +389,7 @@ For example, a dark mode theme might look like this:
 }
 ```
 
-Other examples of custom styling can be found in our [development example style-sheet](./dev/index.css).
+Other examples of custom styling can be found in our [development example style-sheet](https://github.com/bucketco/bucket-javascript-sdk/tree/main/packages/browser-sdk/src/feedback/ui/index.css).
 
 ## Using your own UI to collect feedback
 
@@ -414,7 +414,7 @@ Bucket API.
 ### Manual feedback collection with custom UI
 
 Examples of a HTML-form that collects the relevant data can be found
-in [feedback.html](./example/feedback/feedback.html) and [feedback.jsx](./example/feedback/feedback.jsx).
+in [feedback.html](https://github.com/bucketco/bucket-javascript-sdk/tree/main/packages/browser-sdk/example/feedback/feedback.html) and [feedback.jsx](https://github.com/bucketco/bucket-javascript-sdk/tree/main/packages/browser-sdk/example/feedback/Feedback.jsx).
 
 Once you have collected the feedback data, pass it along to `bucketClient.feedback()`:
 
