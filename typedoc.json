@@ -14,7 +14,7 @@
   },
   "projectDocuments": ["packages/browser-sdk/FEEDBACK.md"],
   "readme": "none",
-  "useHTMLAnchors": true,
+  "useHTMLAnchors": false,
 
   "outputs": [
     {
@@ -30,7 +30,7 @@
       "path": "./dist/docs/html"
     }
   ],
-  "outputFileStrategy": "members",
+  "outputFileStrategy": "modules",
   "membersWithOwnFile": [],
 
   "navigation": {
@@ -54,6 +54,7 @@
   "interfacePropertiesFormat": "htmlTable",
   "classPropertiesFormat": "htmlTable",
   "enumMembersFormat": "htmlTable",
+  "propertiesFormat": "htmlTable",
   "propertyMembersFormat": "htmlTable",
   "typeDeclarationFormat": "htmlTable",
 

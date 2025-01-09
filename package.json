@@ -17,7 +17,7 @@
     "lint": "lerna run lint --stream",
     "lint:ci": "lerna run lint:ci --stream",
     "version": "lerna version --exact --no-push",
-    "docs": "typedoc"
+    "docs": "./docs.sh"
   },
   "packageManager": "yarn@4.1.1",
   "devDependencies": {
