@@ -4,15 +4,15 @@
   "entryPointStrategy": "packages",
   "entryPoints": [
     "packages/browser-sdk/",
-    // "packages/react-sdk/",
-    "packages/node-sdk/"
+    "packages/node-sdk/",
+    "packages/react-sdk/"
   ],
   "packageOptions": {
-    "entryPoints": ["src/index.ts*"]
+    "entryPoints": ["src/index.ts"]
   },
 
   "readme": "none",
-  "disableSources": true,
+  "disableSources": false,
   "outputs": [
     {
       "name": "markdown",
@@ -21,7 +21,7 @@
     {
       "name": "json",
       "path": "./dist/docs/docs.json"
-    },
+    }
   ],
   "navigation": {
     "includeCategories": false,
