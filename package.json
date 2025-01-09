@@ -25,6 +25,6 @@
     "prettier": "^3.3.3",
     "typedoc": "0.27.6",
     "typedoc-plugin-frontmatter": "^1.1.2",
-    "typedoc-plugin-markdown": "^4.3.2"
+    "typedoc-plugin-markdown": "^4.4.1"
   }
 }

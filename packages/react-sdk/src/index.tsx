@@ -236,7 +236,7 @@ export function useTrack() {
  * Returns a function to open up the feedback form
  * Note: When calling `useRequestFeedback`, user/company must already be set.
  *
- * See [link](../../browser-sdk/FEEDBACK.md#bucketclient.requestfeedback-options) for more information
+ * See [link](../../browser-sdk/FEEDBACK.md#bucketclientrequestfeedback-options) for more information
  * 
  * ```ts
  * const requestFeedback = useRequestFeedback();

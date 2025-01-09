@@ -15222,12 +15222,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typedoc-plugin-markdown@npm:^4.3.2":
-  version: 4.3.2
-  resolution: "typedoc-plugin-markdown@npm:4.3.2"
+"typedoc-plugin-markdown@npm:^4.4.1":
+  version: 4.4.1
+  resolution: "typedoc-plugin-markdown@npm:4.4.1"
   peerDependencies:
     typedoc: 0.27.x
-  checksum: 10c0/6e66524fabb8087931552477188e47084ce6ce32e8e937c86795bbf821dfad042a9d03d83ecbfbde6b4f94b78c8370f9f8ed1eeec169dca04759ad2f82057e45
+  checksum: 10c0/54c9a25aed64d07258033c4d060acac15a618ee0494cbb2bc70fd10d03c82b3434715b6db01fbeb09d672cff736340666d70da1be83188e3a994048a0a0c6b65
   languageName: node
   linkType: hard
 
@@ -16289,7 +16289,7 @@ __metadata:
     prettier: "npm:^3.3.3"
     typedoc: "npm:0.27.6"
     typedoc-plugin-frontmatter: "npm:^1.1.2"
-    typedoc-plugin-markdown: "npm:^4.3.2"
+    typedoc-plugin-markdown: "npm:^4.4.1"
   languageName: unknown
   linkType: soft
 

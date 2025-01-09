@@ -1,6 +1,8 @@
 {
   "$schema": "https://typedoc-plugin-markdown.org/schema.json",
 
+  "plugin": ["typedoc-plugin-markdown", "typedoc-plugin-frontmatter"],
+
   "entryPointStrategy": "packages",
   "entryPoints": [
     "packages/browser-sdk/",
@@ -10,9 +12,10 @@
   "packageOptions": {
     "entryPoints": ["src/index.ts"]
   },
-
+  "projectDocuments": ["packages/browser-sdk/FEEDBACK.md"],
   "readme": "none",
-  "disableSources": false,
+  "useHTMLAnchors": true,
+
   "outputs": [
     {
       "name": "markdown",
@@ -21,28 +24,29 @@
     {
       "name": "json",
       "path": "./dist/docs/docs.json"
+    },
+    {
+      "name": "html",
+      "path": "./dist/docs/html"
     }
   ],
+  "outputFileStrategy": "members",
+  "membersWithOwnFile": [],
+
   "navigation": {
     "includeCategories": false,
     "includeGroups": false,
     "includeFolders": false,
     "excludeReferences": true
   },
+  
+  "disableSources": true,
   "categorizeByGroup": false,
   "groupReferencesByType": true,
   "commentStyle": "block",
-
-  "outputFileStrategy": "members",
-  "membersWithOwnFile": [],
-
-  "plugin": ["typedoc-plugin-markdown", "typedoc-plugin-frontmatter"],
-
   "useCodeBlocks": true,
-
   "expandObjects": true,
   "expandParameters": true,
-
   "typeDeclarationVisibility": "verbose",
   
   "indexFormat": "htmlTable",
@@ -87,5 +91,5 @@
     "pagination": {
       "visible": true,
     }
-  }
+  },
 }
