@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 
 import {
+  FeatureKey,
   BucketProvider,
   Features,
   useFeature as bucketUseFeature,
@@ -26,11 +27,11 @@ const myFeatures = ["huddle"] as const;
 // }
 
 const publishableKey = import.meta.env.VITE_PUBLISHABLE_KEY || "";
-const host = import.meta.env.VITE_BUCKET_HOST || "http://localhost:3000";
+const host = import.meta.env.VITE_BUCKET_HOST;
 
 function HuddleFeature() {
   // Type safe feature
-  const feature = useFeature("huddle");
+  const feature = useFeature("huddles");
   return (
     <div>
       <h2>Huddle feature</h2>
@@ -176,7 +177,15 @@ function Demos() {
       <h1>React SDK</h1>
 
       <HuddleFeature />
-      <FeatureOptIn />
+
+      <h2>Feature opt-in</h2>
+      <div>
+        Create a <code>huddle</code> feature and set a rule:{" "}
+        <code>optin-huddles IS TRUE</code>. Hit the checkbox below to opt-in/out
+        of the feature.
+      </div>
+      <FeatureOptIn featureKey={"huddles"} featureName={"Huddles"} />
+
       <UpdateContext />
       <Feedback />
       <SendEvent />
@@ -184,31 +193,29 @@ function Demos() {
   );
 }
 
-function FeatureOptIn() {
+function FeatureOptIn({
+  featureKey,
+  featureName,
+}: {
+  featureKey: FeatureKey;
+  featureName: string;
+}) {
   const updateUser = useUpdateUser();
   const [sendingUpdate, setSendingUpdate] = useState(false);
-  const huddles = useFeature("huddle");
+  const { isEnabled } = useFeature(featureKey);
 
   return (
     <div>
-      <h2>Feature opt-in</h2>
-      <div style={{ display: "flex", flexFlow: "column" }}></div>
-      <div>
-        Create a <code>huddle</code> feature and set a rule:{" "}
-        <code>optInHuddles IS TRUE</code>. Hit the checkbox below to opt-in/out
-        of the feature.
-      </div>
-
-      <label htmlFor="huddlesOptIn">Opt-in to Huddle feature</label>
+      <label htmlFor="huddlesOptIn">Opt-in to {featureName} feature</label>
       <input
         disabled={sendingUpdate}
         id="huddlesOptIn"
         type="checkbox"
-        checked={huddles.isEnabled}
+        checked={isEnabled}
         onChange={() => {
           setSendingUpdate(true);
           updateUser({
-            optInHuddles: huddles.isEnabled ? "false" : "true",
+            [`optin-${featureKey}`]: isEnabled ? "false" : "true",
           })?.then(() => {
             setSendingUpdate(false);
           });

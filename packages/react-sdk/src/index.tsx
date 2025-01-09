@@ -29,7 +29,7 @@ export interface Features {}
 
 const SDK_VERSION = `react-sdk/${version}`;
 
-type BucketFeatures = keyof (keyof Features extends never
+export type FeatureKey = keyof (keyof Features extends never
   ? Record<string, boolean>
   : Features);
 
@@ -51,7 +51,7 @@ const ProviderContext = createContext<ProviderContextType>({
 export type BucketProps = BucketContext & {
   publishableKey: string;
   featureOptions?: Omit<FeaturesOptions, "fallbackFeatures"> & {
-    fallbackFeatures?: BucketFeatures[];
+    fallbackFeatures?: FeatureKey[];
   };
   children?: ReactNode;
   loadingComponent?: ReactNode;

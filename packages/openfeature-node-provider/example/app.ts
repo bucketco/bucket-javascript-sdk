@@ -14,10 +14,6 @@ declare global {
   namespace Express {
     interface Locals {
       context: Context;
-      track: (
-        event: string,
-        attributes?: Record<string, any>,
-      ) => Promise<boolean>;
     }
   }
 }
@@ -32,19 +28,14 @@ app.use((req, res, next) => {
     companyId: "company99",
   };
   res.locals.context = ofContext;
-  res.locals.track = (event: string, attributes?: Record<string, any>) => {
-    return provider.client.track(ofContext.targetingKey, event, {
-      attributes,
-      companyId: ofContext.companyId,
-    });
-  };
   next();
 });
 
 const todos = ["Buy milk", "Walk the dog"];
 
 app.get("/", (_req, res) => {
-  res.locals.track("front-page-viewed");
+  const ofClient = OpenFeature.getClient();
+  ofClient.track("front-page-viewed", res.locals.context);
   res.json({ message: "Ready to manage some TODOs!" });
 });
 
@@ -53,18 +44,15 @@ app.get("/todos", async (req, res) => {
   // We use the `getFeatures` method to check if the user has the "show-todo" feature enabled.
   // Note that "show-todo" is a feature that we defined in the `Features` interface in the `bucket.ts` file.
   // and that the indexing for feature name below is type-checked at compile time.
-  const isEnabled = await OpenFeature.getClient().getBooleanValue(
+  const ofClient = OpenFeature.getClient();
+  const isEnabled = await ofClient.getBooleanValue(
     "show-todo",
     false,
     res.locals.context,
   );
 
   if (isEnabled) {
-    res.locals.track("show-todo");
-
-    // You can instead also send any custom event if you prefer, including attributes.
-    // provider.client.track(res.locals.context.targetingKey, "Todo's viewed", { attributes: { access: "api" } });
-
+    ofClient.track("show-todo", res.locals.context);
     return res.json({ todos });
   }
 
@@ -80,7 +68,8 @@ app.post("/todos", async (req, res) => {
     return res.status(400).json({ error: "Invalid todo" });
   }
 
-  const isEnabled = await OpenFeature.getClient().getBooleanValue(
+  const ofClient = OpenFeature.getClient();
+  const isEnabled = await ofClient.getBooleanValue(
     "create-todo",
     false,
     res.locals.context,
@@ -89,7 +78,7 @@ app.post("/todos", async (req, res) => {
   // Check if the user has the "create-todos" feature enabled
   if (isEnabled) {
     // Track the feature usage
-    res.locals.track("create-todo");
+    ofClient.track("create-todo", res.locals.context);
     todos.push(todo);
 
     return res.status(201).json({ todo });
@@ -107,7 +96,8 @@ app.delete("/todos/:idx", async (req, res) => {
     return res.status(400).json({ error: "Invalid index" });
   }
 
-  const isEnabled = await OpenFeature.getClient().getBooleanValue(
+  const ofClient = OpenFeature.getClient();
+  const isEnabled = await ofClient.getBooleanValue(
     "delete-todo",
     false,
     res.locals.context,
@@ -116,7 +106,7 @@ app.delete("/todos/:idx", async (req, res) => {
   if (isEnabled) {
     todos.splice(idx, 1);
 
-    res.locals.track("delete-todo");
+    ofClient.track("delete-todo", res.locals.context);
     return res.json({});
   }
 
