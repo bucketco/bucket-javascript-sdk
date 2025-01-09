@@ -22,8 +22,6 @@ import {
 
 import { version } from "../package.json";
 
-export { UnassignedFeedback };
-
 export interface Features {}
 
 const SDK_VERSION = `react-sdk/${version}`;
