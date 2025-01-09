@@ -20,11 +20,12 @@ To get started you need to obtain your secret key from the
 [environment settings](https://app.bucket.co/envs/current/settings/app-environments)
 in Bucket.
 
-> [!CAUTION]
-> Secret keys are meant for use in server side SDKs only.
-> Secret keys offer the users the ability to obtain
-> information that is often sensitive and thus should not be used in
-> client-side applications.
+{% hint style="danger" %}
+Secret keys are meant for use in server side SDKs only.
+Secret keys offer the users the ability to obtain
+information that is often sensitive and thus should not be used in
+client-side applications.
+{% endhint %}
 
 Bucket will load settings through the various environment variables automatically (see [Configuring](#configuring) below).
 
