@@ -1,12 +1,22 @@
 export { BoundBucketClient, BucketClient } from "./client";
 export type {
   Attributes,
+  BatchBufferOptions,
   ClientOptions,
   Context,
+  ContextWithTracking,
+  Feature,
   FeatureOverrides,
+  FeatureOverridesFn,
   Features,
   HttpClient,
+  HttpClientResponse,
+  IdType,
   Logger,
+  LogLevel,
+  LOG_LEVELS,
   RawFeature,
   TrackingMeta,
+  TrackOptions,
+  TypedFeatures,
 } from "./types";

@@ -26,6 +26,7 @@ import {
   Cache,
   ClientOptions,
   Context,
+  ContextWithTracking,
   Feature,
   FeatureEvent,
   FeaturesAPIResponse,
@@ -80,17 +81,6 @@ type BulkEvent =
       attributes?: Attributes;
       context?: TrackingMeta;
     };
-
-/**
- * A context with tracking option.
- **/
-interface ContextWithTracking extends Context {
-  /**
-   * Enable tracking for the context.
-   * If set to `false`, tracking will be disabled for the context. Default is `true`.
-   */
-  enableTracking?: boolean;
-}
 
 /**
  * The SDK client.
