@@ -15231,6 +15231,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"typedoc-plugin-mdn-links@npm:^4.0.7":
+  version: 4.0.7
+  resolution: "typedoc-plugin-mdn-links@npm:4.0.7"
+  peerDependencies:
+    typedoc: 0.26.x || 0.27.x
+  checksum: 10c0/e82edc9db370744f853177c2d7652b897f911f88071168a814f22299328db3aa53be508b8d521cb8ce9f1c0ee77a1e3f44ea458c5dac31b9b25123d8412202da
+  languageName: node
+  linkType: hard
+
 "typedoc@npm:0.27.6":
   version: 0.27.6
   resolution: "typedoc@npm:0.27.6"
@@ -16290,6 +16299,7 @@ __metadata:
     typedoc: "npm:0.27.6"
     typedoc-plugin-frontmatter: "npm:^1.1.2"
     typedoc-plugin-markdown: "npm:^4.4.1"
+    typedoc-plugin-mdn-links: "npm:^4.0.7"
   languageName: unknown
   linkType: soft
 

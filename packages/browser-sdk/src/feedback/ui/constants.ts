@@ -6,7 +6,7 @@ export const feedbackContainerId = "bucket-feedback-dialog-container";
 /**
  * These events will be propagated to the feedback dialog
  *
- * see https://developer.mozilla.org/en-US/docs/Web/API/Element#events
+ * @see [https://developer.mozilla.org/en-US/docs/Web/API/Element#events](https://developer.mozilla.org/en-US/docs/Web/API/Element#events)
  */
 export const propagatedEvents = [
   "animationcancel",

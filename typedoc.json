@@ -1,7 +1,7 @@
 {
   "$schema": "https://typedoc-plugin-markdown.org/schema.json",
 
-  "plugin": ["typedoc-plugin-markdown", "typedoc-plugin-frontmatter"],
+  "plugin": ["typedoc-plugin-markdown", "typedoc-plugin-frontmatter", "typedoc-plugin-mdn-links"],
 
   "entryPointStrategy": "packages",
   "entryPoints": [
@@ -93,4 +93,5 @@
       "visible": true,
     }
   },
+
 }
