@@ -237,7 +237,7 @@ export function useTrack() {
  * Note: When calling `useRequestFeedback`, user/company must already be set.
  *
  * See [link](../../browser-sdk/FEEDBACK.md#bucketclientrequestfeedback-options) for more information
- * 
+ *
  * ```ts
  * const requestFeedback = useRequestFeedback();
  * bucket.requestFeedback({
