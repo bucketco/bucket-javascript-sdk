@@ -20,14 +20,6 @@
     {
       "name": "markdown",
       "path": "./dist/docs",
-    },
-    {
-      "name": "json",
-      "path": "./dist/docs/docs.json"
-    },
-    {
-      "name": "html",
-      "path": "./dist/docs/html"
     }
   ],
   "outputFileStrategy": "modules",
@@ -92,6 +84,5 @@
     "pagination": {
       "visible": true,
     }
-  },
-
+  }
 }
