@@ -94,6 +94,7 @@ const defaultConfig: Config = {
 
 export interface Feature {
   isEnabled: boolean;
+  config: any;
   track: () => Promise<Response | undefined>;
   requestFeedback: (
     options: Omit<RequestFeedbackData, "featureKey" | "featureId">,
@@ -232,7 +233,7 @@ export class BucketClient {
    * Performs a shallow merge with the existing company context.
    * Attempting to update the company ID will log a warning and be ignored.
    *
-   * @param company
+   * @param company The company details.
    */
   async updateCompany(company: { [key: string]: string | number | undefined }) {
     if (company.id && company.id !== this.context.company?.id) {
@@ -255,7 +256,7 @@ export class BucketClient {
    * Performs a shallow merge with the existing company context.
    * Updates to the company ID will be ignored.
    *
-   * @param company
+   * @param otherContext Additional context.
    */
   async updateOtherContext(otherContext: {
     [key: string]: string | number | undefined;
@@ -273,8 +274,7 @@ export class BucketClient {
    *
    * Calling `client.stop()` will remove all listeners added here.
    *
-   * @param callback this will be called when the features are updated.
-   * @param options passed as-is to addEventListener
+   * @param cb The callback to call when the update completes.
    */
   onFeaturesUpdated(cb: () => void) {
     return this.featuresClient.onUpdated(cb);
@@ -283,8 +283,8 @@ export class BucketClient {
   /**
    * Track an event in Bucket.
    *
-   * @param eventName The name of the event
-   * @param attributes Any attributes you want to attach to the event
+   * @param eventName The name of the event.
+   * @param attributes Any attributes you want to attach to the event.
    */
   async track(eventName: string, attributes?: Record<string, any> | null) {
     if (!this.context.user) {
@@ -312,8 +312,8 @@ export class BucketClient {
   /**
    * Submit user feedback to Bucket. Must include either `score` or `comment`, or both.
    *
-   * @returns
-   * @param payload
+   * @param payload The feedback details to submit.
+   * @returns The server response.
    */
   async feedback(payload: Feedback) {
     const userId =
@@ -407,34 +407,43 @@ export class BucketClient {
    * Returns a map of enabled features.
    * Accessing a feature will *not* send a check event
    *
-   * @returns Map of features
+   * @returns Map of features.
    */
   getFeatures(): RawFeatures {
     return this.featuresClient.getFeatures();
   }
 
   /**
-   * Return a feature. Accessing `isEnabled` will automatically send a `check` event.
-   * @returns A feature
+   * Return a feature. Accessing `isEnabled` or `config` will automatically send a `check` event.
+   * @returns A feature.
    */
   getFeature(key: string): Feature {
     const f = this.getFeatures()[key];
 
     const fClient = this.featuresClient;
     const value = f?.isEnabled ?? false;
+    const config = f?.config?.payload;
+
+    function sendCheckEvent() {
+      fClient
+        .sendCheckEvent({
+          key: key,
+          version: f?.targetingVersion,
+          value,
+        })
+        .catch(() => {
+          // ignore
+        });
+    }
 
     return {
       get isEnabled() {
-        fClient
-          .sendCheckEvent({
-            key: key,
-            version: f?.targetingVersion,
-            value,
-          })
-          .catch(() => {
-            // ignore
-          });
+        sendCheckEvent();
         return value;
+      },
+      get config() {
+        sendCheckEvent();
+        return config;
       },
       track: () => this.track(key),
       requestFeedback: (

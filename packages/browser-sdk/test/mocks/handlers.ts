@@ -9,16 +9,20 @@ export const featureResponse: FeaturesResponse = {
   success: true,
   features: {
     featureA: { isEnabled: true, key: "featureA", targetingVersion: 1 },
+    featureB: {
+      isEnabled: true,
+      targetingVersion: 11,
+      key: "featureB",
+      config: {
+        version: 12,
+        name: "gpt3",
+        payload: { model: "gpt-something", temperature: 0.5 },
+      },
+    },
   },
 };
 
-export const featuresResult: Features = {
-  featureA: {
-    isEnabled: true,
-    key: "featureA",
-    targetingVersion: 1,
-  },
-};
+export const featuresResult: Features = featureResponse.features;
 
 function checkRequest(request: StrictRequest<DefaultBodyType>) {
   const url = new URL(request.url);

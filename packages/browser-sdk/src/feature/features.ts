@@ -13,6 +13,11 @@ export type RawFeature = {
   key: string;
   isEnabled: boolean;
   targetingVersion?: number;
+  config?: {
+    name: string | null;
+    version: number;
+    payload: any;
+  };
 };
 
 const FEATURES_UPDATED_EVENT = "features-updated";
@@ -53,7 +58,9 @@ export function validateFeaturesResponse(response: any) {
   if (typeof response.success !== "boolean" || !isObject(response.features)) {
     return;
   }
+
   const features = parseAPIFeaturesResponse(response.features);
+
   if (!features) {
     return;
   }
@@ -198,6 +205,7 @@ export class FeaturesClient {
             JSON.stringify(errorBody),
         );
       }
+
       const typeRes = validateFeaturesResponse(await res.json());
       if (!typeRes || !typeRes.success) {
         throw new Error("unable to validate response");

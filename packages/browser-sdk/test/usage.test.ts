@@ -79,6 +79,7 @@ describe("usage", () => {
       isEnabled: false,
       track: expect.any(Function),
       requestFeedback: expect.any(Function),
+      config: undefined,
     });
   });
 
@@ -393,82 +394,114 @@ describe(`sends "check" events `, () => {
     ).toHaveBeenCalledTimes(0);
   });
 
-  it(`getFeature() sends check event when accessing "isEnabled"`, async () => {
-    vi.spyOn(FeaturesClient.prototype, "sendCheckEvent");
-    vi.spyOn(HttpClient.prototype, "post");
-
-    const client = new BucketClient({
-      publishableKey: KEY,
-      user: { id: "uid" },
-      company: { id: "cid" },
-    });
-    await client.initialize();
-
-    const featureA = client.getFeature("featureA");
-
-    expect(
-      vi.mocked(FeaturesClient.prototype.sendCheckEvent),
-    ).toHaveBeenCalledTimes(0);
-    expect(featureA.isEnabled).toBe(true);
-
-    expect(
-      vi.mocked(FeaturesClient.prototype.sendCheckEvent),
-    ).toHaveBeenCalledTimes(1);
-    expect(
-      vi.mocked(FeaturesClient.prototype.sendCheckEvent),
-    ).toHaveBeenCalledWith({
-      key: "featureA",
-      value: true,
-      version: 1,
-    });
-
-    expect(vi.mocked(HttpClient.prototype.post)).toHaveBeenCalledWith({
-      body: {
-        action: "check",
-        evalContext: {
-          company: {
-            id: "cid",
-          },
-          other: undefined,
-          user: {
-            id: "uid",
-          },
-        },
-        evalResult: true,
-        key: "featureA",
-        targetingVersion: 1,
-      },
-      path: "features/events",
-    });
-  });
-
-  it("sends check event for not-enabled features", async () => {
-    // disabled features don't appear in the API response
-    vi.spyOn(FeaturesClient.prototype, "sendCheckEvent");
-
-    const client = new BucketClient({ publishableKey: KEY });
-    await client.initialize();
-
-    const nonExistentFeature = client.getFeature("non-existent");
-
-    expect(
-      vi.mocked(FeaturesClient.prototype.sendCheckEvent),
-    ).toHaveBeenCalledTimes(0);
-    expect(nonExistentFeature.isEnabled).toBe(false);
-
-    expect(
-      vi.mocked(FeaturesClient.prototype.sendCheckEvent),
-    ).toHaveBeenCalledTimes(1);
-    expect(
-      vi.mocked(FeaturesClient.prototype.sendCheckEvent),
-    ).toHaveBeenCalledWith({
-      value: false,
-      key: "non-existent",
-      version: undefined,
-    });
-  });
-
   describe("getFeature", async () => {
+    afterEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it(`sends check event when accessing "isEnabled"`, async () => {
+      const sendCheckEventSpy = vi.spyOn(
+        FeaturesClient.prototype,
+        "sendCheckEvent",
+      );
+      const postSpy = vi.spyOn(HttpClient.prototype, "post");
+
+      const client = new BucketClient({
+        publishableKey: KEY,
+        user: { id: "uid" },
+        company: { id: "cid" },
+      });
+      await client.initialize();
+
+      const featureA = client.getFeature("featureA");
+
+      expect(sendCheckEventSpy).toHaveBeenCalledTimes(0);
+      expect(featureA.isEnabled).toBe(true);
+      expect(sendCheckEventSpy).toHaveBeenCalledTimes(1);
+      expect(sendCheckEventSpy).toHaveBeenCalledWith({
+        key: "featureA",
+        value: true,
+        version: 1,
+      });
+
+      expect(postSpy).toHaveBeenCalledWith({
+        body: {
+          action: "check",
+          evalContext: {
+            company: {
+              id: "cid",
+            },
+            other: undefined,
+            user: {
+              id: "uid",
+            },
+          },
+          evalResult: true,
+          key: "featureA",
+          targetingVersion: 1,
+        },
+        path: "features/events",
+      });
+    });
+
+    it(`sends check event when accessing "config"`, async () => {
+      const postSpy = vi.spyOn(HttpClient.prototype, "post");
+
+      const client = new BucketClient({
+        publishableKey: KEY,
+        user: { id: "uid" },
+      });
+
+      await client.initialize();
+      const featureB = client.getFeature("featureB");
+      expect(featureB.config).toEqual({
+        model: "gpt-something",
+        temperature: 0.5,
+      });
+
+      expect(postSpy).toHaveBeenCalledWith({
+        body: {
+          action: "check",
+          evalContext: {
+            other: undefined,
+            user: {
+              id: "uid",
+            },
+          },
+          evalResult: true,
+          key: "featureB",
+          targetingVersion: 11,
+        },
+        path: "features/events",
+      });
+    });
+
+    it("sends check event for not-enabled features", async () => {
+      // disabled features don't appear in the API response
+      vi.spyOn(FeaturesClient.prototype, "sendCheckEvent");
+
+      const client = new BucketClient({ publishableKey: KEY });
+      await client.initialize();
+
+      const nonExistentFeature = client.getFeature("non-existent");
+
+      expect(
+        vi.mocked(FeaturesClient.prototype.sendCheckEvent),
+      ).toHaveBeenCalledTimes(0);
+      expect(nonExistentFeature.isEnabled).toBe(false);
+
+      expect(
+        vi.mocked(FeaturesClient.prototype.sendCheckEvent),
+      ).toHaveBeenCalledTimes(1);
+      expect(
+        vi.mocked(FeaturesClient.prototype.sendCheckEvent),
+      ).toHaveBeenCalledWith({
+        value: false,
+        key: "non-existent",
+        version: undefined,
+      });
+    });
+
     it("calls client.track with the featureId", async () => {
       const client = new BucketClient({ publishableKey: KEY });
       await client.initialize();

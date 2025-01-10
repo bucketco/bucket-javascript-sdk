@@ -27,8 +27,10 @@ function featuresClientFactory() {
   const httpClient = new HttpClient("pk", {
     baseUrl: "https://front.bucket.co",
   });
+
   vi.spyOn(httpClient, "get");
   vi.spyOn(httpClient, "post");
+
   return {
     cache,
     httpClient,
@@ -54,7 +56,7 @@ function featuresClientFactory() {
   };
 }
 
-describe("FeaturesClient unit tests", () => {
+describe("FeaturesClient", () => {
   test("fetches features", async () => {
     const { newFeaturesClient, httpClient } = featuresClientFactory();
     const featuresClient = newFeaturesClient();
@@ -69,8 +71,9 @@ describe("FeaturesClient unit tests", () => {
 
     expect(updated).toBe(true);
     expect(httpClient.get).toBeCalledTimes(1);
-    const calls = vi.mocked(httpClient.get).mock.calls.at(0);
-    const { params, path, timeoutMs } = calls![0];
+
+    const calls = vi.mocked(httpClient.get).mock.calls.at(0)!;
+    const { params, path, timeoutMs } = calls[0];
 
     const paramsObj = Object.fromEntries(new URLSearchParams(params));
     expect(paramsObj).toEqual({

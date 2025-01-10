@@ -95,6 +95,11 @@ export interface Feature {
   isEnabled: boolean;
 
   /**
+   * Optional user-defined configuration if the feature is enabled.
+   */
+  config: any;
+
+  /**
    * Track feature usage in Bucket.
    */
   track(): Promise<void>;

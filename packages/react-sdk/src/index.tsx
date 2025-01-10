@@ -198,21 +198,29 @@ export function useFeature(key: FeatureKey) {
   const feature = features[key];
   const enabled = feature?.isEnabled ?? false;
 
+  function sendCheckEvent() {
+    client
+      ?.sendCheckEvent({
+        key,
+        value: enabled,
+        version: feature?.targetingVersion,
+      })
+      .catch(() => {
+        // ignore
+      });
+  }
+
   return {
     isLoading,
     track,
     requestFeedback,
     get isEnabled() {
-      client
-        ?.sendCheckEvent({
-          key,
-          value: enabled,
-          version: feature?.targetingVersion,
-        })
-        .catch(() => {
-          // ignore
-        });
+      sendCheckEvent();
       return enabled;
+    },
+    get config() {
+      sendCheckEvent();
+      return feature?.config?.payload;
     },
   };
 }

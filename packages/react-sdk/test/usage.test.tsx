@@ -81,6 +81,11 @@ const server = setupServer(
             key: "abc",
             isEnabled: true,
             targetingVersion: 1,
+            config: {
+              name: "gpt3",
+              payload: { model: "gpt-something", temperature: 0.5 },
+              version: 2,
+            },
           },
           def: {
             key: "def",
@@ -235,6 +240,24 @@ describe("useFeature", () => {
       expect(result.current).toStrictEqual({
         isEnabled: false,
         isLoading: false,
+        track: expect.any(Function),
+        requestFeedback: expect.any(Function),
+      });
+    });
+
+    unmount();
+  });
+
+  test("provides the expected values if feature is enabled", async () => {
+    const { result, unmount } = renderHook(() => useFeature("abc"), {
+      wrapper: ({ children }) => getProvider({ children }),
+    });
+
+    await waitFor(() => {
+      expect(result.current).toStrictEqual({
+        isEnabled: true,
+        isLoading: false,
+        config: { model: "gpt-something", temperature: 0.5 },
         track: expect.any(Function),
         requestFeedback: expect.any(Function),
       });
