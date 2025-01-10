@@ -38,6 +38,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@bucket.co"
           git add sdk-docs
-          git commit -m "Update documentation"
-          git push
+          git commit -m "Update documentation" && git push || echo "No docs changes to commit"
   
