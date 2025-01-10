@@ -302,7 +302,7 @@ export function useUpdateUser() {
  * ```ts
  * const updateCompany = useUpdateCompany();
  * updateCompany({ plan: "enterprise" }).then(() => console.log("Features updated"));
- *
+ * ```
  */
 export function useUpdateCompany() {
   const { client } = useContext<ProviderContextType>(ProviderContext);
@@ -322,6 +322,7 @@ export function useUpdateCompany() {
  * const updateOtherContext = useUpdateOtherContext();
  * updateOtherContext({ workspaceId: newWorkspaceId })
  *   .then(() => console.log("Features updated"));
+ * ```
  */
 export function useUpdateOtherContext() {
   const { client } = useContext<ProviderContextType>(ProviderContext);
