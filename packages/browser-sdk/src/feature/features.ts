@@ -25,7 +25,7 @@ const FEATURES_UPDATED_EVENT = "features-updated";
 export type RawFeatures = Record<string, RawFeature | undefined>;
 
 export type FeaturesOptions = {
-  fallbackFeatures?: string[];
+  fallbackFeatures?: string[] | Record<string, any>;
   timeoutMs?: number;
   staleWhileRevalidate?: boolean;
   staleTimeMs?: number;
@@ -33,13 +33,13 @@ export type FeaturesOptions = {
 };
 
 type Config = {
-  fallbackFeatures: string[];
+  fallbackFeatures: Record<string, any>;
   timeoutMs: number;
   staleWhileRevalidate: boolean;
 };
 
 export const DEFAULT_FEATURES_CONFIG: Config = {
-  fallbackFeatures: [],
+  fallbackFeatures: {},
   timeoutMs: 5000,
   staleWhileRevalidate: false,
 };
@@ -133,6 +133,20 @@ export class FeaturesClient {
           staleTimeMs: options?.staleTimeMs ?? 0,
           expireTimeMs: options?.expireTimeMs ?? FEATURES_EXPIRE_MS,
         });
+
+    if (Array.isArray(options?.fallbackFeatures)) {
+      options = {
+        ...options,
+        fallbackFeatures: options.fallbackFeatures.reduce(
+          (acc, key) => {
+            acc[key] = null;
+            return acc;
+          },
+          {} as Record<string, any>,
+        ),
+      };
+    }
+
     this.config = { ...DEFAULT_FEATURES_CONFIG, ...options };
     this.rateLimiter =
       options?.rateLimiter ??
@@ -312,12 +326,16 @@ export class FeaturesClient {
     }
 
     // fetch failed, nothing cached => return fallbacks
-    return this.config.fallbackFeatures.reduce((acc, key) => {
-      acc[key] = {
-        key,
-        isEnabled: true,
-      };
-      return acc;
-    }, {} as RawFeatures);
+    return Object.entries(this.config.fallbackFeatures).reduce(
+      (acc, [key, config]) => {
+        acc[key] = {
+          key,
+          isEnabled: true,
+          config,
+        };
+        return acc;
+      },
+      {} as RawFeatures,
+    );
   }
 }

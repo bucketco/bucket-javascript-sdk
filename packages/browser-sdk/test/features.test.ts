@@ -115,7 +115,7 @@ describe("FeaturesClient", () => {
     expect(timeoutMs).toEqual(5000);
   });
 
-  test("return fallback features on failure", async () => {
+  test("return fallback features on failure (string list)", async () => {
     const { newFeaturesClient, httpClient } = featuresClientFactory();
 
     vi.mocked(httpClient.get).mockRejectedValue(
@@ -124,10 +124,32 @@ describe("FeaturesClient", () => {
     const featuresClient = newFeaturesClient({
       fallbackFeatures: ["huddle"],
     });
+
     await featuresClient.initialize();
-    expect(featuresClient.getFeatures()).toEqual({
+    expect(featuresClient.getFeatures()).toStrictEqual({
       huddle: {
         isEnabled: true,
+        config: null,
+        key: "huddle",
+      },
+    });
+  });
+
+  test("return fallback features on failure (record)", async () => {
+    const { newFeaturesClient, httpClient } = featuresClientFactory();
+
+    vi.mocked(httpClient.get).mockRejectedValue(
+      new Error("Failed to fetch features"),
+    );
+    const featuresClient = newFeaturesClient({
+      fallbackFeatures: { huddle: { name: "john" } },
+    });
+
+    await featuresClient.initialize();
+    expect(featuresClient.getFeatures()).toStrictEqual({
+      huddle: {
+        isEnabled: true,
+        config: { name: "john" },
         key: "huddle",
       },
     });

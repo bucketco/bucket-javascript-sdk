@@ -20,15 +20,22 @@ import {
   UnassignedFeedback,
 } from "@bucketco/browser-sdk";
 
+import { Features } from "../dev/nextjs-flag-demo/components/Flags";
 import { version } from "../package.json";
 
 export interface Features {}
 
 const SDK_VERSION = `react-sdk/${version}`;
 
-export type FeatureKey = keyof (keyof Features extends never
-  ? Record<string, boolean>
-  : Features);
+type MaterializedFeatures = keyof Features extends never
+  ? Record<string, any>
+  : Features;
+
+export type FeatureKey = keyof MaterializedFeatures;
+export type FeatureConfig<TKey extends FeatureKey> =
+  MaterializedFeatures[TKey] extends boolean
+    ? never
+    : MaterializedFeatures[TKey];
 
 type ProviderContextType = {
   client?: BucketClient;
@@ -48,7 +55,7 @@ const ProviderContext = createContext<ProviderContextType>({
 export type BucketProps = BucketContext & {
   publishableKey: string;
   featureOptions?: Omit<FeaturesOptions, "fallbackFeatures"> & {
-    fallbackFeatures?: FeatureKey[];
+    fallbackFeatures?: FeatureKey[] | Record<FeatureKey, any>;
   };
   children?: ReactNode;
   loadingComponent?: ReactNode;
@@ -168,14 +175,14 @@ export function BucketProvider({
  *
  * ```ts
  * function HuddleButton() {
- *   const {isEnabled, track} = useFeature("huddle");
+ *   const {isEnabled, config, track} = useFeature("huddle");
  *   if (isEnabled) {
- *    return <button onClick={() => track()}>Start Huddle</button>;
+ *    return <button onClick={() => track()}>{config?.title ?? "Start Huddle"}</button>;
  *   }
  * }
  * ```
  */
-export function useFeature(key: FeatureKey) {
+export function useFeature<TKey extends FeatureKey>(key: TKey) {
   const {
     features: { features, isLoading },
     client,
@@ -220,7 +227,7 @@ export function useFeature(key: FeatureKey) {
     },
     get config() {
       sendCheckEvent();
-      return feature?.config?.payload;
+      return feature?.config?.payload as FeatureConfig<TKey>;
     },
   };
 }

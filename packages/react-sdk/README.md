@@ -29,6 +29,10 @@ declare module "@bucketco/react-sdk" {
   interface Features {
     huddle: boolean;
     recordVideo: boolean;
+    questionnaire?: {
+      showAll: boolean,
+      time: 600000,
+    }
   }
 }
 ```
@@ -92,7 +96,7 @@ Returns the state of a given features for the current context.
 import { useFeature } from "@bucketco/react-sdk";
 
 function StartHuddleButton() {
-  const { isLoading, isEnabled, track, requestFeedback } = useFeature("huddle");
+  const { isLoading, isEnabled, config, track, requestFeedback } = useFeature("huddle");
 
   if (isLoading) {
     return <Loading />;
@@ -108,7 +112,7 @@ function StartHuddleButton() {
       <button
         onClick={(e) =>
           requestFeedback({
-            title: "How do you like Huddles?",
+            title: config?.question ?? "How do you like Huddles?",
             position: {
               type: "POPOVER",
               anchor: e.currentTarget as HTMLElement,
@@ -186,7 +190,7 @@ const sendFeedback = useSendFeedback();
 sendFeedback({
   featureId: "bucket-feature-id",
   score: 5,
-  comment: "Best thing I"ve ever tried!",
+  comment: "Best thing I've ever tried!",
 });
 ```
 

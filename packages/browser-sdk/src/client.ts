@@ -102,16 +102,16 @@ export interface Feature {
 }
 
 export class BucketClient {
-  private publishableKey: string;
-  private context: BucketContext;
+  private readonly publishableKey: string;
+  private readonly context: BucketContext;
   private config: Config;
   private requestFeedbackOptions: Partial<RequestFeedbackOptions>;
-  private logger: Logger;
-  private httpClient: HttpClient;
+  private readonly logger: Logger;
+  private readonly httpClient: HttpClient;
 
-  private autoFeedback: AutoFeedback | undefined;
+  private readonly autoFeedback: AutoFeedback | undefined;
   private autoFeedbackInit: Promise<void> | undefined;
-  private featuresClient: FeaturesClient;
+  private readonly featuresClient: FeaturesClient;
 
   constructor(opts: InitOptions) {
     this.publishableKey = opts.publishableKey;

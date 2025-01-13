@@ -36,9 +36,10 @@ const client = OpenFeature.getClient();
 
 // use client
 const boolValue = client.getBooleanValue("huddles", false);
-```
 
-Bucket only supports boolean values.
+// use more complex, config-enabled functionality.
+const feedbackConfig = client.getObjectValue("ask-feedback", { question: "How are you enjoying this feature?" });
+```
 
 Initializing the Bucket Browser Provider will
 also initialize [automatic feedback surveys](https://github.com/bucketco/bucket-javascript-sdk/tree/main/packages/browser-sdk#qualitative-feedback).

@@ -27,19 +27,24 @@ const bucketClient = new BucketClient({ publishableKey, user, company });
 
 await bucketClient.initialize();
 
-const { isEnabled, track, requestFeedback } = bucketClient.getFeature("huddle");
+const { isEnabled, config, track, requestFeedback } = bucketClient.getFeature("huddle");
 
 if (isEnabled) {
-  // show feature. When retrieving `isEnabled` the client automatically
+  // Show feature. When retrieving `isEnabled` the client automatically
   // sends a "check" event for the "huddle" feature which is shown in the
   // Bucket UI.
 
   // On usage, call `track` to let Bucket know that a user interacted with the feature
   track();
 
+  // The `config` is a user-supplied value in Bucket that can be dynamically evaluated
+  // with respect to the current context. Here, it is assumed that one could either get
+  // a config value that maches the context or not.
+  const question = config?.question ?? "Tell us what you think of Huddles"
+  
   // Use `requestFeedback` to create "Send feedback" buttons easily for specific
   // features. This is not related to `track` and you can call them individually.
-  requestFeedback({ title: "Tell us what you think of Huddles" });
+  requestFeedback({ title: question });
 }
 
 // `track` just calls `bucketClient.track(<featureKey>)` to send an event using the same feature key
@@ -127,6 +132,7 @@ To retrieve features along with their targeting information, use `getFeature(key
 const huddle = bucketClient.getFeature("huddle");
 // {
 //   isEnabled: true,
+//   config: any,
 //   track: () => Promise<Response>
 //   requestFeedback: (options: RequestFeedbackData) => void
 // }
@@ -140,6 +146,7 @@ const features = bucketClient.getFeatures();
 //   huddle: {
 //     isEnabled: true,
 //     targetingVersion: 42,
+//     config: ...
 //   }
 // }
 ```
@@ -148,7 +155,39 @@ const features = bucketClient.getFeatures();
 by down-stream clients, like the React SDK.
 
 Note that accessing `isEnabled` on the object returned by `getFeatures` does not automatically
-generate a `check` event, contrary to the `isEnabled` property on the object return from `getFeature`.
+generate a `check` event, contrary to the `isEnabled` property on the object returned by `getFeature`.
+
+### Feature toggles
+
+Similar to `isEnabled`, each feature has a `config` property. This configuration is set by the user within Bucket. It is
+similar to the way access is controlled, using matching rules. Each config-bound rule is given a configuration payload
+(a JSON value) that is returned to the SDKs if the requested context matches that specific rule. It is possible to have
+multiple rules with different configuration payloads. Whichever rule matches the context, provides the configuration
+payload.
+
+
+The config is accessible through the same methods as the `isEnabled` property:
+
+```ts
+const features = bucketClient.getFeatures();
+// {
+//   huddle: {
+//     isEnabled: true,
+//     targetingVersion: 42,
+//     config?: {
+//       name: "gpt-3.5",
+//       version: 2,
+//       payload: { maxTokens: 10000, model: "gpt-3.5-beta1" }
+//     }
+//   }
+// }
+```
+The `name` is given by the user in Bucket for each configuration variant, and `version` is maintained by Bucket similar
+to `targetingVersion`. The `payload` is the actual JSON value supplied by the user and serves as context-based
+configuration.
+
+Just as `isEnabled`, accessing `config` on the object returned by `getFeatures` does not automatically
+generate a `check` event, contrary to the `config` property on the object returned by `getFeature`.
 
 ### Tracking feature usage
 
