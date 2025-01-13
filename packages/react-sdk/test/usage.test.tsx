@@ -238,6 +238,7 @@ describe("useFeature", () => {
 
     await waitFor(() => {
       expect(result.current).toStrictEqual({
+        config: undefined,
         isEnabled: false,
         isLoading: false,
         track: expect.any(Function),
