@@ -14,6 +14,11 @@ let featureOverrides = (context: Context): FeatureOverrides => {
   return { "delete-todos": true }; // feature keys checked at compile time
 };
 
+let host = undefined;
+if (process.env.BUCKET_HOST) {
+  host = process.env.BUCKET_HOST;
+}
+
 // Create a new BucketClient instance with the secret key and default features
 // The default features will be used if the user does not have any features set
 // Create a bucketConfig.json file to configure the client or set environment variables

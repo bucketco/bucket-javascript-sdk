@@ -10,12 +10,37 @@ import {
 } from "./featureCache";
 
 export type RawFeature = {
+  /**
+   * Feature key
+   */
   key: string;
+
+  /**
+   * Result of feature flag evaluation
+   */
   isEnabled: boolean;
+
+  /**
+   * Version of targeting rules
+   */
   targetingVersion?: number;
+
+  /**
+   * Optional user-defined configuration.
+   */
   config?: {
+    /**
+     * The name of the matched configuration variant.
+     */
     name: string | null;
+    /**
+     * The version of the matched configuration variant.
+     */
     version: number;
+
+    /**
+     * The user-supplied data.
+     */
     payload: any;
   };
 };
@@ -25,8 +50,23 @@ const FEATURES_UPDATED_EVENT = "features-updated";
 export type RawFeatures = Record<string, RawFeature | undefined>;
 
 export type FeaturesOptions = {
+  /**
+   * Feature keys for which `isEnabled` should fallback to true
+   * if SDK fails to fetch features from Bucket servers. If a record
+   * is supplied instead of array, the values of each key represent the
+   * configuration values and `isEnabled` is assume `true`.
+   */
   fallbackFeatures?: string[] | Record<string, any>;
+
+  /**
+   * Timeout in milliseconds
+   */
   timeoutMs?: number;
+
+  /**
+   * If set to true client will return cached value when its stale
+   * but refetching
+   */
   staleWhileRevalidate?: boolean;
   staleTimeMs?: number;
   expireTimeMs?: number;
@@ -46,7 +86,14 @@ export const DEFAULT_FEATURES_CONFIG: Config = {
 
 // Deep merge two objects.
 export type FeaturesResponse = {
+  /**
+   * `true` if call was successful
+   */
   success: boolean;
+
+  /**
+   * List of enabled features
+   */
   features: RawFeatures;
 };
 
@@ -86,9 +133,23 @@ export function flattenJSON(obj: Record<string, any>): Record<string, any> {
   return result;
 }
 
+/**
+ * Event representing checking the feature flag evaluation result
+ */
 export interface CheckEvent {
+  /**
+   * Feature key
+   */
   key: string;
+
+  /**
+   * Result of feature flag evaluation
+   */
   value: boolean;
+
+  /**
+   * Version of targeting rules
+   */
   version?: number;
 }
 
@@ -102,6 +163,9 @@ export const FEATURES_EXPIRE_MS = 30 * 24 * 60 * 60 * 1000; // expire entirely a
 
 const localStorageCacheKey = `__bucket_features`;
 
+/**
+ * @internal
+ */
 export class FeaturesClient {
   private cache: FeatureCache;
   private features: RawFeatures;

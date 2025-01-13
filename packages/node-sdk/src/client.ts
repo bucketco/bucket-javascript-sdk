@@ -26,6 +26,7 @@ import {
   Cache,
   ClientOptions,
   Context,
+  ContextWithTracking,
   Feature,
   FeatureEvent,
   FeaturesAPIResponse,
@@ -80,17 +81,6 @@ type BulkEvent =
       attributes?: Attributes;
       context?: TrackingMeta;
     };
-
-/**
- * A context with tracking option.
- **/
-interface ContextWithTracking extends Context {
-  /**
-   * Enable tracking for the context.
-   * If set to `false`, tracking will be disabled for the context. Default is `true`.
-   */
-  enableTracking?: boolean;
-}
 
 /**
  * The SDK client.
@@ -249,9 +239,6 @@ export class BucketClient {
    * Returns a new BoundBucketClient with the user/company/otherContext
    * set to be used in subsequent calls.
    * For example, for evaluating feature targeting or tracking events.
-   *
-   * @param enableTracking - Whether to track feature.
-   * @param context - The user/company/otherContext to bind to the client.
    *
    * @returns A new client bound with the arguments given.
    * @throws An error if the user/company is given but their ID is not a string.
@@ -425,8 +412,6 @@ export class BucketClient {
   /**
    * Gets the evaluated feature for the current context which includes the user, company, and custom context.
    *
-   * @param enableTracking - Whether to track feature.
-   * @param context - The context to evaluate the features for.
    * @returns The evaluated features.
    * @remarks
    * Call `initialize` before calling this method to ensure the feature definitions are cached, no features will be returned otherwise.
@@ -1134,7 +1119,6 @@ export class BoundBucketClient {
    * Create a new client bound with the additional context.
    * Note: This performs a shallow merge for user/company/other individually.
    *
-   * @param context User/company/other context to bind to the client object
    * @returns new client bound with the additional context
    */
   public bindClient({

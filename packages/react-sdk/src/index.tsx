@@ -251,8 +251,7 @@ export function useTrack() {
  * Returns a function to open up the feedback form
  * Note: When calling `useRequestFeedback`, user/company must already be set.
  *
- * See https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/tracking-sdk/FEEDBACK.md#bucketrequestfeeback-options
- * for more information
+ * See [link](../../browser-sdk/FEEDBACK.md#bucketclientrequestfeedback-options) for more information
  *
  * ```ts
  * const requestFeedback = useRequestFeedback();
@@ -271,8 +270,7 @@ export function useRequestFeedback() {
  * Returns a function to manually send feedback collected from a user.
  * Note: When calling `useSendFeedback`, user/company must already be set.
  *
- * See https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/tracking-sdk/FEEDBACK.md#using-your-own-ui-to-collect-feedback
- * for more information
+ * See [link](./../../browser-sdk/FEEDBACK.md#using-your-own-ui-to-collect-feedback) for more information
  *
  * ```ts
  * const sendFeedback = useSendFeedback();
@@ -319,7 +317,7 @@ export function useUpdateUser() {
  * ```ts
  * const updateCompany = useUpdateCompany();
  * updateCompany({ plan: "enterprise" }).then(() => console.log("Features updated"));
- *
+ * ```
  */
 export function useUpdateCompany() {
   const { client } = useContext<ProviderContextType>(ProviderContext);
@@ -339,6 +337,7 @@ export function useUpdateCompany() {
  * const updateOtherContext = useUpdateOtherContext();
  * updateOtherContext({ workspaceId: newWorkspaceId })
  *   .then(() => console.log("Features updated"));
+ * ```
  */
 export function useUpdateOtherContext() {
   const { client } = useContext<ProviderContextType>(ProviderContext);

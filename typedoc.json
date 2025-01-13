@@ -1,0 +1,88 @@
+{
+  "$schema": "https://typedoc-plugin-markdown.org/schema.json",
+
+  "plugin": ["typedoc-plugin-markdown", "typedoc-plugin-frontmatter", "typedoc-plugin-mdn-links"],
+
+  "entryPointStrategy": "packages",
+  "entryPoints": [
+    "packages/browser-sdk/",
+    "packages/node-sdk/",
+    "packages/react-sdk/"
+  ],
+  "packageOptions": {
+    "entryPoints": ["src/index.ts"]
+  },
+  "projectDocuments": ["packages/browser-sdk/FEEDBACK.md"],
+  "readme": "none",
+  "useHTMLAnchors": false,
+
+  "outputs": [
+    {
+      "name": "markdown",
+      "path": "./dist/docs",
+    }
+  ],
+  "outputFileStrategy": "modules",
+  "membersWithOwnFile": [],
+
+  "navigation": {
+    "includeCategories": false,
+    "includeGroups": false,
+    "includeFolders": false,
+    "excludeReferences": true
+  },
+  
+  "disableSources": true,
+  "categorizeByGroup": false,
+  "groupReferencesByType": true,
+  "commentStyle": "block",
+  "useCodeBlocks": true,
+  "expandObjects": true,
+  "expandParameters": true,
+  "typeDeclarationVisibility": "verbose",
+  
+  "indexFormat": "htmlTable",
+  "parametersFormat": "htmlTable",
+  "interfacePropertiesFormat": "htmlTable",
+  "classPropertiesFormat": "htmlTable",
+  "enumMembersFormat": "htmlTable",
+  "propertiesFormat": "htmlTable",
+  "propertyMembersFormat": "htmlTable",
+  "typeDeclarationFormat": "htmlTable",
+
+  "hideGroupHeadings": false,
+  "hideBreadcrumbs": true,
+  "hidePageTitle": false,
+  "hidePageHeader": true,
+  
+  "tableColumnSettings": {
+    "hideDefaults": false,
+    "hideInherited": true,
+    "hideModifiers": false,
+    "hideOverrides": false,
+    "hideSources": true,
+    "hideValues": false,
+    "leftAlignHeaders": false
+  },
+
+  "frontmatterGlobals": {
+    "layout": {
+      "visible": true,
+    },
+    "title": {
+      "visible": true,
+    },
+    "description": {
+      "visible": false,
+    },
+    "tableOfContents": {
+      "visible": true,
+    },
+    "outline": {
+      "visible": true,
+    },
+    "pagination": {
+      "visible": true,
+    }
+  }
+}
