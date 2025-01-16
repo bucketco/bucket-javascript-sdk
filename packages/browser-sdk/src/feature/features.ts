@@ -9,7 +9,7 @@ import {
   parseAPIFeaturesResponse,
 } from "./featureCache";
 
-export type RawFeature = {
+export type FetchedFeature = {
   /**
    * Feature key
    */
@@ -28,7 +28,14 @@ export type RawFeature = {
 
 const FEATURES_UPDATED_EVENT = "features-updated";
 
-export type RawFeatures = Record<string, RawFeature | undefined>;
+export type FetchedFeatures = Record<string, FetchedFeature | undefined>;
+export type RawFeature = FetchedFeature & {
+  /**
+   * If not null, the result is being overridden locally
+   */
+  isEnabledOverride: boolean | null;
+};
+export type RawFeatures = Record<string, RawFeature>;
 
 export type FeaturesOptions = {
   /**
@@ -73,7 +80,7 @@ export type FeaturesResponse = {
   /**
    * List of enabled features
    */
-  features: RawFeatures;
+  features: FetchedFeatures;
 };
 
 export function validateFeaturesResponse(response: any) {
@@ -138,14 +145,38 @@ type context = {
 
 export const FEATURES_EXPIRE_MS = 30 * 24 * 60 * 60 * 1000; // expire entirely after 30 days
 
-const localStorageCacheKey = `__bucket_features`;
+const localStorageFetchedFeaturesKey = `__bucket_fetched_features`;
+const localStorageOverridesKey = `__bucket_overrides`;
+
+function setOverridesCache(overrides: Record<string, boolean>) {
+  localStorage.setItem(localStorageOverridesKey, JSON.stringify(overrides));
+}
+
+function getOverridesCache(): Record<string, boolean> {
+  try {
+    const cachedOverrides = JSON.parse(
+      localStorage.getItem(localStorageOverridesKey) || "{}",
+    );
+
+    if (!isObject(cachedOverrides)) {
+      return {};
+    }
+    return cachedOverrides;
+  } catch (e) {
+    return {};
+  }
+}
 
 /**
  * @internal
  */
 export class FeaturesClient {
   private cache: FeatureCache;
-  private features: RawFeatures;
+  private fetchedFeatures: FetchedFeatures;
+  private featureOverrides: Record<string, boolean>;
+
+  private features: RawFeatures = {};
+
   private config: Config;
   private rateLimiter: RateLimiter;
   private readonly logger: Logger;
@@ -162,14 +193,15 @@ export class FeaturesClient {
       rateLimiter?: RateLimiter;
     },
   ) {
-    this.features = {};
+    this.fetchedFeatures = {};
     this.logger = loggerWithPrefix(logger, "[Features]");
     this.cache = options?.cache
       ? options.cache
       : new FeatureCache({
           storage: {
-            get: () => localStorage.getItem(localStorageCacheKey),
-            set: (value) => localStorage.setItem(localStorageCacheKey, value),
+            get: () => localStorage.getItem(localStorageFetchedFeaturesKey),
+            set: (value) =>
+              localStorage.setItem(localStorageFetchedFeaturesKey, value),
           },
           staleTimeMs: options?.staleTimeMs ?? 0,
           expireTimeMs: options?.expireTimeMs ?? FEATURES_EXPIRE_MS,
@@ -178,11 +210,12 @@ export class FeaturesClient {
     this.rateLimiter =
       options?.rateLimiter ??
       new RateLimiter(FEATURE_EVENTS_PER_MIN, this.logger);
+    this.featureOverrides = getOverridesCache();
   }
 
   async initialize() {
     const features = (await this.maybeFetchFeatures()) || {};
-    this.setFeatures(features);
+    this.setFetchedFeatures(features);
   }
 
   async setContext(context: context) {
@@ -222,7 +255,7 @@ export class FeaturesClient {
     return this.features;
   }
 
-  public async fetchFeatures(): Promise<RawFeatures | undefined> {
+  public async fetchFeatures(): Promise<FetchedFeatures | undefined> {
     const params = this.fetchParams();
     try {
       const res = await this.httpClient.get({
@@ -291,9 +324,39 @@ export class FeaturesClient {
     return checkEvent.value;
   }
 
-  private setFeatures(features: RawFeatures) {
-    this.features = features;
+  private triggerFeaturesChanged() {
+    const mergedFeatures: RawFeatures = {};
+
+    // merge fetched features with overrides into `this.features`
+    for (const key in this.fetchedFeatures) {
+      const fetchedFeature = this.fetchedFeatures[key];
+      if (!fetchedFeature) continue;
+      const isEnabledOverride = this.featureOverrides[key] ?? null;
+      mergedFeatures[key] = {
+        ...fetchedFeature,
+        isEnabledOverride,
+      };
+    }
+
+    // add any overrides that aren't in the fetched features
+    for (const key in this.featureOverrides) {
+      if (!this.features[key]) {
+        mergedFeatures[key] = {
+          key,
+          isEnabled: false,
+          isEnabledOverride: null,
+        };
+      }
+    }
+
+    this.features = mergedFeatures;
+
     this.eventTarget.dispatchEvent(new Event(FEATURES_UPDATED_EVENT));
+  }
+
+  private setFetchedFeatures(features: FetchedFeatures) {
+    this.fetchedFeatures = features;
+    this.triggerFeaturesChanged();
   }
 
   private fetchParams() {
@@ -308,7 +371,7 @@ export class FeaturesClient {
     return params;
   }
 
-  private async maybeFetchFeatures(): Promise<RawFeatures | undefined> {
+  private async maybeFetchFeatures(): Promise<FetchedFeatures | undefined> {
     const cacheKey = this.fetchParams().toString();
     const cachedItem = this.cache.get(cacheKey);
 
@@ -325,7 +388,7 @@ export class FeaturesClient {
             this.cache.set(cacheKey, {
               features,
             });
-            this.setFeatures(features);
+            this.setFetchedFeatures(features);
           })
           .catch(() => {
             // we don't care about the result, we just want to re-fetch
@@ -358,6 +421,25 @@ export class FeaturesClient {
         isEnabled: true,
       };
       return acc;
-    }, {} as RawFeatures);
+    }, {} as FetchedFeatures);
+  }
+
+  setFeatureOverride(key: string, isEnabled: boolean | null) {
+    if (!(typeof isEnabled === "boolean" || isEnabled === null)) {
+      throw new Error("setFeatureOverride: isEnabled must be boolean or null");
+    }
+
+    if (isEnabled === null) {
+      delete this.featureOverrides[key];
+    } else {
+      this.featureOverrides[key] = isEnabled;
+    }
+    setOverridesCache(this.featureOverrides);
+
+    this.triggerFeaturesChanged();
+  }
+
+  getFeatureOverride(key: string): boolean | null {
+    return this.featureOverrides[key] ?? null;
   }
 }
