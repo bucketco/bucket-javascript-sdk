@@ -53,7 +53,7 @@ bucketClient.requestFeedback({ featureKey: "huddle" });
 
 B. Script tag (client-side directly in html)
 
-See [example/browser.html](example/browser.html) for a working example:
+See [example/browser.html](https://github.com/bucketco/bucket-javascript-sdk/tree/main/packages/browser-sdk/example/browser.html) for a working example:
 
 ```html
 <script src="https://cdn.jsdelivr.net/npm/@bucketco/browser-sdk@2"></script>

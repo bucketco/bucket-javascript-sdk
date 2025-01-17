@@ -28,3 +28,22 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Publish
         run: yarn lerna publish from-package --no-private --yes
+      - name: Build docs
+        run: yarn docs
+      - name: Checkout docs with SSH
+        uses: actions/checkout@v3
+        with:
+          repository: bucketco/docs
+          ssh-key: ${{ secrets.DOCS_DEPLOY_KEY }}
+          path: bucket-docs
+      - name: Copy generated docs to docs repo
+        run: |
+          rm -rf bucket-docs/sdk-docs
+          cp -R dist/docs bucket-docs/sdk-docs
+      - name: Commit and push changes
+        run: |
+          cd bucket-docs
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@bucket.co"
+          git add sdk-docs
+          git commit -m "Update documentation" && git push || echo "No docs changes to commit"

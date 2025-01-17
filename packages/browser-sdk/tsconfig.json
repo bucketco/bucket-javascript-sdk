@@ -6,7 +6,8 @@
     "jsxFactory": "h",
     "jsxFragmentFactory": "Fragment",
     "declarationDir": "./dist/types",
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "declarationMap": true
   },
   "include": ["src", "test", "dev"],
   "typeRoots": ["./node_modules/@types", "./types"]

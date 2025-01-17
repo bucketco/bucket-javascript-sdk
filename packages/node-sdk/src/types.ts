@@ -416,6 +416,17 @@ export type Context = {
   other?: Record<string, any>;
 };
 
+/**
+ * A context with tracking option.
+ **/
+export interface ContextWithTracking extends Context {
+  /**
+   * Enable tracking for the context.
+   * If set to `false`, tracking will be disabled for the context. Default is `true`.
+   */
+  enableTracking?: boolean;
+}
+
 export const LOG_LEVELS = ["DEBUG", "INFO", "WARN", "ERROR"] as const;
 export type LogLevel = (typeof LOG_LEVELS)[number];
 
