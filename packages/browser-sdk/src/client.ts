@@ -19,6 +19,10 @@ import { BucketContext, CompanyContext, UserContext } from "./context";
 import { HttpClient } from "./httpClient";
 import { Logger, loggerWithPrefix, quietConsoleLogger } from "./logger";
 
+// file is generated on install and the updated using the CLI
+// @ts-expect-error - generated file
+import { generatedFeatures } from ".bucket/generated";
+
 const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 const isNode = typeof document === "undefined"; // deno supports "window" but not "document" according to https://remix.run/docs/en/main/guides/gotchas
 
@@ -236,6 +240,8 @@ export class BucketClient {
       sdkVersion: opts?.sdkVersion,
     });
 
+    const features = opts?.features ?? generatedFeatures;
+
     this.featuresClient = new FeaturesClient(
       this.httpClient,
       // API expects `other` and we have `otherContext`.
@@ -245,7 +251,7 @@ export class BucketClient {
         other: this.context.otherContext,
       },
       this.logger,
-      opts?.features,
+      features,
     );
 
     if (

@@ -1,48 +1,63 @@
 import { readJson, writeJson } from "fs-extra/esm";
+import { findUp } from "find-up";
 
-import { CONFIG_FILE } from "./constants.js";
+import { REPO_CONFIG_FILE } from "./constants.js";
+import { Datatype } from "./gen.js";
 
 type Config = {
-  token?: string;
-  appId?: string;
-  envId?: string;
+  features: ConfigFeatureDefs;
+  sdk: "browser" | "react";
 };
 
-let config: Config = {};
+export type ConfigFeatureDef = {
+  key: string;
+  access?: boolean;
+  config?: Datatype;
+};
+
+export type ConfigFeatureDefs = Array<string | ConfigFeatureDef>;
+
+let config: Config = {
+  features: [],
+  sdk: "browser",
+};
 
 /**
  * Instantly return a specified key's value or the entire config object.
  */
 export function getConfig(): Config;
-export function getConfig(key: keyof Config): string | undefined;
 export function getConfig(key?: keyof Config) {
   return key ? config[key] : config;
+}
+
+export async function findRepoConfig() {
+  return await findUp(REPO_CONFIG_FILE);
 }
 
 /**
  * Read the config file and return either a specified key's value or the entire config object.
  */
-export async function readConfigFile(): Promise<Config>;
-export async function readConfigFile(
-  key: keyof Config,
-): Promise<string | undefined>;
-export async function readConfigFile(key?: keyof Config) {
-  try {
-    config = await readJson(CONFIG_FILE);
-    return key ? config[key] : config;
-  } catch (error) {
-    return {};
+export async function readConfigFile() {
+  const location = await findRepoConfig();
+  if (!location) {
+    throw new Error("No bucket.config.js file found.");
   }
+  return await readJson(location);
 }
 
 /**
  * Write a new value to the config file.
  */
-export async function writeConfigFile(
-  key: keyof Config,
-  value: string | undefined,
-) {
-  const config = await readConfigFile();
-  config[key] = value;
-  await writeJson(CONFIG_FILE, config);
+export async function writeConfigFile(config: object, location?: string) {
+  const path = location ? location : await findRepoConfig();
+  if (!path) throw new Error("writeConfigFile: Could not find config file.");
+  await writeJson(path, config, { spaces: 2 });
+}
+
+export async function loadConfig() {
+  config = await readConfigFile();
+}
+
+export async function configFileExists() {
+  return !!(await findRepoConfig());
 }

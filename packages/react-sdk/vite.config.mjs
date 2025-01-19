@@ -24,10 +24,11 @@ export default defineConfig({
       formats: ["es", "umd"],
     },
     rollupOptions: {
-      external: ["react", "react-dom"],
+      external: ["react", "react-dom", ".bucket/generated"],
       output: {
         globals: {
           react: "React",
+          ".bucket/generated": "generated",
         },
       },
     },
