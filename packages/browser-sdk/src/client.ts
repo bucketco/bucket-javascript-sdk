@@ -18,7 +18,6 @@ import { API_BASE_URL, SSE_REALTIME_BASE_URL } from "./config";
 import { BucketContext, CompanyContext, UserContext } from "./context";
 import { HttpClient } from "./httpClient";
 import { Logger, loggerWithPrefix, quietConsoleLogger } from "./logger";
-
 // file is generated on install and the updated using the CLI
 // @ts-expect-error - generated file
 import { generatedFeatures } from ".bucket/generated";
