@@ -198,13 +198,13 @@ export class BucketClient {
   private context: BucketContext;
   private config: Config;
   private requestFeedbackOptions: Partial<RequestFeedbackOptions>;
-  private logger: Logger;
   private httpClient: HttpClient;
 
   private autoFeedback: AutoFeedback | undefined;
   private autoFeedbackInit: Promise<void> | undefined;
   private featuresClient: FeaturesClient;
 
+  public readonly logger: Logger;
   /**
    * Create a new BucketClient instance.
    */
