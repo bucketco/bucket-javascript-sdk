@@ -1,13 +1,7 @@
-/**
- * ID of HTML DIV element which contains the feedback dialog
- */
 export const feedbackContainerId = "bucket-feedback-dialog-container";
+export const toolbarContainerId = "bucket-toolbar-dialog-container";
 
-/**
- * These events will be propagated to the feedback dialog
- *
- * @see [https://developer.mozilla.org/en-US/docs/Web/API/Element#events](https://developer.mozilla.org/en-US/docs/Web/API/Element#events)
- */
+// see https://developer.mozilla.org/en-US/docs/Web/API/Element#events
 export const propagatedEvents = [
   "animationcancel",
   "animationend",

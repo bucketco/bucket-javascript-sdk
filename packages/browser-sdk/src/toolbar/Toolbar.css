@@ -1,0 +1,75 @@
+#toolbarRoot {
+  --brand300: #a39dfc;
+  --black: #1e1f24;
+
+  --bg-color: #1e1f24;
+  --border-color: #292b32;
+  --logo-color: #787c91;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+}
+
+:focus {
+  outline: none;
+}
+
+.reset {
+  color: var(--brand300);
+}
+
+.dialog {
+  color: #ffffff;
+  box-sizing: border-box;
+  background-color: var(--black);
+  border: 1px solid #292b32;
+  box-shadow:
+    0px 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0px 4px 6px -2px rgba(0, 0, 0, 0.05);
+  border-radius: 7px;
+}
+
+#bucketToolbarToggle {
+  width: 32px;
+  height: 32px;
+  position: fixed;
+  z-index: 999999;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+
+  color: var(--logo-color);
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  box-shadow:
+    0px 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0px 4px 6px -2px rgba(0, 0, 0, 0.05);
+  border-radius: 7px;
+
+  /* background: #787c91; */
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.arrow {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background-color: var(--black);
+  box-shadow: #d8d9df -1px -1px 1px 0px;
+  transform: rotate(45deg);
+
+  &.bottom {
+    box-shadow: #d8d9df -1px -1px 1px 0px;
+  }
+  &.top {
+    box-shadow: #d8d9df 1px 1px 1px 0px;
+  }
+  &.left {
+    box-shadow: #d8d9df 1px -1px 1px 0px;
+  }
+  &.right {
+    box-shadow: #d8d9df -1px 1px 1px 0px;
+  }
+}

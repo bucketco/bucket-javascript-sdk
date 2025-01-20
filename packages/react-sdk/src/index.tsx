@@ -17,6 +17,7 @@ import {
   FeedbackOptions,
   RawFeatures,
   RequestFeedbackData,
+  ToolbarOptions,
   UnassignedFeedback,
 } from "@bucketco/browser-sdk";
 
@@ -69,6 +70,10 @@ export type BucketProps = BucketContext & {
   debug?: boolean;
   enableTracking?: boolean;
 
+  featureList: Readonly<string[]>;
+
+  toolbar?: ToolbarOptions;
+
   // for testing
   newBucketClient?: (
     ...args: ConstructorParameters<typeof BucketClient>
@@ -83,6 +88,7 @@ export function BucketProvider({
   publishableKey,
   featureOptions,
   loadingComponent,
+  featureList,
   newBucketClient = (...args) => new BucketClient(...args),
   ...config
 }: BucketProps) {
@@ -127,6 +133,7 @@ export function BucketProvider({
       feedback: config.feedback,
       logger: config.debug ? console : undefined,
       sdkVersion: SDK_VERSION,
+      featureList,
     });
     clientRef.current = client;
 
@@ -146,7 +153,7 @@ export function BucketProvider({
 
   const context: ProviderContextType = {
     features: {
-      features,
+      features: features,
       isLoading: featuresLoading,
     },
     client: clientRef.current,
@@ -196,7 +203,7 @@ export function useFeature(key: FeatureKey) {
   }
 
   const feature = features[key];
-  const enabled = feature?.isEnabled ?? false;
+  const enabled = feature?.isEnabledOverride ?? feature?.isEnabled ?? false;
 
   return {
     isLoading,

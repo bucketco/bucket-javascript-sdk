@@ -3,11 +3,8 @@ import { expect, Locator, Page, test } from "@playwright/test";
 
 import { InitOptions } from "../../src/client";
 import { DEFAULT_TRANSLATIONS } from "../../src/feedback/ui/config/defaultTranslations";
-import {
-  feedbackContainerId,
-  propagatedEvents,
-} from "../../src/feedback/ui/constants";
 import { FeedbackTranslations } from "../../src/feedback/ui/types";
+import { feedbackContainerId, propagatedEvents } from "../../src/ui/constants";
 
 const KEY = randomUUID();
 const API_HOST = `https://front.bucket.co`;

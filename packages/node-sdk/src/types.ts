@@ -123,7 +123,9 @@ export type TypedFeatures = keyof Features extends never
 /**
  * Describes the feature overrides.
  */
-export type FeatureOverrides = Partial<Record<keyof TypedFeatures, boolean>>;
+export type FeatureOverrides = Partial<
+  Record<keyof TypedFeatures, boolean | null>
+>;
 export type FeatureOverridesFn = (context: Context) => FeatureOverrides;
 
 /**

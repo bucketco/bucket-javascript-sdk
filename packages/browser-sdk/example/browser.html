@@ -13,29 +13,50 @@
       const publishableKey = urlParams.get("publishableKey");
       const featureKey = urlParams.get("featureKey") ?? "huddles";
     </script>
+    <style>
+      #start-huddle {
+        border: 1px solid black;
+        padding: 10px;
+      }
+    </style>
     <div id="start-huddle" style="display: none">
+      Start huddle!<br />
       <button onClick="bucket.track(featureKey)">Click me</button>
-      <button onClick="bucket.requestFeedback({featureKey})">
+      <button
+        onClick="bucket.requestFeedback({featureKey, position: {type: 'POPOVER', anchor: event.currentTarget}})"
+      >
         Give feedback!
       </button>
     </div>
 
     <script src="../dist/bucket-browser-sdk.umd.js"></script>
     <script>
+      const featuresList = ["huddles"];
+
       const bucket = new BucketBrowserSDK.BucketClient({
         publishableKey,
         user: { id: "42" },
         company: { id: "1" },
+        toolbar: {
+          show: true,
+          position: "bottom-right",
+        },
+        featureList,
       });
 
       bucket.initialize().then(() => {
         console.log("Bucket initialized");
         document.getElementById("loading").style.display = "none";
-        const { isEnabled, track, requestFeedback } =
-          bucket.getFeature("huddles");
+      });
+
+      bucket.onFeaturesUpdated(() => {
+        const { isEnabled } = bucket.getFeature("huddles");
         if (isEnabled) {
           // show the start-huddle button
           document.getElementById("start-huddle").style.display = "block";
+        } else {
+          // hide the start-huddle button
+          document.getElementById("start-huddle").style.display = "none";
         }
       });
     </script>

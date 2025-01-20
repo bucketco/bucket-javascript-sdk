@@ -1,9 +1,9 @@
 import { HttpClient } from "../httpClient";
 import { Logger } from "../logger";
 import { AblySSEChannel, openAblySSEChannel } from "../sse";
+import { Position } from "../ui/types";
 
 import {
-  FeedbackPosition,
   FeedbackSubmission,
   FeedbackTranslations,
   OpenFeedbackFormOptions,
@@ -20,24 +20,13 @@ import { DEFAULT_POSITION } from "./ui";
 export type Key = string;
 
 export type FeedbackOptions = {
-  /**
-   * Enables automatic feedback prompting if it's set up in Bucket
-   */
   enableAutoFeedback?: boolean;
-
-  /**
-   *
-   */
   autoFeedbackHandler?: FeedbackPromptHandler;
-
-  /**
-   * With these options you can override the look of the feedback prompt
-   */
   ui?: {
     /**
      * Control the placement and behavior of the feedback form.
      */
-    position?: FeedbackPosition;
+    position?: Position;
 
     /**
      * Add your own custom translations for the feedback form.
@@ -46,14 +35,8 @@ export type FeedbackOptions = {
     translations?: Partial<FeedbackTranslations>;
   };
 
-  /**
-   * @deprecated Use `enableAutoFeedback` instead
-   */
+  // Deprecated
   enableLiveSatisfaction?: boolean;
-
-  /**
-   * @deprecated Use `autoFeedbackHandler` instead
-   */
   liveSatisfactionHandler?: FeedbackPromptHandler;
 };
 
@@ -69,7 +52,7 @@ export function handleDeprecatedFeedbackOptions(
   };
 }
 
-export type FeatureIdentifier =
+type FeatureIdentifier =
   | {
       /**
        * Bucket feature ID.
@@ -100,6 +83,9 @@ export type RequestFeedbackData = Omit<
    *
    * This can be used for side effects, such as storing a
    * copy of the feedback in your own application or CRM.
+   *
+   * @param {Object} data
+   * @param data.
    */
   onAfterSubmit?: (data: FeedbackSubmission) => void;
 } & FeatureIdentifier;
@@ -171,29 +157,10 @@ export type Feedback = UnassignedFeedback & {
 };
 
 export type FeedbackPrompt = {
-  /**
-   * Specific question user was asked
-   */
   question: string;
-
-  /**
-   * Feedback prompt should appear only after this time
-   */
   showAfter: Date;
-
-  /**
-   * Feedback prompt will not be shown after this time
-   */
   showBefore: Date;
-
-  /**
-   * Id of the prompt
-   */
   promptId: string;
-
-  /**
-   * Feature ID from Bucket
-   */
   featureId: string;
 };
 
@@ -294,7 +261,7 @@ export class AutoFeedback {
     private httpClient: HttpClient,
     private feedbackPromptHandler: FeedbackPromptHandler = createDefaultFeedbackPromptHandler(),
     private userId: string,
-    private position: FeedbackPosition = DEFAULT_POSITION,
+    private position: Position = DEFAULT_POSITION,
     private feedbackTranslations: Partial<FeedbackTranslations> = {},
   ) {}
 

@@ -46,17 +46,24 @@ export type FeaturesOptions = {
   fallbackFeatures?: string[];
 
   /**
-   * Timeout in milliseconds
+   * Timeout in milliseconds when fetching features
    */
   timeoutMs?: number;
 
   /**
-   * If set to true client will return cached value when its stale
-   * but refetching
+   * If set to true stale features will be returned while refetching features
    */
   staleWhileRevalidate?: boolean;
-  staleTimeMs?: number;
+
+  /**
+   * If set, features will be cached between page loads for this duration
+   */
   expireTimeMs?: number;
+
+  /**
+   * Stale features will be returned if staleWhileRevalidate is true if no new features can be fetched
+   */
+  staleTimeMs?: number;
 };
 
 type Config = {
@@ -149,25 +156,22 @@ export const FEATURES_EXPIRE_MS = 30 * 24 * 60 * 60 * 1000; // expire entirely a
 const localStorageFetchedFeaturesKey = `__bucket_fetched_features`;
 const localStorageOverridesKey = `__bucket_overrides`;
 
-type OverridesFeatures = Record<string, boolean>;
+type OverridesFeatures = Record<string, boolean | null>;
 
 function setOverridesCache(overrides: OverridesFeatures) {
   localStorage.setItem(localStorageOverridesKey, JSON.stringify(overrides));
 }
 
 function getOverridesCache(): OverridesFeatures {
-  try {
-    const cachedOverrides = JSON.parse(
-      localStorage.getItem(localStorageOverridesKey) || "{}",
-    );
+  const cachedOverrides = JSON.parse(
+    localStorage.getItem(localStorageOverridesKey) || "{}",
+  );
 
-    if (!isObject(cachedOverrides)) {
-      return {};
-    }
-    return cachedOverrides;
-  } catch (e) {
+  if (!isObject(cachedOverrides)) {
     return {};
   }
+
+  return cachedOverrides;
 }
 
 /**
@@ -176,7 +180,7 @@ function getOverridesCache(): OverridesFeatures {
 export class FeaturesClient {
   private cache: FeatureCache;
   private fetchedFeatures: FetchedFeatures;
-  private featureOverrides: OverridesFeatures;
+  private featureOverrides: OverridesFeatures = {};
 
   private features: RawFeatures = {};
 
@@ -190,6 +194,7 @@ export class FeaturesClient {
   constructor(
     private httpClient: HttpClient,
     private context: context,
+    private featureDefinitions: Readonly<string[]>,
     logger: Logger,
     options?: FeaturesOptions & {
       cache?: FeatureCache;
@@ -213,7 +218,18 @@ export class FeaturesClient {
     this.rateLimiter =
       options?.rateLimiter ??
       new RateLimiter(FEATURE_EVENTS_PER_MIN, this.logger);
-    this.featureOverrides = getOverridesCache();
+
+    try {
+      const storedFeatureOverrides = getOverridesCache();
+      for (const key in storedFeatureOverrides) {
+        if (this.featureDefinitions.includes(key)) {
+          this.featureOverrides[key] = storedFeatureOverrides[key];
+        }
+      }
+    } catch (e) {
+      this.logger.warn("error getting feature overrides from cache", e);
+      this.featureOverrides = {};
+    }
   }
 
   async initialize() {
@@ -341,13 +357,13 @@ export class FeaturesClient {
       };
     }
 
-    // add any overrides that aren't in the fetched features
-    for (const key in this.featureOverrides) {
-      if (!this.features[key]) {
+    // add any features that aren't in the fetched features
+    for (const key of this.featureDefinitions) {
+      if (!mergedFeatures[key]) {
         mergedFeatures[key] = {
           key,
           isEnabled: false,
-          isEnabledOverride: this.featureOverrides[key],
+          isEnabledOverride: this.featureOverrides[key] ?? null,
         };
       }
     }

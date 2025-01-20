@@ -45,6 +45,7 @@ function featuresClientFactory() {
           other: { eventId: "big-conference1" },
           ...context,
         },
+        [],
         testLogger,
         {
           cache,

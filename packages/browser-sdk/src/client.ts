@@ -14,10 +14,12 @@ import {
   RequestFeedbackOptions,
 } from "./feedback/feedback";
 import * as feedbackLib from "./feedback/ui";
+import { ToolbarPosition } from "./toolbar/Toolbar";
 import { API_BASE_URL, SSE_REALTIME_BASE_URL } from "./config";
 import { BucketContext, CompanyContext, UserContext } from "./context";
 import { HttpClient } from "./httpClient";
 import { Logger, loggerWithPrefix, quietConsoleLogger } from "./logger";
+import { showToolbarToggle } from "./toolbar";
 
 const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 const isNode = typeof document === "undefined"; // deno supports "window" but not "document" according to https://remix.run/docs/en/main/guides/gotchas
@@ -95,6 +97,15 @@ interface Config {
   enableTracking: boolean;
 }
 
+export type ToolbarOptions =
+  | boolean
+  | {
+      show?: boolean;
+      position?: ToolbarPosition;
+    };
+
+export type FeatureDefinitions = Readonly<Array<string>>;
+
 /**
  * BucketClient initialization options.
  */
@@ -166,6 +177,9 @@ export interface InitOptions {
    */
   sdkVersion?: string;
   enableTracking?: boolean;
+
+  toolbar?: ToolbarOptions;
+  featureList?: FeatureDefinitions;
 }
 
 const defaultConfig: Config = {
@@ -189,6 +203,15 @@ export interface Feature {
     options: Omit<RequestFeedbackData, "featureKey" | "featureId">,
   ) => void;
 }
+
+function shouldShowToolbar(opts?: ToolbarOptions) {
+  return (
+    opts === true ||
+    (typeof opts === "object" && opts.show === true) ||
+    window?.location?.hostname === "localhost"
+  );
+}
+
 /**
  * BucketClient lets you interact with the Bucket API.
  *
@@ -244,6 +267,7 @@ export class BucketClient {
         company: this.context.company,
         other: this.context.otherContext,
       },
+      opts?.featureList || [],
       this.logger,
       opts?.features,
     );
@@ -268,6 +292,15 @@ export class BucketClient {
           feedbackOpts?.ui?.translations,
         );
       }
+    }
+
+    if (shouldShowToolbar(opts.toolbar)) {
+      this.logger.info("opening toolbar toggler");
+      showToolbarToggle({
+        bucketClient: this as unknown as BucketClient,
+        position:
+          typeof opts.toolbar === "object" ? opts.toolbar.position : undefined,
+      });
     }
   }
 
