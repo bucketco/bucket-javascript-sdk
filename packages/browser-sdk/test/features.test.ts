@@ -297,4 +297,25 @@ describe("FeaturesClient unit tests", () => {
     expect(client.getFeatures().featureA.isEnabled).toBe(true);
     expect(client.getFeatures().featureA.isEnabledOverride).toBe(false);
   });
+
+  test("handled overrides for features not returned by API", async () => {
+    // change the response so we can validate that we'll serve the stale cache
+    const { newFeaturesClient } = featuresClientFactory();
+    // localStorage.clear();
+    const client = newFeaturesClient();
+    await client.initialize();
+
+    let updated = false;
+    client.onUpdated(() => {
+      updated = true;
+    });
+
+    expect(client.getFeatures().featureB).toBeUndefined();
+
+    client.setFeatureOverride("featureB", true);
+
+    expect(updated).toBe(true);
+    expect(client.getFeatures().featureB.isEnabled).toBe(false);
+    expect(client.getFeatures().featureB.isEnabledOverride).toBe(true);
+  });
 });

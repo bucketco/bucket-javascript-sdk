@@ -346,7 +346,7 @@ export class FeaturesClient {
         mergedFeatures[key] = {
           key,
           isEnabled: false,
-          isEnabledOverride: null,
+          isEnabledOverride: this.featureOverrides[key],
         };
       }
     }
