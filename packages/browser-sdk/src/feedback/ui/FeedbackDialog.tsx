@@ -36,13 +36,6 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
   onSubmit,
   onScoreSubmit,
 }) => {
-  // const close = useCallback(() => {
-  //   const dialog = refs.floating.current as HTMLDialogElement | null;
-  //   dialog?.close();
-  //   autoClose.stop();
-  //   onClose?.();
-  // }, [onClose]);
-
   const [feedbackId, setFeedbackId] = useState<string | undefined>(undefined);
   const [scoreState, setScoreState] = useState<
     "idle" | "submitting" | "submitted"

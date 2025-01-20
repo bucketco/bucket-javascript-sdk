@@ -174,10 +174,29 @@ export type Feedback = UnassignedFeedback & {
 };
 
 export type FeedbackPrompt = {
+  /**
+   * Specific question user was asked
+   */
   question: string;
+
+  /**
+   * Feedback prompt should appear only after this time
+   */
   showAfter: Date;
+
+  /**
+   * Feedback prompt will not be shown after this time
+   */
   showBefore: Date;
+
+  /**
+   * Id of the prompt
+   */
   promptId: string;
+
+  /**
+   * Feature ID from Bucket
+   */
   featureId: string;
 };
 

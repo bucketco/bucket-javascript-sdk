@@ -47,8 +47,14 @@ export interface OpenFeedbackFormOptions {
   onClose?: () => void;
   onDismiss?: () => void;
 }
-
+/**
+ * You can use this to override text values in the feedback form
+ * with desired language translation
+ */
 export type FeedbackTranslations = {
+  /**
+   *
+   */
   DefaultQuestionLabel: string;
   QuestionPlaceholder: string;
   ScoreStatusDescription: string;

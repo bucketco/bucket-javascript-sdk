@@ -1,5 +1,7 @@
 import { FeedbackTranslations } from "../types";
-
+/**
+ * {@includeCode ./defaultTranslations.tsx}
+ */
 export const DEFAULT_TRANSLATIONS: FeedbackTranslations = {
   DefaultQuestionLabel: "How satisfied are you with this feature?",
   QuestionPlaceholder: "Write a comment",
