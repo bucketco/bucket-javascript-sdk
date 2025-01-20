@@ -29,6 +29,7 @@ export type FetchedFeature = {
 const FEATURES_UPDATED_EVENT = "features-updated";
 
 export type FetchedFeatures = Record<string, FetchedFeature | undefined>;
+// todo: on next major, come up with a better name for this type
 export type RawFeature = FetchedFeature & {
   /**
    * If not null, the result is being overridden locally
