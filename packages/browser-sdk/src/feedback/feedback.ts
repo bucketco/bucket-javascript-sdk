@@ -20,8 +20,19 @@ import { DEFAULT_POSITION } from "./ui";
 export type Key = string;
 
 export type FeedbackOptions = {
+  /**
+   * Enables automatic feedback prompting if it's set up in Bucket
+   */
   enableAutoFeedback?: boolean;
+
+  /**
+   *
+   */
   autoFeedbackHandler?: FeedbackPromptHandler;
+
+  /**
+   * With these options you can override the look of the feedback prompt
+   */
   ui?: {
     /**
      * Control the placement and behavior of the feedback form.
@@ -35,8 +46,14 @@ export type FeedbackOptions = {
     translations?: Partial<FeedbackTranslations>;
   };
 
-  // Deprecated
+  /**
+   * @deprecated Use `enableAutoFeedback` instead
+   */
   enableLiveSatisfaction?: boolean;
+
+  /**
+   * @deprecated Use `autoFeedbackHandler` instead
+   */
   liveSatisfactionHandler?: FeedbackPromptHandler;
 };
 
