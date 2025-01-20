@@ -29,7 +29,7 @@ export type FetchedFeature = {
 const FEATURES_UPDATED_EVENT = "features-updated";
 
 export type FetchedFeatures = Record<string, FetchedFeature | undefined>;
-// todo: on next major, come up with a better name for this type
+// todo: on next major, come up with a better name for this type. Maybe `LocalFeature`.
 export type RawFeature = FetchedFeature & {
   /**
    * If not null, the result is being overridden locally
@@ -46,7 +46,7 @@ export type FeaturesOptions = {
   fallbackFeatures?: string[];
 
   /**
-   * Timeout in miliseconds
+   * Timeout in milliseconds
    */
   timeoutMs?: number;
 
