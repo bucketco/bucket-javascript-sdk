@@ -148,11 +148,13 @@ export const FEATURES_EXPIRE_MS = 30 * 24 * 60 * 60 * 1000; // expire entirely a
 const localStorageFetchedFeaturesKey = `__bucket_fetched_features`;
 const localStorageOverridesKey = `__bucket_overrides`;
 
-function setOverridesCache(overrides: Record<string, boolean>) {
+type OverridesFeatures = Record<string, boolean>;
+
+function setOverridesCache(overrides: OverridesFeatures) {
   localStorage.setItem(localStorageOverridesKey, JSON.stringify(overrides));
 }
 
-function getOverridesCache(): Record<string, boolean> {
+function getOverridesCache(): OverridesFeatures {
   try {
     const cachedOverrides = JSON.parse(
       localStorage.getItem(localStorageOverridesKey) || "{}",
@@ -173,7 +175,7 @@ function getOverridesCache(): Record<string, boolean> {
 export class FeaturesClient {
   private cache: FeatureCache;
   private fetchedFeatures: FetchedFeatures;
-  private featureOverrides: Record<string, boolean>;
+  private featureOverrides: OverridesFeatures;
 
   private features: RawFeatures = {};
 
