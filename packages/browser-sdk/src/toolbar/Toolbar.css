@@ -35,7 +35,7 @@
   padding: 3px;
 }
 
-#bucketToolbarToggle {
+.toolbar-toggle {
   width: 32px;
   height: 32px;
   position: fixed;
@@ -57,6 +57,22 @@
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.toolbar-toggle .override-indicator {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 10px;
+  height: 10px;
+  background-color: var(--brand400);
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.1s ease-in-out;
+
+  &.show {
+    opacity: 1;
+  }
 }
 
 .arrow {

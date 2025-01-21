@@ -1,5 +1,11 @@
 import { h } from "preact";
-import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "preact/hooks";
 
 import { BucketClient } from "../client";
 import { toolbarContainerId } from "../ui/constants";
@@ -50,6 +56,10 @@ export default function Toolbar({
     );
   }
 
+  const hasAnyOverrides = useMemo(() => {
+    return features.some((f) => f.localOverride !== null);
+  }, [features]);
+
   useEffect(() => {
     updateFeatures();
     return bucketClient.onFeaturesUpdated(updateFeatures);
@@ -61,6 +71,7 @@ export default function Toolbar({
       <ToolbarToggle
         innerRef={toggleToolbarRef}
         position={position}
+        hasAnyOverrides={hasAnyOverrides}
         onClick={toggleToolbar}
       />
       <Dialog
@@ -90,20 +101,28 @@ function ToolbarToggle({
   position,
   onClick,
   innerRef,
+  hasAnyOverrides,
 }: {
   position: ToolbarPosition;
   onClick: () => void;
   innerRef: React.RefObject<HTMLDivElement>;
+  hasAnyOverrides: boolean;
   children?: preact.VNode;
 }) {
   const offsets = parseUnanchoredPosition(position);
+
+  const classes = [
+    "override-indicator",
+    hasAnyOverrides ? "show" : undefined,
+  ].join(" ");
   return (
     <div
       ref={innerRef}
-      id="bucketToolbarToggle"
+      class="toolbar-toggle"
       onClick={onClick}
       style={{ cursor: "pointer", ...offsets }}
     >
+      <div class={classes}></div>
       <Logo height="13px" width="13px" />
     </div>
   );
@@ -159,7 +178,10 @@ function FeatureTable({
             <td>
               <Switch
                 onColor="var(--brand400)"
-                isOn={feature!.isEnabled || feature?.localOverride === true}
+                isOn={
+                  (feature?.localOverride === null && feature!.isEnabled) ||
+                  feature?.localOverride === true
+                }
                 onChange={(e) =>
                   setEnabledOverride(feature!.key, e.currentTarget.checked)
                 }
