@@ -9,6 +9,7 @@ import {
   shift,
   useFloating,
 } from "./packages/floating-ui-preact-dom";
+import styles from "./Dialog.css?inline";
 import { Position } from "./types";
 import { parseUnanchoredPosition } from "./utils";
 
@@ -165,15 +166,18 @@ export const Dialog: FunctionComponent<OpenDialogOptions> = ({
   }
 
   useEffect(() => {
-    if (open) {
-      if (dialogRef.current && !dialogRef.current.hasAttribute("open")) {
-        dialogRef.current[position.type === "MODAL" ? "showModal" : "show"]();
-      }
+    if (!dialogRef.current) return;
+    if (open && !dialogRef.current.hasAttribute("open")) {
+      dialogRef.current[position.type === "MODAL" ? "showModal" : "show"]();
+    }
+    if (!open && dialogRef.current.hasAttribute("open")) {
+      dialogRef.current[position.type === "MODAL" ? "close" : "close"]();
     }
   }, [dialogRef, open, position.type]);
 
   return (
     <>
+      <style dangerouslySetInnerHTML={{ __html: styles }}></style>
       <dialog
         ref={setDiagRef}
         class={[

@@ -142,7 +142,7 @@ function FeatureTable({
   setEnabledOverride: (key: string, value: boolean | null) => void;
 }) {
   return (
-    <table>
+    <table class="table">
       <tbody>
         {Object.values(features).map((feature) => (
           <tr key={feature!.key}>
@@ -158,7 +158,7 @@ function FeatureTable({
 
             <td>
               <Switch
-                onColor="var(--brand300)"
+                onColor="var(--brand400)"
                 isOn={feature!.isEnabled || feature?.localOverride === true}
                 onChange={(e) =>
                   setEnabledOverride(feature!.key, e.currentTarget.checked)

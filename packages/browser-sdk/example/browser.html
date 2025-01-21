@@ -31,7 +31,7 @@
 
     <script src="../dist/bucket-browser-sdk.umd.js"></script>
     <script>
-      const featuresList = ["huddles"];
+      const featureList = ["huddles"];
 
       const bucket = new BucketBrowserSDK.BucketClient({
         publishableKey,
@@ -39,7 +39,9 @@
         company: { id: "1" },
         toolbar: {
           show: true,
-          position: "bottom-right",
+          // position: {
+          //   placement: "bottom-right",
+          // },
         },
         featureList,
       });
