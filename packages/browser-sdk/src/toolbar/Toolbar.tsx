@@ -11,12 +11,17 @@ import { BucketClient } from "../client";
 import { toolbarContainerId } from "../ui/constants";
 import { Dialog } from "../ui/Dialog";
 import { Logo } from "../ui/icons/Logo";
-import { Switch } from "../ui/Switch";
 import { Offset, Placement } from "../ui/types";
 import { parseUnanchoredPosition } from "../ui/utils";
 
-import styles from "./Toolbar.css?inline";
+import { FeatureSearch, FeaturesTable } from "./Features";
+import styles from "./index.css?inline";
 
+export type FeatureItem = {
+  key: string;
+  localOverride: boolean | null;
+  isEnabled: boolean;
+};
 export interface ToolbarPosition {
   placement: Placement;
   offset?: Offset;
@@ -52,11 +57,14 @@ export default function Toolbar({
     setFeatures(
       Object.values(rawFeatures)
         .filter((f) => f !== undefined)
-        .map((feature) => ({
-          key: feature.key,
-          localOverride: bucketClient.getFeatureOverride(feature?.key),
-          isEnabled: feature.isEnabled,
-        })),
+        .map(
+          (feature) =>
+            ({
+              key: feature.key,
+              localOverride: bucketClient.getFeatureOverride(feature?.key),
+              isEnabled: feature.isEnabled,
+            }) satisfies FeatureItem,
+        ),
     );
   }
 
@@ -99,7 +107,7 @@ export default function Toolbar({
         onClose={closeToolbar}
       >
         <FeatureSearch onSearch={onSearch} />
-        <FeatureTable
+        <FeaturesTable
           features={searchedFeatures}
           setEnabledOverride={bucketClient.setFeatureOverride.bind(
             bucketClient,
@@ -139,101 +147,5 @@ function ToolbarToggle({
       <div class={classes}></div>
       <Logo height="13px" width="13px" />
     </div>
-  );
-}
-
-function FeatureSearch({ onSearch }: { onSearch: (val: string) => void }) {
-  return (
-    <input
-      type="search"
-      placeholder="Search"
-      onInput={(s) => onSearch(s.currentTarget.value)}
-      autoFocus
-      class="search-input"
-    />
-  );
-}
-
-function Reset({
-  setEnabledOverride,
-  featureKey,
-}: {
-  setEnabledOverride: (key: string, value: boolean | null) => void;
-  featureKey: string;
-}) {
-  return (
-    <a
-      href=""
-      class="reset"
-      onClick={(e) => {
-        e.preventDefault();
-        setEnabledOverride(featureKey, null);
-      }}
-    >
-      reset
-    </a>
-  );
-}
-
-function FeatureTable({
-  features,
-  setEnabledOverride,
-  appBaseUrl,
-}: {
-  features: {
-    key: string;
-    localOverride: boolean | null;
-    isEnabled: boolean;
-  }[];
-  setEnabledOverride: (key: string, value: boolean | null) => void;
-  appBaseUrl: string;
-}) {
-  if (features.length === 0) {
-    return <div style={{ color: "var(--gray500)" }}>No features found</div>;
-  }
-  return (
-    <table class="table">
-      <tbody>
-        {features.map((feature) => {
-          return (
-            <tr key={feature.key}>
-              <td class="feature-name-cell">
-                <a
-                  href={`${appBaseUrl}/envs/current/features/by-key/${feature.key}`}
-                  target="_blank"
-                  class="feature-link"
-                >
-                  {feature.key}
-                </a>
-              </td>
-              <td class="feature-reset-cell">
-                {feature.localOverride !== null ? (
-                  <Reset
-                    setEnabledOverride={setEnabledOverride}
-                    featureKey={feature.key}
-                  />
-                ) : null}
-              </td>
-              <td>
-                <Switch
-                  isOn={
-                    (feature.localOverride === null && feature.isEnabled) ||
-                    feature.localOverride === true
-                  }
-                  onChange={(e) => {
-                    const isChecked = e.currentTarget.checked;
-                    const isOverridden = isChecked !== feature.isEnabled;
-                    setEnabledOverride(
-                      feature.key,
-                      isOverridden ? isChecked : null,
-                    );
-                  }}
-                />
-              </td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
   );
 }

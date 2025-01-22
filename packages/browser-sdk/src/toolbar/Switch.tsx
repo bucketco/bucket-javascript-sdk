@@ -1,7 +1,5 @@
 import { Fragment, h } from "preact";
 
-import styles from "./Switch.css?inline";
-
 interface SwitchProps extends h.JSX.HTMLAttributes<HTMLInputElement> {
   isOn: boolean;
   width?: number;
@@ -18,7 +16,6 @@ export function Switch({
 }: SwitchProps) {
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: styles }}></style>
       <label class="switch" data-enabled={isOn}>
         <input
           type="checkbox"
