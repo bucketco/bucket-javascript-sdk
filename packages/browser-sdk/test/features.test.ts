@@ -5,6 +5,7 @@ import {
   FEATURES_EXPIRE_MS,
   FeaturesClient,
   FeaturesOptions,
+  FetchedFeature,
   RawFeature,
 } from "../src/feature/features";
 import { HttpClient } from "../src/httpClient";
@@ -131,6 +132,7 @@ describe("FeaturesClient", () => {
         isEnabled: true,
         config: null,
         key: "huddle",
+        isEnabledOverride: null,
       },
     });
   });
@@ -150,7 +152,7 @@ describe("FeaturesClient", () => {
       huddle: {
         isEnabled: true,
         config: { name: "john" },
-        key: "huddle",
+        isEnabledOverride: null,
       },
     });
   });
@@ -199,7 +201,7 @@ describe("FeaturesClient", () => {
           isEnabled: true,
           key: "featureB",
           targetingVersion: 1,
-        } satisfies RawFeature,
+        } satisfies FetchedFeature,
       },
     };
 
@@ -224,6 +226,7 @@ describe("FeaturesClient", () => {
         isEnabled: true,
         key: "featureB",
         targetingVersion: 1,
+        isEnabledOverride: null,
       } satisfies RawFeature,
     });
 
@@ -262,7 +265,8 @@ describe("FeaturesClient", () => {
           isEnabled: true,
           targetingVersion: 1,
           key: "featureA",
-        },
+          isEnabledOverride: null,
+        } satisfies RawFeature,
       }),
     );
   });
@@ -293,5 +297,50 @@ describe("FeaturesClient", () => {
 
     expect(httpClient.get).toHaveBeenCalledTimes(2);
     expect(a).not.toEqual(b);
+  });
+
+  test("handled overrides", async () => {
+    // change the response so we can validate that we'll serve the stale cache
+    const { newFeaturesClient } = featuresClientFactory();
+    // localStorage.clear();
+    const client = newFeaturesClient();
+    await client.initialize();
+
+    let updated = false;
+    client.onUpdated(() => {
+      updated = true;
+    });
+
+    expect(client.getFeatures().featureA.isEnabled).toBe(true);
+    expect(client.getFeatures().featureA.isEnabledOverride).toBe(null);
+
+    expect(updated).toBe(false);
+
+    client.setFeatureOverride("featureA", false);
+
+    expect(updated).toBe(true);
+    expect(client.getFeatures().featureA.isEnabled).toBe(true);
+    expect(client.getFeatures().featureA.isEnabledOverride).toBe(false);
+  });
+
+  test("handled overrides for features not returned by API", async () => {
+    // change the response so we can validate that we'll serve the stale cache
+    const { newFeaturesClient } = featuresClientFactory();
+    // localStorage.clear();
+    const client = newFeaturesClient();
+    await client.initialize();
+
+    let updated = false;
+    client.onUpdated(() => {
+      updated = true;
+    });
+
+    expect(client.getFeatures().featureB).toBeUndefined();
+
+    client.setFeatureOverride("featureB", true);
+
+    expect(updated).toBe(true);
+    expect(client.getFeatures().featureB.isEnabled).toBe(false);
+    expect(client.getFeatures().featureB.isEnabledOverride).toBe(true);
   });
 });

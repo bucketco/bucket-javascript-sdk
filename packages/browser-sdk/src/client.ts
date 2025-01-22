@@ -202,13 +202,13 @@ export class BucketClient {
   private readonly context: BucketContext;
   private config: Config;
   private requestFeedbackOptions: Partial<RequestFeedbackOptions>;
-  private readonly logger: Logger;
   private readonly httpClient: HttpClient;
 
   private readonly autoFeedback: AutoFeedback | undefined;
   private autoFeedbackInit: Promise<void> | undefined;
   private readonly featuresClient: FeaturesClient;
 
+  public readonly logger: Logger;
   /**
    * Create a new BucketClient instance.
    */
@@ -505,6 +505,8 @@ export class BucketClient {
   /**
    * Returns a map of enabled features.
    * Accessing a feature will *not* send a check event
+   * and `isEnabled` does not take any feature overrides
+   * into account.
    *
    * @returns Map of features.
    */
@@ -520,7 +522,7 @@ export class BucketClient {
     const f = this.getFeatures()[key];
 
     const fClient = this.featuresClient;
-    const value = f?.isEnabled ?? false;
+    const value = f?.isEnabledOverride ?? f?.isEnabled ?? false;
     const config = f?.config?.payload;
 
     function sendCheckEvent() {
@@ -554,6 +556,14 @@ export class BucketClient {
         });
       },
     };
+  }
+
+  setFeatureOverride(key: string, isEnabled: boolean | null) {
+    this.featuresClient.setFeatureOverride(key, isEnabled);
+  }
+
+  getFeatureOverride(key: string): boolean | null {
+    return this.featuresClient.getFeatureOverride(key);
   }
 
   sendCheckEvent(checkEvent: CheckEvent) {

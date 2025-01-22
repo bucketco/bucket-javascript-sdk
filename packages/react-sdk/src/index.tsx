@@ -143,11 +143,11 @@ export function BucketProvider({
 
     client
       .initialize()
-      .then(() => {
-        setFeaturesLoading(false);
+      .catch((e) => {
+        client.logger.error("failed to initialize client", e);
       })
-      .catch(() => {
-        // initialize cannot actually throw, but this fixes lint warnings
+      .finally(() => {
+        setFeaturesLoading(false);
       });
   }, [contextKey]);
 

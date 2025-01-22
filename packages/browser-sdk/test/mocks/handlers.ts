@@ -22,7 +22,15 @@ export const featureResponse: FeaturesResponse = {
   },
 };
 
-export const featuresResult: Features = featureResponse.features;
+export const featuresResult: Features = Object.entries(
+  featureResponse.features,
+).reduce((acc, [key, feature]) => {
+  acc[key] = {
+    ...feature,
+    isEnabledOverride: null,
+  };
+  return acc;
+}, {} as Features);
 
 function checkRequest(request: StrictRequest<DefaultBodyType>) {
   const url = new URL(request.url);
