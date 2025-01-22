@@ -1,4 +1,4 @@
-import { Fragment, FunctionComponent, h } from "preact";
+import { createContext, Fragment, FunctionComponent, h } from "preact";
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
 import {
@@ -32,12 +32,17 @@ export interface OpenDialogOptions {
 
   containerId: string;
 
-  DialogContent: preact.FunctionComponent<{
-    close: () => void;
-    onClose?: () => void;
-    dismiss: () => void;
-  }>;
+  children?: preact.ComponentChildren;
 }
+
+export type DialogContextType = {
+  close: () => void;
+  dismiss: () => void;
+};
+
+export const DialogContext = createContext<DialogContextType | undefined>(
+  undefined,
+);
 
 export const Dialog: FunctionComponent<OpenDialogOptions> = ({
   position,
@@ -45,8 +50,8 @@ export const Dialog: FunctionComponent<OpenDialogOptions> = ({
   onClose,
   onDismiss,
   containerId,
-  DialogContent,
   strategy,
+  children,
 }) => {
   const arrowRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -176,7 +181,7 @@ export const Dialog: FunctionComponent<OpenDialogOptions> = ({
   }, [dialogRef, open, position.type]);
 
   return (
-    <>
+    <DialogContext.Provider value={{ close, dismiss }}>
       <style dangerouslySetInnerHTML={{ __html: styles }}></style>
       <dialog
         ref={setDiagRef}
@@ -191,7 +196,7 @@ export const Dialog: FunctionComponent<OpenDialogOptions> = ({
         ].join(" ")}
         style={anchor ? floatingStyles : unanchoredPosition}
       >
-        <DialogContent close={close} dismiss={dismiss} onClose={onClose} />
+        {children && <Fragment>{children}</Fragment>}
 
         {anchor && (
           <div
@@ -201,6 +206,6 @@ export const Dialog: FunctionComponent<OpenDialogOptions> = ({
           ></div>
         )}
       </dialog>
-    </>
+    </DialogContext.Provider>
   );
 };

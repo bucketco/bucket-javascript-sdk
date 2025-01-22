@@ -2,7 +2,7 @@ import { Fragment, FunctionComponent, h } from "preact";
 import { useCallback, useState } from "preact/hooks";
 
 import { feedbackContainerId } from "../../ui/constants";
-import { Dialog } from "../../ui/Dialog";
+import { Dialog, DialogContext } from "../../ui/Dialog";
 import { Close } from "../../ui/icons/Close";
 
 import { DEFAULT_TRANSLATIONS } from "./config/defaultTranslations";
@@ -78,31 +78,34 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
         position={position}
         onClose={onClose}
         onDismiss={onDismiss}
-        DialogContent={({ dismiss }) => (
-          <>
-            <FeedbackForm
-              t={{ ...DEFAULT_TRANSLATIONS, ...translations }}
-              key={key}
-              question={title}
-              openWithCommentVisible={openWithCommentVisible}
-              onSubmit={submit}
-              onScoreSubmit={submitScore}
-              scoreState={scoreState}
-              onInteraction={autoClose.stop}
-            />
+      >
+        <DialogContext.Consumer>
+          {(ctx) => (
+            <>
+              <FeedbackForm
+                t={{ ...DEFAULT_TRANSLATIONS, ...translations }}
+                key={key}
+                question={title}
+                openWithCommentVisible={openWithCommentVisible}
+                onSubmit={submit}
+                onScoreSubmit={submitScore}
+                scoreState={scoreState}
+                onInteraction={autoClose.stop}
+              />
 
-            <button onClick={dismiss} class="close">
-              {!autoClose.stopped && autoClose.elapsedFraction > 0 && (
-                <RadialProgress
-                  diameter={28}
-                  progress={1.0 - autoClose.elapsedFraction}
-                />
-              )}
-              <Close />
-            </button>
-          </>
-        )}
-      ></Dialog>
+              <button class="close" onClick={() => ctx?.dismiss()}>
+                {!autoClose.stopped && autoClose.elapsedFraction > 0 && (
+                  <RadialProgress
+                    diameter={28}
+                    progress={1.0 - autoClose.elapsedFraction}
+                  />
+                )}
+                <Close />
+              </button>
+            </>
+          )}
+        </DialogContext.Consumer>
+      </Dialog>
     </>
   );
 };

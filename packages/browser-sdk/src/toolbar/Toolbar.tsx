@@ -11,10 +11,10 @@ import { BucketClient } from "../client";
 import { toolbarContainerId } from "../ui/constants";
 import { Dialog } from "../ui/Dialog";
 import { Logo } from "../ui/icons/Logo";
+import { Switch } from "../ui/Switch";
 import { Offset, Placement } from "../ui/types";
 import { parseUnanchoredPosition } from "../ui/utils";
 
-import { Switch } from "./Switch";
 import styles from "./Toolbar.css?inline";
 
 export interface ToolbarPosition {
@@ -41,6 +41,10 @@ export default function Toolbar({
 
   const toggleToolbar = useCallback(() => {
     setToolbarOpen((prev) => !prev);
+  }, [setToolbarOpen]);
+
+  const closeToolbar = useCallback(() => {
+    setToolbarOpen(false);
   }, [setToolbarOpen]);
 
   function updateFeatures() {
@@ -77,22 +81,20 @@ export default function Toolbar({
       <Dialog
         strategy="fixed"
         open={toolbarOpen}
-        DialogContent={() => (
-          <div id="bucketToolbarPopover">
-            <FeatureTable
-              features={features}
-              setEnabledOverride={bucketClient.setFeatureOverride.bind(
-                bucketClient,
-              )}
-            />
-          </div>
-        )}
         containerId={toolbarContainerId}
         position={{
           type: "POPOVER",
           anchor: toggleToolbarRef.current,
         }}
-      />
+        onClose={closeToolbar}
+      >
+        <FeatureTable
+          features={features}
+          setEnabledOverride={bucketClient.setFeatureOverride.bind(
+            bucketClient,
+          )}
+        />
+      </Dialog>
     </div>
   );
 }
@@ -163,32 +165,46 @@ function FeatureTable({
   return (
     <table class="table">
       <tbody>
-        {Object.values(features).map((feature) => (
-          <tr key={feature!.key}>
-            <td>{feature!.key}</td>
-            <td>
-              {feature?.localOverride !== null ? (
-                <Reset
-                  setEnabledOverride={setEnabledOverride}
-                  featureKey={feature!.key}
+        {features.map((feat) => {
+          return (
+            <tr key={feat!.key}>
+              <td
+                style={{
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  width: "auto",
+                }}
+              >
+                {feat!.key}
+              </td>
+              <td style={{ minWidth: "38px" }}>
+                {feat?.localOverride !== null ? (
+                  <Reset
+                    setEnabledOverride={setEnabledOverride}
+                    featureKey={feat!.key}
+                  />
+                ) : null}
+              </td>
+              <td>
+                <Switch
+                  isOn={
+                    (feat?.localOverride === null && feat!.isEnabled) ||
+                    feat?.localOverride === true
+                  }
+                  onChange={(e) => {
+                    const isChecked = e.currentTarget.checked;
+                    const isOverridden = isChecked !== feat!.isEnabled;
+                    setEnabledOverride(
+                      feat!.key,
+                      isOverridden ? isChecked : null,
+                    );
+                  }}
                 />
-              ) : null}
-            </td>
-
-            <td>
-              <Switch
-                onColor="var(--brand400)"
-                isOn={
-                  (feature?.localOverride === null && feature!.isEnabled) ||
-                  feature?.localOverride === true
-                }
-                onChange={(e) =>
-                  setEnabledOverride(feature!.key, e.currentTarget.checked)
-                }
-              />
-            </td>
-          </tr>
-        ))}
+              </td>
+            </tr>
+          );
+        })}
       </tbody>
     </table>
   );

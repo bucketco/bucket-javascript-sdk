@@ -1,3 +1,51 @@
+@keyframes bounceInUp {
+  from,
+  60%,
+  75%,
+  90%,
+  to {
+    animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+  }
+
+  from {
+    opacity: 0;
+    transform: translate3d(0, 1000px, 0) scaleY(5);
+  }
+
+  60% {
+    opacity: 1;
+    transform: translate3d(0, -10px, 0) scaleY(0.9);
+  }
+
+  75% {
+    transform: translate3d(0, 5px, 0) scaleY(0.95);
+  }
+
+  90% {
+    transform: translate3d(0, -3px, 0) scaleY(0.985);
+  }
+
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes gelatine {
+  from,
+  to {
+    transform: scale(1, 1);
+  }
+  25% {
+    transform: scale(0.9, 1.1);
+  }
+  50% {
+    transform: scale(1.1, 0.9);
+  }
+  75% {
+    transform: scale(0.95, 1.05);
+  }
+}
+
 #toolbarRoot {
   --brand300: #a39dfc;
   --brand400: #847cfb;
@@ -5,9 +53,9 @@
 
   --bg-color: #1e1f24;
   --border-color: #292b32;
-  --logo-color: #787c91;
-  font-family: Arial, sans-serif;
-  font-size: 13px;
+  --logo-color: white;
+  font-family: monospace;
+  font-size: 12px;
 }
 
 :focus {
@@ -27,8 +75,8 @@
     0px 10px 15px -3px rgba(0, 0, 0, 0.1),
     0px 4px 6px -2px rgba(0, 0, 0, 0.05);
   border-radius: 7px;
-
-  min-width: 250px;
+  z-index: 999999;
+  min-width: 200px;
 }
 
 .table tr td {
@@ -57,21 +105,25 @@
   display: flex;
   justify-content: center;
   align-items: center;
+
+  animation: bounceInUp 1s ease-out;
 }
 
 .toolbar-toggle .override-indicator {
   position: absolute;
   top: -3px;
   right: -3px;
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   background-color: var(--brand400);
   border-radius: 50%;
   opacity: 0;
   transition: opacity 0.1s ease-in-out;
+  border: 1px solid var(--brand300);
 
   &.show {
     opacity: 1;
+    animation: gelatine 0.5s;
   }
 }
 
