@@ -172,8 +172,8 @@ export function BucketProvider({
 
 const EMPTY_FEATURE_CONFIG = {
   key: undefined,
-  version: undefined,
-  payload: undefined,
+  targetingVersion: undefined,
+  value: undefined,
 };
 
 type RequestFeedbackOptions = Omit<
@@ -187,8 +187,8 @@ type Feature<TKey extends FeatureKey> = {
   config:
     | {
         key: string;
-        version: number;
-        payload: FeatureConfig<TKey>;
+        targetingVersion?: number;
+        value: FeatureConfig<TKey>;
       }
     | typeof EMPTY_FEATURE_CONFIG;
   track: () => void;

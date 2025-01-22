@@ -133,24 +133,31 @@ export class BucketBrowserSDKProvider implements Provider {
         };
       }
 
-      if (feature.config === null || feature.config === undefined) {
+      if (!feature.config.key) {
         return {
           value: defaultValue,
           reason: StandardResolutionReasons.DEFAULT,
         };
       }
 
-      if (typeof feature.config !== expType) {
+      if (expType === "string") {
+        return {
+          value: feature.config.key,
+          reason: StandardResolutionReasons.TARGETING_MATCH,
+        };
+      }
+
+      if (typeof feature.config.value !== expType) {
         return {
           value: defaultValue,
           reason: StandardResolutionReasons.ERROR,
           errorCode: ErrorCode.TYPE_MISMATCH,
-          errorMessage: `Expected ${expType} but got ${typeof feature.config}`,
+          errorMessage: `Expected ${expType} but got ${typeof feature.config.value}`,
         };
       }
 
       return {
-        value: feature.config as T,
+        value: feature.config.value as T,
         reason: StandardResolutionReasons.TARGETING_MATCH,
       };
     }
@@ -194,8 +201,10 @@ export class BucketBrowserSDKProvider implements Provider {
       this._clientOptions.logger?.error("client not initialized");
     }
 
-    this._client?.track(trackingEventName, trackingEventDetails).catch((e) => {
-      this._clientOptions.logger?.error("error tracking event", e);
-    });
+    this._client
+      ?.track(trackingEventName, trackingEventDetails)
+      .catch((e: any) => {
+        this._clientOptions.logger?.error("error tracking event", e);
+      });
   }
 }

@@ -224,7 +224,7 @@ describe("useFeature", () => {
     expect(result.current).toStrictEqual({
       isEnabled: false,
       isLoading: true,
-      config: { key: undefined, version: undefined, payload: undefined },
+      config: { key: undefined, targetingVersion: undefined, value: undefined },
       track: expect.any(Function),
       requestFeedback: expect.any(Function),
     });
@@ -239,7 +239,11 @@ describe("useFeature", () => {
 
     await waitFor(() => {
       expect(result.current).toStrictEqual({
-        config: { key: undefined, version: undefined, payload: undefined },
+        config: {
+          key: undefined,
+          targetingVersion: undefined,
+          value: undefined,
+        },
         isEnabled: false,
         isLoading: false,
         track: expect.any(Function),
@@ -261,8 +265,8 @@ describe("useFeature", () => {
         isLoading: false,
         config: {
           key: "gpt3",
-          version: 2,
-          payload: { model: "gpt-something", temperature: 0.5 },
+          targetingVersion: 2,
+          value: { model: "gpt-something", temperature: 0.5 },
         },
         track: expect.any(Function),
         requestFeedback: expect.any(Function),

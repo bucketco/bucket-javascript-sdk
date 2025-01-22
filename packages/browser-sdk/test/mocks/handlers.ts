@@ -1,13 +1,18 @@
 import { DefaultBodyType, http, HttpResponse, StrictRequest } from "msw";
 
-import { FeaturesResponse, RawFeatures } from "../../src/feature/features";
+import { RawFeatures } from "../../src/feature/features";
 
 export const testChannel = "testChannel";
 
-export const featureResponse: FeaturesResponse = {
+export const featureResponse = {
   success: true,
   features: {
-    featureA: { isEnabled: true, key: "featureA", targetingVersion: 1 },
+    featureA: {
+      isEnabled: true,
+      key: "featureA",
+      targetingVersion: 1,
+      config: undefined,
+    },
     featureB: {
       isEnabled: true,
       targetingVersion: 11,
@@ -25,7 +30,13 @@ export const featuresResult = Object.entries(featureResponse.features).reduce(
   (acc, [key, feature]) => {
     acc[key] = {
       ...feature!,
-      key: key,
+      config: feature.config
+        ? {
+            key: feature.config.key,
+            targetingVersion: feature.config.version,
+            value: feature.config.payload,
+          }
+        : undefined,
       isEnabledOverride: null,
     };
     return acc;

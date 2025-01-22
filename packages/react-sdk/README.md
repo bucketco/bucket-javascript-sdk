@@ -96,8 +96,13 @@ Returns the state of a given features for the current context.
 import { useFeature } from "@bucketco/react-sdk";
 
 function StartHuddleButton() {
-  const { isLoading, isEnabled, config, track, requestFeedback } =
-    useFeature("huddle");
+  const {
+    isLoading,
+    isEnabled,
+    config: { key, value },
+    track,
+    requestFeedback,
+  } = useFeature("huddle");
 
   if (isLoading) {
     return <Loading />;
@@ -113,7 +118,7 @@ function StartHuddleButton() {
       <button
         onClick={(e) =>
           requestFeedback({
-            title: config?.question ?? "How do you like Huddles?",
+            title: value?.question ?? "How do you like Huddles?",
             position: {
               type: "POPOVER",
               anchor: e.currentTarget as HTMLElement,

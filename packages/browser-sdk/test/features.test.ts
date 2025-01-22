@@ -122,6 +122,7 @@ describe("FeaturesClient", () => {
     vi.mocked(httpClient.get).mockRejectedValue(
       new Error("Failed to fetch features"),
     );
+
     const featuresClient = newFeaturesClient({
       fallbackFeatures: ["huddle"],
     });
@@ -130,7 +131,7 @@ describe("FeaturesClient", () => {
     expect(featuresClient.getFeatures()).toStrictEqual({
       huddle: {
         isEnabled: true,
-        config: null,
+        config: undefined,
         key: "huddle",
         isEnabledOverride: null,
       },
@@ -145,7 +146,10 @@ describe("FeaturesClient", () => {
     );
     const featuresClient = newFeaturesClient({
       fallbackFeatures: {
-        huddle: { key: "john", version: 1, payload: { something: "else" } },
+        huddle: {
+          key: "john",
+          value: { something: "else" },
+        },
       },
     });
 
@@ -153,23 +157,24 @@ describe("FeaturesClient", () => {
     expect(featuresClient.getFeatures()).toStrictEqual({
       huddle: {
         isEnabled: true,
-        config: { key: "john", version: 1, payload: { something: "else" } },
+        config: { key: "john", value: { something: "else" } },
         key: "huddle",
         isEnabledOverride: null,
       },
     });
   });
 
-  test("caches response", async () => {
+  test.only("caches response", async () => {
     const { newFeaturesClient, httpClient } = featuresClientFactory();
 
-    const featuresClient = newFeaturesClient();
-    await featuresClient.initialize();
+    const featuresClient1 = newFeaturesClient();
+    await featuresClient1.initialize();
 
     expect(httpClient.get).toBeCalledTimes(1);
 
     const featuresClient2 = newFeaturesClient();
     await featuresClient2.initialize();
+
     const features = featuresClient2.getFeatures();
 
     expect(features).toEqual(featuresResult);

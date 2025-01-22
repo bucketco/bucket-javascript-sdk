@@ -186,14 +186,14 @@ export type FeatureDynamicConfig =
       /**
        * The version of the matched configuration value.
        */
-      version: number;
+      targetingVersion?: number;
 
       /**
        * The user-supplied data.
        */
-      payload: any;
+      value: any;
     }
-  | { key: undefined; version: undefined; payload: undefined };
+  | { key: undefined; targetingVersion: undefined; value: undefined };
 
 /**
  * A feature.
@@ -546,8 +546,8 @@ export class BucketClient {
 
   private missingConfig: FeatureDynamicConfig = {
     key: undefined,
-    version: undefined,
-    payload: undefined,
+    targetingVersion: undefined,
+    value: undefined,
   };
   /**
    * Return a feature. Accessing `isEnabled` or `config` will automatically send a `check` event.

@@ -90,32 +90,50 @@ describe("BucketBrowserSDKProvider", () => {
   });
 
   describe("resolveBooleanEvaluation", () => {
-    function mockFeature(enabled: boolean, config: any) {
+    function mockFeature(
+      enabled: boolean,
+      configKey: string | undefined,
+      configValue: any | undefined,
+    ) {
+      const config =
+        configKey !== undefined
+          ? {
+              key: configKey,
+              targetingVersion: 1,
+              value: configValue,
+            }
+          : {
+              key: undefined,
+              targetingVersion: undefined,
+              value: undefined,
+            };
+
       bucketClientMock.getFeature = vi.fn().mockReturnValue({
         isEnabled: enabled,
-        config: config,
+        config,
       });
 
       bucketClientMock.getFeatures = vi.fn().mockReturnValue({
         [testFlagKey]: {
           isEnabled: enabled,
-          config: {
-            name: "test",
-            version: 1,
-            payload: config,
-          },
+          config,
           targetingVersion: 1,
         },
       });
     }
 
     it("calls the client correctly when evaluating", async () => {
-      mockFeature(true, true);
+      mockFeature(true, "key", true);
       await provider.initialize();
 
       const val = ofClient.getBooleanDetails(testFlagKey, false);
 
-      expect(val).toBeDefined();
+      expect(val).toEqual({
+        flagKey: "a-key",
+        flagMetadata: {},
+        reason: "TARGETING_MATCH",
+        value: true,
+      });
 
       expect(bucketClientMock.getFeatures).toHaveBeenCalled();
       expect(bucketClientMock.getFeature).toHaveBeenCalledWith(testFlagKey);
@@ -131,8 +149,8 @@ describe("BucketBrowserSDKProvider", () => {
       [false, true, true, true, "DISABLED"],
     ])(
       "should return the correct result when evaluating boolean %s, %s, %s, %s, %s`",
-      async (enabled, config, def, expected, reason) => {
-        mockFeature(enabled, config);
+      async (enabled, value, def, expected, reason) => {
+        mockFeature(enabled, "key", value);
         expect(ofClient.getBooleanDetails(testFlagKey, def)).toEqual({
           flagKey: "a-key",
           flagMetadata: {},
@@ -149,8 +167,8 @@ describe("BucketBrowserSDKProvider", () => {
       [false, 4, -4, -4, "DISABLED"],
     ])(
       "should return the correct result when evaluating number %s, %s, %s, %s, %s`",
-      async (enabled, config, def, expected, reason) => {
-        mockFeature(enabled, config);
+      async (enabled, value, def, expected, reason) => {
+        mockFeature(enabled, value ? "key" : undefined, value);
         expect(ofClient.getNumberDetails(testFlagKey, def)).toEqual({
           flagKey: "a-key",
           flagMetadata: {},
@@ -162,8 +180,8 @@ describe("BucketBrowserSDKProvider", () => {
 
     it.each([["string"], [true], [{}]])(
       "should handle type mismatch when evaluating number as %s`",
-      async (config) => {
-        mockFeature(true, config);
+      async (value) => {
+        mockFeature(true, "key", value);
         expect(ofClient.getNumberDetails(testFlagKey, -1)).toEqual({
           flagKey: "a-key",
           flagMetadata: {},
@@ -176,34 +194,17 @@ describe("BucketBrowserSDKProvider", () => {
     );
 
     it.each([
-      [true, "1", "-1", "1", "TARGETING_MATCH"],
-      [true, null, "-2", "-2", "DEFAULT"],
-      [false, "2", "-3", "-3", "DISABLED"],
-      [false, "3", "-4", "-4", "DISABLED"],
+      [true, { anything: 1 }, "default", "key", "TARGETING_MATCH"],
+      [false, 1337, "default", "default", "DISABLED"],
     ])(
       "should return the correct result when evaluating string %s, %s, %s, %s, %s`",
-      async (enabled, config, def, expected, reason) => {
-        mockFeature(enabled, config);
+      async (enabled, value, def, expected, reason) => {
+        mockFeature(enabled, "key", value);
         expect(ofClient.getStringDetails(testFlagKey, def)).toEqual({
           flagKey: "a-key",
           flagMetadata: {},
           reason: reason,
           value: expected,
-        });
-      },
-    );
-
-    it.each([[15], [true], [{}]])(
-      "should handle type mismatch when evaluating string as %s`",
-      async (config) => {
-        mockFeature(true, config);
-        expect(ofClient.getStringDetails(testFlagKey, "hello")).toEqual({
-          flagKey: "a-key",
-          flagMetadata: {},
-          reason: "ERROR",
-          errorCode: "TYPE_MISMATCH",
-          errorMessage: "",
-          value: "hello",
         });
       },
     );
@@ -215,8 +216,8 @@ describe("BucketBrowserSDKProvider", () => {
       [false, [5], [6], [6], "DISABLED"],
     ])(
       "should return the correct result when evaluating array %s, %s, %s, %s, %s`",
-      async (enabled, config, def, expected, reason) => {
-        mockFeature(enabled, config);
+      async (enabled, value, def, expected, reason) => {
+        mockFeature(enabled, value ? "key" : undefined, value);
         expect(ofClient.getObjectDetails(testFlagKey, def)).toEqual({
           flagKey: "a-key",
           flagMetadata: {},
@@ -233,8 +234,8 @@ describe("BucketBrowserSDKProvider", () => {
       [false, { a: 5 }, { a: 6 }, { a: 6 }, "DISABLED"],
     ])(
       "should return the correct result when evaluating object %s, %s, %s, %s, %s`",
-      async (enabled, config, def, expected, reason) => {
-        mockFeature(enabled, config);
+      async (enabled, value, def, expected, reason) => {
+        mockFeature(enabled, value ? "key" : undefined, value);
         expect(ofClient.getObjectDetails(testFlagKey, def)).toEqual({
           flagKey: "a-key",
           flagMetadata: {},
@@ -246,8 +247,8 @@ describe("BucketBrowserSDKProvider", () => {
 
     it.each([["string"], [15], [true]])(
       "should handle type mismatch when evaluating object as %s`",
-      async (config) => {
-        mockFeature(true, config);
+      async (value) => {
+        mockFeature(true, "key", value);
         expect(ofClient.getObjectDetails(testFlagKey, { obj: true })).toEqual({
           flagKey: "a-key",
           flagMetadata: {},

@@ -27,8 +27,12 @@ const bucketClient = new BucketClient({ publishableKey, user, company });
 
 await bucketClient.initialize();
 
-const { isEnabled, config, track, requestFeedback } =
-  bucketClient.getFeature("huddle");
+const {
+  isEnabled,
+  config: { value: question },
+  track,
+  requestFeedback,
+} = bucketClient.getFeature("huddle");
 
 if (isEnabled) {
   // Show feature. When retrieving `isEnabled` the client automatically
@@ -38,10 +42,10 @@ if (isEnabled) {
   // On usage, call `track` to let Bucket know that a user interacted with the feature
   track();
 
-  // The `config` is a user-supplied value in Bucket that can be dynamically evaluated
+  // The `value` is a user-supplied value in Bucket that can be dynamically evaluated
   // with respect to the current context. Here, it is assumed that one could either get
-  // a config value that matches the context or not.
-  const question = config?.question ?? "Tell us what you think of Huddles";
+  // a config value that matches the context or use a default.
+  const question = value?.question ?? "Tell us what you think of Huddles";
 
   // Use `requestFeedback` to create "Send feedback" buttons easily for specific
   // features. This is not related to `track` and you can call them individually.
@@ -133,7 +137,7 @@ To retrieve features along with their targeting information, use `getFeature(key
 const huddle = bucketClient.getFeature("huddle");
 // {
 //   isEnabled: true,
-//   config: any,
+//   config: { key: "zoom", targetingVersion: 2, value: { ... } },
 //   track: () => Promise<Response>
 //   requestFeedback: (options: RequestFeedbackData) => void
 // }
@@ -161,10 +165,10 @@ generate a `check` event, contrary to the `isEnabled` property on the object ret
 ### Remote config
 
 Similar to `isEnabled`, each feature has a `config` property. This configuration is set by the user within Bucket. It is
-similar to the way access is controlled, using matching rules. Each config-bound rule is given a configuration payload
-(a JSON value) that is returned to the SDKs if the requested context matches that specific rule. It is possible to have
-multiple rules with different configuration payloads. Whichever rule matches the context, provides the configuration
-payload.
+similar to the way access is managed -- using rules. Each config-bound rule is given a configuration value
+(a JSON value) that is returned to the SDK if the requested context matches. It is possible to have
+multiple rules with different configuration values. Whichever rule matches the context, provides the configuration
+value.
 
 The config is accessible through the same methods as the `isEnabled` property:
 
@@ -175,16 +179,16 @@ const features = bucketClient.getFeatures();
 //     isEnabled: true,
 //     targetingVersion: 42,
 //     config?: {
-//       name: "gpt-3.5",
+//       key: "gpt-3.5",
 //       targetingVersion: 2,
-//       payload: { maxTokens: 10000, model: "gpt-3.5-beta1" }
+//       value: { maxTokens: 10000, model: "gpt-3.5-beta1" }
 //     }
 //   }
 // }
 ```
 
-The `name` is given by the user in Bucket for each configuration variant, and `version` is maintained by Bucket similar
-to `targetingVersion`. The `payload` is the actual JSON value supplied by the user and serves as context-based
+The `key` is given by the user in Bucket for each configuration value, and `targetingVersion` is maintained by Bucket similar
+to access `targetingVersion`. The `value` is the actual JSON value supplied by the user and serves as context-based
 configuration.
 
 Just as `isEnabled`, accessing `config` on the object returned by `getFeatures` does not automatically

@@ -39,12 +39,12 @@ export type FetchedFeature = {
     /**
      * The version of the matched configuration value.
      */
-    version: number;
+    targetingVersion?: number;
 
     /**
      * The user-supplied data.
      */
-    payload: any;
+    value: any;
   };
 };
 
@@ -62,6 +62,11 @@ export type RawFeature = FetchedFeature & {
 
 export type RawFeatures = Record<string, RawFeature>;
 
+export type FallbackFeatureConfig = {
+  key: string;
+  value: any;
+} | null;
+
 export type FeaturesOptions = {
   /**
    * Feature keys for which `isEnabled` should fallback to true
@@ -69,7 +74,7 @@ export type FeaturesOptions = {
    * is supplied instead of array, the values of each key represent the
    * configuration values and `isEnabled` is assume `true`.
    */
-  fallbackFeatures?: string[] | Record<string, any>;
+  fallbackFeatures?: string[] | Record<string, FallbackFeatureConfig>;
 
   /**
    * Timeout in milliseconds
@@ -86,7 +91,7 @@ export type FeaturesOptions = {
 };
 
 type Config = {
-  fallbackFeatures: Record<string, any>;
+  fallbackFeatures: Record<string, FallbackFeatureConfig>;
   timeoutMs: number;
   staleWhileRevalidate: boolean;
 };
@@ -95,19 +100,6 @@ export const DEFAULT_FEATURES_CONFIG: Config = {
   fallbackFeatures: {},
   timeoutMs: 5000,
   staleWhileRevalidate: false,
-};
-
-// Deep merge two objects.
-export type FeaturesResponse = {
-  /**
-   * `true` if call was successful
-   */
-  success: boolean;
-
-  /**
-   * List of enabled features
-   */
-  features: FetchedFeatures;
 };
 
 export function validateFeaturesResponse(response: any) {
@@ -238,20 +230,22 @@ export class FeaturesClient {
           expireTimeMs: options?.expireTimeMs ?? FEATURES_EXPIRE_MS,
         });
 
+    let fallbackFeatures: Record<string, FallbackFeatureConfig>;
+
     if (Array.isArray(options?.fallbackFeatures)) {
-      options = {
-        ...options,
-        fallbackFeatures: options.fallbackFeatures.reduce(
-          (acc, key) => {
-            acc[key] = null;
-            return acc;
-          },
-          {} as Record<string, any>,
-        ),
-      };
+      fallbackFeatures = options.fallbackFeatures.reduce(
+        (acc, key) => {
+          acc[key] = null;
+          return acc;
+        },
+        {} as Record<string, FallbackFeatureConfig>,
+      );
+    } else {
+      fallbackFeatures = options?.fallbackFeatures ?? {};
     }
 
-    this.config = { ...DEFAULT_FEATURES_CONFIG, ...options };
+    this.config = { ...DEFAULT_FEATURES_CONFIG, ...options, fallbackFeatures };
+
     this.rateLimiter =
       options?.rateLimiter ??
       new RateLimiter(FEATURE_EVENTS_PER_MIN, this.logger);
@@ -420,6 +414,7 @@ export class FeaturesClient {
   private async maybeFetchFeatures(): Promise<FetchedFeatures | undefined> {
     const cacheKey = this.fetchParams().toString();
     const cachedItem = this.cache.get(cacheKey);
+    console.log(cacheKey);
 
     if (cachedItem) {
       if (!cachedItem.stale) return cachedItem.features;
@@ -466,7 +461,12 @@ export class FeaturesClient {
         acc[key] = {
           key,
           isEnabled: true,
-          config,
+          config: config
+            ? {
+                key: config.key,
+                value: config.value,
+              }
+            : undefined,
         };
         return acc;
       },

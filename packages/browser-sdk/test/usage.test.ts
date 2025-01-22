@@ -456,8 +456,8 @@ describe(`sends "check" events `, () => {
       const featureB = client.getFeature("featureB");
       expect(featureB.config).toEqual({
         key: "gpt3",
-        version: 12,
-        payload: {
+        targetingVersion: 12,
+        value: {
           model: "gpt-something",
           temperature: 0.5,
         },
