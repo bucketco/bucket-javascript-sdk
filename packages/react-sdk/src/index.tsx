@@ -170,6 +170,31 @@ export function BucketProvider({
   );
 }
 
+const EMPTY_FEATURE_CONFIG = {
+  key: undefined,
+  version: undefined,
+  payload: undefined,
+};
+
+type RequestFeedbackOptions = Omit<
+  RequestFeedbackData,
+  "featureKey" | "featureId"
+>;
+
+type Feature<TKey extends FeatureKey> = {
+  isEnabled: boolean;
+  isLoading: boolean;
+  config:
+    | {
+        key: string;
+        version: number;
+        payload: FeatureConfig<TKey>;
+      }
+    | typeof EMPTY_FEATURE_CONFIG;
+  track: () => void;
+  requestFeedback: (opts: RequestFeedbackOptions) => void;
+};
+
 /**
  * Returns the state of a given feature for the current context, e.g.
  *
@@ -182,21 +207,21 @@ export function BucketProvider({
  * }
  * ```
  */
-export function useFeature<TKey extends FeatureKey>(key: TKey) {
+export function useFeature<TKey extends FeatureKey>(key: TKey): Feature<TKey> {
   const {
     features: { features, isLoading },
     client,
   } = useContext<ProviderContextType>(ProviderContext);
 
   const track = () => client?.track(key);
-  const requestFeedback = (
-    opts: Omit<RequestFeedbackData, "featureKey" | "featureId">,
-  ) => client?.requestFeedback({ ...opts, featureKey: key });
+  const requestFeedback = (opts: RequestFeedbackOptions) =>
+    client?.requestFeedback({ ...opts, featureKey: key });
 
   if (isLoading) {
     return {
       isLoading,
       isEnabled: false,
+      config: EMPTY_FEATURE_CONFIG,
       track,
       requestFeedback,
     };
@@ -227,7 +252,7 @@ export function useFeature<TKey extends FeatureKey>(key: TKey) {
     },
     get config() {
       sendCheckEvent();
-      return feature?.config?.payload as FeatureConfig<TKey>;
+      return feature?.config ?? EMPTY_FEATURE_CONFIG;
     },
   };
 }

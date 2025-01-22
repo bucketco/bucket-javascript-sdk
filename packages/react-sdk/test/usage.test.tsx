@@ -82,7 +82,7 @@ const server = setupServer(
             isEnabled: true,
             targetingVersion: 1,
             config: {
-              name: "gpt3",
+              key: "gpt3",
               payload: { model: "gpt-something", temperature: 0.5 },
               version: 2,
             },
@@ -224,6 +224,7 @@ describe("useFeature", () => {
     expect(result.current).toStrictEqual({
       isEnabled: false,
       isLoading: true,
+      config: { key: undefined, version: undefined, payload: undefined },
       track: expect.any(Function),
       requestFeedback: expect.any(Function),
     });
@@ -238,7 +239,7 @@ describe("useFeature", () => {
 
     await waitFor(() => {
       expect(result.current).toStrictEqual({
-        config: undefined,
+        config: { key: undefined, version: undefined, payload: undefined },
         isEnabled: false,
         isLoading: false,
         track: expect.any(Function),
@@ -258,7 +259,11 @@ describe("useFeature", () => {
       expect(result.current).toStrictEqual({
         isEnabled: true,
         isLoading: false,
-        config: { model: "gpt-something", temperature: 0.5 },
+        config: {
+          key: "gpt3",
+          version: 2,
+          payload: { model: "gpt-something", temperature: 0.5 },
+        },
         track: expect.any(Function),
         requestFeedback: expect.any(Function),
       });
