@@ -18,4 +18,5 @@
   position: absolute;
   top: 1px;
   transition: transform 0.1s ease-in-out;
+  box-shadow: 0 0px 5px rgba(0, 0, 0, 0.2);
 }

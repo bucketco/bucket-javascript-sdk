@@ -15,7 +15,7 @@ import {
 } from "./feedback/feedback";
 import * as feedbackLib from "./feedback/ui";
 import { ToolbarPosition } from "./toolbar/Toolbar";
-import { API_BASE_URL, SSE_REALTIME_BASE_URL } from "./config";
+import { API_BASE_URL, APP_BASE_URL, SSE_REALTIME_BASE_URL } from "./config";
 import { BucketContext, CompanyContext, UserContext } from "./context";
 import { HttpClient } from "./httpClient";
 import { Logger, loggerWithPrefix, quietConsoleLogger } from "./logger";
@@ -93,6 +93,7 @@ export type PayloadContext = {
 
 interface Config {
   apiBaseUrl: string;
+  appBaseUrl: string;
   sseBaseUrl: string;
   enableTracking: boolean;
 }
@@ -152,6 +153,11 @@ export interface InitOptions {
   apiBaseUrl?: string;
 
   /**
+   * Base URL of the Bucket web app. Links open ín this app by default.
+   */
+  appBaseUrl?: string;
+
+  /**
    * @deprecated
    * Use `sseBaseUrl` instead.
    */
@@ -184,6 +190,7 @@ export interface InitOptions {
 
 const defaultConfig: Config = {
   apiBaseUrl: API_BASE_URL,
+  appBaseUrl: APP_BASE_URL,
   sseBaseUrl: SSE_REALTIME_BASE_URL,
   enableTracking: true,
 };
@@ -243,6 +250,7 @@ export class BucketClient {
 
     this.config = {
       apiBaseUrl: opts?.apiBaseUrl ?? opts?.host ?? defaultConfig.apiBaseUrl,
+      appBaseUrl: opts?.appBaseUrl ?? opts?.host ?? defaultConfig.appBaseUrl,
       sseBaseUrl: opts?.sseBaseUrl ?? opts?.sseHost ?? defaultConfig.sseBaseUrl,
       enableTracking: opts?.enableTracking ?? defaultConfig.enableTracking,
     } satisfies Config;
@@ -330,6 +338,13 @@ export class BucketClient {
         this.logger.error("error sending company", e);
       });
     }
+  }
+
+  /**
+   * Get the current configuration.
+   */
+  getConfig() {
+    return this.config;
   }
 
   /**

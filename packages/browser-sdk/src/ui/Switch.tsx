@@ -12,8 +12,8 @@ const gutter = 1;
 
 export function Switch({
   isOn,
-  width = 30,
-  height = 15,
+  width = 24,
+  height = 14,
   ...props
 }: SwitchProps) {
   return (

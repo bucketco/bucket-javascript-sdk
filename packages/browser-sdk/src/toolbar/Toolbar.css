@@ -49,21 +49,19 @@
 #toolbarRoot {
   --brand300: #a39dfc;
   --brand400: #847cfb;
+  --gray500: #787c91;
   --black: #1e1f24;
 
   --bg-color: #1e1f24;
   --border-color: #292b32;
   --logo-color: white;
+  --text-color: white;
   font-family: monospace;
   font-size: 12px;
 }
 
 :focus {
   outline: none;
-}
-
-.reset {
-  color: var(--brand300);
 }
 
 .dialog {
@@ -77,10 +75,6 @@
   border-radius: 7px;
   z-index: 999999;
   min-width: 200px;
-}
-
-.table tr td {
-  padding: 3px;
 }
 
 .toolbar-toggle {
@@ -146,5 +140,75 @@
   }
   &.right {
     box-shadow: #d8d9df -1px 1px 1px 0px;
+  }
+}
+
+.search-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-color);
+  color: white;
+  padding: 0 0 6px 0;
+  font-family: monospace;
+  margin-bottom: 4px;
+  width: 100%;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table tr td {
+  padding: 6px 6px 4px 0;
+}
+
+.reset {
+  color: var(--brand300);
+}
+
+input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-left: 10px;
+  background: linear-gradient(
+      45deg,
+      rgba(0, 0, 0, 0) 0%,
+      rgba(0, 0, 0, 0) 43%,
+      #fff 45%,
+      #fff 55%,
+      rgba(0, 0, 0, 0) 57%,
+      rgba(0, 0, 0, 0) 100%
+    ),
+    linear-gradient(
+      135deg,
+      transparent 0%,
+      transparent 43%,
+      #fff 45%,
+      #fff 55%,
+      transparent 57%,
+      transparent 100%
+    );
+  cursor: pointer;
+}
+
+.feature-name-cell {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: auto;
+}
+
+.feature-reset-cell {
+  min-width: "38px";
+}
+
+.feature-link {
+  color: var(--text-color);
+  text-decoration: none;
+  &:hover {
+    text-decoration: underline;
   }
 }

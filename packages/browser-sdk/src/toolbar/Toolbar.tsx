@@ -69,6 +69,16 @@ export default function Toolbar({
     return bucketClient.onFeaturesUpdated(updateFeatures);
   }, [bucketClient]);
 
+  const [search, setSearch] = useState<string | null>(null);
+  const onSearch = (val: string) => {
+    setSearch(val === "" ? null : val);
+  };
+
+  const searchedFeatures =
+    search === null ? features : features.filter((f) => f.key.includes(search));
+
+  const appBaseUrl = bucketClient.getConfig().appBaseUrl;
+
   return (
     <div id="toolbarRoot">
       <style dangerouslySetInnerHTML={{ __html: styles }}></style>
@@ -88,11 +98,13 @@ export default function Toolbar({
         }}
         onClose={closeToolbar}
       >
+        <FeatureSearch onSearch={onSearch} />
         <FeatureTable
-          features={features}
+          features={searchedFeatures}
           setEnabledOverride={bucketClient.setFeatureOverride.bind(
             bucketClient,
           )}
+          appBaseUrl={appBaseUrl}
         />
       </Dialog>
     </div>
@@ -130,6 +142,18 @@ function ToolbarToggle({
   );
 }
 
+function FeatureSearch({ onSearch }: { onSearch: (val: string) => void }) {
+  return (
+    <input
+      type="search"
+      placeholder="Search"
+      onInput={(s) => onSearch(s.currentTarget.value)}
+      autoFocus
+      class="search-input"
+    />
+  );
+}
+
 function Reset({
   setEnabledOverride,
   featureKey,
@@ -154,6 +178,7 @@ function Reset({
 function FeatureTable({
   features,
   setEnabledOverride,
+  appBaseUrl,
 }: {
   features: {
     key: string;
@@ -161,42 +186,45 @@ function FeatureTable({
     isEnabled: boolean;
   }[];
   setEnabledOverride: (key: string, value: boolean | null) => void;
+  appBaseUrl: string;
 }) {
+  if (features.length === 0) {
+    return <div style={{ color: "var(--gray500)" }}>No features found</div>;
+  }
   return (
     <table class="table">
       <tbody>
-        {features.map((feat) => {
+        {features.map((feature) => {
           return (
-            <tr key={feat!.key}>
-              <td
-                style={{
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  width: "auto",
-                }}
-              >
-                {feat!.key}
+            <tr key={feature.key}>
+              <td class="feature-name-cell">
+                <a
+                  href={`${appBaseUrl}/envs/current/features/by-key/${feature.key}`}
+                  target="_blank"
+                  class="feature-link"
+                >
+                  {feature.key}
+                </a>
               </td>
-              <td style={{ minWidth: "38px" }}>
-                {feat?.localOverride !== null ? (
+              <td class="feature-reset-cell">
+                {feature.localOverride !== null ? (
                   <Reset
                     setEnabledOverride={setEnabledOverride}
-                    featureKey={feat!.key}
+                    featureKey={feature.key}
                   />
                 ) : null}
               </td>
               <td>
                 <Switch
                   isOn={
-                    (feat?.localOverride === null && feat!.isEnabled) ||
-                    feat?.localOverride === true
+                    (feature.localOverride === null && feature.isEnabled) ||
+                    feature.localOverride === true
                   }
                   onChange={(e) => {
                     const isChecked = e.currentTarget.checked;
-                    const isOverridden = isChecked !== feat!.isEnabled;
+                    const isOverridden = isChecked !== feature.isEnabled;
                     setEnabledOverride(
-                      feat!.key,
+                      feature.key,
                       isOverridden ? isChecked : null,
                     );
                   }}
