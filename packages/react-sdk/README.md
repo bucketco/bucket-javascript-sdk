@@ -30,9 +30,9 @@ declare module "@bucketco/react-sdk" {
     huddle: boolean;
     recordVideo: boolean;
     questionnaire?: {
-      showAll: boolean,
-      time: 600000,
-    }
+      showAll: boolean;
+      time: 600000;
+    };
   }
 }
 ```
@@ -96,7 +96,8 @@ Returns the state of a given features for the current context.
 import { useFeature } from "@bucketco/react-sdk";
 
 function StartHuddleButton() {
-  const { isLoading, isEnabled, config, track, requestFeedback } = useFeature("huddle");
+  const { isLoading, isEnabled, config, track, requestFeedback } =
+    useFeature("huddle");
 
   if (isLoading) {
     return <Loading />;

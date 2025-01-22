@@ -27,7 +27,8 @@ const bucketClient = new BucketClient({ publishableKey, user, company });
 
 await bucketClient.initialize();
 
-const { isEnabled, config, track, requestFeedback } = bucketClient.getFeature("huddle");
+const { isEnabled, config, track, requestFeedback } =
+  bucketClient.getFeature("huddle");
 
 if (isEnabled) {
   // Show feature. When retrieving `isEnabled` the client automatically
@@ -39,9 +40,9 @@ if (isEnabled) {
 
   // The `config` is a user-supplied value in Bucket that can be dynamically evaluated
   // with respect to the current context. Here, it is assumed that one could either get
-  // a config value that maches the context or not.
-  const question = config?.question ?? "Tell us what you think of Huddles"
-  
+  // a config value that matches the context or not.
+  const question = config?.question ?? "Tell us what you think of Huddles";
+
   // Use `requestFeedback` to create "Send feedback" buttons easily for specific
   // features. This is not related to `track` and you can call them individually.
   requestFeedback({ title: question });
@@ -165,7 +166,6 @@ similar to the way access is controlled, using matching rules. Each config-bound
 multiple rules with different configuration payloads. Whichever rule matches the context, provides the configuration
 payload.
 
-
 The config is accessible through the same methods as the `isEnabled` property:
 
 ```ts
@@ -176,12 +176,13 @@ const features = bucketClient.getFeatures();
 //     targetingVersion: 42,
 //     config?: {
 //       name: "gpt-3.5",
-//       version: 2,
+//       targetingVersion: 2,
 //       payload: { maxTokens: 10000, model: "gpt-3.5-beta1" }
 //     }
 //   }
 // }
 ```
+
 The `name` is given by the user in Bucket for each configuration variant, and `version` is maintained by Bucket similar
 to `targetingVersion`. The `payload` is the actual JSON value supplied by the user and serves as context-based
 configuration.

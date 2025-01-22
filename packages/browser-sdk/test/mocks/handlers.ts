@@ -1,7 +1,6 @@
 import { DefaultBodyType, http, HttpResponse, StrictRequest } from "msw";
 
-import { Features } from "../../../node-sdk/src/types";
-import { FeaturesResponse } from "../../src/feature/features";
+import { FeaturesResponse, RawFeatures } from "../../src/feature/features";
 
 export const testChannel = "testChannel";
 
@@ -22,15 +21,17 @@ export const featureResponse: FeaturesResponse = {
   },
 };
 
-export const featuresResult: Features = Object.entries(
-  featureResponse.features,
-).reduce((acc, [key, feature]) => {
-  acc[key] = {
-    ...feature,
-    isEnabledOverride: null,
-  };
-  return acc;
-}, {} as Features);
+export const featuresResult = Object.entries(featureResponse.features).reduce(
+  (acc, [key, feature]) => {
+    acc[key] = {
+      ...feature!,
+      key: key,
+      isEnabledOverride: null,
+    };
+    return acc;
+  },
+  {} as RawFeatures,
+);
 
 function checkRequest(request: StrictRequest<DefaultBodyType>) {
   const url = new URL(request.url);

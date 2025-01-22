@@ -38,7 +38,9 @@ const client = OpenFeature.getClient();
 const boolValue = client.getBooleanValue("huddles", false);
 
 // use more complex, config-enabled functionality.
-const feedbackConfig = client.getObjectValue("ask-feedback", { question: "How are you enjoying this feature?" });
+const feedbackConfig = client.getObjectValue("ask-feedback", {
+  question: "How are you enjoying this feature?",
+});
 ```
 
 Initializing the Bucket Browser Provider will

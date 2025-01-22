@@ -48,6 +48,7 @@ export type FetchedFeature = {
 const FEATURES_UPDATED_EVENT = "features-updated";
 
 export type FetchedFeatures = Record<string, FetchedFeature | undefined>;
+
 // todo: on next major, come up with a better name for this type. Maybe `LocalFeature`.
 export type RawFeature = FetchedFeature & {
   /**
@@ -55,6 +56,7 @@ export type RawFeature = FetchedFeature & {
    */
   isEnabledOverride: boolean | null;
 };
+
 export type RawFeatures = Record<string, RawFeature>;
 
 export type FeaturesOptions = {
@@ -456,15 +458,17 @@ export class FeaturesClient {
     }
 
     // fetch failed, nothing cached => return fallbacks
-
-    return this.config.fallbackFeatures.reduce((acc, [key, config]) => {
-      acc[key] = {
-        key,
-        isEnabled: true,
-        config,
-      };
-      return acc;
-    }, {} as FetchedFeatures);
+    return Object.entries(this.config.fallbackFeatures).reduce(
+      (acc, [key, config]) => {
+        acc[key] = {
+          key,
+          isEnabled: true,
+          config,
+        };
+        return acc;
+      },
+      {} as FetchedFeatures,
+    );
   }
 
   setFeatureOverride(key: string, isEnabled: boolean | null) {
