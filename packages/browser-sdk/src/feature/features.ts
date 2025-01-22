@@ -9,6 +9,9 @@ import {
   parseAPIFeaturesResponse,
 } from "./featureCache";
 
+/**
+ * A feature fetched from the server.
+ */
 export type FetchedFeature = {
   /**
    * Feature key
@@ -26,15 +29,15 @@ export type FetchedFeature = {
   targetingVersion?: number;
 
   /**
-   * Optional user-defined configuration.
+   * Optional user-defined dynamic configuration.
    */
   config?: {
     /**
-     * The name of the matched configuration variant.
+     * The key of the matched configuration value.
      */
-    name: string | null;
+    key: string;
     /**
-     * The version of the matched configuration variant.
+     * The version of the matched configuration value.
      */
     version: number;
 

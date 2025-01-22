@@ -79,7 +79,7 @@ describe("usage", () => {
       isEnabled: false,
       track: expect.any(Function),
       requestFeedback: expect.any(Function),
-      config: undefined,
+      config: { key: undefined, version: undefined, payload: undefined },
     });
   });
 
@@ -455,8 +455,12 @@ describe(`sends "check" events `, () => {
       await client.initialize();
       const featureB = client.getFeature("featureB");
       expect(featureB.config).toEqual({
-        model: "gpt-something",
-        temperature: 0.5,
+        key: "gpt3",
+        version: 12,
+        payload: {
+          model: "gpt-something",
+          temperature: 0.5,
+        },
       });
 
       expect(postSpy).toHaveBeenCalledWith({
@@ -511,6 +515,7 @@ describe(`sends "check" events `, () => {
         isEnabled: false,
         track: expect.any(Function),
         requestFeedback: expect.any(Function),
+        config: { key: undefined, version: undefined, payload: undefined },
       });
 
       vi.spyOn(client, "track");
@@ -529,6 +534,7 @@ describe(`sends "check" events `, () => {
         isEnabled: false,
         track: expect.any(Function),
         requestFeedback: expect.any(Function),
+        config: { key: undefined, version: undefined, payload: undefined },
       });
 
       vi.spyOn(client, "requestFeedback");

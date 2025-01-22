@@ -158,7 +158,7 @@ by down-stream clients, like the React SDK.
 Note that accessing `isEnabled` on the object returned by `getFeatures` does not automatically
 generate a `check` event, contrary to the `isEnabled` property on the object returned by `getFeature`.
 
-### Feature toggles
+### Remote config
 
 Similar to `isEnabled`, each feature has a `config` property. This configuration is set by the user within Bucket. It is
 similar to the way access is controlled, using matching rules. Each config-bound rule is given a configuration payload

@@ -174,25 +174,54 @@ const defaultConfig: Config = {
   enableTracking: true,
 };
 
+/**
+ * A dynamic configuration value for a feature.
+ */
+export type FeatureDynamicConfig =
+  | {
+      /**
+       * The key of the matched configuration value.
+       */
+      key: string;
+      /**
+       * The version of the matched configuration value.
+       */
+      version: number;
+
+      /**
+       * The user-supplied data.
+       */
+      payload: any;
+    }
+  | { key: undefined; version: undefined; payload: undefined };
+
+/**
+ * A feature.
+ */
 export interface Feature {
   /**
-   * Result of feature flag evaluation
+   * Result of feature flag evaluation.
    */
   isEnabled: boolean;
 
   /*
-   * Optional user-defined configuration
+   * Optional user-defined configuration.
    */
-  config: any;
+  config: FeatureDynamicConfig;
 
   /**
-   * Function to send analytics events for this feature
+   * Function to send analytics events for this feature.
    */
   track: () => Promise<Response | undefined>;
+
+  /**
+   * Function to request feedback for this feature.
+   */
   requestFeedback: (
     options: Omit<RequestFeedbackData, "featureKey" | "featureId">,
   ) => void;
 }
+
 /**
  * BucketClient lets you interact with the Bucket API.
  *
@@ -209,6 +238,7 @@ export class BucketClient {
   private readonly featuresClient: FeaturesClient;
 
   public readonly logger: Logger;
+
   /**
    * Create a new BucketClient instance.
    */
@@ -514,6 +544,11 @@ export class BucketClient {
     return this.featuresClient.getFeatures();
   }
 
+  private missingConfig: FeatureDynamicConfig = {
+    key: undefined,
+    version: undefined,
+    payload: undefined,
+  };
   /**
    * Return a feature. Accessing `isEnabled` or `config` will automatically send a `check` event.
    * @returns A feature.
@@ -523,7 +558,7 @@ export class BucketClient {
 
     const fClient = this.featuresClient;
     const value = f?.isEnabledOverride ?? f?.isEnabled ?? false;
-    const config = f?.config?.payload;
+    const config = f?.config ?? this.missingConfig;
 
     function sendCheckEvent() {
       fClient

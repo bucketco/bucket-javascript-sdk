@@ -14,7 +14,7 @@ export const featureResponse: FeaturesResponse = {
       key: "featureB",
       config: {
         version: 12,
-        name: "gpt3",
+        key: "gpt3",
         payload: { model: "gpt-something", temperature: 0.5 },
       },
     },
@@ -116,6 +116,18 @@ export const handlers = [
       success: true,
     });
   }),
+  http.post("https://front.bucket.co/features/events", async ({ request }) => {
+    if (!checkRequest(request)) return invalidReqResponse;
+    const data = await request.json();
+
+    if (typeof data !== "object" || !data || !data["userId"]) {
+      return new HttpResponse(null, { status: 400 });
+    }
+
+    return HttpResponse.json({
+      success: true,
+    });
+  }),
   http.post("https://front.bucket.co/feedback", async ({ request }) => {
     if (!checkRequest(request)) return invalidReqResponse;
     const data = await request.json();
@@ -146,4 +158,19 @@ export const handlers = [
     if (!checkRequest(request)) return invalidReqResponse;
     return HttpResponse.json({ success: true, keyName: "keyName" });
   }),
+  http.post(
+    "https://livemessaging.bucket.co/keys/keyName/requestToken",
+    async ({ request }) => {
+      const data = await request.json();
+      if (typeof data !== "object") {
+        return new HttpResponse(null, { status: 400 });
+      }
+
+      return HttpResponse.json({
+        success: true,
+        token: "token",
+        expires: 1234567890,
+      });
+    },
+  ),
 ];

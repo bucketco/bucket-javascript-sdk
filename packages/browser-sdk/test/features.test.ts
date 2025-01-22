@@ -144,14 +144,17 @@ describe("FeaturesClient", () => {
       new Error("Failed to fetch features"),
     );
     const featuresClient = newFeaturesClient({
-      fallbackFeatures: { huddle: { name: "john" } },
+      fallbackFeatures: {
+        huddle: { key: "john", version: 1, payload: { something: "else" } },
+      },
     });
 
     await featuresClient.initialize();
     expect(featuresClient.getFeatures()).toStrictEqual({
       huddle: {
         isEnabled: true,
-        config: { name: "john" },
+        config: { key: "john", version: 1, payload: { something: "else" } },
+        key: "huddle",
         isEnabledOverride: null,
       },
     });
@@ -335,12 +338,12 @@ describe("FeaturesClient", () => {
       updated = true;
     });
 
-    expect(client.getFeatures().featureB).toBeUndefined();
+    expect(client.getFeatures().featureC).toBeUndefined();
 
-    client.setFeatureOverride("featureB", true);
+    client.setFeatureOverride("featureC", true);
 
     expect(updated).toBe(true);
-    expect(client.getFeatures().featureB.isEnabled).toBe(false);
-    expect(client.getFeatures().featureB.isEnabledOverride).toBe(true);
+    expect(client.getFeatures().featureC.isEnabled).toBe(false);
+    expect(client.getFeatures().featureC.isEnabledOverride).toBe(true);
   });
 });
