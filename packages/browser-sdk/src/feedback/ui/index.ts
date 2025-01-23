@@ -33,6 +33,11 @@ function attachDialogContainer() {
   return container.shadowRoot!;
 }
 
+// this is a counter that increases every time the feedback form is opened
+// and since it's passed as a key to the FeedbackDialog component,
+// it forces a re-render on every form open
+let openInstances = 0;
+
 export function openFeedbackForm(options: OpenFeedbackFormOptions): void {
   const shadowRoot = attachDialogContainer();
   const position = options.position || DEFAULT_POSITION;
@@ -55,5 +60,10 @@ export function openFeedbackForm(options: OpenFeedbackFormOptions): void {
     }
   }
 
-  render(h(FeedbackDialog, { ...options, position }), shadowRoot);
+  openInstances++;
+
+  render(
+    h(FeedbackDialog, { ...options, position, key: openInstances.toString() }),
+    shadowRoot,
+  );
 }
