@@ -274,6 +274,10 @@ export class FeaturesClient {
     return this.features;
   }
 
+  getFetchedFeatures(): FetchedFeatures {
+    return this.fetchedFeatures;
+  }
+
   public async fetchFeatures(): Promise<FetchedFeatures | undefined> {
     const params = this.fetchParams();
     try {
