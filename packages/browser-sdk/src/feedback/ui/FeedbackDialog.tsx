@@ -2,7 +2,7 @@ import { Fragment, FunctionComponent, h } from "preact";
 import { useCallback, useState } from "preact/hooks";
 
 import { feedbackContainerId } from "../../ui/constants";
-import { Dialog, DialogContext } from "../../ui/Dialog";
+import { Dialog, useDialog } from "../../ui/Dialog";
 import { Close } from "../../ui/icons/Close";
 
 import { DEFAULT_TRANSLATIONS } from "./config/defaultTranslations";
@@ -62,49 +62,53 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
     [feedbackId, onSubmit],
   );
 
+  const { isOpen, close } = useDialog({ onClose, initialValue: true });
+
   const autoClose = useTimer({
     enabled: position.type === "DIALOG",
     initialDuration: INACTIVE_DURATION_MS,
     onEnd: close,
   });
 
+  const dismiss = useCallback(() => {
+    autoClose.stop();
+    close();
+    onDismiss?.();
+  }, [autoClose, close, onDismiss]);
+
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: styles }}></style>
       <Dialog
-        open={true}
+        isOpen={isOpen}
         containerId={feedbackContainerId}
         key={key}
         position={position}
-        onClose={onClose}
+        close={close}
         onDismiss={onDismiss}
       >
-        <DialogContext.Consumer>
-          {(ctx) => (
-            <>
-              <FeedbackForm
-                t={{ ...DEFAULT_TRANSLATIONS, ...translations }}
-                key={key}
-                question={title}
-                openWithCommentVisible={openWithCommentVisible}
-                onSubmit={submit}
-                onScoreSubmit={submitScore}
-                scoreState={scoreState}
-                onInteraction={autoClose.stop}
-              />
+        <>
+          <FeedbackForm
+            t={{ ...DEFAULT_TRANSLATIONS, ...translations }}
+            key={key}
+            question={title}
+            openWithCommentVisible={openWithCommentVisible}
+            onSubmit={submit}
+            onScoreSubmit={submitScore}
+            scoreState={scoreState}
+            onInteraction={autoClose.stop}
+          />
 
-              <button class="close" onClick={() => ctx?.dismiss()}>
-                {!autoClose.stopped && autoClose.elapsedFraction > 0 && (
-                  <RadialProgress
-                    diameter={28}
-                    progress={1.0 - autoClose.elapsedFraction}
-                  />
-                )}
-                <Close />
-              </button>
-            </>
-          )}
-        </DialogContext.Consumer>
+          <button class="close" onClick={dismiss}>
+            {!autoClose.stopped && autoClose.elapsedFraction > 0 && (
+              <RadialProgress
+                diameter={28}
+                progress={1.0 - autoClose.elapsedFraction}
+              />
+            )}
+            <Close />
+          </button>
+        </>
       </Dialog>
     </>
   );

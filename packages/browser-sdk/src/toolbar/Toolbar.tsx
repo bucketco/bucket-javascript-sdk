@@ -1,15 +1,9 @@
 import { h } from "preact";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "preact/hooks";
+import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import { BucketClient } from "../client";
 import { toolbarContainerId } from "../ui/constants";
-import { Dialog } from "../ui/Dialog";
+import { Dialog, useDialog } from "../ui/Dialog";
 import { Logo } from "../ui/icons/Logo";
 import { Offset, Placement } from "../ui/types";
 import { parseUnanchoredPosition } from "../ui/utils";
@@ -40,17 +34,8 @@ export default function Toolbar({
   bucketClient: BucketClient;
   position: ToolbarPosition;
 }) {
-  const [toolbarOpen, setToolbarOpen] = useState(false);
   const toggleToolbarRef = useRef<HTMLDivElement>(null);
   const [features, setFeatures] = useState<Feature[]>([]);
-
-  const toggleToolbar = useCallback(() => {
-    setToolbarOpen((prev) => !prev);
-  }, [setToolbarOpen]);
-
-  const closeToolbar = useCallback(() => {
-    setToolbarOpen(false);
-  }, [setToolbarOpen]);
 
   function updateFeatures() {
     const rawFeatures = bucketClient.getFeatures();
@@ -87,6 +72,8 @@ export default function Toolbar({
 
   const appBaseUrl = bucketClient.getConfig().appBaseUrl;
 
+  const { isOpen, close, toggle } = useDialog();
+
   return (
     <div class="toolbar">
       <style dangerouslySetInnerHTML={{ __html: styles }}></style>
@@ -94,17 +81,17 @@ export default function Toolbar({
         innerRef={toggleToolbarRef}
         position={position}
         hasAnyOverrides={hasAnyOverrides}
-        onClick={toggleToolbar}
+        onClick={toggle}
       />
       <Dialog
         strategy="fixed"
-        open={toolbarOpen}
+        isOpen={isOpen}
         containerId={toolbarContainerId}
         position={{
           type: "POPOVER",
           anchor: toggleToolbarRef.current,
         }}
-        onClose={closeToolbar}
+        close={close}
       >
         <FeatureSearch onSearch={onSearch} />
         <FeaturesTable

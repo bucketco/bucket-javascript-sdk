@@ -1,5 +1,5 @@
-import { createContext, Fragment, FunctionComponent, h } from "preact";
-import { useCallback, useEffect, useRef } from "preact/hooks";
+import { Fragment, FunctionComponent, h } from "preact";
+import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import {
   arrow,
@@ -25,9 +25,8 @@ export interface OpenDialogOptions {
 
   strategy?: "fixed" | "absolute";
 
-  open: boolean;
-
-  onClose?: () => void;
+  isOpen: boolean;
+  close: () => void;
   onDismiss?: () => void;
 
   containerId: string;
@@ -35,19 +34,38 @@ export interface OpenDialogOptions {
   children?: preact.ComponentChildren;
 }
 
-export type DialogContextType = {
-  close: () => void;
-  dismiss: () => void;
-};
-
-export const DialogContext = createContext<DialogContextType | undefined>(
-  undefined,
-);
+export function useDialog({
+  onClose,
+  onOpen,
+  initialValue = false,
+}: {
+  onClose?: () => void;
+  onOpen?: () => void;
+  initialValue?: boolean;
+} = {}) {
+  const [isOpen, setIsOpen] = useState<boolean>(initialValue);
+  return {
+    isOpen,
+    open: () => {
+      setIsOpen(true);
+      onOpen?.();
+    },
+    close: () => {
+      setIsOpen(false);
+      onClose?.();
+    },
+    toggle: () => {
+      if (isOpen) onClose?.();
+      else onOpen?.();
+      setIsOpen((prev) => !prev);
+    },
+  };
+}
 
 export const Dialog: FunctionComponent<OpenDialogOptions> = ({
   position,
-  open,
-  onClose,
+  isOpen,
+  close,
   onDismiss,
   containerId,
   strategy,
@@ -105,12 +123,6 @@ export const Dialog: FunctionComponent<OpenDialogOptions> = ({
     bottom: "",
     [staticSide]: "-4px",
   };
-
-  const close = useCallback(() => {
-    const dialog = refs.floating.current as HTMLDialogElement | null;
-    dialog?.close();
-    onClose?.();
-  }, [onClose]);
 
   const dismiss = useCallback(() => {
     close();
@@ -172,16 +184,16 @@ export const Dialog: FunctionComponent<OpenDialogOptions> = ({
 
   useEffect(() => {
     if (!dialogRef.current) return;
-    if (open && !dialogRef.current.hasAttribute("open")) {
+    if (isOpen && !dialogRef.current.hasAttribute("open")) {
       dialogRef.current[position.type === "MODAL" ? "showModal" : "show"]();
     }
-    if (!open && dialogRef.current.hasAttribute("open")) {
-      dialogRef.current[position.type === "MODAL" ? "close" : "close"]();
+    if (!isOpen && dialogRef.current.hasAttribute("open")) {
+      dialogRef.current.close();
     }
-  }, [dialogRef, open, position.type]);
+  }, [dialogRef, isOpen, position.type]);
 
   return (
-    <DialogContext.Provider value={{ close, dismiss }}>
+    <>
       <style dangerouslySetInnerHTML={{ __html: styles }}></style>
       <dialog
         ref={setDiagRef}
@@ -206,6 +218,6 @@ export const Dialog: FunctionComponent<OpenDialogOptions> = ({
           ></div>
         )}
       </dialog>
-    </DialogContext.Provider>
+    </>
   );
 };
