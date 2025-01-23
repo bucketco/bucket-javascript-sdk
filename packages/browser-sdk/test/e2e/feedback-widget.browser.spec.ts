@@ -59,6 +59,47 @@ async function getOpenedWidgetContainer(
   return page.locator(`#${feedbackContainerId}`);
 }
 
+async function getGiveFeedbackPageContainer(
+  page: Page,
+  initOptions: Omit<InitOptions, "publishableKey"> = {},
+) {
+  await page.goto("http://localhost:8001/test/e2e/give-feedback-button.html");
+
+  // Mock API calls
+  await page.route(`${API_HOST}/user`, async (route) => {
+    await route.fulfill({ status: 200 });
+  });
+
+  await page.route(`${API_HOST}/features/enabled*`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      body: JSON.stringify({
+        success: true,
+        features: {},
+      }),
+    });
+  });
+
+  // Golden path requests
+  await page.evaluate(`
+    ;(async () => {
+      const { BucketClient } = await import("/dist/bucket-browser-sdk.mjs");
+      const bucket = new BucketClient({publishableKey: "${KEY}", user: {id: "foo"}, company: {id: "bar"}, ...${JSON.stringify(initOptions ?? {})}});
+      await bucket.initialize();
+      console.log("setup clicky", document.querySelector("#give-feedback-button"))
+      document.querySelector("#give-feedback-button")?.addEventListener("click", () => {
+        console.log("cliked!");
+        bucket.requestFeedback({
+          featureId: "featureId1",
+          title: "baz",
+        });
+      });
+    })()
+  `);
+
+  return page.locator(`#${feedbackContainerId}`);
+}
+
 async function setScore(container: Locator, score: number) {
   await new Promise((resolve) => setTimeout(resolve, 50)); // allow react to update its state
   await container
@@ -100,6 +141,23 @@ test.beforeEach(async ({ page, browserName }) => {
 test("Opens a feedback widget", async ({ page }) => {
   const container = await getOpenedWidgetContainer(page);
 
+  await expect(container).toBeAttached();
+  await expect(container.locator("dialog")).toHaveAttribute("open", "");
+});
+
+test("Opens a feedback widget multiple times in same session", async ({
+  page,
+}) => {
+  const container = await getGiveFeedbackPageContainer(page);
+
+  await page.getByTestId("give-feedback-button").click();
+  await expect(container).toBeAttached();
+  await expect(container.locator("dialog")).toHaveAttribute("open", "");
+
+  await container.locator("dialog .close").click();
+  await expect(container.locator("dialog")).not.toHaveAttribute("open", "");
+
+  await page.getByTestId("give-feedback-button").click();
   await expect(container).toBeAttached();
   await expect(container.locator("dialog")).toHaveAttribute("open", "");
 });
