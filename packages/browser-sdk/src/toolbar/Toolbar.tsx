@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { BucketClient } from "../client";
 import { toolbarContainerId } from "../ui/constants";
 import { Dialog, useDialog } from "../ui/Dialog";
+import { Close } from "../ui/icons/Close";
 import { Logo } from "../ui/icons/Logo";
 import { Offset, Placement } from "../ui/types";
 import { parseUnanchoredPosition } from "../ui/utils";
@@ -81,6 +82,7 @@ export default function Toolbar({
         innerRef={toggleToolbarRef}
         position={position}
         hasAnyOverrides={hasAnyOverrides}
+        isOpen={isOpen}
         onClick={toggle}
       />
       <Dialog
@@ -107,11 +109,13 @@ export default function Toolbar({
 }
 
 function ToolbarToggle({
+  isOpen,
   position,
   onClick,
   innerRef,
   hasAnyOverrides,
 }: {
+  isOpen: boolean;
   position: ToolbarPosition;
   onClick: () => void;
   innerRef: React.RefObject<HTMLDivElement>;
@@ -120,19 +124,23 @@ function ToolbarToggle({
 }) {
   const offsets = parseUnanchoredPosition(position);
 
-  const classes = [
+  const toggleClasses = ["toolbar-toggle", isOpen ? "open" : undefined].join(
+    " ",
+  );
+
+  const indicatorClasses = [
     "override-indicator",
     hasAnyOverrides ? "show" : undefined,
   ].join(" ");
+
   return (
-    <div
-      ref={innerRef}
-      class="toolbar-toggle"
-      onClick={onClick}
-      style={{ cursor: "pointer", ...offsets }}
-    >
-      <div class={classes}></div>
-      <Logo height="13px" width="13px" />
+    <div ref={innerRef} class={toggleClasses} onClick={onClick} style={offsets}>
+      <div class={indicatorClasses}></div>
+      {isOpen ? (
+        <Close width="16" height="16" />
+      ) : (
+        <Logo height="13px" width="13px" />
+      )}
     </div>
   );
 }
