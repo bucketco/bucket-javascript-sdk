@@ -71,7 +71,7 @@ export type BucketProps = BucketContext & {
   debug?: boolean;
   enableTracking?: boolean;
 
-  featureList: Readonly<string[]>;
+  featureList?: Readonly<string[]>;
 
   toolbar?: ToolbarOptions;
 
