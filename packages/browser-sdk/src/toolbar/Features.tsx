@@ -83,7 +83,7 @@ export function FeatureSearch({
   return (
     <input
       type="search"
-      placeholder="Search"
+      placeholder="Search features"
       onInput={(s) => onSearch(s.currentTarget.value)}
       autoFocus
       class="search-input"

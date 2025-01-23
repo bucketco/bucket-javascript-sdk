@@ -3,8 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import { BucketClient } from "../client";
 import { toolbarContainerId } from "../ui/constants";
-import { Dialog, useDialog } from "../ui/Dialog";
-import { Close } from "../ui/icons/Close";
+import { Dialog, DialogContent, DialogHeader, useDialog } from "../ui/Dialog";
 import { Logo } from "../ui/icons/Logo";
 import { Offset, Placement } from "../ui/types";
 import { parseUnanchoredPosition } from "../ui/utils";
@@ -95,14 +94,18 @@ export default function Toolbar({
         }}
         close={close}
       >
-        <FeatureSearch onSearch={onSearch} />
-        <FeaturesTable
-          features={searchedFeatures}
-          setEnabledOverride={bucketClient.setFeatureOverride.bind(
-            bucketClient,
-          )}
-          appBaseUrl={appBaseUrl}
-        />
+        <DialogHeader>
+          <FeatureSearch onSearch={onSearch} />
+        </DialogHeader>
+        <DialogContent>
+          <FeaturesTable
+            features={searchedFeatures}
+            setEnabledOverride={bucketClient.setFeatureOverride.bind(
+              bucketClient,
+            )}
+            appBaseUrl={appBaseUrl}
+          />
+        </DialogContent>
       </Dialog>
     </div>
   );
@@ -136,11 +139,7 @@ function ToolbarToggle({
   return (
     <div ref={innerRef} class={toggleClasses} onClick={onClick} style={offsets}>
       <div class={indicatorClasses}></div>
-      {isOpen ? (
-        <Close width="16" height="16" />
-      ) : (
-        <Logo height="13px" width="13px" />
-      )}
+      <Logo height="13px" width="13px" />
     </div>
   );
 }

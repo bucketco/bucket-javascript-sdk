@@ -90,6 +90,7 @@
   border-radius: 7px;
   z-index: 999999;
   min-width: 200px;
+  padding: 0;
 }
 
 .toolbar-toggle {
@@ -116,27 +117,29 @@
   align-items: center;
 
   animation: bounceInUp 1s ease-out;
-}
 
-.toolbar-toggle.open {
-  color: var(--gray500);
-}
+  transition: color 0.1s ease;
 
-.toolbar-toggle .override-indicator {
-  position: absolute;
-  top: -3px;
-  right: -3px;
-  width: 8px;
-  height: 8px;
-  background-color: var(--brand400);
-  border-radius: 50%;
-  opacity: 0;
-  transition: opacity 0.1s ease-in-out;
-  border: 1px solid var(--brand300);
+  &.open {
+    color: var(--gray500);
+  }
 
-  &.show {
-    opacity: 1;
-    animation: gelatine 0.5s;
+  & .override-indicator {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    width: 8px;
+    height: 8px;
+    background-color: var(--brand400);
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.1s ease-in-out;
+    border: 1px solid var(--brand300);
+
+    &.show {
+      opacity: 1;
+      animation: gelatine 0.5s;
+    }
   }
 }
 

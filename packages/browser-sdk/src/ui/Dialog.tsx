@@ -221,3 +221,19 @@ export const Dialog: FunctionComponent<OpenDialogOptions> = ({
     </>
   );
 };
+
+export function DialogHeader({
+  children,
+}: {
+  children: preact.ComponentChildren;
+}) {
+  return <header class="dialog-header">{children}</header>;
+}
+
+export function DialogContent({
+  children,
+}: {
+  children: preact.ComponentChildren;
+}) {
+  return <div class="dialog-content">{children}</div>;
+}

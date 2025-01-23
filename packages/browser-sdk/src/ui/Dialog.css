@@ -94,3 +94,12 @@
       fade 300ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 }
+
+.dialog-header {
+  border-bottom: 1px solid var(--border-color);
+  padding: 7px 12px;
+}
+
+.dialog-content {
+  padding: 7px 12px;
+}
