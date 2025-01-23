@@ -88,7 +88,7 @@ export default function Toolbar({
   const appBaseUrl = bucketClient.getConfig().appBaseUrl;
 
   return (
-    <div id="toolbarRoot">
+    <div class="toolbar">
       <style dangerouslySetInnerHTML={{ __html: styles }}></style>
       <ToolbarToggle
         innerRef={toggleToolbarRef}

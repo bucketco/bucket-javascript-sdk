@@ -253,7 +253,7 @@ export class BucketClient {
       appBaseUrl: opts?.appBaseUrl ?? opts?.host ?? defaultConfig.appBaseUrl,
       sseBaseUrl: opts?.sseBaseUrl ?? opts?.sseHost ?? defaultConfig.sseBaseUrl,
       enableTracking: opts?.enableTracking ?? defaultConfig.enableTracking,
-    } satisfies Config;
+    };
 
     const feedbackOpts = handleDeprecatedFeedbackOptions(opts?.feedback);
 

@@ -1,3 +1,5 @@
+/* Animations */
+
 @keyframes bounceInUp {
   from,
   60%,
@@ -46,7 +48,9 @@
   }
 }
 
-#toolbarRoot {
+/* Toolbar */
+
+.toolbar {
   --brand300: #a39dfc;
   --brand400: #847cfb;
   --gray500: #787c91;
@@ -56,7 +60,18 @@
   --border-color: #292b32;
   --logo-color: white;
   --text-color: white;
-  font-family: monospace;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    "Open Sans",
+    "Helvetica Neue",
+    sans-serif;
   font-size: 12px;
 }
 
@@ -90,11 +105,9 @@
   background: var(--bg-color);
   border: 1px solid var(--border-color);
   box-shadow:
-    0px 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0px 4px 6px -2px rgba(0, 0, 0, 0.05);
-  border-radius: 9px;
-
-  /* background: #787c91; */
+    0px 10px 15px -3px rgba(0, 0, 0, 0.15),
+    0px 4px 6px -2px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
 
   display: flex;
   justify-content: center;

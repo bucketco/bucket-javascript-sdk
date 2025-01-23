@@ -60,6 +60,7 @@ export type BucketProps = BucketContext & {
    */
   host?: string;
   apiBaseUrl?: string;
+  appBaseUrl?: string;
 
   /**
    * @deprecated
@@ -122,6 +123,7 @@ export function BucketProvider({
 
       host: config.host,
       apiBaseUrl: config.apiBaseUrl,
+      appBaseUrl: config.appBaseUrl,
       sseHost: config.sseHost,
       sseBaseUrl: config.sseBaseUrl,
 
