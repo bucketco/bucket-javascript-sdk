@@ -1,4 +1,4 @@
-import { BucketClient } from "../../";
+import { BucketClient } from "../../src";
 
 const urlParams = new URLSearchParams(window.location.search);
 const publishableKey = urlParams.get("publishableKey") ?? "publishableKey";
