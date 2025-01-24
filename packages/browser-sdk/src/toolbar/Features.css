@@ -3,7 +3,7 @@
   border: none;
   color: white;
   width: 100%;
-  font-size: 12px;
+  font-size: var(--text-size);
 
   &::placeholder {
     color: var(--gray500);
