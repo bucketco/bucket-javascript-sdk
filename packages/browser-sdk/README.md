@@ -29,7 +29,7 @@ await bucketClient.initialize();
 
 const {
   isEnabled,
-  config: { value: question },
+  config: { payload: question },
   track,
   requestFeedback,
 } = bucketClient.getFeature("huddle");
@@ -44,7 +44,7 @@ if (isEnabled) {
 
   // The `payload` is a user-supplied JSON in Bucket that is dynamically picked
   // out depending on the user/company.
-  const question = value?.question ?? "Tell us what you think of Huddles";
+  const question = payload?.question ?? "Tell us what you think of Huddles";
 
   // Use `requestFeedback` to create "Send feedback" buttons easily for specific
   // features. This is not related to `track` and you can call them individually.
