@@ -1,8 +1,12 @@
-export type Placement =
+import { Placement } from "./packages/floating-ui-preact-dom/types";
+
+export type DialogPlacement =
   | "bottom-right"
   | "bottom-left"
   | "top-right"
   | "top-left";
+
+export type PopoverPlacement = Placement;
 
 export type Offset = {
   /**
@@ -17,5 +21,13 @@ export type Offset = {
 
 export type Position =
   | { type: "MODAL" }
-  | { type: "DIALOG"; placement: Placement; offset?: Offset }
-  | { type: "POPOVER"; anchor: HTMLElement | null };
+  | {
+      type: "DIALOG";
+      placement: DialogPlacement;
+      offset?: Offset;
+    }
+  | {
+      type: "POPOVER";
+      anchor: HTMLElement | null;
+      placement?: PopoverPlacement;
+    };

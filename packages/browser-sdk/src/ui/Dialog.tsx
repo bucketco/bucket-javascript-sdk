@@ -1,4 +1,5 @@
-import { Fragment, FunctionComponent, h } from "preact";
+import { MiddlewareData, Placement } from "@floating-ui/dom";
+import { Fragment, FunctionComponent, h, Ref } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import {
@@ -73,7 +74,11 @@ export const Dialog: FunctionComponent<OpenDialogOptions> = ({
 }) => {
   const arrowRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
+
   const anchor = position.type === "POPOVER" ? position.anchor : null;
+  const placement =
+    position.type === "POPOVER" ? position.placement : undefined;
+
   const {
     refs,
     floatingStyles,
@@ -85,13 +90,13 @@ export const Dialog: FunctionComponent<OpenDialogOptions> = ({
     },
     strategy,
     transform: false,
+    placement,
     whileElementsMounted: autoUpdate,
     middleware: [
       flip({
         padding: 10,
         mainAxis: true,
         crossAxis: true,
-        fallbackAxisSideDirection: "end",
       }),
       shift(),
       offset(8),
@@ -105,24 +110,6 @@ export const Dialog: FunctionComponent<OpenDialogOptions> = ({
   if (position.type === "DIALOG") {
     unanchoredPosition = parseUnanchoredPosition(position);
   }
-
-  const { x: arrowX, y: arrowY } = middlewareData.arrow ?? {};
-
-  const staticSide =
-    {
-      top: "bottom",
-      right: "left",
-      bottom: "top",
-      left: "right",
-    }[actualPlacement.split("-")[0]] || "bottom";
-
-  const arrowStyles = {
-    left: arrowX != null ? `${arrowX}px` : "",
-    top: arrowY != null ? `${arrowY}px` : "",
-    right: "",
-    bottom: "",
-    [staticSide]: "-4px",
-  };
 
   const dismiss = useCallback(() => {
     close();
@@ -192,35 +179,72 @@ export const Dialog: FunctionComponent<OpenDialogOptions> = ({
     }
   }, [dialogRef, isOpen, position.type]);
 
+  const classes = [
+    "dialog",
+    position.type === "MODAL"
+      ? "modal"
+      : position.type === "POPOVER"
+        ? "anchored"
+        : `unanchored unanchored-${position.placement}`,
+    actualPlacement,
+  ].join(" ");
+
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: styles }}></style>
       <dialog
         ref={setDiagRef}
-        class={[
-          "dialog",
-          position.type === "MODAL"
-            ? "modal"
-            : position.type === "POPOVER"
-              ? "anchored"
-              : `unanchored unanchored-${position.placement}`,
-          actualPlacement,
-        ].join(" ")}
+        class={classes}
         style={anchor ? floatingStyles : unanchoredPosition}
       >
         {children && <Fragment>{children}</Fragment>}
 
         {anchor && (
-          <div
-            ref={arrowRef}
-            class={["arrow", actualPlacement].join(" ")}
-            style={arrowStyles}
-          ></div>
+          <DialogArrow
+            arrowRef={arrowRef}
+            arrowData={middlewareData?.arrow}
+            placement={actualPlacement}
+          />
         )}
       </dialog>
     </>
   );
 };
+
+function DialogArrow({
+  arrowData,
+  arrowRef,
+  placement,
+}: {
+  arrowData: MiddlewareData["arrow"];
+  arrowRef: Ref<HTMLDivElement>;
+  placement: Placement;
+}) {
+  const { x: arrowX, y: arrowY } = arrowData ?? {};
+
+  const staticSide =
+    {
+      top: "bottom",
+      right: "left",
+      bottom: "top",
+      left: "right",
+    }[placement.split("-")[0]] || "bottom";
+
+  const arrowStyles = {
+    left: arrowX != null ? `${arrowX}px` : "",
+    top: arrowY != null ? `${arrowY}px` : "",
+    right: "",
+    bottom: "",
+    [staticSide]: "-4px",
+  };
+  return (
+    <div
+      ref={arrowRef}
+      class={["arrow", placement].join(" ")}
+      style={arrowStyles}
+    ></div>
+  );
+}
 
 export function DialogHeader({
   children,

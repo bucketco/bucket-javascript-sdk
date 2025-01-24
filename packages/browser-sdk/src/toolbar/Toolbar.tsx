@@ -5,7 +5,7 @@ import { BucketClient } from "../client";
 import { toolbarContainerId } from "../ui/constants";
 import { Dialog, DialogContent, DialogHeader, useDialog } from "../ui/Dialog";
 import { Logo } from "../ui/icons/Logo";
-import { Offset, Placement } from "../ui/types";
+import { DialogPlacement, Offset } from "../ui/types";
 import { parseUnanchoredPosition } from "../ui/utils";
 
 import { FeatureSearch, FeaturesTable } from "./Features";
@@ -17,7 +17,7 @@ export type FeatureItem = {
   isEnabled: boolean;
 };
 export interface ToolbarPosition {
-  placement: Placement;
+  placement: DialogPlacement;
   offset?: Offset;
 }
 
@@ -91,6 +91,7 @@ export default function Toolbar({
         position={{
           type: "POPOVER",
           anchor: toggleToolbarRef.current,
+          placement: "top-start",
         }}
         close={close}
       >

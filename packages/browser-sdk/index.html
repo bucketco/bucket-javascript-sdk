@@ -26,12 +26,12 @@
       }
     </style>
     <div id="start-huddle" style="display: none">
-      <button onClick="bucket.track(featureKey)">Start huddle</button>
       <button
         onClick="bucket.requestFeedback({featureKey, position: {type: 'POPOVER', anchor: event.currentTarget}})"
       >
         Give feedback!
       </button>
+      <button onClick="bucket.track(featureKey)">Start huddle</button>
     </div>
 
     <script type="module">
@@ -44,6 +44,9 @@
         company: { id: "1" },
         toolbar: {
           show: true,
+          position: {
+            placement: "bottom-right",
+          },
         },
 
         featureList,

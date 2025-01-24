@@ -59,7 +59,7 @@
 }
 
 .feature-reset-cell {
-  min-width: 30px;
+  width: 30px;
   padding: 6px 0;
   text-align: right;
 }
@@ -70,4 +70,5 @@
 
 .feature-switch-cell {
   padding: 6px 0 6px 6px;
+  width: 0;
 }
