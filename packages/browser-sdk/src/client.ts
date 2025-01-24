@@ -211,11 +211,14 @@ export interface Feature {
   ) => void;
 }
 
-function shouldShowToolbar(opts?: ToolbarOptions) {
-  if (typeof opts === "boolean") return opts;
-  if (typeof opts?.show === "boolean") return opts.show;
+function shouldShowToolbar(opts: InitOptions) {
+  const toolbarOpts = opts.toolbar;
+  if (typeof toolbarOpts === "boolean") return toolbarOpts;
+  if (typeof toolbarOpts?.show === "boolean") return toolbarOpts.show;
 
-  return window?.location?.hostname === "localhost";
+  return (
+    opts.featureList !== undefined && window?.location?.hostname === "localhost"
+  );
 }
 
 /**
@@ -301,7 +304,7 @@ export class BucketClient {
       }
     }
 
-    if (shouldShowToolbar(opts.toolbar)) {
+    if (shouldShowToolbar(opts)) {
       this.logger.info("opening toolbar toggler");
       showToolbarToggle({
         bucketClient: this as unknown as BucketClient,
