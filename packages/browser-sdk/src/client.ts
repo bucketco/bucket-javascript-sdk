@@ -212,11 +212,10 @@ export interface Feature {
 }
 
 function shouldShowToolbar(opts?: ToolbarOptions) {
-  return (
-    opts === true ||
-    (typeof opts === "object" && opts.show === true) ||
-    window?.location?.hostname === "localhost"
-  );
+  if (typeof opts === "boolean") return opts;
+  if (typeof opts?.show === "boolean") return opts.show;
+
+  return window?.location?.hostname === "localhost";
 }
 
 /**
