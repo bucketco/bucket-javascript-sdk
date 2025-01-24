@@ -58,7 +58,7 @@ function FeatureRow({
           />
         ) : null}
       </td>
-      <td>
+      <td class="feature-switch-cell">
         <Switch
           isOn={
             (feature.localOverride === null && feature.isEnabled) ||

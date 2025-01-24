@@ -144,12 +144,8 @@
 }
 
 .arrow {
-  position: absolute;
-  width: 8px;
-  height: 8px;
   background-color: var(--black);
   box-shadow: var(--border-color) -1px -1px 1px 0px;
-  transform: rotate(45deg);
 
   &.bottom {
     box-shadow: var(--border-color) -1px -1px 1px 0px;

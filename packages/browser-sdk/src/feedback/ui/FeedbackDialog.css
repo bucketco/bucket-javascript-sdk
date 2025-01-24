@@ -33,12 +33,8 @@
 }
 
 .arrow {
-  position: absolute;
-  width: 8px;
-  height: 8px;
   background-color: var(--bucket-feedback-dialog-background-color, #fff);
   box-shadow: var(--bucket-feedback-dialog-border, #d8d9df) -1px -1px 1px 0px;
-  transform: rotate(45deg);
 
   &.bottom {
     box-shadow: var(--bucket-feedback-dialog-border, #d8d9df) -1px -1px 1px 0px;

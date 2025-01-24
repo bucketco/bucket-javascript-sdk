@@ -57,6 +57,7 @@
 
 .dialog.anchored {
   position: absolute;
+  margin: 0;
 
   &[open] {
     animation: /* easeOutQuint */
@@ -93,6 +94,13 @@
       floatDown 300ms cubic-bezier(0.22, 1, 0.36, 1),
       fade 300ms cubic-bezier(0.22, 1, 0.36, 1);
   }
+}
+
+.dialog .arrow {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  transform: rotate(45deg);
 }
 
 .dialog-header {
