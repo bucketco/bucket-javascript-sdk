@@ -2,14 +2,14 @@ import React, { useState } from "react";
 
 import {
   FeatureKey,
-  BucketProvider,
+  BaseBucketProvider,
   useFeature,
   useRequestFeedback,
   useTrack,
   useUpdateCompany,
   useUpdateOtherContext,
   useUpdateUser,
-} from "../../src";
+} from "../../src/BaseBucketProvider";
 
 // Extending the Features interface to define the available features
 declare module "../../src" {
@@ -219,7 +219,7 @@ function FeatureOptIn({
 
 export function App() {
   return (
-    <BucketProvider
+    <BaseBucketProvider
       publishableKey={publishableKey}
       feedback={{
         enableLiveSatisfaction: true,
@@ -231,6 +231,6 @@ export function App() {
     >
       <Demos />
       {}
-    </BucketProvider>
+    </BaseBucketProvider>
   );
 }

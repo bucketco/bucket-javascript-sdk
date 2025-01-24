@@ -4,7 +4,7 @@
     "outDir": "./dist/",
     "target": "ESNext",
     "module": "NodeNext",
-    "moduleResolution": "NodeNext"
+    "moduleResolution": "nodenext"
   },
   "include": ["**/*.ts"],
   "exclude": ["node_modules", "dist", "**/*.spec.ts"]

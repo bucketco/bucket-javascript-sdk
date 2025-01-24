@@ -18,9 +18,6 @@ import { API_BASE_URL, SSE_REALTIME_BASE_URL } from "./config";
 import { BucketContext, CompanyContext, UserContext } from "./context";
 import { HttpClient } from "./httpClient";
 import { Logger, loggerWithPrefix, quietConsoleLogger } from "./logger";
-// file is generated on install and the updated using the CLI
-// @ts-expect-error - generated file
-import { generatedFeatures } from ".bucket/generated";
 
 const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 const isNode = typeof document === "undefined"; // deno supports "window" but not "document" according to https://remix.run/docs/en/main/guides/gotchas
@@ -98,6 +95,8 @@ interface Config {
   enableTracking: boolean;
 }
 
+export type FeatureDefinitions = Readonly<Array<string>>;
+
 /**
  * BucketClient initialization options.
  */
@@ -169,6 +168,8 @@ export interface InitOptions {
    */
   sdkVersion?: string;
   enableTracking?: boolean;
+
+  featureList?: FeatureDefinitions;
 }
 
 const defaultConfig: Config = {
@@ -238,8 +239,7 @@ export class BucketClient {
       baseUrl: this.config.apiBaseUrl,
       sdkVersion: opts?.sdkVersion,
     });
-
-    const features = opts?.features ?? generatedFeatures;
+    console.log("featureList", opts.featureList);
 
     this.featuresClient = new FeaturesClient(
       this.httpClient,
@@ -250,7 +250,6 @@ export class BucketClient {
         other: this.context.otherContext,
       },
       this.logger,
-      features,
     );
 
     if (
