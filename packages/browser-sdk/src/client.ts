@@ -175,23 +175,19 @@ const defaultConfig: Config = {
 };
 
 /**
- * A dynamic configuration value for a feature.
+ * A remotely managed configuration value for a feature.
  */
-export type FeatureDynamicConfig =
+export type FeatureRemoteConfig =
   | {
       /**
        * The key of the matched configuration value.
        */
       key: string;
-      /**
-       * The version of the matched configuration value.
-       */
-      targetingVersion?: number;
 
       /**
        * The user-supplied data.
        */
-      value: any;
+      payload: any;
     }
   | { key: undefined; targetingVersion: undefined; value: undefined };
 
@@ -207,7 +203,7 @@ export interface Feature {
   /*
    * Optional user-defined configuration.
    */
-  config: FeatureDynamicConfig;
+  config: FeatureRemoteConfig;
 
   /**
    * Function to send analytics events for this feature.
@@ -544,11 +540,6 @@ export class BucketClient {
     return this.featuresClient.getFeatures();
   }
 
-  private missingConfig: FeatureDynamicConfig = {
-    key: undefined,
-    targetingVersion: undefined,
-    value: undefined,
-  };
   /**
    * Return a feature. Accessing `isEnabled` or `config` will automatically send a `check` event.
    * @returns A feature.
@@ -558,7 +549,12 @@ export class BucketClient {
 
     const fClient = this.featuresClient;
     const value = f?.isEnabledOverride ?? f?.isEnabled ?? false;
-    const config = f?.config ?? this.missingConfig;
+    const config = f?.config
+      ? {
+          key: f.config.key,
+          payload: f.config.payload,
+        }
+      : ({} as FeatureRemoteConfig);
 
     function sendCheckEvent() {
       fClient

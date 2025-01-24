@@ -224,7 +224,7 @@ describe("useFeature", () => {
     expect(result.current).toStrictEqual({
       isEnabled: false,
       isLoading: true,
-      config: { key: undefined, targetingVersion: undefined, value: undefined },
+      config: {},
       track: expect.any(Function),
       requestFeedback: expect.any(Function),
     });
@@ -239,11 +239,7 @@ describe("useFeature", () => {
 
     await waitFor(() => {
       expect(result.current).toStrictEqual({
-        config: {
-          key: undefined,
-          targetingVersion: undefined,
-          value: undefined,
-        },
+        config: {},
         isEnabled: false,
         isLoading: false,
         track: expect.any(Function),

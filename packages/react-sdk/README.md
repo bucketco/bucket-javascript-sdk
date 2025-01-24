@@ -99,7 +99,7 @@ function StartHuddleButton() {
   const {
     isLoading,
     isEnabled,
-    config: { key, value },
+    config: { key, payload },
     track,
     requestFeedback,
   } = useFeature("huddle");
@@ -118,7 +118,7 @@ function StartHuddleButton() {
       <button
         onClick={(e) =>
           requestFeedback({
-            title: value?.question ?? "How do you like Huddles?",
+            title: payload?.question ?? "How do you like Huddles?",
             position: {
               type: "POPOVER",
               anchor: e.currentTarget as HTMLElement,

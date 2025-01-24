@@ -36,11 +36,7 @@ export function parseAPIFeaturesResponse(
       isEnabled: feature.isEnabled,
       targetingVersion: feature.targetingVersion,
       key,
-      config: feature.config && {
-        key: feature.config.key,
-        targetingVersion: feature.config.version,
-        value: feature.config.payload,
-      },
+      config: feature.config,
     };
   }
 

@@ -30,13 +30,7 @@ export const featuresResult = Object.entries(featureResponse.features).reduce(
   (acc, [key, feature]) => {
     acc[key] = {
       ...feature!,
-      config: feature.config
-        ? {
-            key: feature.config.key,
-            targetingVersion: feature.config.version,
-            value: feature.config.payload,
-          }
-        : undefined,
+      config: feature.config,
       isEnabledOverride: null,
     };
     return acc;

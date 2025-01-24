@@ -170,16 +170,15 @@ export function BucketProvider({
   );
 }
 
-const EMPTY_FEATURE_CONFIG = {
-  key: undefined,
-  targetingVersion: undefined,
-  value: undefined,
-};
-
 type RequestFeedbackOptions = Omit<
   RequestFeedbackData,
   "featureKey" | "featureId"
 >;
+
+type EmptyFeatureConfig = {
+  key: undefined;
+  payload: undefined;
+};
 
 type Feature<TKey extends FeatureKey> = {
   isEnabled: boolean;
@@ -187,10 +186,9 @@ type Feature<TKey extends FeatureKey> = {
   config:
     | {
         key: string;
-        targetingVersion?: number;
-        value: FeatureConfig<TKey>;
+        payload: FeatureConfig<TKey>;
       }
-    | typeof EMPTY_FEATURE_CONFIG;
+    | EmptyFeatureConfig;
   track: () => void;
   requestFeedback: (opts: RequestFeedbackOptions) => void;
 };
@@ -200,10 +198,9 @@ type Feature<TKey extends FeatureKey> = {
  *
  * ```ts
  * function HuddleButton() {
- *   const {isEnabled, config, track} = useFeature("huddle");
+ *   const {isEnabled, config: { payload }, track} = useFeature("huddle");
  *   if (isEnabled) {
- *    return <button onClick={() => track()}>{config?.title ?? "Start Huddle"}</button>;
- *   }
+ *    return <button onClick={() => track()}>{payload?.buttonTitle ?? "Start Huddle"}</button>;
  * }
  * ```
  */
@@ -221,7 +218,7 @@ export function useFeature<TKey extends FeatureKey>(key: TKey): Feature<TKey> {
     return {
       isLoading,
       isEnabled: false,
-      config: EMPTY_FEATURE_CONFIG,
+      config: {} as EmptyFeatureConfig,
       track,
       requestFeedback,
     };
@@ -252,7 +249,7 @@ export function useFeature<TKey extends FeatureKey>(key: TKey): Feature<TKey> {
     },
     get config() {
       sendCheckEvent();
-      return feature?.config ?? EMPTY_FEATURE_CONFIG;
+      return feature?.config ?? ({} as EmptyFeatureConfig);
     },
   };
 }

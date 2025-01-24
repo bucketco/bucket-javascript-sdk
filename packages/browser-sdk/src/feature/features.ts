@@ -36,15 +36,16 @@ export type FetchedFeature = {
      * The key of the matched configuration value.
      */
     key: string;
+
     /**
      * The version of the matched configuration value.
      */
-    targetingVersion?: number;
+    version?: number;
 
     /**
      * The user-supplied data.
      */
-    value: any;
+    payload: any;
   };
 };
 
@@ -64,7 +65,7 @@ export type RawFeatures = Record<string, RawFeature>;
 
 export type FallbackFeatureConfig = {
   key: string;
-  value: any;
+  payload: any;
 } | null;
 
 export type FeaturesOptions = {
@@ -414,7 +415,6 @@ export class FeaturesClient {
   private async maybeFetchFeatures(): Promise<FetchedFeatures | undefined> {
     const cacheKey = this.fetchParams().toString();
     const cachedItem = this.cache.get(cacheKey);
-    console.log(cacheKey);
 
     if (cachedItem) {
       if (!cachedItem.stale) return cachedItem.features;
@@ -464,7 +464,7 @@ export class FeaturesClient {
           config: config
             ? {
                 key: config.key,
-                value: config.value,
+                payload: config.payload,
               }
             : undefined,
         };

@@ -75,11 +75,11 @@ describe("usage", () => {
     expect(features).toEqual(featuresResult);
 
     const featureId1 = bucketInstance.getFeature("featureId1");
-    expect(featureId1).toEqual({
+    expect(featureId1).toStrictEqual({
       isEnabled: false,
       track: expect.any(Function),
       requestFeedback: expect.any(Function),
-      config: { key: undefined, version: undefined, payload: undefined },
+      config: {},
     });
   });
 
@@ -399,6 +399,43 @@ describe(`sends "check" events `, () => {
       vi.clearAllMocks();
     });
 
+    it(`returns get the expected feature details`, async () => {
+      const client = new BucketClient({
+        publishableKey: KEY,
+        user: { id: "uid" },
+        company: { id: "cid" },
+      });
+
+      await client.initialize();
+
+      expect(client.getFeature("featureA")).toStrictEqual({
+        isEnabled: true,
+        config: {},
+        track: expect.any(Function),
+        requestFeedback: expect.any(Function),
+      });
+
+      expect(client.getFeature("featureB")).toStrictEqual({
+        isEnabled: true,
+        config: {
+          key: "gpt3",
+          payload: {
+            model: "gpt-something",
+            temperature: 0.5,
+          },
+        },
+        track: expect.any(Function),
+        requestFeedback: expect.any(Function),
+      });
+
+      expect(client.getFeature("featureC")).toStrictEqual({
+        isEnabled: false,
+        config: {},
+        track: expect.any(Function),
+        requestFeedback: expect.any(Function),
+      });
+    });
+
     it(`sends check event when accessing "isEnabled"`, async () => {
       const sendCheckEventSpy = vi.spyOn(
         FeaturesClient.prototype,
@@ -417,6 +454,7 @@ describe(`sends "check" events `, () => {
 
       expect(sendCheckEventSpy).toHaveBeenCalledTimes(0);
       expect(featureA.isEnabled).toBe(true);
+
       expect(sendCheckEventSpy).toHaveBeenCalledTimes(1);
       expect(sendCheckEventSpy).toHaveBeenCalledWith({
         key: "featureA",
@@ -454,13 +492,8 @@ describe(`sends "check" events `, () => {
 
       await client.initialize();
       const featureB = client.getFeature("featureB");
-      expect(featureB.config).toEqual({
+      expect(featureB.config).toMatchObject({
         key: "gpt3",
-        targetingVersion: 12,
-        value: {
-          model: "gpt-something",
-          temperature: 0.5,
-        },
       });
 
       expect(postSpy).toHaveBeenCalledWith({
@@ -511,11 +544,11 @@ describe(`sends "check" events `, () => {
       await client.initialize();
 
       const featureId1 = client.getFeature("featureId1");
-      expect(featureId1).toEqual({
+      expect(featureId1).toStrictEqual({
         isEnabled: false,
         track: expect.any(Function),
         requestFeedback: expect.any(Function),
-        config: { key: undefined, version: undefined, payload: undefined },
+        config: {},
       });
 
       vi.spyOn(client, "track");
@@ -530,11 +563,11 @@ describe(`sends "check" events `, () => {
       await client.initialize();
 
       const featureId1 = client.getFeature("featureId1");
-      expect(featureId1).toEqual({
+      expect(featureId1).toStrictEqual({
         isEnabled: false,
         track: expect.any(Function),
         requestFeedback: expect.any(Function),
-        config: { key: undefined, version: undefined, payload: undefined },
+        config: {},
       });
 
       vi.spyOn(client, "requestFeedback");

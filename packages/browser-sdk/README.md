@@ -42,9 +42,8 @@ if (isEnabled) {
   // On usage, call `track` to let Bucket know that a user interacted with the feature
   track();
 
-  // The `value` is a user-supplied value in Bucket that can be dynamically evaluated
-  // with respect to the current context. Here, it is assumed that one could either get
-  // a config value that matches the context or use a default.
+  // The `payload` is a user-supplied JSON in Bucket that is dynamically picked
+  // out depending on the user/company.
   const question = value?.question ?? "Tell us what you think of Huddles";
 
   // Use `requestFeedback` to create "Send feedback" buttons easily for specific
@@ -137,7 +136,7 @@ To retrieve features along with their targeting information, use `getFeature(key
 const huddle = bucketClient.getFeature("huddle");
 // {
 //   isEnabled: true,
-//   config: { key: "zoom", targetingVersion: 2, value: { ... } },
+//   config: { key: "zoom", payload: { ... } },
 //   track: () => Promise<Response>
 //   requestFeedback: (options: RequestFeedbackData) => void
 // }
@@ -164,13 +163,8 @@ generate a `check` event, contrary to the `isEnabled` property on the object ret
 
 ### Remote config
 
-Similar to `isEnabled`, each feature has a `config` property. This configuration is set by the user within Bucket. It is
-similar to the way access is managed -- using rules. Each config-bound rule is given a configuration value
-(a JSON value) that is returned to the SDK if the requested context matches. It is possible to have
-multiple rules with different configuration values. Whichever rule matches the context, provides the configuration
-value.
-
-The config is accessible through the same methods as the `isEnabled` property:
+Similar to `isEnabled`, each feature has a `config` property. This configuration is managed from within Bucket.
+It is managed similar to the way access to features is managed, but instead the binary `isEnabled` you can have multiple configuration values which are given to different user/companies.
 
 ```ts
 const features = bucketClient.getFeatures();
@@ -180,16 +174,13 @@ const features = bucketClient.getFeatures();
 //     targetingVersion: 42,
 //     config?: {
 //       key: "gpt-3.5",
-//       targetingVersion: 2,
-//       value: { maxTokens: 10000, model: "gpt-3.5-beta1" }
+//       payload: { maxTokens: 10000, model: "gpt-3.5-beta1" }
 //     }
 //   }
 // }
 ```
 
-The `key` is given by the user in Bucket for each configuration value, and `targetingVersion` is maintained by Bucket similar
-to access `targetingVersion`. The `value` is the actual JSON value supplied by the user and serves as context-based
-configuration.
+The `key` is always present while the `payload` is a optional JSON value for arbitrary configuration needs. `
 
 Just as `isEnabled`, accessing `config` on the object returned by `getFeatures` does not automatically
 generate a `check` event, contrary to the `config` property on the object returned by `getFeature`.

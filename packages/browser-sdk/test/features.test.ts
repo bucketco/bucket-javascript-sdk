@@ -148,7 +148,7 @@ describe("FeaturesClient", () => {
       fallbackFeatures: {
         huddle: {
           key: "john",
-          value: { something: "else" },
+          payload: { something: "else" },
         },
       },
     });
@@ -157,7 +157,7 @@ describe("FeaturesClient", () => {
     expect(featuresClient.getFeatures()).toStrictEqual({
       huddle: {
         isEnabled: true,
-        config: { key: "john", value: { something: "else" } },
+        config: { key: "john", payload: { something: "else" } },
         key: "huddle",
         isEnabledOverride: null,
       },
