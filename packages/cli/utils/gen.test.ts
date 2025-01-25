@@ -1,13 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { genDTS } from "./gen.js";
-import { ConfigFeatureDefs } from "./config.js";
+import { FeatureDef, genDTS } from "./gen.js";
 
 describe("genFeatureTypes", () => {
-  const features: ConfigFeatureDefs = [
-    "feature1",
-    { key: "feature2", access: false, config: "string" },
+  const features: FeatureDef[] = [
+    { key: "feat-1", access: true, config: undefined },
+    { key: "FEAT URE2", access: false, config: "string" },
     {
       key: "feature3",
+      access: true,
       config: {
         aiModel: "string",
         prompt: "string",
@@ -16,12 +16,12 @@ describe("genFeatureTypes", () => {
   ];
 
   it("should generate correct TypeScript output for browser", () => {
-    const output = genDTS("browser", features);
+    const output = genDTS(features);
     expect(output).toMatchSnapshot();
   });
 
   it("should generate correct TypeScript output for react", () => {
-    const output = genDTS("react", features);
+    const output = genDTS(features);
     expect(output).toMatchSnapshot();
   });
 });

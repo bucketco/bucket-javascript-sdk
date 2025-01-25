@@ -11,7 +11,7 @@
   "scripts": {
     "build": "tsc",
     "start": "yarn build && node dist/index.js",
-    "test": "vitest"
+    "test": "vitest --config ./vite.config.js"
   },
   "dependencies": {
     "@inquirer/prompts": "^7.2.3",

@@ -24,7 +24,10 @@ export function registerFeaturesCommands(program: Command) {
 
         await loadConfig();
 
-        genFeatureTypes(getConfig().sdk, getConfig().features);
+        genFeatureTypes(
+          getConfig().features,
+          getConfig().codeGenBasePath ?? "node_modules/",
+        );
         console.log(chalk.green(`Generated typed features.`));
       } catch (error) {
         handleError(error, "Failed to generate feature types:");
@@ -50,7 +53,10 @@ export function registerFeaturesCommands(program: Command) {
         handleError(error, "Failed to create feature:");
       }
 
-      await genFeatureTypes(getConfig().sdk, getConfig().features);
+      await genFeatureTypes(
+        getConfig().features,
+        getConfig().codeGenBasePath ?? "node_modules/",
+      );
     });
 
   program.addCommand(featuresCommand);

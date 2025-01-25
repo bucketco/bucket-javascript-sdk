@@ -4,9 +4,11 @@ import { findUp } from "find-up";
 import { REPO_CONFIG_FILE } from "./constants.js";
 import { Datatype } from "./gen.js";
 
+export const generatedPackageName = "_bucket";
+
 type Config = {
   features: ConfigFeatureDefs;
-  sdk: "browser" | "react";
+  codeGenBasePath?: string;
 };
 
 export type ConfigFeatureDef = {
@@ -19,7 +21,7 @@ export type ConfigFeatureDefs = Array<string | ConfigFeatureDef>;
 
 let config: Config = {
   features: [],
-  sdk: "browser",
+  codeGenBasePath: "node_modules/",
 };
 
 /**
