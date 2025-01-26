@@ -239,7 +239,6 @@ export class BucketClient {
       baseUrl: this.config.apiBaseUrl,
       sdkVersion: opts?.sdkVersion,
     });
-    console.log("featureList", opts.featureList);
 
     this.featuresClient = new FeaturesClient(
       this.httpClient,
