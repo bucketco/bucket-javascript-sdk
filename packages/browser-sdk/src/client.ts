@@ -14,10 +14,12 @@ import {
   RequestFeedbackOptions,
 } from "./feedback/feedback";
 import * as feedbackLib from "./feedback/ui";
-import { API_BASE_URL, SSE_REALTIME_BASE_URL } from "./config";
+import { ToolbarPosition } from "./toolbar/Toolbar";
+import { API_BASE_URL, APP_BASE_URL, SSE_REALTIME_BASE_URL } from "./config";
 import { BucketContext, CompanyContext, UserContext } from "./context";
 import { HttpClient } from "./httpClient";
 import { Logger, loggerWithPrefix, quietConsoleLogger } from "./logger";
+import { showToolbarToggle } from "./toolbar";
 
 const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 const isNode = typeof document === "undefined"; // deno supports "window" but not "document" according to https://remix.run/docs/en/main/guides/gotchas
@@ -91,9 +93,17 @@ export type PayloadContext = {
 
 interface Config {
   apiBaseUrl: string;
+  appBaseUrl: string;
   sseBaseUrl: string;
   enableTracking: boolean;
 }
+
+export type ToolbarOptions =
+  | boolean
+  | {
+      show?: boolean;
+      position?: ToolbarPosition;
+    };
 
 export type FeatureDefinitions = Readonly<Array<string>>;
 
@@ -143,6 +153,11 @@ export interface InitOptions {
   apiBaseUrl?: string;
 
   /**
+   * Base URL of the Bucket web app. Links open ín this app by default.
+   */
+  appBaseUrl?: string;
+
+  /**
    * @deprecated
    * Use `sseBaseUrl` instead.
    */
@@ -169,11 +184,13 @@ export interface InitOptions {
   sdkVersion?: string;
   enableTracking?: boolean;
 
+  toolbar?: ToolbarOptions;
   featureList?: FeatureDefinitions;
 }
 
 const defaultConfig: Config = {
   apiBaseUrl: API_BASE_URL,
+  appBaseUrl: APP_BASE_URL,
   sseBaseUrl: SSE_REALTIME_BASE_URL,
   enableTracking: true,
 };
@@ -193,6 +210,17 @@ export interface Feature {
     options: Omit<RequestFeedbackData, "featureKey" | "featureId">,
   ) => void;
 }
+
+function shouldShowToolbar(opts: InitOptions) {
+  const toolbarOpts = opts.toolbar;
+  if (typeof toolbarOpts === "boolean") return toolbarOpts;
+  if (typeof toolbarOpts?.show === "boolean") return toolbarOpts.show;
+
+  return (
+    opts.featureList !== undefined && window?.location?.hostname === "localhost"
+  );
+}
+
 /**
  * BucketClient lets you interact with the Bucket API.
  *
@@ -202,13 +230,13 @@ export class BucketClient {
   private context: BucketContext;
   private config: Config;
   private requestFeedbackOptions: Partial<RequestFeedbackOptions>;
-  private logger: Logger;
   private httpClient: HttpClient;
 
   private autoFeedback: AutoFeedback | undefined;
   private autoFeedbackInit: Promise<void> | undefined;
   private featuresClient: FeaturesClient;
 
+  public readonly logger: Logger;
   /**
    * Create a new BucketClient instance.
    */
@@ -224,9 +252,10 @@ export class BucketClient {
 
     this.config = {
       apiBaseUrl: opts?.apiBaseUrl ?? opts?.host ?? defaultConfig.apiBaseUrl,
+      appBaseUrl: opts?.appBaseUrl ?? opts?.host ?? defaultConfig.appBaseUrl,
       sseBaseUrl: opts?.sseBaseUrl ?? opts?.sseHost ?? defaultConfig.sseBaseUrl,
       enableTracking: opts?.enableTracking ?? defaultConfig.enableTracking,
-    } satisfies Config;
+    };
 
     const feedbackOpts = handleDeprecatedFeedbackOptions(opts?.feedback);
 
@@ -248,6 +277,7 @@ export class BucketClient {
         company: this.context.company,
         other: this.context.otherContext,
       },
+      opts?.featureList || [],
       this.logger,
     );
 
@@ -271,6 +301,15 @@ export class BucketClient {
           feedbackOpts?.ui?.translations,
         );
       }
+    }
+
+    if (shouldShowToolbar(opts)) {
+      this.logger.info("opening toolbar toggler");
+      showToolbarToggle({
+        bucketClient: this as unknown as BucketClient,
+        position:
+          typeof opts.toolbar === "object" ? opts.toolbar.position : undefined,
+      });
     }
   }
 
@@ -300,6 +339,13 @@ export class BucketClient {
         this.logger.error("error sending company", e);
       });
     }
+  }
+
+  /**
+   * Get the current configuration.
+   */
+  getConfig() {
+    return this.config;
   }
 
   /**
@@ -501,6 +547,8 @@ export class BucketClient {
   /**
    * Returns a map of enabled features.
    * Accessing a feature will *not* send a check event
+   * and `isEnabled` does not take any feature overrides
+   * into account.
    *
    * @returns Map of features
    */
@@ -516,13 +564,13 @@ export class BucketClient {
     const f = this.getFeatures()[key];
 
     const fClient = this.featuresClient;
-    const value = f?.isEnabled ?? false;
+    const value = f?.isEnabledOverride ?? f?.isEnabled ?? false;
 
     return {
       get isEnabled() {
         fClient
           .sendCheckEvent({
-            key: key,
+            key,
             version: f?.targetingVersion,
             value,
           })
@@ -541,6 +589,14 @@ export class BucketClient {
         });
       },
     };
+  }
+
+  setFeatureOverride(key: string, isEnabled: boolean | null) {
+    this.featuresClient.setFeatureOverride(key, isEnabled);
+  }
+
+  getFeatureOverride(key: string): boolean | null {
+    return this.featuresClient.getFeatureOverride(key);
   }
 
   sendCheckEvent(checkEvent: CheckEvent) {
