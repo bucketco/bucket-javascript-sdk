@@ -174,7 +174,7 @@ describe("FeaturesClient", () => {
     });
   });
 
-  test.only("caches response", async () => {
+  test("caches response", async () => {
     const { newFeaturesClient, httpClient } = featuresClientFactory();
 
     const featuresClient1 = newFeaturesClient();
