@@ -1,7 +1,11 @@
 {
   "featureOverrides": {
     "myFeature": true,
-    "myFeatureFalse": false
+    "myFeatureFalse": false,
+    "myFeatureWithConfig": {
+      "key": "config-1",
+      "payload": { "something": "else" }
+    }
   },
   "secretKey": "mySecretKey",
   "offline": true,

@@ -10,6 +10,10 @@ describe("config tests", () => {
       featureOverrides: {
         myFeature: true,
         myFeatureFalse: false,
+        myFeatureWithConfig: {
+          key: "config-1",
+          payload: { something: "else" },
+        },
       },
       secretKey: "mySecretKey",
       offline: true,
@@ -31,6 +35,10 @@ describe("config tests", () => {
         myFeatureFalse: false,
         myNewFeature: true,
         myNewFeatureFalse: false,
+        myFeatureWithConfig: {
+          key: "config-1",
+          payload: { something: "else" },
+        },
       },
       secretKey: "mySecretKeyFromEnv",
       offline: true,
