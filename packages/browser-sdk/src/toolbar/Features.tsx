@@ -60,7 +60,7 @@ function FeatureRow({
       </td>
       <td class="feature-switch-cell">
         <Switch
-          isOn={
+          checked={
             (feature.localOverride === null && feature.isEnabled) ||
             feature.localOverride === true
           }

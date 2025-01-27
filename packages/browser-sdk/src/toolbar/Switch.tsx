@@ -1,7 +1,7 @@
 import { Fragment, h } from "preact";
 
 interface SwitchProps extends h.JSX.HTMLAttributes<HTMLInputElement> {
-  isOn: boolean;
+  checked: boolean;
   width?: number;
   height?: number;
 }
@@ -9,17 +9,17 @@ interface SwitchProps extends h.JSX.HTMLAttributes<HTMLInputElement> {
 const gutter = 1;
 
 export function Switch({
-  isOn,
+  checked,
   width = 24,
   height = 14,
   ...props
 }: SwitchProps) {
   return (
     <>
-      <label class="switch" data-enabled={isOn}>
+      <label class="switch" data-enabled={checked}>
         <input
           type="checkbox"
-          checked={isOn}
+          checked={checked}
           style={{ display: "none" }}
           name="enabled"
           {...props}
@@ -36,7 +36,7 @@ export function Switch({
             style={{
               width: `${height - gutter * 2}px`,
               height: `${height - gutter * 2}px`,
-              transform: isOn
+              transform: checked
                 ? `translateX(${width - (height - gutter * 2) - gutter}px)`
                 : `translateX(${gutter}px)`,
               top: `${gutter}px`,
