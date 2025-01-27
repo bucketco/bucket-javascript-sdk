@@ -72,12 +72,17 @@ const boundClient = bucketClient.bindClient({
 
 // get the huddle feature using company, user and custom context to
 // evaluate the targeting.
-const { isEnabled, track } = boundClient.getFeature("huddle");
+const { isEnabled, track, config } = boundClient.getFeature("huddle");
 
 if (isEnabled) {
   // this is your feature gated code ...
   // send an event when the feature is used:
   track();
+
+  if (config?.key === "zoom") {
+    // this code will run if a given remote configuration
+    // is set up.
+  }
 
   // CAUTION: if you plan to use the event for automated feedback surveys
   // call `flush` immediately after `track`. It can optionally be awaited
@@ -105,6 +110,28 @@ to `getFeatures()` (or through `bindClient(..).getFeatures()`). That means the
 `getFeatures()` call does not need to contact the Bucket servers once
 `initialize()` has completed. `BucketClient` will continue to periodically
 download the targeting rules from the Bucket servers in the background.
+
+## Remote configuration
+
+Bucket supports remote feature configuration. This functionality allows you to setup
+an arbitrary number of key-payload pairs that are matched against the same context
+that is used to evaluate whether the feature is enabled or not. The selected pair
+is then, returned to the caller and can be accessed using the `config` property.
+
+The methods: `getFeature()`, `getFeatures()`, `getFeatureRemote()` and `getFeaturesRemote()`,
+will include this config when the feature(s) are evaluated. In case no configuration pair
+matched (or was configured), these methods will return an empty object. You can, thus, safely
+deconstruct the `config` object in your code:
+
+```typescript
+const {
+  isEnabled,
+  config: { key, payload },
+} = boundClient.getFeature("huddles");
+if (isEnabled && key === "premium") {
+  // ... your code
+}
+```
 
 ## Configuring
 
@@ -134,7 +161,13 @@ Note: BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED are comma separated list
   "apiBaseUrl": "https://proxy.slick-demo.com",
   "featureOverrides": {
     "huddles": true,
-    "voiceChat": false
+    "voiceChat": false,
+    "aiAssist": {
+      "key": "gpt-4.0",
+      "payload": {
+        "maxTokens": 50000
+      }
+    }
   }
 }
 ```
@@ -161,7 +194,12 @@ declare module "@bucketco/node-sdk" {
   interface Features {
     "show-todos": boolean;
     "create-todos": boolean;
-    "delete-todos": boolean;
+    "delete-todos": {
+      key: string,
+      payload: {
+        someKey: string,
+      }
+    };
   }
 }
 
@@ -170,6 +208,10 @@ export const bucketClient = new BucketClient();
 bucketClient.initialize().then({
   console.log("Bucket initialized!")
   bucketClient.getFeature("invalid-feature") // feature doesn't exist
+
+  // this will print out the value of the "key" as specified as a value to
+  // `delete-todos` feature.
+  console.log(bucketClient.getFeature("delete-todos").config.key)
 })
 
 ```
