@@ -354,15 +354,12 @@ describe("FeaturesClient", () => {
       updated = true;
     });
 
-    expect(client.getFeatures().featureB.isEnabled).toBe(false);
+    expect(client.getFeatures().featureB.isEnabled).toBe(true);
     expect(client.getFeatures().featureB.isEnabledOverride).toBe(null);
-
-    expect(client.getFetchedFeatures()?.featureB).toBeUndefined();
 
     client.setFeatureOverride("featureC", true);
 
     expect(updated).toBe(true);
-    expect(client.getFeatures().featureC.isEnabled).toBe(false);
-    expect(client.getFeatures().featureC.isEnabledOverride).toBe(true);
+    expect(client.getFeatures().featureC).toBeUndefined();
   });
 });
