@@ -153,6 +153,7 @@ describe("FeaturesClient", () => {
           key: "john",
           payload: { something: "else" },
         },
+        zoom: true,
       },
     });
 
@@ -162,6 +163,12 @@ describe("FeaturesClient", () => {
         isEnabled: true,
         config: { key: "john", payload: { something: "else" } },
         key: "huddle",
+        isEnabledOverride: null,
+      },
+      zoom: {
+        isEnabled: true,
+        config: undefined,
+        key: "zoom",
         isEnabledOverride: null,
       },
     });

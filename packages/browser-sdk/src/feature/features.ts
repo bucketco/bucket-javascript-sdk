@@ -63,10 +63,12 @@ export type RawFeature = FetchedFeature & {
 
 export type RawFeatures = Record<string, RawFeature>;
 
-export type FallbackFeatureConfig = {
-  key: string;
-  payload: any;
-} | null;
+export type FallbackFeatureOverride =
+  | {
+      key: string;
+      payload: any;
+    }
+  | true;
 
 export type FeaturesOptions = {
   /**
@@ -75,7 +77,7 @@ export type FeaturesOptions = {
    * is supplied instead of array, the values of each key represent the
    * configuration values and `isEnabled` is assume `true`.
    */
-  fallbackFeatures?: string[] | Record<string, FallbackFeatureConfig>;
+  fallbackFeatures?: string[] | Record<string, FallbackFeatureOverride>;
 
   /**
    * Timeout in milliseconds when fetching features
@@ -99,7 +101,7 @@ export type FeaturesOptions = {
 };
 
 type Config = {
-  fallbackFeatures: Record<string, FallbackFeatureConfig>;
+  fallbackFeatures: Record<string, FallbackFeatureOverride>;
   timeoutMs: number;
   staleWhileRevalidate: boolean;
 };
@@ -236,15 +238,15 @@ export class FeaturesClient {
           expireTimeMs: options?.expireTimeMs ?? FEATURES_EXPIRE_MS,
         });
 
-    let fallbackFeatures: Record<string, FallbackFeatureConfig>;
+    let fallbackFeatures: Record<string, FallbackFeatureOverride>;
 
     if (Array.isArray(options?.fallbackFeatures)) {
       fallbackFeatures = options.fallbackFeatures.reduce(
         (acc, key) => {
-          acc[key] = null;
+          acc[key] = true;
           return acc;
         },
-        {} as Record<string, FallbackFeatureConfig>,
+        {} as Record<string, FallbackFeatureOverride>,
       );
     } else {
       fallbackFeatures = options?.fallbackFeatures ?? {};
@@ -477,16 +479,17 @@ export class FeaturesClient {
 
     // fetch failed, nothing cached => return fallbacks
     return Object.entries(this.config.fallbackFeatures).reduce(
-      (acc, [key, config]) => {
+      (acc, [key, override]) => {
         acc[key] = {
           key,
-          isEnabled: true,
-          config: config
-            ? {
-                key: config.key,
-                payload: config.payload,
-              }
-            : undefined,
+          isEnabled: !!override,
+          config:
+            typeof override === "object" && "key" in override
+              ? {
+                  key: override.key,
+                  payload: override.payload,
+                }
+              : undefined,
         };
         return acc;
       },
