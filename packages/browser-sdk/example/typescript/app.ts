@@ -1,10 +1,14 @@
 import { BucketClient } from "../../src";
 
 const urlParams = new URLSearchParams(window.location.search);
-const publishableKey = urlParams.get("publishableKey") ?? "publishableKey";
+const publishableKey = urlParams.get("publishableKey");
 const featureKey = urlParams.get("featureKey") ?? "huddles";
 
 const featureList = ["huddles"];
+
+if (!publishableKey) {
+  throw Error("publishableKey is missing");
+}
 
 const bucket = new BucketClient({
   publishableKey,

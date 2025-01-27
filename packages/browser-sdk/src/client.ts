@@ -184,7 +184,15 @@ export interface InitOptions {
   sdkVersion?: string;
   enableTracking?: boolean;
 
+  /**
+   * Toolbar configuration (alpha)
+   * @ignore
+   */
   toolbar?: ToolbarOptions;
+  /**
+   * Local-first definition of features (alpha)
+   * @ignore
+   */
   featureList?: FeatureDefinitions;
 }
 
