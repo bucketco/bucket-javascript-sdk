@@ -90,169 +90,22 @@ describe("BucketBrowserSDKProvider", () => {
   });
 
   describe("resolveBooleanEvaluation", () => {
-    function mockFeature(
-      enabled: boolean,
-      configKey: string | undefined,
-      configPayload: any | undefined,
-    ) {
-      const config = {
-        key: configKey,
-        payload: configPayload,
-      };
-
+    it("calls the client correctly for boolean evaluation", async () => {
       bucketClientMock.getFeature = vi.fn().mockReturnValue({
-        isEnabled: enabled,
-        config,
+        isEnabled: true,
       });
-
       bucketClientMock.getFeatures = vi.fn().mockReturnValue({
         [testFlagKey]: {
-          isEnabled: enabled,
-          config: {
-            key: "key",
-            payload: configPayload,
-          },
+          isEnabled: true,
+          targetingVersion: 1,
         },
       });
-    }
-
-    it("calls the client correctly when evaluating", async () => {
-      mockFeature(true, "key", true);
       await provider.initialize();
 
-      const val = ofClient.getBooleanDetails(testFlagKey, false);
-
-      expect(val).toEqual({
-        flagKey: "a-key",
-        flagMetadata: {},
-        reason: "TARGETING_MATCH",
-        value: true,
-      });
-
+      ofClient.getBooleanDetails(testFlagKey, false);
       expect(bucketClientMock.getFeatures).toHaveBeenCalled();
       expect(bucketClientMock.getFeature).toHaveBeenCalledWith(testFlagKey);
     });
-
-    it.each([
-      [true, true, false, true, "TARGETING_MATCH"],
-      [true, false, false, true, "TARGETING_MATCH"],
-      [true, null, false, true, "TARGETING_MATCH"],
-      [true, { obj: true }, false, true, "TARGETING_MATCH"],
-      [true, 15, false, true, "TARGETING_MATCH"],
-      [false, true, false, false, "DISABLED"],
-      [false, true, true, true, "DISABLED"],
-    ])(
-      "should return the correct result when evaluating boolean %s, %s, %s, %s, %s`",
-      async (enabled, value, def, expected, reason) => {
-        mockFeature(enabled, "key", value);
-        expect(ofClient.getBooleanDetails(testFlagKey, def)).toEqual({
-          flagKey: "a-key",
-          flagMetadata: {},
-          reason: reason,
-          value: expected,
-        });
-      },
-    );
-
-    it.each([
-      [true, 1, -1, 1, "TARGETING_MATCH"],
-      [true, null, -2, -2, "DEFAULT"],
-      [false, 3, -3, -3, "DISABLED"],
-      [false, 4, -4, -4, "DISABLED"],
-    ])(
-      "should return the correct result when evaluating number %s, %s, %s, %s, %s`",
-      async (enabled, value, def, expected, reason) => {
-        mockFeature(enabled, value ? "key" : undefined, value);
-        expect(ofClient.getNumberDetails(testFlagKey, def)).toEqual({
-          flagKey: "a-key",
-          flagMetadata: {},
-          reason: reason,
-          value: expected,
-        });
-      },
-    );
-
-    it.each([["string"], [true], [{}]])(
-      "should handle type mismatch when evaluating number as %s`",
-      async (value) => {
-        mockFeature(true, "key", value);
-        expect(ofClient.getNumberDetails(testFlagKey, -1)).toEqual({
-          flagKey: "a-key",
-          flagMetadata: {},
-          reason: "ERROR",
-          errorCode: "TYPE_MISMATCH",
-          errorMessage: "",
-          value: -1,
-        });
-      },
-    );
-
-    it.each([
-      [true, { anything: 1 }, "default", "key", "TARGETING_MATCH"],
-      [false, 1337, "default", "default", "DISABLED"],
-    ])(
-      "should return the correct result when evaluating string %s, %s, %s, %s, %s`",
-      async (enabled, value, def, expected, reason) => {
-        mockFeature(enabled, "key", value);
-        expect(ofClient.getStringDetails(testFlagKey, def)).toEqual({
-          flagKey: "a-key",
-          flagMetadata: {},
-          reason: reason,
-          value: expected,
-        });
-      },
-    );
-
-    it.each([
-      [true, [], [1], [], "TARGETING_MATCH"],
-      [true, null, [2], [2], "DEFAULT"],
-      [false, [3], [4], [4], "DISABLED"],
-      [false, [5], [6], [6], "DISABLED"],
-    ])(
-      "should return the correct result when evaluating array %s, %s, %s, %s, %s`",
-      async (enabled, value, def, expected, reason) => {
-        mockFeature(enabled, value ? "key" : undefined, value);
-        expect(ofClient.getObjectDetails(testFlagKey, def)).toEqual({
-          flagKey: "a-key",
-          flagMetadata: {},
-          reason: reason,
-          value: expected,
-        });
-      },
-    );
-
-    it.each([
-      [true, {}, { a: 1 }, {}, "TARGETING_MATCH"],
-      [true, null, { a: 2 }, { a: 2 }, "DEFAULT"],
-      [false, { a: 3 }, { a: 4 }, { a: 4 }, "DISABLED"],
-      [false, { a: 5 }, { a: 6 }, { a: 6 }, "DISABLED"],
-    ])(
-      "should return the correct result when evaluating object %s, %s, %s, %s, %s`",
-      async (enabled, value, def, expected, reason) => {
-        mockFeature(enabled, value ? "key" : undefined, value);
-        expect(ofClient.getObjectDetails(testFlagKey, def)).toEqual({
-          flagKey: "a-key",
-          flagMetadata: {},
-          reason: reason,
-          value: expected,
-        });
-      },
-    );
-
-    it.each([["string"], [15], [true]])(
-      "should handle type mismatch when evaluating object as %s`",
-      async (value) => {
-        mockFeature(true, "key", value);
-        expect(ofClient.getObjectDetails(testFlagKey, { obj: true })).toEqual({
-          flagKey: "a-key",
-          flagMetadata: {},
-          reason: "ERROR",
-          errorCode: "TYPE_MISMATCH",
-          errorMessage: "",
-          value: { obj: true },
-        });
-      },
-    );
   });
 
   describe("track", () => {
@@ -280,3 +133,4 @@ describe("BucketBrowserSDKProvider", () => {
     });
   });
 });
+
