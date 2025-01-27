@@ -17,6 +17,7 @@ import {
   FeedbackOptions,
   RawFeatures,
   RequestFeedbackData,
+  ToolbarOptions,
   UnassignedFeedback,
 } from "@bucketco/browser-sdk";
 
@@ -66,6 +67,7 @@ export type BucketProps = BucketContext & {
    */
   host?: string;
   apiBaseUrl?: string;
+  appBaseUrl?: string;
 
   /**
    * @deprecated
@@ -75,6 +77,10 @@ export type BucketProps = BucketContext & {
   sseBaseUrl?: string;
   debug?: boolean;
   enableTracking?: boolean;
+
+  featureList?: Readonly<string[]>;
+
+  toolbar?: ToolbarOptions;
 
   // for testing
   newBucketClient?: (
@@ -90,6 +96,7 @@ export function BucketProvider({
   publishableKey,
   featureOptions,
   loadingComponent,
+  featureList,
   newBucketClient = (...args) => new BucketClient(...args),
   ...config
 }: BucketProps) {
@@ -123,6 +130,7 @@ export function BucketProvider({
 
       host: config.host,
       apiBaseUrl: config.apiBaseUrl,
+      appBaseUrl: config.appBaseUrl,
       sseHost: config.sseHost,
       sseBaseUrl: config.sseBaseUrl,
 
@@ -134,6 +142,7 @@ export function BucketProvider({
       feedback: config.feedback,
       logger: config.debug ? console : undefined,
       sdkVersion: SDK_VERSION,
+      featureList,
     });
     clientRef.current = client;
 
@@ -153,7 +162,7 @@ export function BucketProvider({
 
   const context: ProviderContextType = {
     features: {
-      features,
+      features: features,
       isLoading: featuresLoading,
     },
     client: clientRef.current,
@@ -225,7 +234,7 @@ export function useFeature<TKey extends FeatureKey>(key: TKey): Feature<TKey> {
   }
 
   const feature = features[key];
-  const enabled = feature?.isEnabled ?? false;
+  const enabled = feature?.isEnabledOverride ?? feature?.isEnabled ?? false;
 
   function sendCheckEvent() {
     client

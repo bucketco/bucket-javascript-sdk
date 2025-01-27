@@ -1,6 +1,7 @@
 import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
 
 import { version } from "../package.json";
+import { FeatureDefinitions } from "../src/client";
 import {
   FEATURES_EXPIRE_MS,
   FeaturesClient,
@@ -38,6 +39,7 @@ function featuresClientFactory() {
     newFeaturesClient: function newFeaturesClient(
       options?: FeaturesOptions,
       context?: any,
+      featureList: FeatureDefinitions = [],
     ) {
       return new FeaturesClient(
         httpClient,
@@ -47,6 +49,7 @@ function featuresClientFactory() {
           other: { eventId: "big-conference1" },
           ...context,
         },
+        featureList,
         testLogger,
         {
           cache,
@@ -334,8 +337,9 @@ describe("FeaturesClient", () => {
   test("handled overrides for features not returned by API", async () => {
     // change the response so we can validate that we'll serve the stale cache
     const { newFeaturesClient } = featuresClientFactory();
+
     // localStorage.clear();
-    const client = newFeaturesClient();
+    const client = newFeaturesClient(undefined, undefined, ["featureB"]);
     await client.initialize();
 
     let updated = false;
@@ -343,7 +347,10 @@ describe("FeaturesClient", () => {
       updated = true;
     });
 
-    expect(client.getFeatures().featureC).toBeUndefined();
+    expect(client.getFeatures().featureB.isEnabled).toBe(false);
+    expect(client.getFeatures().featureB.isEnabledOverride).toBe(null);
+
+    expect(client.getFetchedFeatures()?.featureB).toBeUndefined();
 
     client.setFeatureOverride("featureC", true);
 
