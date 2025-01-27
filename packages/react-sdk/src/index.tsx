@@ -21,7 +21,6 @@ import {
   UnassignedFeedback,
 } from "@bucketco/browser-sdk";
 
-import { Features } from "../dev/nextjs-flag-demo/components/Flags";
 import { version } from "../package.json";
 
 export interface Features {}
