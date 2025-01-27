@@ -218,7 +218,7 @@ export type FeatureRemoteConfig =
        */
       payload: any;
     }
-  | { key: undefined; targetingVersion: undefined; value: undefined };
+  | { key: undefined; payload: undefined };
 
 /**
  * A feature.
@@ -616,7 +616,7 @@ export class BucketClient {
     function sendCheckEvent() {
       fClient
         .sendCheckEvent({
-          key: key,
+          key,
           version: f?.targetingVersion,
           value,
         })
