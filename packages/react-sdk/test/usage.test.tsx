@@ -263,8 +263,7 @@ describe("useFeature", () => {
         isLoading: false,
         config: {
           key: "gpt3",
-          targetingVersion: 2,
-          value: { model: "gpt-something", temperature: 0.5 },
+          payload: { model: "gpt-something", temperature: 0.5 },
         },
         track: expect.any(Function),
         requestFeedback: expect.any(Function),

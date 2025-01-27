@@ -247,6 +247,10 @@ export function useFeature<TKey extends FeatureKey>(key: TKey): Feature<TKey> {
       });
   }
 
+  const reducedConfig = feature?.config
+    ? { key: feature.config.key, payload: feature.config.payload }
+    : ({} as EmptyFeatureConfig);
+
   return {
     isLoading,
     track,
@@ -257,7 +261,7 @@ export function useFeature<TKey extends FeatureKey>(key: TKey): Feature<TKey> {
     },
     get config() {
       sendCheckEvent();
-      return feature?.config ?? ({} as EmptyFeatureConfig);
+      return reducedConfig;
     },
   };
 }
