@@ -14,10 +14,12 @@ import {
   RequestFeedbackOptions,
 } from "./feedback/feedback";
 import * as feedbackLib from "./feedback/ui";
-import { API_BASE_URL, SSE_REALTIME_BASE_URL } from "./config";
+import { ToolbarPosition } from "./toolbar/Toolbar";
+import { API_BASE_URL, APP_BASE_URL, SSE_REALTIME_BASE_URL } from "./config";
 import { BucketContext, CompanyContext, UserContext } from "./context";
 import { HttpClient } from "./httpClient";
 import { Logger, loggerWithPrefix, quietConsoleLogger } from "./logger";
+import { showToolbarToggle } from "./toolbar";
 
 const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 const isNode = typeof document === "undefined"; // deno supports "window" but not "document" according to https://remix.run/docs/en/main/guides/gotchas
@@ -91,9 +93,19 @@ export type PayloadContext = {
 
 interface Config {
   apiBaseUrl: string;
+  appBaseUrl: string;
   sseBaseUrl: string;
   enableTracking: boolean;
 }
+
+export type ToolbarOptions =
+  | boolean
+  | {
+      show?: boolean;
+      position?: ToolbarPosition;
+    };
+
+export type FeatureDefinitions = Readonly<Array<string>>;
 
 /**
  * BucketClient initialization options.
@@ -141,6 +153,11 @@ export interface InitOptions {
   apiBaseUrl?: string;
 
   /**
+   * Base URL of the Bucket web app. Links open ín this app by default.
+   */
+  appBaseUrl?: string;
+
+  /**
    * @deprecated
    * Use `sseBaseUrl` instead.
    */
@@ -166,10 +183,22 @@ export interface InitOptions {
    */
   sdkVersion?: string;
   enableTracking?: boolean;
+
+  /**
+   * Toolbar configuration (alpha)
+   * @ignore
+   */
+  toolbar?: ToolbarOptions;
+  /**
+   * Local-first definition of features (alpha)
+   * @ignore
+   */
+  featureList?: FeatureDefinitions;
 }
 
 const defaultConfig: Config = {
   apiBaseUrl: API_BASE_URL,
+  appBaseUrl: APP_BASE_URL,
   sseBaseUrl: SSE_REALTIME_BASE_URL,
   enableTracking: true,
 };
@@ -189,7 +218,7 @@ export type FeatureRemoteConfig =
        */
       payload: any;
     }
-  | { key: undefined; targetingVersion: undefined; value: undefined };
+  | { key: undefined; payload: undefined };
 
 /**
  * A feature.
@@ -216,6 +245,16 @@ export interface Feature {
   requestFeedback: (
     options: Omit<RequestFeedbackData, "featureKey" | "featureId">,
   ) => void;
+}
+
+function shouldShowToolbar(opts: InitOptions) {
+  const toolbarOpts = opts.toolbar;
+  if (typeof toolbarOpts === "boolean") return toolbarOpts;
+  if (typeof toolbarOpts?.show === "boolean") return toolbarOpts.show;
+
+  return (
+    opts.featureList !== undefined && window?.location?.hostname === "localhost"
+  );
 }
 
 /**
@@ -250,9 +289,10 @@ export class BucketClient {
 
     this.config = {
       apiBaseUrl: opts?.apiBaseUrl ?? opts?.host ?? defaultConfig.apiBaseUrl,
+      appBaseUrl: opts?.appBaseUrl ?? opts?.host ?? defaultConfig.appBaseUrl,
       sseBaseUrl: opts?.sseBaseUrl ?? opts?.sseHost ?? defaultConfig.sseBaseUrl,
       enableTracking: opts?.enableTracking ?? defaultConfig.enableTracking,
-    } satisfies Config;
+    };
 
     const feedbackOpts = handleDeprecatedFeedbackOptions(opts?.feedback);
 
@@ -274,6 +314,7 @@ export class BucketClient {
         company: this.context.company,
         other: this.context.otherContext,
       },
+      opts?.featureList || [],
       this.logger,
       opts?.features,
     );
@@ -298,6 +339,15 @@ export class BucketClient {
           feedbackOpts?.ui?.translations,
         );
       }
+    }
+
+    if (shouldShowToolbar(opts)) {
+      this.logger.info("opening toolbar toggler");
+      showToolbarToggle({
+        bucketClient: this as unknown as BucketClient,
+        position:
+          typeof opts.toolbar === "object" ? opts.toolbar.position : undefined,
+      });
     }
   }
 
@@ -327,6 +377,13 @@ export class BucketClient {
         this.logger.error("error sending company", e);
       });
     }
+  }
+
+  /**
+   * Get the current configuration.
+   */
+  getConfig() {
+    return this.config;
   }
 
   /**
@@ -559,7 +616,7 @@ export class BucketClient {
     function sendCheckEvent() {
       fClient
         .sendCheckEvent({
-          key: key,
+          key,
           version: f?.targetingVersion,
           value,
         })
