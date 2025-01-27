@@ -126,13 +126,6 @@ export class BucketBrowserSDKProvider implements Provider {
         };
       }
 
-      if (expType === "boolean") {
-        return {
-          value: true as T,
-          reason: StandardResolutionReasons.TARGETING_MATCH,
-        };
-      }
-
       if (!feature.config.key) {
         return {
           value: defaultValue,
@@ -142,7 +135,7 @@ export class BucketBrowserSDKProvider implements Provider {
 
       if (expType === "string") {
         return {
-          value: feature.config.payload as T,
+          value: feature.config.key as T,
           reason: StandardResolutionReasons.TARGETING_MATCH,
         };
       }

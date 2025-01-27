@@ -135,21 +135,34 @@ describe("BucketBrowserSDKProvider", () => {
 
     it.each([
       [true, true, false, true, "TARGETING_MATCH"],
-      [true, false, false, true, "TARGETING_MATCH"],
-      [true, null, false, true, "TARGETING_MATCH"],
-      [true, { obj: true }, false, true, "TARGETING_MATCH"],
-      [true, 15, false, true, "TARGETING_MATCH"],
+      [true, false, false, false, "TARGETING_MATCH"],
+      [true, null, true, true, "DEFAULT"],
       [false, true, false, false, "DISABLED"],
       [false, true, true, true, "DISABLED"],
     ])(
-      "should return the correct result when evaluating boolean %s, %s, %s, %s, %s`",
+      "should return the correct result when evaluating boolean. enabled: %s, value: %s, default: %s, expected: %s, reason: %s`",
       async (enabled, value, def, expected, reason) => {
-        mockFeature(enabled, "key", value);
+        mockFeature(enabled, value !== null ? "key" : undefined, value);
         expect(ofClient.getBooleanDetails(testFlagKey, def)).toEqual({
           flagKey: "a-key",
           flagMetadata: {},
           reason: reason,
           value: expected,
+        });
+      },
+    );
+
+    it.each([[null], [{ obj: true }], [15]])(
+      "should handle type mismatch when evaluating boolean as %s.`",
+      async (value) => {
+        mockFeature(true, "key", value);
+        expect(ofClient.getBooleanDetails(testFlagKey, true)).toEqual({
+          flagKey: "a-key",
+          flagMetadata: {},
+          reason: "ERROR",
+          errorCode: "TYPE_MISMATCH",
+          errorMessage: "",
+          value: true,
         });
       },
     );
@@ -160,7 +173,7 @@ describe("BucketBrowserSDKProvider", () => {
       [false, 3, -3, -3, "DISABLED"],
       [false, 4, -4, -4, "DISABLED"],
     ])(
-      "should return the correct result when evaluating number %s, %s, %s, %s, %s`",
+      "should return the correct result when evaluating number. enabled: %s, value: %s, default: %s, expected: %s, reason: %s`",
       async (enabled, value, def, expected, reason) => {
         mockFeature(enabled, value ? "key" : undefined, value);
         expect(ofClient.getNumberDetails(testFlagKey, def)).toEqual({
@@ -191,7 +204,7 @@ describe("BucketBrowserSDKProvider", () => {
       [true, { anything: 1 }, "default", "key", "TARGETING_MATCH"],
       [false, 1337, "default", "default", "DISABLED"],
     ])(
-      "should return the correct result when evaluating string %s, %s, %s, %s, %s`",
+      "should return the correct result when evaluating string. enabled: %s, value: %s, default: %s, expected: %s, reason: %s`",
       async (enabled, value, def, expected, reason) => {
         mockFeature(enabled, "key", value);
         expect(ofClient.getStringDetails(testFlagKey, def)).toEqual({
@@ -209,7 +222,7 @@ describe("BucketBrowserSDKProvider", () => {
       [false, [3], [4], [4], "DISABLED"],
       [false, [5], [6], [6], "DISABLED"],
     ])(
-      "should return the correct result when evaluating array %s, %s, %s, %s, %s`",
+      "should return the correct result when evaluating array. enabled: %s, value: %s, default: %s, expected: %s, reason: %s`",
       async (enabled, value, def, expected, reason) => {
         mockFeature(enabled, value ? "key" : undefined, value);
         expect(ofClient.getObjectDetails(testFlagKey, def)).toEqual({
@@ -227,7 +240,7 @@ describe("BucketBrowserSDKProvider", () => {
       [false, { a: 3 }, { a: 4 }, { a: 4 }, "DISABLED"],
       [false, { a: 5 }, { a: 6 }, { a: 6 }, "DISABLED"],
     ])(
-      "should return the correct result when evaluating object %s, %s, %s, %s, %s`",
+      "should return the correct result when evaluating object. enabled: %s, value: %s, default: %s, expected: %s, reason: %s`",
       async (enabled, value, def, expected, reason) => {
         mockFeature(enabled, value ? "key" : undefined, value);
         expect(ofClient.getObjectDetails(testFlagKey, def)).toEqual({
