@@ -882,18 +882,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@bucketco/browser-sdk@npm:3.0.0-alpha.0":
-  version: 3.0.0-alpha.0
-  resolution: "@bucketco/browser-sdk@npm:3.0.0-alpha.0"
-  dependencies:
-    "@floating-ui/dom": "npm:^1.6.8"
-    canonical-json: "npm:^0.0.4"
-    js-cookie: "npm:^3.0.5"
-    preact: "npm:^10.22.1"
-  checksum: 10c0/eba1a2f15c49c1aeca37c6d2b218e50d92e2034c51a9acdd6884ce143156dc7f285f9141f5e6cfcc2aed0186c0b8fc61bb9939aca737a1e76d1a2d9d65a7b74c
-  languageName: node
-  linkType: hard
-
 "@bucketco/browser-sdk@npm:3.0.0-alpha.1, @bucketco/browser-sdk@workspace:packages/browser-sdk":
   version: 0.0.0-use.local
   resolution: "@bucketco/browser-sdk@workspace:packages/browser-sdk"
@@ -984,7 +972,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@bucketco/openfeature-browser-provider@workspace:packages/openfeature-browser-provider"
   dependencies:
-    "@bucketco/browser-sdk": "npm:3.0.0-alpha.0"
+    "@bucketco/browser-sdk": "npm:3.0.0-alpha.1"
     "@bucketco/eslint-config": "npm:0.0.2"
     "@bucketco/tsconfig": "npm:0.0.2"
     "@openfeature/core": "npm:1.5.0"
