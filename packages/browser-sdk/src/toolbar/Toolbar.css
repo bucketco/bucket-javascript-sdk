@@ -60,6 +60,7 @@
   --border-color: #292b32;
   --logo-color: white;
   --text-color: white;
+  --text-size: 13px;
   font-family:
     system-ui,
     -apple-system,
@@ -72,7 +73,7 @@
     "Open Sans",
     "Helvetica Neue",
     sans-serif;
-  font-size: 12px;
+  font-size: var(--text-size);
 }
 
 :focus {
