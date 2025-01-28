@@ -24,9 +24,25 @@ function parseOverrides(config: object | undefined) {
   if ("featureOverrides" in config && isObject(config.featureOverrides)) {
     Object.entries(config.featureOverrides).forEach(([key, value]) => {
       ok(
-        typeof value === "boolean" || (isObject(value) && "key" in value),
-        `invalid type "${typeof value}" for key ${key}, expected boolean or object with key`,
+        typeof value === "boolean" || isObject(value),
+        `invalid type "${typeof value}" for key ${key}, expected boolean or object`,
       );
+      if (isObject(value)) {
+        ok(
+          "isEnabled" in value && typeof value.isEnabled === "boolean",
+          `invalid type "${typeof value.isEnabled}" for key ${key}.isEnabled, expected boolean`,
+        );
+        ok(
+          value.config === undefined || isObject(value.config),
+          `invalid type "${typeof value.config}" for key ${key}.config, expected object or undefined`,
+        );
+        if (isObject(value.config)) {
+          ok(
+            "key" in value.config && typeof value.config.key === "string",
+            `invalid type "${typeof value.config.key}" for key ${key}.config.key, expected string`,
+          );
+        }
+      }
     });
 
     return config.featureOverrides;
