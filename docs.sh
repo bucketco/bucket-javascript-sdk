@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 typedoc
 
 # We need to fix the links in the generated markdown files.
