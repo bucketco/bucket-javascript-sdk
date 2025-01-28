@@ -2,7 +2,6 @@
   "extends": "@bucketco/tsconfig/library",
   "compilerOptions": {
     "outDir": "./dist/",
-    "lib": ["dom", "dom.iterable"],
     "declarationDir": "./dist/types",
     "declarationMap": true
   },
