@@ -136,6 +136,7 @@ export function BucketProvider({
       logger: config.debug ? console : undefined,
       sdkVersion: SDK_VERSION,
       featureList,
+      toolbar: config.toolbar,
     });
     clientRef.current = client;
 
