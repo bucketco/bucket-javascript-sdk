@@ -35,7 +35,8 @@
   },
   "dependencies": {
     "@bucketco/browser-sdk": "3.0.0-alpha.0",
-    "canonical-json": "^0.0.4"
+    "canonical-json": "^0.0.4",
+    "rollup": "^4.2.0"
   },
   "peerDependencies": {
     "react": "*",
