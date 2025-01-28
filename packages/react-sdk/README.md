@@ -221,4 +221,4 @@ See https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/browser
 
 MIT License
 
-Copyright (c) 2024 Bucket ApS
+Copyright (c) 2025 Bucket ApS
