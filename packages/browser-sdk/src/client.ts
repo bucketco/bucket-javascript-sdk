@@ -14,86 +14,173 @@ import {
   RequestFeedbackOptions,
 } from "./feedback/feedback";
 import * as feedbackLib from "./feedback/ui";
-import { API_BASE_URL, SSE_REALTIME_BASE_URL } from "./config";
+import { ToolbarPosition } from "./toolbar/Toolbar";
+import { API_BASE_URL, APP_BASE_URL, SSE_REALTIME_BASE_URL } from "./config";
 import { BucketContext, CompanyContext, UserContext } from "./context";
 import { HttpClient } from "./httpClient";
 import { Logger, loggerWithPrefix, quietConsoleLogger } from "./logger";
+import { showToolbarToggle } from "./toolbar";
 
 const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 const isNode = typeof document === "undefined"; // deno supports "window" but not "document" according to https://remix.run/docs/en/main/guides/gotchas
 
+/**
+ * (Internal) User context.
+ *
+ * @internal
+ */
 export type User = {
   /**
-   * Identifier of the user
+   * Identifier of the user.
    */
   userId: string;
 
   /**
-   * User attributes
+   * User attributes.
    */
   attributes?: {
+    /**
+     * Name of the user.
+     */
     name?: string;
+
+    /**
+     * Email of the user.
+     */
+    email?: string;
+
+    /**
+     * Avatar URL of the user.
+     */
+    avatar?: string;
+
+    /**
+     * Custom attributes of the user.
+     */
     [key: string]: any;
   };
 
+  /**
+   * Custom context of the user.
+   */
   context?: PayloadContext;
 };
 
+/**
+ * (Internal) Company context.
+ *
+ * @internal
+ */
 export type Company = {
   /**
-   * User identifier
+   * User identifier.
    */
   userId: string;
 
   /**
-   * Company identifier
+   * Company identifier.
    */
   companyId: string;
 
   /**
-   * Company attributes
+   * Company attributes.
    */
   attributes?: {
+    /**
+     * Name of the company.
+     */
     name?: string;
+
+    /**
+     * Custom attributes of the company.
+     */
     [key: string]: any;
   };
 
   context?: PayloadContext;
 };
 
+/**
+ * Tracked event.
+ */
 export type TrackedEvent = {
   /**
-   * Event name
+   * Event name.
    */
   event: string;
 
   /**
-   * User identifier
+   * User identifier.
    */
   userId: string;
 
   /**
-   * Company identifier
+   * Company identifier.
    */
   companyId?: string;
 
   /**
-   * Event attributes
+   * Event attributes.
    */
   attributes?: Record<string, any>;
 
+  /**
+   * Custom context of the event.
+   */
   context?: PayloadContext;
 };
 
+/**
+ * (Internal) Custom context of the event.
+ *
+ * @internal
+ */
 export type PayloadContext = {
+  /**
+   * Whether the company and user associated with the event are active.
+   */
   active?: boolean;
 };
 
+/**
+ * BucketClient configuration.
+ */
 interface Config {
+  /**
+   * Base URL of Bucket servers.
+   */
   apiBaseUrl: string;
+
+  /**
+   * Base URL of the Bucket web app.
+   */
+  appBaseUrl: string;
+
+  /**
+   * Base URL of Bucket servers for SSE connections used by AutoFeedback.
+   */
   sseBaseUrl: string;
+
+  /**
+   * Whether to enable tracking.
+   */
   enableTracking: boolean;
 }
+
+/**
+ * Toolbar options.
+ */
+export type ToolbarOptions =
+  | boolean
+  | {
+      show?: boolean;
+      position?: ToolbarPosition;
+    };
+
+/**
+ * Feature definitions.
+ */
+export type FeatureDefinitions = Readonly<Array<string>>;
 
 /**
  * BucketClient initialization options.
@@ -105,12 +192,14 @@ export interface InitOptions {
   publishableKey: string;
 
   /**
-   * User related context. If you provide `id` Bucket will enrich the evaluation context with user attributes on Bucket servers.
+   * User related context. If you provide `id` Bucket will enrich the evaluation context with
+   * user attributes on Bucket servers.
    */
   user?: UserContext;
 
   /**
-   * Company related context. If you provide `id` Bucket will enrich the evaluation context with company attributes on Bucket servers.
+   * Company related context. If you provide `id` Bucket will enrich the evaluation context with
+   * company attributes on Bucket servers.
    */
   company?: CompanyContext;
 
@@ -141,6 +230,11 @@ export interface InitOptions {
   apiBaseUrl?: string;
 
   /**
+   * Base URL of the Bucket web app. Links open ín this app by default.
+   */
+  appBaseUrl?: string;
+
+  /**
    * @deprecated
    * Use `sseBaseUrl` instead.
    */
@@ -165,15 +259,35 @@ export interface InitOptions {
    * Version of the SDK
    */
   sdkVersion?: string;
+
+  /**
+   * Whether to enable tracking. Defaults to `true`.
+   */
   enableTracking?: boolean;
+
+  /**
+   * Toolbar configuration (alpha)
+   * @ignore
+   */
+  toolbar?: ToolbarOptions;
+
+  /**
+   * Local-first definition of features (alpha)
+   * @ignore
+   */
+  featureList?: FeatureDefinitions;
 }
 
 const defaultConfig: Config = {
   apiBaseUrl: API_BASE_URL,
+  appBaseUrl: APP_BASE_URL,
   sseBaseUrl: SSE_REALTIME_BASE_URL,
   enableTracking: true,
 };
 
+/**
+ * Represents a feature.
+ */
 export interface Feature {
   /**
    * Result of feature flag evaluation
@@ -185,13 +299,27 @@ export interface Feature {
    *
    */
   track: () => Promise<Response | undefined>;
+
+  /**
+   * Function to request feedback for this feature.
+   */
   requestFeedback: (
     options: Omit<RequestFeedbackData, "featureKey" | "featureId">,
   ) => void;
 }
+
+function shouldShowToolbar(opts: InitOptions) {
+  const toolbarOpts = opts.toolbar;
+  if (typeof toolbarOpts === "boolean") return toolbarOpts;
+  if (typeof toolbarOpts?.show === "boolean") return toolbarOpts.show;
+
+  return (
+    opts.featureList !== undefined && window?.location?.hostname === "localhost"
+  );
+}
+
 /**
  * BucketClient lets you interact with the Bucket API.
- *
  */
 export class BucketClient {
   private publishableKey: string;
@@ -220,9 +348,10 @@ export class BucketClient {
 
     this.config = {
       apiBaseUrl: opts?.apiBaseUrl ?? opts?.host ?? defaultConfig.apiBaseUrl,
+      appBaseUrl: opts?.appBaseUrl ?? opts?.host ?? defaultConfig.appBaseUrl,
       sseBaseUrl: opts?.sseBaseUrl ?? opts?.sseHost ?? defaultConfig.sseBaseUrl,
       enableTracking: opts?.enableTracking ?? defaultConfig.enableTracking,
-    } satisfies Config;
+    };
 
     const feedbackOpts = handleDeprecatedFeedbackOptions(opts?.feedback);
 
@@ -244,6 +373,7 @@ export class BucketClient {
         company: this.context.company,
         other: this.context.otherContext,
       },
+      opts?.featureList || [],
       this.logger,
       opts?.features,
     );
@@ -268,6 +398,15 @@ export class BucketClient {
           feedbackOpts?.ui?.translations,
         );
       }
+    }
+
+    if (shouldShowToolbar(opts)) {
+      this.logger.info("opening toolbar toggler");
+      showToolbarToggle({
+        bucketClient: this as unknown as BucketClient,
+        position:
+          typeof opts.toolbar === "object" ? opts.toolbar.position : undefined,
+      });
     }
   }
 
@@ -297,6 +436,13 @@ export class BucketClient {
         this.logger.error("error sending company", e);
       });
     }
+  }
+
+  /**
+   * Get the current configuration.
+   */
+  getConfig() {
+    return this.config;
   }
 
   /**
