@@ -214,7 +214,7 @@ export type FeatureRemoteConfig =
       key: string;
 
       /**
-       * The user-supplied data.
+       * The optional user-supplied payload data.
        */
       payload: any;
     }
