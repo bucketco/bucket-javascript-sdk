@@ -14,6 +14,7 @@
     "test:ci": "lerna run test:ci --stream",
     "test": "lerna run test --stream",
     "prettier": "lerna run prettier --stream",
+    "prettier:fix": "lerna run prettier -- --write",
     "lint": "lerna run lint --stream",
     "lint:ci": "lerna run lint:ci --stream",
     "version": "lerna version --exact --no-push",
