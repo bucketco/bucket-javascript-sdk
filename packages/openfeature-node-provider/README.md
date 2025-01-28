@@ -136,4 +136,4 @@ const enterpriseFeatureEnabled = await client.track(
 
 MIT License
 
-Copyright (c) 2024 Bucket ApS
+Copyright (c) 2025 Bucket ApS
