@@ -118,15 +118,26 @@ If you supply `user` or `company` objects, they must include at least the `id` p
 In addition to the `id`, you must also supply anything additional that you want to be able to evaluate feature targeting rules against.
 
 Attributes cannot be nested (multiple levels) and must be either strings, integers or booleans.
+Some attributes are special and used in Bucket UI:
 
-- `name` is a special attribute and is used to display name for user/company
-- for `user`, `email` is also special and will be highlighted in the Bucket UI if available
+- `name` is used to display name for `user`/`company`,
+- `email` is accepted for `user`s and will be highlighted in the Bucket UI if available,
+- `avatar` can be provided for both `user` and `company` and should be an URL to an image.
 
 ```ts
 const bucketClient = new BucketClient({
   publishableKey,
-  user: { id: "user_123", name: "John Doe", email: "john@acme.com" },
-  company: { id: "company_123", name: "Acme, Inc" },
+  user: {
+    id: "user_123",
+    name: "John Doe",
+    email: "john@acme.com"
+    avatar: "https://example.com/images/udsy6363"
+  },
+  company: {
+    id: "company_123",
+    name: "Acme, Inc",
+    avatar: "https://example.com/images/31232ds"
+  },
 });
 ```
 
@@ -164,7 +175,8 @@ generate a `check` event, contrary to the `isEnabled` property on the object ret
 ### Remote config
 
 Similar to `isEnabled`, each feature has a `config` property. This configuration is managed from within Bucket.
-It is managed similar to the way access to features is managed, but instead the binary `isEnabled` you can have multiple configuration values which are given to different user/companies.
+It is managed similar to the way access to features is managed, but instead of the binary `isEnabled` you can have
+multiple configuration values which are given to different user/companies.
 
 ```ts
 const features = bucketClient.getFeatures();
@@ -172,7 +184,7 @@ const features = bucketClient.getFeatures();
 //   huddle: {
 //     isEnabled: true,
 //     targetingVersion: 42,
-//     config?: {
+//     config: {
 //       key: "gpt-3.5",
 //       payload: { maxTokens: 10000, model: "gpt-3.5-beta1" }
 //     }
@@ -180,7 +192,10 @@ const features = bucketClient.getFeatures();
 // }
 ```
 
-The `key` is always present while the `payload` is a optional JSON value for arbitrary configuration needs. `
+The `key` is always present while the `payload` is a optional JSON value for arbitrary configuration needs.
+If feature has no configuration or, no configuration value was matched against the context, the `config` object
+will be empty, thus, `key` will be `undefined`. Make sure to check against this case when trying to use the
+configuration in your application.
 
 Just as `isEnabled`, accessing `config` on the object returned by `getFeatures` does not automatically
 generate a `check` event, contrary to the `config` property on the object returned by `getFeature`.

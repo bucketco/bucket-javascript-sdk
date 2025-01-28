@@ -43,9 +43,9 @@ export type FetchedFeature = {
     version?: number;
 
     /**
-     * The user-supplied data.
+     * The optional user-supplied payload data.
      */
-    payload: any;
+    payload?: any;
   };
 };
 
