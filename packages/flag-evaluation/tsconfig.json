@@ -2,7 +2,7 @@
   "extends": "../tsconfig/library",
   "compilerOptions": {
     "outDir": "./dist/",
-    "lib": ["dom", "dom.iterable"],
+    "lib": ["dom", "dom.iterable"]
   },
   "include": ["src"],
   "typeRoots": ["./node_modules/@types", "./types"]
