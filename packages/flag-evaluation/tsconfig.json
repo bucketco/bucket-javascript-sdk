@@ -1,8 +1,8 @@
 {
-  "extends": "../tsconfig/library",
+  "extends": "@bucketco/tsconfig/library",
   "compilerOptions": {
-    "outDir": "./dist/",
-    "lib": ["dom", "dom.iterable"]
+    "lib": [],
+    "outDir": "./dist/"
   },
   "include": ["src"],
   "typeRoots": ["./node_modules/@types", "./types"]
