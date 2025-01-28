@@ -437,6 +437,11 @@ export type Context = {
     name?: string | undefined;
 
     /**
+     * The avatar URL of the company.
+     */
+    avatar?: string | undefined;
+
+    /**
      * Custom attributes of the company.
      */
     [k: string]: any;

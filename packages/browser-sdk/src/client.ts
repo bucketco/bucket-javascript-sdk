@@ -25,7 +25,9 @@ const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 const isNode = typeof document === "undefined"; // deno supports "window" but not "document" according to https://remix.run/docs/en/main/guides/gotchas
 
 /**
- * User context.
+ * (Internal) User context.
+ *
+ * @internal
  */
 export type User = {
   /**
@@ -65,7 +67,9 @@ export type User = {
 };
 
 /**
- * Company context.
+ * (Internal) Company context.
+ *
+ * @internal
  */
 export type Company = {
   /**
@@ -127,7 +131,9 @@ export type TrackedEvent = {
 };
 
 /**
- * Custom context of the event.
+ * (Internal) Custom context of the event.
+ *
+ * @internal
  */
 export type PayloadContext = {
   /**
@@ -255,7 +261,7 @@ export interface InitOptions {
   sdkVersion?: string;
 
   /**
-   * Whether to enable tracking.
+   * Whether to enable tracking. Defaults to `true`.
    */
   enableTracking?: boolean;
 
