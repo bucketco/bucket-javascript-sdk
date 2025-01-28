@@ -24,80 +24,152 @@ import { showToolbarToggle } from "./toolbar";
 const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 const isNode = typeof document === "undefined"; // deno supports "window" but not "document" according to https://remix.run/docs/en/main/guides/gotchas
 
+/**
+ * (Internal) User context.
+ *
+ * @internal
+ */
 export type User = {
   /**
-   * Identifier of the user
+   * Identifier of the user.
    */
   userId: string;
 
   /**
-   * User attributes
+   * User attributes.
    */
   attributes?: {
+    /**
+     * Name of the user.
+     */
     name?: string;
+
+    /**
+     * Email of the user.
+     */
+    email?: string;
+
+    /**
+     * Avatar URL of the user.
+     */
+    avatar?: string;
+
+    /**
+     * Custom attributes of the user.
+     */
     [key: string]: any;
   };
 
+  /**
+   * Custom context of the user.
+   */
   context?: PayloadContext;
 };
 
+/**
+ * (Internal) Company context.
+ *
+ * @internal
+ */
 export type Company = {
   /**
-   * User identifier
+   * User identifier.
    */
   userId: string;
 
   /**
-   * Company identifier
+   * Company identifier.
    */
   companyId: string;
 
   /**
-   * Company attributes
+   * Company attributes.
    */
   attributes?: {
+    /**
+     * Name of the company.
+     */
     name?: string;
+
+    /**
+     * Custom attributes of the company.
+     */
     [key: string]: any;
   };
 
   context?: PayloadContext;
 };
 
+/**
+ * Tracked event.
+ */
 export type TrackedEvent = {
   /**
-   * Event name
+   * Event name.
    */
   event: string;
 
   /**
-   * User identifier
+   * User identifier.
    */
   userId: string;
 
   /**
-   * Company identifier
+   * Company identifier.
    */
   companyId?: string;
 
   /**
-   * Event attributes
+   * Event attributes.
    */
   attributes?: Record<string, any>;
 
+  /**
+   * Custom context of the event.
+   */
   context?: PayloadContext;
 };
 
+/**
+ * (Internal) Custom context of the event.
+ *
+ * @internal
+ */
 export type PayloadContext = {
+  /**
+   * Whether the company and user associated with the event are active.
+   */
   active?: boolean;
 };
 
+/**
+ * BucketClient configuration.
+ */
 interface Config {
+  /**
+   * Base URL of Bucket servers.
+   */
   apiBaseUrl: string;
+
+  /**
+   * Base URL of the Bucket web app.
+   */
   appBaseUrl: string;
+
+  /**
+   * Base URL of Bucket servers for SSE connections used by AutoFeedback.
+   */
   sseBaseUrl: string;
+
+  /**
+   * Whether to enable tracking.
+   */
   enableTracking: boolean;
 }
 
+/**
+ * Toolbar options.
+ */
 export type ToolbarOptions =
   | boolean
   | {
@@ -105,6 +177,9 @@ export type ToolbarOptions =
       position?: ToolbarPosition;
     };
 
+/**
+ * Feature definitions.
+ */
 export type FeatureDefinitions = Readonly<Array<string>>;
 
 /**
@@ -117,12 +192,14 @@ export interface InitOptions {
   publishableKey: string;
 
   /**
-   * User related context. If you provide `id` Bucket will enrich the evaluation context with user attributes on Bucket servers.
+   * User related context. If you provide `id` Bucket will enrich the evaluation context with
+   * user attributes on Bucket servers.
    */
   user?: UserContext;
 
   /**
-   * Company related context. If you provide `id` Bucket will enrich the evaluation context with company attributes on Bucket servers.
+   * Company related context. If you provide `id` Bucket will enrich the evaluation context with
+   * company attributes on Bucket servers.
    */
   company?: CompanyContext;
 
@@ -182,6 +259,10 @@ export interface InitOptions {
    * Version of the SDK
    */
   sdkVersion?: string;
+
+  /**
+   * Whether to enable tracking. Defaults to `true`.
+   */
   enableTracking?: boolean;
 
   /**
@@ -189,6 +270,7 @@ export interface InitOptions {
    * @ignore
    */
   toolbar?: ToolbarOptions;
+
   /**
    * Local-first definition of features (alpha)
    * @ignore
@@ -203,6 +285,9 @@ const defaultConfig: Config = {
   enableTracking: true,
 };
 
+/**
+ * Represents a feature.
+ */
 export interface Feature {
   /**
    * Result of feature flag evaluation
@@ -214,6 +299,10 @@ export interface Feature {
    *
    */
   track: () => Promise<Response | undefined>;
+
+  /**
+   * Function to request feedback for this feature.
+   */
   requestFeedback: (
     options: Omit<RequestFeedbackData, "featureKey" | "featureId">,
   ) => void;
@@ -231,7 +320,6 @@ function shouldShowToolbar(opts: InitOptions) {
 
 /**
  * BucketClient lets you interact with the Bucket API.
- *
  */
 export class BucketClient {
   private publishableKey: string;

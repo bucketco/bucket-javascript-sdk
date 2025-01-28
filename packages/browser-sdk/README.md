@@ -109,15 +109,26 @@ If you supply `user` or `company` objects, they must include at least the `id` p
 In addition to the `id`, you must also supply anything additional that you want to be able to evaluate feature targeting rules against.
 
 Attributes cannot be nested (multiple levels) and must be either strings, integers or booleans.
+Some attributes are special and used in Bucket UI:
 
-- `name` is a special attribute and is used to display name for user/company
-- for `user`, `email` is also special and will be highlighted in the Bucket UI if available
+- `name` is used to display name for `user`/`company`,
+- `email` is accepted for `user`s and will be highlighted in the Bucket UI if available,
+- `avatar` can be provided for both `user` and `company` and should be an URL to an image.
 
 ```ts
 const bucketClient = new BucketClient({
   publishableKey,
-  user: { id: "user_123", name: "John Doe", email: "john@acme.com" },
-  company: { id: "company_123", name: "Acme, Inc" },
+  user: {
+    id: "user_123",
+    name: "John Doe",
+    email: "john@acme.com"
+    avatar: "https://example.com/images/udsy6363"
+  },
+  company: {
+    id: "company_123",
+    name: "Acme, Inc",
+    avatar: "https://example.com/images/31232ds"
+  },
 });
 ```
 
