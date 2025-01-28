@@ -12,13 +12,14 @@ export const featureResponse: FeaturesResponse = {
   },
 };
 
-export const featuresResult: Features = {
+export const featuresResult = {
   featureA: {
     isEnabled: true,
     key: "featureA",
     targetingVersion: 1,
+    isEnabledOverride: null,
   },
-};
+} satisfies Features;
 
 function checkRequest(request: StrictRequest<DefaultBodyType>) {
   const url = new URL(request.url);

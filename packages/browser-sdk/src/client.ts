@@ -8,62 +8,214 @@ import {
   AutoFeedback,
   Feedback,
   feedback,
-  FeedbackOptions as FeedbackOptions,
+  FeedbackOptions,
   handleDeprecatedFeedbackOptions,
   RequestFeedbackData,
   RequestFeedbackOptions,
 } from "./feedback/feedback";
 import * as feedbackLib from "./feedback/ui";
-import { API_BASE_URL, SSE_REALTIME_BASE_URL } from "./config";
+import { ToolbarPosition } from "./toolbar/Toolbar";
+import { API_BASE_URL, APP_BASE_URL, SSE_REALTIME_BASE_URL } from "./config";
 import { BucketContext, CompanyContext, UserContext } from "./context";
 import { HttpClient } from "./httpClient";
 import { Logger, loggerWithPrefix, quietConsoleLogger } from "./logger";
+import { showToolbarToggle } from "./toolbar";
 
 const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 const isNode = typeof document === "undefined"; // deno supports "window" but not "document" according to https://remix.run/docs/en/main/guides/gotchas
 
+/**
+ * (Internal) User context.
+ *
+ * @internal
+ */
 export type User = {
+  /**
+   * Identifier of the user.
+   */
   userId: string;
+
+  /**
+   * User attributes.
+   */
   attributes?: {
+    /**
+     * Name of the user.
+     */
     name?: string;
+
+    /**
+     * Email of the user.
+     */
+    email?: string;
+
+    /**
+     * Avatar URL of the user.
+     */
+    avatar?: string;
+
+    /**
+     * Custom attributes of the user.
+     */
     [key: string]: any;
   };
+
+  /**
+   * Custom context of the user.
+   */
   context?: PayloadContext;
 };
 
+/**
+ * (Internal) Company context.
+ *
+ * @internal
+ */
 export type Company = {
+  /**
+   * User identifier.
+   */
   userId: string;
+
+  /**
+   * Company identifier.
+   */
   companyId: string;
+
+  /**
+   * Company attributes.
+   */
   attributes?: {
+    /**
+     * Name of the company.
+     */
     name?: string;
+
+    /**
+     * Custom attributes of the company.
+     */
     [key: string]: any;
   };
+
   context?: PayloadContext;
 };
 
+/**
+ * Tracked event.
+ */
 export type TrackedEvent = {
+  /**
+   * Event name.
+   */
   event: string;
+
+  /**
+   * User identifier.
+   */
   userId: string;
+
+  /**
+   * Company identifier.
+   */
   companyId?: string;
+
+  /**
+   * Event attributes.
+   */
   attributes?: Record<string, any>;
+
+  /**
+   * Custom context of the event.
+   */
   context?: PayloadContext;
 };
 
+/**
+ * (Internal) Custom context of the event.
+ *
+ * @internal
+ */
 export type PayloadContext = {
+  /**
+   * Whether the company and user associated with the event are active.
+   */
   active?: boolean;
 };
 
+/**
+ * BucketClient configuration.
+ */
 interface Config {
+  /**
+   * Base URL of Bucket servers.
+   */
   apiBaseUrl: string;
+
+  /**
+   * Base URL of the Bucket web app.
+   */
+  appBaseUrl: string;
+
+  /**
+   * Base URL of Bucket servers for SSE connections used by AutoFeedback.
+   */
   sseBaseUrl: string;
+
+  /**
+   * Whether to enable tracking.
+   */
   enableTracking: boolean;
 }
 
+/**
+ * Toolbar options.
+ */
+export type ToolbarOptions =
+  | boolean
+  | {
+      show?: boolean;
+      position?: ToolbarPosition;
+    };
+
+/**
+ * Feature definitions.
+ */
+export type FeatureDefinitions = Readonly<Array<string>>;
+
+/**
+ * BucketClient initialization options.
+ */
 export interface InitOptions {
+  /**
+   * Publishable key for authentication
+   */
   publishableKey: string;
+
+  /**
+   * User related context. If you provide `id` Bucket will enrich the evaluation context with
+   * user attributes on Bucket servers.
+   */
   user?: UserContext;
+
+  /**
+   * Company related context. If you provide `id` Bucket will enrich the evaluation context with
+   * company attributes on Bucket servers.
+   */
   company?: CompanyContext;
+
+  /**
+   * Context not related to users or companies
+   */
   otherContext?: Record<string, any>;
+
+  /**
+   * You can provide a logger to see the logs of the network calls.
+   * This is undefined by default.
+   * For debugging purposes you can just set the browser console to this property:
+   * ```javascript
+   * options.logger = window.console;
+   * ```
+   */
   logger?: Logger;
 
   /**
@@ -71,47 +223,119 @@ export interface InitOptions {
    * Use `apiBaseUrl` instead.
    */
   host?: string;
+
+  /**
+   * Base URL of Bucket servers. You can override this to use your mocked server.
+   */
   apiBaseUrl?: string;
+
+  /**
+   * Base URL of the Bucket web app. Links open ín this app by default.
+   */
+  appBaseUrl?: string;
 
   /**
    * @deprecated
    * Use `sseBaseUrl` instead.
    */
   sseHost?: string;
+
+  /**
+   * Base URL of Bucket servers for SSE connections used by AutoFeedback.
+   */
   sseBaseUrl?: string;
 
+  /**
+   * AutoFeedback specific configuration
+   */
   feedback?: FeedbackOptions;
+
+  /**
+   * Feature flag specific configuration
+   */
   features?: FeaturesOptions;
+
+  /**
+   * Version of the SDK
+   */
   sdkVersion?: string;
+
+  /**
+   * Whether to enable tracking. Defaults to `true`.
+   */
   enableTracking?: boolean;
+
+  /**
+   * Toolbar configuration (alpha)
+   * @ignore
+   */
+  toolbar?: ToolbarOptions;
+
+  /**
+   * Local-first definition of features (alpha)
+   * @ignore
+   */
+  featureList?: FeatureDefinitions;
 }
 
 const defaultConfig: Config = {
   apiBaseUrl: API_BASE_URL,
+  appBaseUrl: APP_BASE_URL,
   sseBaseUrl: SSE_REALTIME_BASE_URL,
   enableTracking: true,
 };
 
+/**
+ * Represents a feature.
+ */
 export interface Feature {
+  /**
+   * Result of feature flag evaluation
+   */
   isEnabled: boolean;
+
+  /**
+   * Function to send analytics events for this feature
+   *
+   */
   track: () => Promise<Response | undefined>;
+
+  /**
+   * Function to request feedback for this feature.
+   */
   requestFeedback: (
     options: Omit<RequestFeedbackData, "featureKey" | "featureId">,
   ) => void;
 }
 
+function shouldShowToolbar(opts: InitOptions) {
+  const toolbarOpts = opts.toolbar;
+  if (typeof toolbarOpts === "boolean") return toolbarOpts;
+  if (typeof toolbarOpts?.show === "boolean") return toolbarOpts.show;
+
+  return (
+    opts.featureList !== undefined && window?.location?.hostname === "localhost"
+  );
+}
+
+/**
+ * BucketClient lets you interact with the Bucket API.
+ */
 export class BucketClient {
   private publishableKey: string;
   private context: BucketContext;
   private config: Config;
   private requestFeedbackOptions: Partial<RequestFeedbackOptions>;
-  private logger: Logger;
   private httpClient: HttpClient;
 
   private autoFeedback: AutoFeedback | undefined;
   private autoFeedbackInit: Promise<void> | undefined;
   private featuresClient: FeaturesClient;
 
+  public readonly logger: Logger;
+  /**
+   * Create a new BucketClient instance.
+   */
   constructor(opts: InitOptions) {
     this.publishableKey = opts.publishableKey;
     this.logger =
@@ -124,9 +348,10 @@ export class BucketClient {
 
     this.config = {
       apiBaseUrl: opts?.apiBaseUrl ?? opts?.host ?? defaultConfig.apiBaseUrl,
+      appBaseUrl: opts?.appBaseUrl ?? opts?.host ?? defaultConfig.appBaseUrl,
       sseBaseUrl: opts?.sseBaseUrl ?? opts?.sseHost ?? defaultConfig.sseBaseUrl,
       enableTracking: opts?.enableTracking ?? defaultConfig.enableTracking,
-    } satisfies Config;
+    };
 
     const feedbackOpts = handleDeprecatedFeedbackOptions(opts?.feedback);
 
@@ -148,6 +373,7 @@ export class BucketClient {
         company: this.context.company,
         other: this.context.otherContext,
       },
+      opts?.featureList || [],
       this.logger,
       opts?.features,
     );
@@ -172,6 +398,15 @@ export class BucketClient {
           feedbackOpts?.ui?.translations,
         );
       }
+    }
+
+    if (shouldShowToolbar(opts)) {
+      this.logger.info("opening toolbar toggler");
+      showToolbarToggle({
+        bucketClient: this as unknown as BucketClient,
+        position:
+          typeof opts.toolbar === "object" ? opts.toolbar.position : undefined,
+      });
     }
   }
 
@@ -204,8 +439,15 @@ export class BucketClient {
   }
 
   /**
+   * Get the current configuration.
+   */
+  getConfig() {
+    return this.config;
+  }
+
+  /**
    * Update the user context.
-   * @description Performs a shallow merge with the existing user context.
+   * Performs a shallow merge with the existing user context.
    * Attempting to update the user ID will log a warning and be ignored.
    *
    * @param user
@@ -254,8 +496,6 @@ export class BucketClient {
    * Update the company context.
    * Performs a shallow merge with the existing company context.
    * Updates to the company ID will be ignored.
-   *
-   * @param company
    */
   async updateOtherContext(otherContext: {
     [key: string]: string | number | undefined;
@@ -273,8 +513,7 @@ export class BucketClient {
    *
    * Calling `client.stop()` will remove all listeners added here.
    *
-   * @param callback this will be called when the features are updated.
-   * @param options passed as-is to addEventListener
+   * @param cb this will be called when the features are updated.
    */
   onFeaturesUpdated(cb: () => void) {
     return this.featuresClient.onUpdated(cb);
@@ -313,7 +552,6 @@ export class BucketClient {
    * Submit user feedback to Bucket. Must include either `score` or `comment`, or both.
    *
    * @returns
-   * @param payload
    */
   async feedback(payload: Feedback) {
     const userId =
@@ -406,6 +644,8 @@ export class BucketClient {
   /**
    * Returns a map of enabled features.
    * Accessing a feature will *not* send a check event
+   * and `isEnabled` does not take any feature overrides
+   * into account.
    *
    * @returns Map of features
    */
@@ -421,13 +661,13 @@ export class BucketClient {
     const f = this.getFeatures()[key];
 
     const fClient = this.featuresClient;
-    const value = f?.isEnabled ?? false;
+    const value = f?.isEnabledOverride ?? f?.isEnabled ?? false;
 
     return {
       get isEnabled() {
         fClient
           .sendCheckEvent({
-            key: key,
+            key,
             version: f?.targetingVersion,
             value,
           })
@@ -446,6 +686,14 @@ export class BucketClient {
         });
       },
     };
+  }
+
+  setFeatureOverride(key: string, isEnabled: boolean | null) {
+    this.featuresClient.setFeatureOverride(key, isEnabled);
+  }
+
+  getFeatureOverride(key: string): boolean | null {
+    return this.featuresClient.getFeatureOverride(key);
   }
 
   sendCheckEvent(checkEvent: CheckEvent) {

@@ -17,6 +17,7 @@ import {
   FeedbackOptions,
   RawFeatures,
   RequestFeedbackData,
+  ToolbarOptions,
   UnassignedFeedback,
 } from "@bucketco/browser-sdk";
 
@@ -59,6 +60,7 @@ export type BucketProps = BucketContext & {
    */
   host?: string;
   apiBaseUrl?: string;
+  appBaseUrl?: string;
 
   /**
    * @deprecated
@@ -68,6 +70,10 @@ export type BucketProps = BucketContext & {
   sseBaseUrl?: string;
   debug?: boolean;
   enableTracking?: boolean;
+
+  featureList?: Readonly<string[]>;
+
+  toolbar?: ToolbarOptions;
 
   // for testing
   newBucketClient?: (
@@ -83,6 +89,7 @@ export function BucketProvider({
   publishableKey,
   featureOptions,
   loadingComponent,
+  featureList,
   newBucketClient = (...args) => new BucketClient(...args),
   ...config
 }: BucketProps) {
@@ -116,6 +123,7 @@ export function BucketProvider({
 
       host: config.host,
       apiBaseUrl: config.apiBaseUrl,
+      appBaseUrl: config.appBaseUrl,
       sseHost: config.sseHost,
       sseBaseUrl: config.sseBaseUrl,
 
@@ -127,6 +135,7 @@ export function BucketProvider({
       feedback: config.feedback,
       logger: config.debug ? console : undefined,
       sdkVersion: SDK_VERSION,
+      featureList,
     });
     clientRef.current = client;
 
@@ -136,17 +145,17 @@ export function BucketProvider({
 
     client
       .initialize()
-      .then(() => {
-        setFeaturesLoading(false);
+      .catch((e) => {
+        client.logger.error("failed to initialize client", e);
       })
-      .catch(() => {
-        // initialize cannot actually throw, but this fixes lint warnings
+      .finally(() => {
+        setFeaturesLoading(false);
       });
   }, [contextKey]);
 
   const context: ProviderContextType = {
     features: {
-      features,
+      features: features,
       isLoading: featuresLoading,
     },
     client: clientRef.current,
@@ -196,7 +205,7 @@ export function useFeature(key: FeatureKey) {
   }
 
   const feature = features[key];
-  const enabled = feature?.isEnabled ?? false;
+  const enabled = feature?.isEnabledOverride ?? feature?.isEnabled ?? false;
 
   return {
     isLoading,
@@ -236,8 +245,7 @@ export function useTrack() {
  * Returns a function to open up the feedback form
  * Note: When calling `useRequestFeedback`, user/company must already be set.
  *
- * See https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/tracking-sdk/FEEDBACK.md#bucketrequestfeeback-options
- * for more information
+ * See [link](../../browser-sdk/FEEDBACK.md#bucketclientrequestfeedback-options) for more information
  *
  * ```ts
  * const requestFeedback = useRequestFeedback();
@@ -256,8 +264,7 @@ export function useRequestFeedback() {
  * Returns a function to manually send feedback collected from a user.
  * Note: When calling `useSendFeedback`, user/company must already be set.
  *
- * See https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/tracking-sdk/FEEDBACK.md#using-your-own-ui-to-collect-feedback
- * for more information
+ * See [link](./../../browser-sdk/FEEDBACK.md#using-your-own-ui-to-collect-feedback) for more information
  *
  * ```ts
  * const sendFeedback = useSendFeedback();
@@ -304,7 +311,7 @@ export function useUpdateUser() {
  * ```ts
  * const updateCompany = useUpdateCompany();
  * updateCompany({ plan: "enterprise" }).then(() => console.log("Features updated"));
- *
+ * ```
  */
 export function useUpdateCompany() {
   const { client } = useContext<ProviderContextType>(ProviderContext);
@@ -324,6 +331,7 @@ export function useUpdateCompany() {
  * const updateOtherContext = useUpdateOtherContext();
  * updateOtherContext({ workspaceId: newWorkspaceId })
  *   .then(() => console.log("Features updated"));
+ * ```
  */
 export function useUpdateOtherContext() {
   const { client } = useContext<ProviderContextType>(ProviderContext);

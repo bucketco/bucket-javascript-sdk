@@ -20,11 +20,12 @@ To get started you need to obtain your secret key from the
 [environment settings](https://app.bucket.co/envs/current/settings/app-environments)
 in Bucket.
 
-> [!CAUTION]
-> Secret keys are meant for use in server side SDKs only.
-> Secret keys offer the users the ability to obtain
-> information that is often sensitive and thus should not be used in
-> client-side applications.
+{% hint style="danger" %}
+Secret keys are meant for use in server side SDKs only.
+Secret keys offer the users the ability to obtain
+information that is often sensitive and thus should not be used in
+client-side applications.
+{% endhint %}
 
 Bucket will load settings through the various environment variables automatically (see [Configuring](#configuring) below).
 
@@ -62,10 +63,12 @@ const boundClient = bucketClient.bindClient({
     id: "john_doe",
     name: "John Doe",
     email: "john@acme.com",
+    avatar: "https://example.com/users/jdoe",
   },
   company: {
     id: "acme_inc",
     name: "Acme, Inc.",
+    avatar: "https://example.com/companies/acme",
   },
 });
 
@@ -112,14 +115,14 @@ a configuration file on disk or by passing options to the `BucketClient`
 constructor. By default, the SDK searches for `bucketConfig.json` in the
 current working directory.
 
-| Option             | Type                    | Description                                                                                                                                                         | Env Var                                           |
-| ------------------ | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| `secretKey`        | string                  | The secret key used for authentication with Bucket's servers.                                                                                                       | BUCKET_SECRET_KEY                                 |
-| `logLevel`         | string                  | The log level for the SDK (e.g., `"DEBUG"`, `"INFO"`, `"WARN"`, `"ERROR"`). Default: `INFO`                                                                         | BUCKET_LOG_LEVEL                                  |
-| `offline`          | boolean                 | Operate in offline mode. Default: `false`, except in tests it will default to `true` based off of the `TEST` env. var.                                              | BUCKET_OFFLINE                                    |
-| `apiBaseUrl`       | string                  | The base API URL for the Bucket servers.                                                                                                                            | BUCKET_API_BASE_URL                               |
-| `featureOverrides` | Record<string, boolean> | An object specifying feature overrides for testing or local development. See [example/app.test.ts](example/app.test.ts) for how to use `featureOverrides` in tests. | BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED |
-| `configFile`       | string                  | Load this config file from disk. Default: `bucketConfig.json`                                                                                                       | BUCKET_CONFIG_FILE                                |
+| Option             | Type                    | Description                                                                                                                                                                                                                                          | Env Var                                           |
+| ------------------ | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| `secretKey`        | string                  | The secret key used for authentication with Bucket's servers.                                                                                                                                                                                        | BUCKET_SECRET_KEY                                 |
+| `logLevel`         | string                  | The log level for the SDK (e.g., `"DEBUG"`, `"INFO"`, `"WARN"`, `"ERROR"`). Default: `INFO`                                                                                                                                                          | BUCKET_LOG_LEVEL                                  |
+| `offline`          | boolean                 | Operate in offline mode. Default: `false`, except in tests it will default to `true` based off of the `TEST` env. var.                                                                                                                               | BUCKET_OFFLINE                                    |
+| `apiBaseUrl`       | string                  | The base API URL for the Bucket servers.                                                                                                                                                                                                             | BUCKET_API_BASE_URL                               |
+| `featureOverrides` | Record<string, boolean> | An object specifying feature overrides for testing or local development. See [example/app.test.ts](https://github.com/bucketco/bucket-javascript-sdk/tree/main/packages/browser-sdk/example/app.test.ts) for how to use `featureOverrides` in tests. | BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED |
+| `configFile`       | string                  | Load this config file from disk. Default: `bucketConfig.json`                                                                                                                                                                                        | BUCKET_CONFIG_FILE                                |
 
 Note: BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED are comma separated lists of features which will be enabled or disabled respectively.
 
@@ -236,12 +239,12 @@ app.get("/todos", async (_req, res) => {
 }
 ```
 
-See [example/app.ts](example/app.ts) for a full example.
+See [example/app.ts](https://github.com/bucketco/bucket-javascript-sdk/tree/main/packages/node-sdk/example/app.ts) for a full example.
 
 ## Remote flag evaluation with stored context
 
 If you don't want to provide context each time when evaluating feature flags but
-rather you would like to utilise the attributes you sent to Bucket previously
+rather you would like to utilize the attributes you sent to Bucket previously
 (by calling `updateCompany` and `updateUser`) you can do so by calling `getFeaturesRemote`
 (or `getFeatureRemote` for a specific feature) with providing just `userId` and `companyId`.
 These methods will call Bucket's servers and feature flags will be evaluated remotely
@@ -367,6 +370,7 @@ to provide for easier navigation:
 
 - `name` -- display name for `user`/`company`,
 - `email` -- the email of the user.
+- `avatar` -- the URL for `user`/`company` avatar image.
 
 Attributes cannot be nested (multiple levels) and must be either strings,
 integers or booleans.

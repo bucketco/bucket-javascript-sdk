@@ -102,6 +102,11 @@ app.delete("/todos/:idx", (req, res) => {
     .json({ error: "You do not have access to this feature yet!" });
 });
 
+app.get("/features", async (_req, res) => {
+  const features = await res.locals.bucketUser.getFeaturesRemote();
+  res.json(features);
+});
+
 export default app;
 
 function extractBucketContextFromHeader(req: express.Request) {

@@ -56,6 +56,8 @@ import { EvaluationContext, OpenFeature } from "@openfeature/web-sdk";
 // initialize provider
 const publishableKey = "<your-bucket-publishable-key>";
 
+// this converts the context to a Bucket compatible context
+// adapt it to fit your need
 const contextTranslator = (context?: EvaluationContext) => {
   return {
     user: {
@@ -81,20 +83,24 @@ await OpenFeature.setContext({ userId: "my-key" });
 
 # Tracking feature usage
 
-To track feature usage, use the `track` method on the client.
-By default you can use the flag/feature key as the event name
-as the first argument to designate feature usage when calling
-the `track` method:
+The Bucket OpenFeature Provider supports the OpenFeature tracking API
+natively.
 
 ```ts
-import { EvaluationContext, OpenFeature } from "@openfeature/web-sdk";
 import { BucketBrowserProvider } from "@bucketco/openfeature-browser-provider";
+import { OpenFeature } from "@openfeature/web-sdk";
 
-const bucketOpenFeatureProvider = new BucketBrowserProvider({
-  publishableKey,
-});
+// initialize provider
+const publishableKey = "<your-bucket-publishable-key>";
 
-bucketOpenFeatureProvider.client.track("huddle", { voiceHuddle: true });
+const bucketProvider = new BucketBrowserProvider({ publishableKey });
+
+// set OpenFeature provider and get client
+await OpenFeature.setProviderAndWait(bucketProvider);
+const client = OpenFeature.getClient();
+
+// use client to send an event when user uses a feature
+client.track("huddles");
 ```
 
 # License

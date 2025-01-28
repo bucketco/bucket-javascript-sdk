@@ -1,26 +1,6 @@
+import { Position } from "../../ui/types";
+
 export type WithRequired<T, K extends keyof T> = T & { [P in K]-?: T[P] };
-
-export type FeedbackPlacement =
-  | "bottom-right"
-  | "bottom-left"
-  | "top-right"
-  | "top-left";
-
-export type Offset = {
-  /**
-   * Offset from the nearest horizontal screen edge after placement is resolved
-   */
-  x?: string | number;
-  /**
-   * Offset from the nearest vertical screen edge after placement is resolved
-   */
-  y?: string | number;
-};
-
-export type FeedbackPosition =
-  | { type: "MODAL" }
-  | { type: "DIALOG"; placement: FeedbackPlacement; offset?: Offset }
-  | { type: "POPOVER"; anchor: HTMLElement | null };
 
 export interface FeedbackSubmission {
   question: string;
@@ -46,7 +26,7 @@ export interface OpenFeedbackFormOptions {
   /**
    * Control the placement and behavior of the feedback form.
    */
-  position?: FeedbackPosition;
+  position?: Position;
 
   /**
    * Add your own custom translations for the feedback form.
@@ -67,8 +47,14 @@ export interface OpenFeedbackFormOptions {
   onClose?: () => void;
   onDismiss?: () => void;
 }
-
+/**
+ * You can use this to override text values in the feedback form
+ * with desired language translation
+ */
 export type FeedbackTranslations = {
+  /**
+   *
+   */
   DefaultQuestionLabel: string;
   QuestionPlaceholder: string;
   ScoreStatusDescription: string;

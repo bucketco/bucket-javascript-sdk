@@ -397,24 +397,72 @@ export type Context = {
    * The user context. If no `id` key is set, the whole object is ignored.
    */
   user?: {
+    /**
+     * The identifier of the user.
+     */
     id: string | number | undefined;
+
+    /**
+     * The name of the user.
+     */
     name?: string | undefined;
+
+    /**
+     * The email of the user.
+     */
     email?: string | undefined;
+
+    /**
+     * The avatar URL of the user.
+     */
+    avatar?: string | undefined;
+
+    /**
+     * Custom attributes of the user.
+     */
     [k: string]: any;
   };
   /**
    * The company context. If no `id` key is set, the whole object is ignored.
    */
   company?: {
+    /**
+     * The identifier of the company.
+     */
     id: string | number | undefined;
+
+    /**
+     * The name of the company.
+     */
     name?: string | undefined;
+
+    /**
+     * The avatar URL of the company.
+     */
+    avatar?: string | undefined;
+
+    /**
+     * Custom attributes of the company.
+     */
     [k: string]: any;
   };
+
   /**
    * The other context. This is used for any additional context that is not related to user or company.
    */
   other?: Record<string, any>;
 };
+
+/**
+ * A context with tracking option.
+ **/
+export interface ContextWithTracking extends Context {
+  /**
+   * Enable tracking for the context.
+   * If set to `false`, tracking will be disabled for the context. Default is `true`.
+   */
+  enableTracking?: boolean;
+}
 
 export const LOG_LEVELS = ["DEBUG", "INFO", "WARN", "ERROR"] as const;
 export type LogLevel = (typeof LOG_LEVELS)[number];

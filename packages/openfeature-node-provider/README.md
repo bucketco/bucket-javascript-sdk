@@ -28,7 +28,7 @@ The available options can be found in the [Bucket Node.js SDK](https://github.co
 
 ### Example using the default configuration
 
-```javascript
+```typescript
 import { BucketNodeProvider } from "@bucketco/openfeature-node-provider";
 import { OpenFeature } from "@openfeature/server-sdk";
 
@@ -106,6 +106,30 @@ const contextTranslator = (context: EvaluationContext): BucketContext => {
 const provider = new BucketNodeProvider({ secretKey, contextTranslator });
 
 OpenFeature.setProvider(provider);
+```
+
+## Tracking feature adoption
+
+The Bucket OpenFeature provider supports the OpenFeature Tracking API.
+It's straight forward to start sending tracking events through OpenFeature.
+
+Simply call the "track" method on the OpenFeature client:
+
+```ts
+import { BucketNodeProvider } from "@bucketco/openfeature-node-provider";
+import { OpenFeature } from "@openfeature/server-sdk";
+
+const provider = new BucketNodeProvider({ secretKey });
+
+await OpenFeature.setProviderAndWait(provider);
+
+const client = OpenFeature.getClient();
+
+// `evaluationContext` is whatever you use to evaluate features based off
+const enterpriseFeatureEnabled = await client.track(
+  "huddles",
+  evaluationContext,
+);
 ```
 
 # License
