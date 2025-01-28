@@ -164,7 +164,8 @@ generate a `check` event, contrary to the `isEnabled` property on the object ret
 ### Remote config
 
 Similar to `isEnabled`, each feature has a `config` property. This configuration is managed from within Bucket.
-It is managed similar to the way access to features is managed, but instead the binary `isEnabled` you can have multiple configuration values which are given to different user/companies.
+It is managed similar to the way access to features is managed, but instead of the binary `isEnabled` you can have
+multiple configuration values which are given to different user/companies.
 
 ```ts
 const features = bucketClient.getFeatures();
@@ -172,7 +173,7 @@ const features = bucketClient.getFeatures();
 //   huddle: {
 //     isEnabled: true,
 //     targetingVersion: 42,
-//     config?: {
+//     config: {
 //       key: "gpt-3.5",
 //       payload: { maxTokens: 10000, model: "gpt-3.5-beta1" }
 //     }
@@ -180,7 +181,10 @@ const features = bucketClient.getFeatures();
 // }
 ```
 
-The `key` is always present while the `payload` is a optional JSON value for arbitrary configuration needs. `
+The `key` is always present while the `payload` is a optional JSON value for arbitrary configuration needs.
+If feature has no configuration or, no configuration value was matched against the context, the `config` object
+will be empty, thus, `key` will be `undefined`. Make sure to check against this case when trying to use the
+configuration in your application.
 
 Just as `isEnabled`, accessing `config` on the object returned by `getFeatures` does not automatically
 generate a `check` event, contrary to the `config` property on the object returned by `getFeature`.
