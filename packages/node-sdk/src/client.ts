@@ -17,6 +17,7 @@ import fetchClient from "./fetch-http-client";
 import { newRateLimiter } from "./rate-limiter";
 import type {
   EvaluatedFeaturesAPIResponse,
+  FeatureAPIResponse,
   FeatureOverridesFn,
   FeatureRemoteConfig,
   IdType,
@@ -830,8 +831,12 @@ export class BucketClient {
       featureDefinitions = fetchedFeatures.features;
     }
 
-    const keyToVersionMap = new Map<string, number>(
-      featureDefinitions.map((f) => [f.key, f.targeting.version]),
+    const featureMap = featureDefinitions.reduce(
+      (acc, f) => {
+        acc[f.key] = f;
+        return acc;
+      },
+      {} as Record<string, FeatureAPIResponse>,
     );
 
     const { enableTracking = true, ...context } = options;
@@ -844,32 +849,30 @@ export class BucketClient {
       }),
     );
 
-    const evaluatedConfigs = evaluated
-      .filter(({ value }) => value)
-      .reduce(
-        (acc, { featureKey }) => {
-          const feature = featureDefinitions.find((f) => f.key === featureKey)!;
-          if (feature.config) {
-            const variant = evaluateFeatureRules({
-              featureKey,
-              rules: feature.config.variants.map(({ filter, ...rest }) => ({
-                filter,
-                value: rest,
-              })),
-              context,
-            });
+    const evaluatedConfigs = evaluated.reduce(
+      (acc, { featureKey }) => {
+        const feature = featureMap[featureKey];
+        if (feature.config) {
+          const variant = evaluateFeatureRules({
+            featureKey,
+            rules: feature.config.variants.map(({ filter, ...rest }) => ({
+              filter,
+              value: rest,
+            })),
+            context,
+          });
 
-            if (variant.value) {
-              acc[featureKey] = {
-                ...variant.value,
-                targetingVersion: feature.config.version,
-              };
-            }
+          if (variant.value) {
+            acc[featureKey] = {
+              ...variant.value,
+              targetingVersion: feature.config.version,
+            };
           }
-          return acc;
-        },
-        {} as Record<string, RawFeatureRemoteConfig>,
-      );
+        }
+        return acc;
+      },
+      {} as Record<string, RawFeatureRemoteConfig>,
+    );
 
     this.warnMissingFeatureContextFields(
       context,
@@ -885,7 +888,7 @@ export class BucketClient {
           await this.sendFeatureEvent({
             action: "evaluate",
             key: res.featureKey,
-            targetingVersion: keyToVersionMap.get(res.featureKey),
+            targetingVersion: featureMap[res.featureKey].targeting.version,
             evalResult: res.value ?? false,
             evalContext: res.context,
             evalRuleResults: res.ruleEvaluationResults,
@@ -906,7 +909,7 @@ export class BucketClient {
           key: res.featureKey,
           isEnabled: res.value ?? false,
           config: evaluatedConfigs[res.featureKey],
-          targetingVersion: keyToVersionMap.get(res.featureKey),
+          targetingVersion: featureMap[res.featureKey].targeting.version,
           missingContextFields: res.missingContextFields,
         };
         return acc;
@@ -921,8 +924,8 @@ export class BucketClient {
       key,
       {
         key,
-        isEnabled: !!override,
-        config: isObject(override) ? override : undefined,
+        isEnabled: isObject(override) ? override.isEnabled : !!override,
+        config: isObject(override) ? override.config : undefined,
       },
     ]);
 

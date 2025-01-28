@@ -176,8 +176,11 @@ type TypedFeatureKey = keyof TypedFeatures;
 
 type FeatureOverride =
   | {
-      key: string;
-      payload: any;
+      isEnabled: boolean;
+      config?: {
+        key: string;
+        payload: any;
+      };
     }
   | boolean;
 
@@ -191,7 +194,9 @@ export type FeatureOverrides = Partial<
 export type FeatureOverridesFn = (context: Context) => FeatureOverrides;
 
 /**
- * Describes a remote feature config variant.
+ * (Internal) Describes a remote feature config variant.
+ *
+ * @internal
  */
 export type FeatureConfigVariant = {
   /**
@@ -216,43 +221,90 @@ export type FeatureConfigVariant = {
 };
 
 /**
- * Describes a specific feature in the API response
+ * (Internal) Describes a specific feature in the API response.
+ *
+ * @internal
  */
-type FeatureAPIResponse = {
+export type FeatureAPIResponse = {
+  /**
+   * The key of the feature.
+   */
   key: string;
+
+  /**
+   * The targeting rules for the feature.
+   */
   targeting: {
+    /**
+     * The version of the targeting rules.
+     */
     version: number;
+
+    /**
+     * The targeting rules.
+     */
     rules: {
+      /**
+       * The filter for the rule.
+       */
       filter: RuleFilter;
     }[];
   };
+
+  /**
+   * The remote configuration for the feature.
+   */
   config?: {
+    /**
+     * The version of the remote configuration.
+     */
     version: number;
+
+    /**
+     * The variants of the remote configuration.
+     */
     variants: FeatureConfigVariant[];
   };
 };
 
 /**
- * Describes the response of the features endpoint
+ * (Internal) Describes the response of the features endpoint.
+ *
+ * @internal
  */
 export type FeaturesAPIResponse = {
-  /** The feature definitions */
+  /**
+   * The feature definitions.
+   */
   features: FeatureAPIResponse[];
 };
 
+/**
+ * (Internal) Describes the response of the evaluated features endpoint.
+ *
+ * @internal
+ */
 export type EvaluatedFeaturesAPIResponse = {
-  /** True if request successful */
+  /**
+   * True if request successful.
+   */
   success: boolean;
-  /** True if additional context for user or company was found and used for evaluation on the remote server */
+
+  /**
+   * True if additional context for user or company was found and used for evaluation on the remote server.
+   */
   remoteContextUsed: boolean;
-  /** The feature definitions */
+
+  /**
+   * The feature definitions.
+   */
   features: RawFeature[];
 };
 
 /**
  * Describes the response of a HTTP client.
- * @typeParam TResponse - The type of the response body.
  *
+ * @typeParam TResponse - The type of the response body.
  */
 export type HttpClientResponse<TResponse> = {
   /**

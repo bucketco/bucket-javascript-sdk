@@ -1905,11 +1905,14 @@ describe("BucketClient", () => {
       client.featureOverrides = (_context: Context) => {
         expect(context).toStrictEqual(context);
         return {
-          feature1: false,
+          feature1: { isEnabled: false },
           feature2: true,
           feature3: {
-            key: "config-1",
-            payload: { something: "else" },
+            isEnabled: true,
+            config: {
+              key: "config-1",
+              payload: { something: "else" },
+            },
           },
         };
       };
