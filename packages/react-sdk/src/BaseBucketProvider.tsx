@@ -17,6 +17,7 @@ import {
   FeedbackOptions,
   RawFeatures,
   RequestFeedbackData,
+  ToolbarOptions,
   UnassignedFeedback,
 } from "@bucketco/browser-sdk";
 
@@ -53,6 +54,7 @@ export type BucketProps = BucketContext & {
    */
   host?: string;
   apiBaseUrl?: string;
+  appBaseUrl?: string;
 
   /**
    * @deprecated
@@ -63,7 +65,9 @@ export type BucketProps = BucketContext & {
   debug?: boolean;
   enableTracking?: boolean;
 
-  features?: Readonly<string[]>;
+  featureList?: Readonly<string[]>;
+
+  toolbar?: ToolbarOptions;
 
   // for testing
   newBucketClient?: (
@@ -79,15 +83,16 @@ export function BaseBucketProvider({
   publishableKey,
   featureOptions,
   loadingComponent,
-  features,
+  featureList,
   newBucketClient = (...args) => new BucketClient(...args),
   ...config
 }: BucketProps) {
   const [featuresLoading, setFeaturesLoading] = useState(true);
-  const [featuresState, setFeaturesState] = useState<RawFeatures>({});
+  const [features, setFeatures] = useState<RawFeatures>({});
 
   const clientRef = useRef<BucketClient>();
   const contextKeyRef = useRef<string>();
+
   const featureContext = { user, company, otherContext };
   const contextKey = canonicalJSON({ config, featureContext });
 
@@ -112,6 +117,7 @@ export function BaseBucketProvider({
 
       host: config.host,
       apiBaseUrl: config.apiBaseUrl,
+      appBaseUrl: config.appBaseUrl,
       sseHost: config.sseHost,
       sseBaseUrl: config.sseBaseUrl,
 
@@ -123,27 +129,27 @@ export function BaseBucketProvider({
       feedback: config.feedback,
       logger: config.debug ? console : undefined,
       sdkVersion: SDK_VERSION,
-      featureList: features,
+      featureList,
     });
     clientRef.current = client;
 
     client.onFeaturesUpdated(() => {
-      setFeaturesState(client.getFeatures());
+      setFeatures(client.getFeatures());
     });
 
     client
       .initialize()
-      .then(() => {
-        setFeaturesLoading(false);
+      .catch((e) => {
+        client.logger.error("failed to initialize client", e);
       })
-      .catch(() => {
-        // initialize cannot actually throw, but this fixes lint warnings
+      .finally(() => {
+        setFeaturesLoading(false);
       });
   }, [contextKey]);
 
   const context: ProviderContextType = {
     features: {
-      features: featuresState,
+      features: features,
       isLoading: featuresLoading,
     },
     client: clientRef.current,
@@ -193,7 +199,7 @@ export function useFeature(key: string) {
   }
 
   const feature = features[key];
-  const enabled = feature?.isEnabled ?? false;
+  const enabled = feature?.isEnabledOverride ?? feature?.isEnabled ?? false;
 
   return {
     isLoading,

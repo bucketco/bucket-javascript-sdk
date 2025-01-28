@@ -2,6 +2,7 @@
 
 export type { Feature, InitOptions, ToolbarOptions } from "./client";
 export { BucketClient } from "./client";
+// export { BucketClientConfigured } from "./clientConfigured";
 export type { BucketContext, CompanyContext, UserContext } from "./context";
 export type {
   CheckEvent,

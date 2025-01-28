@@ -19,20 +19,23 @@ export default defineConfig({
     exclude: ["**/node_modules/**", "test/e2e/**"],
     sourcemap: true,
     lib: {
-      // Could also be a dictionary or array of multiple entry points
-      entry: resolve(__dirname, "src/index.ts"),
-      name: "BucketBrowserSDK",
-      // the proper extensions will be added
-      fileName: "bucket-browser-sdk",
+      entry: {
+        index: resolve(__dirname, "src/index.ts"),
+        configuredClient: resolve(__dirname, "src/configuredClient.ts"),
+      },
+      formats: ["es", "amd"],
+      fileName: "bucket-browser-sdk-[name]",
     },
     rollupOptions: {
       // make sure to externalize deps that shouldn't be bundled
       // into your library
+      external: ["_bucket"],
       output: {
         // Provide global variables to use in the UMD build
         // for externalized deps
         globals: {
           BucketClient: "BucketClient",
+          _bucket: "_bucket",
         },
       },
     },

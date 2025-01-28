@@ -36,7 +36,7 @@ export type RawFeature = FetchedFeature & {
    */
   isEnabledOverride: boolean | null;
 };
-export type RawFeatures = Record<string, RawFeature>;
+export type RawFeatures = { [key: string]: RawFeature };
 
 export type FeaturesOptions = {
   /**

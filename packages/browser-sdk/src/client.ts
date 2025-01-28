@@ -2,6 +2,7 @@ import {
   CheckEvent,
   FeaturesClient,
   FeaturesOptions,
+  RawFeature,
   RawFeatures,
 } from "./feature/features";
 import {
@@ -224,8 +225,17 @@ function shouldShowToolbar(opts: InitOptions) {
 /**
  * BucketClient lets you interact with the Bucket API.
  *
+ * @typeparam FeatureDef - The type of the feature definitions. If not set it defaults to `Record<string, RawFeature>` which means the BucketClient doesn't have any type information about the features. This parameter is useful with code generated types from the @bucketco/cli.
+ * @typeparam FeatureKey - An internal type to represent the keys of the feature definitions. Automatically defaults to the keys of the feature definitions.
+ *
  */
-export class BucketClient {
+export class BucketClient<
+  FeatureDef extends RawFeatures = Record<string, RawFeature>,
+  FeatureKey extends Extract<keyof FeatureDef, string> = Extract<
+    keyof FeatureDef,
+    string
+  >,
+> {
   private publishableKey: string;
   private context: BucketContext;
   private config: Config;
@@ -552,15 +562,18 @@ export class BucketClient {
    *
    * @returns Map of features
    */
-  getFeatures(): RawFeatures {
-    return this.featuresClient.getFeatures();
+  getFeatures(): Record<FeatureKey, RawFeature> {
+    return this.featuresClient.getFeatures() as Record<
+      keyof FeatureDef,
+      RawFeature
+    >;
   }
 
   /**
    * Return a feature. Accessing `isEnabled` will automatically send a `check` event.
    * @returns A feature
    */
-  getFeature(key: string): Feature {
+  getFeature(key: FeatureKey): Feature {
     const f = this.getFeatures()[key];
 
     const fClient = this.featuresClient;
@@ -591,11 +604,11 @@ export class BucketClient {
     };
   }
 
-  setFeatureOverride(key: string, isEnabled: boolean | null) {
+  setFeatureOverride(key: FeatureKey, isEnabled: boolean | null) {
     this.featuresClient.setFeatureOverride(key, isEnabled);
   }
 
-  getFeatureOverride(key: string): boolean | null {
+  getFeatureOverride(key: FeatureKey): boolean | null {
     return this.featuresClient.getFeatureOverride(key);
   }
 

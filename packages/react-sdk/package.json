@@ -37,8 +37,8 @@
     }
   },
   "dependencies": {
-    "bucket-cli": "../cli",
     "@bucketco/browser-sdk": "2.5.1",
+    "bucket-cli": "../cli",
     "canonical-json": "^0.0.4"
   },
   "peerDependencies": {

@@ -5853,7 +5853,7 @@ __metadata:
 
 "bucket-cli@file:../cli::locator=%40bucketco%2Freact-sdk%40workspace%3Apackages%2Freact-sdk":
   version: 1.0.0
-  resolution: "bucket-cli@file:../cli#../cli::hash=b290f0&locator=%40bucketco%2Freact-sdk%40workspace%3Apackages%2Freact-sdk"
+  resolution: "bucket-cli@file:../cli#../cli::hash=1b4bca&locator=%40bucketco%2Freact-sdk%40workspace%3Apackages%2Freact-sdk"
   dependencies:
     "@inquirer/prompts": "npm:^7.2.3"
     "@sindresorhus/slugify": "npm:^2.2.1"
@@ -5867,7 +5867,7 @@ __metadata:
     strip-json-comments: "npm:^5.0.1"
   bin:
     bucket: ./dist/index.js
-  checksum: 10c0/a059e09261b9e5acf848ef722eafbf5f34bb546994e251fb8b5e3f23a242792c7ad3eccf43439a483ccb9ffcaaddc8e50a0778b594d83cab5f5772b61f6e433e
+  checksum: 10c0/8d151944feb0a6deac99c70e6f9ed253bf5338422b7ce17a529fd01033e736a34943887f24ca6dbc92da278745c90d7946bba4540b9850e38ba9c3b7c043a403
   languageName: node
   linkType: hard
 
