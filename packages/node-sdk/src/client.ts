@@ -197,13 +197,21 @@ export class BucketClient {
         )
       : isObject(options.fallbackFeatures)
         ? Object.entries(options.fallbackFeatures).reduce(
-            (acc, [key, value]) => {
+            (acc, [key, fallback]) => {
               acc[key as keyof TypedFeatures] = {
-                isEnabled: !!value,
+                isEnabled:
+                  typeof fallback === "object"
+                    ? fallback.isEnabled
+                    : !!fallback,
                 key,
-                config: isObject(value)
-                  ? (value as RawFeatureRemoteConfig)
-                  : undefined,
+                config:
+                  typeof fallback === "object" && fallback.config
+                    ? {
+                        key: fallback.config.key,
+                        default: true,
+                        payload: fallback.config.payload,
+                      }
+                    : undefined,
               };
               return acc;
             },

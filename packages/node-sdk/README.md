@@ -111,27 +111,33 @@ to `getFeatures()` (or through `bindClient(..).getFeatures()`). That means the
 `initialize()` has completed. `BucketClient` will continue to periodically
 download the targeting rules from the Bucket servers in the background.
 
-## Remote configuration
+### Remote config
 
-Bucket supports remote feature configuration. This functionality allows you to setup
-an arbitrary number of key-payload pairs that are matched against the same context
-that is used to evaluate whether the feature is enabled or not. The selected pair
-is then, returned to the caller and can be accessed using the `config` property.
+Similar to `isEnabled`, each feature has a `config` property. This configuration is managed from within Bucket.
+It is managed similar to the way access to features is managed, but instead of the binary `isEnabled` you can have
+multiple configuration values which are given to different user/companies.
 
-The methods: `getFeature()`, `getFeatures()`, `getFeatureRemote()` and `getFeaturesRemote()`,
-will include this config when the feature(s) are evaluated. In case no configuration pair
-matched (or was configured), these methods will return an empty object. You can, thus, safely
-deconstruct the `config` object in your code:
-
-```typescript
-const {
-  isEnabled,
-  config: { key, payload },
-} = boundClient.getFeature("huddles");
-if (isEnabled && key === "premium") {
-  // ... your code
-}
+```ts
+const features = bucketClient.getFeatures();
+// {
+//   huddle: {
+//     isEnabled: true,
+//     targetingVersion: 42,
+//     config: {
+//       key: "gpt-3.5",
+//       payload: { maxTokens: 10000, model: "gpt-3.5-beta1" }
+//     }
+//   }
+// }
 ```
+
+The `key` is always present while the `payload` is a optional JSON value for arbitrary configuration needs.
+If feature has no configuration or, no configuration value was matched against the context, the `config` object
+will be empty, thus, `key` will be `undefined`. Make sure to check against this case when trying to use the
+configuration in your application.
+
+Just as `isEnabled`, accessing `config` on the object returned by `getFeatures` does not automatically
+generate a `check` event, contrary to the `config` property on the object returned by `getFeature`.
 
 ## Configuring
 
@@ -191,13 +197,18 @@ import { BucketClient } from "@bucketco/node-sdk";
 
 // Extending the Features interface to define the available features
 declare module "@bucketco/node-sdk" {
+  type ConfirmationConfig = {
+    shouldShowConfirmation: boolean
+  }
+
   interface Features {
     "show-todos": boolean;
-    "create-todos": boolean;
+    "create-todos": { isEnabled: boolean };
     "delete-todos": {
-      key: string,
-      payload: {
-        someKey: string,
+      isEnabled: boolean,
+      config: {
+        key: string,
+        payload: ConfirmationConfig,
       }
     };
   }
@@ -208,11 +219,26 @@ export const bucketClient = new BucketClient();
 bucketClient.initialize().then({
   console.log("Bucket initialized!")
   bucketClient.getFeature("invalid-feature") // feature doesn't exist
-
-  // this will print out the value of the "key" as specified as a value to
-  // `delete-todos` feature.
-  console.log(bucketClient.getFeature("delete-todos").config.key)
 })
+
+function deleteTodo(todoId: string) {
+  // get the feature information
+  const { isEnabled, config: { payload: confirmationConfig }} = bucketClient.getFeature("delete-todos")
+
+  // check that feature is enabled for user
+  if (!isEnabled) {
+    return;
+  }
+
+  // finally, check if we enabled the "confirmation" dialog for this user and only
+  // show it in that case.
+  // since we defined `ConfirmationConfig` as the only valid payload for `delete-todos`,
+  // we have type-safety helping us with the payload value.
+  if (confirmationConfig.shouldShowConfirmation) {
+    showMessage("Are you really sure you want to delete this ite,?");
+    // ... rest of the code
+  }
+}
 
 ```
 

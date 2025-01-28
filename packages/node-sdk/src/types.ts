@@ -75,7 +75,7 @@ export type RawFeatureRemoteConfig = {
   default: boolean;
 
   /**
-   * The user-supplied data.
+   * The optional user-supplied payload data.
    */
   payload: any;
 };
@@ -121,7 +121,7 @@ export type FeatureRemoteConfig =
       key: string;
 
       /**
-       * The user-supplied data.
+       * The optional user-supplied payload data.
        */
       payload: any;
     }
@@ -205,7 +205,7 @@ export type FeatureConfigVariant = {
   filter: RuleFilter;
 
   /**
-   * The payload for the variant.
+   * The optional user-supplied payload data.
    */
   payload: any;
 

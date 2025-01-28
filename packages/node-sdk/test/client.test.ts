@@ -221,21 +221,26 @@ describe("BucketClient", () => {
         fallbackFeatures: {
           feature1: true,
           feature2: {
-            key: "config1",
-            payload: { value: true },
+            isEnabled: true,
+            config: {
+              key: "config1",
+              payload: { value: true },
+            },
           },
         },
       });
 
-      expect(bucketInstance["_config"].fallbackFeatures).toEqual({
+      expect(bucketInstance["_config"].fallbackFeatures).toStrictEqual({
         feature1: {
           key: "feature1",
+          config: undefined,
           isEnabled: true,
         },
         feature2: {
           key: "feature2",
           isEnabled: true,
           config: {
+            default: true,
             key: "config1",
             payload: { value: true },
           },
