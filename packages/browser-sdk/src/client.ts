@@ -312,7 +312,7 @@ export type FeatureRemoteConfig =
   | { key: undefined; payload: undefined };
 
 /**
- * A feature.
+ * Represents a feature.
  */
 export interface Feature {
   /**
