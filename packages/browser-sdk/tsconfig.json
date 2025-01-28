@@ -2,6 +2,7 @@
   "extends": "@bucketco/tsconfig/library",
   "compilerOptions": {
     "outDir": "./dist/",
+    "lib": ["dom", "dom.iterable"],
     "jsx": "react",
     "jsxFactory": "h",
     "jsxFragmentFactory": "Fragment",
