@@ -5,6 +5,7 @@ export { BucketClient } from "./client";
 export type { BucketContext, CompanyContext, UserContext } from "./context";
 export type {
   CheckEvent,
+  FallbackFeatureOverride,
   FeaturesOptions,
   RawFeature,
   RawFeatures,
