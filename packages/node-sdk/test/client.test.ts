@@ -1898,12 +1898,14 @@ describe("BucketClient", () => {
             },
           },
           track: expect.any(Function),
+          config: undefined,
         },
         feature2: {
           key: "feature2",
           isEnabled: false,
           config: { key: undefined, payload: undefined },
           track: expect.any(Function),
+          config: undefined,
         },
       });
 
@@ -1929,6 +1931,7 @@ describe("BucketClient", () => {
           isEnabled: false,
           config: { key: undefined, payload: undefined },
           track: expect.any(Function),
+          config: undefined,
         },
         feature2: {
           key: "feature2",
@@ -1944,6 +1947,7 @@ describe("BucketClient", () => {
             payload: { something: "else" },
           },
           track: expect.any(Function),
+          config: undefined,
         },
       });
     });
