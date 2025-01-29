@@ -3,6 +3,7 @@ import { describe, it, expect } from "vitest";
 import { ConfigFeatureDefs } from "../utils/config.js";
 import { genFeatureTypes } from "./features.js";
 import { readFile } from "fs/promises";
+import path from "path";
 
 describe("genFeatureTypes", () => {
   const features: ConfigFeatureDefs = [
@@ -21,15 +22,22 @@ describe("genFeatureTypes", () => {
   ];
 
   it("should generate correct TypeScript output for browser", async () => {
-    await genFeatureTypes(features, "test/output");
-    const dtsOutput = await readFile("test/output/_bucket/index.d.ts", "utf-8");
+    const outputDir = "test/gen";
+    await genFeatureTypes(features, outputDir);
+    const dtsOutput = await readFile(
+      path.join(outputDir, "_bucket/index.d.ts"),
+      "utf-8",
+    );
     expect(dtsOutput).toMatchSnapshot("index.d.ts");
 
-    const jsOutput = await readFile("test/output/_bucket/index.js", "utf-8");
+    const jsOutput = await readFile(
+      path.join(outputDir, "_bucket/index.js"),
+      "utf-8",
+    );
     expect(jsOutput).toMatchSnapshot("index.d.ts");
 
     const packageJsonOutput = await readFile(
-      "test/output/_bucket/package.json",
+      path.join(outputDir, "_bucket/package.json"),
       "utf-8",
     );
     expect(packageJsonOutput).toMatchSnapshot("index.d.ts");
