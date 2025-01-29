@@ -1,8 +1,10 @@
-// import "preact/debug";
-
-export type { Feature, InitOptions, ToolbarOptions } from "./client";
+export type {
+  Feature,
+  FeatureDef,
+  InitOptions,
+  ToolbarOptions,
+} from "./client";
 export { BucketClient } from "./client";
-// export { BucketClientConfigured } from "./clientConfigured";
 export type { BucketContext, CompanyContext, UserContext } from "./context";
 export type {
   CheckEvent,

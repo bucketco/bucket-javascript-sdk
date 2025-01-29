@@ -23,7 +23,13 @@ import {
 
 import { version } from "../package.json";
 
+export interface Features {}
+
 const SDK_VERSION = `react-sdk/${version}`;
+
+export type FeatureKey = keyof (keyof Features extends never
+  ? Record<string, boolean>
+  : Features);
 
 type ProviderContextType = {
   client?: BucketClient;
@@ -43,7 +49,7 @@ const ProviderContext = createContext<ProviderContextType>({
 export type BucketProps = BucketContext & {
   publishableKey: string;
   featureOptions?: Omit<FeaturesOptions, "fallbackFeatures"> & {
-    fallbackFeatures?: string[];
+    fallbackFeatures?: FeatureKey[];
   };
   children?: ReactNode;
   loadingComponent?: ReactNode;
@@ -178,7 +184,7 @@ export function BaseBucketProvider({
  * }
  * ```
  */
-export function useFeature(key: string) {
+export function useFeature(key: FeatureKey) {
   const {
     features: { features, isLoading },
     client,

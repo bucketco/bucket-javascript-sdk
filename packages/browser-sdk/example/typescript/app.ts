@@ -2,15 +2,34 @@ import { BucketClient } from "../../src";
 
 const urlParams = new URLSearchParams(window.location.search);
 const publishableKey = urlParams.get("publishableKey");
-const featureKey = urlParams.get("featureKey") ?? "huddles";
-
-const featureList = ["huddles"];
+const featureKey = (urlParams.get("featureKey") ??
+  "huddles") as keyof FeatureTypes;
 
 if (!publishableKey) {
   throw Error("publishableKey is missing");
 }
 
-const bucket = new BucketClient({
+interface FeatureTypes {
+  huddles: {
+    key: "huddles";
+    isEnabled: boolean;
+    config: {
+      title: string;
+      description: string;
+    };
+  };
+  voiceHuddle: {
+    key: "voiceHuddle";
+    isEnabled: boolean;
+    config: {
+      volumeMax: number;
+    };
+  };
+}
+
+const featureList = ["huddles", "voiceHuddle"];
+
+const bucket = new BucketClient<FeatureTypes>({
   publishableKey,
   user: { id: "42" },
   company: { id: "1" },
