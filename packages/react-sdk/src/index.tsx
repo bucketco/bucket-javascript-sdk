@@ -142,6 +142,7 @@ export function BucketProvider({
       logger: config.debug ? console : undefined,
       sdkVersion: SDK_VERSION,
       featureList,
+      toolbar: config.toolbar,
     });
     clientRef.current = client;
 
@@ -226,7 +227,7 @@ export function useFeature<TKey extends FeatureKey>(key: TKey): Feature<TKey> {
     return {
       isLoading,
       isEnabled: false,
-      config: {} as EmptyFeatureConfig,
+      config: { key: undefined, payload: undefined },
       track,
       requestFeedback,
     };
@@ -249,7 +250,7 @@ export function useFeature<TKey extends FeatureKey>(key: TKey): Feature<TKey> {
 
   const reducedConfig = feature?.config
     ? { key: feature.config.key, payload: feature.config.payload }
-    : ({} as EmptyFeatureConfig);
+    : { key: undefined, payload: undefined };
 
   return {
     isLoading,

@@ -1,6 +1,6 @@
 {
   "name": "@bucketco/react-sdk",
-  "version": "3.0.0-alpha.1",
+  "version": "3.0.0-alpha.2",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -34,7 +34,7 @@
     }
   },
   "dependencies": {
-    "@bucketco/browser-sdk": "3.0.0-alpha.1",
+    "@bucketco/browser-sdk": "3.0.0-alpha.2",
     "canonical-json": "^0.0.4",
     "rollup": "^4.2.0"
   },
@@ -47,7 +47,7 @@
     "@bucketco/tsconfig": "workspace:^",
     "@testing-library/react": "^15.0.7",
     "@types/jsdom": "^21.1.6",
-    "@types/node": "^20.14.0",
+    "@types/node": "^22.12.0",
     "@types/react": "^18.3.2",
     "@types/react-dom": "^18.3.0",
     "@types/webpack": "^5.28.5",
@@ -59,7 +59,7 @@
     "react-dom": "*",
     "rollup-preserve-directives": "^1.1.2",
     "ts-node": "^10.9.2",
-    "typescript": "^5.4.5",
+    "typescript": "^5.7.3",
     "vite": "^5.0.13",
     "vite-plugin-dts": "^4.0.0-beta.1",
     "vitest": "^2.0.4",

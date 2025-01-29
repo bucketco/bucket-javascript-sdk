@@ -192,6 +192,7 @@ describe("<BucketProvider />", () => {
         logger: undefined,
         sseBaseUrl: "https://test.com",
         sseHost: undefined,
+        toolbar: undefined,
         enableTracking: false,
         feedback: undefined,
         featureList: undefined,
@@ -226,7 +227,7 @@ describe("useFeature", () => {
     expect(result.current).toStrictEqual({
       isEnabled: false,
       isLoading: true,
-      config: {},
+      config: { key: undefined, payload: undefined },
       track: expect.any(Function),
       requestFeedback: expect.any(Function),
     });
@@ -241,7 +242,7 @@ describe("useFeature", () => {
 
     await waitFor(() => {
       expect(result.current).toStrictEqual({
-        config: {},
+        config: { key: undefined, payload: undefined },
         isEnabled: false,
         isLoading: false,
         track: expect.any(Function),

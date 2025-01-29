@@ -79,7 +79,7 @@ describe("usage", () => {
       isEnabled: false,
       track: expect.any(Function),
       requestFeedback: expect.any(Function),
-      config: {},
+      config: { key: undefined, payload: undefined },
     });
   });
 
@@ -410,7 +410,7 @@ describe(`sends "check" events `, () => {
 
       expect(client.getFeature("featureA")).toStrictEqual({
         isEnabled: true,
-        config: {},
+        config: { key: undefined, payload: undefined },
         track: expect.any(Function),
         requestFeedback: expect.any(Function),
       });
@@ -430,7 +430,7 @@ describe(`sends "check" events `, () => {
 
       expect(client.getFeature("featureC")).toStrictEqual({
         isEnabled: false,
-        config: {},
+        config: { key: undefined, payload: undefined },
         track: expect.any(Function),
         requestFeedback: expect.any(Function),
       });
@@ -548,7 +548,7 @@ describe(`sends "check" events `, () => {
         isEnabled: false,
         track: expect.any(Function),
         requestFeedback: expect.any(Function),
-        config: {},
+        config: { key: undefined, payload: undefined },
       });
 
       vi.spyOn(client, "track");
@@ -567,7 +567,7 @@ describe(`sends "check" events `, () => {
         isEnabled: false,
         track: expect.any(Function),
         requestFeedback: expect.any(Function),
-        config: {},
+        config: { key: undefined, payload: undefined },
       });
 
       vi.spyOn(client, "requestFeedback");
