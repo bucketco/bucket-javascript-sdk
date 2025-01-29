@@ -74,12 +74,17 @@ const boundClient = bucketClient.bindClient({
 
 // get the huddle feature using company, user and custom context to
 // evaluate the targeting.
-const { isEnabled, track } = boundClient.getFeature("huddle");
+const { isEnabled, track, config } = boundClient.getFeature("huddle");
 
 if (isEnabled) {
   // this is your feature gated code ...
   // send an event when the feature is used:
   track();
+
+  if (config?.key === "zoom") {
+    // this code will run if a given remote configuration
+    // is set up.
+  }
 
   // CAUTION: if you plan to use the event for automated feedback surveys
   // call `flush` immediately after `track`. It can optionally be awaited
@@ -107,6 +112,34 @@ to `getFeatures()` (or through `bindClient(..).getFeatures()`). That means the
 `getFeatures()` call does not need to contact the Bucket servers once
 `initialize()` has completed. `BucketClient` will continue to periodically
 download the targeting rules from the Bucket servers in the background.
+
+### Remote config
+
+Similar to `isEnabled`, each feature has a `config` property. This configuration is managed from within Bucket.
+It is managed similar to the way access to features is managed, but instead of the binary `isEnabled` you can have
+multiple configuration values which are given to different user/companies.
+
+```ts
+const features = bucketClient.getFeatures();
+// {
+//   huddle: {
+//     isEnabled: true,
+//     targetingVersion: 42,
+//     config: {
+//       key: "gpt-3.5",
+//       payload: { maxTokens: 10000, model: "gpt-3.5-beta1" }
+//     }
+//   }
+// }
+```
+
+The `key` is always present while the `payload` is a optional JSON value for arbitrary configuration needs.
+If feature has no configuration or, no configuration value was matched against the context, the `config` object
+will be empty, thus, `key` will be `undefined`. Make sure to check against this case when trying to use the
+configuration in your application.
+
+Just as `isEnabled`, accessing `config` on the object returned by `getFeatures` does not automatically
+generate a `check` event, contrary to the `config` property on the object returned by `getFeature`.
 
 ## Configuring
 
@@ -136,7 +169,13 @@ Note: BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED are comma separated list
   "apiBaseUrl": "https://proxy.slick-demo.com",
   "featureOverrides": {
     "huddles": true,
-    "voiceChat": false
+    "voiceChat": false,
+    "aiAssist": {
+      "key": "gpt-4.0",
+      "payload": {
+        "maxTokens": 50000
+      }
+    }
   }
 }
 ```
@@ -162,8 +201,11 @@ import { BucketClient } from "@bucketco/node-sdk";
 declare module "@bucketco/node-sdk" {
   interface Features {
     "show-todos": boolean;
-    "create-todos": boolean;
-    "delete-todos": boolean;
+    "create-todos": { isEnabled: boolean };
+    "delete-todos": {
+      isEnabled: boolean,
+      config: any
+    };
   }
 }
 
@@ -173,7 +215,52 @@ bucketClient.initialize().then({
   console.log("Bucket initialized!")
   bucketClient.getFeature("invalid-feature") // feature doesn't exist
 })
+```
 
+The following example show how to add strongly typed payloads when using remote configuration:
+
+```typescript
+import { BucketClient } from "@bucketco/node-sdk";
+
+type ConfirmationConfig = {
+  shouldShowConfirmation: boolean;
+};
+
+declare module "@bucketco/node-sdk" {
+  interface Features {
+    "delete-todos": {
+      isEnabled: boolean;
+      config: {
+        key: string;
+        payload: ConfirmationConfig;
+      };
+    };
+  }
+}
+
+export const bucketClient = new BucketClient();
+
+function deleteTodo(todoId: string) {
+  // get the feature information
+  const {
+    isEnabled,
+    config: { payload: confirmationConfig },
+  } = bucketClient.getFeature("delete-todos");
+
+  // check that feature is enabled for user
+  if (!isEnabled) {
+    return;
+  }
+
+  // finally, check if we enabled the "confirmation" dialog for this user and only
+  // show it in that case.
+  // since we defined `ConfirmationConfig` as the only valid payload for `delete-todos`,
+  // we have type-safety helping us with the payload value.
+  if (confirmationConfig.shouldShowConfirmation) {
+    showMessage("Are you really sure you want to delete this item?");
+    // ... rest of the code
+  }
+}
 ```
 
 ![Type check failed](docs/type-check-failed.png "Type check failed")
