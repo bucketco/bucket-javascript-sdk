@@ -324,10 +324,6 @@ export interface Feature {
   /**
    * Function to request feedback for this feature.
    */
-
-  /**
-   * Function to request feedback for this feature.
-   */
   requestFeedback: (
     options: Omit<RequestFeedbackData, "featureKey" | "featureId">,
   ) => void;
