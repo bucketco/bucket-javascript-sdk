@@ -302,7 +302,6 @@ export class BucketClient<
       key: typeof f === "string" ? f : f.key,
       access: typeof f === "string" ? true : f.access,
       config: typeof f === "string" ? {} : f.configType,
-      fallback: typeof f === "string" ? undefined : f.fallback,
     }));
 
     this.featuresClient = new FeaturesClient(

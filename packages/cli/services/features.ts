@@ -3,7 +3,6 @@ import {
   readConfigFile,
   writeConfigFile,
   FeatureDef,
-  FallbackValue,
 } from "../utils/config.js";
 import { genDTS, genJs } from "../utils/gen.js";
 import { outputFile } from "fs-extra";
