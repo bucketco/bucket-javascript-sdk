@@ -465,10 +465,10 @@ export class BucketClient {
    * @remarks
    * Call `initialize` before calling this method to ensure the feature definitions are cached, no features will be returned otherwise.
    **/
-  public getFeature(
+  public getFeature<TKey extends keyof TypedFeatures>(
     { enableTracking = true, ...context }: ContextWithTracking,
-    key: keyof TypedFeatures,
-  ) {
+    key: TKey,
+  ): TypedFeatures[TKey] {
     const options = { enableTracking, ...context };
     const features = this._getFeatures(options);
     const feature = features[key];
@@ -513,12 +513,12 @@ export class BucketClient {
    * @param additionalContext
    * @returns evaluated feature
    */
-  public async getFeatureRemote(
-    key: string,
+  public async getFeatureRemote<TKey extends keyof TypedFeatures>(
+    key: TKey,
     userId?: IdType,
     companyId?: IdType,
     additionalContext?: Context,
-  ): Promise<Feature> {
+  ): Promise<TypedFeatures[TKey]> {
     const features = await this._getFeaturesRemote(
       key,
       userId,
@@ -947,10 +947,10 @@ export class BucketClient {
     return evaluatedFeatures;
   }
 
-  private _wrapRawFeature(
+  private _wrapRawFeature<TKey extends keyof TypedFeatures>(
     options: { enableTracking: boolean } & Context,
     { key, isEnabled, config, targetingVersion }: RawFeature,
-  ): Feature {
+  ): TypedFeatures[TKey] {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const client = this;
 
