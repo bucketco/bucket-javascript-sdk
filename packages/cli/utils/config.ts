@@ -20,6 +20,10 @@ const ConfigSchema = z.object({
   codeGenBasePath: z.string().optional(),
 });
 
+export const initConfig = {
+  features: [],
+} satisfies z.input<typeof ConfigSchema>;
+
 export const generatedPackageName = "_bucket";
 
 type Config = {
