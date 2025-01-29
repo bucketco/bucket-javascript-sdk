@@ -1,6 +1,6 @@
 {
   "name": "@bucketco/browser-sdk",
-  "version": "3.0.0-alpha.0",
+  "version": "3.0.0-alpha.2",
   "packageManager": "yarn@4.1.1",
   "license": "MIT",
   "repository": {
@@ -21,8 +21,7 @@
     "lint:ci": "eslint --output-file eslint-report.json --format json .",
     "prettier": "prettier --check .",
     "format": "yarn lint --fix && yarn prettier --write",
-    "preversion": "yarn lint && yarn prettier && yarn vitest run -c vitest.config.ts && yarn build",
-    "postinstall": "node --eval \"import('@bucketco/cli')\" cli features generate --ignore-missing-config"
+    "preversion": "yarn lint && yarn prettier && yarn vitest run -c vitest.config.ts && yarn build"
   },
   "files": [
     "dist"
@@ -42,7 +41,6 @@
     }
   },
   "dependencies": {
-    "@bucketco/cli": "1.0.0",
     "@floating-ui/dom": "^1.6.8",
     "canonical-json": "^0.0.4",
     "js-cookie": "^3.0.5",

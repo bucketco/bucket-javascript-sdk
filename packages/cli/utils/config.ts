@@ -3,12 +3,28 @@ import { findUp } from "find-up";
 
 import { REPO_CONFIG_FILE } from "./constants.js";
 import { Datatype } from "./gen.js";
+import path from "path";
+import z from "zod";
+
+const ConfigSchema = z.object({
+  features: z.array(
+    z.union([
+      z.string(),
+      z.object({
+        key: z.string(),
+        access: z.boolean().optional(),
+        config: z.any().optional(),
+      }),
+    ]),
+  ),
+  codeGenBasePath: z.string().optional(),
+});
 
 export const generatedPackageName = "_bucket";
 
 type Config = {
   features: ConfigFeatureDefs;
-  codeGenBasePath?: string;
+  codeGenBasePath: string;
 };
 
 export type ConfigFeatureDef = {
@@ -21,7 +37,7 @@ export type ConfigFeatureDefs = Array<string | ConfigFeatureDef>;
 
 let config: Config = {
   features: [],
-  codeGenBasePath: "node_modules/",
+  codeGenBasePath: "",
 };
 
 /**
@@ -44,7 +60,12 @@ export async function readConfigFile() {
   if (!location) {
     throw new Error("No bucket.config.js file found.");
   }
-  return await readJson(location);
+  const parseResult = ConfigSchema.safeParse(await readJson(location));
+  if (parseResult.success) {
+    return parseResult.data;
+  }
+
+  throw new Error("Failed to parse config file: " + parseResult.error.message);
 }
 
 /**
@@ -57,9 +78,21 @@ export async function writeConfigFile(config: object, location?: string) {
 }
 
 export async function loadConfig() {
-  config = await readConfigFile();
+  let readConfig = await readConfigFile();
+
+  config = {
+    ...readConfig,
+    codeGenBasePath:
+      readConfig.codeGenBasePath ?? (await defaultCodeGenBasePath()),
+  };
+  return config;
 }
 
 export async function configFileExists() {
   return !!(await findRepoConfig());
+}
+
+export async function defaultCodeGenBasePath() {
+  const confLocation = (await findRepoConfig()) ?? "";
+  return path.join(path.dirname(confLocation), "node_modules");
 }

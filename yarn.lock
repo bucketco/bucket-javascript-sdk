@@ -894,23 +894,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@bucketco/browser-sdk@npm:3.0.0-alpha.0":
-  version: 3.0.0-alpha.0
-  resolution: "@bucketco/browser-sdk@npm:3.0.0-alpha.0"
-  dependencies:
-    "@floating-ui/dom": "npm:^1.6.8"
-    canonical-json: "npm:^0.0.4"
-    js-cookie: "npm:^3.0.5"
-    preact: "npm:^10.22.1"
-  checksum: 10c0/eba1a2f15c49c1aeca37c6d2b218e50d92e2034c51a9acdd6884ce143156dc7f285f9141f5e6cfcc2aed0186c0b8fc61bb9939aca737a1e76d1a2d9d65a7b74c
-  languageName: node
-  linkType: hard
-
-"@bucketco/browser-sdk@workspace:packages/browser-sdk":
+"@bucketco/browser-sdk@workspace:*, @bucketco/browser-sdk@workspace:packages/browser-sdk":
   version: 0.0.0-use.local
   resolution: "@bucketco/browser-sdk@workspace:packages/browser-sdk"
   dependencies:
-    "@bucketco/cli": "npm:1.0.0"
     "@bucketco/eslint-config": "npm:0.0.2"
     "@bucketco/tsconfig": "npm:0.0.2"
     "@floating-ui/dom": "npm:^1.6.8"
@@ -939,7 +926,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@bucketco/cli@npm:1.0.0, @bucketco/cli@workspace:packages/cli":
+"@bucketco/cli@workspace:packages/cli":
   version: 0.0.0-use.local
   resolution: "@bucketco/cli@workspace:packages/cli"
   dependencies:
@@ -960,6 +947,7 @@ __metadata:
     ts-node: "npm:^10.9.2"
     typescript: "npm:^5.5.4"
     vitest: "npm:^2.1.8"
+    zod: "npm:^3.24.1"
   bin:
     bucket: ./dist/index.js
   languageName: unknown
@@ -1069,7 +1057,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@bucketco/react-sdk@workspace:packages/react-sdk"
   dependencies:
-    "@bucketco/browser-sdk": "npm:3.0.0-alpha.0"
+    "@bucketco/browser-sdk": "workspace:*"
     "@bucketco/eslint-config": "workspace:^"
     "@bucketco/tsconfig": "workspace:^"
     "@testing-library/react": "npm:^15.0.7"
@@ -17620,5 +17608,12 @@ __metadata:
   bin:
     z-schema: bin/z-schema
   checksum: 10c0/3242da6b2d8da3bc9a66876ef01a1d5f0d0ad7bd70b0e3e24f5dc6ef5f6213e6e660f14f3dceee9b000692a47b86b365c0ea43b5340153efcb2808ccbfb3fc6f
+  languageName: node
+  linkType: hard
+
+"zod@npm:^3.24.1":
+  version: 3.24.1
+  resolution: "zod@npm:3.24.1"
+  checksum: 10c0/0223d21dbaa15d8928fe0da3b54696391d8e3e1e2d0283a1a070b5980a1dbba945ce631c2d1eccc088fdbad0f2dfa40155590bf83732d3ac4fcca2cc9237591b
   languageName: node
   linkType: hard
