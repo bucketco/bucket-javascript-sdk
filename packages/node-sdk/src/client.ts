@@ -29,7 +29,6 @@ import {
   ClientOptions,
   Context,
   ContextWithTracking,
-  Feature,
   FeatureEvent,
   FeaturesAPIResponse,
   HttpClient,
@@ -983,7 +982,7 @@ export class BucketClient {
       },
       get config() {
         sendCheckEvent();
-        return simplifiedConfig;
+        return simplifiedConfig as TypedFeatures[TKey]["config"];
       },
       key,
       track: async () => {
