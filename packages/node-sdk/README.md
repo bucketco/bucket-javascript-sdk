@@ -199,19 +199,12 @@ import { BucketClient } from "@bucketco/node-sdk";
 
 // Extending the Features interface to define the available features
 declare module "@bucketco/node-sdk" {
-  type ConfirmationConfig = {
-    shouldShowConfirmation: boolean
-  }
-
   interface Features {
     "show-todos": boolean;
     "create-todos": { isEnabled: boolean };
     "delete-todos": {
       isEnabled: boolean,
-      config: {
-        key: string,
-        payload: ConfirmationConfig,
-      }
+      config: any
     };
   }
 }
@@ -222,10 +215,37 @@ bucketClient.initialize().then({
   console.log("Bucket initialized!")
   bucketClient.getFeature("invalid-feature") // feature doesn't exist
 })
+```
+
+The following example show how to add strongly typed payloads when using remote configuration:
+
+```typescript
+import { BucketClient } from "@bucketco/node-sdk";
+
+type ConfirmationConfig = {
+  shouldShowConfirmation: boolean;
+};
+
+declare module "@bucketco/node-sdk" {
+  interface Features {
+    "delete-todos": {
+      isEnabled: boolean;
+      config: {
+        key: string;
+        payload: ConfirmationConfig;
+      };
+    };
+  }
+}
+
+export const bucketClient = new BucketClient();
 
 function deleteTodo(todoId: string) {
   // get the feature information
-  const { isEnabled, config: { payload: confirmationConfig }} = bucketClient.getFeature("delete-todos")
+  const {
+    isEnabled,
+    config: { payload: confirmationConfig },
+  } = bucketClient.getFeature("delete-todos");
 
   // check that feature is enabled for user
   if (!isEnabled) {
@@ -237,11 +257,10 @@ function deleteTodo(todoId: string) {
   // since we defined `ConfirmationConfig` as the only valid payload for `delete-todos`,
   // we have type-safety helping us with the payload value.
   if (confirmationConfig.shouldShowConfirmation) {
-    showMessage("Are you really sure you want to delete this ite,?");
+    showMessage("Are you really sure you want to delete this item?");
     // ... rest of the code
   }
 }
-
 ```
 
 ![Type check failed](docs/type-check-failed.png "Type check failed")
