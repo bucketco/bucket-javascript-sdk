@@ -6,8 +6,9 @@
     "jsx": "react",
     "declarationMap": true,
     "moduleResolution": "bundler",
-    "module": "Preserve"
+    "module": "Preserve",
+    "rootDir": "./src"
   },
-  "include": ["src", "dev"],
+  "include": ["src"],
   "typeRoots": ["./node_modules/@types"]
 }
