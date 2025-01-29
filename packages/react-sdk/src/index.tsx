@@ -27,9 +27,15 @@ export interface Features {}
 
 const SDK_VERSION = `react-sdk/${version}`;
 
-export type FeatureKey = keyof (keyof Features extends never
-  ? Record<string, boolean>
-  : Features);
+type MaterializedFeatures = keyof Features extends never
+  ? Record<string, any>
+  : Features;
+
+export type FeatureKey = keyof MaterializedFeatures;
+export type FeatureConfig<TKey extends FeatureKey> =
+  MaterializedFeatures[TKey] extends boolean
+    ? never
+    : MaterializedFeatures[TKey];
 
 type ProviderContextType = {
   client?: BucketClient;
@@ -49,7 +55,7 @@ const ProviderContext = createContext<ProviderContextType>({
 export type BucketProps = BucketContext & {
   publishableKey: string;
   featureOptions?: Omit<FeaturesOptions, "fallbackFeatures"> & {
-    fallbackFeatures?: FeatureKey[];
+    fallbackFeatures?: FeatureKey[] | Record<FeatureKey, any>;
   };
   children?: ReactNode;
   loadingComponent?: ReactNode;
@@ -172,33 +178,53 @@ export function BucketProvider({
   );
 }
 
+type RequestFeedbackOptions = Omit<
+  RequestFeedbackData,
+  "featureKey" | "featureId"
+>;
+
+type Feature<TKey extends FeatureKey> = {
+  isEnabled: boolean;
+  isLoading: boolean;
+  config:
+    | {
+        key: string;
+        payload: FeatureConfig<TKey>;
+      }
+    | {
+        key: undefined;
+        payload: undefined;
+      };
+  track: () => void;
+  requestFeedback: (opts: RequestFeedbackOptions) => void;
+};
+
 /**
  * Returns the state of a given feature for the current context, e.g.
  *
  * ```ts
  * function HuddleButton() {
- *   const {isEnabled, track} = useFeature("huddle");
+ *   const {isEnabled, config: { payload }, track} = useFeature("huddle");
  *   if (isEnabled) {
- *    return <button onClick={() => track()}>Start Huddle</button>;
- *   }
+ *    return <button onClick={() => track()}>{payload?.buttonTitle ?? "Start Huddle"}</button>;
  * }
  * ```
  */
-export function useFeature(key: FeatureKey) {
+export function useFeature<TKey extends FeatureKey>(key: TKey): Feature<TKey> {
   const {
     features: { features, isLoading },
     client,
   } = useContext<ProviderContextType>(ProviderContext);
 
   const track = () => client?.track(key);
-  const requestFeedback = (
-    opts: Omit<RequestFeedbackData, "featureKey" | "featureId">,
-  ) => client?.requestFeedback({ ...opts, featureKey: key });
+  const requestFeedback = (opts: RequestFeedbackOptions) =>
+    client?.requestFeedback({ ...opts, featureKey: key });
 
   if (isLoading) {
     return {
       isLoading,
       isEnabled: false,
+      config: { key: undefined, payload: undefined },
       track,
       requestFeedback,
     };
@@ -207,21 +233,33 @@ export function useFeature(key: FeatureKey) {
   const feature = features[key];
   const enabled = feature?.isEnabledOverride ?? feature?.isEnabled ?? false;
 
+  function sendCheckEvent() {
+    client
+      ?.sendCheckEvent({
+        key,
+        value: enabled,
+        version: feature?.targetingVersion,
+      })
+      .catch(() => {
+        // ignore
+      });
+  }
+
+  const reducedConfig = feature?.config
+    ? { key: feature.config.key, payload: feature.config.payload }
+    : { key: undefined, payload: undefined };
+
   return {
     isLoading,
     track,
     requestFeedback,
     get isEnabled() {
-      client
-        ?.sendCheckEvent({
-          key,
-          value: enabled,
-          version: feature?.targetingVersion,
-        })
-        .catch(() => {
-          // ignore
-        });
+      sendCheckEvent();
       return enabled;
+    },
+    get config() {
+      sendCheckEvent();
+      return reducedConfig;
     },
   };
 }

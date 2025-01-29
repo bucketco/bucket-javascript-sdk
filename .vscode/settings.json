@@ -39,7 +39,5 @@
     "**/*.lock": true
   },
   "typescript.tsdk": "node_modules/typescript/lib",
-  "cSpell.words": [
-    "bucketco"
-  ]
+  "cSpell.words": ["bucketco", "openfeature"]
 }
