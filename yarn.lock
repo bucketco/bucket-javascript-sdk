@@ -882,15 +882,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@bucketco/browser-sdk@npm:2.4.0":
-  version: 2.4.0
-  resolution: "@bucketco/browser-sdk@npm:2.4.0"
+"@bucketco/browser-sdk@npm:3.0.0-alpha.1":
+  version: 3.0.0-alpha.1
+  resolution: "@bucketco/browser-sdk@npm:3.0.0-alpha.1"
   dependencies:
     "@floating-ui/dom": "npm:^1.6.8"
     canonical-json: "npm:^0.0.4"
     js-cookie: "npm:^3.0.5"
     preact: "npm:^10.22.1"
-  checksum: 10c0/b33a9fdafa4a857ac4f815fe69b602b37527a37d54270abd479b754da998d030f5a70b738c662ab57fa4f6374b8e1fbd052feb8bdbd8b78367086dcedc5a5432
+  checksum: 10c0/4dd602d70e12d577445c262834605c6a90d5e7ee9d8a1a018295aa7cc1773227d3fd442f7e12fbf23092c13207c0d5ac6a89d1b0d7cef7d7e24b5b9999e573c8
   languageName: node
   linkType: hard
 
