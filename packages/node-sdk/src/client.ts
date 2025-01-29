@@ -975,7 +975,7 @@ export class BucketClient {
 
     const simplifiedConfig = config
       ? { key: config.key, payload: config.payload }
-      : ({} as FeatureRemoteConfig);
+      : { key: undefined, payload: undefined };
 
     return {
       get isEnabled() {

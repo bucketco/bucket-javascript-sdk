@@ -1351,7 +1351,7 @@ describe("BucketClient", () => {
         feature2: {
           key: "feature2",
           isEnabled: false,
-          config: {},
+          config: { key: undefined, payload: undefined },
           track: expect.any(Function),
         },
       });
@@ -1462,7 +1462,7 @@ describe("BucketClient", () => {
         feature2: {
           key: "feature2",
           isEnabled: false,
-          config: {},
+          config: { key: undefined, payload: undefined },
           track: expect.any(Function),
         },
       });
@@ -1539,7 +1539,7 @@ describe("BucketClient", () => {
         feature2: {
           key: "feature2",
           isEnabled: false,
-          config: {},
+          config: { key: undefined, payload: undefined },
           track: expect.any(Function),
         },
       });
@@ -1616,7 +1616,7 @@ describe("BucketClient", () => {
         feature2: {
           key: "feature2",
           isEnabled: false,
-          config: {},
+          config: { key: undefined, payload: undefined },
           track: expect.any(Function),
         },
       });
@@ -1788,7 +1788,7 @@ describe("BucketClient", () => {
       expect(result).toStrictEqual({
         key: "key",
         isEnabled: true,
-        config: {},
+        config: { key: undefined, payload: undefined },
         track: expect.any(Function),
       });
 
@@ -1844,7 +1844,7 @@ describe("BucketClient", () => {
         feature2: {
           key: "feature2",
           isEnabled: false,
-          config: {},
+          config: { key: undefined, payload: undefined },
           track: expect.any(Function),
         },
       });
@@ -1902,7 +1902,7 @@ describe("BucketClient", () => {
         feature2: {
           key: "feature2",
           isEnabled: false,
-          config: {},
+          config: { key: undefined, payload: undefined },
           track: expect.any(Function),
         },
       });
@@ -1927,13 +1927,13 @@ describe("BucketClient", () => {
         feature1: {
           key: "feature1",
           isEnabled: false,
-          config: {},
+          config: { key: undefined, payload: undefined },
           track: expect.any(Function),
         },
         feature2: {
           key: "feature2",
           isEnabled: true,
-          config: {},
+          config: { key: undefined, payload: undefined },
           track: expect.any(Function),
         },
         feature3: {
@@ -2006,7 +2006,7 @@ describe("BucketClient", () => {
         feature2: {
           key: "feature2",
           isEnabled: false,
-          config: {},
+          config: { key: undefined, payload: undefined },
           track: expect.any(Function),
         },
       });
@@ -2309,13 +2309,13 @@ describe("BoundBucketClient", () => {
         feature1: {
           key: "feature1",
           isEnabled: true,
-          config: {},
+          config: { key: undefined, payload: undefined },
           track: expect.any(Function),
         },
         feature2: {
           key: "feature2",
           isEnabled: false,
-          config: {},
+          config: { key: undefined, payload: undefined },
           track: expect.any(Function),
         },
       });
@@ -2340,7 +2340,7 @@ describe("BoundBucketClient", () => {
       expect(result).toStrictEqual({
         key: "feature1",
         isEnabled: true,
-        config: {},
+        config: { key: undefined, payload: undefined },
         track: expect.any(Function),
       });
 
