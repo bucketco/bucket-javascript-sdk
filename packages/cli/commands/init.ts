@@ -25,7 +25,7 @@ export function registerInitCommands(program: Command) {
         await writeConfigFile(initConfig, "bucket.config.json");
         chalk.green(`Bucket bucket.config.json written!`);
       } catch (error) {
-        handleError(error, "Failed to generate feature types:");
+        handleError(error, "Failed to initialize");
       }
     });
 }
