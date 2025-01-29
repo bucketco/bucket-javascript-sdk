@@ -19,7 +19,6 @@ import type {
   EvaluatedFeaturesAPIResponse,
   FeatureAPIResponse,
   FeatureOverridesFn,
-  FeatureRemoteConfig,
   IdType,
   RawFeature,
   RawFeatureRemoteConfig,
@@ -1110,7 +1109,7 @@ export class BoundBucketClient {
    *
    * @returns Features for the given user/company and whether each one is enabled or not
    */
-  public getFeatures() {
+  public getFeatures(): TypedFeatures {
     return this._client.getFeatures(this._options);
   }
 
@@ -1120,7 +1119,9 @@ export class BoundBucketClient {
    *
    * @returns Features for the given user/company and whether each one is enabled or not
    */
-  public getFeature(key: keyof TypedFeatures) {
+  public getFeature<TKey extends keyof TypedFeatures>(
+    key: TKey,
+  ): TypedFeatures[TKey] {
     return this._client.getFeature(this._options, key);
   }
 

@@ -110,6 +110,8 @@ export interface RawFeature {
   missingContextFields?: string[];
 }
 
+type EmptyFeatureRemoteConfig = { key: undefined; payload: undefined };
+
 /**
  * A remotely managed configuration value for a feature.
  */
@@ -125,12 +127,14 @@ export type FeatureRemoteConfig =
        */
       payload: any;
     }
-  | { key: undefined; payload: undefined };
+  | EmptyFeatureRemoteConfig;
 
 /**
  * Describes a feature
  */
-export interface Feature {
+export interface Feature<
+  TConfig extends FeatureRemoteConfig | never = EmptyFeatureRemoteConfig,
+> {
   /**
    * The key of the feature.
    */
@@ -144,18 +148,23 @@ export interface Feature {
   /*
    * Optional user-defined configuration.
    */
-  config: FeatureRemoteConfig;
-
-  /**
-   * Optional user-defined configuration if the feature is enabled.
-   */
-  config: any;
+  config: TConfig extends never ? EmptyFeatureRemoteConfig : TConfig;
 
   /**
    * Track feature usage in Bucket.
    */
   track(): Promise<void>;
 }
+
+type FullFeatureOverride = {
+  isEnabled: boolean;
+  config?: {
+    key: string;
+    payload: any;
+  };
+};
+
+type FeatureOverride = FullFeatureOverride | boolean;
 
 /**
  * Describes a collection of evaluated features.
@@ -175,25 +184,25 @@ export interface Features {}
  */
 export type TypedFeatures = keyof Features extends never
   ? Record<string, Feature>
-  : Record<keyof Features, Feature>;
+  : {
+      [FeatureKey in keyof Features]: Features[FeatureKey] extends FullFeatureOverride
+        ? Feature<Features[FeatureKey]["config"]>
+        : Feature;
+    };
 
 type TypedFeatureKey = keyof TypedFeatures;
-
-type FeatureOverride =
-  | {
-      isEnabled: boolean;
-      config?: {
-        key: string;
-        payload: any;
-      };
-    }
-  | boolean;
 
 /**
  * Describes the feature overrides.
  */
 export type FeatureOverrides = Partial<
-  Record<TypedFeatureKey, FeatureOverride>
+  keyof Features extends never
+    ? Record<string, FeatureOverride>
+    : {
+        [FeatureKey in keyof Features]: Features[FeatureKey] extends FullFeatureOverride
+          ? Features[FeatureKey]
+          : Exclude<FeatureOverride, "config">;
+      }
 >;
 
 export type FeatureOverridesFn = (context: Context) => FeatureOverrides;
