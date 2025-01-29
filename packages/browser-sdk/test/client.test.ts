@@ -68,7 +68,7 @@ describe("BucketClient", () => {
   describe("getFeature", () => {
     it("takes overrides into account", async () => {
       await client.initialize();
-      expect(featuresResult.featureA.isEnabled).toBe(true);
+      expect(featuresResult["featureA"].isEnabled).toBe(true);
       expect(client.getFeature("featureA").isEnabled).toBe(true);
       client.setFeatureOverride("featureA", false);
       expect(client.getFeature("featureA").isEnabled).toBe(false);

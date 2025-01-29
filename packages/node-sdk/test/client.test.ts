@@ -1698,11 +1698,13 @@ describe("BucketClient", () => {
           key: "feature1",
           isEnabled: true,
           track: expect.any(Function),
+          config: undefined,
         },
         feature2: {
           key: "feature2",
           isEnabled: false,
           track: expect.any(Function),
+          config: undefined,
         },
       });
 
@@ -1720,11 +1722,13 @@ describe("BucketClient", () => {
           key: "feature1",
           isEnabled: false,
           track: expect.any(Function),
+          config: undefined,
         },
         feature2: {
           key: "feature2",
           isEnabled: true,
           track: expect.any(Function),
+          config: undefined,
         },
       });
     });

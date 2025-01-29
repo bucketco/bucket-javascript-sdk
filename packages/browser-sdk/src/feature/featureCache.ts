@@ -22,19 +22,24 @@ export function parseAPIFeaturesResponse(
   const features: FetchedFeatures = {};
   for (const key in featuresInput) {
     const feature = featuresInput[key];
+
     if (
       typeof feature.isEnabled !== "boolean" ||
       feature.key !== key ||
-      typeof feature.targetingVersion !== "number"
+      typeof feature.targetingVersion !== "number" ||
+      (feature.config && typeof feature.config !== "object")
     ) {
       return;
     }
+
     features[key] = {
       isEnabled: feature.isEnabled,
       targetingVersion: feature.targetingVersion,
       key,
+      config: feature.config,
     };
   }
+
   return features;
 }
 
@@ -45,8 +50,8 @@ export interface CacheResult {
 
 export class FeatureCache {
   private storage: StorageItem;
-  private staleTimeMs: number;
-  private expireTimeMs: number;
+  private readonly staleTimeMs: number;
+  private readonly expireTimeMs: number;
 
   constructor({
     storage,

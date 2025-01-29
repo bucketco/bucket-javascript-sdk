@@ -29,6 +29,10 @@ declare module "@bucketco/react-sdk" {
   interface Features {
     huddle: boolean;
     recordVideo: boolean;
+    questionnaire?: {
+      showAll: boolean;
+      time: 600000;
+    };
   }
 }
 ```
@@ -64,7 +68,7 @@ import { BucketProvider } from "@bucketco/react-sdk";
 
   ```tsx
   function LoadingBucket({ children }) {
-    const {isLoading} = useFeature("myFeature")
+    const { isLoading } = useFeature("myFeature")
     if (isLoading) {
       return <Spinner />
     }
@@ -82,6 +86,62 @@ import { BucketProvider } from "@bucketco/react-sdk";
 
 - `enableTracking` (default: `true`): Set to `false` to stop sending tracking events and user/company updates to Bucket. Useful when you're impersonating a user.
 
+## Feature toggles
+
+Bucket determines which features are active for a given `user`/`company`. The `user`/`company` are given in the `BucketProvider` as props.
+
+If you supply `user` or `company` objects, they must include at least the `id` property otherwise they will be ignored in their entirety.
+In addition to the `id`, you must also supply anything additional that you want to be able to evaluate feature targeting rules against.
+The additional attributes are supplied using the `otherContext` prop.
+
+Attributes cannot be nested (multiple levels) and must be either strings, integers or booleans.
+
+- `name` is a special attribute and is used to display name for user/company
+- for `user`, `email` is also special and will be highlighted in the Bucket UI if available
+
+```tsx
+ <BucketProvider
+    publishableKey={YOUR_PUBLISHABLE_KEY}
+    user={{ id: "user_123", name: "John Doe", email: "john@acme.com" }}
+    company={{ id: "company_123", name: "Acme, Inc" }}
+    otherContext={{ completedSteps: [1, 4, 7] }}
+  >
+    <LoadingBucket>
+    {/* children here are shown when loading finishes */}
+    </LoadingBucket>
+  <BucketProvider>
+```
+
+To retrieve features along with their targeting information, use `useFeature(key: string)` hook (described in a section below).
+
+Note that accessing `isEnabled` on the object returned by `useFeature()` automatically
+generates a `check` event.
+
+## Remote config
+
+Similar to `isEnabled`, each feature accessed using `useFeature()` hook, has a `config` property. This configuration
+is managed from within Bucket. It is managed similar to the way access to features is managed, but instead of the
+binary `isEnabled` you can have multiple configuration values which are given to different user/companies.
+
+```ts
+const {
+  isEnabled,
+  config: { key, payload },
+} = useFeature("huddles");
+
+// isEnabled: true,
+// key: "gpt-3.5",
+// payload: { maxTokens: 10000, model: "gpt-3.5-beta1" }
+```
+
+The `key` is always present while the `payload` is a optional JSON value for arbitrary configuration needs.
+If feature has no configuration or, no configuration value was matched against the context, the `config` object
+will be empty, thus, `key` will be `undefined`. Make sure to check against this case when trying to use the
+configuration in your application.
+
+Note that, similar to `isEnabled`, accessing `config` on the object returned by `useFeature()` automatically
+generates a `check` event.
+
 ## Hooks
 
 ### `useFeature()`
@@ -92,7 +152,13 @@ Returns the state of a given features for the current context.
 import { useFeature } from "@bucketco/react-sdk";
 
 function StartHuddleButton() {
-  const { isLoading, isEnabled, track, requestFeedback } = useFeature("huddle");
+  const {
+    isLoading,
+    isEnabled,
+    config: { key, payload },
+    track,
+    requestFeedback,
+  } = useFeature("huddle");
 
   if (isLoading) {
     return <Loading />;
@@ -108,7 +174,7 @@ function StartHuddleButton() {
       <button
         onClick={(e) =>
           requestFeedback({
-            title: "How do you like Huddles?",
+            title: payload?.question ?? "How do you like Huddles?",
             position: {
               type: "POPOVER",
               anchor: e.currentTarget as HTMLElement,
@@ -186,7 +252,7 @@ const sendFeedback = useSendFeedback();
 sendFeedback({
   featureId: "bucket-feature-id",
   score: 5,
-  comment: "Best thing I"ve ever tried!",
+  comment: "Best thing I've ever tried!",
 });
 ```
 
@@ -221,4 +287,4 @@ See https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/browser
 
 MIT License
 
-Copyright (c) 2024 Bucket ApS
+Copyright (c) 2025 Bucket ApS

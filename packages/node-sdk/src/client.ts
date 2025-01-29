@@ -910,6 +910,9 @@ export class BucketClient {
 
         return isEnabled;
       },
+      get config() {
+        return undefined;
+      },
       key,
       track: async () => {
         if (typeof options.user?.id === "undefined") {

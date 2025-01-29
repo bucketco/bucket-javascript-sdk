@@ -9,6 +9,9 @@ import {
   parseAPIFeaturesResponse,
 } from "./featureCache";
 
+/**
+ * A feature fetched from the server.
+ */
 export type FetchedFeature = {
   /**
    * Feature key
@@ -24,11 +27,32 @@ export type FetchedFeature = {
    * Version of targeting rules
    */
   targetingVersion?: number;
+
+  /**
+   * Optional user-defined dynamic configuration.
+   */
+  config?: {
+    /**
+     * The key of the matched configuration value.
+     */
+    key: string;
+
+    /**
+     * The version of the matched configuration value.
+     */
+    version?: number;
+
+    /**
+     * The optional user-supplied payload data.
+     */
+    payload?: any;
+  };
 };
 
 const FEATURES_UPDATED_EVENT = "features-updated";
 
 export type FetchedFeatures = Record<string, FetchedFeature | undefined>;
+
 // todo: on next major, come up with a better name for this type. Maybe `LocalFeature`.
 export type RawFeature = FetchedFeature & {
   /**
@@ -36,14 +60,24 @@ export type RawFeature = FetchedFeature & {
    */
   isEnabledOverride: boolean | null;
 };
+
 export type RawFeatures = Record<string, RawFeature>;
+
+export type FallbackFeatureOverride =
+  | {
+      key: string;
+      payload: any;
+    }
+  | true;
 
 export type FeaturesOptions = {
   /**
    * Feature keys for which `isEnabled` should fallback to true
-   * if SDK fails to fetch features from Bucket servers.
+   * if SDK fails to fetch features from Bucket servers. If a record
+   * is supplied instead of array, the values of each key represent the
+   * configuration values and `isEnabled` is assume `true`.
    */
-  fallbackFeatures?: string[];
+  fallbackFeatures?: string[] | Record<string, FallbackFeatureOverride>;
 
   /**
    * Timeout in milliseconds when fetching features
@@ -67,28 +101,15 @@ export type FeaturesOptions = {
 };
 
 type Config = {
-  fallbackFeatures: string[];
+  fallbackFeatures: Record<string, FallbackFeatureOverride>;
   timeoutMs: number;
   staleWhileRevalidate: boolean;
 };
 
 export const DEFAULT_FEATURES_CONFIG: Config = {
-  fallbackFeatures: [],
+  fallbackFeatures: {},
   timeoutMs: 5000,
   staleWhileRevalidate: false,
-};
-
-// Deep merge two objects.
-export type FeaturesResponse = {
-  /**
-   * `true` if call was successful
-   */
-  success: boolean;
-
-  /**
-   * List of enabled features
-   */
-  features: FetchedFeatures;
 };
 
 export function validateFeaturesResponse(response: any) {
@@ -99,7 +120,9 @@ export function validateFeaturesResponse(response: any) {
   if (typeof response.success !== "boolean" || !isObject(response.features)) {
     return;
   }
+
   const features = parseAPIFeaturesResponse(response.features);
+
   if (!features) {
     return;
   }
@@ -214,7 +237,23 @@ export class FeaturesClient {
           staleTimeMs: options?.staleTimeMs ?? 0,
           expireTimeMs: options?.expireTimeMs ?? FEATURES_EXPIRE_MS,
         });
-    this.config = { ...DEFAULT_FEATURES_CONFIG, ...options };
+
+    let fallbackFeatures: Record<string, FallbackFeatureOverride>;
+
+    if (Array.isArray(options?.fallbackFeatures)) {
+      fallbackFeatures = options.fallbackFeatures.reduce(
+        (acc, key) => {
+          acc[key] = true;
+          return acc;
+        },
+        {} as Record<string, FallbackFeatureOverride>,
+      );
+    } else {
+      fallbackFeatures = options?.fallbackFeatures ?? {};
+    }
+
+    this.config = { ...DEFAULT_FEATURES_CONFIG, ...options, fallbackFeatures };
+
     this.rateLimiter =
       options?.rateLimiter ??
       new RateLimiter(FEATURE_EVENTS_PER_MIN, this.logger);
@@ -302,6 +341,7 @@ export class FeaturesClient {
             JSON.stringify(errorBody),
         );
       }
+
       const typeRes = validateFeaturesResponse(await res.json());
       if (!typeRes || !typeRes.success) {
         throw new Error("unable to validate response");
@@ -438,13 +478,23 @@ export class FeaturesClient {
     }
 
     // fetch failed, nothing cached => return fallbacks
-    return this.config.fallbackFeatures.reduce((acc, key) => {
-      acc[key] = {
-        key,
-        isEnabled: true,
-      };
-      return acc;
-    }, {} as FetchedFeatures);
+    return Object.entries(this.config.fallbackFeatures).reduce(
+      (acc, [key, override]) => {
+        acc[key] = {
+          key,
+          isEnabled: !!override,
+          config:
+            typeof override === "object" && "key" in override
+              ? {
+                  key: override.key,
+                  payload: override.payload,
+                }
+              : undefined,
+        };
+        return acc;
+      },
+      {} as FetchedFeatures,
+    );
   }
 
   setFeatureOverride(key: string, isEnabled: boolean | null) {

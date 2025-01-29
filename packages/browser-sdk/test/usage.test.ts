@@ -75,10 +75,11 @@ describe("usage", () => {
     expect(features).toEqual(featuresResult);
 
     const featureId1 = bucketInstance.getFeature("featureId1");
-    expect(featureId1).toEqual({
+    expect(featureId1).toStrictEqual({
       isEnabled: false,
       track: expect.any(Function),
       requestFeedback: expect.any(Function),
+      config: { key: undefined, payload: undefined },
     });
   });
 
@@ -393,91 +394,161 @@ describe(`sends "check" events `, () => {
     ).toHaveBeenCalledTimes(0);
   });
 
-  it(`getFeature() sends check event when accessing "isEnabled"`, async () => {
-    vi.spyOn(FeaturesClient.prototype, "sendCheckEvent");
-    vi.spyOn(HttpClient.prototype, "post");
-
-    const client = new BucketClient({
-      publishableKey: KEY,
-      user: { id: "uid" },
-      company: { id: "cid" },
-    });
-    await client.initialize();
-
-    const featureA = client.getFeature("featureA");
-
-    expect(
-      vi.mocked(FeaturesClient.prototype.sendCheckEvent),
-    ).toHaveBeenCalledTimes(0);
-    expect(featureA.isEnabled).toBe(true);
-
-    expect(
-      vi.mocked(FeaturesClient.prototype.sendCheckEvent),
-    ).toHaveBeenCalledTimes(1);
-    expect(
-      vi.mocked(FeaturesClient.prototype.sendCheckEvent),
-    ).toHaveBeenCalledWith({
-      key: "featureA",
-      value: true,
-      version: 1,
+  describe("getFeature", async () => {
+    afterEach(() => {
+      vi.clearAllMocks();
     });
 
-    expect(vi.mocked(HttpClient.prototype.post)).toHaveBeenCalledWith({
-      body: {
-        action: "check",
-        evalContext: {
-          company: {
-            id: "cid",
-          },
-          other: undefined,
-          user: {
-            id: "uid",
+    it(`returns get the expected feature details`, async () => {
+      const client = new BucketClient({
+        publishableKey: KEY,
+        user: { id: "uid" },
+        company: { id: "cid" },
+      });
+
+      await client.initialize();
+
+      expect(client.getFeature("featureA")).toStrictEqual({
+        isEnabled: true,
+        config: { key: undefined, payload: undefined },
+        track: expect.any(Function),
+        requestFeedback: expect.any(Function),
+      });
+
+      expect(client.getFeature("featureB")).toStrictEqual({
+        isEnabled: true,
+        config: {
+          key: "gpt3",
+          payload: {
+            model: "gpt-something",
+            temperature: 0.5,
           },
         },
-        evalResult: true,
+        track: expect.any(Function),
+        requestFeedback: expect.any(Function),
+      });
+
+      expect(client.getFeature("featureC")).toStrictEqual({
+        isEnabled: false,
+        config: { key: undefined, payload: undefined },
+        track: expect.any(Function),
+        requestFeedback: expect.any(Function),
+      });
+    });
+
+    it(`sends check event when accessing "isEnabled"`, async () => {
+      const sendCheckEventSpy = vi.spyOn(
+        FeaturesClient.prototype,
+        "sendCheckEvent",
+      );
+      const postSpy = vi.spyOn(HttpClient.prototype, "post");
+
+      const client = new BucketClient({
+        publishableKey: KEY,
+        user: { id: "uid" },
+        company: { id: "cid" },
+      });
+      await client.initialize();
+
+      const featureA = client.getFeature("featureA");
+
+      expect(sendCheckEventSpy).toHaveBeenCalledTimes(0);
+      expect(featureA.isEnabled).toBe(true);
+
+      expect(sendCheckEventSpy).toHaveBeenCalledTimes(1);
+      expect(sendCheckEventSpy).toHaveBeenCalledWith({
         key: "featureA",
-        targetingVersion: 1,
-      },
-      path: "features/events",
+        value: true,
+        version: 1,
+      });
+
+      expect(postSpy).toHaveBeenCalledWith({
+        body: {
+          action: "check",
+          evalContext: {
+            company: {
+              id: "cid",
+            },
+            other: undefined,
+            user: {
+              id: "uid",
+            },
+          },
+          evalResult: true,
+          key: "featureA",
+          targetingVersion: 1,
+        },
+        path: "features/events",
+      });
     });
-  });
 
-  it("sends check event for not-enabled features", async () => {
-    // disabled features don't appear in the API response
-    vi.spyOn(FeaturesClient.prototype, "sendCheckEvent");
+    it(`sends check event when accessing "config"`, async () => {
+      const postSpy = vi.spyOn(HttpClient.prototype, "post");
 
-    const client = new BucketClient({ publishableKey: KEY });
-    await client.initialize();
+      const client = new BucketClient({
+        publishableKey: KEY,
+        user: { id: "uid" },
+      });
 
-    const nonExistentFeature = client.getFeature("non-existent");
+      await client.initialize();
+      const featureB = client.getFeature("featureB");
+      expect(featureB.config).toMatchObject({
+        key: "gpt3",
+      });
 
-    expect(
-      vi.mocked(FeaturesClient.prototype.sendCheckEvent),
-    ).toHaveBeenCalledTimes(0);
-    expect(nonExistentFeature.isEnabled).toBe(false);
-
-    expect(
-      vi.mocked(FeaturesClient.prototype.sendCheckEvent),
-    ).toHaveBeenCalledTimes(1);
-    expect(
-      vi.mocked(FeaturesClient.prototype.sendCheckEvent),
-    ).toHaveBeenCalledWith({
-      value: false,
-      key: "non-existent",
-      version: undefined,
+      expect(postSpy).toHaveBeenCalledWith({
+        body: {
+          action: "check",
+          evalContext: {
+            other: undefined,
+            user: {
+              id: "uid",
+            },
+          },
+          evalResult: true,
+          key: "featureB",
+          targetingVersion: 11,
+        },
+        path: "features/events",
+      });
     });
-  });
 
-  describe("getFeature", async () => {
+    it("sends check event for not-enabled features", async () => {
+      // disabled features don't appear in the API response
+      vi.spyOn(FeaturesClient.prototype, "sendCheckEvent");
+
+      const client = new BucketClient({ publishableKey: KEY });
+      await client.initialize();
+
+      const nonExistentFeature = client.getFeature("non-existent");
+
+      expect(
+        vi.mocked(FeaturesClient.prototype.sendCheckEvent),
+      ).toHaveBeenCalledTimes(0);
+      expect(nonExistentFeature.isEnabled).toBe(false);
+
+      expect(
+        vi.mocked(FeaturesClient.prototype.sendCheckEvent),
+      ).toHaveBeenCalledTimes(1);
+      expect(
+        vi.mocked(FeaturesClient.prototype.sendCheckEvent),
+      ).toHaveBeenCalledWith({
+        value: false,
+        key: "non-existent",
+        version: undefined,
+      });
+    });
+
     it("calls client.track with the featureId", async () => {
       const client = new BucketClient({ publishableKey: KEY });
       await client.initialize();
 
       const featureId1 = client.getFeature("featureId1");
-      expect(featureId1).toEqual({
+      expect(featureId1).toStrictEqual({
         isEnabled: false,
         track: expect.any(Function),
         requestFeedback: expect.any(Function),
+        config: { key: undefined, payload: undefined },
       });
 
       vi.spyOn(client, "track");
@@ -492,10 +563,11 @@ describe(`sends "check" events `, () => {
       await client.initialize();
 
       const featureId1 = client.getFeature("featureId1");
-      expect(featureId1).toEqual({
+      expect(featureId1).toStrictEqual({
         isEnabled: false,
         track: expect.any(Function),
         requestFeedback: expect.any(Function),
+        config: { key: undefined, payload: undefined },
       });
 
       vi.spyOn(client, "requestFeedback");
