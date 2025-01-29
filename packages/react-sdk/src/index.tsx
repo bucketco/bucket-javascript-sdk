@@ -183,11 +183,6 @@ type RequestFeedbackOptions = Omit<
   "featureKey" | "featureId"
 >;
 
-type EmptyFeatureConfig = {
-  key: undefined;
-  payload: undefined;
-};
-
 type Feature<TKey extends FeatureKey> = {
   isEnabled: boolean;
   isLoading: boolean;
@@ -196,7 +191,10 @@ type Feature<TKey extends FeatureKey> = {
         key: string;
         payload: FeatureConfig<TKey>;
       }
-    | EmptyFeatureConfig;
+    | {
+        key: undefined;
+        payload: undefined;
+      };
   track: () => void;
   requestFeedback: (opts: RequestFeedbackOptions) => void;
 };
@@ -226,7 +224,7 @@ export function useFeature<TKey extends FeatureKey>(key: TKey): Feature<TKey> {
     return {
       isLoading,
       isEnabled: false,
-      config: {} as EmptyFeatureConfig,
+      config: { key: undefined, payload: undefined },
       track,
       requestFeedback,
     };
@@ -249,7 +247,7 @@ export function useFeature<TKey extends FeatureKey>(key: TKey): Feature<TKey> {
 
   const reducedConfig = feature?.config
     ? { key: feature.config.key, payload: feature.config.payload }
-    : ({} as EmptyFeatureConfig);
+    : { key: undefined, payload: undefined };
 
   return {
     isLoading,

@@ -696,7 +696,7 @@ export class BucketClient {
           key: f.config.key,
           payload: f.config.payload,
         }
-      : ({} as FeatureRemoteConfig);
+      : { key: undefined, payload: undefined };
 
     function sendCheckEvent() {
       fClient
