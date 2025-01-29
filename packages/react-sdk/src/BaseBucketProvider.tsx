@@ -178,7 +178,7 @@ export function BaseBucketProvider({
  * }
  * ```
  */
-export function useFeature(key: FeatureKey) {
+export function useFeature(key: string) {
   const {
     features: { features, isLoading },
     client,
