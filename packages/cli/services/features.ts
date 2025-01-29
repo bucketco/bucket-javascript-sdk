@@ -1,10 +1,11 @@
 import {
-  ConfigFeatureDefs,
   generatedPackageName,
   readConfigFile,
   writeConfigFile,
+  FeatureDef,
+  FallbackValue,
 } from "../utils/config.js";
-import { FeatureDef, genDTS, genJs } from "../utils/gen.js";
+import { genDTS, genJs } from "../utils/gen.js";
 import { outputFile } from "fs-extra";
 import path from "path";
 
@@ -22,14 +23,15 @@ const packageJson = {
   },
 };
 
-export async function genFeatureTypes(
-  configFeatures: ConfigFeatureDefs,
+export async function generatePackagedConfig(
+  configFeatures: FeatureDef[],
   basePath: string,
 ) {
   const features = configFeatures.map((feature) => ({
-    key: typeof feature === "string" ? feature : feature.key,
-    access: typeof feature === "string" ? true : (feature.access ?? true),
-    config: typeof feature === "string" ? undefined : feature.config,
+    key: feature.key,
+    access: feature.access ?? true,
+    configType: feature.configType,
+    fallback: feature.fallback,
   }));
 
   await outputFile(
@@ -49,7 +51,7 @@ export async function genFeatureTypes(
 export async function addFeatureToConfig(feature: FeatureDef) {
   const config = await readConfigFile();
 
-  if (feature.access && feature.config === undefined)
+  if (feature.access && feature.configType === undefined)
     config.features.push(feature.key);
   else config.features.push(feature);
 

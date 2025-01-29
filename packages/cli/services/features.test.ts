@@ -1,21 +1,32 @@
 import { describe, it, expect } from "vitest";
 
-import { ConfigFeatureDefs } from "../utils/config.js";
-import { genFeatureTypes } from "./features.js";
+import { FeatureDef } from "../utils/config.js";
+import { generatePackagedConfig } from "./features.js";
 import { readFile } from "fs/promises";
 import path from "path";
 
 describe("genFeatureTypes", () => {
-  const features: ConfigFeatureDefs = [
-    "feature1",
-    { key: "feature2", access: false, config: "string" },
+  const features: FeatureDef[] = [
+    { key: "feature1" },
+    { key: "feature2", access: false, configType: "string" },
     {
       key: "feature3",
-      config: {
+      configType: {
         aiModel: "string",
         prompt: {
           text: "string",
           cheekyFactor: "number",
+        },
+      },
+      fallback: {
+        isEnabled: true,
+        config: {
+          cheekyFactorType: "number", // this will trip up a simple output writer
+          aiModel: "gpt3",
+          prompt: {
+            text: "Explain in conversational language",
+            cheekyFactor: 0.5,
+          },
         },
       },
     },
@@ -23,7 +34,7 @@ describe("genFeatureTypes", () => {
 
   it("should generate correct TypeScript output for browser", async () => {
     const outputDir = "test/gen";
-    await genFeatureTypes(features, outputDir);
+    await generatePackagedConfig(features, outputDir);
     const dtsOutput = await readFile(
       path.join(outputDir, "_bucket/index.d.ts"),
       "utf-8",

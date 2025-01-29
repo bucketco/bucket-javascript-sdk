@@ -1,27 +1,36 @@
 import { describe, it, expect } from "vitest";
-import { FeatureDef, genDTS } from "./gen.js";
+import { genDTS, genJs } from "./gen.js";
+import { FeatureDef } from "./config.js";
 
 describe("genFeatureTypes", () => {
   const features: FeatureDef[] = [
-    { key: "feat-1", access: true, config: undefined },
-    { key: "FEAT URE2", access: false, config: "string" },
+    { key: "feat-1", access: true, configType: undefined },
+    { key: "FEAT URE2", access: false, configType: "string" },
     {
       key: "feature3",
       access: true,
-      config: {
+      configType: {
         aiModel: "string",
         prompt: "string",
+      },
+      fallback: {
+        isEnabled: true,
+        config: {
+          type: "number", // this will trip up a simple output writer
+          aiModel: "gtp3.5-turbo",
+          prompt: "Explain in conversational language",
+        },
       },
     },
   ];
 
-  it("should generate correct TypeScript output for browser", () => {
+  it("should generate correct TypeScript declaration", () => {
     const output = genDTS(features);
     expect(output).toMatchSnapshot();
   });
 
-  it("should generate correct TypeScript output for react", () => {
-    const output = genDTS(features);
+  it("should generate correct javascript file", () => {
+    const output = genJs(features);
     expect(output).toMatchSnapshot();
   });
 });

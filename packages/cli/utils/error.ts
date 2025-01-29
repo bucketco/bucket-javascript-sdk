@@ -1,7 +1,7 @@
 import { AxiosError } from "axios";
 import chalk from "chalk";
 
-export function handleError(error: unknown, message?: string | null) {
+export function handleError(error: unknown, message?: string | null): never {
   if (error instanceof AxiosError && error.response?.data) {
     const data = error.response.data;
     console.error(

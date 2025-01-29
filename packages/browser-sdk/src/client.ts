@@ -105,7 +105,17 @@ export type ToolbarOptions =
       position?: ToolbarPosition;
     };
 
-export type FeatureDefinitions = Readonly<Array<string>>;
+export type FeatureDefinitions = Readonly<
+  Array<
+    | string
+    | {
+        key: string;
+        access: boolean;
+        configType?: any;
+        fallback?: any;
+      }
+  >
+>;
 
 /**
  * BucketClient initialization options.
@@ -288,6 +298,13 @@ export class BucketClient<
       sdkVersion: opts?.sdkVersion,
     });
 
+    const featuresList = (opts?.featureList || []).map((f) => ({
+      key: typeof f === "string" ? f : f.key,
+      access: typeof f === "string" ? true : f.access,
+      config: typeof f === "string" ? {} : f.configType,
+      fallback: typeof f === "string" ? undefined : f.fallback,
+    }));
+
     this.featuresClient = new FeaturesClient(
       this.httpClient,
       // API expects `other` and we have `otherContext`.
@@ -296,7 +313,7 @@ export class BucketClient<
         company: this.context.company,
         other: this.context.otherContext,
       },
-      opts?.featureList || [],
+      featuresList,
       this.logger,
     );
 

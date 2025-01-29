@@ -27,17 +27,21 @@ export const initConfig = {
 export const generatedPackageName = "_bucket";
 
 type Config = {
-  features: ConfigFeatureDefs;
+  features: FeatureDef[];
   codeGenBasePath: string;
 };
 
-export type ConfigFeatureDef = {
+export type FeatureDef = {
   key: string;
   access?: boolean;
-  config?: Datatype;
+  configType?: Datatype;
+  fallback?: FallbackValue;
 };
 
-export type ConfigFeatureDefs = Array<string | ConfigFeatureDef>;
+export type FallbackValue = {
+  isEnabled: boolean;
+  config: any;
+};
 
 let config: Config = {
   features: [],
@@ -84,8 +88,16 @@ export async function writeConfigFile(config: object, location?: string) {
 export async function loadConfig() {
   let readConfig = await readConfigFile();
 
+  // normalize features to have a key
+  const features: FeatureDef[] = readConfig.features.map((feature) => {
+    if (typeof feature === "string") {
+      return { key: feature };
+    }
+    return feature;
+  });
+
   config = {
-    ...readConfig,
+    features,
     codeGenBasePath:
       readConfig.codeGenBasePath ?? (await defaultCodeGenBasePath()),
   };
