@@ -314,4 +314,4 @@ If you are including the Bucket tracking SDK with a `<script>`-tag from `jsdeliv
 
 MIT License
 
-Copyright (c) 2024 Bucket ApS
+Copyright (c) 2025 Bucket ApS
