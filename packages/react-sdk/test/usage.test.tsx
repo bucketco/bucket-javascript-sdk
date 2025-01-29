@@ -192,6 +192,7 @@ describe("<BucketProvider />", () => {
         logger: undefined,
         sseBaseUrl: "https://test.com",
         sseHost: undefined,
+        toolbar: undefined,
         enableTracking: false,
         feedback: undefined,
         featureList: undefined,
