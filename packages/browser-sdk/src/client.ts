@@ -338,7 +338,7 @@ export type Feature<
   /**
    * Function to send analytics events for this feature.
    */
-  track: () => Promise<Response | undefined>;
+  track: () => Promise<Response | undefined> | undefined;
 
   /**
    * Function to request feedback for this feature.
