@@ -375,7 +375,7 @@ export type FeatureDef = {
  *
  */
 export class BucketClient<
-  FeatureDefs = Record<string, FeatureDef>,
+  FeatureDefs extends Record<string, FeatureDef> = Record<string, FeatureDef>,
   FeatureKey extends string = Extract<keyof FeatureDefs, string>,
 > {
   private readonly publishableKey: string;
