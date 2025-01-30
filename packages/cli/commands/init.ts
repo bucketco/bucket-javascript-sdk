@@ -1,12 +1,12 @@
 import chalk from "chalk";
 import { Command } from "commander";
 
-import { handleError } from "../utils/error.js";
 import {
   findRepoConfig,
   initConfig,
   writeConfigFile,
 } from "../utils/config.js";
+import { handleError } from "../utils/error.js";
 
 export function registerInitCommands(program: Command) {
   program

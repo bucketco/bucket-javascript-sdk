@@ -1,4 +1,5 @@
 import slugify from "@sindresorhus/slugify";
+
 import { FeatureDef } from "./config.js";
 
 export type Datatype =

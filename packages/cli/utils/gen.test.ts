@@ -1,6 +1,7 @@
-import { describe, it, expect } from "vitest";
-import { genDTS, genJs } from "./gen.js";
+import { describe, expect,it } from "vitest";
+
 import { FeatureDef } from "./config.js";
+import { genDTS, genJs } from "./gen.js";
 
 describe("genFeatureTypes", () => {
   const features: FeatureDef[] = [

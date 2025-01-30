@@ -117,12 +117,13 @@ module.exports = [
       // Typescript Specific
       "@typescript-eslint/no-unused-vars": "off", // handled by unused-imports
       "@typescript-eslint/explicit-module-boundary-types": ["off"],
+      "@typescript-eslint/no-floating-promises": "error",
       "@typescript-eslint/switch-exhaustiveness-check": ["warn"],
       "@typescript-eslint/no-non-null-assertion": ["off"],
-      "@typescript-eslint/no-empty-function": ["off"],
+      "@typescript-eslint/no-empty-function": ["warn"],
       "@typescript-eslint/no-explicit-any": ["off"],
-      "@typescript-eslint/no-use-before-define": ["off"], // todo: discuss enabling this rule
-      "@typescript-eslint/no-shadow": ["off"], // todo: discuss enabling this rule
+      "@typescript-eslint/no-use-before-define": ["off"],
+      "@typescript-eslint/no-shadow": ["warn"],
     },
   },
   {

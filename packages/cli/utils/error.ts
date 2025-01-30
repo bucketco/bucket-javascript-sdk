@@ -13,9 +13,9 @@ export function handleError(error: unknown, message?: string | null): never {
     if (data.validationErrors) {
       console.table(
         data.validationErrors.map(
-          ({ path, message }: { path: string[]; message: string }) => ({
+          ({ path, message: errMsg }: { path: string[]; message: string }) => ({
             path: path.join("."),
-            error: message,
+            error: errMsg,
           }),
         ),
       );

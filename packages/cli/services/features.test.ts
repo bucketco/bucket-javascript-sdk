@@ -1,9 +1,10 @@
-import { describe, it, expect } from "vitest";
-
-import { FeatureDef } from "../utils/config.js";
-import { generatePackagedConfig } from "./features.js";
 import { readFile } from "fs/promises";
 import path from "path";
+import { describe, expect,it } from "vitest";
+
+import { FeatureDef } from "../utils/config.js";
+
+import { generatePackagedConfig } from "./features.js";
 
 describe("genFeatureTypes", () => {
   const features: FeatureDef[] = [

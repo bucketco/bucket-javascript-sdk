@@ -1,12 +1,13 @@
+import path from "path";
+import { outputFile } from "fs-extra";
+
 import {
+  FeatureDef,
   generatedPackageName,
   readConfigFile,
   writeConfigFile,
-  FeatureDef,
 } from "../utils/config.js";
 import { genDTS, genJs } from "../utils/gen.js";
-import { outputFile } from "fs-extra";
-import path from "path";
 
 const packageJson = {
   name: generatedPackageName,

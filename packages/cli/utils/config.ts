@@ -1,10 +1,10 @@
-import { readJson, writeJson } from "fs-extra/esm";
+import path from "path";
 import { findUp } from "find-up";
+import { readJson, writeJson } from "fs-extra/esm";
+import { z } from "zod";
 
 import { REPO_CONFIG_FILE } from "./constants.js";
 import { Datatype } from "./gen.js";
-import path from "path";
-import z from "zod";
 
 const ConfigSchema = z.object({
   features: z.array(
@@ -43,7 +43,7 @@ export type FallbackValue = {
   config: any;
 };
 
-let config: Config = {
+let loadedConfig: Config = {
   features: [],
   codeGenBasePath: "",
 };
@@ -53,7 +53,7 @@ let config: Config = {
  */
 export function getConfig(): Config;
 export function getConfig(key?: keyof Config) {
-  return key ? config[key] : config;
+  return key ? loadedConfig[key] : loadedConfig;
 }
 
 export async function findRepoConfig() {
@@ -80,13 +80,14 @@ export async function readConfigFile() {
  * Write a new value to the config file.
  */
 export async function writeConfigFile(config: object, location?: string) {
-  const path = location ? location : await findRepoConfig();
-  if (!path) throw new Error("writeConfigFile: Could not find config file.");
-  await writeJson(path, config, { spaces: 2 });
+  const writePath = location ? location : await findRepoConfig();
+  if (!writePath)
+    throw new Error("writeConfigFile: Could not find config file.");
+  await writeJson(writePath, config, { spaces: 2 });
 }
 
 export async function loadConfig() {
-  let readConfig = await readConfigFile();
+  const readConfig = await readConfigFile();
 
   // normalize features to have a key
   const features: FeatureDef[] = readConfig.features.map((feature) => {
@@ -96,12 +97,12 @@ export async function loadConfig() {
     return feature;
   });
 
-  config = {
+  loadedConfig = {
     features,
     codeGenBasePath:
       readConfig.codeGenBasePath ?? (await defaultCodeGenBasePath()),
   };
-  return config;
+  return loadedConfig;
 }
 
 export async function configFileExists() {
