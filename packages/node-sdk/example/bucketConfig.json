@@ -1,6 +1,6 @@
 {
   "overrides": {
-    "myFeature": true,
-    "myFeatureFalse": false
+    "show-todos": true,
+    "create-todos": true
   }
 }
