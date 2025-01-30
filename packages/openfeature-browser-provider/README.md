@@ -107,4 +107,4 @@ client.track("huddles");
 
 MIT License
 
-Copyright (c) 2024 Bucket ApS
+Copyright (c) 2025 Bucket ApS

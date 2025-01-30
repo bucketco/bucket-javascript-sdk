@@ -11,6 +11,7 @@ import { generatedFeatures } from "_bucket";
 import { BucketClient, InitOptions } from "./client";
 
 export type FeatureKey = Extract<keyof GeneratedFeatureTypes, string>;
+export type FeatureDefs = GeneratedFeatureTypes;
 
 export class BucketClientConfigured extends BucketClient<GeneratedFeatureTypes> {
   constructor(opts: InitOptions) {

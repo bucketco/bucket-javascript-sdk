@@ -1,7 +1,6 @@
 import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
 
 import { version } from "../package.json";
-import { FeatureDefinitions } from "../src/client";
 import {
   FEATURES_EXPIRE_MS,
   FeaturesClient,
@@ -29,15 +28,17 @@ function featuresClientFactory() {
   const httpClient = new HttpClient("pk", {
     baseUrl: "https://front.bucket.co",
   });
+
   vi.spyOn(httpClient, "get");
   vi.spyOn(httpClient, "post");
+
   return {
     cache,
     httpClient,
     newFeaturesClient: function newFeaturesClient(
       options?: FeaturesOptions,
       context?: any,
-      featureList: FeatureDefinitions = [],
+      featureList: string[] = [],
     ) {
       return new FeaturesClient(
         httpClient,
@@ -58,7 +59,7 @@ function featuresClientFactory() {
   };
 }
 
-describe("FeaturesClient unit tests", () => {
+describe("FeaturesClient", () => {
   test("fetches features", async () => {
     const { newFeaturesClient, httpClient } = featuresClientFactory();
     const featuresClient = newFeaturesClient();
@@ -73,8 +74,9 @@ describe("FeaturesClient unit tests", () => {
 
     expect(updated).toBe(true);
     expect(httpClient.get).toBeCalledTimes(1);
-    const calls = vi.mocked(httpClient.get).mock.calls.at(0);
-    const { params, path, timeoutMs } = calls![0];
+
+    const calls = vi.mocked(httpClient.get).mock.calls.at(0)!;
+    const { params, path, timeoutMs } = calls[0];
 
     const paramsObj = Object.fromEntries(new URLSearchParams(params));
     expect(paramsObj).toEqual({
@@ -116,21 +118,57 @@ describe("FeaturesClient unit tests", () => {
     expect(timeoutMs).toEqual(5000);
   });
 
-  test("return fallback features on failure", async () => {
+  test("return fallback features on failure (string list)", async () => {
+    const { newFeaturesClient, httpClient } = featuresClientFactory();
+
+    vi.mocked(httpClient.get).mockRejectedValue(
+      new Error("Failed to fetch features"),
+    );
+
+    const featuresClient = newFeaturesClient({
+      fallbackFeatures: ["huddle"],
+    });
+
+    await featuresClient.initialize();
+    expect(featuresClient.getFeatures()).toStrictEqual({
+      huddle: {
+        isEnabled: true,
+        config: undefined,
+        key: "huddle",
+        isEnabledOverride: null,
+      },
+    });
+  });
+
+  test("return fallback features on failure (record)", async () => {
     const { newFeaturesClient, httpClient } = featuresClientFactory();
 
     vi.mocked(httpClient.get).mockRejectedValue(
       new Error("Failed to fetch features"),
     );
     const featuresClient = newFeaturesClient({
-      fallbackFeatures: ["huddle"],
+      fallbackFeatures: {
+        huddle: {
+          key: "john",
+          payload: { something: "else" },
+        },
+        zoom: true,
+      },
     });
+
     await featuresClient.initialize();
-    expect(featuresClient.getFeatures()).toEqual({
+    expect(featuresClient.getFeatures()).toStrictEqual({
       huddle: {
         isEnabled: true,
-        isEnabledOverride: null,
+        config: { key: "john", payload: { something: "else" } },
         key: "huddle",
+        isEnabledOverride: null,
+      },
+      zoom: {
+        isEnabled: true,
+        config: undefined,
+        key: "zoom",
+        isEnabledOverride: null,
       },
     });
   });
@@ -138,13 +176,14 @@ describe("FeaturesClient unit tests", () => {
   test("caches response", async () => {
     const { newFeaturesClient, httpClient } = featuresClientFactory();
 
-    const featuresClient = newFeaturesClient();
-    await featuresClient.initialize();
+    const featuresClient1 = newFeaturesClient();
+    await featuresClient1.initialize();
 
     expect(httpClient.get).toBeCalledTimes(1);
 
     const featuresClient2 = newFeaturesClient();
     await featuresClient2.initialize();
+
     const features = featuresClient2.getFeatures();
 
     expect(features).toEqual(featuresResult);
@@ -314,15 +353,12 @@ describe("FeaturesClient unit tests", () => {
       updated = true;
     });
 
-    expect(client.getFeatures().featureB.isEnabled).toBe(false);
+    expect(client.getFeatures().featureB.isEnabled).toBe(true);
     expect(client.getFeatures().featureB.isEnabledOverride).toBe(null);
 
-    expect(client.getFetchedFeatures()?.featureB).toBeUndefined();
-
-    client.setFeatureOverride("featureB", true);
+    client.setFeatureOverride("featureC", true);
 
     expect(updated).toBe(true);
-    expect(client.getFeatures().featureB.isEnabled).toBe(false);
-    expect(client.getFeatures().featureB.isEnabledOverride).toBe(true);
+    expect(client.getFeatures().featureC).toBeUndefined();
   });
 });

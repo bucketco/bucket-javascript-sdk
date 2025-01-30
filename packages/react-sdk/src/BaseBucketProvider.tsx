@@ -13,6 +13,8 @@ import canonicalJSON from "canonical-json";
 import {
   BucketClient,
   BucketContext,
+  Feature,
+  FeatureDef,
   FeaturesOptions,
   FeedbackOptions,
   RawFeatures,
@@ -43,7 +45,7 @@ const ProviderContext = createContext<ProviderContextType>({
 export type BucketProps = BucketContext & {
   publishableKey: string;
   featureOptions?: Omit<FeaturesOptions, "fallbackFeatures"> & {
-    fallbackFeatures?: string[];
+    fallbackFeatures?: string[] | Record<string, any>;
   };
   children?: ReactNode;
   loadingComponent?: ReactNode;
@@ -166,33 +168,40 @@ export function BaseBucketProvider({
   );
 }
 
+type RequestFeedbackOptions = Omit<
+  RequestFeedbackData,
+  "featureKey" | "featureId"
+>;
+
 /**
  * Returns the state of a given feature for the current context, e.g.
  *
  * ```ts
  * function HuddleButton() {
- *   const {isEnabled, track} = useFeature("huddle");
+ *   const {isEnabled, config: { payload }, track} = useFeature("huddle");
  *   if (isEnabled) {
- *    return <button onClick={() => track()}>Start Huddle</button>;
- *   }
+ *    return <button onClick={() => track()}>{payload?.buttonTitle ?? "Start Huddle"}</button>;
  * }
  * ```
  */
-export function useFeature(key: string) {
+export function useFeature<
+  TKey extends string,
+  FeatureDefs extends Record<string, FeatureDef>,
+>(key: TKey): Feature<TKey, FeatureDefs> & { isLoading: boolean } {
   const {
     features: { features, isLoading },
     client,
   } = useContext<ProviderContextType>(ProviderContext);
 
   const track = () => client?.track(key);
-  const requestFeedback = (
-    opts: Omit<RequestFeedbackData, "featureKey" | "featureId">,
-  ) => client?.requestFeedback({ ...opts, featureKey: key });
+  const requestFeedback = (opts: RequestFeedbackOptions) =>
+    client?.requestFeedback({ ...opts, featureKey: key });
 
   if (isLoading) {
     return {
       isLoading,
       isEnabled: false,
+      config: { key: undefined, payload: undefined },
       track,
       requestFeedback,
     };
@@ -201,21 +210,33 @@ export function useFeature(key: string) {
   const feature = features[key];
   const enabled = feature?.isEnabledOverride ?? feature?.isEnabled ?? false;
 
+  function sendCheckEvent() {
+    client
+      ?.sendCheckEvent({
+        key,
+        value: enabled,
+        version: feature?.targetingVersion,
+      })
+      .catch(() => {
+        // ignore
+      });
+  }
+
+  const reducedConfig = feature?.config
+    ? { key: feature.config.key, payload: feature.config.payload }
+    : { key: undefined, payload: undefined };
+
   return {
     isLoading,
     track,
     requestFeedback,
     get isEnabled() {
-      client
-        ?.sendCheckEvent({
-          key,
-          value: enabled,
-          version: feature?.targetingVersion,
-        })
-        .catch(() => {
-          // ignore
-        });
+      sendCheckEvent();
       return enabled;
+    },
+    get config() {
+      sendCheckEvent();
+      return reducedConfig;
     },
   };
 }
@@ -249,9 +270,16 @@ export function useTrack() {
  * });
  * ```
  */
-export function useRequestFeedback() {
+export function useRequestFeedback<
+  FeatureDefs extends Record<string, FeatureDef> = Record<string, FeatureDef>,
+  FeatureKey extends string = Extract<keyof FeatureDefs, string>,
+>() {
   const { client } = useContext<ProviderContextType>(ProviderContext);
-  return (options: RequestFeedbackData) => client?.requestFeedback(options);
+  return (
+    options: Omit<RequestFeedbackData, "featureKey"> & {
+      featureKey: FeatureKey;
+    },
+  ) => client?.requestFeedback(options);
 }
 
 /**

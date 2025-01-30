@@ -1,25 +1,42 @@
 import { DefaultBodyType, http, HttpResponse, StrictRequest } from "msw";
 
-import { Features } from "../../../node-sdk/src/types";
-import { FeaturesResponse } from "../../src/feature/features";
+import { RawFeatures } from "../../src/feature/features";
 
 export const testChannel = "testChannel";
 
-export const featureResponse: FeaturesResponse = {
+export const featureResponse = {
   success: true,
   features: {
-    featureA: { isEnabled: true, key: "featureA", targetingVersion: 1 },
+    featureA: {
+      isEnabled: true,
+      key: "featureA",
+      targetingVersion: 1,
+      config: undefined,
+    },
+    featureB: {
+      isEnabled: true,
+      targetingVersion: 11,
+      key: "featureB",
+      config: {
+        version: 12,
+        key: "gpt3",
+        payload: { model: "gpt-something", temperature: 0.5 },
+      },
+    },
   },
 };
 
-export const featuresResult = {
-  featureA: {
-    isEnabled: true,
-    key: "featureA",
-    targetingVersion: 1,
-    isEnabledOverride: null,
+export const featuresResult = Object.entries(featureResponse.features).reduce(
+  (acc, [key, feature]) => {
+    acc[key] = {
+      ...feature!,
+      config: feature.config,
+      isEnabledOverride: null,
+    };
+    return acc;
   },
-} satisfies Features;
+  {} as RawFeatures,
+);
 
 function checkRequest(request: StrictRequest<DefaultBodyType>) {
   const url = new URL(request.url);
@@ -104,6 +121,18 @@ export const handlers = [
       success: true,
     });
   }),
+  http.post("https://front.bucket.co/features/events", async ({ request }) => {
+    if (!checkRequest(request)) return invalidReqResponse;
+    const data = await request.json();
+
+    if (typeof data !== "object" || !data || !data["userId"]) {
+      return new HttpResponse(null, { status: 400 });
+    }
+
+    return HttpResponse.json({
+      success: true,
+    });
+  }),
   http.post("https://front.bucket.co/feedback", async ({ request }) => {
     if (!checkRequest(request)) return invalidReqResponse;
     const data = await request.json();
@@ -134,4 +163,19 @@ export const handlers = [
     if (!checkRequest(request)) return invalidReqResponse;
     return HttpResponse.json({ success: true, keyName: "keyName" });
   }),
+  http.post(
+    "https://livemessaging.bucket.co/keys/keyName/requestToken",
+    async ({ request }) => {
+      const data = await request.json();
+      if (typeof data !== "object") {
+        return new HttpResponse(null, { status: 400 });
+      }
+
+      return HttpResponse.json({
+        success: true,
+        token: "token",
+        expires: 1234567890,
+      });
+    },
+  ),
 ];

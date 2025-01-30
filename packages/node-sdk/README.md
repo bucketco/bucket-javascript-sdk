@@ -63,10 +63,12 @@ const boundClient = bucketClient.bindClient({
     id: "john_doe",
     name: "John Doe",
     email: "john@acme.com",
+    avatar: "https://example.com/users/jdoe",
   },
   company: {
     id: "acme_inc",
     name: "Acme, Inc.",
+    avatar: "https://example.com/companies/acme",
   },
 });
 
@@ -242,7 +244,7 @@ See [example/app.ts](https://github.com/bucketco/bucket-javascript-sdk/tree/main
 ## Remote flag evaluation with stored context
 
 If you don't want to provide context each time when evaluating feature flags but
-rather you would like to utilise the attributes you sent to Bucket previously
+rather you would like to utilize the attributes you sent to Bucket previously
 (by calling `updateCompany` and `updateUser`) you can do so by calling `getFeaturesRemote`
 (or `getFeatureRemote` for a specific feature) with providing just `userId` and `companyId`.
 These methods will call Bucket's servers and feature flags will be evaluated remotely
@@ -368,6 +370,7 @@ to provide for easier navigation:
 
 - `name` -- display name for `user`/`company`,
 - `email` -- the email of the user.
+- `avatar` -- the URL for `user`/`company` avatar image.
 
 Attributes cannot be nested (multiple levels) and must be either strings,
 integers or booleans.
@@ -422,4 +425,4 @@ through a package manager.
 ## License
 
 > MIT License
-> Copyright (c) 2024 Bucket ApS
+> Copyright (c) 2025 Bucket ApS

@@ -5,6 +5,7 @@ import React from "react";
 import { BucketClient } from "@bucketco/browser-sdk";
 import {
   BucketClientConfigured,
+  FeatureDefs,
   FeatureKey,
 } from "@bucketco/browser-sdk/configuredClient";
 
@@ -32,4 +33,7 @@ export const BucketProvider = (props: BucketProps) => (
     }
   />
 );
-export const useFeature = (key: FeatureKey) => baseUseFeature(key as string);
+
+export function useFeature<Key extends FeatureKey>(key: Key) {
+  return baseUseFeature<Key, FeatureDefs>(key);
+}

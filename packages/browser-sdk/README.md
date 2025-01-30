@@ -27,19 +27,28 @@ const bucketClient = new BucketClient({ publishableKey, user, company });
 
 await bucketClient.initialize();
 
-const { isEnabled, track, requestFeedback } = bucketClient.getFeature("huddle");
+const {
+  isEnabled,
+  config: { payload: question },
+  track,
+  requestFeedback,
+} = bucketClient.getFeature("huddle");
 
 if (isEnabled) {
-  // show feature. When retrieving `isEnabled` the client automatically
+  // Show feature. When retrieving `isEnabled` the client automatically
   // sends a "check" event for the "huddle" feature which is shown in the
   // Bucket UI.
 
   // On usage, call `track` to let Bucket know that a user interacted with the feature
   track();
 
+  // The `payload` is a user-supplied JSON in Bucket that is dynamically picked
+  // out depending on the user/company.
+  const question = payload?.question ?? "Tell us what you think of Huddles";
+
   // Use `requestFeedback` to create "Send feedback" buttons easily for specific
   // features. This is not related to `track` and you can call them individually.
-  requestFeedback({ title: "Tell us what you think of Huddles" });
+  requestFeedback({ title: question });
 }
 
 // `track` just calls `bucketClient.track(<featureKey>)` to send an event using the same feature key
@@ -109,15 +118,26 @@ If you supply `user` or `company` objects, they must include at least the `id` p
 In addition to the `id`, you must also supply anything additional that you want to be able to evaluate feature targeting rules against.
 
 Attributes cannot be nested (multiple levels) and must be either strings, integers or booleans.
+Some attributes are special and used in Bucket UI:
 
-- `name` is a special attribute and is used to display name for user/company
-- for `user`, `email` is also special and will be highlighted in the Bucket UI if available
+- `name` is used to display name for `user`/`company`,
+- `email` is accepted for `user`s and will be highlighted in the Bucket UI if available,
+- `avatar` can be provided for both `user` and `company` and should be an URL to an image.
 
 ```ts
 const bucketClient = new BucketClient({
   publishableKey,
-  user: { id: "user_123", name: "John Doe", email: "john@acme.com" },
-  company: { id: "company_123", name: "Acme, Inc" },
+  user: {
+    id: "user_123",
+    name: "John Doe",
+    email: "john@acme.com"
+    avatar: "https://example.com/images/udsy6363"
+  },
+  company: {
+    id: "company_123",
+    name: "Acme, Inc",
+    avatar: "https://example.com/images/31232ds"
+  },
 });
 ```
 
@@ -127,6 +147,7 @@ To retrieve features along with their targeting information, use `getFeature(key
 const huddle = bucketClient.getFeature("huddle");
 // {
 //   isEnabled: true,
+//   config: { key: "zoom", payload: { ... } },
 //   track: () => Promise<Response>
 //   requestFeedback: (options: RequestFeedbackData) => void
 // }
@@ -140,6 +161,7 @@ const features = bucketClient.getFeatures();
 //   huddle: {
 //     isEnabled: true,
 //     targetingVersion: 42,
+//     config: ...
 //   }
 // }
 ```
@@ -148,7 +170,35 @@ const features = bucketClient.getFeatures();
 by down-stream clients, like the React SDK.
 
 Note that accessing `isEnabled` on the object returned by `getFeatures` does not automatically
-generate a `check` event, contrary to the `isEnabled` property on the object return from `getFeature`.
+generate a `check` event, contrary to the `isEnabled` property on the object returned by `getFeature`.
+
+### Remote config
+
+Similar to `isEnabled`, each feature has a `config` property. This configuration is managed from within Bucket.
+It is managed similar to the way access to features is managed, but instead of the binary `isEnabled` you can have
+multiple configuration values which are given to different user/companies.
+
+```ts
+const features = bucketClient.getFeatures();
+// {
+//   huddle: {
+//     isEnabled: true,
+//     targetingVersion: 42,
+//     config: {
+//       key: "gpt-3.5",
+//       payload: { maxTokens: 10000, model: "gpt-3.5-beta1" }
+//     }
+//   }
+// }
+```
+
+The `key` is always present while the `payload` is a optional JSON value for arbitrary configuration needs.
+If feature has no configuration or, no configuration value was matched against the context, the `config` object
+will be empty, thus, `key` will be `undefined`. Make sure to check against this case when trying to use the
+configuration in your application.
+
+Just as `isEnabled`, accessing `config` on the object returned by `getFeatures` does not automatically
+generate a `check` event, contrary to the `config` property on the object returned by `getFeature`.
 
 ### Tracking feature usage
 
@@ -264,4 +314,4 @@ If you are including the Bucket tracking SDK with a `<script>`-tag from `jsdeliv
 
 MIT License
 
-Copyright (c) 2024 Bucket ApS
+Copyright (c) 2025 Bucket ApS

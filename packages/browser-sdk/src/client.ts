@@ -24,80 +24,152 @@ import { showToolbarToggle } from "./toolbar";
 const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 const isNode = typeof document === "undefined"; // deno supports "window" but not "document" according to https://remix.run/docs/en/main/guides/gotchas
 
+/**
+ * (Internal) User context.
+ *
+ * @internal
+ */
 export type User = {
   /**
-   * Identifier of the user
+   * Identifier of the user.
    */
   userId: string;
 
   /**
-   * User attributes
+   * User attributes.
    */
   attributes?: {
+    /**
+     * Name of the user.
+     */
     name?: string;
+
+    /**
+     * Email of the user.
+     */
+    email?: string;
+
+    /**
+     * Avatar URL of the user.
+     */
+    avatar?: string;
+
+    /**
+     * Custom attributes of the user.
+     */
     [key: string]: any;
   };
 
+  /**
+   * Custom context of the user.
+   */
   context?: PayloadContext;
 };
 
+/**
+ * (Internal) Company context.
+ *
+ * @internal
+ */
 export type Company = {
   /**
-   * User identifier
+   * User identifier.
    */
   userId: string;
 
   /**
-   * Company identifier
+   * Company identifier.
    */
   companyId: string;
 
   /**
-   * Company attributes
+   * Company attributes.
    */
   attributes?: {
+    /**
+     * Name of the company.
+     */
     name?: string;
+
+    /**
+     * Custom attributes of the company.
+     */
     [key: string]: any;
   };
 
   context?: PayloadContext;
 };
 
+/**
+ * Tracked event.
+ */
 export type TrackedEvent = {
   /**
-   * Event name
+   * Event name.
    */
   event: string;
 
   /**
-   * User identifier
+   * User identifier.
    */
   userId: string;
 
   /**
-   * Company identifier
+   * Company identifier.
    */
   companyId?: string;
 
   /**
-   * Event attributes
+   * Event attributes.
    */
   attributes?: Record<string, any>;
 
+  /**
+   * Custom context of the event.
+   */
   context?: PayloadContext;
 };
 
+/**
+ * (Internal) Custom context of the event.
+ *
+ * @internal
+ */
 export type PayloadContext = {
+  /**
+   * Whether the company and user associated with the event are active.
+   */
   active?: boolean;
 };
 
+/**
+ * BucketClient configuration.
+ */
 interface Config {
+  /**
+   * Base URL of Bucket servers.
+   */
   apiBaseUrl: string;
+
+  /**
+   * Base URL of the Bucket web app.
+   */
   appBaseUrl: string;
+
+  /**
+   * Base URL of Bucket servers for SSE connections used by AutoFeedback.
+   */
   sseBaseUrl: string;
+
+  /**
+   * Whether to enable tracking.
+   */
   enableTracking: boolean;
 }
 
+/**
+ * Toolbar options.
+ */
 export type ToolbarOptions =
   | boolean
   | {
@@ -105,6 +177,9 @@ export type ToolbarOptions =
       position?: ToolbarPosition;
     };
 
+/**
+ * Feature definitions.
+ */
 export type FeatureDefinitions = Readonly<
   Array<
     | string
@@ -112,7 +187,6 @@ export type FeatureDefinitions = Readonly<
         key: string;
         access: boolean;
         configType?: any;
-        fallback?: any;
       }
   >
 >;
@@ -127,12 +201,14 @@ export interface InitOptions {
   publishableKey: string;
 
   /**
-   * User related context. If you provide `id` Bucket will enrich the evaluation context with user attributes on Bucket servers.
+   * User related context. If you provide `id` Bucket will enrich the evaluation context with
+   * user attributes on Bucket servers.
    */
   user?: UserContext;
 
   /**
-   * Company related context. If you provide `id` Bucket will enrich the evaluation context with company attributes on Bucket servers.
+   * Company related context. If you provide `id` Bucket will enrich the evaluation context with
+   * company attributes on Bucket servers.
    */
   company?: CompanyContext;
 
@@ -192,6 +268,10 @@ export interface InitOptions {
    * Version of the SDK
    */
   sdkVersion?: string;
+
+  /**
+   * Whether to enable tracking. Defaults to `true`.
+   */
   enableTracking?: boolean;
 
   /**
@@ -199,6 +279,7 @@ export interface InitOptions {
    * @ignore
    */
   toolbar?: ToolbarOptions;
+
   /**
    * Local-first definition of features (alpha)
    * @ignore
@@ -213,21 +294,59 @@ const defaultConfig: Config = {
   enableTracking: true,
 };
 
-export interface Feature {
+/**
+ * A remotely managed configuration value for a feature.
+ */
+export type FeatureRemoteConfig<
+  TKey extends string,
+  FeatureDefs extends Record<string, FeatureDef>,
+> = FeatureDefs[TKey] extends boolean ? never : FeatureDefs[TKey]["config"];
+
+/**
+ * A feature.
+ */
+export type Feature<
+  TKey extends string,
+  FeatureDefs extends Record<string, FeatureDef>,
+> = {
   /**
-   * Result of feature flag evaluation
+   * Result of feature flag evaluation.
    */
+
   isEnabled: boolean;
 
-  /**
-   * Function to send analytics events for this feature
-   *
+  /*
+   * Optional user-defined configuration.
    */
-  track: () => Promise<Response | undefined>;
+  config:
+    | {
+        /**
+         * The key of the matched configuration value.
+         */
+        key: string;
+
+        /**
+         * The optional user-supplied payload data.
+         */
+        payload: FeatureRemoteConfig<TKey, FeatureDefs>;
+      }
+    | {
+        key: undefined;
+        payload: undefined;
+      };
+
+  /**
+   * Function to send analytics events for this feature.
+   */
+  track: () => void;
+
+  /**
+   * Function to request feedback for this feature.
+   */
   requestFeedback: (
     options: Omit<RequestFeedbackData, "featureKey" | "featureId">,
   ) => void;
-}
+};
 
 function shouldShowToolbar(opts: InitOptions) {
   const toolbarOpts = opts.toolbar;
@@ -242,7 +361,11 @@ function shouldShowToolbar(opts: InitOptions) {
 /**
  * Feature definition. Typically auto-generated by `@bucketco/cli`.
  */
-export type FeatureDef = { key: string; access: boolean; config: any };
+export type FeatureDef = {
+  key: string;
+  access: boolean;
+  config: any;
+};
 
 /**
  * BucketClient lets you interact with the Bucket API.
@@ -252,20 +375,21 @@ export type FeatureDef = { key: string; access: boolean; config: any };
  *
  */
 export class BucketClient<
-  FeatureDefs = Record<string, FeatureDef>,
+  FeatureDefs extends Record<string, FeatureDef> = Record<string, FeatureDef>,
   FeatureKey extends string = Extract<keyof FeatureDefs, string>,
 > {
-  private publishableKey: string;
-  private context: BucketContext;
+  private readonly publishableKey: string;
+  private readonly context: BucketContext;
   private config: Config;
   private requestFeedbackOptions: Partial<RequestFeedbackOptions>;
-  private httpClient: HttpClient;
+  private readonly httpClient: HttpClient;
 
-  private autoFeedback: AutoFeedback | undefined;
+  private readonly autoFeedback: AutoFeedback | undefined;
   private autoFeedbackInit: Promise<void> | undefined;
-  private featuresClient: FeaturesClient;
+  private readonly featuresClient: FeaturesClient;
 
   public readonly logger: Logger;
+
   /**
    * Create a new BucketClient instance.
    */
@@ -298,11 +422,9 @@ export class BucketClient<
       sdkVersion: opts?.sdkVersion,
     });
 
-    const featuresList = (opts?.featureList || []).map((f) => ({
-      key: typeof f === "string" ? f : f.key,
-      access: typeof f === "string" ? true : f.access,
-      config: typeof f === "string" ? {} : f.configType,
-    }));
+    const featuresList = (opts?.featureList || []).map((f) =>
+      typeof f === "string" ? f : f.key,
+    );
 
     this.featuresClient = new FeaturesClient(
       this.httpClient,
@@ -412,7 +534,7 @@ export class BucketClient<
    * Performs a shallow merge with the existing company context.
    * Attempting to update the company ID will log a warning and be ignored.
    *
-   * @param company
+   * @param company The company details.
    */
   async updateCompany(company: { [key: string]: string | number | undefined }) {
     if (company.id && company.id !== this.context.company?.id) {
@@ -434,6 +556,8 @@ export class BucketClient<
    * Update the company context.
    * Performs a shallow merge with the existing company context.
    * Updates to the company ID will be ignored.
+   *
+   * @param otherContext Additional context.
    */
   async updateOtherContext(otherContext: {
     [key: string]: string | number | undefined;
@@ -451,7 +575,7 @@ export class BucketClient<
    *
    * Calling `client.stop()` will remove all listeners added here.
    *
-   * @param cb this will be called when the features are updated.
+   * @param cb The callback to call when the update completes.
    */
   onFeaturesUpdated(cb: () => void) {
     return this.featuresClient.onUpdated(cb);
@@ -460,8 +584,8 @@ export class BucketClient<
   /**
    * Track an event in Bucket.
    *
-   * @param eventName The name of the event
-   * @param attributes Any attributes you want to attach to the event
+   * @param eventName The name of the event.
+   * @param attributes Any attributes you want to attach to the event.
    */
   async track(eventName: string, attributes?: Record<string, any> | null) {
     if (!this.context.user) {
@@ -489,7 +613,8 @@ export class BucketClient<
   /**
    * Submit user feedback to Bucket. Must include either `score` or `comment`, or both.
    *
-   * @returns
+   * @param payload The feedback details to submit.
+   * @returns The server response.
    */
   async feedback(payload: Feedback) {
     const userId =
@@ -589,34 +714,48 @@ export class BucketClient<
    * and `isEnabled` does not take any feature overrides
    * into account.
    *
-   * @returns Map of features
+   * @returns Map of features.
    */
   getFeatures(): Record<FeatureKey, RawFeature> {
     return this.featuresClient.getFeatures() as Record<FeatureKey, RawFeature>;
   }
 
   /**
-   * Return a feature. Accessing `isEnabled` will automatically send a `check` event.
-   * @returns A feature
+   * Return a feature. Accessing `isEnabled` or `config` will automatically send a `check` event.
+   * @returns A feature.
    */
-  getFeature(key: FeatureKey): Feature {
+  getFeature(key: FeatureKey): Feature<FeatureKey, FeatureDefs> {
     const f = this.getFeatures()[key];
 
     const fClient = this.featuresClient;
     const value = f?.isEnabledOverride ?? f?.isEnabled ?? false;
+    const config = f?.config
+      ? {
+          key: f.config.key,
+          payload: f.config.payload,
+        }
+      : { key: undefined, payload: undefined };
+
+    function sendCheckEvent() {
+      fClient
+        .sendCheckEvent({
+          key,
+          version: f?.targetingVersion,
+          value,
+        })
+        .catch(() => {
+          // ignore
+        });
+    }
 
     return {
       get isEnabled() {
-        fClient
-          .sendCheckEvent({
-            key,
-            version: f?.targetingVersion,
-            value,
-          })
-          .catch(() => {
-            // ignore
-          });
+        sendCheckEvent();
         return value;
+      },
+      get config() {
+        sendCheckEvent();
+        return config;
       },
       track: () => this.track(key),
       requestFeedback: (
