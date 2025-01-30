@@ -10,13 +10,6 @@ import {
   useUpdateUser,
 } from "../../src/BaseBucketProvider";
 
-// // Extending the Features interface to define the available features
-// declare module "../../src" {
-//   interface Features {
-//     huddles: boolean;
-//   }
-// }
-
 const publishableKey = import.meta.env.VITE_PUBLISHABLE_KEY || "";
 const host = import.meta.env.VITE_BUCKET_HOST;
 
@@ -188,7 +181,7 @@ function FeatureOptIn({
   featureKey,
   featureName,
 }: {
-  featureKey: FeatureKey;
+  featureKey: string;
   featureName: string;
 }) {
   const updateUser = useUpdateUser();

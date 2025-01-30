@@ -10,7 +10,6 @@ const prettierConfig = require("eslint-config-prettier");
 
 module.exports = [
   {
-    // All files
     files: [
       "**/*.js",
       "**/*.cjs",
@@ -34,6 +33,7 @@ module.exports = [
         // This is required to avoid ecmaVersion < 2015 error or 'import' / 'export' error
         ecmaVersion: "latest",
         sourceType: "module",
+        project: "./tsconfig.json",
       },
     },
     settings: {
