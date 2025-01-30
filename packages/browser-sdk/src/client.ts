@@ -338,7 +338,7 @@ export type Feature<
   /**
    * Function to send analytics events for this feature.
    */
-  track: () => void;
+  track: () => Promise<Response | undefined>;
 
   /**
    * Function to request feedback for this feature.
@@ -375,7 +375,7 @@ export type FeatureDef = {
  *
  */
 export class BucketClient<
-  FeatureDefs extends Record<string, FeatureDef> = Record<string, FeatureDef>,
+  FeatureDefs = Record<string, FeatureDef>,
   FeatureKey extends string = Extract<keyof FeatureDefs, string>,
 > {
   private readonly publishableKey: string;
