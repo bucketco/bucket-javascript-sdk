@@ -1,6 +1,6 @@
 import { readFile } from "fs/promises";
 import path from "path";
-import { describe, expect,it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { FeatureDef } from "../utils/config.js";
 
