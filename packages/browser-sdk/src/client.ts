@@ -650,18 +650,16 @@ export class BucketClient<
       return;
     }
 
-    const featureId = "featureId" in options ? options.featureId : undefined;
     const featureKey = "featureKey" in options ? options.featureKey : undefined;
 
-    if (!featureId && !featureKey) {
+    if (!featureKey) {
       this.logger.error(
-        "`requestFeedback` call ignored. No `featureId` or `featureKey` provided",
+        "`requestFeedback` call ignored. No `featureKey` provided",
       );
       return;
     }
 
     const feedbackData = {
-      featureId,
       featureKey,
       companyId:
         options.companyId ||
@@ -675,7 +673,7 @@ export class BucketClient<
     // to prevent the same click from closing it.
     setTimeout(() => {
       feedbackLib.openFeedbackForm({
-        key: (featureKey || (featureId as string))!,
+        key: featureKey,
         title: options.title,
         position: options.position || this.requestFeedbackOptions.position,
         translations:
