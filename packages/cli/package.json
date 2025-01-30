@@ -18,6 +18,7 @@
   "files": [
     "dist"
   ],
+  "type": "module",
   "scripts": {
     "build": "tsc",
     "start": "yarn build && node dist/index.js",
