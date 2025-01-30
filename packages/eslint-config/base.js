@@ -10,10 +10,6 @@ const prettierConfig = require("eslint-config-prettier");
 
 module.exports = [
   {
-    // Blacklisted Folders, including **/node_modules/ and .git/
-    ignores: ["build/", "**/gen"],
-  },
-  {
     // All files
     files: [
       "**/*.js",
@@ -100,7 +96,7 @@ module.exports = [
     languageOptions: {
       parser: tsParser,
       parserOptions: {
-        project: "./tsconfig.json",
+        project: "./tsconfig.eslint.json",
       },
     },
     settings: {
