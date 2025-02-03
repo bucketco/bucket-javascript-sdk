@@ -54,7 +54,7 @@ export default class BatchBuffer<T> {
     if (this.buffer.length >= this.maxSize) {
       await this.flush();
     } else if (!this.timer) {
-      this.timer = setTimeout(() => this.flush(), this.intervalMs);
+      this.timer = setTimeout(() => this.flush(), this.intervalMs).unref();
     }
   }
 
