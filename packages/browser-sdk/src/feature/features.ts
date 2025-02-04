@@ -14,19 +14,29 @@ import {
  */
 export type FetchedFeature = {
   /**
-   * Feature key
+   * Feature key.
    */
   key: string;
 
   /**
-   * Result of feature flag evaluation
+   * Result of feature flag evaluation.
    */
   isEnabled: boolean;
 
   /**
-   * Version of targeting rules
+   * Version of targeting rules.
    */
   targetingVersion?: number;
+
+  /**
+   * Rule evaluation results.
+   */
+  ruleEvaluationResults?: boolean[];
+
+  /**
+   * Missing context fields.
+   */
+  missingContextFields?: string[];
 
   /**
    * Optional user-defined dynamic configuration.
@@ -38,6 +48,11 @@ export type FetchedFeature = {
     key: string;
 
     /**
+     * Indicated that the matched configuration value is the default.
+     */
+    default?: boolean;
+
+    /**
      * The version of the matched configuration value.
      */
     version?: number;
@@ -46,6 +61,16 @@ export type FetchedFeature = {
      * The optional user-supplied payload data.
      */
     payload?: any;
+
+    /**
+     * The rule evaluation results.
+     */
+    ruleEvaluationResults?: boolean[];
+
+    /**
+     * The missing context fields.
+     */
+    missingContextFields?: string[];
   };
 };
 
@@ -153,19 +178,29 @@ export function flattenJSON(obj: Record<string, any>): Record<string, any> {
  */
 export interface CheckEvent {
   /**
-   * Feature key
+   * Feature key.
    */
   key: string;
 
   /**
-   * Result of feature flag evaluation
+   * Result of feature flag or configuration evaluation.
    */
-  value: boolean;
+  value: any;
 
   /**
-   * Version of targeting rules
+   * Version of targeting rules.
    */
   version?: number;
+
+  /**
+   * Rule evaluation results.
+   */
+  ruleEvaluationResults?: boolean[];
+
+  /**
+   * Missing context fields.
+   */
+  missingContextFields?: string[];
 }
 
 type context = {

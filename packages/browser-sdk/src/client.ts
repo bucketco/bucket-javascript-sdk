@@ -694,25 +694,38 @@ export class BucketClient {
         }
       : { key: undefined, payload: undefined };
 
-    function sendCheckEvent() {
-      fClient
-        .sendCheckEvent({
-          key,
-          version: f?.targetingVersion,
-          value,
-        })
-        .catch(() => {
-          // ignore
-        });
-    }
-
     return {
       get isEnabled() {
-        sendCheckEvent();
+        fClient
+          .sendCheckEvent({
+            key,
+            version: f?.targetingVersion,
+            ruleEvaluationResults: f?.ruleEvaluationResults,
+            missingContextFields: f?.missingContextFields,
+            value,
+          })
+          .catch(() => {
+            // ignore
+          });
         return value;
       },
       get config() {
-        sendCheckEvent();
+        fClient
+          .sendCheckEvent({
+            key,
+            version: f?.config?.version,
+            ruleEvaluationResults: f?.config?.ruleEvaluationResults,
+            missingContextFields: f?.config?.missingContextFields,
+            value: f?.config && {
+              key: f.config.key,
+              default: f.config.default,
+              payload: f.config.payload,
+            },
+          })
+          .catch(() => {
+            // ignore
+          });
+
         return config;
       },
       track: () => this.track(key),
