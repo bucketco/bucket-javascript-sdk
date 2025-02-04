@@ -1,6 +1,6 @@
 {
   "name": "@bucketco/browser-sdk",
-  "version": "3.0.0-alpha.2",
+  "version": "3.0.0-alpha.3",
   "packageManager": "yarn@4.1.1",
   "license": "MIT",
   "repository": {
@@ -26,13 +26,18 @@
   "files": [
     "dist"
   ],
-  "main": "./dist/bucket-browser-sdk.umd.js",
-  "types": "./dist/types/src/index.d.ts",
+  "main": "./dist/bucket-browser-sdk-index.mjs",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/bucket-browser-sdk.mjs",
-      "require": "./dist/bucket-browser-sdk.umd.js",
-      "types": "./dist/types/src/index.d.ts"
+      "import": "./dist/bucket-browser-sdk-index.mjs",
+      "require": "./dist/bucket-browser-sdk.amd.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./configuredClient": {
+      "import": "./dist/bucket-browser-sdk-configuredClient.mjs",
+      "require": "./dist/bucket-browser-sdk-configuredClient.amd.js",
+      "types": "./dist/configuredClient.d.ts"
     }
   },
   "dependencies": {

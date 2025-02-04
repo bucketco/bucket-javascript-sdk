@@ -18,16 +18,18 @@ export default defineConfig({
     exclude: ["**/node_modules/**", "test/e2e/**", "dev"],
     sourcemap: true,
     lib: {
-      entry: resolve(__dirname, "src/index.tsx"),
-      name: "BucketReactSDK",
-      fileName: "bucket-react-sdk",
-      formats: ["es", "umd"],
+      entry: {
+        index: resolve(__dirname, "src/index.tsx"),
+        baseBucketProvider: resolve(__dirname, "src/BaseBucketProvider.tsx"),
+      },
+      formats: ["es"],
     },
     rollupOptions: {
-      external: ["react", "react-dom"],
+      external: ["react", "react-dom", "_bucket"],
       output: {
         globals: {
           react: "React",
+          _bucket: "BucketInternal",
         },
       },
     },

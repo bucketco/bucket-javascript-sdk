@@ -1,22 +1,14 @@
 import React, { useState } from "react";
 
 import {
-  FeatureKey,
-  BucketProvider,
+  BaseBucketProvider,
   useFeature,
   useRequestFeedback,
   useTrack,
   useUpdateCompany,
   useUpdateOtherContext,
   useUpdateUser,
-} from "../../src";
-
-// Extending the Features interface to define the available features
-declare module "../../src" {
-  interface Features {
-    huddles: boolean;
-  }
-}
+} from "../../src/BaseBucketProvider";
 
 const publishableKey = import.meta.env.VITE_PUBLISHABLE_KEY || "";
 const host = import.meta.env.VITE_BUCKET_HOST;
@@ -189,7 +181,7 @@ function FeatureOptIn({
   featureKey,
   featureName,
 }: {
-  featureKey: FeatureKey;
+  featureKey: string;
   featureName: string;
 }) {
   const updateUser = useUpdateUser();
@@ -219,7 +211,7 @@ function FeatureOptIn({
 
 export function App() {
   return (
-    <BucketProvider
+    <BaseBucketProvider
       publishableKey={publishableKey}
       feedback={{
         enableLiveSatisfaction: true,
@@ -231,6 +223,6 @@ export function App() {
     >
       <Demos />
       {}
-    </BucketProvider>
+    </BaseBucketProvider>
   );
 }

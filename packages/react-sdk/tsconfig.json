@@ -5,8 +5,11 @@
     "outDir": "./dist/",
     "declarationDir": "./dist/types",
     "jsx": "react",
-    "declarationMap": true
+    "declarationMap": true,
+    "moduleResolution": "bundler",
+    "module": "Preserve",
+    "rootDir": "./src"
   },
-  "include": ["src", "dev"],
+  "include": ["src"],
   "typeRoots": ["./node_modules/@types"]
 }

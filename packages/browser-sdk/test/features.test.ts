@@ -1,7 +1,6 @@
 import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
 
 import { version } from "../package.json";
-import { FeatureDefinitions } from "../src/client";
 import {
   FEATURES_EXPIRE_MS,
   FeaturesClient,
@@ -39,7 +38,7 @@ function featuresClientFactory() {
     newFeaturesClient: function newFeaturesClient(
       options?: FeaturesOptions,
       context?: any,
-      featureList: FeatureDefinitions = [],
+      featureList: string[] = [],
     ) {
       return new FeaturesClient(
         httpClient,
