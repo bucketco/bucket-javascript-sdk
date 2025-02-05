@@ -101,11 +101,13 @@ type Configuration = {
   feedback?: undefined; // See FEEDBACK.md
   enableTracking?: true; // set to `false` to stop sending track events and user/company updates to Bucket servers. Useful when you're impersonating a user.
   featureOptions?: {
-    fallbackFeatures?: string[]; // Enable these features if unable to contact bucket.co
-    timeoutMs?: number; // Timeout for fetching features
-    staleWhileRevalidate?: boolean; // Revalidate in the background when cached features turn stale to avoid latency in the UI
+    fallbackFeatures?:
+      | string[]
+      | Record<string, { key: string; payload: any } | true>; // Enable these features if unable to contact bucket.co. Can be a list of feature keys or a record with configuration values
+    timeoutMs?: number; // Timeout for fetching features (default: 5000ms)
+    staleWhileRevalidate?: boolean; // Revalidate in the background when cached features turn stale to avoid latency in the UI (default: false)
     staleTimeMs?: number; // at initialization time features are loaded from the cache unless they have gone stale. Defaults to 0 which means the cache is disabled. Increase in the case of a non-SPA.
-    expireTimeMs?: number; // In case we're unable to fetch features from Bucket, cached/stale features will be used instead until they expire after  `expireTimeMs`.
+    expireTimeMs?: number; // In case we're unable to fetch features from Bucket, cached/stale features will be used instead until they expire after `expireTimeMs`. Default is 30 days.
   };
 };
 ```
@@ -171,6 +173,42 @@ by down-stream clients, like the React SDK.
 
 Note that accessing `isEnabled` on the object returned by `getFeatures` does not automatically
 generate a `check` event, contrary to the `isEnabled` property on the object returned by `getFeature`.
+
+### Feature Overrides
+
+You can override feature flags locally for testing purposes using `setFeatureOverride`:
+
+```ts
+// Override a feature to be enabled
+bucketClient.setFeatureOverride("huddle", true);
+
+// Override a feature to be disabled
+bucketClient.setFeatureOverride("huddle", false);
+
+// Remove the override
+bucketClient.setFeatureOverride("huddle", null);
+
+// Get current override value
+const override = bucketClient.getFeatureOverride("huddle"); // returns boolean | null
+```
+
+Feature overrides are persisted in `localStorage` and will be restored when the page is reloaded.
+
+### Feature Updates
+
+You can listen for feature updates using `onFeaturesUpdated`:
+
+```ts
+// Register a callback for feature updates
+const unsubscribe = bucketClient.onFeaturesUpdated(() => {
+  console.log("Features were updated");
+});
+
+// Later, stop listening for updates
+unsubscribe();
+```
+
+Note that the callback may be called even if features haven't actually changed.
 
 ### Remote config
 
@@ -262,7 +300,7 @@ bucketClient.feedback({
 });
 ```
 
-#### Bucket feedback API
+### Bucket feedback API
 
 If you are not using the Bucket Browser SDK, you can still submit feedback using the HTTP API.
 
@@ -274,9 +312,9 @@ The Bucket Browser SDK doesn't collect any metadata and HTTP IP addresses are _n
 
 For tracking individual users, we recommend using something like database ID as userId, as it's unique and doesn't include any PII (personal identifiable information). If, however, you're using e.g. email address as userId, but prefer not to send any PII to Bucket, you can hash the sensitive data before sending it to Bucket:
 
-```
+```ts
 import bucket from "@bucketco/browser-sdk";
-import { sha256 } from 'crypto-hash';
+import { sha256 } from "crypto-hash";
 
 bucket.user(await sha256("john_doe"));
 ```
@@ -290,7 +328,7 @@ The two cookies are:
 - `bucket-prompt-${userId}`: store the last automated feedback prompt message ID received to avoid repeating surveys
 - `bucket-token-${userId}`: caching a token used to connect to Bucket's live messaging infrastructure that is used to deliver automated feedback surveys in real time.
 
-### Typescript
+### TypeScript
 
 Types are bundled together with the library and exposed automatically when importing through a package manager.
 
@@ -310,7 +348,7 @@ If you are including the Bucket tracking SDK with a `<script>`-tag from `jsdeliv
 | --------------- | ------------------------ | ------------------------------- |
 | script-src-elem | https://cdn.jsdelivr.net | Loads the Bucket SDK from a CDN |
 
-# License
+## License
 
 MIT License
 
