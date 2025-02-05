@@ -70,36 +70,6 @@ export type FallbackFeatureOverride =
     }
   | true;
 
-export type FeaturesOptions = {
-  /**
-   * Feature keys for which `isEnabled` should fallback to true
-   * if SDK fails to fetch features from Bucket servers. If a record
-   * is supplied instead of array, the values of each key represent the
-   * configuration values and `isEnabled` is assume `true`.
-   */
-  fallbackFeatures?: string[] | Record<string, FallbackFeatureOverride>;
-
-  /**
-   * Timeout in milliseconds when fetching features
-   */
-  timeoutMs?: number;
-
-  /**
-   * If set to true stale features will be returned while refetching features
-   */
-  staleWhileRevalidate?: boolean;
-
-  /**
-   * If set, features will be cached between page loads for this duration
-   */
-  expireTimeMs?: number;
-
-  /**
-   * Stale features will be returned if staleWhileRevalidate is true if no new features can be fetched
-   */
-  staleTimeMs?: number;
-};
-
 type Config = {
   fallbackFeatures: Record<string, FallbackFeatureOverride>;
   timeoutMs: number;
@@ -219,7 +189,11 @@ export class FeaturesClient {
     private context: context,
     private featureDefinitions: Readonly<string[]>,
     logger: Logger,
-    options?: FeaturesOptions & {
+    options?: {
+      fallbackFeatures?: Record<string, FallbackFeatureOverride> | string[];
+      timeoutMs?: number;
+      staleTimeMs?: number;
+      expireTimeMs?: number;
       cache?: FeatureCache;
       rateLimiter?: RateLimiter;
     },

@@ -1,7 +1,7 @@
 import {
   CheckEvent,
+  FallbackFeatureOverride,
   FeaturesClient,
-  FeaturesOptions,
   RawFeatures,
 } from "./feature/features";
 import {
@@ -185,7 +185,7 @@ export type FeatureDefinitions = Readonly<Array<string>>;
 /**
  * BucketClient initialization options.
  */
-export interface InitOptions {
+export type InitOptions = {
   /**
    * Publishable key for authentication
    */
@@ -219,12 +219,6 @@ export interface InitOptions {
   logger?: Logger;
 
   /**
-   * @deprecated
-   * Use `apiBaseUrl` instead.
-   */
-  host?: string;
-
-  /**
    * Base URL of Bucket servers. You can override this to use your mocked server.
    */
   apiBaseUrl?: string;
@@ -235,10 +229,32 @@ export interface InitOptions {
   appBaseUrl?: string;
 
   /**
-   * @deprecated
-   * Use `sseBaseUrl` instead.
+   * Feature keys for which `isEnabled` should fallback to true
+   * if SDK fails to fetch features from Bucket servers. If a record
+   * is supplied instead of array, the values of each key represent the
+   * configuration values and `isEnabled` is assume `true`.
    */
-  sseHost?: string;
+  fallbackFeatures?: string[] | Record<string, FallbackFeatureOverride>;
+
+  /**
+   * Timeout in milliseconds when fetching features
+   */
+  timeoutMs?: number;
+
+  /**
+   * If set to true stale features will be returned while refetching features
+   */
+  staleWhileRevalidate?: boolean;
+
+  /**
+   * If set, features will be cached between page loads for this duration
+   */
+  expireTimeMs?: number;
+
+  /**
+   * Stale features will be returned if staleWhileRevalidate is true if no new features can be fetched
+   */
+  staleTimeMs?: number;
 
   /**
    * Base URL of Bucket servers for SSE connections used by AutoFeedback.
@@ -251,11 +267,6 @@ export interface InitOptions {
   feedback?: FeedbackOptions;
 
   /**
-   * Feature flag specific configuration
-   */
-  features?: FeaturesOptions;
-
-  /**
    * Version of the SDK
    */
   sdkVersion?: string;
@@ -266,17 +277,15 @@ export interface InitOptions {
   enableTracking?: boolean;
 
   /**
-   * Toolbar configuration (alpha)
-   * @ignore
+   * Toolbar configuration
    */
   toolbar?: ToolbarOptions;
 
   /**
-   * Local-first definition of features (alpha)
-   * @ignore
+   * Local-first definition of features
    */
-  featureList?: FeatureDefinitions;
-}
+  features?: FeatureDefinitions;
+};
 
 const defaultConfig: Config = {
   apiBaseUrl: API_BASE_URL,
@@ -335,7 +344,7 @@ function shouldShowToolbar(opts: InitOptions) {
   if (typeof toolbarOpts?.show === "boolean") return toolbarOpts.show;
 
   return (
-    opts.featureList !== undefined && window?.location?.hostname === "localhost"
+    opts.features !== undefined && window?.location?.hostname === "localhost"
   );
 }
 
@@ -369,9 +378,9 @@ export class BucketClient {
     };
 
     this.config = {
-      apiBaseUrl: opts?.apiBaseUrl ?? opts?.host ?? defaultConfig.apiBaseUrl,
-      appBaseUrl: opts?.appBaseUrl ?? opts?.host ?? defaultConfig.appBaseUrl,
-      sseBaseUrl: opts?.sseBaseUrl ?? opts?.sseHost ?? defaultConfig.sseBaseUrl,
+      apiBaseUrl: opts?.apiBaseUrl ?? defaultConfig.apiBaseUrl,
+      appBaseUrl: opts?.appBaseUrl ?? defaultConfig.appBaseUrl,
+      sseBaseUrl: opts?.sseBaseUrl ?? defaultConfig.sseBaseUrl,
       enableTracking: opts?.enableTracking ?? defaultConfig.enableTracking,
     };
 
@@ -395,9 +404,14 @@ export class BucketClient {
         company: this.context.company,
         other: this.context.otherContext,
       },
-      opts?.featureList || [],
+      opts?.features || [],
       this.logger,
-      opts?.features,
+      {
+        expireTimeMs: opts.expireTimeMs,
+        staleTimeMs: opts.staleTimeMs,
+        fallbackFeatures: opts.fallbackFeatures,
+        timeoutMs: opts.timeoutMs,
+      },
     );
 
     if (

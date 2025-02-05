@@ -5,7 +5,6 @@ import { FeatureDefinitions } from "../src/client";
 import {
   FEATURES_EXPIRE_MS,
   FeaturesClient,
-  FeaturesOptions,
   FetchedFeature,
   RawFeature,
 } from "../src/feature/features";
@@ -37,9 +36,9 @@ function featuresClientFactory() {
     cache,
     httpClient,
     newFeaturesClient: function newFeaturesClient(
-      options?: FeaturesOptions,
-      context?: any,
-      featureList: FeatureDefinitions = [],
+      context?: Record<string, any>,
+      features?: FeatureDefinitions,
+      options?: { staleWhileRevalidate?: boolean; fallbackFeatures?: any },
     ) {
       return new FeaturesClient(
         httpClient,
@@ -49,7 +48,7 @@ function featuresClientFactory() {
           other: { eventId: "big-conference1" },
           ...context,
         },
-        featureList,
+        features || [],
         testLogger,
         {
           cache,
@@ -94,14 +93,11 @@ describe("FeaturesClient", () => {
 
   test("ignores undefined context", async () => {
     const { newFeaturesClient, httpClient } = featuresClientFactory();
-    const featuresClient = newFeaturesClient(
-      {},
-      {
-        user: undefined,
-        company: undefined,
-        other: undefined,
-      },
-    );
+    const featuresClient = newFeaturesClient({
+      user: undefined,
+      company: undefined,
+      other: undefined,
+    });
     await featuresClient.initialize();
     expect(featuresClient.getFeatures()).toEqual(featuresResult);
 
@@ -126,7 +122,7 @@ describe("FeaturesClient", () => {
       new Error("Failed to fetch features"),
     );
 
-    const featuresClient = newFeaturesClient({
+    const featuresClient = newFeaturesClient(undefined, undefined, {
       fallbackFeatures: ["huddle"],
     });
 
@@ -147,7 +143,7 @@ describe("FeaturesClient", () => {
     vi.mocked(httpClient.get).mockRejectedValue(
       new Error("Failed to fetch features"),
     );
-    const featuresClient = newFeaturesClient({
+    const featuresClient = newFeaturesClient(undefined, undefined, {
       fallbackFeatures: {
         huddle: {
           key: "john",
@@ -346,7 +342,7 @@ describe("FeaturesClient", () => {
     const { newFeaturesClient } = featuresClientFactory();
 
     // localStorage.clear();
-    const client = newFeaturesClient(undefined, undefined, ["featureB"]);
+    const client = newFeaturesClient(undefined, ["featureB"]);
     await client.initialize();
 
     let updated = false;
