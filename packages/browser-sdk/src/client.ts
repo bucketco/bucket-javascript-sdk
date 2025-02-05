@@ -698,6 +698,7 @@ export class BucketClient {
       get isEnabled() {
         fClient
           .sendCheckEvent({
+            action: "check",
             key,
             version: f?.targetingVersion,
             ruleEvaluationResults: f?.ruleEvaluationResults,
@@ -712,6 +713,7 @@ export class BucketClient {
       get config() {
         fClient
           .sendCheckEvent({
+            action: "check-config",
             key,
             version: f?.config?.version,
             ruleEvaluationResults: f?.config?.ruleEvaluationResults,

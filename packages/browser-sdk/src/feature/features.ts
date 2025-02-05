@@ -178,6 +178,11 @@ export function flattenJSON(obj: Record<string, any>): Record<string, any> {
  */
 export interface CheckEvent {
   /**
+   * Action to perform.
+   */
+  action: "check" | "check-config";
+
+  /**
    * Feature key.
    */
   key: string;
@@ -400,11 +405,13 @@ export class FeaturesClient {
 
     await this.rateLimiter.rateLimited(rateLimitKey, async () => {
       const payload = {
-        action: "check",
+        action: checkEvent.action,
         key: checkEvent.key,
         targetingVersion: checkEvent.version,
         evalContext: this.context,
         evalResult: checkEvent.value,
+        evalRuleResults: checkEvent.ruleEvaluationResults,
+        evalMissingFields: checkEvent.missingContextFields,
       };
 
       this.httpClient
