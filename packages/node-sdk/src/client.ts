@@ -909,6 +909,8 @@ export class BucketClient {
             acc[featureKey] = {
               ...variant.value,
               targetingVersion: feature.config.version,
+              ruleEvaluationResults: variant.ruleEvaluationResults,
+              missingContextFields: variant.missingContextFields,
             };
           }
         }
