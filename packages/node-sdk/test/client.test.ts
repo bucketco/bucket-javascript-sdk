@@ -1106,6 +1106,21 @@ describe("BucketClient", () => {
           },
           {
             type: "feature-flag-event",
+            action: "evaluate-config",
+            key: "feature1",
+            targetingVersion: 1,
+            evalContext: context,
+            evalResult: {
+              key: "config-1",
+              payload: {
+                something: "else",
+              },
+            },
+            evalRuleResults: [true],
+            evalMissingFields: [],
+          },
+          {
+            type: "feature-flag-event",
             action: "evaluate",
             key: "feature2",
             targetingVersion: 2,
@@ -1119,21 +1134,6 @@ describe("BucketClient", () => {
             event: "feature1",
             userId: user.id,
             companyId: company.id,
-          },
-          {
-            type: "feature-flag-event",
-            action: "evaluate-config",
-            key: "feature1",
-            targetingVersion: 1,
-            evalContext: context,
-            evalResult: {
-              key: "config-1",
-              payload: {
-                something: "else",
-              },
-            },
-            evalRuleResults: [true],
-            evalMissingFields: [],
           },
         ],
       );
@@ -1168,6 +1168,11 @@ describe("BucketClient", () => {
           }),
           expect.objectContaining({
             type: "feature-flag-event",
+            action: "evaluate-config",
+            key: "feature1",
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
             action: "evaluate",
             key: "feature2",
           }),
@@ -1181,11 +1186,6 @@ describe("BucketClient", () => {
             evalRuleResults: [true],
             evalMissingFields: [],
           },
-          expect.objectContaining({
-            type: "feature-flag-event",
-            action: "evaluate-config",
-            key: "feature1",
-          }),
         ],
       );
     });
@@ -1219,6 +1219,11 @@ describe("BucketClient", () => {
           }),
           expect.objectContaining({
             type: "feature-flag-event",
+            action: "evaluate-config",
+            key: "feature1",
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
             action: "evaluate",
             key: "feature2",
           }),
@@ -1237,11 +1242,6 @@ describe("BucketClient", () => {
             evalRuleResults: [true],
             evalMissingFields: [],
           },
-          expect.objectContaining({
-            type: "feature-flag-event",
-            action: "evaluate-config",
-            key: "feature1",
-          }),
         ],
       );
     });
@@ -1279,6 +1279,11 @@ describe("BucketClient", () => {
           }),
           expect.objectContaining({
             type: "feature-flag-event",
+            action: "evaluate-config",
+            key: "feature1",
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
             action: "evaluate",
             key: "feature2",
           }),
@@ -1298,11 +1303,6 @@ describe("BucketClient", () => {
             userId: user.id,
             companyId: company.id,
           },
-          expect.objectContaining({
-            type: "feature-flag-event",
-            action: "evaluate-config",
-            key: "feature1",
-          }),
         ],
       );
     });
@@ -1421,6 +1421,25 @@ describe("BucketClient", () => {
           },
           {
             type: "feature-flag-event",
+            action: "evaluate-config",
+            key: "feature1",
+            targetingVersion: 1,
+            evalContext: {
+              company,
+              user,
+              other: otherContext,
+            },
+            evalResult: {
+              key: "config-1",
+              payload: {
+                something: "else",
+              },
+            },
+            evalRuleResults: [true],
+            evalMissingFields: [],
+          },
+          {
+            type: "feature-flag-event",
             action: "evaluate",
             key: "feature2",
             targetingVersion: 2,
@@ -1494,25 +1513,6 @@ describe("BucketClient", () => {
             key: "feature1",
             targetingVersion: 1,
             type: "feature-flag-event",
-            evalRuleResults: [true],
-            evalMissingFields: [],
-          },
-          {
-            type: "feature-flag-event",
-            action: "evaluate-config",
-            key: "feature1",
-            targetingVersion: 1,
-            evalContext: {
-              company,
-              user,
-              other: otherContext,
-            },
-            evalResult: {
-              key: "config-1",
-              payload: {
-                something: "else",
-              },
-            },
             evalRuleResults: [true],
             evalMissingFields: [],
           },
@@ -1594,6 +1594,14 @@ describe("BucketClient", () => {
           }),
           expect.objectContaining({
             type: "feature-flag-event",
+            action: "evaluate-config",
+            key: "feature1",
+            evalContext: {
+              user,
+            },
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
             action: "evaluate",
             key: "feature2",
             evalContext: {
@@ -1631,14 +1639,6 @@ describe("BucketClient", () => {
               user,
             },
             key: "feature1",
-          }),
-          expect.objectContaining({
-            type: "feature-flag-event",
-            action: "evaluate-config",
-            key: "feature1",
-            evalContext: {
-              user,
-            },
           }),
         ],
       );
@@ -1689,6 +1689,14 @@ describe("BucketClient", () => {
           }),
           expect.objectContaining({
             type: "feature-flag-event",
+            action: "evaluate-config",
+            key: "feature1",
+            evalContext: {
+              company,
+            },
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
             action: "evaluate",
             key: "feature2",
             evalContext: {
@@ -1722,14 +1730,6 @@ describe("BucketClient", () => {
           expect.objectContaining({
             type: "feature-flag-event",
             action: "check",
-            key: "feature1",
-            evalContext: {
-              company,
-            },
-          }),
-          expect.objectContaining({
-            type: "feature-flag-event",
-            action: "evaluate-config",
             key: "feature1",
             evalContext: {
               company,
@@ -1797,18 +1797,6 @@ describe("BucketClient", () => {
           },
           {
             type: "feature-flag-event",
-            action: "evaluate",
-            key: "feature2",
-            targetingVersion: 2,
-            evalContext: {
-              other: otherContext,
-            },
-            evalResult: false,
-            evalRuleResults: [false],
-            evalMissingFields: ["something"],
-          },
-          {
-            type: "feature-flag-event",
             action: "evaluate-config",
             evalContext: {
               other: otherContext,
@@ -1823,6 +1811,18 @@ describe("BucketClient", () => {
             targetingVersion: 1,
             evalMissingFields: [],
             evalRuleResults: [true],
+          },
+          {
+            type: "feature-flag-event",
+            action: "evaluate",
+            key: "feature2",
+            targetingVersion: 2,
+            evalContext: {
+              other: otherContext,
+            },
+            evalResult: false,
+            evalRuleResults: [false],
+            evalMissingFields: ["something"],
           },
         ],
       );
@@ -1859,17 +1859,17 @@ describe("BucketClient", () => {
           }),
           expect.objectContaining({
             type: "feature-flag-event",
-            action: "evaluate",
-            key: "feature2",
-          }),
-          expect.objectContaining({
-            type: "feature-flag-event",
             action: "evaluate-config",
             key: "feature1",
             evalContext: {
               company,
               user,
             },
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "evaluate",
+            key: "feature2",
           }),
         ],
       );
@@ -1915,16 +1915,16 @@ describe("BucketClient", () => {
           }),
           expect.objectContaining({
             type: "feature-flag-event",
-            key: "feature2",
-            action: "evaluate",
-          }),
-          expect.objectContaining({
-            type: "feature-flag-event",
             action: "evaluate-config",
             key: "feature1",
             evalContext: {
               user,
             },
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            key: "feature2",
+            action: "evaluate",
           }),
         ],
       );
@@ -1967,14 +1967,14 @@ describe("BucketClient", () => {
           }),
           expect.objectContaining({
             type: "feature-flag-event",
-            action: "evaluate",
-          }),
-          expect.objectContaining({
-            type: "feature-flag-event",
             action: "evaluate-config",
             evalContext: {
               company,
             },
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "evaluate",
           }),
         ],
       );

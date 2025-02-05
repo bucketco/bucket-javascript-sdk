@@ -928,35 +928,50 @@ export class BucketClient {
     );
 
     if (enableTracking) {
-      evaluated.forEach(async (res) => {
-        try {
-          await this.sendFeatureEvent({
-            action: "evaluate",
-            key: res.featureKey,
-            targetingVersion: featureMap[res.featureKey].targeting.version,
-            evalResult: res.value ?? false,
-            evalContext: res.context,
-            evalRuleResults: res.ruleEvaluationResults,
-            evalMissingFields: res.missingContextFields,
-          });
+      const promises = evaluated
+        .map(async (res) => {
+          const promises = [];
+          promises.push(
+            this.sendFeatureEvent({
+              action: "evaluate",
+              key: res.featureKey,
+              targetingVersion: featureMap[res.featureKey].targeting.version,
+              evalResult: res.value ?? false,
+              evalContext: res.context,
+              evalRuleResults: res.ruleEvaluationResults,
+              evalMissingFields: res.missingContextFields,
+            }),
+          );
 
           const config = evaluatedConfigs[res.featureKey];
           if (config) {
-            await this.sendFeatureEvent({
-              action: "evaluate-config",
-              key: res.featureKey,
-              targetingVersion: config.targetingVersion,
-              evalResult: { key: config.key, payload: config.payload },
-              evalContext: res.context,
-              evalRuleResults: config.ruleEvaluationResults,
-              evalMissingFields: config.missingContextFields,
-            });
+            promises.push(
+              this.sendFeatureEvent({
+                action: "evaluate-config",
+                key: res.featureKey,
+                targetingVersion: config.targetingVersion,
+                evalResult: { key: config.key, payload: config.payload },
+                evalContext: res.context,
+                evalRuleResults: config.ruleEvaluationResults,
+                evalMissingFields: config.missingContextFields,
+              }),
+            );
           }
-        } catch (err) {
-          this._config.logger?.error(
-            `failed to send evaluate event for "${res.featureKey}"`,
-            err,
-          );
+
+          return promises;
+        })
+        .flat();
+
+      Promise.allSettled(promises).then((results) => {
+        const failed = results
+          .map((result) =>
+            result.status === "rejected" ? result.reason : undefined,
+          )
+          .filter(Boolean);
+        if (failed.length > 0) {
+          this._config.logger?.error(`failed to queue some evaluate events.`, {
+            errors: failed,
+          });
         }
       });
     }
