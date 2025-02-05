@@ -54,7 +54,8 @@ bucketClient.initialize().then({
 Once the client is initialized, you can obtain features along with the `isEnabled`
 status to indicate whether the feature is targeted for this user/company:
 
-_Note_: If `user.id` or `company.id` is not given, the whole `user` or `company` object is ignored.
+> [!NOTE]
+> If `user.id` or `company.id` is not given, the whole `user` or `company` object is ignored.
 
 ```typescript
 // configure the client
@@ -133,9 +134,8 @@ You can manually flush the batch buffer at any time:
 await client.flush();
 ```
 
-{% hint style="danger" %}
-It's recommended to call `flush()` before your application shuts down to ensure all events are sent.
-{% endhint %}
+> [!NOTE]
+> It's recommended to call `flush()` before your application shuts down to ensure all events are sent.
 
 ### Rate Limiting
 
@@ -271,7 +271,7 @@ current working directory.
 | `featureOverrides` | Record<string, boolean> | An object specifying feature overrides for testing or local development. See [example/app.test.ts](https://github.com/bucketco/bucket-javascript-sdk/tree/main/packages/browser-sdk/example/app.test.ts) for how to use `featureOverrides` in tests. | BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED |
 | `configFile`       | string                  | Load this config file from disk. Default: `bucketConfig.json`                                                                                                                                                                                        | BUCKET_CONFIG_FILE                                |
 
-Note: BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED are comma separated lists of features which will be enabled or disabled respectively.
+> [!NOTE] > `BUCKET_FEATURES_ENABLED` and `BUCKET_FEATURES_DISABLED` are comma separated lists of features which will be enabled or disabled respectively.
 
 `bucketConfig.json` example:
 
@@ -283,11 +283,14 @@ Note: BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED are comma separated list
   "apiBaseUrl": "https://proxy.slick-demo.com",
   "featureOverrides": {
     "huddles": true,
-    "voiceChat": false,
+    "voiceChat": { "isEnabled": false },
     "aiAssist": {
-      "key": "gpt-4.0",
-      "payload": {
-        "maxTokens": 50000
+      "isEnabled": true,
+      "config": {
+        "key": "gpt-4.0",
+        "payload": {
+          "maxTokens": 50000
+        }
       }
     }
   }
@@ -317,6 +320,12 @@ declare module "@bucketco/node-sdk" {
     "show-todos": boolean;
     "create-todos": {
       isEnabled: boolean;
+      config: {
+        key: string;
+        payload: {
+          minimumLength: number;
+        };
+      };
     };
     "delete-todos": {
       isEnabled: boolean;
@@ -336,12 +345,28 @@ export const bucketClient = new BucketClient();
 bucketClient.initialize().then(() => {
   console.log("Bucket initialized!");
 
-  // TypeScript will catch this error:
-  bucketClient.getFeature("invalid-feature"); // feature doesn't exist
+  // TypeScript will catch this error: "invalid-feature" doesn't exist
+  bucketClient.getFeature("invalid-feature");
+
+  const {
+    isEnabled,
+    config: { payload },
+  } = bucketClient.getFeature("create-todos");
 });
 ```
 
 ![Type check failed](docs/type-check-failed.png "Type check failed")
+
+```typescript
+bucketClient.initialize().then(() => {
+  // TypeScript will catch this error as well: "minLength" is not part of the payload.
+  if (isEnabled && todo.length > config.payload.minLength) {
+    // ...
+  }
+});
+```
+
+![Config type check failed](docs/type-check-payload-failed.png "Remote config type check failed")
 
 ## Feature Overrides
 
@@ -537,9 +562,10 @@ client.updateCompany("acme_inc", {
 const features = await client.getFeaturesRemote("acme_inc", "john_doe");
 ```
 
-NOTE: User and company attribute updates are processed asynchronously, so there might
-be a small delay between when attributes are updated and when they are available
-for evaluation.
+> [!NOTE]
+> User and company attribute updates are processed asynchronously, so there might
+> be a small delay between when attributes are updated and when they are available
+> for evaluation.
 
 ## Opting out of tracking
 
@@ -635,7 +661,7 @@ Some attributes are used by Bucket to improve the UI, and are recommended
 to provide for easier navigation:
 
 - `name` -- display name for `user`/`company`,
-- `email` -- the email of the user.
+- `email` -- the email of the user,
 - `avatar` -- the URL for `user`/`company` avatar image.
 
 Attributes cannot be nested (multiple levels) and must be either strings,

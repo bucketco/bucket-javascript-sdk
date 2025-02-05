@@ -28,8 +28,10 @@ export function parseAPIFeaturesResponse(
       feature.key !== key ||
       typeof feature.targetingVersion !== "number" ||
       (feature.config && typeof feature.config !== "object") ||
-      (feature.missingContextFields && !Array.isArray(feature.missingContextFields)) ||
-      (feature.ruleEvaluationResults && !Array.isArray(feature.ruleEvaluationResults))
+      (feature.missingContextFields &&
+        !Array.isArray(feature.missingContextFields)) ||
+      (feature.ruleEvaluationResults &&
+        !Array.isArray(feature.ruleEvaluationResults))
     ) {
       return;
     }

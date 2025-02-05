@@ -8,9 +8,9 @@ First find your `publishableKey` under [environment settings](https://app.bucket
 
 The package can be imported or used directly in a HTML script tag:
 
-A. Import module
+A. Import module:
 
-```ts
+```typescript
 import { BucketClient } from "@bucketco/browser-sdk";
 
 const user = {
@@ -93,21 +93,21 @@ See [example/browser.html](https://github.com/bucketco/bucket-javascript-sdk/tre
 
 Supply these to the constructor call:
 
-```ts
+```typescript
 type Configuration = {
   logger: console; // by default only logs warn/error, by passing `console` you'll log everything
   apiBaseUrl?: "https://front.bucket.co";
   sseBaseUrl?: "https://livemessaging.bucket.co";
   feedback?: undefined; // See FEEDBACK.md
-  enableTracking?: true; // set to `false` to stop sending track events and user/company updates to Bucket servers. Useful when you're impersonating a user.
+  enableTracking?: true; // set to `false` to stop sending track events and user/company updates to Bucket servers. Useful when you're impersonating a user
   featureOptions?: {
     fallbackFeatures?:
       | string[]
       | Record<string, { key: string; payload: any } | true>; // Enable these features if unable to contact bucket.co. Can be a list of feature keys or a record with configuration values
     timeoutMs?: number; // Timeout for fetching features (default: 5000ms)
     staleWhileRevalidate?: boolean; // Revalidate in the background when cached features turn stale to avoid latency in the UI (default: false)
-    staleTimeMs?: number; // at initialization time features are loaded from the cache unless they have gone stale. Defaults to 0 which means the cache is disabled. Increase in the case of a non-SPA.
-    expireTimeMs?: number; // In case we're unable to fetch features from Bucket, cached/stale features will be used instead until they expire after `expireTimeMs`. Default is 30 days.
+    staleTimeMs?: number; // at initialization time features are loaded from the cache unless they have gone stale. Defaults to 0 which means the cache is disabled. Increase in the case of a non-SPA
+    expireTimeMs?: number; // In case we're unable to fetch features from Bucket, cached/stale features will be used instead until they expire after `expireTimeMs`. Default is 30 days
   };
 };
 ```
@@ -122,9 +122,9 @@ In addition to the `id`, you must also supply anything additional that you want 
 Attributes cannot be nested (multiple levels) and must be either strings, integers or booleans.
 Some attributes are special and used in Bucket UI:
 
-- `name` is used to display name for `user`/`company`,
-- `email` is accepted for `user`s and will be highlighted in the Bucket UI if available,
-- `avatar` can be provided for both `user` and `company` and should be an URL to an image.
+- `name` -- display name for `user`/`company`,
+- `email` -- is accepted for `user`s and will be highlighted in the Bucket UI if available,
+- `avatar` -- can be provided for both `user` and `company` and should be an URL to an image.
 
 ```ts
 const bucketClient = new BucketClient({
@@ -208,7 +208,8 @@ const unsubscribe = bucketClient.onFeaturesUpdated(() => {
 unsubscribe();
 ```
 
-Note that the callback may be called even if features haven't actually changed.
+> [!NOTE]
+> Note that the callback may be called even if features haven't actually changed.
 
 ### Remote config
 
@@ -263,7 +264,7 @@ const { isEnabled } = bucketClient.getFeature("voiceHuddle");
 await bucketClient.updateUser({ voiceHuddleOptIn: (!isEnabled).toString() });
 ```
 
-Note that user/company attributes are also stored remotely on the Bucket servers and will automatically be used to evaluate feature targeting if the page is refreshed.
+> [!NOTE] > `user`/`company` attributes are also stored remotely on the Bucket servers and will automatically be used to evaluate feature targeting if the page is refreshed.
 
 ### Qualitative feedback
 
@@ -273,7 +274,8 @@ Bucket can collect qualitative feedback from your users in the form of a [Custom
 
 The Bucket Browser SDK comes with automated feedback collection mode enabled by default, which lets the Bucket service ask your users for feedback for relevant features just after they've used them.
 
-Note: To get started with automatic feedback collection, make sure you've set `user` in the `BucketClient` constructor.
+> [!NOTE]
+> To get started with automatic feedback collection, make sure you've set `user` in the `BucketClient` constructor.
 
 Automated feedback surveys work even if you're not using the SDK to send events to Bucket.
 It works because the Bucket Browser SDK maintains a live connection to Bucket's servers and can automatically show a feedback prompt whenever the Bucket servers determines that an event should trigger a prompt - regardless of how this event is sent to Bucket.
@@ -336,20 +338,19 @@ Types are bundled together with the library and exposed automatically when impor
 
 If you are running with strict Content Security Policies active on your website, you will need to enable these directives in order to use the SDK:
 
-| Directive   | Values                          | Reason                                                                                                                                   |
-| ----------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| connect-src | https://front.bucket.co         | Basic functionality`                                                                                                                     |
-| connect-src | https://livemessaging.bucket.co | Server sent events for use in automated feedback surveys, which allows for automatically collecting feedback when a user used a feature. |
-| style-src   | 'unsafe-inline'                 | The feedback UI is styled with inline styles. Not having this directive results unstyled HTML elements.                                  |
+| Directive   | Values                                                             | Reason                                                                                                                                   |
+| ----------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| connect-src | [https://front.bucket.co](https://front.bucket.co)                 | Basic functionality`                                                                                                                     |
+| connect-src | [https://livemessaging.bucket.co](https://livemessaging.bucket.co) | Server sent events for use in automated feedback surveys, which allows for automatically collecting feedback when a user used a feature. |
+| style-src   | 'unsafe-inline'                                                    | The feedback UI is styled with inline styles. Not having this directive results unstyled HTML elements.                                  |
 
 If you are including the Bucket tracking SDK with a `<script>`-tag from `jsdelivr.net` you will also need:
 
-| Directive       | Values                   | Reason                          |
-| --------------- | ------------------------ | ------------------------------- |
-| script-src-elem | https://cdn.jsdelivr.net | Loads the Bucket SDK from a CDN |
+| Directive       | Values                                               | Reason                          |
+| --------------- | ---------------------------------------------------- | ------------------------------- |
+| script-src-elem | [https://cdn.jsdelivr.net](https://cdn.jsdelivr.net) | Loads the Bucket SDK from a CDN |
 
 ## License
 
-MIT License
-
-Copyright (c) 2025 Bucket ApS
+> MIT License
+> Copyright (c) 2025 Bucket ApS

@@ -924,9 +924,9 @@ export class BucketClient {
 
     if (enableTracking) {
       const promises = evaluated
-        .map(async (res) => {
-          const promises = [];
-          promises.push(
+        .map((res) => {
+          const outPromises: Promise<void>[] = [];
+          outPromises.push(
             this.sendFeatureEvent({
               action: "evaluate",
               key: res.featureKey,
@@ -940,7 +940,7 @@ export class BucketClient {
 
           const config = evaluatedConfigs[res.featureKey];
           if (config) {
-            promises.push(
+            outPromises.push(
               this.sendFeatureEvent({
                 action: "evaluate-config",
                 key: res.featureKey,
@@ -953,11 +953,11 @@ export class BucketClient {
             );
           }
 
-          return promises;
+          return outPromises;
         })
         .flat();
 
-      Promise.allSettled(promises).then((results) => {
+      void Promise.allSettled(promises).then((results) => {
         const failed = results
           .map((result) =>
             result.status === "rejected" ? result.reason : undefined,
