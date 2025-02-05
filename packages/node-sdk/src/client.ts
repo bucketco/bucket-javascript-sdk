@@ -791,11 +791,11 @@ export class BucketClient {
   /**
    * Warns if any features have targeting rules that require context fields that are missing.
    *
-   * @param options - The options.
+   * @param context - The context.
    * @param features - The features to check.
    */
   private warnMissingFeatureContextFields(
-    options: Context,
+    context: Context,
     features: {
       key: string;
       missingContextFields?: string[];
@@ -805,51 +805,46 @@ export class BucketClient {
       };
     }[],
   ) {
-    features.forEach(({ config, ...feature }) => {
-      if (feature.missingContextFields?.length) {
+    const report = features.reduce(
+      (acc, { config, ...feature }) => {
         if (
-          !this._config.rateLimiter.isAllowed(
+          feature.missingContextFields?.length &&
+          this._config.rateLimiter.isAllowed(
             hashObject({
-              key: feature.key,
+              featureKey: feature.key,
               missingContextFields: feature.missingContextFields,
-              options,
+              context,
             }),
           )
         ) {
-          return;
+          acc[feature.key] = feature.missingContextFields;
         }
 
-        const missingFieldsStr = feature.missingContextFields
-          .map((field) => `"${field}"`)
-          .join(", ");
-
-        this._config.logger?.warn(
-          `feature "${feature.key}" has targeting rules that require the following context fields: ${missingFieldsStr}`,
-        );
-      }
-
-      if (config?.missingContextFields?.length) {
         if (
-          !this._config.rateLimiter.isAllowed(
+          config?.missingContextFields?.length &&
+          this._config.rateLimiter.isAllowed(
             hashObject({
-              key: config.key,
+              featureKey: feature.key,
+              configKey: config.key,
               missingContextFields: config.missingContextFields,
-              options,
+              context,
             }),
           )
         ) {
-          return;
+          acc[`${feature.key}.config`] = config.missingContextFields;
         }
 
-        const missingFieldsStr = config.missingContextFields
-          .map((field) => `"${field}"`)
-          .join(", ");
+        return acc;
+      },
+      {} as Record<string, string[]>,
+    );
 
-        this._config.logger?.warn(
-          `remote config "${config.key}" has targeting rules that require the following context fields: ${missingFieldsStr}`,
-        );
-      }
-    });
+    if (Object.keys(report).length > 0) {
+      this._config.logger?.warn(
+        `feature/remote config targeting rules might not be correctly evaluated due to missing context fields.`,
+        report,
+      );
+    }
   }
 
   private _getFeatures(

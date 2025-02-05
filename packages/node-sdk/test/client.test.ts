@@ -1531,9 +1531,10 @@ describe("BucketClient", () => {
       });
 
       expect(logger.warn).toHaveBeenCalledWith(
-        expect.stringMatching(
-          'feature "feature2" has targeting rules that require the following context fields: "something"',
-        ),
+        "feature/remote config targeting rules might not be correctly evaluated due to missing context fields.",
+        {
+          feature2: ["something"],
+        },
       );
     });
 
@@ -2180,13 +2181,20 @@ describe("BucketClient", () => {
                 version: 3,
                 default: true,
                 payload: { something: "else" },
+                missingContextFields: ["funny"],
               },
+              missingContextFields: ["something", "funny"],
             },
             feature2: {
               key: "feature2",
               targetingVersion: 2,
               isEnabled: false,
-              missingContextFields: ["something"],
+              missingContextFields: ["another"],
+            },
+            feature3: {
+              key: "feature3",
+              targetingVersion: 5,
+              isEnabled: true,
             },
           },
         },
@@ -2220,6 +2228,12 @@ describe("BucketClient", () => {
           config: { key: undefined, payload: undefined },
           track: expect.any(Function),
         },
+        feature3: {
+          key: "feature3",
+          isEnabled: true,
+          config: { key: undefined, payload: undefined },
+          track: expect.any(Function),
+        },
       });
 
       expect(httpClient.get).toHaveBeenCalledTimes(1);
@@ -2244,7 +2258,12 @@ describe("BucketClient", () => {
     it("should warn if missing context fields", async () => {
       await client.getFeaturesRemote();
       expect(logger.warn).toHaveBeenCalledWith(
-        'feature "feature2" has targeting rules that require the following context fields: "something"',
+        "feature/remote config targeting rules might not be correctly evaluated due to missing context fields.",
+        {
+          feature1: ["something", "funny"],
+          "feature1.config": ["funny"],
+          feature2: ["another"],
+        },
       );
     });
   });
@@ -2269,6 +2288,7 @@ describe("BucketClient", () => {
                 version: 3,
                 default: true,
                 payload: { something: "else" },
+                missingContextFields: ["two"],
               },
               missingContextFields: ["one", "two"],
             },
@@ -2318,7 +2338,11 @@ describe("BucketClient", () => {
     it("should warn if missing context fields", async () => {
       await client.getFeatureRemote("feature1");
       expect(logger.warn).toHaveBeenCalledWith(
-        'feature "feature1" has targeting rules that require the following context fields: "one", "two"',
+        "feature/remote config targeting rules might not be correctly evaluated due to missing context fields.",
+        {
+          feature1: ["one", "two"],
+          "feature1.config": ["two"],
+        },
       );
     });
   });
@@ -2495,6 +2519,13 @@ describe("BoundBucketClient", () => {
               key: "feature1",
               targetingVersion: 1,
               isEnabled: true,
+              config: {
+                key: "config-1",
+                version: 3,
+                default: true,
+                payload: { something: "else" },
+                missingContextFields: ["else"],
+              },
             },
             feature2: {
               key: "feature2",
@@ -2520,7 +2551,7 @@ describe("BoundBucketClient", () => {
         feature1: {
           key: "feature1",
           isEnabled: true,
-          config: { key: undefined, payload: undefined },
+          config: { key: "config-1", payload: { something: "else" } },
           track: expect.any(Function),
         },
         feature2: {
@@ -2551,7 +2582,7 @@ describe("BoundBucketClient", () => {
       expect(result).toStrictEqual({
         key: "feature1",
         isEnabled: true,
-        config: { key: undefined, payload: undefined },
+        config: { key: "config-1", payload: { something: "else" } },
         track: expect.any(Function),
       });
 
