@@ -69,22 +69,6 @@ export function handleDeprecatedFeedbackOptions(
   };
 }
 
-type FeatureIdentifier =
-  | {
-      /**
-       * Bucket feature ID.
-       *
-       * @deprecated use `feedbackId` instead.
-       */
-      featureId: string;
-    }
-  | {
-      /**
-       * Bucket feature key.
-       */
-      featureKey: string;
-    };
-
 export type RequestFeedbackData = Omit<
   OpenFeedbackFormOptions,
   "key" | "onSubmit"
@@ -105,7 +89,12 @@ export type RequestFeedbackData = Omit<
    * @param data.
    */
   onAfterSubmit?: (data: FeedbackSubmission) => void;
-} & FeatureIdentifier;
+
+  /**
+   * Bucket feature key.
+   */
+  featureKey: string;
+};
 
 export type RequestFeedbackOptions = RequestFeedbackData & {
   /**
@@ -115,6 +104,11 @@ export type RequestFeedbackOptions = RequestFeedbackData & {
 };
 
 export type UnassignedFeedback = {
+  /**
+   * Bucket feature key.
+   */
+  featureKey: string;
+
   /**
    * Bucket feedback ID
    */
@@ -159,7 +153,7 @@ export type UnassignedFeedback = {
    * - `sdk` - Feedback submitted via `feedback`
    */
   source?: "prompt" | "sdk" | "widget";
-} & FeatureIdentifier;
+};
 
 export type Feedback = UnassignedFeedback & {
   /**
@@ -242,10 +236,17 @@ export const DEFAULT_FEEDBACK_CONFIG = {
   autoFeedbackEnabled: true,
 };
 
+// Payload can include featureId or featureKey, but the public API only exposes featureKey
+// We use featureId internally because prompting is based on featureId
+type FeedbackPayload = Omit<Feedback, "featureKey"> & {
+  featureId?: string;
+  featureKey?: string;
+};
+
 export async function feedback(
   httpClient: HttpClient,
   logger: Logger,
-  payload: Feedback,
+  payload: FeedbackPayload,
 ) {
   if (!payload.score && !payload.comment) {
     logger.error(
@@ -435,7 +436,7 @@ export class AutoFeedback {
         question: reply.question,
         promptedQuestion: message.question,
         source: "prompt",
-      } satisfies Feedback;
+      } satisfies FeedbackPayload;
 
       const response = await feedback(
         this.httpClient,
