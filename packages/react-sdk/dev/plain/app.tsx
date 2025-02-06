@@ -19,7 +19,7 @@ declare module "../../src" {
 }
 
 const publishableKey = import.meta.env.VITE_PUBLISHABLE_KEY || "";
-const host = import.meta.env.VITE_BUCKET_HOST;
+const apiBaseUrl = import.meta.env.VITE_BUCKET_API_BASE_URL;
 
 function HuddleFeature() {
   // Type safe feature
@@ -227,7 +227,7 @@ export function App() {
       company={initialCompany}
       user={initialUser}
       otherContext={initialOtherContext}
-      host={host}
+      apiBaseUrl={apiBaseUrl}
     >
       <Demos />
       {}
