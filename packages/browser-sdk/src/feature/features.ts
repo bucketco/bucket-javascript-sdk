@@ -1,4 +1,4 @@
-import { FEATURE_EVENTS_PER_MIN } from "../config";
+import { FEATURE_EVENTS_PER_MIN } from "../constants";
 import { HttpClient } from "../httpClient";
 import { Logger, loggerWithPrefix } from "../logger";
 import RateLimiter from "../rateLimiter";

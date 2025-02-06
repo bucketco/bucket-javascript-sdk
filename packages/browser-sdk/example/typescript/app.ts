@@ -1,10 +1,11 @@
-import { BucketClient } from "../../src";
+import { BucketClient, FeatureKey } from "../../src";
+import features from "./bucket.config";
 
 const urlParams = new URLSearchParams(window.location.search);
 const publishableKey = urlParams.get("publishableKey");
-const featureKey = urlParams.get("featureKey") ?? "huddles";
-
-const featureList = ["huddles"];
+const featureKey = (urlParams.get("featureKey") ?? "huddles") as FeatureKey<
+  typeof features
+>;
 
 if (!publishableKey) {
   throw Error("publishableKey is missing");
@@ -18,7 +19,7 @@ const bucket = new BucketClient({
     show: true,
     position: { placement: "bottom-right" },
   },
-  featureList,
+  features,
 });
 
 document
@@ -38,9 +39,14 @@ bucket.initialize().then(() => {
 });
 
 bucket.onFeaturesUpdated(() => {
-  const { isEnabled } = bucket.getFeature("huddles");
+  const { isEnabled, config } = bucket.getFeature("huddles");
 
   const startHuddleElem = document.getElementById("start-huddle");
+  if (startHuddleElem) {
+    startHuddleElem.innerText =
+      config?.payload?.startHuddleCopy ?? "Start Huddle";
+  }
+
   if (isEnabled) {
     // show the start-huddle button
     if (startHuddleElem) startHuddleElem.style.display = "block";

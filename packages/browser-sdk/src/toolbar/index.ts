@@ -7,7 +7,7 @@ import { attachContainer } from "../ui/utils";
 import Toolbar, { ToolbarPosition } from "./Toolbar";
 
 type showToolbarToggleOptions = {
-  bucketClient: BucketClient;
+  bucketClient: BucketClient<any>;
   position?: ToolbarPosition;
 };
 

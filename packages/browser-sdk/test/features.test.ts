@@ -1,13 +1,13 @@
 import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
 
 import { version } from "../package.json";
-import { FeatureDefinitions } from "../src/client";
 import {
   FEATURES_EXPIRE_MS,
   FeaturesClient,
   FetchedFeature,
   RawFeature,
 } from "../src/feature/features";
+import { FeatureDefinitions } from "../src/featureDefinitions";
 import { HttpClient } from "../src/httpClient";
 
 import { featuresResult } from "./mocks/handlers";
@@ -48,7 +48,7 @@ function featuresClientFactory() {
           other: { eventId: "big-conference1" },
           ...context,
         },
-        features || [],
+        features?.map((f) => (f instanceof Object ? f.key : f)) || [],
         testLogger,
         {
           cache,

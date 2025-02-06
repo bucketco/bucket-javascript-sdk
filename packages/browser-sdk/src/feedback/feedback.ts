@@ -69,7 +69,7 @@ export function handleDeprecatedFeedbackOptions(
   };
 }
 
-export type RequestFeedbackData = Omit<
+export type RequestFeedbackData<TFeatureKey extends string = string> = Omit<
   OpenFeedbackFormOptions,
   "key" | "onSubmit"
 > & {
@@ -93,7 +93,7 @@ export type RequestFeedbackData = Omit<
   /**
    * Bucket feature key.
    */
-  featureKey: string;
+  featureKey: TFeatureKey;
 };
 
 export type RequestFeedbackOptions = RequestFeedbackData & {

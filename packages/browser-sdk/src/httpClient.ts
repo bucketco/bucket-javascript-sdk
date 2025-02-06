@@ -1,4 +1,4 @@
-import { API_BASE_URL, SDK_VERSION, SDK_VERSION_HEADER_NAME } from "./config";
+import { API_BASE_URL, SDK_VERSION, SDK_VERSION_HEADER_NAME } from "./constants";
 
 export interface HttpClientOptions {
   baseUrl?: string;
