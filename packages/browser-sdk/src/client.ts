@@ -439,7 +439,7 @@ export class BucketClient {
     if (shouldShowToolbar(opts)) {
       this.logger.info("opening toolbar toggler");
       showToolbarToggle({
-        bucketClient: this as unknown as BucketClient,
+        bucketClient: this,
         position:
           typeof opts.toolbar === "object" ? opts.toolbar.position : undefined,
       });
@@ -622,32 +622,28 @@ export class BucketClient {
       return;
     }
 
-    const featureId = "featureId" in options ? options.featureId : undefined;
-    const featureKey = "featureKey" in options ? options.featureKey : undefined;
-
-    if (!featureId && !featureKey) {
+    if (!options.featureKey) {
       this.logger.error(
-        "`requestFeedback` call ignored. No `featureId` or `featureKey` provided",
+        "`requestFeedback` call ignored. No `featureKey` provided",
       );
       return;
     }
 
     const feedbackData = {
-      featureId,
-      featureKey,
+      featureKey: options.featureKey,
       companyId:
         options.companyId ||
         (this.context.company?.id
           ? String(this.context.company?.id)
           : undefined),
       source: "widget" as const,
-    } as Feedback;
+    } satisfies Feedback;
 
     // Wait a tick before opening the feedback form,
     // to prevent the same click from closing it.
     setTimeout(() => {
       feedbackLib.openFeedbackForm({
-        key: (featureKey || featureId)!,
+        key: options.featureKey,
         title: options.title,
         position: options.position || this.requestFeedbackOptions.position,
         translations:

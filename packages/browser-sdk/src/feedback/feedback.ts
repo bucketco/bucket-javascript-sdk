@@ -69,22 +69,6 @@ export function handleDeprecatedFeedbackOptions(
   };
 }
 
-type FeatureIdentifier =
-  | {
-      /**
-       * Bucket feature ID.
-       *
-       * @deprecated use `feedbackId` instead.
-       */
-      featureId: string;
-    }
-  | {
-      /**
-       * Bucket feature key.
-       */
-      featureKey: string;
-    };
-
 export type RequestFeedbackData = Omit<
   OpenFeedbackFormOptions,
   "key" | "onSubmit"
@@ -105,7 +89,12 @@ export type RequestFeedbackData = Omit<
    * @param data.
    */
   onAfterSubmit?: (data: FeedbackSubmission) => void;
-} & FeatureIdentifier;
+
+  /**
+   * Bucket feature key.
+   */
+  featureKey: string;
+};
 
 export type RequestFeedbackOptions = RequestFeedbackData & {
   /**
@@ -159,7 +148,17 @@ export type UnassignedFeedback = {
    * - `sdk` - Feedback submitted via `feedback`
    */
   source?: "prompt" | "sdk" | "widget";
-} & FeatureIdentifier;
+
+  /**
+   * Bucket feature ID.
+   *
+   */
+  featureId?: string;
+  /**
+   * Bucket feature key.
+   */
+  featureKey?: string;
+};
 
 export type Feedback = UnassignedFeedback & {
   /**

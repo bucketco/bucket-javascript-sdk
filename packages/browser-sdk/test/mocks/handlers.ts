@@ -141,7 +141,7 @@ export const handlers = [
       !data ||
       !data["userId"] ||
       typeof data["score"] !== "number" ||
-      (!data["featureId"] && !data["featureKey"])
+      (!data["featureId"] && !data["key"])
     ) {
       return new HttpResponse(null, { status: 400 });
     }
