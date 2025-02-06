@@ -105,6 +105,11 @@ export type RequestFeedbackOptions = RequestFeedbackData & {
 
 export type UnassignedFeedback = {
   /**
+   * Bucket feature key.
+   */
+  featureKey: string;
+
+  /**
    * Bucket feedback ID
    */
   feedbackId?: string;
@@ -148,16 +153,6 @@ export type UnassignedFeedback = {
    * - `sdk` - Feedback submitted via `feedback`
    */
   source?: "prompt" | "sdk" | "widget";
-
-  /**
-   * Bucket feature ID.
-   *
-   */
-  featureId?: string;
-  /**
-   * Bucket feature key.
-   */
-  featureKey?: string;
 };
 
 export type Feedback = UnassignedFeedback & {
@@ -241,10 +236,17 @@ export const DEFAULT_FEEDBACK_CONFIG = {
   autoFeedbackEnabled: true,
 };
 
+// Payload can include featureId or featureKey, but the public API only exposes featureKey
+// We use featureId internally because prompting is based on featureId
+type FeedbackPayload = Omit<Feedback, "featureKey"> & {
+  featureId?: string;
+  featureKey?: string;
+};
+
 export async function feedback(
   httpClient: HttpClient,
   logger: Logger,
-  payload: Feedback,
+  payload: FeedbackPayload,
 ) {
   if (!payload.score && !payload.comment) {
     logger.error(
@@ -434,7 +436,7 @@ export class AutoFeedback {
         question: reply.question,
         promptedQuestion: message.question,
         source: "prompt",
-      } satisfies Feedback;
+      } satisfies FeedbackPayload;
 
       const response = await feedback(
         this.httpClient,
