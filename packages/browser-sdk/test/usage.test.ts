@@ -11,7 +11,7 @@ import {
 } from "vitest";
 
 import { BucketClient } from "../src";
-import { API_BASE_URL } from "../src/config";
+import { API_BASE_URL } from "../src/constants";
 import { FeaturesClient } from "../src/feature/features";
 import { FeedbackPromptHandler } from "../src/feedback/feedback";
 import {

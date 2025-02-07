@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import { expect, test } from "@playwright/test";
 
-import { API_BASE_URL } from "../../src/config";
+import { API_BASE_URL } from "../../src/constants";
 
 const KEY = randomUUID();
 

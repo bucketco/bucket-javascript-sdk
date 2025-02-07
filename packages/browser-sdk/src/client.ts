@@ -15,8 +15,13 @@ import {
 } from "./feedback/feedback";
 import * as feedbackLib from "./feedback/ui";
 import { ToolbarPosition } from "./toolbar/Toolbar";
-import { API_BASE_URL, APP_BASE_URL, SSE_REALTIME_BASE_URL } from "./config";
+import { API_BASE_URL, APP_BASE_URL, SSE_REALTIME_BASE_URL } from "./constants";
 import { BucketContext, CompanyContext, UserContext } from "./context";
+import {
+  ConfigType,
+  FeatureDefinitions,
+  FeatureKey,
+} from "./featureDefinitions";
 import { HttpClient } from "./httpClient";
 import { Logger, loggerWithPrefix, quietConsoleLogger } from "./logger";
 import { showToolbarToggle } from "./toolbar";
@@ -178,14 +183,9 @@ export type ToolbarOptions =
     };
 
 /**
- * Feature definitions.
- */
-export type FeatureDefinitions = Readonly<Array<string>>;
-
-/**
  * BucketClient initialization options.
  */
-export type InitOptions = {
+export type InitOptions<TFeatures extends FeatureDefinitions = any> = {
   /**
    * Publishable key for authentication
    */
@@ -284,7 +284,7 @@ export type InitOptions = {
   /**
    * Local-first definition of features
    */
-  features?: FeatureDefinitions;
+  features?: TFeatures;
 };
 
 const defaultConfig: Config = {
@@ -295,26 +295,9 @@ const defaultConfig: Config = {
 };
 
 /**
- * A remotely managed configuration value for a feature.
- */
-export type FeatureRemoteConfig =
-  | {
-      /**
-       * The key of the matched configuration value.
-       */
-      key: string;
-
-      /**
-       * The optional user-supplied payload data.
-       */
-      payload: any;
-    }
-  | { key: undefined; payload: undefined };
-
-/**
  * A feature.
  */
-export interface Feature {
+export interface Feature<TRemoteConfig = any> {
   /**
    * Result of feature flag evaluation.
    */
@@ -323,7 +306,19 @@ export interface Feature {
   /*
    * Optional user-defined configuration.
    */
-  config: FeatureRemoteConfig;
+  config:
+    | {
+        /**
+         * The key of the matched configuration value.
+         */
+        key: string;
+
+        /**
+         * The optional user-supplied payload data.
+         */
+        payload: TRemoteConfig;
+      }
+    | { key: undefined; payload: undefined };
 
   /**
    * Function to send analytics events for this feature.
@@ -338,7 +333,7 @@ export interface Feature {
   ) => void;
 }
 
-function shouldShowToolbar(opts: InitOptions) {
+function shouldShowToolbar(opts: InitOptions<any>) {
   const toolbarOpts = opts.toolbar;
   if (typeof toolbarOpts === "boolean") return toolbarOpts;
   if (typeof toolbarOpts?.show === "boolean") return toolbarOpts.show;
@@ -351,7 +346,10 @@ function shouldShowToolbar(opts: InitOptions) {
 /**
  * BucketClient lets you interact with the Bucket API.
  */
-export class BucketClient {
+export class BucketClient<
+  TFeatures extends FeatureDefinitions = any,
+  TFeatureKey extends string = FeatureKey<TFeatures>,
+> {
   private readonly publishableKey: string;
   private readonly context: BucketContext;
   private config: Config;
@@ -367,7 +365,7 @@ export class BucketClient {
   /**
    * Create a new BucketClient instance.
    */
-  constructor(opts: InitOptions) {
+  constructor(opts: InitOptions<TFeatures>) {
     this.publishableKey = opts.publishableKey;
     this.logger =
       opts?.logger ?? loggerWithPrefix(quietConsoleLogger, "[Bucket]");
@@ -396,6 +394,9 @@ export class BucketClient {
       sdkVersion: opts?.sdkVersion,
     });
 
+    const keys =
+      opts.features?.map((f) => (f instanceof Object ? f.key : f)) ?? [];
+
     this.featuresClient = new FeaturesClient(
       this.httpClient,
       // API expects `other` and we have `otherContext`.
@@ -404,7 +405,7 @@ export class BucketClient {
         company: this.context.company,
         other: this.context.otherContext,
       },
-      opts?.features || [],
+      keys,
       this.logger,
       {
         expireTimeMs: opts.expireTimeMs,
@@ -614,7 +615,7 @@ export class BucketClient {
    *
    * @param options
    */
-  requestFeedback(options: RequestFeedbackData) {
+  requestFeedback(options: RequestFeedbackData<FeatureKey<TFeatures>>) {
     if (!this.context.user?.id) {
       this.logger.error(
         "`requestFeedback` call ignored. No `user` context provided at initialization",
@@ -692,7 +693,9 @@ export class BucketClient {
    * Return a feature. Accessing `isEnabled` or `config` will automatically send a `check` event.
    * @returns A feature.
    */
-  getFeature(key: string): Feature {
+  getFeature<TKey extends TFeatureKey>(
+    key: TKey,
+  ): Feature<ConfigType<TFeatures, TKey>> {
     const f = this.getFeatures()[key];
 
     const fClient = this.featuresClient;

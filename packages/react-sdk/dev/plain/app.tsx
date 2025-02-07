@@ -10,20 +10,14 @@ import {
   useUpdateOtherContext,
   useUpdateUser,
 } from "../../src";
-
-// Extending the Features interface to define the available features
-declare module "../../src" {
-  interface Features {
-    huddles: boolean;
-  }
-}
+import bucketFeatures from "./bucket.features";
 
 const publishableKey = import.meta.env.VITE_PUBLISHABLE_KEY || "";
 const apiBaseUrl = import.meta.env.VITE_BUCKET_API_BASE_URL;
 
 function HuddleFeature() {
-  // Type safe feature
   const feature = useFeature("huddles");
+
   return (
     <div>
       <h2>Huddle feature</h2>
@@ -148,7 +142,7 @@ function Feedback() {
         onClick={(e) =>
           requestFeedback({
             title: "How do you like Huddles?",
-            featureKey: "huddle",
+            featureKey: "huddles",
             position: {
               type: "POPOVER",
               anchor: e.currentTarget as HTMLElement,
@@ -164,20 +158,26 @@ function Feedback() {
 
 // App.tsx
 function Demos() {
+  const { isEnabled, config } = useFeature("optIn");
+
   return (
     <main>
       <h1>React SDK</h1>
 
       <HuddleFeature />
 
-      <h2>Feature opt-in</h2>
-      <div>
-        Create a <code>huddle</code> feature and set a rule:{" "}
-        <code>optin-huddles IS TRUE</code>. Hit the checkbox below to opt-in/out
-        of the feature.
-      </div>
-      <FeatureOptIn featureKey={"huddles"} featureName={"Huddles"} />
-
+      {isEnabled && (
+        <>
+          <h2>Feature opt-in</h2>
+          <div>
+            Create a <code>huddle</code> feature and set a rule:{" "}
+            <code>optin-huddles IS TRUE</code>. Hit the checkbox below to
+            opt-in/out of the feature.
+            {config.payload?.additionalCopy}
+          </div>
+          <FeatureOptIn featureKey={"huddles"} featureName={"Huddles"} />
+        </>
+      )}
       <UpdateContext />
       <Feedback />
       <SendEvent />
@@ -228,6 +228,7 @@ export function App() {
       user={initialUser}
       otherContext={initialOtherContext}
       apiBaseUrl={apiBaseUrl}
+      features={bucketFeatures}
     >
       <Demos />
       {}

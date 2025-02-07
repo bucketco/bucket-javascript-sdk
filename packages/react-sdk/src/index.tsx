@@ -10,9 +10,13 @@ import React, {
 } from "react";
 import canonicalJSON from "canonical-json";
 
+import type { FeatureDefinitions } from "@bucketco/browser-sdk";
 import {
   BucketClient,
   BucketContext,
+  ConfigType,
+  defineFeatures,
+  FeatureKey as BaseFeatureKey,
   FeedbackOptions,
   RawFeatures,
   RequestFeedbackData,
@@ -21,6 +25,12 @@ import {
 } from "@bucketco/browser-sdk";
 
 import { version } from "../package.json";
+
+export { defineFeatures, FeatureDefinitions };
+
+export type FeaturesType<TFeatures extends FeatureDefinitions> = {
+  [K in BaseFeatureKey<TFeatures>]: ConfigType<TFeatures, K>;
+};
 
 export interface Features {}
 
@@ -65,7 +75,7 @@ export type BucketProps = BucketContext & {
   debug?: boolean;
   enableTracking?: boolean;
 
-  features?: Readonly<string[]>;
+  features?: Readonly<FeatureDefinitions>;
 
   fallbackFeatures?: FeatureKey[] | Record<FeatureKey, any>;
 
@@ -306,7 +316,8 @@ export function useTrack() {
  */
 export function useRequestFeedback() {
   const { client } = useContext<ProviderContextType>(ProviderContext);
-  return (options: RequestFeedbackData) => client?.requestFeedback(options);
+  return (options: RequestFeedbackData<FeatureKey>) =>
+    client?.requestFeedback(options);
 }
 
 /**

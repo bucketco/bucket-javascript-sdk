@@ -8,6 +8,12 @@ export type {
   RawFeatures,
 } from "./feature/features";
 export type {
+  ConfigType,
+  FeatureDefinitions,
+  FeatureKey,
+} from "./featureDefinitions";
+export { defineFeatures } from "./featureDefinitions";
+export type {
   Feedback,
   FeedbackOptions,
   FeedbackPrompt,
