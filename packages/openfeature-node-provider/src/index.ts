@@ -182,11 +182,13 @@ export class BucketNodeProvider implements Provider {
       this.contextTranslator(context),
       (feature) => {
         const expType = typeof defaultValue;
-        const payload = feature.config.payload;
+        const payloadType = typeof feature.config.payload;
 
-        const payloadType = payload === null ? "null" : typeof payload;
-
-        if (payloadType !== expType) {
+        if (
+          feature.config.payload === undefined ||
+          feature.config.payload === null ||
+          payloadType !== expType
+        ) {
           return Promise.resolve({
             value: defaultValue,
             variant: feature.config.key,
@@ -197,7 +199,7 @@ export class BucketNodeProvider implements Provider {
         }
 
         return Promise.resolve({
-          value: payload,
+          value: feature.config.payload,
           variant: feature.config.key,
           reason: StandardResolutionReasons.TARGETING_MATCH,
         });

@@ -175,12 +175,13 @@ export class BucketBrowserSDKProvider implements Provider {
     return this.resolveFeature(flagKey, defaultValue, (feature) => {
       const expType = typeof defaultValue;
 
-      const payloadType =
-        feature.config.payload === null
-          ? "null"
-          : typeof feature.config.payload;
+      const payloadType = typeof feature.config.payload;
 
-      if (payloadType !== expType) {
+      if (
+        feature.config.payload === undefined ||
+        feature.config.payload === null ||
+        payloadType !== expType
+      ) {
         return {
           value: defaultValue,
           reason: StandardResolutionReasons.ERROR,
