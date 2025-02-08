@@ -11,7 +11,7 @@ import {
   TrackingEventDetails,
 } from "@openfeature/web-sdk";
 
-import { BucketClient, InitOptions } from "@bucketco/browser-sdk";
+import { BucketClient, Feature, InitOptions } from "@bucketco/browser-sdk";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ContextTranslationFn = (
@@ -100,12 +100,11 @@ export class BucketBrowserSDKProvider implements Provider {
     await this.initialize(newContext);
   }
 
-  private resolveFeature<T extends null | boolean | string | number | object>(
+  private resolveFeature<T extends JsonValue>(
     flagKey: string,
     defaultValue: T,
+    resolveFn: (feature: Feature) => ResolutionDetails<T>,
   ): ResolutionDetails<T> {
-    const expType = typeof defaultValue;
-
     if (!this._client) {
       return {
         value: defaultValue,
@@ -117,42 +116,7 @@ export class BucketBrowserSDKProvider implements Provider {
 
     const features = this._client.getFeatures();
     if (flagKey in features) {
-      const feature = this._client.getFeature(flagKey);
-
-      if (!feature.isEnabled) {
-        return {
-          value: defaultValue,
-          reason: StandardResolutionReasons.DISABLED,
-        };
-      }
-
-      if (!feature.config.key) {
-        return {
-          value: defaultValue,
-          reason: StandardResolutionReasons.DEFAULT,
-        };
-      }
-
-      if (expType === "string") {
-        return {
-          value: feature.config.key as T,
-          reason: StandardResolutionReasons.TARGETING_MATCH,
-        };
-      }
-
-      if (typeof feature.config.payload !== expType) {
-        return {
-          value: defaultValue,
-          reason: StandardResolutionReasons.ERROR,
-          errorCode: ErrorCode.TYPE_MISMATCH,
-          errorMessage: `Expected ${expType} but got ${typeof feature.config.payload}`,
-        };
-      }
-
-      return {
-        value: feature.config.payload as T,
-        reason: StandardResolutionReasons.TARGETING_MATCH,
-      };
+      return resolveFn(this._client.getFeature(flagKey));
     }
 
     return {
@@ -164,25 +128,67 @@ export class BucketBrowserSDKProvider implements Provider {
   }
 
   resolveBooleanEvaluation(flagKey: string, defaultValue: boolean) {
-    return this.resolveFeature(flagKey, defaultValue);
+    return this.resolveFeature(flagKey, defaultValue, (feature) => {
+      return {
+        value: feature.isEnabled,
+        reason: StandardResolutionReasons.TARGETING_MATCH,
+      };
+    });
   }
 
-  resolveNumberEvaluation(flagKey: string, defaultValue: number) {
-    return this.resolveFeature(flagKey, defaultValue);
+  resolveNumberEvaluation(_: string, defaultValue: number) {
+    return {
+      value: defaultValue,
+      reason: StandardResolutionReasons.ERROR,
+      errorCode: ErrorCode.GENERAL,
+      errorMessage:
+        "Bucket doesn't support this method. Use `resolveObjectEvaluation` instead.",
+    };
   }
 
   resolveObjectEvaluation<T extends JsonValue>(
     flagKey: string,
     defaultValue: T,
   ) {
-    return this.resolveFeature(flagKey, defaultValue);
+    return this.resolveFeature(flagKey, defaultValue, (feature) => {
+      const expType = typeof defaultValue;
+      const payload = feature.config?.payload;
+
+      const payloadType = payload === null ? "null" : typeof payload;
+
+      if (payloadType !== expType) {
+        return {
+          value: defaultValue,
+          reason: StandardResolutionReasons.ERROR,
+          errorCode: ErrorCode.TYPE_MISMATCH,
+          errorMessage: `Expected remote config payload of type \`${expType}\` but got \`${payloadType}\`.`,
+        };
+      }
+
+      return {
+        value: payload,
+        reason: StandardResolutionReasons.TARGETING_MATCH,
+      };
+    });
   }
 
   resolveStringEvaluation(
     flagKey: string,
     defaultValue: string,
   ): ResolutionDetails<string> {
-    return this.resolveFeature(flagKey, defaultValue);
+    return this.resolveFeature(flagKey, defaultValue, (feature) => {
+      if (!feature.config.key) {
+        return {
+          value: defaultValue,
+          reason: StandardResolutionReasons.DEFAULT,
+        };
+      }
+
+      return {
+        value: feature.config.key as string,
+        reason: StandardResolutionReasons.TARGETING_MATCH,
+      };
+    });
   }
 
   track(
