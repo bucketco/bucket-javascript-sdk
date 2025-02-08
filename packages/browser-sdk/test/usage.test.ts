@@ -441,6 +441,7 @@ describe(`sends "check" events `, () => {
         FeaturesClient.prototype,
         "sendCheckEvent",
       );
+
       const postSpy = vi.spyOn(HttpClient.prototype, "post");
 
       const client = new BucketClient({
@@ -457,9 +458,12 @@ describe(`sends "check" events `, () => {
 
       expect(sendCheckEventSpy).toHaveBeenCalledTimes(1);
       expect(sendCheckEventSpy).toHaveBeenCalledWith({
+        action: "check",
         key: "featureA",
         value: true,
         version: 1,
+        missingContextFields: ["field1", "field2"],
+        ruleEvaluationResults: [false, true],
       });
 
       expect(postSpy).toHaveBeenCalledWith({
@@ -475,6 +479,8 @@ describe(`sends "check" events `, () => {
             },
           },
           evalResult: true,
+          evalRuleResults: [false, true],
+          evalMissingFields: ["field1", "field2"],
           key: "featureA",
           targetingVersion: 1,
         },
@@ -498,16 +504,21 @@ describe(`sends "check" events `, () => {
 
       expect(postSpy).toHaveBeenCalledWith({
         body: {
-          action: "check",
+          action: "check-config",
           evalContext: {
             other: undefined,
             user: {
               id: "uid",
             },
           },
-          evalResult: true,
+          evalResult: {
+            key: "gpt3",
+            payload: { model: "gpt-something", temperature: 0.5 },
+          },
+          evalRuleResults: [true, false, false],
+          evalMissingFields: ["field3"],
           key: "featureB",
-          targetingVersion: 11,
+          targetingVersion: 12,
         },
         path: "features/events",
       });
@@ -533,6 +544,7 @@ describe(`sends "check" events `, () => {
       expect(
         vi.mocked(FeaturesClient.prototype.sendCheckEvent),
       ).toHaveBeenCalledWith({
+        action: "check",
         value: false,
         key: "non-existent",
         version: undefined,

@@ -27,7 +27,11 @@ export function parseAPIFeaturesResponse(
       typeof feature.isEnabled !== "boolean" ||
       feature.key !== key ||
       typeof feature.targetingVersion !== "number" ||
-      (feature.config && typeof feature.config !== "object")
+      (feature.config && typeof feature.config !== "object") ||
+      (feature.missingContextFields &&
+        !Array.isArray(feature.missingContextFields)) ||
+      (feature.ruleEvaluationResults &&
+        !Array.isArray(feature.ruleEvaluationResults))
     ) {
       return;
     }
@@ -37,6 +41,8 @@ export function parseAPIFeaturesResponse(
       targetingVersion: feature.targetingVersion,
       key,
       config: feature.config,
+      missingContextFields: feature.missingContextFields,
+      ruleEvaluationResults: feature.ruleEvaluationResults,
     };
   }
 

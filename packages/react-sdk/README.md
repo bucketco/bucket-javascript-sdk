@@ -6,7 +6,7 @@ React client side library for [Bucket.co](https://bucket.co)
 
 Install via npm:
 
-```
+```shell
 npm i @bucketco/react-sdk
 ```
 
@@ -21,7 +21,7 @@ If no explicit feature definitions are provided, there will be no types checked 
 
 **Example:**
 
-```tsx
+```typescript
 import "@bucketco/react-sdk";
 
 // Define your features by extending the `Features` interface in @bucketco/react-sdk
@@ -52,18 +52,74 @@ import { BucketProvider } from "@bucketco/react-sdk";
   company={{ id: "acme_inc", plan: "pro" }}
   user={{ id: "john doe" }}
   loadingComponent={<Loading />}
-  fallbackFeatures={["huddle"]}
+  featureOptions={{ fallbackFeatures: ["huddle"] }}
 >
   {/* children here are shown when loading finishes or immediately if no `loadingComponent` is given */}
 </BucketProvider>;
 ```
 
-- `publishableKey` is used to connect the provider to an _environment_ on Bucket. Find your `publishableKey` under [environment settings](https://app.bucket.co/envs/current/settings/app-environments) in Bucket.
+- `publishableKey` is used to connect the provider to an _environment_ on Bucket. Find your `publishableKey` under [environment settings](https://app.bucket.co/envs/current/settings/app-environments) in Bucket,
 - `company`, `user` and `otherContext` make up the _context_ that is used to determine if a feature is enabled or not. `company` and `user` contexts are automatically transmitted to Bucket servers so the Bucket app can show you which companies have access to which features etc.
+  > [!Note]
+  > If you specify `company` and/or `user` they must have at least the `id` property, otherwise they will be ignored in their entirety. You should also supply anything additional you want to be able to evaluate feature targeting against,
+- `featureOptions` contains configuration for features:
 
-  If you specify `company` and/or `user` they must have at least the `id` property, otherwise they will be ignored in their entirety. You should also supply anything additional you want to be able to evaluate feature targeting against.
+  - `fallbackFeatures`: A list of strings which specify which features to consider enabled if the SDK is unable to fetch features. Can be provided in two formats:
 
-- `fallbackFeatures` is a list of strings which specify which features to consider enabled if the SDK is unable to fetch features.
+    ```ts
+    // Simple array of feature keys
+    featureOptions={{
+      fallbackFeatures: ["feature1", "feature2"]
+    }}
+
+    // Or with configuration overrides
+    featureOptions={{
+      fallbackFeatures: {
+        "feature1": true,  // just enable the feature
+        "feature2": {      // enable with configuration
+          key: "variant-a",
+          payload: {
+            limit: 100,
+            mode: "test"
+          }
+        }
+      }
+    }}
+    ```
+
+  - `timeoutMs`: Timeout in milliseconds when fetching features from the server,
+  - `staleWhileRevalidate`: If set to `true`, stale features will be returned while refetching features in the background,
+  - `expireTimeMs`: If set, features will be cached between page loads for this duration (in milliseconds),
+  - `staleTimeMs`: Maximum time (in milliseconds) that stale features will be returned if `staleWhileRevalidate` is true and new features cannot be fetched.
+
+Example with all options:
+
+```tsx
+<BucketProvider
+  publishableKey={YOUR_PUBLISHABLE_KEY}
+  featureOptions={{
+    // Fallback features if server is unreachable
+    fallbackFeatures: {
+      "premium-feature": {
+        key: "basic",
+        payload: { maxItems: 10 },
+      },
+    },
+    // Timeout after 5 seconds
+    timeoutMs: 5000,
+    // Return stale data while fetching
+    staleWhileRevalidate: true,
+    // Cache features for 1 hour
+    expireTimeMs: 60 * 60 * 1000,
+    // Allow stale data up to 5 minutes
+    staleTimeMs: 5 * 60 * 1000,
+  }}
+  // ... other props
+>
+  {children}
+</BucketProvider>
+```
+
 - `loadingComponent` lets you specify an React component to be rendered instead of the children while the Bucket provider is initializing. If you want more control over loading screens, `useFeature()` returns `isLoading` which you can use to customize the loading experience:
 
   ```tsx
@@ -84,7 +140,19 @@ import { BucketProvider } from "@bucketco/react-sdk";
   <BucketProvider>
   ```
 
-- `enableTracking` (default: `true`): Set to `false` to stop sending tracking events and user/company updates to Bucket. Useful when you're impersonating a user.
+- `enableTracking` (default: `true`): Set to `false` to stop sending tracking events and user/company updates to Bucket. Useful when you're impersonating a user,
+- `apiBaseUrl`: Optional base URL for the Bucket API. Use this to override the default API endpoint,
+- `appBaseUrl`: Optional base URL for the Bucket application. Use this to override the default app URL,
+- `sseBaseUrl`: Optional base URL for Server-Sent Events. Use this to override the default SSE endpoint,
+- `debug`: Set to `true` to enable debug logging to the console,
+- `toolbar`: Optional configuration for the Bucket toolbar,
+- `feedback`: Optional configuration for feedback collection:
+
+  ```ts
+  {
+    enableLiveSatisfaction: boolean; // Enable/disable live satisfaction surveys
+  }
+  ```
 
 ## Feature toggles
 
@@ -95,9 +163,11 @@ In addition to the `id`, you must also supply anything additional that you want 
 The additional attributes are supplied using the `otherContext` prop.
 
 Attributes cannot be nested (multiple levels) and must be either strings, integers or booleans.
+A number of special attributes exist:
 
-- `name` is a special attribute and is used to display name for user/company
-- for `user`, `email` is also special and will be highlighted in the Bucket UI if available
+- `name` -- display name for `user`/`company`,
+- `email` -- the email of the user,
+- `avatar` -- the URL for `user`/`company` avatar image.
 
 ```tsx
  <BucketProvider
@@ -146,18 +216,22 @@ generates a `check` event.
 
 ### `useFeature()`
 
-Returns the state of a given features for the current context.
+Returns the state of a given feature for the current context. The hook provides type-safe access to feature flags and their configurations.
 
 ```tsx
 import { useFeature } from "@bucketco/react-sdk";
 
 function StartHuddleButton() {
   const {
-    isLoading,
-    isEnabled,
-    config: { key, payload },
-    track,
-    requestFeedback,
+    isLoading, // true while features are being loaded
+    isEnabled, // boolean indicating if the feature is enabled
+    config: {
+      // feature configuration
+      key, // string identifier for the config variant
+      payload, // type-safe configuration object
+    },
+    track, // function to track feature usage
+    requestFeedback, // function to request feedback for this feature
   } = useFeature("huddle");
 
   if (isLoading) {
@@ -192,23 +266,23 @@ function StartHuddleButton() {
 ### `useTrack()`
 
 `useTrack()` lets you send custom events to Bucket. Use this whenever a user _uses_ a feature. Create [features](https://docs.bucket.co/introduction/concepts/feature) in Bucket based off of these events to analyze feature usage.
+Returns a function to send custom events to Bucket. Use this whenever a user _uses_ a feature. These events can be used to analyze feature usage and create new features in Bucket.
 
 ```tsx
 import { useTrack } from "@bucketco/react-sdk";
 
 function StartHuddle() {
-  const track = useTrack();
-  return (
-    <div>
-      <button onClick={() => track("Huddle Started", { huddleType: "voice" })}>
-        Start voice huddle!
-      </button>
-    </div>
-  );
+  <div>
+    <button onClick={() => track("Huddle Started", { huddleType: "voice" })}>
+      Start voice huddle!
+    </button>
+  </div>;
 }
 ```
 
 ### `useRequestFeedback()`
+
+Returns a function that lets you open up a dialog to ask for feedback on a specific feature. This is useful for collecting targeted feedback about specific features.
 
 `useRequestFeedback()` returns a function that lets you open up a dialog to ask for feedback on a specific feature.
 See [Automated Feedback Surveys](https://docs.bucket.co/product-handbook/live-satisfaction) for how to do this automatically, without code.
@@ -217,73 +291,116 @@ When using the `useRequestFeedback` you must pass the feature key to `requestFee
 The example below shows how to use `position` to ensure the popover appears next to the "Give feedback!" button.
 
 ```tsx
-import { useTrackEvent } from "@bucketco/react-sdk";
+import { useRequestFeedback } from "@bucketco/react-sdk";
 
-const requestFeedback = useRequestFeedback();
-
-<button
-  onClick={(e) =>
-    requestFeedback({
-      featureKey: "huddle-feature-key",
-      title: "How satisfied are you with file uploads?",
-      position: {
-        type: "POPOVER",
-        anchor: e.currentTarget as HTMLElement,
-      },
-    })
-  }
->
-  Give feedback!
-</button>;
+function FeedbackButton() {
+  const requestFeedback = useRequestFeedback();
+  return (
+    <button
+      onClick={(e) =>
+        requestFeedback({
+          featureKey: "huddle-feature",
+          title: "How satisfied are you with file uploads?",
+          position: {
+            type: "POPOVER",
+            anchor: e.currentTarget as HTMLElement,
+          },
+          // Optional custom styling
+          style: {
+            theme: "light",
+            primaryColor: "#007AFF",
+          },
+        })
+      }
+    >
+      Give feedback!
+    </button>
+  );
+}
 ```
 
-See https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/browser-sdk/FEEDBACK.md#manual-feedback-collection for more information on `requestFeedback`
+See the [Feedback Documentation](https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/browser-sdk/FEEDBACK.md#manual-feedback-collection) for more information on `requestFeedback` options.
 
 ### `useSendFeedback()`
 
-`useSendFeedback()` returns a function that lets you send feedback to Bucket.
-This is useful if you've manually collected feedback and want to send it to Bucket.
+Returns a function that lets you send feedback to Bucket. This is useful if you've manually collected feedback through your own UI and want to send it to Bucket.
 
-```ts
+```tsx
 import { useSendFeedback } from "@bucketco/react-sdk";
 
-const sendFeedback = useSendFeedback();
+function CustomFeedbackForm() {
+  const sendFeedback = useSendFeedback();
 
-sendFeedback({
-  featureId: "bucket-feature-id",
-  score: 5,
-  comment: "Best thing I've ever tried!",
-});
+  const handleSubmit = async (data: FormData) => {
+    await sendFeedback({
+      featureId: "bucket-feature-id",
+      score: parseInt(data.get("score") as string),
+      comment: data.get("comment") as string,
+      metadata: {
+        source: "custom-form",
+        userRole: "admin",
+      },
+    });
+  };
+
+  return <form onSubmit={handleSubmit}>...</form>;
+}
 ```
 
 ### `useUpdateUser()`, `useUpdateCompany()` and `useUpdateOtherContext()`
 
-`useUpdateUser()`, `useUpdateCompany()` and `useUpdateOtherContext()` all return
-a function that lets you update the attributes for the currently set user/company.
+These hooks return functions that let you update the attributes for the currently set user, company, or other context. Updates to user/company are stored remotely and affect feature targeting, while "other" context updates only affect the current session.
 
-Updates made to user/company are stored remotely and are used automatically
-for evaluating feature targeting in the future, while "other" context is only
-used in the current session.
+```tsx
+import {
+  useUpdateUser,
+  useUpdateCompany,
+  useUpdateOtherContext,
+} from "@bucketco/react-sdk";
 
-This is only useful for updating attributes for the already set user/company.
-If you want to change the user.id or company.id, you need to update the props
-given the `BucketProvider` instead.
+function FeatureOptIn() {
+  const updateUser = useUpdateUser();
+  const updateCompany = useUpdateCompany();
+  const updateOtherContext = useUpdateOtherContext();
 
-```ts
-import { useUpdateUser } from "@bucketco/react-sdk";
+  const handleUserUpdate = async () => {
+    await updateUser({
+      role: "admin",
+      betaFeatures: "enabled",
+    });
+  };
 
-const updateUser = useUpdateUser();
+  const handleCompanyUpdate = async () => {
+    await updateCompany({
+      plan: "enterprise",
+      employees: 500,
+    });
+  };
 
-updateUser({
-  huddlesOptIn: "true",
-});
+  const handleContextUpdate = async () => {
+    await updateOtherContext({
+      currentWorkspace: "workspace-123",
+      theme: "dark",
+    });
+  };
+
+  return (
+    <div>
+      <button onClick={handleUserUpdate}>Update User</button>
+      <button onClick={handleCompanyUpdate}>Update Company</button>
+      <button onClick={handleContextUpdate}>Update Context</button>
+    </div>
+  );
+}
 ```
 
-# Content Security Policy (CSP)
+Note: To change the `user.id` or `company.id`, you need to update the props passed to `BucketProvider` instead of using these hooks.
 
-See https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/browser-sdk/README.md#content-security-policy-csp for info on using Bucket React SDK with CSP
+## Content Security Policy (CSP)
 
-# License
+See [CSP](https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/browser-sdk/README.md#content-security-policy-csp) for info on using Bucket React SDK with CSP
+
+## License
 
 MIT License
 

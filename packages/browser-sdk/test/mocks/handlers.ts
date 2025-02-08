@@ -12,6 +12,8 @@ export const featureResponse = {
       key: "featureA",
       targetingVersion: 1,
       config: undefined,
+      ruleEvaluationResults: [false, true],
+      missingContextFields: ["field1", "field2"],
     },
     featureB: {
       isEnabled: true,
@@ -21,6 +23,8 @@ export const featureResponse = {
         version: 12,
         key: "gpt3",
         payload: { model: "gpt-something", temperature: 0.5 },
+        ruleEvaluationResults: [true, false, false],
+        missingContextFields: ["field3"],
       },
     },
   },
