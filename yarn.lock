@@ -946,16 +946,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@bucketco/node-sdk@npm:>=1.4.2":
-  version: 1.5.0
-  resolution: "@bucketco/node-sdk@npm:1.5.0"
-  dependencies:
-    "@bucketco/flag-evaluation": "npm:~0.1.0"
-  checksum: 10c0/63230400c0c0fa6ccf8708550bbcf583cc58bd18a2b99e19ec1dde43bce593c43136790ff3f0573f171c123c6a0555eebafcefdfa5cc71a2e706079fdb1ebe39
-  languageName: node
-  linkType: hard
-
-"@bucketco/node-sdk@workspace:packages/node-sdk":
+"@bucketco/node-sdk@npm:1.6.0-alpha.3, @bucketco/node-sdk@workspace:packages/node-sdk":
   version: 0.0.0-use.local
   resolution: "@bucketco/node-sdk@workspace:packages/node-sdk"
   dependencies:
@@ -1005,7 +996,7 @@ __metadata:
   dependencies:
     "@babel/core": "npm:~7.24.7"
     "@bucketco/eslint-config": "npm:~0.0.2"
-    "@bucketco/node-sdk": "npm:>=1.4.2"
+    "@bucketco/node-sdk": "npm:1.6.0-alpha.3"
     "@bucketco/tsconfig": "npm:~0.0.2"
     "@openfeature/core": "npm:^1.5.0"
     "@openfeature/server-sdk": "npm:>=1.16.1"

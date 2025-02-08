@@ -13,26 +13,27 @@ import {
 
 import { BucketClient, Feature, InitOptions } from "@bucketco/browser-sdk";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ContextTranslationFn = (
   context?: EvaluationContext,
 ) => Record<string, any>;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function defaultContextTranslator(
   context?: EvaluationContext,
 ): Record<string, any> {
   if (!context) return {};
   return {
     user: {
-      id: context["trackingKey"],
-      email: context["email"],
-      name: context["name"],
+      id: context.targetingKey ?? context["userId"],
+      email: context["email"]?.toString(),
+      name: context["name"]?.toString(),
+      avatar: context["avatar"]?.toString(),
+      country: context["country"]?.toString(),
     },
     company: {
       id: context["companyId"],
-      name: context["companyName"],
-      plan: context["companyPlan"],
+      name: context["companyName"]?.toString(),
+      plan: context["companyPlan"]?.toString(),
+      avatar: context["companyAvatar"]?.toString(),
     },
   };
 }
@@ -131,12 +132,13 @@ export class BucketBrowserSDKProvider implements Provider {
     return this.resolveFeature(flagKey, defaultValue, (feature) => {
       return {
         value: feature.isEnabled,
+        variant: feature.config.key,
         reason: StandardResolutionReasons.TARGETING_MATCH,
       };
     });
   }
 
-  resolveNumberEvaluation(_: string, defaultValue: number) {
+  resolveNumberEvaluation(_flagKey: string, defaultValue: number) {
     return {
       value: defaultValue,
       reason: StandardResolutionReasons.ERROR,
@@ -144,32 +146,6 @@ export class BucketBrowserSDKProvider implements Provider {
       errorMessage:
         "Bucket doesn't support this method. Use `resolveObjectEvaluation` instead.",
     };
-  }
-
-  resolveObjectEvaluation<T extends JsonValue>(
-    flagKey: string,
-    defaultValue: T,
-  ) {
-    return this.resolveFeature(flagKey, defaultValue, (feature) => {
-      const expType = typeof defaultValue;
-      const payload = feature.config?.payload;
-
-      const payloadType = payload === null ? "null" : typeof payload;
-
-      if (payloadType !== expType) {
-        return {
-          value: defaultValue,
-          reason: StandardResolutionReasons.ERROR,
-          errorCode: ErrorCode.TYPE_MISMATCH,
-          errorMessage: `Expected remote config payload of type \`${expType}\` but got \`${payloadType}\`.`,
-        };
-      }
-
-      return {
-        value: payload,
-        reason: StandardResolutionReasons.TARGETING_MATCH,
-      };
-    });
   }
 
   resolveStringEvaluation(
@@ -186,6 +162,37 @@ export class BucketBrowserSDKProvider implements Provider {
 
       return {
         value: feature.config.key as string,
+        variant: feature.config.key,
+        reason: StandardResolutionReasons.TARGETING_MATCH,
+      };
+    });
+  }
+
+  resolveObjectEvaluation<T extends JsonValue>(
+    flagKey: string,
+    defaultValue: T,
+  ) {
+    return this.resolveFeature(flagKey, defaultValue, (feature) => {
+      const expType = typeof defaultValue;
+
+      const payloadType =
+        feature.config.payload === null
+          ? "null"
+          : typeof feature.config.payload;
+
+      if (payloadType !== expType) {
+        return {
+          value: defaultValue,
+          reason: StandardResolutionReasons.ERROR,
+          variant: feature.config.key,
+          errorCode: ErrorCode.TYPE_MISMATCH,
+          errorMessage: `Expected remote config payload of type \`${expType}\` but got \`${payloadType}\`.`,
+        };
+      }
+
+      return {
+        value: feature.config.payload,
+        variant: feature.config.key,
         reason: StandardResolutionReasons.TARGETING_MATCH,
       };
     });
