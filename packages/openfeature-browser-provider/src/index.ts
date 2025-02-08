@@ -23,14 +23,14 @@ export function defaultContextTranslator(
   if (!context) return {};
   return {
     user: {
-      id: context.targetingKey ?? context["userId"],
+      id: context.targetingKey ?? context["userId"]?.toString(),
       email: context["email"]?.toString(),
       name: context["name"]?.toString(),
       avatar: context["avatar"]?.toString(),
       country: context["country"]?.toString(),
     },
     company: {
-      id: context["companyId"],
+      id: context["companyId"]?.toString(),
       name: context["companyName"]?.toString(),
       plan: context["companyPlan"]?.toString(),
       avatar: context["companyAvatar"]?.toString(),

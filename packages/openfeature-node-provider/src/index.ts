@@ -25,7 +25,7 @@ export const defaultContextTranslator = (
   context: EvaluationContext,
 ): BucketContext => {
   const user = {
-    id: context.targetingKey ?? context["userId"],
+    id: context.targetingKey ?? context["userId"]?.toString(),
     name: context["name"]?.toString(),
     email: context["email"]?.toString(),
     avatar: context["avatar"]?.toString(),
@@ -33,7 +33,7 @@ export const defaultContextTranslator = (
   };
 
   const company = {
-    id: context["companyId"],
+    id: context["companyId"]?.toString(),
     name: context["companyName"]?.toString(),
     avatar: context["companyAvatar"]?.toString(),
     plan: context["companyPlan"]?.toString(),

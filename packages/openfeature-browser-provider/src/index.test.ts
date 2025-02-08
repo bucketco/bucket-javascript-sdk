@@ -136,7 +136,7 @@ describe("BucketBrowserSDKProvider", () => {
         }),
       ).toEqual({
         user: {
-          id: 123,
+          id: "123",
           name: "John Doe",
           email: "ron@bucket.co",
           avatar: "https://bucket.co/avatar.png",
