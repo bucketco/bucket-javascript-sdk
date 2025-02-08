@@ -882,18 +882,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@bucketco/browser-sdk@npm:2.4.0":
-  version: 2.4.0
-  resolution: "@bucketco/browser-sdk@npm:2.4.0"
-  dependencies:
-    "@floating-ui/dom": "npm:^1.6.8"
-    canonical-json: "npm:^0.0.4"
-    js-cookie: "npm:^3.0.5"
-    preact: "npm:^10.22.1"
-  checksum: 10c0/b33a9fdafa4a857ac4f815fe69b602b37527a37d54270abd479b754da998d030f5a70b738c662ab57fa4f6374b8e1fbd052feb8bdbd8b78367086dcedc5a5432
-  languageName: node
-  linkType: hard
-
 "@bucketco/browser-sdk@npm:3.0.0-alpha.2, @bucketco/browser-sdk@workspace:packages/browser-sdk":
   version: 0.0.0-use.local
   resolution: "@bucketco/browser-sdk@workspace:packages/browser-sdk"
@@ -958,16 +946,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@bucketco/node-sdk@npm:>=1.4.2":
-  version: 1.5.0
-  resolution: "@bucketco/node-sdk@npm:1.5.0"
-  dependencies:
-    "@bucketco/flag-evaluation": "npm:~0.1.0"
-  checksum: 10c0/63230400c0c0fa6ccf8708550bbcf583cc58bd18a2b99e19ec1dde43bce593c43136790ff3f0573f171c123c6a0555eebafcefdfa5cc71a2e706079fdb1ebe39
-  languageName: node
-  linkType: hard
-
-"@bucketco/node-sdk@workspace:packages/node-sdk":
+"@bucketco/node-sdk@npm:1.6.0-alpha.3, @bucketco/node-sdk@workspace:packages/node-sdk":
   version: 0.0.0-use.local
   resolution: "@bucketco/node-sdk@workspace:packages/node-sdk"
   dependencies:
@@ -993,7 +972,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@bucketco/openfeature-browser-provider@workspace:packages/openfeature-browser-provider"
   dependencies:
-    "@bucketco/browser-sdk": "npm:2.4.0"
+    "@bucketco/browser-sdk": "npm:3.0.0-alpha.2"
     "@bucketco/eslint-config": "npm:0.0.2"
     "@bucketco/tsconfig": "npm:0.0.2"
     "@openfeature/core": "npm:1.5.0"
@@ -1017,7 +996,7 @@ __metadata:
   dependencies:
     "@babel/core": "npm:~7.24.7"
     "@bucketco/eslint-config": "npm:~0.0.2"
-    "@bucketco/node-sdk": "npm:>=1.4.2"
+    "@bucketco/node-sdk": "npm:1.6.0-alpha.3"
     "@bucketco/tsconfig": "npm:~0.0.2"
     "@openfeature/core": "npm:^1.5.0"
     "@openfeature/server-sdk": "npm:>=1.16.1"

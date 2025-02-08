@@ -133,7 +133,7 @@ export type FeatureRemoteConfig =
  * Describes a feature
  */
 export interface Feature<
-  TConfig extends FeatureRemoteConfig | never = EmptyFeatureRemoteConfig,
+  TConfig extends FeatureRemoteConfig | undefined = EmptyFeatureRemoteConfig,
 > {
   /**
    * The key of the feature.
@@ -148,7 +148,7 @@ export interface Feature<
   /*
    * Optional user-defined configuration.
    */
-  config: TConfig extends never ? EmptyFeatureRemoteConfig : TConfig;
+  config: TConfig extends undefined ? EmptyFeatureRemoteConfig : TConfig;
 
   /**
    * Track feature usage in Bucket.

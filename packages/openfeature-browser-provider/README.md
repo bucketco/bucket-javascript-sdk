@@ -15,8 +15,8 @@ The OpenFeature SDK is required as peer dependency.
 
 The minimum required version of `@openfeature/web-sdk` currently is `1.0`.
 
-```
-$ npm install @openfeature/web-sdk @bucketco/openfeature-browser-provider
+```shell
+npm install @openfeature/web-sdk @bucketco/openfeature-browser-provider
 ```
 
 ## Sample initialization
@@ -36,12 +36,68 @@ const client = OpenFeature.getClient();
 
 // use client
 const boolValue = client.getBooleanValue("huddles", false);
-```
 
-Bucket only supports boolean values.
+// use more complex, dynamic config-enabled functionality.
+const feedbackConfig = client.getObjectValue("ask-feedback", {
+  question: "How are you enjoying this feature?",
+});
+```
 
 Initializing the Bucket Browser Provider will
 also initialize [automatic feedback surveys](https://github.com/bucketco/bucket-javascript-sdk/tree/main/packages/browser-sdk#qualitative-feedback).
+
+## Feature resolution methods
+
+The Bucket OpenFeature Provider implements the OpenFeature evaluation interface for different value types. Each method handles the resolution of feature flags according to the OpenFeature specification.
+
+### Common behavior
+
+All resolution methods share these behaviors:
+
+- Return default value with `PROVIDER_NOT_READY` if client is not initialized,
+- Return default value with `FLAG_NOT_FOUND` if flag doesn't exist,
+- Return default value with `ERROR` if there was a type mismatch,
+- Return evaluated value with `TARGETING_MATCH` on successful resolution.
+
+### Type-Specific Methods
+
+#### Boolean Resolution
+
+```ts
+client.getBooleanValue("my-flag", false);
+```
+
+Returns the feature's enabled state. This is the most common use case for feature flags.
+
+#### String Resolution
+
+```ts
+client.getStringValue("my-flag", "default");
+```
+
+Returns the feature's remote config key (also known as "variant"). Useful for multi-variate use cases.
+
+#### Number Resolution
+
+```ts
+client.getNumberValue("my-flag", 0);
+```
+
+Not directly supported by Bucket. Use `getObjectValue` instead for numeric configurations.
+
+#### Object Resolution
+
+```ts
+// works for any type:
+client.getObjectValue("my-flag", { defaultValue: true });
+client.getObjectValue("my-flag", "string-value");
+client.getObjectValue("my-flag", 199);
+```
+
+Returns the feature's remote config payload with type validation. This is the most flexible method,
+allowing for complex configuration objects or simple types.
+
+The object resolution performs runtime type checking between the default value and the feature payload to ensure type safety.
 
 ## Context
 
@@ -61,11 +117,18 @@ const publishableKey = "<your-bucket-publishable-key>";
 const contextTranslator = (context?: EvaluationContext) => {
   return {
     user: {
-      id: context["trackingKey"],
-      name: context["name"],
-      email: context["email"],
+      id: context.targetingKey ?? context["userId"],
+      email: context["email"]?.toString(),
+      name: context["name"]?.toString(),
+      avatar: context["avatar"]?.toString(),
+      country: context["country"]?.toString(),
     },
-    company: { id: context["orgId"], name: context["orgName"] },
+    company: {
+      id: context["companyId"],
+      name: context["companyName"]?.toString(),
+      avatar: context["companyAvatar"]?.toString(),
+      plan: context["companyPlan"]?.toString(),
+    },
   };
 };
 
@@ -81,7 +144,7 @@ To update the context, call `OpenFeature.setContext(myNewContext);`
 await OpenFeature.setContext({ userId: "my-key" });
 ```
 
-# Tracking feature usage
+## Tracking feature usage
 
 The Bucket OpenFeature Provider supports the OpenFeature tracking API
 natively.
@@ -103,8 +166,7 @@ const client = OpenFeature.getClient();
 client.track("huddles");
 ```
 
-# License
+## License
 
-MIT License
-
-Copyright (c) 2025 Bucket ApS
+> MIT License
+> Copyright (c) 2025 Bucket ApS

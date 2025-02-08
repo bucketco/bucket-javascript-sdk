@@ -1,9 +1,9 @@
-import { ErrorCode } from "@openfeature/core";
-import { beforeAll, beforeEach, describe, expect, it, Mock, vi } from "vitest";
+import { ProviderStatus } from "@openfeature/server-sdk";
+import { beforeEach, describe, expect, it, Mock, vi } from "vitest";
 
 import { BucketClient } from "@bucketco/node-sdk";
 
-import { BucketNodeProvider } from "./index";
+import { BucketNodeProvider, defaultContextTranslator } from "./index";
 
 vi.mock("@bucketco/node-sdk", () => {
   const actualModule = vi.importActual("@bucketco/node-sdk");
@@ -17,6 +17,7 @@ vi.mock("@bucketco/node-sdk", () => {
 
 const bucketClientMock = {
   getFeatures: vi.fn(),
+  getFeature: vi.fn(),
   initialize: vi.fn().mockResolvedValue({}),
   flush: vi.fn(),
   track: vi.fn(),
@@ -35,6 +36,8 @@ const bucketContext = {
   company: { id: "99" },
 };
 
+const testFlagKey = "a-key";
+
 beforeEach(() => {
   vi.clearAllMocks();
 });
@@ -42,121 +45,305 @@ beforeEach(() => {
 describe("BucketNodeProvider", () => {
   let provider: BucketNodeProvider;
 
-  const newBucketClient = BucketClient as Mock;
-  newBucketClient.mockReturnValue(bucketClientMock);
+  const mockBucketClient = BucketClient as Mock;
+  mockBucketClient.mockReturnValue(bucketClientMock);
 
-  const translatorFn = vi.fn().mockReturnValue(bucketContext);
+  let mockTranslatorFn: Mock;
 
-  beforeAll(async () => {
+  function mockFeature(
+    enabled: boolean,
+    configKey?: string | null,
+    configPayload?: any,
+  ) {
+    const config = {
+      key: configKey,
+      payload: configPayload,
+    };
+
+    bucketClientMock.getFeature = vi.fn().mockReturnValue({
+      isEnabled: enabled,
+      config,
+    });
+
+    bucketClientMock.getFeatures = vi.fn().mockReturnValue({
+      [testFlagKey]: {
+        isEnabled: enabled,
+        config: {
+          key: "key",
+          payload: configPayload,
+        },
+      },
+    });
+  }
+
+  beforeEach(async () => {
+    mockTranslatorFn = vi.fn().mockReturnValue(bucketContext);
+
     provider = new BucketNodeProvider({
       secretKey,
-      contextTranslator: translatorFn,
+      contextTranslator: mockTranslatorFn,
     });
+
     await provider.initialize();
   });
 
-  it("calls the constructor", () => {
-    provider = new BucketNodeProvider({
-      secretKey,
-      contextTranslator: translatorFn,
-    });
-    expect(newBucketClient).toHaveBeenCalledTimes(1);
-    expect(newBucketClient).toHaveBeenCalledWith({ secretKey });
-  });
-
-  it("uses the contextTranslator function", async () => {
-    const track = vi.fn();
-    bucketClientMock.getFeatures.mockReturnValue({
-      booleanTrue: {
-        isEnabled: true,
-        key: "booleanTrue",
-        track,
-      },
-    });
-
-    await provider.resolveBooleanEvaluation("booleanTrue", false, context);
-    expect(translatorFn).toHaveBeenCalledTimes(1);
-    expect(translatorFn).toHaveBeenCalledWith(context);
-    expect(bucketClientMock.getFeatures).toHaveBeenCalledTimes(1);
-    expect(bucketClientMock.getFeatures).toHaveBeenCalledWith(bucketContext);
-  });
-
-  describe("method resolveBooleanEvaluation", () => {
-    it("should return right value if key exists", async () => {
-      const result = await provider.resolveBooleanEvaluation(
-        "booleanTrue",
-        false,
-        context,
-      );
-      expect(result.value).toEqual(true);
-      expect(result.errorCode).toBeUndefined();
+  describe("contextTranslator", () => {
+    it("defaultContextTranslator provides the correct context", async () => {
+      expect(
+        defaultContextTranslator({
+          userId: 123,
+          name: "John Doe",
+          email: "ron@bucket.co",
+          avatar: "https://bucket.co/avatar.png",
+          companyId: "456",
+          companyName: "Acme, Inc.",
+          companyAvatar: "https://acme.com/company-avatar.png",
+          companyPlan: "pro",
+        }),
+      ).toEqual({
+        user: {
+          id: "123",
+          name: "John Doe",
+          email: "ron@bucket.co",
+          avatar: "https://bucket.co/avatar.png",
+        },
+        company: {
+          id: "456",
+          name: "Acme, Inc.",
+          plan: "pro",
+          avatar: "https://acme.com/company-avatar.png",
+        },
+      });
     });
 
-    it("should return the default value if key does not exists", async () => {
-      const result = await provider.resolveBooleanEvaluation(
-        "non-existent",
-        true,
-        context,
-      );
-      expect(result.value).toEqual(true);
-      expect(result.errorCode).toEqual(ErrorCode.FLAG_NOT_FOUND);
+    it("defaultContextTranslator uses targetingKey if provided", async () => {
+      expect(
+        defaultContextTranslator({
+          targetingKey: "123",
+        }),
+      ).toMatchObject({
+        user: {
+          id: "123",
+        },
+        company: {
+          id: undefined,
+        },
+      });
     });
   });
 
-  describe("method resolveNumberEvaluation", () => {
-    it("should return the default value and an error message", async () => {
-      const result = await provider.resolveNumberEvaluation("number1", 42);
-      expect(result.value).toEqual(42);
-      expect(result.errorCode).toEqual(ErrorCode.GENERAL);
-      expect(result.errorMessage).toEqual(
-        `Bucket doesn't support number flags`,
-      );
-    });
-  });
+  describe("lifecycle", () => {
+    it("calls the constructor of BucketClient", () => {
+      mockBucketClient.mockClear();
 
-  describe("method resolveStringEvaluation", () => {
-    it("should return the default value and an error message", async () => {
-      const result = await provider.resolveStringEvaluation(
-        "number1",
-        "defaultValue",
-      );
-      expect(result.value).toEqual("defaultValue");
-      expect(result.errorCode).toEqual(ErrorCode.GENERAL);
-      expect(result.errorMessage).toEqual(
-        `Bucket doesn't support string flags`,
-      );
-    });
-  });
-  describe("method resolveObjectEvaluation", () => {
-    it("should return the default value and an error message", async () => {
-      const defaultValue = { key: "value" };
-      const result = await provider.resolveObjectEvaluation(
-        "number1",
-        defaultValue,
-      );
-      expect(result.value).toEqual(defaultValue);
-      expect(result.errorCode).toEqual(ErrorCode.GENERAL);
-      expect(result.errorMessage).toEqual(
-        `Bucket doesn't support object flags`,
-      );
-    });
-  });
+      provider = new BucketNodeProvider({
+        secretKey,
+        contextTranslator: mockTranslatorFn,
+      });
 
-  describe("onClose", () => {
-    it("calls flush", async () => {
+      expect(mockBucketClient).toHaveBeenCalledTimes(1);
+      expect(mockBucketClient).toHaveBeenCalledWith({ secretKey });
+    });
+
+    it("should set the status to READY if initialization succeeds", async () => {
+      provider = new BucketNodeProvider({
+        secretKey,
+        contextTranslator: mockTranslatorFn,
+      });
+
+      await provider.initialize();
+
+      expect(provider.status).toBe(ProviderStatus.READY);
+    });
+
+    it("should keep the status as READY after closing", async () => {
+      provider = new BucketNodeProvider({
+        secretKey: "invalid",
+        contextTranslator: mockTranslatorFn,
+      });
+
+      await provider.initialize();
+      await provider.onClose();
+
+      expect(provider.status).toBe(ProviderStatus.READY);
+    });
+
+    it("calls flush when provider is closed", async () => {
       await provider.onClose();
       expect(bucketClientMock.flush).toHaveBeenCalledTimes(1);
     });
+
+    it("uses the contextTranslator function", async () => {
+      mockFeature(true);
+
+      await provider.resolveBooleanEvaluation(testFlagKey, false, context);
+
+      expect(mockTranslatorFn).toHaveBeenCalledTimes(1);
+      expect(mockTranslatorFn).toHaveBeenCalledWith(context);
+
+      expect(bucketClientMock.getFeatures).toHaveBeenCalledTimes(1);
+      expect(bucketClientMock.getFeatures).toHaveBeenCalledWith(bucketContext);
+    });
+  });
+
+  describe("resolving flags", () => {
+    beforeEach(async () => {
+      await provider.initialize();
+    });
+
+    it("returns error if provider is not initialized", async () => {
+      provider = new BucketNodeProvider({
+        secretKey: "invalid",
+        contextTranslator: mockTranslatorFn,
+      });
+
+      const val = await provider.resolveBooleanEvaluation(
+        testFlagKey,
+        true,
+        context,
+      );
+
+      expect(val).toMatchObject({
+        reason: "ERROR",
+        errorCode: "PROVIDER_NOT_READY",
+        value: true,
+      });
+    });
+
+    it("returns error if flag is not found", async () => {
+      mockFeature(true, "key", true);
+      const val = await provider.resolveBooleanEvaluation(
+        "missing-key",
+        true,
+        context,
+      );
+
+      expect(val).toMatchObject({
+        reason: "ERROR",
+        errorCode: "FLAG_NOT_FOUND",
+        value: true,
+      });
+    });
+
+    it("calls the client correctly when evaluating", async () => {
+      mockFeature(true, "key", true);
+
+      const val = await provider.resolveBooleanEvaluation(
+        testFlagKey,
+        false,
+        context,
+      );
+
+      expect(val).toMatchObject({
+        reason: "TARGETING_MATCH",
+        value: true,
+      });
+
+      expect(bucketClientMock.getFeatures).toHaveBeenCalled();
+      expect(bucketClientMock.getFeature).toHaveBeenCalledWith(
+        bucketContext,
+        testFlagKey,
+      );
+    });
+
+    it.each([
+      [true, false, true, "TARGETING_MATCH", undefined],
+      [undefined, true, true, "ERROR", "FLAG_NOT_FOUND"],
+      [undefined, false, false, "ERROR", "FLAG_NOT_FOUND"],
+    ])(
+      "should return the correct result when evaluating boolean. enabled: %s, value: %s, default: %s, expected: %s, reason: %s, errorCode: %s`",
+      async (enabled, def, expected, reason, errorCode) => {
+        const configKey = enabled !== undefined ? "variant-1" : undefined;
+
+        mockFeature(enabled ?? false, configKey);
+        const flagKey = enabled ? testFlagKey : "missing-key";
+
+        expect(
+          await provider.resolveBooleanEvaluation(flagKey, def, context),
+        ).toMatchObject({
+          reason,
+          value: expected,
+          ...(configKey ? { variant: configKey } : {}),
+          ...(errorCode ? { errorCode } : {}),
+        });
+      },
+    );
+
+    it("should return error when context is missing user ID", async () => {
+      mockTranslatorFn.mockReturnValue({ user: {} });
+
+      expect(
+        await provider.resolveBooleanEvaluation(testFlagKey, true, context),
+      ).toMatchObject({
+        reason: "ERROR",
+        errorCode: "INVALID_CONTEXT",
+        value: true,
+      });
+    });
+
+    it("should return error when evaluating number", async () => {
+      expect(
+        await provider.resolveNumberEvaluation(testFlagKey, 1),
+      ).toMatchObject({
+        reason: "ERROR",
+        errorCode: "GENERAL",
+        value: 1,
+      });
+    });
+
+    it.each([
+      ["key-1", "default", "key-1", "TARGETING_MATCH"],
+      [null, "default", "default", "DEFAULT"],
+      [undefined, "default", "default", "DEFAULT"],
+    ])(
+      "should return the correct result when evaluating string. variant: %s, def: %s, expected: %s, reason: %s, errorCode: %s`",
+      async (variant, def, expected, reason) => {
+        mockFeature(true, variant, {});
+        expect(
+          await provider.resolveStringEvaluation(testFlagKey, def, context),
+        ).toMatchObject({
+          reason,
+          value: expected,
+          ...(variant ? { variant } : {}),
+        });
+      },
+    );
+
+    it.each([
+      [{}, { a: 1 }, {}, "TARGETING_MATCH", undefined],
+      ["string", "default", "string", "TARGETING_MATCH", undefined],
+      [15, -15, 15, "TARGETING_MATCH", undefined],
+      [true, false, true, "TARGETING_MATCH", undefined],
+      [null, { a: 2 }, { a: 2 }, "ERROR", "TYPE_MISMATCH"],
+      [100, "string", "string", "ERROR", "TYPE_MISMATCH"],
+      [true, 1337, 1337, "ERROR", "TYPE_MISMATCH"],
+      ["string", 1337, 1337, "ERROR", "TYPE_MISMATCH"],
+      [undefined, "default", "default", "ERROR", "TYPE_MISMATCH"],
+    ])(
+      "should return the correct result when evaluating object. payload: %s, default: %s, expected: %s, reason: %s, errorCode: %s`",
+      async (value, def, expected, reason, errorCode) => {
+        const configKey = value === undefined ? undefined : "config-key";
+        mockFeature(true, configKey, value);
+        expect(
+          await provider.resolveObjectEvaluation(testFlagKey, def, context),
+        ).toMatchObject({
+          reason,
+          value: expected,
+          ...(errorCode ? { errorCode, variant: configKey } : {}),
+        });
+      },
+    );
   });
 
   describe("track", () => {
     it("should track", async () => {
-      expect(translatorFn).toHaveBeenCalledTimes(0);
+      expect(mockTranslatorFn).toHaveBeenCalledTimes(0);
       provider.track("event", context, {
         action: "click",
       });
-      expect(translatorFn).toHaveBeenCalledTimes(1);
-      expect(translatorFn).toHaveBeenCalledWith(context);
+
+      expect(mockTranslatorFn).toHaveBeenCalledTimes(1);
+      expect(mockTranslatorFn).toHaveBeenCalledWith(context);
       expect(bucketClientMock.track).toHaveBeenCalledTimes(1);
       expect(bucketClientMock.track).toHaveBeenCalledWith("42", "event", {
         attributes: { action: "click" },

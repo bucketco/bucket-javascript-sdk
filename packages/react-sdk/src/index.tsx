@@ -194,6 +194,11 @@ type RequestFeedbackOptions = Omit<
   "featureKey" | "featureId"
 >;
 
+type EmptyFeatureConfig = {
+  key: undefined;
+  payload: undefined;
+};
+
 type Feature<TKey extends FeatureKey> = {
   isEnabled: boolean;
   isLoading: boolean;
@@ -202,10 +207,7 @@ type Feature<TKey extends FeatureKey> = {
         key: string;
         payload: FeatureConfig<TKey>;
       }
-    | {
-        key: undefined;
-        payload: undefined;
-      };
+    | EmptyFeatureConfig;
   track: () => void;
   requestFeedback: (opts: RequestFeedbackOptions) => void;
 };
