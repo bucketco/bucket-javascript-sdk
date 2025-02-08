@@ -315,6 +315,15 @@ describe("BucketClient", () => {
       expect(triggerOnExit).not.toHaveBeenCalled();
     });
 
+    it("should not register an exit flush handler if `offline` is true", () => {
+      new BucketClient({
+        ...validOptions,
+        offline: true,
+      });
+
+      expect(triggerOnExit).not.toHaveBeenCalled();
+    });
+
     it.each([undefined, true])(
       "should register an exit flush handler if `batchOptions.flushOnExit` is `%s`",
       (flushOnExit) => {
@@ -927,6 +936,18 @@ describe("BucketClient", () => {
           },
         ],
       );
+    });
+
+    it("should not flush all bulk data if `offline` is true", async () => {
+      const client = new BucketClient({
+        ...validOptions,
+        offline: true,
+      });
+
+      await client.updateUser(user.id, { attributes: { age: 2 } });
+      await client.flush();
+
+      expect(httpClient.post).not.toHaveBeenCalled();
     });
   });
 
