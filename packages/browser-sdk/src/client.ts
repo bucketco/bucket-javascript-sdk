@@ -720,7 +720,6 @@ export class BucketClient {
             missingContextFields: f?.config?.missingContextFields,
             value: f?.config && {
               key: f.config.key,
-              default: f.config.default,
               payload: f.config.payload,
             },
           })

@@ -240,7 +240,6 @@ describe("BucketClient", () => {
           key: "feature2",
           isEnabled: true,
           config: {
-            default: true,
             key: "config1",
             payload: { value: true },
           },

@@ -48,11 +48,6 @@ export type FetchedFeature = {
     key: string;
 
     /**
-     * Indicated that the matched configuration value is the default.
-     */
-    default?: boolean;
-
-    /**
      * The version of the matched configuration value.
      */
     version?: number;

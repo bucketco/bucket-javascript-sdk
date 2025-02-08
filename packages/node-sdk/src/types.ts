@@ -73,11 +73,6 @@ export type RawFeatureRemoteConfig = {
   targetingVersion?: number;
 
   /**
-   * Indicates if the config value is the default.
-   */
-  default: boolean;
-
-  /**
    * The optional user-supplied payload data.
    */
   payload: any;
@@ -245,11 +240,6 @@ export type FeatureConfigVariant = {
    * The key of the variant.
    */
   key: string;
-
-  /**
-   * Indicates if the variant is the default variant.
-   */
-  default: boolean;
 };
 
 /**

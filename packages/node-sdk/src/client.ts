@@ -209,7 +209,6 @@ export class BucketClient {
                   typeof fallback === "object" && fallback.config
                     ? {
                         key: fallback.config.key,
-                        default: true,
                         payload: fallback.config.payload,
                       }
                     : undefined,
