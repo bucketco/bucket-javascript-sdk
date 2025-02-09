@@ -124,6 +124,7 @@ export class BucketClient {
    * See README for configuration options.
    *
    * @param options - The options for the client or an existing client to clone.
+   * @param options.secretKey - The secret key to use for the client.
    * @param options.apiBaseUrl - The base URL to send requests to (optional).
    * @param options.logger - The logger to use for logging (optional).
    * @param options.httpClient - The HTTP client to use for sending requests (optional).
@@ -133,6 +134,7 @@ export class BucketClient {
    * @param options.batchOptions - The options for the batch buffer (optional).
    * @param options.featureOverrides - The feature overrides to use for the client (optional).
    * @param options.configFile - The path to the config file (optional).
+
    *
    * @throws An error if the options are invalid.
    **/
@@ -1054,12 +1056,14 @@ export class BoundBucketClient {
   private readonly _options: ContextWithTracking;
 
   /**
-   * Creates a new BoundBucketClient.
+   * (Internal) Creates a new BoundBucketClient. Use `bindClient` to create a new client bound with a specific context.
    *
    * @param client - The `BucketClient` to use.
    * @param options - The options for the client.
    * @param options.enableTracking - Whether to enable tracking for the client.
    * @param options.context - The context for the client.
+   *
+   * @internal
    */
   constructor(
     client: BucketClient,
