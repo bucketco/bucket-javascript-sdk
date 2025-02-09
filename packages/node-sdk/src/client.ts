@@ -220,7 +220,7 @@ export class BucketClient {
     };
 
     if ((config.batchOptions?.flushOnExit ?? true) && !this._config.offline) {
-      triggerOnExit(this.flush);
+      triggerOnExit(() => this.flush());
     }
 
     if (!new URL(this._config.apiBaseUrl).pathname.endsWith("/")) {
