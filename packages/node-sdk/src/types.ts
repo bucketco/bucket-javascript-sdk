@@ -473,6 +473,12 @@ export interface ContextWithTracking extends Context {
    * If set to `false`, tracking will be disabled for the context. Default is `true`.
    */
   enableTracking?: boolean;
+
+  /**
+   * The meta context used to update the user or company when syncing is required during
+   * feature retrieval.
+   */
+  meta?: TrackingMeta;
 }
 
 export const LOG_LEVELS = ["DEBUG", "INFO", "WARN", "ERROR"] as const;
