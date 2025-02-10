@@ -271,7 +271,8 @@ current working directory.
 | `featureOverrides` | Record<string, boolean> | An object specifying feature overrides for testing or local development. See [example/app.test.ts](https://github.com/bucketco/bucket-javascript-sdk/tree/main/packages/browser-sdk/example/app.test.ts) for how to use `featureOverrides` in tests. | BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED |
 | `configFile`       | string                  | Load this config file from disk. Default: `bucketConfig.json`                                                                                                                                                                                        | BUCKET_CONFIG_FILE                                |
 
-> [!NOTE] > `BUCKET_FEATURES_ENABLED` and `BUCKET_FEATURES_DISABLED` are comma separated lists of features which will be enabled or disabled respectively.
+> [!NOTE]
+> `BUCKET_FEATURES_ENABLED` and `BUCKET_FEATURES_DISABLED` are comma separated lists of features which will be enabled or disabled respectively.
 
 `bucketConfig.json` example:
 
