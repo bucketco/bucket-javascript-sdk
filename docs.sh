@@ -37,8 +37,10 @@ do
   awk '
     BEGIN { in_block = 0; content = ""; }
     /^> \[!NOTE\]/ { in_block = 1; print "{% hint style=\"info\" %}"; next; }
+    /^> \[!TIP\]/ { in_block = 1; print "{% hint style=\"success\" %}"; next; }
+    /^> \[!IMPORTANT\]/ { in_block = 1; print "{% hint style=\"warning\" %}"; next; }
     /^> \[!WARNING\]/ { in_block = 1; print "{% hint style=\"warning\" %}"; next; }
-    /^> \[!DANGER\]/ { in_block = 1; print "{% hint style=\"danger\" %}"; next; }
+    /^> \[!CAUTION\]/ { in_block = 1; print "{% hint style=\"danger\" %}"; next; }
     in_block && /^>/ { 
       content = content substr($0, 3) "\n";
       next;

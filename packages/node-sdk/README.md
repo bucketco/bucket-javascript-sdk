@@ -20,12 +20,9 @@ To get started you need to obtain your secret key from the
 [environment settings](https://app.bucket.co/envs/current/settings/app-environments)
 in Bucket.
 
-{% hint style="danger" %}
-Secret keys are meant for use in server side SDKs only.
-Secret keys offer the users the ability to obtain
-information that is often sensitive and thus should not be used in
-client-side applications.
-{% endhint %}
+> [!CAUTION]
+> Secret keys are meant for use in server side SDKs only. Secret keys offer the users the ability to obtain
+> information that is often sensitive and thus should not be used in client-side applications.
 
 Bucket will load settings through the various environment variables automatically (see [Configuring](#configuring) below).
 
@@ -54,7 +51,7 @@ bucketClient.initialize().then({
 Once the client is initialized, you can obtain features along with the `isEnabled`
 status to indicate whether the feature is targeted for this user/company:
 
-> [!NOTE]
+> [!IMPORTANT]
 > If `user.id` or `company.id` is not given, the whole `user` or `company` object is ignored.
 
 ```typescript
@@ -134,7 +131,7 @@ You can manually flush the batch buffer at any time:
 await client.flush();
 ```
 
-> [!NOTE]
+> [!TIP]
 > It's recommended to call `flush()` before your application shuts down to ensure all events are sent.
 
 ### Rate Limiting
@@ -271,8 +268,7 @@ current working directory.
 | `featureOverrides` | Record<string, boolean> | An object specifying feature overrides for testing or local development. See [example/app.test.ts](https://github.com/bucketco/bucket-javascript-sdk/tree/main/packages/browser-sdk/example/app.test.ts) for how to use `featureOverrides` in tests. | BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED |
 | `configFile`       | string                  | Load this config file from disk. Default: `bucketConfig.json`                                                                                                                                                                                        | BUCKET_CONFIG_FILE                                |
 
-> [!NOTE]
-> `BUCKET_FEATURES_ENABLED` and `BUCKET_FEATURES_DISABLED` are comma separated lists of features which will be enabled or disabled respectively.
+> [!NOTE] > `BUCKET_FEATURES_ENABLED` and `BUCKET_FEATURES_DISABLED` are comma separated lists of features which will be enabled or disabled respectively.
 
 `bucketConfig.json` example:
 
@@ -563,7 +559,7 @@ client.updateCompany("acme_inc", {
 const features = await client.getFeaturesRemote("acme_inc", "john_doe");
 ```
 
-> [!NOTE]
+> [!IMPORTANT]
 > User and company attribute updates are processed asynchronously, so there might
 > be a small delay between when attributes are updated and when they are available
 > for evaluation.
@@ -595,7 +591,7 @@ Another way way to disable tracking without employing a bound client is to call 
 or `getFeatures()` by supplying `enableTracking: false` in the arguments passed to
 these functions.
 
-> [!NOTE]
+> [!IMPORTANT]
 > Note, however, that calling `track()`, `updateCompany()` or `updateUser()` in the `BucketClient`
 > will still send tracking data. As such, it is always recommended to use `bindClient()`
 > when using this SDK.
