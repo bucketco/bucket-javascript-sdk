@@ -45,29 +45,7 @@ export type FeedbackOptions = {
      */
     translations?: Partial<FeedbackTranslations>;
   };
-
-  /**
-   * @deprecated Use `enableAutoFeedback` instead
-   */
-  enableLiveSatisfaction?: boolean;
-
-  /**
-   * @deprecated Use `autoFeedbackHandler` instead
-   */
-  liveSatisfactionHandler?: FeedbackPromptHandler;
 };
-
-export function handleDeprecatedFeedbackOptions(
-  opts?: FeedbackOptions,
-): FeedbackOptions {
-  return {
-    ...opts,
-    enableAutoFeedback:
-      opts?.enableAutoFeedback ?? opts?.enableLiveSatisfaction,
-    autoFeedbackHandler:
-      opts?.autoFeedbackHandler ?? opts?.liveSatisfactionHandler,
-  };
-}
 
 export type RequestFeedbackData = Omit<
   OpenFeedbackFormOptions,

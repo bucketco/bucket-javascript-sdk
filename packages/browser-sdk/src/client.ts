@@ -9,7 +9,6 @@ import {
   Feedback,
   feedback,
   FeedbackOptions,
-  handleDeprecatedFeedbackOptions,
   RequestFeedbackData,
   RequestFeedbackOptions,
 } from "./feedback/feedback";
@@ -384,11 +383,9 @@ export class BucketClient {
       enableTracking: opts?.enableTracking ?? defaultConfig.enableTracking,
     };
 
-    const feedbackOpts = handleDeprecatedFeedbackOptions(opts?.feedback);
-
     this.requestFeedbackOptions = {
-      position: feedbackOpts?.ui?.position,
-      translations: feedbackOpts?.ui?.translations,
+      position: opts?.feedback?.ui?.position,
+      translations: opts?.feedback?.ui?.translations,
     };
 
     this.httpClient = new HttpClient(this.publishableKey, {
@@ -417,7 +414,7 @@ export class BucketClient {
     if (
       this.context?.user &&
       !isNode && // do not prompt on server-side
-      feedbackOpts?.enableAutoFeedback !== false // default to on
+      opts?.feedback?.enableAutoFeedback !== false // default to on
     ) {
       if (isMobile) {
         this.logger.warn(
@@ -428,10 +425,10 @@ export class BucketClient {
           this.config.sseBaseUrl,
           this.logger,
           this.httpClient,
-          feedbackOpts?.autoFeedbackHandler,
+          opts?.feedback?.autoFeedbackHandler,
           String(this.context.user?.id),
-          feedbackOpts?.ui?.position,
-          feedbackOpts?.ui?.translations,
+          opts?.feedback?.ui?.position,
+          opts?.feedback?.ui?.translations,
         );
       }
     }
