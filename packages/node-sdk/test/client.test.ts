@@ -240,7 +240,6 @@ describe("BucketClient", () => {
           key: "feature2",
           isEnabled: true,
           config: {
-            default: true,
             key: "config1",
             payload: { value: true },
           },
@@ -441,9 +440,7 @@ describe("BucketClient", () => {
             type: "user",
             userId: user.id,
             attributes: attributes,
-            context: {
-              active: false,
-            },
+            context: undefined,
           },
         ],
       );
@@ -452,7 +449,7 @@ describe("BucketClient", () => {
     });
 
     it("should update company in Bucket when called", async () => {
-      client.bindClient({ company: context.company });
+      client.bindClient({ company: context.company, meta: { active: true } });
       await client.flush();
 
       const { id: _, ...attributes } = context.company;
@@ -466,7 +463,7 @@ describe("BucketClient", () => {
             companyId: company.id,
             attributes: attributes,
             context: {
-              active: false,
+              active: true,
             },
           },
         ],
@@ -600,7 +597,7 @@ describe("BucketClient", () => {
     it("should throw an error if opts are not valid or the user is not set", async () => {
       await expect(
         client.updateUser(user.id, "bad_opts" as any),
-      ).rejects.toThrow("opts must be an object");
+      ).rejects.toThrow("validation failed: options must be an object");
 
       await expect(
         client.updateUser(user.id, { attributes: "bad_attributes" as any }),
@@ -692,7 +689,7 @@ describe("BucketClient", () => {
     it("should throw an error if company is not valid", async () => {
       await expect(
         client.updateCompany(company.id, "bad_opts" as any),
-      ).rejects.toThrow("opts must be an object");
+      ).rejects.toThrow("validation failed: options must be an object");
 
       await expect(
         client.updateCompany(company.id, {
@@ -849,7 +846,7 @@ describe("BucketClient", () => {
 
       await expect(
         boundClient.track(event.event, "bad_opts" as any),
-      ).rejects.toThrow("opts must be an object");
+      ).rejects.toThrow("validation failed: options must be an object");
 
       await expect(
         boundClient.track(event.event, {
@@ -1057,12 +1054,20 @@ describe("BucketClient", () => {
         user,
         other: otherContext,
       };
+
       // test that the feature is returned
       await client.initialize();
       const feature = client.getFeature(
-        { ...context, enableTracking: true },
+        {
+          ...context,
+          meta: {
+            active: true,
+          },
+          enableTracking: true,
+        },
         "feature1",
       );
+
       await feature.track();
       await client.flush();
 
@@ -1077,7 +1082,7 @@ describe("BucketClient", () => {
             },
             companyId: "company123",
             context: {
-              active: false,
+              active: true,
             },
             type: "company",
           },
@@ -1087,7 +1092,7 @@ describe("BucketClient", () => {
               name: "John",
             },
             context: {
-              active: false,
+              active: true,
             },
             type: "user",
             userId: "user123",
@@ -1099,6 +1104,21 @@ describe("BucketClient", () => {
             targetingVersion: 1,
             evalContext: context,
             evalResult: true,
+            evalRuleResults: [true],
+            evalMissingFields: [],
+          },
+          {
+            type: "feature-flag-event",
+            action: "evaluate-config",
+            key: "feature1",
+            targetingVersion: 1,
+            evalContext: context,
+            evalResult: {
+              key: "config-1",
+              payload: {
+                something: "else",
+              },
+            },
             evalRuleResults: [true],
             evalMissingFields: [],
           },
@@ -1151,15 +1171,23 @@ describe("BucketClient", () => {
           }),
           expect.objectContaining({
             type: "feature-flag-event",
+            action: "evaluate-config",
+            key: "feature1",
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
             action: "evaluate",
             key: "feature2",
           }),
           {
             type: "feature-flag-event",
             action: "check",
-            evalResult: true,
-            targetingVersion: 1,
             key: "feature1",
+            targetingVersion: 1,
+            evalResult: true,
+            evalContext: context,
+            evalRuleResults: [true],
+            evalMissingFields: [],
           },
         ],
       );
@@ -1194,15 +1222,28 @@ describe("BucketClient", () => {
           }),
           expect.objectContaining({
             type: "feature-flag-event",
+            action: "evaluate-config",
+            key: "feature1",
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
             action: "evaluate",
             key: "feature2",
           }),
           {
             type: "feature-flag-event",
-            action: "check",
-            evalResult: true,
-            targetingVersion: 1,
+            action: "check-config",
             key: "feature1",
+            evalResult: {
+              key: "config-1",
+              payload: {
+                something: "else",
+              },
+            },
+            targetingVersion: 1,
+            evalContext: context,
+            evalRuleResults: [true],
+            evalMissingFields: [],
           },
         ],
       );
@@ -1214,6 +1255,7 @@ describe("BucketClient", () => {
         user,
         other: otherContext,
       };
+
       // test that the feature is returned
       await client.initialize();
       const feature = client.getFeature(context, "unknown-feature");
@@ -1233,31 +1275,30 @@ describe("BucketClient", () => {
           expect.objectContaining({
             type: "user",
           }),
-          {
+          expect.objectContaining({
             type: "feature-flag-event",
             action: "evaluate",
             key: "feature1",
-            targetingVersion: 1,
-            evalContext: context,
-            evalResult: true,
-            evalRuleResults: [true],
-            evalMissingFields: [],
-          },
-          {
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "evaluate-config",
+            key: "feature1",
+          }),
+          expect.objectContaining({
             type: "feature-flag-event",
             action: "evaluate",
             key: "feature2",
-            targetingVersion: 2,
-            evalContext: context,
-            evalResult: false,
-            evalRuleResults: [false],
-            evalMissingFields: ["something"],
-          },
+          }),
           {
             type: "feature-flag-event",
             action: "check",
-            evalResult: false,
             key: "unknown-feature",
+            targetingVersion: undefined,
+            evalContext: context,
+            evalResult: false,
+            evalRuleResults: undefined,
+            evalMissingFields: undefined,
           },
           {
             type: "event",
@@ -1383,6 +1424,25 @@ describe("BucketClient", () => {
           },
           {
             type: "feature-flag-event",
+            action: "evaluate-config",
+            key: "feature1",
+            targetingVersion: 1,
+            evalContext: {
+              company,
+              user,
+              other: otherContext,
+            },
+            evalResult: {
+              key: "config-1",
+              payload: {
+                something: "else",
+              },
+            },
+            evalRuleResults: [true],
+            evalMissingFields: [],
+          },
+          {
+            type: "feature-flag-event",
             action: "evaluate",
             key: "feature2",
             targetingVersion: 2,
@@ -1396,18 +1456,68 @@ describe("BucketClient", () => {
             evalMissingFields: ["something"],
           },
           {
+            action: "check-config",
+            evalContext: {
+              company,
+              user,
+              other: otherContext,
+            },
+            evalResult: {
+              key: undefined,
+              payload: undefined,
+            },
+            key: "feature2",
+            type: "feature-flag-event",
+            targetingVersion: undefined,
+            evalRuleResults: undefined,
+            evalMissingFields: undefined,
+          },
+          {
             action: "check",
+            evalContext: {
+              company,
+              user,
+              other: otherContext,
+            },
             evalResult: false,
             key: "feature2",
             targetingVersion: 2,
             type: "feature-flag-event",
+            evalMissingFields: ["something"],
+            evalRuleResults: [false],
+          },
+          {
+            action: "check-config",
+            evalContext: {
+              company,
+              user,
+              other: otherContext,
+            },
+            evalResult: {
+              key: "config-1",
+              payload: {
+                something: "else",
+              },
+            },
+            key: "feature1",
+            targetingVersion: 1,
+            type: "feature-flag-event",
+            evalRuleResults: [true],
+            evalMissingFields: [],
           },
           {
             action: "check",
+            evalContext: {
+              company,
+              user,
+              other: otherContext,
+            },
             evalResult: true,
             key: "feature1",
             targetingVersion: 1,
             type: "feature-flag-event",
+            evalRuleResults: [true],
+            evalMissingFields: [],
           },
         ],
       );
@@ -1424,9 +1534,10 @@ describe("BucketClient", () => {
       });
 
       expect(logger.warn).toHaveBeenCalledWith(
-        expect.stringMatching(
-          'feature "feature2" has targeting rules that require the following context fields: "something"',
-        ),
+        "feature/remote config targeting rules might not be correctly evaluated due to missing context fields.",
+        {
+          feature2: ["something"],
+        },
       );
     });
 
@@ -1437,7 +1548,7 @@ describe("BucketClient", () => {
       client.getFeatures({ user, company, other: otherContext });
 
       expect(isAllowedSpy).toHaveBeenCalledWith(
-        "f1e5f547723da57ad12375f304e44ed6f74c744e",
+        "d461e93fe41f6297ab43402d0fc6d63e2444e07d",
       );
     });
 
@@ -1477,44 +1588,62 @@ describe("BucketClient", () => {
         expectedHeaders,
         [
           expect.objectContaining({ type: "user" }),
-          {
+          expect.objectContaining({
             type: "feature-flag-event",
             action: "evaluate",
             key: "feature1",
-            targetingVersion: 1,
             evalContext: {
               user,
             },
-            evalResult: true,
-            evalRuleResults: [true],
-            evalMissingFields: [],
-          },
-          {
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "evaluate-config",
+            key: "feature1",
+            evalContext: {
+              user,
+            },
+          }),
+          expect.objectContaining({
             type: "feature-flag-event",
             action: "evaluate",
             key: "feature2",
-            targetingVersion: 2,
             evalContext: {
               user,
             },
-            evalResult: false,
-            evalRuleResults: [false],
-            evalMissingFields: ["something"],
-          },
-          {
-            action: "check",
-            evalResult: false,
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "check-config",
+            evalContext: {
+              user,
+            },
             key: "feature2",
-            targetingVersion: 2,
+          }),
+          expect.objectContaining({
             type: "feature-flag-event",
-          },
-          {
             action: "check",
-            evalResult: true,
-            key: "feature1",
-            targetingVersion: 1,
+            evalContext: {
+              user,
+            },
+            key: "feature2",
+          }),
+          expect.objectContaining({
             type: "feature-flag-event",
-          },
+            action: "check-config",
+            evalContext: {
+              user,
+            },
+            key: "feature1",
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "check",
+            evalContext: {
+              user,
+            },
+            key: "feature1",
+          }),
         ],
       );
     });
@@ -1554,44 +1683,62 @@ describe("BucketClient", () => {
         expectedHeaders,
         [
           expect.objectContaining({ type: "company" }),
-          {
+          expect.objectContaining({
             type: "feature-flag-event",
             action: "evaluate",
             key: "feature1",
-            targetingVersion: 1,
             evalContext: {
               company,
             },
-            evalResult: true,
-            evalRuleResults: [true],
-            evalMissingFields: [],
-          },
-          {
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "evaluate-config",
+            key: "feature1",
+            evalContext: {
+              company,
+            },
+          }),
+          expect.objectContaining({
             type: "feature-flag-event",
             action: "evaluate",
             key: "feature2",
-            targetingVersion: 2,
             evalContext: {
               company,
             },
-            evalResult: false,
-            evalRuleResults: [false],
-            evalMissingFields: ["something"],
-          },
-          {
-            action: "check",
-            evalResult: false,
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "check-config",
             key: "feature2",
-            targetingVersion: 2,
+            evalContext: {
+              company,
+            },
+          }),
+          expect.objectContaining({
             type: "feature-flag-event",
-          },
-          {
             action: "check",
-            evalResult: true,
-            key: "feature1",
-            targetingVersion: 1,
+            key: "feature2",
+            evalContext: {
+              company,
+            },
+          }),
+          expect.objectContaining({
             type: "feature-flag-event",
-          },
+            action: "check-config",
+            key: "feature1",
+            evalContext: {
+              company,
+            },
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "check",
+            key: "feature1",
+            evalContext: {
+              company,
+            },
+          }),
         ],
       );
     });
@@ -1654,6 +1801,23 @@ describe("BucketClient", () => {
           },
           {
             type: "feature-flag-event",
+            action: "evaluate-config",
+            evalContext: {
+              other: otherContext,
+            },
+            evalResult: {
+              key: "config-1",
+              payload: {
+                something: "else",
+              },
+            },
+            key: "feature1",
+            targetingVersion: 1,
+            evalMissingFields: [],
+            evalRuleResults: [true],
+          },
+          {
+            type: "feature-flag-event",
             action: "evaluate",
             key: "feature2",
             targetingVersion: 2,
@@ -1671,12 +1835,14 @@ describe("BucketClient", () => {
     it("should send `track` with user and company if provided", async () => {
       await client.initialize();
       const feature1 = client.getFeature({ company, user }, "feature1");
+      await client.flush();
 
       await feature1.track();
       await client.flush();
 
-      expect(httpClient.post).toHaveBeenCalledTimes(1);
-      expect(httpClient.post).toHaveBeenCalledWith(
+      expect(httpClient.post).toHaveBeenCalledTimes(2);
+      expect(httpClient.post).toHaveBeenNthCalledWith(
+        1,
         BULK_ENDPOINT,
         expectedHeaders,
         [
@@ -1689,6 +1855,16 @@ describe("BucketClient", () => {
           expect.objectContaining({
             type: "feature-flag-event",
             action: "evaluate",
+            key: "feature1",
+            evalContext: {
+              company,
+              user,
+            },
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "evaluate-config",
+            key: "feature1",
             evalContext: {
               company,
               user,
@@ -1697,7 +1873,15 @@ describe("BucketClient", () => {
           expect.objectContaining({
             type: "feature-flag-event",
             action: "evaluate",
+            key: "feature2",
           }),
+        ],
+      );
+      expect(httpClient.post).toHaveBeenNthCalledWith(
+        2,
+        BULK_ENDPOINT,
+        expectedHeaders,
+        [
           {
             companyId: "company123",
             event: "feature1",
@@ -1712,11 +1896,13 @@ describe("BucketClient", () => {
       await client.initialize();
       const feature = client.getFeature({ user }, "feature1");
 
+      await client.flush();
       await feature.track();
       await client.flush();
 
-      expect(httpClient.post).toHaveBeenCalledTimes(1);
-      expect(httpClient.post).toHaveBeenCalledWith(
+      expect(httpClient.post).toHaveBeenCalledTimes(2);
+      expect(httpClient.post).toHaveBeenNthCalledWith(
+        1,
         BULK_ENDPOINT,
         expectedHeaders,
         [
@@ -1726,14 +1912,31 @@ describe("BucketClient", () => {
           expect.objectContaining({
             type: "feature-flag-event",
             action: "evaluate",
+            key: "feature1",
             evalContext: {
               user,
             },
           }),
           expect.objectContaining({
             type: "feature-flag-event",
+            action: "evaluate-config",
+            key: "feature1",
+            evalContext: {
+              user,
+            },
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            key: "feature2",
             action: "evaluate",
           }),
+        ],
+      );
+      expect(httpClient.post).toHaveBeenNthCalledWith(
+        2,
+        BULK_ENDPOINT,
+        expectedHeaders,
+        [
           {
             event: "feature1",
             type: "event",
@@ -1762,6 +1965,13 @@ describe("BucketClient", () => {
           expect.objectContaining({
             type: "feature-flag-event",
             action: "evaluate",
+            evalContext: {
+              company,
+            },
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "evaluate-config",
             evalContext: {
               company,
             },
@@ -1806,12 +2016,17 @@ describe("BucketClient", () => {
         expectedHeaders,
         [
           expect.objectContaining({ type: "user" }),
-          {
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "check-config",
+            key: "key",
+          }),
+          expect.objectContaining({
             type: "feature-flag-event",
             action: "check",
             key: "key",
             evalResult: true,
-          },
+          }),
         ],
       );
     });
@@ -1969,13 +2184,20 @@ describe("BucketClient", () => {
                 version: 3,
                 default: true,
                 payload: { something: "else" },
+                missingContextFields: ["funny"],
               },
+              missingContextFields: ["something", "funny"],
             },
             feature2: {
               key: "feature2",
               targetingVersion: 2,
               isEnabled: false,
-              missingContextFields: ["something"],
+              missingContextFields: ["another"],
+            },
+            feature3: {
+              key: "feature3",
+              targetingVersion: 5,
+              isEnabled: true,
             },
           },
         },
@@ -2009,6 +2231,12 @@ describe("BucketClient", () => {
           config: { key: undefined, payload: undefined },
           track: expect.any(Function),
         },
+        feature3: {
+          key: "feature3",
+          isEnabled: true,
+          config: { key: undefined, payload: undefined },
+          track: expect.any(Function),
+        },
       });
 
       expect(httpClient.get).toHaveBeenCalledTimes(1);
@@ -2033,7 +2261,12 @@ describe("BucketClient", () => {
     it("should warn if missing context fields", async () => {
       await client.getFeaturesRemote();
       expect(logger.warn).toHaveBeenCalledWith(
-        'feature "feature2" has targeting rules that require the following context fields: "something"',
+        "feature/remote config targeting rules might not be correctly evaluated due to missing context fields.",
+        {
+          feature1: ["something", "funny"],
+          "feature1.config": ["funny"],
+          feature2: ["another"],
+        },
       );
     });
   });
@@ -2058,6 +2291,7 @@ describe("BucketClient", () => {
                 version: 3,
                 default: true,
                 payload: { something: "else" },
+                missingContextFields: ["two"],
               },
               missingContextFields: ["one", "two"],
             },
@@ -2107,7 +2341,11 @@ describe("BucketClient", () => {
     it("should warn if missing context fields", async () => {
       await client.getFeatureRemote("feature1");
       expect(logger.warn).toHaveBeenCalledWith(
-        'feature "feature1" has targeting rules that require the following context fields: "one", "two"',
+        "feature/remote config targeting rules might not be correctly evaluated due to missing context fields.",
+        {
+          feature1: ["one", "two"],
+          "feature1.config": ["two"],
+        },
       );
     });
   });
@@ -2284,6 +2522,13 @@ describe("BoundBucketClient", () => {
               key: "feature1",
               targetingVersion: 1,
               isEnabled: true,
+              config: {
+                key: "config-1",
+                version: 3,
+                default: true,
+                payload: { something: "else" },
+                missingContextFields: ["else"],
+              },
             },
             feature2: {
               key: "feature2",
@@ -2309,7 +2554,7 @@ describe("BoundBucketClient", () => {
         feature1: {
           key: "feature1",
           isEnabled: true,
-          config: { key: undefined, payload: undefined },
+          config: { key: "config-1", payload: { something: "else" } },
           track: expect.any(Function),
         },
         feature2: {
@@ -2340,7 +2585,7 @@ describe("BoundBucketClient", () => {
       expect(result).toStrictEqual({
         key: "feature1",
         isEnabled: true,
-        config: { key: undefined, payload: undefined },
+        config: { key: "config-1", payload: { something: "else" } },
         track: expect.any(Function),
       });
 

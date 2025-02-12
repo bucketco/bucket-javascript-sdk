@@ -1,12 +1,12 @@
 import { FunctionComponent, h } from "preact";
 
-import { Logo } from "../../ui/icons/Logo";
+import { Logo } from "./icons/Logo";
 
 export const Plug: FunctionComponent = () => {
   return (
     <footer class="plug">
       <a href="https://bucket.co" target="_blank">
-        Powered by <Logo height="10px" width="10px" /> Bucket
+        Powered by <Logo /> Bucket
       </a>
     </footer>
   );

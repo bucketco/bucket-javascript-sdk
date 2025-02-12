@@ -1,12 +1,10 @@
 import { h, render } from "preact";
 
-import { feedbackContainerId, propagatedEvents } from "../../ui/constants";
-import { Position } from "../../ui/types";
-
+import { feedbackContainerId, propagatedEvents } from "./constants";
 import { FeedbackDialog } from "./FeedbackDialog";
-import { OpenFeedbackFormOptions } from "./types";
+import { FeedbackPosition, OpenFeedbackFormOptions } from "./types";
 
-export const DEFAULT_POSITION: Position = {
+export const DEFAULT_POSITION: FeedbackPosition = {
   type: "DIALOG",
   placement: "bottom-right",
 };
@@ -33,11 +31,6 @@ function attachDialogContainer() {
   return container.shadowRoot!;
 }
 
-// this is a counter that increases every time the feedback form is opened
-// and since it's passed as a key to the FeedbackDialog component,
-// it forces a re-render on every form open
-let openInstances = 0;
-
 export function openFeedbackForm(options: OpenFeedbackFormOptions): void {
   const shadowRoot = attachDialogContainer();
   const position = options.position || DEFAULT_POSITION;
@@ -60,10 +53,11 @@ export function openFeedbackForm(options: OpenFeedbackFormOptions): void {
     }
   }
 
-  openInstances++;
+  render(h(FeedbackDialog, { ...options, position }), shadowRoot);
 
-  render(
-    h(FeedbackDialog, { ...options, position, key: openInstances.toString() }),
-    shadowRoot,
-  );
+  const dialog = shadowRoot.querySelector("dialog");
+
+  if (dialog && !dialog.hasAttribute("open")) {
+    dialog[position.type === "MODAL" ? "showModal" : "show"]();
+  }
 }

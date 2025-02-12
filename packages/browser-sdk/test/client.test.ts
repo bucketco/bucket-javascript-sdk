@@ -4,8 +4,6 @@ import { BucketClient } from "../src/client";
 import { FeaturesClient } from "../src/feature/features";
 import { HttpClient } from "../src/httpClient";
 
-import { featuresResult } from "./mocks/handlers";
-
 describe("BucketClient", () => {
   let client: BucketClient;
   const httpClientPost = vi.spyOn(HttpClient.prototype as any, "post");
@@ -62,16 +60,6 @@ describe("BucketClient", () => {
         },
       });
       expect(featureClientSetContext).toHaveBeenCalledWith(client["context"]);
-    });
-  });
-
-  describe("getFeature", () => {
-    it("takes overrides into account", async () => {
-      await client.initialize();
-      expect(featuresResult["featureA"].isEnabled).toBe(true);
-      expect(client.getFeature("featureA").isEnabled).toBe(true);
-      client.setFeatureOverride("featureA", false);
-      expect(client.getFeature("featureA").isEnabled).toBe(false);
     });
   });
 });
