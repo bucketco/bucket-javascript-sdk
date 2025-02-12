@@ -1,5 +1,5 @@
 import { createHash } from "crypto";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 
 import {
   decorateLogger,
@@ -8,6 +8,8 @@ import {
   mergeSkipUndefined,
   ok,
   once,
+  withTimeout,
+  TimeoutError,
 } from "../src/utils";
 
 describe("isObject", () => {
@@ -203,5 +205,96 @@ describe("once()", () => {
     expect(onceFn()).toBe(1);
 
     expect(fn).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("withTimeout()", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("should resolve when promise completes before timeout", async () => {
+    const promise = Promise.resolve("success");
+    const result = withTimeout(promise, 1000);
+
+    await expect(result).resolves.toBe("success");
+  });
+
+  it("should reject with TimeoutError when promise takes too long", async () => {
+    const slowPromise = new Promise((resolve) => {
+      setTimeout(() => resolve("too late"), 2000);
+    });
+
+    const result = withTimeout(slowPromise, 1000);
+
+    vi.advanceTimersByTime(1000);
+
+    await expect(result).rejects.toThrow("Operation timed out after 1000ms");
+    await expect(result).rejects.toBeInstanceOf(TimeoutError);
+  });
+
+  it("should propagate original promise rejection", async () => {
+    const error = new Error("original error");
+    const failedPromise = Promise.reject(error);
+
+    const result = withTimeout(failedPromise, 1000);
+
+    await expect(result).rejects.toBe(error);
+  });
+
+  it("should reject immediately for negative timeout", async () => {
+    const promise = Promise.resolve("success");
+
+    await expect(async () => {
+      await withTimeout(promise, -1);
+    }).rejects.toThrow("validation failed: timeout must be a positive number");
+  });
+
+  it("should reject immediately for zero timeout", async () => {
+    const promise = Promise.resolve("success");
+
+    await expect(async () => {
+      await withTimeout(promise, 0);
+    }).rejects.toThrow("validation failed: timeout must be a positive number");
+  });
+
+  it("should clean up timeout when promise resolves", async () => {
+    const clearTimeoutSpy = vi.spyOn(global, "clearTimeout");
+    const promise = Promise.resolve("success");
+
+    await withTimeout(promise, 1000);
+    await vi.runAllTimersAsync();
+
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+    clearTimeoutSpy.mockRestore();
+  });
+
+  it("should clean up timeout when promise rejects", async () => {
+    const clearTimeoutSpy = vi.spyOn(global, "clearTimeout");
+    const promise = Promise.reject(new Error("fail"));
+
+    await expect(withTimeout(promise, 1000)).rejects.toThrow("fail");
+
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+    clearTimeoutSpy.mockRestore();
+  });
+
+  it("should not resolve after timeout occurs", async () => {
+    const slowPromise = new Promise((resolve) => {
+      setTimeout(() => resolve("too late"), 2000);
+    });
+
+    const result = withTimeout(slowPromise, 1000);
+
+    vi.advanceTimersByTime(1000); // Trigger timeout
+    await expect(result).rejects.toThrow("Operation timed out after 1000ms");
+
+    vi.advanceTimersByTime(1000); // Complete the original promise
+    // The promise should still be rejected with the timeout error
+    await expect(result).rejects.toThrow("Operation timed out after 1000ms");
   });
 });
