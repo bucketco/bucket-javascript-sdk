@@ -948,7 +948,16 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@bucketco/node-sdk@npm:1.6.0-alpha.3, @bucketco/node-sdk@workspace:packages/node-sdk":
+"@bucketco/node-sdk@npm:1.6.0-alpha.3":
+  version: 1.6.0-alpha.3
+  resolution: "@bucketco/node-sdk@npm:1.6.0-alpha.3"
+  dependencies:
+    "@bucketco/flag-evaluation": "npm:~0.1.0"
+  checksum: 10c0/7f9654168a3a94b7971d1d2ca0736f9ea1fd1f68d2f170b3eccc345eeab34a1bcb5da7973a63b38b4f0fb8df1353143d87d24c85bca2d52fe6fc0aaf9f2a4951
+  languageName: node
+  linkType: hard
+
+"@bucketco/node-sdk@workspace:packages/node-sdk":
   version: 0.0.0-use.local
   resolution: "@bucketco/node-sdk@workspace:packages/node-sdk"
   dependencies:
@@ -974,7 +983,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@bucketco/openfeature-browser-provider@workspace:packages/openfeature-browser-provider"
   dependencies:
-    "@bucketco/browser-sdk": "npm:3.0.0-alpha.2"
+    "@bucketco/browser-sdk": "npm:2.4.0"
     "@bucketco/eslint-config": "npm:0.0.2"
     "@bucketco/tsconfig": "npm:0.0.2"
     "@openfeature/core": "npm:1.5.0"

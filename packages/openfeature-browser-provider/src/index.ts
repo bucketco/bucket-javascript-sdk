@@ -11,29 +11,28 @@ import {
   TrackingEventDetails,
 } from "@openfeature/web-sdk";
 
-import { BucketClient, Feature, InitOptions } from "@bucketco/browser-sdk";
+import { BucketClient, InitOptions } from "@bucketco/browser-sdk";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ContextTranslationFn = (
   context?: EvaluationContext,
 ) => Record<string, any>;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function defaultContextTranslator(
   context?: EvaluationContext,
 ): Record<string, any> {
   if (!context) return {};
   return {
     user: {
-      id: context.targetingKey ?? context["userId"]?.toString(),
-      email: context["email"]?.toString(),
-      name: context["name"]?.toString(),
-      avatar: context["avatar"]?.toString(),
-      country: context["country"]?.toString(),
+      id: context["trackingKey"],
+      email: context["email"],
+      name: context["name"],
     },
     company: {
-      id: context["companyId"]?.toString(),
-      name: context["companyName"]?.toString(),
-      plan: context["companyPlan"]?.toString(),
-      avatar: context["companyAvatar"]?.toString(),
+      id: context["companyId"],
+      name: context["companyName"],
+      plan: context["companyPlan"],
     },
   };
 }
@@ -45,8 +44,8 @@ export class BucketBrowserSDKProvider implements Provider {
 
   private _client?: BucketClient;
 
-  private readonly _clientOptions: InitOptions;
-  private readonly _contextTranslator: ContextTranslationFn;
+  private _clientOptions: InitOptions;
+  private _contextTranslator: ContextTranslationFn;
 
   public events = new OpenFeatureEventEmitter();
 
@@ -101,102 +100,66 @@ export class BucketBrowserSDKProvider implements Provider {
     await this.initialize(newContext);
   }
 
-  private resolveFeature<T extends JsonValue>(
+  resolveBooleanEvaluation(
     flagKey: string,
-    defaultValue: T,
-    resolveFn: (feature: Feature) => ResolutionDetails<T>,
-  ): ResolutionDetails<T> {
-    if (!this._client) {
+    defaultValue: boolean,
+  ): ResolutionDetails<boolean> {
+    if (!this._client)
       return {
         value: defaultValue,
         reason: StandardResolutionReasons.DEFAULT,
         errorCode: ErrorCode.PROVIDER_NOT_READY,
-        errorMessage: "Bucket client not initialized",
-      } satisfies ResolutionDetails<T>;
-    }
+      } satisfies ResolutionDetails<boolean>;
 
     const features = this._client.getFeatures();
     if (flagKey in features) {
-      return resolveFn(this._client.getFeature(flagKey));
+      const feature = this._client.getFeature(flagKey);
+      return {
+        value: feature.isEnabled,
+        reason: StandardResolutionReasons.TARGETING_MATCH,
+      } satisfies ResolutionDetails<boolean>;
     }
 
     return {
       value: defaultValue,
       reason: StandardResolutionReasons.DEFAULT,
-      errorCode: ErrorCode.FLAG_NOT_FOUND,
-      errorMessage: `Flag ${flagKey} not found`,
+    } satisfies ResolutionDetails<boolean>;
+  }
+
+  resolveNumberEvaluation(
+    _flagKey: string,
+    defaultValue: number,
+  ): ResolutionDetails<number> {
+    return {
+      value: defaultValue,
+      errorCode: ErrorCode.TYPE_MISMATCH,
+      reason: StandardResolutionReasons.ERROR,
+      errorMessage: "Bucket doesn't support number flags",
     };
   }
 
-  resolveBooleanEvaluation(flagKey: string, defaultValue: boolean) {
-    return this.resolveFeature(flagKey, defaultValue, (feature) => {
-      return {
-        value: feature.isEnabled,
-        variant: feature.config.key,
-        reason: StandardResolutionReasons.TARGETING_MATCH,
-      };
-    });
-  }
-
-  resolveNumberEvaluation(_flagKey: string, defaultValue: number) {
+  resolveObjectEvaluation<T extends JsonValue>(
+    _flagKey: string,
+    defaultValue: T,
+  ): ResolutionDetails<T> {
     return {
       value: defaultValue,
+      errorCode: ErrorCode.TYPE_MISMATCH,
       reason: StandardResolutionReasons.ERROR,
-      errorCode: ErrorCode.GENERAL,
-      errorMessage:
-        "Bucket doesn't support this method. Use `resolveObjectEvaluation` instead.",
+      errorMessage: "Bucket doesn't support object flags",
     };
   }
 
   resolveStringEvaluation(
-    flagKey: string,
+    _flagKey: string,
     defaultValue: string,
   ): ResolutionDetails<string> {
-    return this.resolveFeature(flagKey, defaultValue, (feature) => {
-      if (!feature.config.key) {
-        return {
-          value: defaultValue,
-          reason: StandardResolutionReasons.DEFAULT,
-        };
-      }
-
-      return {
-        value: feature.config.key as string,
-        variant: feature.config.key,
-        reason: StandardResolutionReasons.TARGETING_MATCH,
-      };
-    });
-  }
-
-  resolveObjectEvaluation<T extends JsonValue>(
-    flagKey: string,
-    defaultValue: T,
-  ) {
-    return this.resolveFeature(flagKey, defaultValue, (feature) => {
-      const expType = typeof defaultValue;
-
-      const payloadType = typeof feature.config.payload;
-
-      if (
-        feature.config.payload === undefined ||
-        feature.config.payload === null ||
-        payloadType !== expType
-      ) {
-        return {
-          value: defaultValue,
-          reason: StandardResolutionReasons.ERROR,
-          variant: feature.config.key,
-          errorCode: ErrorCode.TYPE_MISMATCH,
-          errorMessage: `Expected remote config payload of type \`${expType}\` but got \`${payloadType}\`.`,
-        };
-      }
-
-      return {
-        value: feature.config.payload,
-        variant: feature.config.key,
-        reason: StandardResolutionReasons.TARGETING_MATCH,
-      };
-    });
+    return {
+      value: defaultValue,
+      errorCode: ErrorCode.TYPE_MISMATCH,
+      reason: StandardResolutionReasons.ERROR,
+      errorMessage: "Bucket doesn't support string flags",
+    };
   }
 
   track(
@@ -208,10 +171,8 @@ export class BucketBrowserSDKProvider implements Provider {
       this._clientOptions.logger?.error("client not initialized");
     }
 
-    this._client
-      ?.track(trackingEventName, trackingEventDetails)
-      .catch((e: any) => {
-        this._clientOptions.logger?.error("error tracking event", e);
-      });
+    this._client?.track(trackingEventName, trackingEventDetails).catch((e) => {
+      this._clientOptions.logger?.error("error tracking event", e);
+    });
   }
 }
