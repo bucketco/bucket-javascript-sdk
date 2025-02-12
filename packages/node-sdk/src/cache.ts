@@ -43,7 +43,7 @@ export default function cache<T>(
       logger?.error("failed to update cached value", e);
     } finally {
       refreshPromise = undefined;
-      timeoutId = setTimeout(update, ttl);
+      timeoutId = setTimeout(update, ttl).unref();
     }
   };
 

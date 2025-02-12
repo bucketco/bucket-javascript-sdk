@@ -43,7 +43,7 @@ export function newRateLimiter(windowSizeMs: number) {
 
   function isAllowed(key: string): boolean {
     clearIntervalId =
-      clearIntervalId || setInterval(() => clear(false), windowSizeMs);
+      clearIntervalId || setInterval(() => clear(false), windowSizeMs).unref();
 
     const now = Date.now();
 
