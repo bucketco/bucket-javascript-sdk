@@ -404,7 +404,6 @@ export class BucketClient {
         company: this.context.company,
         other: this.context.otherContext,
       },
-      opts?.features || [],
       this.logger,
       {
         expireTimeMs: opts.expireTimeMs,

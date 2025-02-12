@@ -187,7 +187,6 @@ export class FeaturesClient {
   constructor(
     private httpClient: HttpClient,
     private context: context,
-    private featureDefinitions: Readonly<string[]>,
     logger: Logger,
     options?: {
       fallbackFeatures?: Record<string, FallbackFeatureOverride> | string[];
@@ -235,9 +234,7 @@ export class FeaturesClient {
     try {
       const storedFeatureOverrides = getOverridesCache();
       for (const key in storedFeatureOverrides) {
-        if (this.featureDefinitions.includes(key)) {
-          this.featureOverrides[key] = storedFeatureOverrides[key];
-        }
+        this.featureOverrides[key] = storedFeatureOverrides[key];
       }
     } catch (e) {
       this.logger.warn("error getting feature overrides from cache", e);
@@ -295,7 +292,7 @@ export class FeaturesClient {
     const params = this.fetchParams();
     try {
       const res = await this.httpClient.get({
-        path: "/features/enabled",
+        path: "/features/evaluated",
         timeoutMs: this.config.timeoutMs,
         params,
       });
@@ -373,17 +370,6 @@ export class FeaturesClient {
         ...fetchedFeature,
         isEnabledOverride,
       };
-    }
-
-    // add any features that aren't in the fetched features
-    for (const key of this.featureDefinitions) {
-      if (!mergedFeatures[key]) {
-        mergedFeatures[key] = {
-          key,
-          isEnabled: false,
-          isEnabledOverride: this.featureOverrides[key] ?? null,
-        };
-      }
     }
 
     this.features = mergedFeatures;

@@ -1,7 +1,6 @@
 import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
 
 import { version } from "../package.json";
-import { FeatureDefinitions } from "../src/client";
 import {
   FEATURES_EXPIRE_MS,
   FeaturesClient,
@@ -37,7 +36,6 @@ function featuresClientFactory() {
     httpClient,
     newFeaturesClient: function newFeaturesClient(
       context?: Record<string, any>,
-      features?: FeatureDefinitions,
       options?: { staleWhileRevalidate?: boolean; fallbackFeatures?: any },
     ) {
       return new FeaturesClient(
@@ -48,7 +46,6 @@ function featuresClientFactory() {
           other: { eventId: "big-conference1" },
           ...context,
         },
-        features || [],
         testLogger,
         {
           cache,
@@ -87,7 +84,7 @@ describe("FeaturesClient", () => {
       publishableKey: "pk",
     });
 
-    expect(path).toEqual("/features/enabled");
+    expect(path).toEqual("/features/evaluated");
     expect(timeoutMs).toEqual(5000);
   });
 
@@ -111,7 +108,7 @@ describe("FeaturesClient", () => {
       publishableKey: "pk",
     });
 
-    expect(path).toEqual("/features/enabled");
+    expect(path).toEqual("/features/evaluated");
     expect(timeoutMs).toEqual(5000);
   });
 
@@ -122,7 +119,7 @@ describe("FeaturesClient", () => {
       new Error("Failed to fetch features"),
     );
 
-    const featuresClient = newFeaturesClient(undefined, undefined, {
+    const featuresClient = newFeaturesClient(undefined, {
       fallbackFeatures: ["huddle"],
     });
 
@@ -143,7 +140,7 @@ describe("FeaturesClient", () => {
     vi.mocked(httpClient.get).mockRejectedValue(
       new Error("Failed to fetch features"),
     );
-    const featuresClient = newFeaturesClient(undefined, undefined, {
+    const featuresClient = newFeaturesClient(undefined, {
       fallbackFeatures: {
         huddle: {
           key: "john",
@@ -342,7 +339,7 @@ describe("FeaturesClient", () => {
     const { newFeaturesClient } = featuresClientFactory();
 
     // localStorage.clear();
-    const client = newFeaturesClient(undefined, ["featureB"]);
+    const client = newFeaturesClient(undefined);
     await client.initialize();
 
     let updated = false;
