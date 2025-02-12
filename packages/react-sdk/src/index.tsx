@@ -13,7 +13,6 @@ import canonicalJSON from "canonical-json";
 import {
   BucketClient,
   BucketContext,
-  FeaturesOptions,
   FeedbackOptions,
   RawFeatures,
   RequestFeedbackData,
@@ -54,30 +53,41 @@ const ProviderContext = createContext<ProviderContextType>({
 
 export type BucketProps = BucketContext & {
   publishableKey: string;
-  featureOptions?: Omit<FeaturesOptions, "fallbackFeatures"> & {
-    fallbackFeatures?: FeatureKey[] | Record<FeatureKey, any>;
-  };
+
   children?: ReactNode;
   loadingComponent?: ReactNode;
   feedback?: FeedbackOptions;
-  /**
-   * @deprecated
-   * Use `apiBaseUrl` instead.
-   */
-  host?: string;
+
   apiBaseUrl?: string;
   appBaseUrl?: string;
 
-  /**
-   * @deprecated
-   * Use `sseBaseUrl` instead.
-   */
-  sseHost?: string;
   sseBaseUrl?: string;
   debug?: boolean;
   enableTracking?: boolean;
 
-  featureList?: Readonly<string[]>;
+  features?: Readonly<string[]>;
+
+  fallbackFeatures?: FeatureKey[] | Record<FeatureKey, any>;
+
+  /**
+   * Timeout in milliseconds when fetching features
+   */
+  timeoutMs?: number;
+
+  /**
+   * If set to true stale features will be returned while refetching features
+   */
+  staleWhileRevalidate?: boolean;
+
+  /**
+   * If set, features will be cached between page loads for this duration
+   */
+  expireTimeMs?: number;
+
+  /**
+   * Stale features will be returned if staleWhileRevalidate is true if no new features can be fetched
+   */
+  staleTimeMs?: number;
 
   toolbar?: ToolbarOptions;
 
@@ -93,14 +103,13 @@ export function BucketProvider({
   company,
   otherContext,
   publishableKey,
-  featureOptions,
   loadingComponent,
-  featureList,
+  features,
   newBucketClient = (...args) => new BucketClient(...args),
   ...config
 }: BucketProps) {
   const [featuresLoading, setFeaturesLoading] = useState(true);
-  const [features, setFeatures] = useState<RawFeatures>({});
+  const [rawFeatures, setRawFeatures] = useState<RawFeatures>({});
 
   const clientRef = useRef<BucketClient>();
   const contextKeyRef = useRef<string>();
@@ -127,27 +136,28 @@ export function BucketProvider({
       company,
       otherContext,
 
-      host: config.host,
       apiBaseUrl: config.apiBaseUrl,
       appBaseUrl: config.appBaseUrl,
-      sseHost: config.sseHost,
       sseBaseUrl: config.sseBaseUrl,
 
       enableTracking: config.enableTracking,
 
-      features: {
-        ...featureOptions,
-      },
+      staleTimeMs: config.staleTimeMs,
+      expireTimeMs: config.expireTimeMs,
+      timeoutMs: config.timeoutMs,
+      staleWhileRevalidate: config.staleWhileRevalidate,
+      fallbackFeatures: config.fallbackFeatures,
+
       feedback: config.feedback,
       logger: config.debug ? console : undefined,
       sdkVersion: SDK_VERSION,
-      featureList,
+      features,
       toolbar: config.toolbar,
     });
     clientRef.current = client;
 
     client.onFeaturesUpdated(() => {
-      setFeatures(client.getFeatures());
+      setRawFeatures(client.getFeatures());
     });
 
     client
@@ -162,7 +172,7 @@ export function BucketProvider({
 
   const context: ProviderContextType = {
     features: {
-      features: features,
+      features: rawFeatures,
       isLoading: featuresLoading,
     },
     client: clientRef.current,

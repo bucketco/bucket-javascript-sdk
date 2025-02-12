@@ -1,11 +1,9 @@
 import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
 
 import { version } from "../package.json";
-import { FeatureDefinitions } from "../src/client";
 import {
   FEATURES_EXPIRE_MS,
   FeaturesClient,
-  FeaturesOptions,
   FetchedFeature,
   RawFeature,
 } from "../src/feature/features";
@@ -37,9 +35,8 @@ function featuresClientFactory() {
     cache,
     httpClient,
     newFeaturesClient: function newFeaturesClient(
-      options?: FeaturesOptions,
-      context?: any,
-      featureList: FeatureDefinitions = [],
+      context?: Record<string, any>,
+      options?: { staleWhileRevalidate?: boolean; fallbackFeatures?: any },
     ) {
       return new FeaturesClient(
         httpClient,
@@ -49,7 +46,6 @@ function featuresClientFactory() {
           other: { eventId: "big-conference1" },
           ...context,
         },
-        featureList,
         testLogger,
         {
           cache,
@@ -92,7 +88,7 @@ describe("FeaturesClient", () => {
       publishableKey: "pk",
     });
 
-    expect(path).toEqual("/features/enabled");
+    expect(path).toEqual("/features/evaluated");
     expect(timeoutMs).toEqual(5000);
   });
 
@@ -121,14 +117,11 @@ describe("FeaturesClient", () => {
 
   test("ignores undefined context", async () => {
     const { newFeaturesClient, httpClient } = featuresClientFactory();
-    const featuresClient = newFeaturesClient(
-      {},
-      {
-        user: undefined,
-        company: undefined,
-        other: undefined,
-      },
-    );
+    const featuresClient = newFeaturesClient({
+      user: undefined,
+      company: undefined,
+      other: undefined,
+    });
     await featuresClient.initialize();
     expect(featuresClient.getFeatures()).toEqual(featuresResult);
 
@@ -142,7 +135,7 @@ describe("FeaturesClient", () => {
       publishableKey: "pk",
     });
 
-    expect(path).toEqual("/features/enabled");
+    expect(path).toEqual("/features/evaluated");
     expect(timeoutMs).toEqual(5000);
   });
 
@@ -153,7 +146,7 @@ describe("FeaturesClient", () => {
       new Error("Failed to fetch features"),
     );
 
-    const featuresClient = newFeaturesClient({
+    const featuresClient = newFeaturesClient(undefined, {
       fallbackFeatures: ["huddle"],
     });
 
@@ -174,7 +167,7 @@ describe("FeaturesClient", () => {
     vi.mocked(httpClient.get).mockRejectedValue(
       new Error("Failed to fetch features"),
     );
-    const featuresClient = newFeaturesClient({
+    const featuresClient = newFeaturesClient(undefined, {
       fallbackFeatures: {
         huddle: {
           key: "john",
@@ -373,7 +366,7 @@ describe("FeaturesClient", () => {
     const { newFeaturesClient } = featuresClientFactory();
 
     // localStorage.clear();
-    const client = newFeaturesClient(undefined, undefined, ["featureB"]);
+    const client = newFeaturesClient(undefined);
     await client.initialize();
 
     let updated = false;
