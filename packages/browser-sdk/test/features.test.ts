@@ -57,6 +57,10 @@ function featuresClientFactory() {
 }
 
 describe("FeaturesClient", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   test("fetches features", async () => {
     const { newFeaturesClient, httpClient } = featuresClientFactory();
     const featuresClient = newFeaturesClient();
@@ -86,6 +90,29 @@ describe("FeaturesClient", () => {
 
     expect(path).toEqual("/features/evaluated");
     expect(timeoutMs).toEqual(5000);
+  });
+
+  test("warns about missing context fields", async () => {
+    const { newFeaturesClient } = featuresClientFactory();
+    const featuresClient = newFeaturesClient();
+
+    await featuresClient.initialize();
+
+    expect(testLogger.warn).toHaveBeenCalledTimes(1);
+    expect(testLogger.warn).toHaveBeenCalledWith(
+      "[Features] feature/remote config targeting rules might not be correctly evaluated due to missing context fields.",
+      {
+        featureA: ["field1", "field2"],
+        "featureB.config": ["field3"],
+      },
+    );
+
+    vi.advanceTimersByTime(TEST_STALE_MS + 1);
+
+    expect(testLogger.warn).toHaveBeenCalledTimes(1);
+    vi.advanceTimersByTime(60 * 1000);
+    await featuresClient.initialize();
+    expect(testLogger.warn).toHaveBeenCalledTimes(2);
   });
 
   test("ignores undefined context", async () => {

@@ -17,11 +17,9 @@ import fetchClient from "./fetch-http-client";
 import { newRateLimiter } from "./rate-limiter";
 import type {
   EvaluatedFeaturesAPIResponse,
-  FeatureAPIResponse,
   FeatureOverridesFn,
   IdType,
   RawFeature,
-  RawFeatureRemoteConfig,
 } from "./types";
 import {
   Attributes,
@@ -29,6 +27,7 @@ import {
   ClientOptions,
   Context,
   ContextWithTracking,
+  Feature,
   FeatureEvent,
   FeaturesAPIResponse,
   HttpClient,
@@ -113,7 +112,6 @@ export class BucketClient {
     offline: boolean;
     configFile?: string;
   };
-
   private _initialize = once(async () => {
     if (!this._config.offline) {
       await this.getFeaturesCache().refresh();
@@ -164,9 +162,8 @@ export class BucketClient {
     );
     ok(
       options.fallbackFeatures === undefined ||
-        Array.isArray(options.fallbackFeatures) ||
-        isObject(options.fallbackFeatures),
-      "fallbackFeatures must be an array or object",
+        Array.isArray(options.fallbackFeatures),
+      "fallbackFeatures must be an object",
     );
     ok(
       options.batchOptions === undefined || isObject(options.batchOptions),
@@ -204,40 +201,18 @@ export class BucketClient {
 
     // todo: deprecate fallback features in favour of a more operationally
     //  friendly way of setting fall backs.
-    const fallbackFeatures = Array.isArray(options.fallbackFeatures)
-      ? options.fallbackFeatures.reduce(
-          (acc, key) => {
-            acc[key as keyof TypedFeatures] = {
-              isEnabled: true,
-              key,
-            };
-            return acc;
-          },
-          {} as Record<keyof TypedFeatures, RawFeature>,
-        )
-      : isObject(options.fallbackFeatures)
-        ? Object.entries(options.fallbackFeatures).reduce(
-            (acc, [key, fallback]) => {
-              acc[key as keyof TypedFeatures] = {
-                isEnabled:
-                  typeof fallback === "object"
-                    ? fallback.isEnabled
-                    : !!fallback,
-                key,
-                config:
-                  typeof fallback === "object" && fallback.config
-                    ? {
-                        key: fallback.config.key,
-                        default: true,
-                        payload: fallback.config.payload,
-                      }
-                    : undefined,
-              };
-              return acc;
-            },
-            {} as Record<keyof TypedFeatures, RawFeature>,
-          )
-        : undefined;
+    const fallbackFeatures =
+      options.fallbackFeatures &&
+      options.fallbackFeatures.reduce(
+        (acc, key) => {
+          acc[key as keyof TypedFeatures] = {
+            isEnabled: true,
+            key,
+          };
+          return acc;
+        },
+        {} as Record<keyof TypedFeatures, RawFeature>,
+      );
 
     this._config = {
       logger,
@@ -513,10 +488,10 @@ export class BucketClient {
    * @remarks
    * Call `initialize` before calling this method to ensure the feature definitions are cached, no features will be returned otherwise.
    **/
-  public getFeature<TKey extends keyof TypedFeatures>(
+  public getFeature(
     { enableTracking = true, ...context }: ContextWithTracking,
-    key: TKey,
-  ): TypedFeatures[TKey] {
+    key: keyof TypedFeatures,
+  ) {
     const options = { enableTracking, ...context };
     const features = this._getFeatures(options);
     const feature = features[key];
@@ -525,7 +500,6 @@ export class BucketClient {
       key,
       isEnabled: feature?.isEnabled ?? false,
       targetingVersion: feature?.targetingVersion,
-      config: feature?.config,
     });
   }
 
@@ -563,12 +537,12 @@ export class BucketClient {
    *
    * @returns evaluated feature
    */
-  public async getFeatureRemote<TKey extends keyof TypedFeatures>(
-    key: TKey,
+  public async getFeatureRemote(
+    key: string,
     userId?: IdType,
     companyId?: IdType,
     additionalContext?: Context,
-  ): Promise<TypedFeatures[TKey]> {
+  ): Promise<Feature> {
     const features = await this._getFeaturesRemote(
       key,
       userId,
@@ -905,12 +879,8 @@ export class BucketClient {
       featureDefinitions = fetchedFeatures.features;
     }
 
-    const featureMap = featureDefinitions.reduce(
-      (acc, f) => {
-        acc[f.key] = f;
-        return acc;
-      },
-      {} as Record<string, FeatureAPIResponse>,
+    const keyToVersionMap = new Map<string, number>(
+      featureDefinitions.map((f) => [f.key, f.targeting.version]),
     );
 
     const { enableTracking = true, meta: _, ...context } = options;
@@ -921,31 +891,6 @@ export class BucketClient {
         rules: feature.targeting.rules.map((r) => ({ ...r, value: true })),
         context,
       }),
-    );
-
-    const evaluatedConfigs = evaluated.reduce(
-      (acc, { featureKey }) => {
-        const feature = featureMap[featureKey];
-        if (feature.config) {
-          const variant = evaluateFeatureRules({
-            featureKey,
-            rules: feature.config.variants.map(({ filter, ...rest }) => ({
-              filter,
-              value: rest,
-            })),
-            context,
-          });
-
-          if (variant.value) {
-            acc[featureKey] = {
-              ...variant.value,
-              targetingVersion: feature.config.version,
-            };
-          }
-        }
-        return acc;
-      },
-      {} as Record<string, RawFeatureRemoteConfig>,
     );
 
     this.warnMissingFeatureContextFields(
@@ -962,7 +907,7 @@ export class BucketClient {
           await this.sendFeatureEvent({
             action: "evaluate",
             key: res.featureKey,
-            targetingVersion: featureMap[res.featureKey].targeting.version,
+            targetingVersion: keyToVersionMap.get(res.featureKey),
             evalResult: res.value ?? false,
             evalContext: res.context,
             evalRuleResults: res.ruleEvaluationResults,
@@ -982,9 +927,7 @@ export class BucketClient {
         acc[res.featureKey as keyof TypedFeatures] = {
           key: res.featureKey,
           isEnabled: res.value ?? false,
-          config: evaluatedConfigs[res.featureKey],
-          targetingVersion: featureMap[res.featureKey].targeting.version,
-          missingContextFields: res.missingContextFields,
+          targetingVersion: keyToVersionMap.get(res.featureKey),
         };
         return acc;
       },
@@ -994,14 +937,7 @@ export class BucketClient {
     // apply feature overrides
     const overrides = Object.entries(
       this._config.featureOverrides(context),
-    ).map(([key, override]) => [
-      key,
-      {
-        key,
-        isEnabled: isObject(override) ? override.isEnabled : !!override,
-        config: isObject(override) ? override.config : undefined,
-      },
-    ]);
+    ).map(([key, isEnabled]) => [key, { key, isEnabled }]);
 
     if (overrides.length > 0) {
       // merge overrides into evaluated features
@@ -1010,47 +946,37 @@ export class BucketClient {
         ...Object.fromEntries(overrides),
       };
     }
+    this._config.logger?.debug("evaluated features", evaluatedFeatures);
 
     return evaluatedFeatures;
   }
 
-  private _wrapRawFeature<TKey extends keyof TypedFeatures>(
+  private _wrapRawFeature(
     options: { enableTracking: boolean } & Context,
-    { key, isEnabled, config, targetingVersion }: RawFeature,
-  ): TypedFeatures[TKey] {
+    { key, isEnabled, targetingVersion }: RawFeature,
+  ): Feature {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const client = this;
 
-    function sendCheckEvent() {
-      if (options.enableTracking) {
-        void client
-          .sendFeatureEvent({
-            action: "check",
-            key,
-            targetingVersion,
-            evalResult: isEnabled,
-          })
-          .catch((err) => {
-            client._config.logger?.error(
-              `failed to send check event for "${key}": ${err}`,
-              err,
-            );
-          });
-      }
-    }
-
-    const simplifiedConfig = config
-      ? { key: config.key, payload: config.payload }
-      : { key: undefined, payload: undefined };
-
     return {
       get isEnabled() {
-        sendCheckEvent();
+        if (options.enableTracking) {
+          void client
+            .sendFeatureEvent({
+              action: "check",
+              key,
+              targetingVersion,
+              evalResult: isEnabled,
+            })
+            .catch((err) => {
+              client._config.logger?.error(
+                `failed to send check event for "${key}": ${err}`,
+                err,
+              );
+            });
+        }
+
         return isEnabled;
-      },
-      get config() {
-        sendCheckEvent();
-        return simplifiedConfig as TypedFeatures[TKey]["config"];
       },
       key,
       track: async () => {
@@ -1088,7 +1014,6 @@ export class BucketClient {
       ...context,
       enableTracking: true,
     };
-
     checkContextWithTracking(contextWithTracking);
 
     const params = new URLSearchParams(
@@ -1108,7 +1033,6 @@ export class BucketClient {
         context,
         Object.values(res.features),
       );
-
       return Object.fromEntries(
         Object.entries(res.features).map(([featureKey, feature]) => {
           return [
@@ -1186,7 +1110,7 @@ export class BoundBucketClient {
    *
    * @returns Features for the given user/company and whether each one is enabled or not
    */
-  public getFeatures(): TypedFeatures {
+  public getFeatures() {
     return this._client.getFeatures(this._options);
   }
 
@@ -1198,9 +1122,7 @@ export class BoundBucketClient {
    *
    * @returns Features for the given user/company and whether each one is enabled or not
    */
-  public getFeature<TKey extends keyof TypedFeatures>(
-    key: TKey,
-  ): TypedFeatures[TKey] {
+  public getFeature(key: keyof TypedFeatures) {
     return this._client.getFeature(this._options, key);
   }
 
