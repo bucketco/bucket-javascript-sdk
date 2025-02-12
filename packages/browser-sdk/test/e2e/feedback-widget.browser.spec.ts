@@ -50,7 +50,7 @@ async function getOpenedWidgetContainer(
       const bucket = new BucketClient({publishableKey: "${KEY}", user: {id: "foo"}, company: {id: "bar"}, ...${JSON.stringify(initOptions ?? {})}});
       await bucket.initialize();
       await bucket.requestFeedback({
-        featureId: "featureId1",
+        featureKey: "feature1",
         title: "baz",
       });
     })()
@@ -90,7 +90,7 @@ async function getGiveFeedbackPageContainer(
       document.querySelector("#give-feedback-button")?.addEventListener("click", () => {
         console.log("cliked!");
         bucket.requestFeedback({
-          featureId: "featureId1",
+          featureKey: "feature1",
           title: "baz",
         });
       });
@@ -250,7 +250,7 @@ test("Sends a request when choosing a score immediately", async ({ page }) => {
     .poll(() => sentJSON)
     .toEqual({
       companyId: "bar",
-      featureId: "featureId1",
+      key: "feature1",
       score: expectedScore,
       question: "baz",
       userId: "foo",
@@ -309,7 +309,7 @@ test("Updates the score on every change", async ({ page }) => {
     .toEqual({
       feedbackId: "123",
       companyId: "bar",
-      featureId: "featureId1",
+      key: "feature1",
       question: "baz",
       score: 3,
       userId: "foo",
@@ -369,7 +369,7 @@ test("Sends a request with both the score and comment when submitting", async ({
     score: expectedScore,
     companyId: "bar",
     question: "baz",
-    featureId: "featureId1",
+    key: "feature1",
     feedbackId: "123",
     userId: "foo",
     source: "widget",
