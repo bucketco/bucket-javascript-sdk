@@ -151,6 +151,7 @@ export const handlers = [
     });
   }),
   http.get("https://front.bucket.co/features/enabled", getFeatures),
+  http.get("https://front.bucket.co/features/evaluated", getFeatures),
   http.post(
     "https://front.bucket.co/feedback/prompting-init",
     ({ request }) => {
