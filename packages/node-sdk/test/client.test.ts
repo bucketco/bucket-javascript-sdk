@@ -440,9 +440,7 @@ describe("BucketClient", () => {
             type: "user",
             userId: user.id,
             attributes: attributes,
-            context: {
-              active: false,
-            },
+            context: undefined,
           },
         ],
       );
@@ -451,7 +449,7 @@ describe("BucketClient", () => {
     });
 
     it("should update company in Bucket when called", async () => {
-      client.bindClient({ company: context.company });
+      client.bindClient({ company: context.company, meta: { active: true } });
       await client.flush();
 
       const { id: _, ...attributes } = context.company;
@@ -465,7 +463,7 @@ describe("BucketClient", () => {
             companyId: company.id,
             attributes: attributes,
             context: {
-              active: false,
+              active: true,
             },
           },
         ],
@@ -599,7 +597,7 @@ describe("BucketClient", () => {
     it("should throw an error if opts are not valid or the user is not set", async () => {
       await expect(
         client.updateUser(user.id, "bad_opts" as any),
-      ).rejects.toThrow("opts must be an object");
+      ).rejects.toThrow("validation failed: options must be an object");
 
       await expect(
         client.updateUser(user.id, { attributes: "bad_attributes" as any }),
@@ -691,7 +689,7 @@ describe("BucketClient", () => {
     it("should throw an error if company is not valid", async () => {
       await expect(
         client.updateCompany(company.id, "bad_opts" as any),
-      ).rejects.toThrow("opts must be an object");
+      ).rejects.toThrow("validation failed: options must be an object");
 
       await expect(
         client.updateCompany(company.id, {
@@ -848,7 +846,7 @@ describe("BucketClient", () => {
 
       await expect(
         boundClient.track(event.event, "bad_opts" as any),
-      ).rejects.toThrow("opts must be an object");
+      ).rejects.toThrow("validation failed: options must be an object");
 
       await expect(
         boundClient.track(event.event, {
@@ -1060,7 +1058,13 @@ describe("BucketClient", () => {
       // test that the feature is returned
       await client.initialize();
       const feature = client.getFeature(
-        { ...context, enableTracking: true },
+        {
+          ...context,
+          meta: {
+            active: true,
+          },
+          enableTracking: true,
+        },
         "feature1",
       );
 
@@ -1078,7 +1082,7 @@ describe("BucketClient", () => {
             },
             companyId: "company123",
             context: {
-              active: false,
+              active: true,
             },
             type: "company",
           },
@@ -1088,7 +1092,7 @@ describe("BucketClient", () => {
               name: "John",
             },
             context: {
-              active: false,
+              active: true,
             },
             type: "user",
             userId: "user123",
@@ -1544,7 +1548,7 @@ describe("BucketClient", () => {
       client.getFeatures({ user, company, other: otherContext });
 
       expect(isAllowedSpy).toHaveBeenCalledWith(
-        "f1e5f547723da57ad12375f304e44ed6f74c744e",
+        "d461e93fe41f6297ab43402d0fc6d63e2444e07d",
       );
     });
 
