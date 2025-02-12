@@ -20,12 +20,9 @@ To get started you need to obtain your secret key from the
 [environment settings](https://app.bucket.co/envs/current/settings/app-environments)
 in Bucket.
 
-{% hint style="danger" %}
-Secret keys are meant for use in server side SDKs only.
-Secret keys offer the users the ability to obtain
-information that is often sensitive and thus should not be used in
-client-side applications.
-{% endhint %}
+> [!CAUTION]
+> Secret keys are meant for use in server side SDKs only. Secret keys offer the users the ability to obtain
+> information that is often sensitive and thus should not be used in client-side applications.
 
 Bucket will load settings through the various environment variables automatically (see [Configuring](#configuring) below).
 
@@ -54,7 +51,8 @@ bucketClient.initialize().then({
 Once the client is initialized, you can obtain features along with the `isEnabled`
 status to indicate whether the feature is targeted for this user/company:
 
-_Note_: If `user.id` or `company.id` is not given, the whole `user` or `company` object is ignored.
+> [!IMPORTANT]
+> If `user.id` or `company.id` is not given, the whole `user` or `company` object is ignored.
 
 ```typescript
 // configure the client
@@ -105,13 +103,126 @@ const bothEnabled =
 
 ## High performance feature targeting
 
-The Bucket Node SDK contacts the Bucket servers when you call `initialize()`
+The SDK contacts the Bucket servers when you call `initialize()`
 and downloads the features with their targeting rules.
 These rules are then matched against the user/company information you provide
 to `getFeatures()` (or through `bindClient(..).getFeatures()`). That means the
 `getFeatures()` call does not need to contact the Bucket servers once
 `initialize()` has completed. `BucketClient` will continue to periodically
 download the targeting rules from the Bucket servers in the background.
+
+### Batch Operations
+
+The SDK automatically batches operations like user/company updates and feature tracking events to minimize API calls.
+The batch buffer is configurable through the client options:
+
+```typescript
+const client = new BucketClient({
+  batchOptions: {
+    maxSize: 100, // Maximum number of events to batch
+    intervalMs: 1000, // Flush interval in milliseconds
+  },
+});
+```
+
+You can manually flush the batch buffer at any time:
+
+```typescript
+await client.flush();
+```
+
+> [!TIP]
+> It's recommended to call `flush()` before your application shuts down to ensure all events are sent.
+
+### Rate Limiting
+
+The SDK includes automatic rate limiting for feature events to prevent overwhelming the API. Rate limiting is applied per
+unique combination of feature key and context. The rate limiter window size is configurable:
+
+```typescript
+const client = new BucketClient({
+  rateLimiterOptions: {
+    windowSizeMs: 60000, // Rate limiting window size in milliseconds
+  },
+});
+```
+
+### Caching
+
+Feature definitions are automatically cached and refreshed in the background. The cache behavior is configurable:
+
+```typescript
+const client = new BucketClient({
+  refetchInterval: 30000, // How often to refresh features (ms)
+  staleWarningInterval: 150000, // When to warn about stale features (ms)
+});
+```
+
+## Error Handling
+
+The SDK is designed to fail gracefully and never throw exceptions to the caller. Instead, it logs errors and provides
+fallback behavior:
+
+1. **Feature Evaluation Failures**:
+
+   ```typescript
+   const { isEnabled } = client.getFeature("my-feature");
+   // If feature evaluation fails, isEnabled will be false
+   ```
+
+2. **Network Errors**:
+
+   ```typescript
+   // Network errors during tracking are logged but don't affect your application
+   const { track } = client.getFeature("my-feature");
+   if (isEnabled) {
+     try {
+       await track();
+     } catch (error) {
+       // The SDK already logged this error
+       // Your application can continue normally
+     }
+   }
+   ```
+
+3. **Missing Context**:
+
+   ```typescript
+   // The SDK tracks missing context fields but continues operation
+   const features = client.getFeatures({
+     user: { id: "user123" },
+     // Missing company context will be logged but won't cause errors
+   });
+   ```
+
+4. **Offline Mode**:
+
+   ```typescript
+   // In offline mode, the SDK uses fallback features
+   const client = new BucketClient({
+     offline: true,
+     fallbackFeatures: {
+       "my-feature": true,
+     },
+   });
+   ```
+
+The SDK logs all errors with appropriate severity levels. You can customize logging by providing your own logger:
+
+```typescript
+const client = new BucketClient({
+  logger: {
+    debug: (msg) => console.debug(msg),
+    info: (msg) => console.info(msg),
+    warn: (msg) => console.warn(msg),
+    error: (msg, error) => {
+      console.error(msg, error);
+      // Send to your error tracking service
+      errorTracker.capture(error);
+    },
+  },
+});
+```
 
 ### Remote config
 
@@ -157,7 +268,7 @@ current working directory.
 | `featureOverrides` | Record<string, boolean> | An object specifying feature overrides for testing or local development. See [example/app.test.ts](https://github.com/bucketco/bucket-javascript-sdk/tree/main/packages/browser-sdk/example/app.test.ts) for how to use `featureOverrides` in tests. | BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED |
 | `configFile`       | string                  | Load this config file from disk. Default: `bucketConfig.json`                                                                                                                                                                                        | BUCKET_CONFIG_FILE                                |
 
-Note: BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED are comma separated lists of features which will be enabled or disabled respectively.
+> [!NOTE] > `BUCKET_FEATURES_ENABLED` and `BUCKET_FEATURES_DISABLED` are comma separated lists of features which will be enabled or disabled respectively.
 
 `bucketConfig.json` example:
 
@@ -169,11 +280,14 @@ Note: BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED are comma separated list
   "apiBaseUrl": "https://proxy.slick-demo.com",
   "featureOverrides": {
     "huddles": true,
-    "voiceChat": false,
+    "voiceChat": { "isEnabled": false },
     "aiAssist": {
-      "key": "gpt-4.0",
-      "payload": {
-        "maxTokens": 50000
+      "isEnabled": true,
+      "config": {
+        "key": "gpt-4.0",
+        "payload": {
+          "maxTokens": 50000
+        }
       }
     }
   }
@@ -201,38 +315,23 @@ import { BucketClient } from "@bucketco/node-sdk";
 declare module "@bucketco/node-sdk" {
   interface Features {
     "show-todos": boolean;
-    "create-todos": { isEnabled: boolean };
-    "delete-todos": {
-      isEnabled: boolean,
-      config: any
+    "create-todos": {
+      isEnabled: boolean;
+      config: {
+        key: string;
+        payload: {
+          minimumLength: number;
+        };
+      };
     };
-  }
-}
-
-export const bucketClient = new BucketClient();
-
-bucketClient.initialize().then({
-  console.log("Bucket initialized!")
-  bucketClient.getFeature("invalid-feature") // feature doesn't exist
-})
-```
-
-The following example show how to add strongly typed payloads when using remote configuration:
-
-```typescript
-import { BucketClient } from "@bucketco/node-sdk";
-
-type ConfirmationConfig = {
-  shouldShowConfirmation: boolean;
-};
-
-declare module "@bucketco/node-sdk" {
-  interface Features {
     "delete-todos": {
       isEnabled: boolean;
       config: {
         key: string;
-        payload: ConfirmationConfig;
+        payload: {
+          requireConfirmation: boolean;
+          maxDeletionsPerDay: number;
+        };
       };
     };
   }
@@ -240,30 +339,132 @@ declare module "@bucketco/node-sdk" {
 
 export const bucketClient = new BucketClient();
 
-function deleteTodo(todoId: string) {
-  // get the feature information
+bucketClient.initialize().then(() => {
+  console.log("Bucket initialized!");
+
+  // TypeScript will catch this error: "invalid-feature" doesn't exist
+  bucketClient.getFeature("invalid-feature");
+
   const {
     isEnabled,
-    config: { payload: confirmationConfig },
-  } = bucketClient.getFeature("delete-todos");
+    config: { payload },
+  } = bucketClient.getFeature("create-todos");
+});
+```
 
-  // check that feature is enabled for user
-  if (!isEnabled) {
-    return;
+![Type check failed](docs/type-check-failed.png "Type check failed")
+
+```typescript
+bucketClient.initialize().then(() => {
+  // TypeScript will catch this error as well: "minLength" is not part of the payload.
+  if (isEnabled && todo.length > config.payload.minLength) {
+    // ...
   }
+});
+```
 
-  // finally, check if we enabled the "confirmation" dialog for this user and only
-  // show it in that case.
-  // since we defined `ConfirmationConfig` as the only valid payload for `delete-todos`,
-  // we have type-safety helping us with the payload value.
-  if (confirmationConfig.shouldShowConfirmation) {
-    showMessage("Are you really sure you want to delete this item?");
-    // ... rest of the code
+![Config type check failed](docs/type-check-payload-failed.png "Remote config type check failed")
+
+## Feature Overrides
+
+Feature overrides allow you to override feature flags and their configurations locally. This is particularly useful for development and testing. You can specify overrides in three ways:
+
+1. Through environment variables:
+
+```bash
+BUCKET_FEATURES_ENABLED=feature1,feature2
+BUCKET_FEATURES_DISABLED=feature3,feature4
+```
+
+1. Through `bucketConfig.json`:
+
+```json
+{
+  "featureOverrides": {
+    "delete-todos": {
+      "isEnabled": true,
+      "config": {
+        "key": "dev-config",
+        "payload": {
+          "requireConfirmation": true,
+          "maxDeletionsPerDay": 5
+        }
+      }
+    }
   }
 }
 ```
 
-![Type check failed](docs/type-check-failed.png "Type check failed")
+1. Programmatically through the client options:
+
+```typescript
+import { BucketClient, Context } from "@bucketco/node-sdk";
+
+const featureOverrides = (context: Context) => ({
+  "delete-todos": {
+    isEnabled: true,
+    config: {
+      key: "dev-config",
+      payload: {
+        requireConfirmation: true,
+        maxDeletionsPerDay: 5,
+      },
+    },
+  },
+});
+
+const client = new BucketClient({
+  featureOverrides,
+});
+```
+
+## Remote Feature Evaluation
+
+In addition to local feature evaluation, Bucket supports remote evaluation using stored context. This is useful when you want to evaluate features using user/company attributes that were previously sent to Bucket:
+
+```typescript
+// First, update user and company attributes
+await client.updateUser("user123", {
+  attributes: {
+    role: "admin",
+    subscription: "premium",
+  },
+});
+
+await client.updateCompany("company456", {
+  attributes: {
+    tier: "enterprise",
+    employees: 1000,
+  },
+});
+
+// Later, evaluate features remotely using stored context
+const features = await client.getFeaturesRemote("company456", "user123");
+// Or evaluate a single feature
+const feature = await client.getFeatureRemote(
+  "create-todos",
+  "company456",
+  "user123",
+);
+
+// You can also provide additional context
+const featuresWithContext = await client.getFeaturesRemote(
+  "company456",
+  "user123",
+  {
+    other: {
+      location: "US",
+      platform: "mobile",
+    },
+  },
+);
+```
+
+Remote evaluation is particularly useful when:
+
+- You want to use the most up-to-date user/company attributes stored in Bucket
+- You don't want to pass all context attributes with every evaluation
+- You need to ensure consistent feature evaluation across different services
 
 ## Using with Express
 
@@ -358,9 +559,10 @@ client.updateCompany("acme_inc", {
 const features = await client.getFeaturesRemote("acme_inc", "john_doe");
 ```
 
-NOTE: User and company attribute updates are processed asynchronously, so there might
-be a small delay between when attributes are updated and when they are available
-for evaluation.
+> [!IMPORTANT]
+> User and company attribute updates are processed asynchronously, so there might
+> be a small delay between when attributes are updated and when they are available
+> for evaluation.
 
 ## Opting out of tracking
 
@@ -389,7 +591,7 @@ Another way way to disable tracking without employing a bound client is to call 
 or `getFeatures()` by supplying `enableTracking: false` in the arguments passed to
 these functions.
 
-> [!NOTE]
+> [!IMPORTANT]
 > Note, however, that calling `track()`, `updateCompany()` or `updateUser()` in the `BucketClient`
 > will still send tracking data. As such, it is always recommended to use `bindClient()`
 > when using this SDK.
@@ -456,7 +658,7 @@ Some attributes are used by Bucket to improve the UI, and are recommended
 to provide for easier navigation:
 
 - `name` -- display name for `user`/`company`,
-- `email` -- the email of the user.
+- `email` -- the email of the user,
 - `avatar` -- the URL for `user`/`company` avatar image.
 
 Attributes cannot be nested (multiple levels) and must be either strings,

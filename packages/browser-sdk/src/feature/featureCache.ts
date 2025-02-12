@@ -1,4 +1,4 @@
-import { FetchedFeatures } from "./features";
+import { RawFeatures } from "./features";
 
 interface StorageItem {
   get(): string | null;
@@ -8,50 +8,45 @@ interface StorageItem {
 interface cacheEntry {
   expireAt: number;
   staleAt: number;
-  features: FetchedFeatures;
+  features: RawFeatures;
 }
 
 // Parse and validate an API feature response
 export function parseAPIFeaturesResponse(
   featuresInput: any,
-): FetchedFeatures | undefined {
+): RawFeatures | undefined {
   if (!isObject(featuresInput)) {
     return;
   }
 
-  const features: FetchedFeatures = {};
+  const features: RawFeatures = {};
   for (const key in featuresInput) {
     const feature = featuresInput[key];
-
     if (
       typeof feature.isEnabled !== "boolean" ||
       feature.key !== key ||
-      typeof feature.targetingVersion !== "number" ||
-      (feature.config && typeof feature.config !== "object")
+      typeof feature.targetingVersion !== "number"
     ) {
       return;
     }
-
     features[key] = {
       isEnabled: feature.isEnabled,
       targetingVersion: feature.targetingVersion,
       key,
-      config: feature.config,
     };
   }
-
   return features;
 }
 
 export interface CacheResult {
-  features: FetchedFeatures;
+  features: RawFeatures;
   stale: boolean;
 }
 
 export class FeatureCache {
   private storage: StorageItem;
-  private readonly staleTimeMs: number;
-  private readonly expireTimeMs: number;
+  private staleTimeMs: number;
+  private expireTimeMs: number;
 
   constructor({
     storage,
@@ -72,7 +67,7 @@ export class FeatureCache {
     {
       features,
     }: {
-      features: FetchedFeatures;
+      features: RawFeatures;
     },
   ) {
     let cacheData: CacheData = {};

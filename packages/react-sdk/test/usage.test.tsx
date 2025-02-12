@@ -81,11 +81,6 @@ const server = setupServer(
             key: "abc",
             isEnabled: true,
             targetingVersion: 1,
-            config: {
-              key: "gpt3",
-              payload: { model: "gpt-something", temperature: 0.5 },
-              version: 2,
-            },
           },
           def: {
             key: "def",
@@ -187,15 +182,12 @@ describe("<BucketProvider />", () => {
           test: "test",
         },
         apiBaseUrl: "https://test.com",
-        appBaseUrl: undefined,
         host: undefined,
         logger: undefined,
         sseBaseUrl: "https://test.com",
         sseHost: undefined,
-        toolbar: undefined,
         enableTracking: false,
         feedback: undefined,
-        featureList: undefined,
         features: {},
         sdkVersion: `react-sdk/${version}`,
       },
@@ -227,7 +219,6 @@ describe("useFeature", () => {
     expect(result.current).toStrictEqual({
       isEnabled: false,
       isLoading: true,
-      config: { key: undefined, payload: undefined },
       track: expect.any(Function),
       requestFeedback: expect.any(Function),
     });
@@ -242,30 +233,8 @@ describe("useFeature", () => {
 
     await waitFor(() => {
       expect(result.current).toStrictEqual({
-        config: { key: undefined, payload: undefined },
         isEnabled: false,
         isLoading: false,
-        track: expect.any(Function),
-        requestFeedback: expect.any(Function),
-      });
-    });
-
-    unmount();
-  });
-
-  test("provides the expected values if feature is enabled", async () => {
-    const { result, unmount } = renderHook(() => useFeature("abc"), {
-      wrapper: ({ children }) => getProvider({ children }),
-    });
-
-    await waitFor(() => {
-      expect(result.current).toStrictEqual({
-        isEnabled: true,
-        isLoading: false,
-        config: {
-          key: "gpt3",
-          payload: { model: "gpt-something", temperature: 0.5 },
-        },
         track: expect.any(Function),
         requestFeedback: expect.any(Function),
       });

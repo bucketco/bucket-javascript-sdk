@@ -9,10 +9,7 @@ import {
   parseAPIFeaturesResponse,
 } from "./featureCache";
 
-/**
- * A feature fetched from the server.
- */
-export type FetchedFeature = {
+export type RawFeature = {
   /**
    * Feature key
    */
@@ -27,89 +24,56 @@ export type FetchedFeature = {
    * Version of targeting rules
    */
   targetingVersion?: number;
-
-  /**
-   * Optional user-defined dynamic configuration.
-   */
-  config?: {
-    /**
-     * The key of the matched configuration value.
-     */
-    key: string;
-
-    /**
-     * The version of the matched configuration value.
-     */
-    version?: number;
-
-    /**
-     * The optional user-supplied payload data.
-     */
-    payload?: any;
-  };
 };
 
 const FEATURES_UPDATED_EVENT = "features-updated";
 
-export type FetchedFeatures = Record<string, FetchedFeature | undefined>;
-
-// todo: on next major, come up with a better name for this type. Maybe `LocalFeature`.
-export type RawFeature = FetchedFeature & {
-  /**
-   * If not null, the result is being overridden locally
-   */
-  isEnabledOverride: boolean | null;
-};
-
-export type RawFeatures = Record<string, RawFeature>;
-
-export type FallbackFeatureOverride =
-  | {
-      key: string;
-      payload: any;
-    }
-  | true;
+export type RawFeatures = Record<string, RawFeature | undefined>;
 
 export type FeaturesOptions = {
   /**
    * Feature keys for which `isEnabled` should fallback to true
-   * if SDK fails to fetch features from Bucket servers. If a record
-   * is supplied instead of array, the values of each key represent the
-   * configuration values and `isEnabled` is assume `true`.
+   * if SDK fails to fetch features from Bucket servers.
    */
-  fallbackFeatures?: string[] | Record<string, FallbackFeatureOverride>;
+  fallbackFeatures?: string[];
 
   /**
-   * Timeout in milliseconds when fetching features
+   * Timeout in miliseconds
    */
   timeoutMs?: number;
 
   /**
-   * If set to true stale features will be returned while refetching features
+   * If set to true client will return cached value when its stale
+   * but refetching
    */
   staleWhileRevalidate?: boolean;
-
-  /**
-   * If set, features will be cached between page loads for this duration
-   */
-  expireTimeMs?: number;
-
-  /**
-   * Stale features will be returned if staleWhileRevalidate is true if no new features can be fetched
-   */
   staleTimeMs?: number;
+  expireTimeMs?: number;
 };
 
 type Config = {
-  fallbackFeatures: Record<string, FallbackFeatureOverride>;
+  fallbackFeatures: string[];
   timeoutMs: number;
   staleWhileRevalidate: boolean;
 };
 
 export const DEFAULT_FEATURES_CONFIG: Config = {
-  fallbackFeatures: {},
+  fallbackFeatures: [],
   timeoutMs: 5000,
   staleWhileRevalidate: false,
+};
+
+// Deep merge two objects.
+export type FeaturesResponse = {
+  /**
+   * `true` if call was successful
+   */
+  success: boolean;
+
+  /**
+   * List of enabled features
+   */
+  features: RawFeatures;
 };
 
 export function validateFeaturesResponse(response: any) {
@@ -120,9 +84,7 @@ export function validateFeaturesResponse(response: any) {
   if (typeof response.success !== "boolean" || !isObject(response.features)) {
     return;
   }
-
   const features = parseAPIFeaturesResponse(response.features);
-
   if (!features) {
     return;
   }
@@ -176,37 +138,14 @@ type context = {
 
 export const FEATURES_EXPIRE_MS = 30 * 24 * 60 * 60 * 1000; // expire entirely after 30 days
 
-const localStorageFetchedFeaturesKey = `__bucket_fetched_features`;
-const localStorageOverridesKey = `__bucket_overrides`;
-
-type OverridesFeatures = Record<string, boolean | null>;
-
-function setOverridesCache(overrides: OverridesFeatures) {
-  localStorage.setItem(localStorageOverridesKey, JSON.stringify(overrides));
-}
-
-function getOverridesCache(): OverridesFeatures {
-  const cachedOverrides = JSON.parse(
-    localStorage.getItem(localStorageOverridesKey) || "{}",
-  );
-
-  if (!isObject(cachedOverrides)) {
-    return {};
-  }
-
-  return cachedOverrides;
-}
+const localStorageCacheKey = `__bucket_features`;
 
 /**
  * @internal
  */
 export class FeaturesClient {
   private cache: FeatureCache;
-  private fetchedFeatures: FetchedFeatures;
-  private featureOverrides: OverridesFeatures = {};
-
-  private features: RawFeatures = {};
-
+  private features: RawFeatures;
   private config: Config;
   private rateLimiter: RateLimiter;
   private readonly logger: Logger;
@@ -217,63 +156,33 @@ export class FeaturesClient {
   constructor(
     private httpClient: HttpClient,
     private context: context,
-    private featureDefinitions: Readonly<string[]>,
     logger: Logger,
     options?: FeaturesOptions & {
       cache?: FeatureCache;
       rateLimiter?: RateLimiter;
     },
   ) {
-    this.fetchedFeatures = {};
+    this.features = {};
     this.logger = loggerWithPrefix(logger, "[Features]");
     this.cache = options?.cache
       ? options.cache
       : new FeatureCache({
           storage: {
-            get: () => localStorage.getItem(localStorageFetchedFeaturesKey),
-            set: (value) =>
-              localStorage.setItem(localStorageFetchedFeaturesKey, value),
+            get: () => localStorage.getItem(localStorageCacheKey),
+            set: (value) => localStorage.setItem(localStorageCacheKey, value),
           },
           staleTimeMs: options?.staleTimeMs ?? 0,
           expireTimeMs: options?.expireTimeMs ?? FEATURES_EXPIRE_MS,
         });
-
-    let fallbackFeatures: Record<string, FallbackFeatureOverride>;
-
-    if (Array.isArray(options?.fallbackFeatures)) {
-      fallbackFeatures = options.fallbackFeatures.reduce(
-        (acc, key) => {
-          acc[key] = true;
-          return acc;
-        },
-        {} as Record<string, FallbackFeatureOverride>,
-      );
-    } else {
-      fallbackFeatures = options?.fallbackFeatures ?? {};
-    }
-
-    this.config = { ...DEFAULT_FEATURES_CONFIG, ...options, fallbackFeatures };
-
+    this.config = { ...DEFAULT_FEATURES_CONFIG, ...options };
     this.rateLimiter =
       options?.rateLimiter ??
       new RateLimiter(FEATURE_EVENTS_PER_MIN, this.logger);
-
-    try {
-      const storedFeatureOverrides = getOverridesCache();
-      for (const key in storedFeatureOverrides) {
-        if (this.featureDefinitions.includes(key)) {
-          this.featureOverrides[key] = storedFeatureOverrides[key];
-        }
-      }
-    } catch (e) {
-      this.logger.warn("error getting feature overrides from cache", e);
-      this.featureOverrides = {};
-    }
   }
 
   async initialize() {
     const features = (await this.maybeFetchFeatures()) || {};
-    this.setFetchedFeatures(features);
+    this.setFeatures(features);
   }
 
   async setContext(context: context) {
@@ -313,11 +222,7 @@ export class FeaturesClient {
     return this.features;
   }
 
-  getFetchedFeatures(): FetchedFeatures {
-    return this.fetchedFeatures;
-  }
-
-  public async fetchFeatures(): Promise<FetchedFeatures | undefined> {
+  public async fetchFeatures(): Promise<RawFeatures | undefined> {
     const params = this.fetchParams();
     try {
       const res = await this.httpClient.get({
@@ -341,7 +246,6 @@ export class FeaturesClient {
             JSON.stringify(errorBody),
         );
       }
-
       const typeRes = validateFeaturesResponse(await res.json());
       if (!typeRes || !typeRes.success) {
         throw new Error("unable to validate response");
@@ -387,39 +291,9 @@ export class FeaturesClient {
     return checkEvent.value;
   }
 
-  private triggerFeaturesChanged() {
-    const mergedFeatures: RawFeatures = {};
-
-    // merge fetched features with overrides into `this.features`
-    for (const key in this.fetchedFeatures) {
-      const fetchedFeature = this.fetchedFeatures[key];
-      if (!fetchedFeature) continue;
-      const isEnabledOverride = this.featureOverrides[key] ?? null;
-      mergedFeatures[key] = {
-        ...fetchedFeature,
-        isEnabledOverride,
-      };
-    }
-
-    // add any features that aren't in the fetched features
-    for (const key of this.featureDefinitions) {
-      if (!mergedFeatures[key]) {
-        mergedFeatures[key] = {
-          key,
-          isEnabled: false,
-          isEnabledOverride: this.featureOverrides[key] ?? null,
-        };
-      }
-    }
-
-    this.features = mergedFeatures;
-
+  private setFeatures(features: RawFeatures) {
+    this.features = features;
     this.eventTarget.dispatchEvent(new Event(FEATURES_UPDATED_EVENT));
-  }
-
-  private setFetchedFeatures(features: FetchedFeatures) {
-    this.fetchedFeatures = features;
-    this.triggerFeaturesChanged();
   }
 
   private fetchParams() {
@@ -434,7 +308,7 @@ export class FeaturesClient {
     return params;
   }
 
-  private async maybeFetchFeatures(): Promise<FetchedFeatures | undefined> {
+  private async maybeFetchFeatures(): Promise<RawFeatures | undefined> {
     const cacheKey = this.fetchParams().toString();
     const cachedItem = this.cache.get(cacheKey);
 
@@ -451,7 +325,7 @@ export class FeaturesClient {
             this.cache.set(cacheKey, {
               features,
             });
-            this.setFetchedFeatures(features);
+            this.setFeatures(features);
           })
           .catch(() => {
             // we don't care about the result, we just want to re-fetch
@@ -478,41 +352,12 @@ export class FeaturesClient {
     }
 
     // fetch failed, nothing cached => return fallbacks
-    return Object.entries(this.config.fallbackFeatures).reduce(
-      (acc, [key, override]) => {
-        acc[key] = {
-          key,
-          isEnabled: !!override,
-          config:
-            typeof override === "object" && "key" in override
-              ? {
-                  key: override.key,
-                  payload: override.payload,
-                }
-              : undefined,
-        };
-        return acc;
-      },
-      {} as FetchedFeatures,
-    );
-  }
-
-  setFeatureOverride(key: string, isEnabled: boolean | null) {
-    if (!(typeof isEnabled === "boolean" || isEnabled === null)) {
-      throw new Error("setFeatureOverride: isEnabled must be boolean or null");
-    }
-
-    if (isEnabled === null) {
-      delete this.featureOverrides[key];
-    } else {
-      this.featureOverrides[key] = isEnabled;
-    }
-    setOverridesCache(this.featureOverrides);
-
-    this.triggerFeaturesChanged();
-  }
-
-  getFeatureOverride(key: string): boolean | null {
-    return this.featureOverrides[key] ?? null;
+    return this.config.fallbackFeatures.reduce((acc, key) => {
+      acc[key] = {
+        key,
+        isEnabled: true,
+      };
+      return acc;
+    }, {} as RawFeatures);
   }
 }

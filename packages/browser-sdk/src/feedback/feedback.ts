@@ -1,9 +1,9 @@
 import { HttpClient } from "../httpClient";
 import { Logger } from "../logger";
 import { AblySSEChannel, openAblySSEChannel } from "../sse";
-import { Position } from "../ui/types";
 
 import {
+  FeedbackPosition,
   FeedbackSubmission,
   FeedbackTranslations,
   OpenFeedbackFormOptions,
@@ -37,7 +37,7 @@ export type FeedbackOptions = {
     /**
      * Control the placement and behavior of the feedback form.
      */
-    position?: Position;
+    position?: FeedbackPosition;
 
     /**
      * Add your own custom translations for the feedback form.
@@ -69,7 +69,7 @@ export function handleDeprecatedFeedbackOptions(
   };
 }
 
-type FeatureIdentifier =
+export type FeatureIdentifier =
   | {
       /**
        * Bucket feature ID.
@@ -100,9 +100,6 @@ export type RequestFeedbackData = Omit<
    *
    * This can be used for side effects, such as storing a
    * copy of the feedback in your own application or CRM.
-   *
-   * @param {Object} data
-   * @param data.
    */
   onAfterSubmit?: (data: FeedbackSubmission) => void;
 } & FeatureIdentifier;
@@ -297,7 +294,7 @@ export class AutoFeedback {
     private httpClient: HttpClient,
     private feedbackPromptHandler: FeedbackPromptHandler = createDefaultFeedbackPromptHandler(),
     private userId: string,
-    private position: Position = DEFAULT_POSITION,
+    private position: FeedbackPosition = DEFAULT_POSITION,
     private feedbackTranslations: Partial<FeedbackTranslations> = {},
   ) {}
 

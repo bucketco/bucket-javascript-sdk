@@ -27,28 +27,19 @@ const bucketClient = new BucketClient({ publishableKey, user, company });
 
 await bucketClient.initialize();
 
-const {
-  isEnabled,
-  config: { payload: question },
-  track,
-  requestFeedback,
-} = bucketClient.getFeature("huddle");
+const { isEnabled, track, requestFeedback } = bucketClient.getFeature("huddle");
 
 if (isEnabled) {
-  // Show feature. When retrieving `isEnabled` the client automatically
+  // show feature. When retrieving `isEnabled` the client automatically
   // sends a "check" event for the "huddle" feature which is shown in the
   // Bucket UI.
 
   // On usage, call `track` to let Bucket know that a user interacted with the feature
   track();
 
-  // The `payload` is a user-supplied JSON in Bucket that is dynamically picked
-  // out depending on the user/company.
-  const question = payload?.question ?? "Tell us what you think of Huddles";
-
   // Use `requestFeedback` to create "Send feedback" buttons easily for specific
   // features. This is not related to `track` and you can call them individually.
-  requestFeedback({ title: question });
+  requestFeedback({ title: "Tell us what you think of Huddles" });
 }
 
 // `track` just calls `bucketClient.track(<featureKey>)` to send an event using the same feature key
@@ -147,7 +138,6 @@ To retrieve features along with their targeting information, use `getFeature(key
 const huddle = bucketClient.getFeature("huddle");
 // {
 //   isEnabled: true,
-//   config: { key: "zoom", payload: { ... } },
 //   track: () => Promise<Response>
 //   requestFeedback: (options: RequestFeedbackData) => void
 // }
@@ -161,7 +151,6 @@ const features = bucketClient.getFeatures();
 //   huddle: {
 //     isEnabled: true,
 //     targetingVersion: 42,
-//     config: ...
 //   }
 // }
 ```
@@ -170,35 +159,7 @@ const features = bucketClient.getFeatures();
 by down-stream clients, like the React SDK.
 
 Note that accessing `isEnabled` on the object returned by `getFeatures` does not automatically
-generate a `check` event, contrary to the `isEnabled` property on the object returned by `getFeature`.
-
-### Remote config
-
-Similar to `isEnabled`, each feature has a `config` property. This configuration is managed from within Bucket.
-It is managed similar to the way access to features is managed, but instead of the binary `isEnabled` you can have
-multiple configuration values which are given to different user/companies.
-
-```ts
-const features = bucketClient.getFeatures();
-// {
-//   huddle: {
-//     isEnabled: true,
-//     targetingVersion: 42,
-//     config: {
-//       key: "gpt-3.5",
-//       payload: { maxTokens: 10000, model: "gpt-3.5-beta1" }
-//     }
-//   }
-// }
-```
-
-The `key` is always present while the `payload` is a optional JSON value for arbitrary configuration needs.
-If feature has no configuration or, no configuration value was matched against the context, the `config` object
-will be empty, thus, `key` will be `undefined`. Make sure to check against this case when trying to use the
-configuration in your application.
-
-Just as `isEnabled`, accessing `config` on the object returned by `getFeatures` does not automatically
-generate a `check` event, contrary to the `config` property on the object returned by `getFeature`.
+generate a `check` event, contrary to the `isEnabled` property on the object return from `getFeature`.
 
 ### Tracking feature usage
 
