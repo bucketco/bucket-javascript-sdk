@@ -1,6 +1,7 @@
 import { constants } from "os";
 
 import { END_FLUSH_TIMEOUT_MS } from "./config";
+import { withTimeout, TimeoutError } from "./utils";
 
 type Callback = () => Promise<void>;
 
@@ -20,21 +21,18 @@ export function subscribe(
     state = false;
 
     try {
-      const result = await Promise.race([
-        new Promise((resolve) => setTimeout(() => resolve(true), timeout)),
-        callback(),
-      ]);
-
-      if (result === true) {
+      await withTimeout(callback(), timeout);
+    } catch (error) {
+      if (error instanceof TimeoutError) {
         console.error(
           "[Bucket SDK] Timeout while flushing events on process exit.",
         );
+      } else {
+        console.error(
+          "[Bucket SDK] An error occurred while flushing events on process exit.",
+          error,
+        );
       }
-    } catch (error) {
-      console.error(
-        "[Bucket SDK] An error occurred while flushing events on process exit.",
-        error,
-      );
     }
 
     state = true;
