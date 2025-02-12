@@ -1,12 +1,10 @@
 import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
 
 import { version } from "../package.json";
-import { FeatureDefinitions } from "../src/client";
 import {
   FEATURES_EXPIRE_MS,
   FeaturesClient,
   FeaturesOptions,
-  FetchedFeature,
   RawFeature,
 } from "../src/feature/features";
 import { HttpClient } from "../src/httpClient";
@@ -29,17 +27,14 @@ function featuresClientFactory() {
   const httpClient = new HttpClient("pk", {
     baseUrl: "https://front.bucket.co",
   });
-
   vi.spyOn(httpClient, "get");
   vi.spyOn(httpClient, "post");
-
   return {
     cache,
     httpClient,
     newFeaturesClient: function newFeaturesClient(
       options?: FeaturesOptions,
       context?: any,
-      featureList: FeatureDefinitions = [],
     ) {
       return new FeaturesClient(
         httpClient,
@@ -49,7 +44,6 @@ function featuresClientFactory() {
           other: { eventId: "big-conference1" },
           ...context,
         },
-        featureList,
         testLogger,
         {
           cache,
@@ -60,11 +54,7 @@ function featuresClientFactory() {
   };
 }
 
-describe("FeaturesClient", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
+describe("FeaturesClient unit tests", () => {
   test("fetches features", async () => {
     const { newFeaturesClient, httpClient } = featuresClientFactory();
     const featuresClient = newFeaturesClient();
@@ -79,9 +69,8 @@ describe("FeaturesClient", () => {
 
     expect(updated).toBe(true);
     expect(httpClient.get).toBeCalledTimes(1);
-
-    const calls = vi.mocked(httpClient.get).mock.calls.at(0)!;
-    const { params, path, timeoutMs } = calls[0];
+    const calls = vi.mocked(httpClient.get).mock.calls.at(0);
+    const { params, path, timeoutMs } = calls![0];
 
     const paramsObj = Object.fromEntries(new URLSearchParams(params));
     expect(paramsObj).toEqual({
@@ -94,29 +83,6 @@ describe("FeaturesClient", () => {
 
     expect(path).toEqual("/features/enabled");
     expect(timeoutMs).toEqual(5000);
-  });
-
-  test("warns about missing context fields", async () => {
-    const { newFeaturesClient } = featuresClientFactory();
-    const featuresClient = newFeaturesClient();
-
-    await featuresClient.initialize();
-
-    expect(testLogger.warn).toHaveBeenCalledTimes(1);
-    expect(testLogger.warn).toHaveBeenCalledWith(
-      "[Features] feature/remote config targeting rules might not be correctly evaluated due to missing context fields.",
-      {
-        featureA: ["field1", "field2"],
-        "featureB.config": ["field3"],
-      },
-    );
-
-    vi.advanceTimersByTime(TEST_STALE_MS + 1);
-
-    expect(testLogger.warn).toHaveBeenCalledTimes(1);
-    vi.advanceTimersByTime(60 * 1000);
-    await featuresClient.initialize();
-    expect(testLogger.warn).toHaveBeenCalledTimes(2);
   });
 
   test("ignores undefined context", async () => {
@@ -146,57 +112,20 @@ describe("FeaturesClient", () => {
     expect(timeoutMs).toEqual(5000);
   });
 
-  test("return fallback features on failure (string list)", async () => {
+  test("return fallback features on failure", async () => {
     const { newFeaturesClient, httpClient } = featuresClientFactory();
 
     vi.mocked(httpClient.get).mockRejectedValue(
       new Error("Failed to fetch features"),
     );
-
     const featuresClient = newFeaturesClient({
       fallbackFeatures: ["huddle"],
     });
-
     await featuresClient.initialize();
-    expect(featuresClient.getFeatures()).toStrictEqual({
+    expect(featuresClient.getFeatures()).toEqual({
       huddle: {
         isEnabled: true,
-        config: undefined,
         key: "huddle",
-        isEnabledOverride: null,
-      },
-    });
-  });
-
-  test("return fallback features on failure (record)", async () => {
-    const { newFeaturesClient, httpClient } = featuresClientFactory();
-
-    vi.mocked(httpClient.get).mockRejectedValue(
-      new Error("Failed to fetch features"),
-    );
-    const featuresClient = newFeaturesClient({
-      fallbackFeatures: {
-        huddle: {
-          key: "john",
-          payload: { something: "else" },
-        },
-        zoom: true,
-      },
-    });
-
-    await featuresClient.initialize();
-    expect(featuresClient.getFeatures()).toStrictEqual({
-      huddle: {
-        isEnabled: true,
-        config: { key: "john", payload: { something: "else" } },
-        key: "huddle",
-        isEnabledOverride: null,
-      },
-      zoom: {
-        isEnabled: true,
-        config: undefined,
-        key: "zoom",
-        isEnabledOverride: null,
       },
     });
   });
@@ -204,14 +133,13 @@ describe("FeaturesClient", () => {
   test("caches response", async () => {
     const { newFeaturesClient, httpClient } = featuresClientFactory();
 
-    const featuresClient1 = newFeaturesClient();
-    await featuresClient1.initialize();
+    const featuresClient = newFeaturesClient();
+    await featuresClient.initialize();
 
     expect(httpClient.get).toBeCalledTimes(1);
 
     const featuresClient2 = newFeaturesClient();
     await featuresClient2.initialize();
-
     const features = featuresClient2.getFeatures();
 
     expect(features).toEqual(featuresResult);
@@ -246,7 +174,7 @@ describe("FeaturesClient", () => {
           isEnabled: true,
           key: "featureB",
           targetingVersion: 1,
-        } satisfies FetchedFeature,
+        } satisfies RawFeature,
       },
     };
 
@@ -271,7 +199,6 @@ describe("FeaturesClient", () => {
         isEnabled: true,
         key: "featureB",
         targetingVersion: 1,
-        isEnabledOverride: null,
       } satisfies RawFeature,
     });
 
@@ -310,8 +237,7 @@ describe("FeaturesClient", () => {
           isEnabled: true,
           targetingVersion: 1,
           key: "featureA",
-          isEnabledOverride: null,
-        } satisfies RawFeature,
+        },
       }),
     );
   });
@@ -342,51 +268,5 @@ describe("FeaturesClient", () => {
 
     expect(httpClient.get).toHaveBeenCalledTimes(2);
     expect(a).not.toEqual(b);
-  });
-
-  test("handled overrides", async () => {
-    // change the response so we can validate that we'll serve the stale cache
-    const { newFeaturesClient } = featuresClientFactory();
-    // localStorage.clear();
-    const client = newFeaturesClient();
-    await client.initialize();
-
-    let updated = false;
-    client.onUpdated(() => {
-      updated = true;
-    });
-
-    expect(client.getFeatures().featureA.isEnabled).toBe(true);
-    expect(client.getFeatures().featureA.isEnabledOverride).toBe(null);
-
-    expect(updated).toBe(false);
-
-    client.setFeatureOverride("featureA", false);
-
-    expect(updated).toBe(true);
-    expect(client.getFeatures().featureA.isEnabled).toBe(true);
-    expect(client.getFeatures().featureA.isEnabledOverride).toBe(false);
-  });
-
-  test("handled overrides for features not returned by API", async () => {
-    // change the response so we can validate that we'll serve the stale cache
-    const { newFeaturesClient } = featuresClientFactory();
-
-    // localStorage.clear();
-    const client = newFeaturesClient(undefined, undefined, ["featureB"]);
-    await client.initialize();
-
-    let updated = false;
-    client.onUpdated(() => {
-      updated = true;
-    });
-
-    expect(client.getFeatures().featureB.isEnabled).toBe(true);
-    expect(client.getFeatures().featureB.isEnabledOverride).toBe(null);
-
-    client.setFeatureOverride("featureC", true);
-
-    expect(updated).toBe(true);
-    expect(client.getFeatures().featureC).toBeUndefined();
   });
 });

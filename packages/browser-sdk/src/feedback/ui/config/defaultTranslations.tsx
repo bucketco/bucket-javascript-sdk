@@ -1,4 +1,5 @@
 import { FeedbackTranslations } from "../types";
+
 /**
  * {@includeCode ./defaultTranslations.tsx}
  */

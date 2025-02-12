@@ -1,17 +1,12 @@
 import { Fragment, FunctionComponent, h } from "preact";
 import { useRef } from "preact/hooks";
 
-import { Dissatisfied } from "../../ui/icons/Dissatisfied";
-import { Neutral } from "../../ui/icons/Neutral";
-import { Satisfied } from "../../ui/icons/Satisfied";
-import { VeryDissatisfied } from "../../ui/icons/VeryDissatisfied";
-import { VerySatisfied } from "../../ui/icons/VerySatisfied";
-import {
-  arrow,
-  offset,
-  useFloating,
-} from "../../ui/packages/floating-ui-preact-dom";
-
+import { Dissatisfied } from "./icons/Dissatisfied";
+import { Neutral } from "./icons/Neutral";
+import { Satisfied } from "./icons/Satisfied";
+import { VeryDissatisfied } from "./icons/VeryDissatisfied";
+import { VerySatisfied } from "./icons/VerySatisfied";
+import { arrow, offset, useFloating } from "./packages/floating-ui-preact-dom";
 import { FeedbackTranslations } from "./types";
 
 const scores = [

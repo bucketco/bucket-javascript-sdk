@@ -1,9 +1,17 @@
-import { vi } from "vitest";
-
 export const testLogger = {
-  log: vi.fn(),
-  info: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
-  debug: vi.fn(),
+  log() {
+    //do nothing
+  },
+  info() {
+    //do nothing
+  },
+  warn() {
+    //do nothing
+  },
+  error() {
+    //do nothing
+  },
+  debug() {
+    //do nothing
+  },
 };

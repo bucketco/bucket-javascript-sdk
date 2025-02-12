@@ -14,12 +14,10 @@ import {
   RequestFeedbackOptions,
 } from "./feedback/feedback";
 import * as feedbackLib from "./feedback/ui";
-import { ToolbarPosition } from "./toolbar/Toolbar";
-import { API_BASE_URL, APP_BASE_URL, SSE_REALTIME_BASE_URL } from "./config";
+import { API_BASE_URL, SSE_REALTIME_BASE_URL } from "./config";
 import { BucketContext, CompanyContext, UserContext } from "./context";
 import { HttpClient } from "./httpClient";
 import { Logger, loggerWithPrefix, quietConsoleLogger } from "./logger";
-import { showToolbarToggle } from "./toolbar";
 
 const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 const isNode = typeof document === "undefined"; // deno supports "window" but not "document" according to https://remix.run/docs/en/main/guides/gotchas
@@ -152,11 +150,6 @@ interface Config {
   apiBaseUrl: string;
 
   /**
-   * Base URL of the Bucket web app.
-   */
-  appBaseUrl: string;
-
-  /**
    * Base URL of Bucket servers for SSE connections used by AutoFeedback.
    */
   sseBaseUrl: string;
@@ -166,16 +159,6 @@ interface Config {
    */
   enableTracking: boolean;
 }
-
-/**
- * Toolbar options.
- */
-export type ToolbarOptions =
-  | boolean
-  | {
-      show?: boolean;
-      position?: ToolbarPosition;
-    };
 
 /**
  * Feature definitions.
@@ -230,11 +213,6 @@ export interface InitOptions {
   apiBaseUrl?: string;
 
   /**
-   * Base URL of the Bucket web app. Links open ín this app by default.
-   */
-  appBaseUrl?: string;
-
-  /**
    * @deprecated
    * Use `sseBaseUrl` instead.
    */
@@ -264,60 +242,26 @@ export interface InitOptions {
    * Whether to enable tracking. Defaults to `true`.
    */
   enableTracking?: boolean;
-
-  /**
-   * Toolbar configuration (alpha)
-   * @ignore
-   */
-  toolbar?: ToolbarOptions;
-
-  /**
-   * Local-first definition of features (alpha)
-   * @ignore
-   */
-  featureList?: FeatureDefinitions;
 }
 
 const defaultConfig: Config = {
   apiBaseUrl: API_BASE_URL,
-  appBaseUrl: APP_BASE_URL,
   sseBaseUrl: SSE_REALTIME_BASE_URL,
   enableTracking: true,
 };
 
 /**
- * A remotely managed configuration value for a feature.
- */
-export type FeatureRemoteConfig =
-  | {
-      /**
-       * The key of the matched configuration value.
-       */
-      key: string;
-
-      /**
-       * The optional user-supplied payload data.
-       */
-      payload: any;
-    }
-  | { key: undefined; payload: undefined };
-
-/**
- * A feature.
+ * Represents a feature.
  */
 export interface Feature {
   /**
-   * Result of feature flag evaluation.
+   * Result of feature flag evaluation
    */
   isEnabled: boolean;
 
-  /*
-   * Optional user-defined configuration.
-   */
-  config: FeatureRemoteConfig;
-
   /**
-   * Function to send analytics events for this feature.
+   * Function to send analytics events for this feature
+   *
    */
   track: () => Promise<Response | undefined>;
 
@@ -328,33 +272,21 @@ export interface Feature {
     options: Omit<RequestFeedbackData, "featureKey" | "featureId">,
   ) => void;
 }
-
-function shouldShowToolbar(opts: InitOptions) {
-  const toolbarOpts = opts.toolbar;
-  if (typeof toolbarOpts === "boolean") return toolbarOpts;
-  if (typeof toolbarOpts?.show === "boolean") return toolbarOpts.show;
-
-  return (
-    opts.featureList !== undefined && window?.location?.hostname === "localhost"
-  );
-}
-
 /**
  * BucketClient lets you interact with the Bucket API.
  */
 export class BucketClient {
-  private readonly publishableKey: string;
-  private readonly context: BucketContext;
+  private publishableKey: string;
+  private context: BucketContext;
   private config: Config;
   private requestFeedbackOptions: Partial<RequestFeedbackOptions>;
-  private readonly httpClient: HttpClient;
+  private httpClient: HttpClient;
 
-  private readonly autoFeedback: AutoFeedback | undefined;
+  private autoFeedback: AutoFeedback | undefined;
   private autoFeedbackInit: Promise<void> | undefined;
-  private readonly featuresClient: FeaturesClient;
+  private featuresClient: FeaturesClient;
 
   public readonly logger: Logger;
-
   /**
    * Create a new BucketClient instance.
    */
@@ -370,10 +302,9 @@ export class BucketClient {
 
     this.config = {
       apiBaseUrl: opts?.apiBaseUrl ?? opts?.host ?? defaultConfig.apiBaseUrl,
-      appBaseUrl: opts?.appBaseUrl ?? opts?.host ?? defaultConfig.appBaseUrl,
       sseBaseUrl: opts?.sseBaseUrl ?? opts?.sseHost ?? defaultConfig.sseBaseUrl,
       enableTracking: opts?.enableTracking ?? defaultConfig.enableTracking,
-    };
+    } satisfies Config;
 
     const feedbackOpts = handleDeprecatedFeedbackOptions(opts?.feedback);
 
@@ -395,7 +326,6 @@ export class BucketClient {
         company: this.context.company,
         other: this.context.otherContext,
       },
-      opts?.featureList || [],
       this.logger,
       opts?.features,
     );
@@ -420,15 +350,6 @@ export class BucketClient {
           feedbackOpts?.ui?.translations,
         );
       }
-    }
-
-    if (shouldShowToolbar(opts)) {
-      this.logger.info("opening toolbar toggler");
-      showToolbarToggle({
-        bucketClient: this as unknown as BucketClient,
-        position:
-          typeof opts.toolbar === "object" ? opts.toolbar.position : undefined,
-      });
     }
   }
 
@@ -461,13 +382,6 @@ export class BucketClient {
   }
 
   /**
-   * Get the current configuration.
-   */
-  getConfig() {
-    return this.config;
-  }
-
-  /**
    * Update the user context.
    * Performs a shallow merge with the existing user context.
    * Attempting to update the user ID will log a warning and be ignored.
@@ -496,7 +410,7 @@ export class BucketClient {
    * Performs a shallow merge with the existing company context.
    * Attempting to update the company ID will log a warning and be ignored.
    *
-   * @param company The company details.
+   * @param company
    */
   async updateCompany(company: { [key: string]: string | number | undefined }) {
     if (company.id && company.id !== this.context.company?.id) {
@@ -518,8 +432,6 @@ export class BucketClient {
    * Update the company context.
    * Performs a shallow merge with the existing company context.
    * Updates to the company ID will be ignored.
-   *
-   * @param otherContext Additional context.
    */
   async updateOtherContext(otherContext: {
     [key: string]: string | number | undefined;
@@ -537,7 +449,7 @@ export class BucketClient {
    *
    * Calling `client.stop()` will remove all listeners added here.
    *
-   * @param cb The callback to call when the update completes.
+   * @param cb this will be called when the features are updated.
    */
   onFeaturesUpdated(cb: () => void) {
     return this.featuresClient.onUpdated(cb);
@@ -546,8 +458,8 @@ export class BucketClient {
   /**
    * Track an event in Bucket.
    *
-   * @param eventName The name of the event.
-   * @param attributes Any attributes you want to attach to the event.
+   * @param eventName The name of the event
+   * @param attributes Any attributes you want to attach to the event
    */
   async track(eventName: string, attributes?: Record<string, any> | null) {
     if (!this.context.user) {
@@ -575,8 +487,7 @@ export class BucketClient {
   /**
    * Submit user feedback to Bucket. Must include either `score` or `comment`, or both.
    *
-   * @param payload The feedback details to submit.
-   * @returns The server response.
+   * @returns
    */
   async feedback(payload: Feedback) {
     const userId =
@@ -669,65 +580,35 @@ export class BucketClient {
   /**
    * Returns a map of enabled features.
    * Accessing a feature will *not* send a check event
-   * and `isEnabled` does not take any feature overrides
-   * into account.
    *
-   * @returns Map of features.
+   * @returns Map of features
    */
   getFeatures(): RawFeatures {
     return this.featuresClient.getFeatures();
   }
 
   /**
-   * Return a feature. Accessing `isEnabled` or `config` will automatically send a `check` event.
-   * @returns A feature.
+   * Return a feature. Accessing `isEnabled` will automatically send a `check` event.
+   * @returns A feature
    */
   getFeature(key: string): Feature {
     const f = this.getFeatures()[key];
 
     const fClient = this.featuresClient;
-    const value = f?.isEnabledOverride ?? f?.isEnabled ?? false;
-    const config = f?.config
-      ? {
-          key: f.config.key,
-          payload: f.config.payload,
-        }
-      : { key: undefined, payload: undefined };
+    const value = f?.isEnabled ?? false;
 
     return {
       get isEnabled() {
         fClient
           .sendCheckEvent({
-            action: "check",
-            key,
+            key: key,
             version: f?.targetingVersion,
-            ruleEvaluationResults: f?.ruleEvaluationResults,
-            missingContextFields: f?.missingContextFields,
             value,
           })
           .catch(() => {
             // ignore
           });
         return value;
-      },
-      get config() {
-        fClient
-          .sendCheckEvent({
-            action: "check-config",
-            key,
-            version: f?.config?.version,
-            ruleEvaluationResults: f?.config?.ruleEvaluationResults,
-            missingContextFields: f?.config?.missingContextFields,
-            value: f?.config && {
-              key: f.config.key,
-              payload: f.config.payload,
-            },
-          })
-          .catch(() => {
-            // ignore
-          });
-
-        return config;
       },
       track: () => this.track(key),
       requestFeedback: (
@@ -739,14 +620,6 @@ export class BucketClient {
         });
       },
     };
-  }
-
-  setFeatureOverride(key: string, isEnabled: boolean | null) {
-    this.featuresClient.setFeatureOverride(key, isEnabled);
-  }
-
-  getFeatureOverride(key: string): boolean | null {
-    return this.featuresClient.getFeatureOverride(key);
   }
 
   sendCheckEvent(checkEvent: CheckEvent) {

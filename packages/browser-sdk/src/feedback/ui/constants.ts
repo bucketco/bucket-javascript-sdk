@@ -2,7 +2,6 @@
  * ID of HTML DIV element which contains the feedback dialog
  */
 export const feedbackContainerId = "bucket-feedback-dialog-container";
-export const toolbarContainerId = "bucket-toolbar-dialog-container";
 
 /**
  * These events will be propagated to the feedback dialog

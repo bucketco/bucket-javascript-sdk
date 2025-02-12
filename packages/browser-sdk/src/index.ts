@@ -1,16 +1,14 @@
-// import "preact/debug";
-
-export type { Feature, InitOptions, ToolbarOptions } from "./client";
+export type { Feature, InitOptions } from "./client";
 export { BucketClient } from "./client";
 export type { BucketContext, CompanyContext, UserContext } from "./context";
 export type {
   CheckEvent,
-  FallbackFeatureOverride,
   FeaturesOptions,
   RawFeature,
   RawFeatures,
 } from "./feature/features";
 export type {
+  FeatureIdentifier,
   Feedback,
   FeedbackOptions,
   FeedbackPrompt,
@@ -24,12 +22,15 @@ export type {
   UnassignedFeedback,
 } from "./feedback/feedback";
 export type { DEFAULT_TRANSLATIONS } from "./feedback/ui/config/defaultTranslations";
+export { feedbackContainerId, propagatedEvents } from "./feedback/ui/constants";
 export type {
+  FeedbackPlacement,
+  FeedbackPosition,
   FeedbackScoreSubmission,
   FeedbackSubmission,
   FeedbackTranslations,
+  Offset,
   OnScoreSubmitResult,
   OpenFeedbackFormOptions,
 } from "./feedback/ui/types";
 export type { Logger } from "./logger";
-export { feedbackContainerId, propagatedEvents } from "./ui/constants";

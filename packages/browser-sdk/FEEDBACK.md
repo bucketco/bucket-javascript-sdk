@@ -13,7 +13,7 @@ the viewport, displayed in English, and with a [light-mode theme](#custom-stylin
 
 These settings can be overwritten when initializing the Bucket Browser SDK:
 
-```typescript
+```javascript
 const bucket = new BucketClient({
   publishableKey: "bucket-publishable-key",
   user: { id: "42" },
@@ -39,9 +39,11 @@ const bucket = new BucketClient({
 
 See also:
 
-- [Positioning and behavior](#positioning-and-behavior) for the position option,
-- [Static language configuration](#static-language-configuration) if you want to translate the feedback UI,
-- [Automated feedback surveys](#automated-feedback-surveys) to override default configuration.
+- [Positioning and behavior](#positioning-and-behavior) for the position option.
+- [Static language configuration](#static-language-configuration) if you want to
+  translate the feedback UI.
+- [Automated feedback surveys](#automated-feedback-surveys) to
+  override default configuration.
 
 ## Automated feedback surveys
 
@@ -61,7 +63,7 @@ The live connection for automated feedback is established when the
 
 You can disable automated collection in the `BucketClient` constructor:
 
-```typescript
+```javascript
 const bucket = new BucketClient({
   publishableKey: "bucket-publishable-key",
   user: { id: "42" },

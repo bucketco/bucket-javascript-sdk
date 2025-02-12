@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bucket feature management</title>
+  </head>
+  <body>
+    <span id="loading">Loading...</span>
+
+    <script>
+      const urlParams = new URLSearchParams(window.location.search);
+      const publishableKey = urlParams.get("publishableKey");
+      const featureKey = urlParams.get("featureKey") ?? "huddles";
+    </script>
+    <div id="start-huddle" style="display: none">
+      <button onClick="bucket.track(featureKey)">Click me</button>
+      <button onClick="bucket.requestFeedback({featureKey})">
+        Give feedback!
+      </button>
+    </div>
+
+    <script src="../dist/bucket-browser-sdk.umd.js"></script>
+    <script>
+      const bucket = new BucketBrowserSDK.BucketClient({
+        publishableKey,
+        user: { id: "42" },
+        company: { id: "1" },
+      });
+
+      bucket.initialize().then(() => {
+        console.log("Bucket initialized");
+        document.getElementById("loading").style.display = "none";
+        const { isEnabled, track, requestFeedback } =
+          bucket.getFeature("huddles");
+        if (isEnabled) {
+          // show the start-huddle button
+          document.getElementById("start-huddle").style.display = "block";
+        }
+      });
+    </script>
+  </body>
+</html>
