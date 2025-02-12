@@ -8,17 +8,8 @@ describe("config tests", () => {
 
     expect(config).toEqual({
       featureOverrides: {
-        myFeature: {
-          isEnabled: true,
-        },
+        myFeature: true,
         myFeatureFalse: false,
-        myFeatureWithConfig: {
-          isEnabled: true,
-          config: {
-            key: "config-1",
-            payload: { something: "else" },
-          },
-        },
       },
       secretKey: "mySecretKey",
       offline: true,
@@ -36,19 +27,10 @@ describe("config tests", () => {
     const config = loadConfig("test/testConfig.json");
     expect(config).toEqual({
       featureOverrides: {
-        myFeature: {
-          isEnabled: true,
-        },
+        myFeature: true,
         myFeatureFalse: false,
         myNewFeature: true,
         myNewFeatureFalse: false,
-        myFeatureWithConfig: {
-          isEnabled: true,
-          config: {
-            key: "config-1",
-            payload: { something: "else" },
-          },
-        },
       },
       secretKey: "mySecretKeyFromEnv",
       offline: true,

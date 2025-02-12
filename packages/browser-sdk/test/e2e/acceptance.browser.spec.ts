@@ -11,7 +11,7 @@ test("Acceptance", async ({ page }) => {
   const successfulRequests: string[] = [];
 
   // Mock API calls with assertions
-  await page.route(`${API_BASE_URL}/features/enabled*`, async (route) => {
+  await page.route(`${API_BASE_URL}/features/evaluated*`, async (route) => {
     successfulRequests.push("FEATURES");
     await route.fulfill({
       status: 200,
