@@ -66,10 +66,13 @@ type BulkEvent =
     }
   | {
       type: "feature-flag-event";
-      action: "check" | "evaluate";
+      action: "check" | "evaluate" | "check-config" | "evaluate-config";
       key: string;
       targetingVersion?: number;
-      evalResult: boolean;
+      evalResult:
+        | boolean
+        | { key: string; payload: any }
+        | { key: undefined; payload: undefined };
       evalContext?: Record<string, any>;
       evalRuleResults?: boolean[];
       evalMissingFields?: string[];
@@ -206,7 +209,6 @@ export class BucketClient {
                   typeof fallback === "object" && fallback.config
                     ? {
                         key: fallback.config.key,
-                        default: true,
                         payload: fallback.config.payload,
                       }
                     : undefined,
@@ -477,6 +479,8 @@ export class BucketClient {
       isEnabled: feature?.isEnabled ?? false,
       targetingVersion: feature?.targetingVersion,
       config: feature?.config,
+      ruleEvaluationResults: feature?.ruleEvaluationResults,
+      missingContextFields: feature?.missingContextFields,
     });
   }
 
@@ -648,7 +652,10 @@ export class BucketClient {
     ok(typeof event === "object", "event must be an object");
     ok(
       typeof event.action === "string" &&
-        (event.action === "evaluate" || event.action === "check"),
+        (event.action === "evaluate" ||
+          event.action === "evaluate-config" ||
+          event.action === "check" ||
+          event.action === "check-config"),
       "event must have an action",
     );
     ok(
@@ -661,7 +668,7 @@ export class BucketClient {
       "event must have a targeting version",
     );
     ok(
-      typeof event.evalResult === "boolean",
+      typeof event.evalResult === "boolean" || isObject(event.evalResult),
       "event must have an evaluation result",
     );
     ok(
@@ -783,36 +790,60 @@ export class BucketClient {
   /**
    * Warns if any features have targeting rules that require context fields that are missing.
    *
-   * @param options - The options.
+   * @param context - The context.
    * @param features - The features to check.
    */
   private warnMissingFeatureContextFields(
-    options: Context,
-    features: { key: string; missingContextFields?: string[] }[],
+    context: Context,
+    features: {
+      key: string;
+      missingContextFields?: string[];
+      config?: {
+        key: string;
+        missingContextFields?: string[];
+      };
+    }[],
   ) {
-    features.forEach(({ key, missingContextFields }) => {
-      if (missingContextFields?.length) {
+    const report = features.reduce(
+      (acc, { config, ...feature }) => {
         if (
-          !this._config.rateLimiter.isAllowed(
+          feature.missingContextFields?.length &&
+          this._config.rateLimiter.isAllowed(
             hashObject({
-              key,
-              missingContextFields,
-              options,
+              featureKey: feature.key,
+              missingContextFields: feature.missingContextFields,
+              context,
             }),
           )
         ) {
-          return;
+          acc[feature.key] = feature.missingContextFields;
         }
 
-        const missingFieldsStr = missingContextFields
-          .map((field) => `"${field}"`)
-          .join(", ");
+        if (
+          config?.missingContextFields?.length &&
+          this._config.rateLimiter.isAllowed(
+            hashObject({
+              featureKey: feature.key,
+              configKey: config.key,
+              missingContextFields: config.missingContextFields,
+              context,
+            }),
+          )
+        ) {
+          acc[`${feature.key}.config`] = config.missingContextFields;
+        }
 
-        this._config.logger?.warn(
-          `feature "${key}" has targeting rules that require the following context fields: ${missingFieldsStr}`,
-        );
-      }
-    });
+        return acc;
+      },
+      {} as Record<string, string[]>,
+    );
+
+    if (Object.keys(report).length > 0) {
+      this._config.logger?.warn(
+        `feature/remote config targeting rules might not be correctly evaluated due to missing context fields.`,
+        report,
+      );
+    }
   }
 
   private _getFeatures(
@@ -872,6 +903,8 @@ export class BucketClient {
             acc[featureKey] = {
               ...variant.value,
               targetingVersion: feature.config.version,
+              ruleEvaluationResults: variant.ruleEvaluationResults,
+              missingContextFields: variant.missingContextFields,
             };
           }
         }
@@ -889,22 +922,50 @@ export class BucketClient {
     );
 
     if (enableTracking) {
-      evaluated.forEach(async (res) => {
-        try {
-          await this.sendFeatureEvent({
-            action: "evaluate",
-            key: res.featureKey,
-            targetingVersion: featureMap[res.featureKey].targeting.version,
-            evalResult: res.value ?? false,
-            evalContext: res.context,
-            evalRuleResults: res.ruleEvaluationResults,
-            evalMissingFields: res.missingContextFields,
-          });
-        } catch (err) {
-          this._config.logger?.error(
-            `failed to send evaluate event for "${res.featureKey}"`,
-            err,
+      const promises = evaluated
+        .map((res) => {
+          const outPromises: Promise<void>[] = [];
+          outPromises.push(
+            this.sendFeatureEvent({
+              action: "evaluate",
+              key: res.featureKey,
+              targetingVersion: featureMap[res.featureKey].targeting.version,
+              evalResult: res.value ?? false,
+              evalContext: res.context,
+              evalRuleResults: res.ruleEvaluationResults,
+              evalMissingFields: res.missingContextFields,
+            }),
           );
+
+          const config = evaluatedConfigs[res.featureKey];
+          if (config) {
+            outPromises.push(
+              this.sendFeatureEvent({
+                action: "evaluate-config",
+                key: res.featureKey,
+                targetingVersion: config.targetingVersion,
+                evalResult: { key: config.key, payload: config.payload },
+                evalContext: res.context,
+                evalRuleResults: config.ruleEvaluationResults,
+                evalMissingFields: config.missingContextFields,
+              }),
+            );
+          }
+
+          return outPromises;
+        })
+        .flat();
+
+      void Promise.allSettled(promises).then((results) => {
+        const failed = results
+          .map((result) =>
+            result.status === "rejected" ? result.reason : undefined,
+          )
+          .filter(Boolean);
+        if (failed.length > 0) {
+          this._config.logger?.error(`failed to queue some evaluate events.`, {
+            errors: failed,
+          });
         }
       });
     }
@@ -915,8 +976,9 @@ export class BucketClient {
           key: res.featureKey,
           isEnabled: res.value ?? false,
           config: evaluatedConfigs[res.featureKey],
-          targetingVersion: featureMap[res.featureKey].targeting.version,
+          ruleEvaluationResults: res.ruleEvaluationResults,
           missingContextFields: res.missingContextFields,
+          targetingVersion: featureMap[res.featureKey].targeting.version,
         };
         return acc;
       },
@@ -947,29 +1009,11 @@ export class BucketClient {
   }
 
   private _wrapRawFeature<TKey extends keyof TypedFeatures>(
-    options: { enableTracking: boolean } & Context,
-    { key, isEnabled, config, targetingVersion }: RawFeature,
+    { enableTracking, ...context }: { enableTracking: boolean } & Context,
+    { config, ...feature }: RawFeature,
   ): TypedFeatures[TKey] {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const client = this;
-
-    function sendCheckEvent() {
-      if (options.enableTracking) {
-        void client
-          .sendFeatureEvent({
-            action: "check",
-            key,
-            targetingVersion,
-            evalResult: isEnabled,
-          })
-          .catch((err) => {
-            client._config.logger?.error(
-              `failed to send check event for "${key}": ${err}`,
-              err,
-            );
-          });
-      }
-    }
 
     const simplifiedConfig = config
       ? { key: config.key, payload: config.payload }
@@ -977,23 +1021,57 @@ export class BucketClient {
 
     return {
       get isEnabled() {
-        sendCheckEvent();
-        return isEnabled;
+        if (enableTracking) {
+          void client
+            .sendFeatureEvent({
+              action: "check",
+              key: feature.key,
+              targetingVersion: feature.targetingVersion,
+              evalResult: feature.isEnabled,
+              evalContext: context,
+              evalRuleResults: feature.ruleEvaluationResults,
+              evalMissingFields: feature.missingContextFields,
+            })
+            .catch((err) => {
+              client._config.logger?.error(
+                `failed to send check event for "${feature.key}": ${err}`,
+                err,
+              );
+            });
+        }
+        return feature.isEnabled;
       },
       get config() {
-        sendCheckEvent();
+        if (enableTracking) {
+          void client
+            .sendFeatureEvent({
+              action: "check-config",
+              key: feature.key,
+              targetingVersion: config?.targetingVersion,
+              evalResult: simplifiedConfig,
+              evalContext: context,
+              evalRuleResults: config?.ruleEvaluationResults,
+              evalMissingFields: config?.missingContextFields,
+            })
+            .catch((err) => {
+              client._config.logger?.error(
+                `failed to send check event for "${feature.key}": ${err}`,
+                err,
+              );
+            });
+        }
         return simplifiedConfig as TypedFeatures[TKey]["config"];
       },
-      key,
+      key: feature.key,
       track: async () => {
-        if (typeof options.user?.id === "undefined") {
+        if (typeof context.user?.id === "undefined") {
           this._config.logger?.warn("no user set, cannot track event");
           return;
         }
 
-        if (options.enableTracking) {
-          await this.track(options.user.id, key, {
-            companyId: options.company?.id,
+        if (enableTracking) {
+          await this.track(context.user.id, feature.key, {
+            companyId: context.company?.id,
           });
         } else {
           this._config.logger?.debug("tracking disabled, not tracking event");

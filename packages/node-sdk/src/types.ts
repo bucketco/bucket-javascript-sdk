@@ -22,7 +22,7 @@ export type FeatureEvent = {
   /**
    * The action that was performed.
    **/
-  action: "evaluate" | "check";
+  action: "evaluate" | "evaluate-config" | "check" | "check-config";
 
   /**
    * The feature key.
@@ -37,7 +37,10 @@ export type FeatureEvent = {
   /**
    * The result of targeting evaluation.
    **/
-  evalResult: boolean;
+  evalResult:
+    | boolean
+    | { key: string; payload: any }
+    | { key: undefined; payload: undefined };
 
   /**
    * The context that was used for evaluation.
@@ -70,14 +73,19 @@ export type RawFeatureRemoteConfig = {
   targetingVersion?: number;
 
   /**
-   * Indicates if the config value is the default.
-   */
-  default: boolean;
-
-  /**
    * The optional user-supplied payload data.
    */
   payload: any;
+
+  /**
+   * The rule results of the evaluation (optional).
+   */
+  ruleEvaluationResults?: boolean[];
+
+  /**
+   * The missing fields in the evaluation context (optional).
+   */
+  missingContextFields?: string[];
 };
 
 /**
@@ -103,6 +111,11 @@ export interface RawFeature {
    * The remote configuration value for the feature.
    */
   config?: RawFeatureRemoteConfig;
+
+  /**
+   * The rule results of the evaluation (optional).
+   */
+  ruleEvaluationResults?: boolean[];
 
   /**
    * The missing fields in the evaluation context (optional).
@@ -227,11 +240,6 @@ export type FeatureConfigVariant = {
    * The key of the variant.
    */
   key: string;
-
-  /**
-   * Indicates if the variant is the default variant.
-   */
-  default: boolean;
 };
 
 /**
