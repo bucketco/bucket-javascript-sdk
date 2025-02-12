@@ -14,19 +14,29 @@ import {
  */
 export type FetchedFeature = {
   /**
-   * Feature key
+   * Feature key.
    */
   key: string;
 
   /**
-   * Result of feature flag evaluation
+   * Result of feature flag evaluation.
    */
   isEnabled: boolean;
 
   /**
-   * Version of targeting rules
+   * Version of targeting rules.
    */
   targetingVersion?: number;
+
+  /**
+   * Rule evaluation results.
+   */
+  ruleEvaluationResults?: boolean[];
+
+  /**
+   * Missing context fields.
+   */
+  missingContextFields?: string[];
 
   /**
    * Optional user-defined dynamic configuration.
@@ -46,6 +56,16 @@ export type FetchedFeature = {
      * The optional user-supplied payload data.
      */
     payload?: any;
+
+    /**
+     * The rule evaluation results.
+     */
+    ruleEvaluationResults?: boolean[];
+
+    /**
+     * The missing context fields.
+     */
+    missingContextFields?: string[];
   };
 };
 
@@ -123,19 +143,34 @@ export function flattenJSON(obj: Record<string, any>): Record<string, any> {
  */
 export interface CheckEvent {
   /**
-   * Feature key
+   * Action to perform.
+   */
+  action: "check" | "check-config";
+
+  /**
+   * Feature key.
    */
   key: string;
 
   /**
-   * Result of feature flag evaluation
+   * Result of feature flag or configuration evaluation.
    */
-  value: boolean;
+  value: any;
 
   /**
-   * Version of targeting rules
+   * Version of targeting rules.
    */
   version?: number;
+
+  /**
+   * Rule evaluation results.
+   */
+  ruleEvaluationResults?: boolean[];
+
+  /**
+   * Missing context fields.
+   */
+  missingContextFields?: string[];
 }
 
 type context = {
@@ -332,15 +367,17 @@ export class FeaturesClient {
    * @param checkEvent - The feature to send the event for.
    */
   async sendCheckEvent(checkEvent: CheckEvent) {
-    const rateLimitKey = `${this.fetchParams().toString()}:${checkEvent.key}:${checkEvent.version}:${checkEvent.value}`;
+    const rateLimitKey = `check-event:${this.fetchParams().toString()}:${checkEvent.key}:${checkEvent.version}:${checkEvent.value}`;
 
     await this.rateLimiter.rateLimited(rateLimitKey, async () => {
       const payload = {
-        action: "check",
+        action: checkEvent.action,
         key: checkEvent.key,
         targetingVersion: checkEvent.version,
         evalContext: this.context,
         evalResult: checkEvent.value,
+        evalRuleResults: checkEvent.ruleEvaluationResults,
+        evalMissingFields: checkEvent.missingContextFields,
       };
 
       this.httpClient
@@ -394,6 +431,32 @@ export class FeaturesClient {
     return params;
   }
 
+  private warnMissingFeatureContextFields(features: FetchedFeatures) {
+    const report: Record<string, string[]> = {};
+    for (const featureKey in features) {
+      const feature = features[featureKey];
+      if (feature?.missingContextFields?.length) {
+        report[feature.key] = feature.missingContextFields;
+      }
+
+      if (feature?.config?.missingContextFields?.length) {
+        report[`${feature.key}.config`] = feature.config.missingContextFields;
+      }
+    }
+
+    if (Object.keys(report).length > 0) {
+      this.rateLimiter.rateLimited(
+        `feature-missing-context-fields:${this.fetchParams().toString()}`,
+        () => {
+          this.logger.warn(
+            `feature/remote config targeting rules might not be correctly evaluated due to missing context fields.`,
+            report,
+          );
+        },
+      );
+    }
+  }
+
   private async maybeFetchFeatures(): Promise<FetchedFeatures | undefined> {
     const cacheKey = this.fetchParams().toString();
     const cachedItem = this.cache.get(cacheKey);
@@ -429,6 +492,7 @@ export class FeaturesClient {
         features: fetchedFeatures,
       });
 
+      this.warnMissingFeatureContextFields(fetchedFeatures);
       return fetchedFeatures;
     }
 
