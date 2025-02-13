@@ -23,6 +23,7 @@ import {
   SDK_VERSION_HEADER_NAME,
 } from "../src/config";
 import fetchClient from "../src/fetch-http-client";
+import { subscribe as triggerOnExit } from "../src/flusher";
 import { newRateLimiter } from "../src/rate-limiter";
 import { ClientOptions, Context, FeaturesAPIResponse } from "../src/types";
 
@@ -44,6 +45,10 @@ vi.mock("../src/rate-limiter", async (importOriginal) => {
     newRateLimiter: vi.fn(original.newRateLimiter),
   };
 });
+
+vi.mock("../src/flusher", () => ({
+  subscribe: vi.fn(),
+}));
 
 const user = {
   id: "user123",
@@ -82,6 +87,7 @@ const validOptions: ClientOptions = {
   batchOptions: {
     maxSize: 99,
     intervalMs: 100,
+    flushOnExit: false,
   },
   offline: false,
 };
@@ -299,6 +305,36 @@ describe("BucketClient", () => {
         FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
       );
     });
+
+    it("should not register an exit flush handler if `batchOptions.flushOnExit` is false", () => {
+      new BucketClient({
+        ...validOptions,
+        batchOptions: { ...validOptions.batchOptions, flushOnExit: false },
+      });
+
+      expect(triggerOnExit).not.toHaveBeenCalled();
+    });
+
+    it("should not register an exit flush handler if `offline` is true", () => {
+      new BucketClient({
+        ...validOptions,
+        offline: true,
+      });
+
+      expect(triggerOnExit).not.toHaveBeenCalled();
+    });
+
+    it.each([undefined, true])(
+      "should register an exit flush handler if `batchOptions.flushOnExit` is `%s`",
+      (flushOnExit) => {
+        new BucketClient({
+          ...validOptions,
+          batchOptions: { ...validOptions.batchOptions, flushOnExit },
+        });
+
+        expect(triggerOnExit).toHaveBeenCalledWith(expect.any(Function));
+      },
+    );
 
     it.each([
       ["https://api.example.com", "https://api.example.com/bulk"],
@@ -898,6 +934,18 @@ describe("BucketClient", () => {
           },
         ],
       );
+    });
+
+    it("should not flush all bulk data if `offline` is true", async () => {
+      const client = new BucketClient({
+        ...validOptions,
+        offline: true,
+      });
+
+      await client.updateUser(user.id, { attributes: { age: 2 } });
+      await client.flush();
+
+      expect(httpClient.post).not.toHaveBeenCalled();
     });
   });
 
