@@ -41,6 +41,7 @@ type ProviderContextType = {
     features: RawFeatures;
     isLoading: boolean;
   };
+  provider: boolean;
 };
 
 const ProviderContext = createContext<ProviderContextType>({
@@ -48,6 +49,7 @@ const ProviderContext = createContext<ProviderContextType>({
     features: {},
     isLoading: false,
   },
+  provider: false,
 });
 
 /**
@@ -146,6 +148,7 @@ export function BucketProvider({
       isLoading: featuresLoading,
     },
     client: clientRef.current,
+    provider: true,
   };
   return (
     <ProviderContext.Provider
@@ -195,7 +198,9 @@ export function useFeature<TKey extends FeatureKey>(key: TKey): Feature<TKey> {
   const {
     features: { isLoading },
     client,
+    provider,
   } = useContext<ProviderContextType>(ProviderContext);
+  ensureProvider(provider);
 
   const track = () => client?.track(key);
   const requestFeedback = (opts: RequestFeedbackOptions) =>
@@ -236,7 +241,8 @@ export function useFeature<TKey extends FeatureKey>(key: TKey): Feature<TKey> {
  * ```
  */
 export function useTrack() {
-  const { client } = useContext<ProviderContextType>(ProviderContext);
+  const { client, provider } = useContext<ProviderContextType>(ProviderContext);
+  ensureProvider(provider);
   return (eventName: string, attributes?: Record<string, any> | null) =>
     client?.track(eventName, attributes);
 }
@@ -256,7 +262,8 @@ export function useTrack() {
  * ```
  */
 export function useRequestFeedback() {
-  const { client } = useContext<ProviderContextType>(ProviderContext);
+  const { client, provider } = useContext<ProviderContextType>(ProviderContext);
+  ensureProvider(provider);
   return (options: RequestFeedbackData) => client?.requestFeedback(options);
 }
 
@@ -277,7 +284,8 @@ export function useRequestFeedback() {
  * ```
  */
 export function useSendFeedback() {
-  const { client } = useContext<ProviderContextType>(ProviderContext);
+  const { client, provider } = useContext<ProviderContextType>(ProviderContext);
+  ensureProvider(provider);
   return (opts: UnassignedFeedback) => client?.feedback(opts);
 }
 
@@ -295,7 +303,8 @@ export function useSendFeedback() {
  * ```
  */
 export function useUpdateUser() {
-  const { client } = useContext<ProviderContextType>(ProviderContext);
+  const { client, provider } = useContext<ProviderContextType>(ProviderContext);
+  ensureProvider(provider);
   return (opts: { [key: string]: string | number | undefined }) =>
     client?.updateUser(opts);
 }
@@ -314,7 +323,9 @@ export function useUpdateUser() {
  * ```
  */
 export function useUpdateCompany() {
-  const { client } = useContext<ProviderContextType>(ProviderContext);
+  const { client, provider } = useContext<ProviderContextType>(ProviderContext);
+  ensureProvider(provider);
+
   return (opts: { [key: string]: string | number | undefined }) =>
     client?.updateCompany(opts);
 }
@@ -334,7 +345,16 @@ export function useUpdateCompany() {
  * ```
  */
 export function useUpdateOtherContext() {
-  const { client } = useContext<ProviderContextType>(ProviderContext);
+  const { client, provider } = useContext<ProviderContextType>(ProviderContext);
+  ensureProvider(provider);
   return (opts: { [key: string]: string | number | undefined }) =>
     client?.updateOtherContext(opts);
+}
+
+function ensureProvider(provider: boolean) {
+  if (!provider) {
+    throw new Error(
+      "BucketProvider is missing. Please ensure your component is wrapped with a BucketProvider.",
+    );
+  }
 }
