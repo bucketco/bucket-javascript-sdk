@@ -330,17 +330,6 @@ const client = new BucketClient({
 > If you are creating multiple client instances in your application, it's recommended to disable `flushOnExit`
 > to avoid potential conflicts during process shutdown. In such cases, you should implement your own flush handling.
 
-A naive example of manual flush handling:
-
-```typescript
-process.on("SIGINT", () => {
-  console.log("Flushing batch buffer...");
-  client.flush().then(() => {
-    process.exit(0);
-  });
-});
-```
-
 When you bind a client to a user/company, this data is matched against the
 targeting rules. To get accurate targeting, you must ensure that the user/company
 information provided is sufficient to match against the targeting rules you've
