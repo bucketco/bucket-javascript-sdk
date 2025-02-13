@@ -342,7 +342,7 @@ describe("useRequestFeedback", () => {
 
       expect(requestFeedback).toHaveBeenCalledOnce();
       expect(requestFeedback).toHaveBeenCalledWith({
-        featureId: "huddles",
+        featureKey: "huddles",
         companyId: "456",
         title: "Test question",
       });
