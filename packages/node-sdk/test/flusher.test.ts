@@ -79,9 +79,7 @@ describe("flusher", () => {
         await vi.runAllTimersAsync();
 
         expect(callback).toHaveBeenCalledTimes(1);
-        expect(mockExit).toHaveBeenCalledWith(
-          0x100 + constants.signals[signal],
-        );
+        expect(mockExit).toHaveBeenCalledWith(0x80 + constants.signals[signal]);
       });
 
       it("should prepend handler when listeners exist", async () => {

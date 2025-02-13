@@ -46,7 +46,7 @@ export function subscribe(
     } else {
       process.on(signal, async () => {
         await wrappedCallback();
-        process.exit(0x100 + constants.signals[signal]);
+        process.exit(0x80 + constants.signals[signal]);
       });
     }
   });
