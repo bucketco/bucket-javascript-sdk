@@ -13,10 +13,9 @@ import canonicalJSON from "canonical-json";
 import {
   BucketClient,
   BucketContext,
-  FeedbackOptions,
+  InitOptions,
   RawFeatures,
   RequestFeedbackData,
-  ToolbarOptions,
   UnassignedFeedback,
 } from "@bucketco/browser-sdk";
 
@@ -51,60 +50,45 @@ const ProviderContext = createContext<ProviderContextType>({
   },
 });
 
-export type BucketProps = BucketContext & {
-  publishableKey: string;
+/**
+ * Props for the BucketProvider.
+ */
+export type BucketProps = BucketContext &
+  InitOptions & {
+    /**
+     * Children to be rendered.
+     */
+    children?: ReactNode;
 
-  children?: ReactNode;
-  loadingComponent?: ReactNode;
-  feedback?: FeedbackOptions;
+    /**
+     * Loading component to be rendered while features are loading.
+     */
+    loadingComponent?: ReactNode;
 
-  apiBaseUrl?: string;
-  appBaseUrl?: string;
+    /**
+     * Whether to enable debug mode (optional).
+     */
+    debug?: boolean;
 
-  sseBaseUrl?: string;
-  debug?: boolean;
-  enableTracking?: boolean;
+    /**
+     * New BucketClient constructor.
+     *
+     * @internal
+     */
+    newBucketClient?: (
+      ...args: ConstructorParameters<typeof BucketClient>
+    ) => BucketClient;
+  };
 
-  features?: Readonly<string[]>;
-
-  fallbackFeatures?: FeatureKey[] | Record<FeatureKey, any>;
-
-  /**
-   * Timeout in milliseconds when fetching features
-   */
-  timeoutMs?: number;
-
-  /**
-   * If set to true stale features will be returned while refetching features
-   */
-  staleWhileRevalidate?: boolean;
-
-  /**
-   * If set, features will be cached between page loads for this duration
-   */
-  expireTimeMs?: number;
-
-  /**
-   * Stale features will be returned if staleWhileRevalidate is true if no new features can be fetched
-   */
-  staleTimeMs?: number;
-
-  toolbar?: ToolbarOptions;
-
-  // for testing
-  newBucketClient?: (
-    ...args: ConstructorParameters<typeof BucketClient>
-  ) => BucketClient;
-};
-
+/**
+ * Provider for the BucketClient.
+ */
 export function BucketProvider({
   children,
   user,
   company,
   otherContext,
-  publishableKey,
   loadingComponent,
-  features,
   newBucketClient = (...args) => new BucketClient(...args),
   ...config
 }: BucketProps) {
@@ -131,29 +115,15 @@ export function BucketProvider({
     }
 
     const client = newBucketClient({
-      publishableKey,
+      ...config,
       user,
       company,
       otherContext,
 
-      apiBaseUrl: config.apiBaseUrl,
-      appBaseUrl: config.appBaseUrl,
-      sseBaseUrl: config.sseBaseUrl,
-
-      enableTracking: config.enableTracking,
-
-      staleTimeMs: config.staleTimeMs,
-      expireTimeMs: config.expireTimeMs,
-      timeoutMs: config.timeoutMs,
-      staleWhileRevalidate: config.staleWhileRevalidate,
-      fallbackFeatures: config.fallbackFeatures,
-
-      feedback: config.feedback,
       logger: config.debug ? console : undefined,
       sdkVersion: SDK_VERSION,
-      features,
-      toolbar: config.toolbar,
     });
+
     clientRef.current = client;
 
     client.onFeaturesUpdated(() => {
