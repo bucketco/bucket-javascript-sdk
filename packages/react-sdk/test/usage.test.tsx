@@ -72,7 +72,7 @@ const server = setupServer(
       { status: 200 },
     );
   }),
-  http.get(/\/features\/enabled$/, () => {
+  http.get(/\/features\/evaluated$/, () => {
     return new HttpResponse(
       JSON.stringify({
         success: true,

@@ -33,7 +33,7 @@ async function getOpenedWidgetContainer(
     await route.fulfill({ status: 200 });
   });
 
-  await page.route(`${API_HOST}/features/enabled*`, async (route) => {
+  await page.route(`${API_HOST}/features/evaluated*`, async (route) => {
     await route.fulfill({
       status: 200,
       body: JSON.stringify({
@@ -70,7 +70,7 @@ async function getGiveFeedbackPageContainer(
     await route.fulfill({ status: 200 });
   });
 
-  await page.route(`${API_HOST}/features/enabled*`, async (route) => {
+  await page.route(`${API_HOST}/features/evaluated*`, async (route) => {
     await route.fulfill({
       status: 200,
       body: JSON.stringify({

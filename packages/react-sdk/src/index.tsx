@@ -223,7 +223,7 @@ type Feature<TKey extends FeatureKey> = {
  */
 export function useFeature<TKey extends FeatureKey>(key: TKey): Feature<TKey> {
   const {
-    features: { features, isLoading },
+    features: { isLoading },
     client,
   } = useContext<ProviderContextType>(ProviderContext);
 
@@ -231,7 +231,7 @@ export function useFeature<TKey extends FeatureKey>(key: TKey): Feature<TKey> {
   const requestFeedback = (opts: RequestFeedbackOptions) =>
     client?.requestFeedback({ ...opts, featureKey: key });
 
-  if (isLoading) {
+  if (isLoading || !client) {
     return {
       isLoading,
       isEnabled: false,
@@ -241,36 +241,17 @@ export function useFeature<TKey extends FeatureKey>(key: TKey): Feature<TKey> {
     };
   }
 
-  const feature = features[key];
-  const enabled = feature?.isEnabledOverride ?? feature?.isEnabled ?? false;
-
-  function sendCheckEvent() {
-    client
-      ?.sendCheckEvent({
-        key,
-        value: enabled,
-        version: feature?.targetingVersion,
-      })
-      .catch(() => {
-        // ignore
-      });
-  }
-
-  const reducedConfig = feature?.config
-    ? { key: feature.config.key, payload: feature.config.payload }
-    : { key: undefined, payload: undefined };
+  const feature = client.getFeature(key);
 
   return {
     isLoading,
     track,
     requestFeedback,
     get isEnabled() {
-      sendCheckEvent();
-      return enabled;
+      return feature.isEnabled ?? false;
     },
     get config() {
-      sendCheckEvent();
-      return reducedConfig;
+      return feature.config ?? { key: undefined, payload: undefined };
     },
   };
 }

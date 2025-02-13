@@ -1,7 +1,6 @@
 import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
 
 import { version } from "../package.json";
-import { FeatureDefinitions } from "../src/client";
 import {
   FEATURES_EXPIRE_MS,
   FeaturesClient,
@@ -37,7 +36,6 @@ function featuresClientFactory() {
     httpClient,
     newFeaturesClient: function newFeaturesClient(
       context?: Record<string, any>,
-      features?: FeatureDefinitions,
       options?: { staleWhileRevalidate?: boolean; fallbackFeatures?: any },
     ) {
       return new FeaturesClient(
@@ -48,7 +46,6 @@ function featuresClientFactory() {
           other: { eventId: "big-conference1" },
           ...context,
         },
-        features || [],
         testLogger,
         {
           cache,
@@ -60,6 +57,10 @@ function featuresClientFactory() {
 }
 
 describe("FeaturesClient", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   test("fetches features", async () => {
     const { newFeaturesClient, httpClient } = featuresClientFactory();
     const featuresClient = newFeaturesClient();
@@ -87,8 +88,31 @@ describe("FeaturesClient", () => {
       publishableKey: "pk",
     });
 
-    expect(path).toEqual("/features/enabled");
+    expect(path).toEqual("/features/evaluated");
     expect(timeoutMs).toEqual(5000);
+  });
+
+  test("warns about missing context fields", async () => {
+    const { newFeaturesClient } = featuresClientFactory();
+    const featuresClient = newFeaturesClient();
+
+    await featuresClient.initialize();
+
+    expect(testLogger.warn).toHaveBeenCalledTimes(1);
+    expect(testLogger.warn).toHaveBeenCalledWith(
+      "[Features] feature/remote config targeting rules might not be correctly evaluated due to missing context fields.",
+      {
+        featureA: ["field1", "field2"],
+        "featureB.config": ["field3"],
+      },
+    );
+
+    vi.advanceTimersByTime(TEST_STALE_MS + 1);
+
+    expect(testLogger.warn).toHaveBeenCalledTimes(1);
+    vi.advanceTimersByTime(60 * 1000);
+    await featuresClient.initialize();
+    expect(testLogger.warn).toHaveBeenCalledTimes(2);
   });
 
   test("ignores undefined context", async () => {
@@ -111,7 +135,7 @@ describe("FeaturesClient", () => {
       publishableKey: "pk",
     });
 
-    expect(path).toEqual("/features/enabled");
+    expect(path).toEqual("/features/evaluated");
     expect(timeoutMs).toEqual(5000);
   });
 
@@ -122,7 +146,7 @@ describe("FeaturesClient", () => {
       new Error("Failed to fetch features"),
     );
 
-    const featuresClient = newFeaturesClient(undefined, undefined, {
+    const featuresClient = newFeaturesClient(undefined, {
       fallbackFeatures: ["huddle"],
     });
 
@@ -143,7 +167,7 @@ describe("FeaturesClient", () => {
     vi.mocked(httpClient.get).mockRejectedValue(
       new Error("Failed to fetch features"),
     );
-    const featuresClient = newFeaturesClient(undefined, undefined, {
+    const featuresClient = newFeaturesClient(undefined, {
       fallbackFeatures: {
         huddle: {
           key: "john",
@@ -342,7 +366,7 @@ describe("FeaturesClient", () => {
     const { newFeaturesClient } = featuresClientFactory();
 
     // localStorage.clear();
-    const client = newFeaturesClient(undefined, ["featureB"]);
+    const client = newFeaturesClient(undefined);
     await client.initialize();
 
     let updated = false;
