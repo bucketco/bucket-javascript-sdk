@@ -89,7 +89,7 @@ export const handlers = [
       !data["userId"] ||
       !data["attributes"]
     ) {
-      return new HttpResponse(null, { status: 400 });
+      return HttpResponse.error();
     }
 
     return HttpResponse.json({
@@ -106,7 +106,7 @@ export const handlers = [
       !data["companyId"] ||
       !data["attributes"]
     ) {
-      return new HttpResponse(null, { status: 400 });
+      return HttpResponse.error();
     }
 
     return HttpResponse.json({
@@ -118,7 +118,7 @@ export const handlers = [
     const data = await request.json();
 
     if (typeof data !== "object" || !data || !data["userId"]) {
-      return new HttpResponse(null, { status: 400 });
+      return HttpResponse.error();
     }
 
     return HttpResponse.json({
@@ -130,7 +130,7 @@ export const handlers = [
     const data = await request.json();
 
     if (typeof data !== "object" || !data || !data["userId"]) {
-      return new HttpResponse(null, { status: 400 });
+      return HttpResponse.error();
     }
 
     return HttpResponse.json({
@@ -145,9 +145,9 @@ export const handlers = [
       !data ||
       !data["userId"] ||
       typeof data["score"] !== "number" ||
-      (!data["featureId"] && !data["featureKey"])
+      (!data["featureId"] && !data["key"])
     ) {
-      return new HttpResponse(null, { status: 400 });
+      return HttpResponse.error();
     }
 
     return HttpResponse.json({
@@ -173,7 +173,7 @@ export const handlers = [
     async ({ request }) => {
       const data = await request.json();
       if (typeof data !== "object") {
-        return new HttpResponse(null, { status: 400 });
+        return HttpResponse.error();
       }
 
       return HttpResponse.json({

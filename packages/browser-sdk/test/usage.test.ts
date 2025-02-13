@@ -64,7 +64,7 @@ describe("usage", () => {
     await bucketInstance.track("baz", { baz: true });
 
     await bucketInstance.feedback({
-      featureId: "featureId1",
+      featureKey: "huddles",
       score: 5,
       comment: "Sunt bine!",
       question: "Cum esti?",

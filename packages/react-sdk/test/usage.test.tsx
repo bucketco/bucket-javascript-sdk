@@ -335,15 +335,15 @@ describe("useRequestFeedback", () => {
 
     await waitFor(async () => {
       result.current({
-        featureId: "123",
+        featureKey: "huddles",
         title: "Test question",
         companyId: "456",
       });
 
       expect(requestFeedback).toHaveBeenCalledOnce();
       expect(requestFeedback).toHaveBeenCalledWith({
+        featureKey: "huddles",
         companyId: "456",
-        featureId: "123",
         title: "Test question",
       });
     });
