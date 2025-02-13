@@ -14,6 +14,7 @@ import {
   SDK_VERSION_HEADER_NAME,
 } from "./config";
 import fetchClient from "./fetch-http-client";
+import { subscribe as triggerOnExit } from "./flusher";
 import { newRateLimiter } from "./rate-limiter";
 import type {
   EvaluatedFeaturesAPIResponse,
@@ -112,6 +113,7 @@ export class BucketClient {
     offline: boolean;
     configFile?: string;
   };
+
   private _initialize = once(async () => {
     if (!this._config.offline) {
       await this.getFeaturesCache().refresh();
@@ -238,6 +240,10 @@ export class BucketClient {
           ? config.featureOverrides
           : () => config.featureOverrides,
     };
+
+    if ((config.batchOptions?.flushOnExit ?? true) && !this._config.offline) {
+      triggerOnExit(() => this.flush());
+    }
 
     if (!new URL(this._config.apiBaseUrl).pathname.endsWith("/")) {
       this._config.apiBaseUrl += "/";
@@ -443,8 +449,14 @@ export class BucketClient {
    * @remarks
    * It is recommended to call this method when the application is shutting down to ensure all events are sent
    * before the process exits.
+   *
+   * This method is automatically called when the process exits if `batchOptions.flushOnExit` is `true` in the options (default).
    */
   public async flush() {
+    if (this._config.offline) {
+      return;
+    }
+
     await this._config.batchBuffer.flush();
   }
 

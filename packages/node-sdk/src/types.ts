@@ -288,13 +288,24 @@ export type BatchBufferOptions<T> = {
 
   /**
    * The maximum size of the buffer before it is flushed.
+   *
+   * @defaultValue `100`
    **/
   maxSize?: number;
 
   /**
    * The interval in milliseconds at which the buffer is flushed.
+   *
+   * @defaultValue `1000`
    **/
   intervalMs?: number;
+
+  /**
+   * Whether to flush the buffer on exit.
+   *
+   * @defaultValue `true`
+   */
+  flushOnExit?: boolean;
 };
 
 /**

@@ -315,16 +315,20 @@ the number of calls that are sent to Bucket's servers. During process shutdown,
 some messages could be waiting to be sent, and thus, would be discarded if the
 buffer is not flushed.
 
-A naive example:
+By default, the SDK automatically subscribes to process exit signals and attempts to flush
+any pending events. This behavior is controlled by the `flushOnExit` option in the client configuration:
 
 ```typescript
-process.on("SIGINT", () => {
-  console.log("Flushing batch buffer...");
-  client.flush().then(() => {
-    process.exit(0);
-  });
+const client = new BucketClient({
+  batchOptions: {
+    flushOnExit: false, // disable automatic flushing on exit
+  },
 });
 ```
+
+> [!NOTE]
+> If you are creating multiple client instances in your application, it's recommended to disable `flushOnExit`
+> to avoid potential conflicts during process shutdown. In such cases, you should implement your own flush handling.
 
 When you bind a client to a user/company, this data is matched against the
 targeting rules. To get accurate targeting, you must ensure that the user/company
