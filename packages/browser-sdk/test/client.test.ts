@@ -70,7 +70,9 @@ describe("BucketClient", () => {
       await client.initialize();
       expect(featuresResult["featureA"].isEnabled).toBe(true);
       expect(client.getFeature("featureA").isEnabled).toBe(true);
-      client.setFeatureOverride("featureA", false);
+
+      client.getFeature("featureA").setIsEnabledOverride(false);
+
       expect(client.getFeature("featureA").isEnabled).toBe(false);
     });
   });
