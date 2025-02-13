@@ -1,5 +1,5 @@
 import { createHash } from "crypto";
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   decorateLogger,
@@ -8,8 +8,8 @@ import {
   mergeSkipUndefined,
   ok,
   once,
-  withTimeout,
   TimeoutError,
+  withTimeout,
 } from "../src/utils";
 
 describe("isObject", () => {

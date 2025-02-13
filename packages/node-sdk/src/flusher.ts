@@ -1,7 +1,7 @@
 import { constants } from "os";
 
 import { END_FLUSH_TIMEOUT_MS } from "./config";
-import { withTimeout, TimeoutError } from "./utils";
+import { TimeoutError, withTimeout } from "./utils";
 
 type Callback = () => Promise<void>;
 
