@@ -279,11 +279,6 @@ export type InitOptions = {
    * Toolbar configuration
    */
   toolbar?: ToolbarOptions;
-
-  /**
-   * Local-first definition of features.
-   */
-  features?: FeatureDefinitions;
 };
 
 const defaultConfig: Config = {
@@ -342,9 +337,7 @@ function shouldShowToolbar(opts: InitOptions) {
   if (typeof toolbarOpts === "boolean") return toolbarOpts;
   if (typeof toolbarOpts?.show === "boolean") return toolbarOpts.show;
 
-  return (
-    opts.features !== undefined && window?.location?.hostname === "localhost"
-  );
+  return window?.location?.hostname === "localhost";
 }
 
 /**
