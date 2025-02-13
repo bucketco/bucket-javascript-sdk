@@ -281,7 +281,7 @@ export type InitOptions = {
   toolbar?: ToolbarOptions;
 
   /**
-   * Local-first definition of features
+   * Local-first definition of features.
    */
   features?: FeatureDefinitions;
 };
