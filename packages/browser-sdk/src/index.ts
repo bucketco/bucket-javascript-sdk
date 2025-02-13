@@ -1,5 +1,3 @@
-// import "preact/debug";
-
 export type { Feature, InitOptions, ToolbarOptions } from "./client";
 export { BucketClient } from "./client";
 export type { BucketContext, CompanyContext, UserContext } from "./context";

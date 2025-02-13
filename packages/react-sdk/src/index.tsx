@@ -256,7 +256,7 @@ export function useTrack() {
  * ```ts
  * const requestFeedback = useRequestFeedback();
  * bucket.requestFeedback({
- *   featureId: "bucket-feature-id",
+ *   featureKey: "file-uploads",
  *   title: "How satisfied are you with file uploads?",
  * });
  * ```
@@ -276,7 +276,7 @@ export function useRequestFeedback() {
  * ```ts
  * const sendFeedback = useSendFeedback();
  * sendFeedback({
- *   featureId: "fe2323223";;
+ *   featureKey: "huddle";
  *   question: "How did you like the new huddle feature?";
  *   score: 5;
  *   comment: "I loved it!";
