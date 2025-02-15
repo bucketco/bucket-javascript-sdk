@@ -14,7 +14,7 @@ import {
 // Extending the Features interface to define the available features
 declare module "../../src" {
   interface Features {
-    huddles: boolean;
+    huddles: { optInCopy: string };
   }
 }
 
@@ -185,20 +185,27 @@ function Demos() {
   );
 }
 
-function FeatureOptIn({
+// type KeysOfValue<T, TCondition> = {
+//   [K in keyof T]: T[K] extends TCondition ? K : never;
+// }[keyof T];
+
+// type OptInFeature = KeysOfValue<Features, { optInCopy: any }>;
+
+function FeatureOptIn<TKey extends FeatureKey>({
   featureKey,
   featureName,
 }: {
-  featureKey: FeatureKey;
+  featureKey: TKey;
   featureName: string;
 }) {
   const updateUser = useUpdateUser();
   const [sendingUpdate, setSendingUpdate] = useState(false);
-  const { isEnabled } = useFeature(featureKey);
+  const { isEnabled, config } = useFeature(featureKey);
 
   return (
     <div>
       <label htmlFor="huddlesOptIn">Opt-in to {featureName} feature</label>
+      <span>{config.payload?.optInCopy ?? "Hit the checkbox to opt-in"}</span>
       <input
         disabled={sendingUpdate}
         id="huddlesOptIn"
@@ -222,12 +229,13 @@ export function App() {
     <BucketProvider
       publishableKey={publishableKey}
       feedback={{
-        enableLiveSatisfaction: true,
+        enableAutoFeedback: true,
       }}
       company={initialCompany}
       user={initialUser}
       otherContext={initialOtherContext}
       apiBaseUrl={apiBaseUrl}
+      // toolbar={true}
     >
       <Demos />
       {}

@@ -15,10 +15,15 @@ export function FeaturesTable({
   if (features.length === 0) {
     return <div style={{ color: "var(--gray500)" }}>No features found</div>;
   }
+
+  const sortedFeatures = [...features].sort((a, b) =>
+    a.inUse === b.inUse ? 0 : a.inUse ? -1 : 1,
+  );
+
   return (
     <table class="features-table">
       <tbody>
-        {features.map((feature) => (
+        {sortedFeatures.map((feature) => (
           <FeatureRow
             feature={feature}
             appBaseUrl={appBaseUrl}
@@ -41,7 +46,7 @@ function FeatureRow({
 }) {
   return (
     <tr key={feature.key}>
-      <td class="feature-name-cell">
+      <td class="feature-name-cell in-use">
         <a
           href={`${appBaseUrl}/envs/current/features/by-key/${feature.key}`}
           target="_blank"
