@@ -457,18 +457,21 @@ describe(`sends "check" events `, () => {
       expect(featureA.isEnabled).toBe(true);
 
       expect(sendCheckEventSpy).toHaveBeenCalledTimes(1);
-      expect(sendCheckEventSpy).toHaveBeenCalledWith({
-        action: "check",
-        key: "featureA",
-        value: true,
-        version: 1,
-        missingContextFields: ["field1", "field2"],
-        ruleEvaluationResults: [false, true],
-      });
+      expect(sendCheckEventSpy).toHaveBeenCalledWith(
+        {
+          action: "check-is-enabled",
+          key: "featureA",
+          value: true,
+          version: 1,
+          missingContextFields: ["field1", "field2"],
+          ruleEvaluationResults: [false, true],
+        },
+        expect.any(Function),
+      );
 
       expect(postSpy).toHaveBeenCalledWith({
         body: {
-          action: "check",
+          action: "check-is-enabled",
           evalContext: {
             company: {
               id: "cid",
@@ -543,12 +546,15 @@ describe(`sends "check" events `, () => {
       ).toHaveBeenCalledTimes(1);
       expect(
         vi.mocked(FeaturesClient.prototype.sendCheckEvent),
-      ).toHaveBeenCalledWith({
-        action: "check",
-        value: false,
-        key: "non-existent",
-        version: undefined,
-      });
+      ).toHaveBeenCalledWith(
+        {
+          action: "check-is-enabled",
+          value: false,
+          key: "non-existent",
+          version: undefined,
+        },
+        expect.any(Function),
+      );
     });
 
     it("calls client.track with the featureId", async () => {
