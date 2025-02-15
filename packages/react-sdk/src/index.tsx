@@ -128,8 +128,9 @@ export function BucketProvider({
 
     clientRef.current = client;
 
-    client.onFeaturesUpdated(() => {
-      setRawFeatures(client.getFeatures());
+    client.on({
+      type: "features-updated",
+      callback: setRawFeatures,
     });
 
     client
