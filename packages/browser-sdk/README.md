@@ -109,6 +109,7 @@ type Configuration = {
     staleTimeMs?: number; // at initialization time features are loaded from the cache unless they have gone stale. Defaults to 0 which means the cache is disabled. Increase in the case of a non-SPA
     expireTimeMs?: number; // In case we're unable to fetch features from Bucket, cached/stale features will be used instead until they expire after `expireTimeMs`. Default is 30 days
   };
+  hooks?: Hooks[] | Hooks[][]; // See the "Hooks" section below.
 };
 ```
 
@@ -307,6 +308,18 @@ bucketClient.feedback({
 If you are not using the Bucket Browser SDK, you can still submit feedback using the HTTP API.
 
 See details in [Feedback HTTP API](https://docs.bucket.co/reference/http-tracking-api#feedback)
+
+### Hooks
+
+Hooks allow for capturing various events occurring in the BucketClient. There are 5 kinds of events:
+
+- FeaturesUpdated
+- User
+- Company
+- Check
+- Track
+
+Supply a list of `Hook`s in the BucketClient constructor or use the `on()` method to add a hook after construction. See the API reference for details on each hook.
 
 ### Zero PII
 
