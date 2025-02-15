@@ -16,6 +16,7 @@ import * as feedbackLib from "./feedback/ui";
 import { ToolbarPosition } from "./toolbar/Toolbar";
 import { API_BASE_URL, APP_BASE_URL, SSE_REALTIME_BASE_URL } from "./config";
 import { BucketContext, CompanyContext, UserContext } from "./context";
+import { Hook, HooksManager } from "./hooksManager";
 import { HttpClient } from "./httpClient";
 import { Logger, loggerWithPrefix, quietConsoleLogger } from "./logger";
 import { showToolbarToggle } from "./toolbar";
@@ -279,6 +280,12 @@ export type InitOptions = {
    * Toolbar configuration
    */
   toolbar?: ToolbarOptions;
+
+  /**
+   * Hooks to be registered on initialization.
+   * Hooks are functions that are called when certain events occur.
+   */
+  hooks?: Hook[] | Hook[][];
 };
 
 const defaultConfig: Config = {
@@ -355,6 +362,8 @@ export class BucketClient {
   private readonly featuresClient: FeaturesClient;
 
   public readonly logger: Logger;
+
+  private readonly hooks: HooksManager;
 
   /**
    * Create a new BucketClient instance.
@@ -433,6 +442,11 @@ export class BucketClient {
           typeof opts.toolbar === "object" ? opts.toolbar.position : undefined,
       });
     }
+
+    this.hooks = new HooksManager();
+    opts.hooks?.flat()?.forEach((hook) => {
+      this.hooks.addHook(hook);
+    });
   }
 
   /**
@@ -461,6 +475,15 @@ export class BucketClient {
         this.logger.error("error sending company", e);
       });
     }
+  }
+
+  /**
+   * Add a hook to the client.
+   *
+   * @param hook Hook to add.
+   */
+  on(hook: Hook) {
+    this.hooks.addHook(hook);
   }
 
   /**
@@ -535,18 +558,6 @@ export class BucketClient {
   }
 
   /**
-   * Register a callback to be called when the features are updated.
-   * Features are not guaranteed to have actually changed when the callback is called.
-   *
-   * Calling `client.stop()` will remove all listeners added here.
-   *
-   * @param cb The callback to call when the update completes.
-   */
-  onFeaturesUpdated(cb: () => void) {
-    return this.featuresClient.onUpdated(cb);
-  }
-
-  /**
    * Track an event in Bucket.
    *
    * @param eventName The name of the event.
@@ -572,6 +583,13 @@ export class BucketClient {
 
     const res = await this.httpClient.post({ path: `/event`, body: payload });
     this.logger.debug(`sent event`, res);
+
+    this.hooks.triggerTrack({
+      eventName,
+      attributes,
+      user: this.context.user,
+      company: this.context.company,
+    });
     return res;
   }
 
@@ -685,6 +703,8 @@ export class BucketClient {
     const f = this.getFeatures()[key];
 
     const fClient = this.featuresClient;
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const self = this;
     const value = f?.isEnabledOverride ?? f?.isEnabled ?? false;
     const config = f?.config
       ? {
@@ -695,9 +715,9 @@ export class BucketClient {
 
     return {
       get isEnabled() {
-        fClient
+        self
           .sendCheckEvent({
-            action: "check",
+            action: "check-is-enabled",
             key,
             version: f?.targetingVersion,
             ruleEvaluationResults: f?.ruleEvaluationResults,
@@ -710,7 +730,7 @@ export class BucketClient {
         return value;
       },
       get config() {
-        fClient
+        self
           .sendCheckEvent({
             action: "check-config",
             key,
@@ -749,7 +769,9 @@ export class BucketClient {
   }
 
   sendCheckEvent(checkEvent: CheckEvent) {
-    return this.featuresClient.sendCheckEvent(checkEvent);
+    return this.featuresClient.sendCheckEvent(checkEvent, () => {
+      this.hooks.triggerCheck(checkEvent);
+    });
   }
 
   /**
@@ -787,6 +809,8 @@ export class BucketClient {
     };
     const res = await this.httpClient.post({ path: `/user`, body: payload });
     this.logger.debug(`sent user`, res);
+
+    this.hooks.triggerUser(this.context.user);
     return res;
   }
 
@@ -817,6 +841,7 @@ export class BucketClient {
 
     const res = await this.httpClient.post({ path: `/company`, body: payload });
     this.logger.debug(`sent company`, res);
+    this.hooks.triggerCompany(this.context.company);
     return res;
   }
 }
