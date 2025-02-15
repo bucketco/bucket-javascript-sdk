@@ -70,7 +70,6 @@ export type FetchedFeature = {
 };
 
 const FEATURES_UPDATED_EVENT = "features-updated";
-const CHECK_EVENT = "check";
 
 export type FetchedFeatures = Record<string, FetchedFeature | undefined>;
 
