@@ -443,9 +443,13 @@ export class BucketClient {
       });
     }
 
+    // Register hooks
     this.hooks = new HooksManager();
     opts.hooks?.flat()?.forEach((hook) => {
       this.hooks.addHook(hook);
+    });
+    this.featuresClient.onUpdated(() => {
+      this.hooks.triggerFeaturesUpdated(this.featuresClient.getFeatures());
     });
   }
 
@@ -702,7 +706,6 @@ export class BucketClient {
   getFeature(key: string): Feature {
     const f = this.getFeatures()[key];
 
-    const fClient = this.featuresClient;
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     const value = f?.isEnabledOverride ?? f?.isEnabled ?? false;

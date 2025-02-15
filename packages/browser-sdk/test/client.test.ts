@@ -74,4 +74,46 @@ describe("BucketClient", () => {
       expect(client.getFeature("featureA").isEnabled).toBe(false);
     });
   });
+
+  describe("hooks integration", () => {
+    it("calls hooks appropriately", async () => {
+      const trackHook = vi.fn();
+      const userHook = vi.fn();
+      const companyHook = vi.fn();
+      const checkHookIsEnabled = vi.fn();
+      const checkHookConfig = vi.fn();
+      const featuresUpdated = vi.fn();
+
+      client.on({ type: "track", callback: trackHook });
+      client.on({ type: "user", callback: userHook });
+      client.on({ type: "company", callback: companyHook });
+      client.on({ type: "check-config", callback: checkHookConfig });
+      client.on({ type: "check-is-enabled", callback: checkHookIsEnabled });
+      client.on({ type: "features-updated", callback: featuresUpdated });
+
+      await client.track("test-event");
+      expect(trackHook).toHaveBeenCalledWith({
+        eventName: "test-event",
+        attributes: undefined,
+        user: client["context"].user,
+        company: client["context"].company,
+      });
+
+      await client["user"]();
+      expect(userHook).toHaveBeenCalledWith(client["context"].user);
+
+      await client["company"]();
+      expect(companyHook).toHaveBeenCalledWith(client["context"].company);
+
+      client.getFeature("featureA").isEnabled;
+      expect(checkHookIsEnabled).toHaveBeenCalled();
+
+      client.getFeature("featureA").config;
+      expect(checkHookConfig).toHaveBeenCalled();
+
+      expect(featuresUpdated).not.toHaveBeenCalled();
+      await client.updateOtherContext({ key: "value" });
+      expect(featuresUpdated).toHaveBeenCalled();
+    });
+  });
 });
