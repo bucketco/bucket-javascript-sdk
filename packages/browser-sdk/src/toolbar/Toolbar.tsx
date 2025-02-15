@@ -15,6 +15,7 @@ export type FeatureItem = {
   key: string;
   localOverride: boolean | null;
   isEnabled: boolean;
+  inUse: boolean;
 };
 export interface ToolbarPosition {
   placement: DialogPlacement;
@@ -25,6 +26,7 @@ type Feature = {
   key: string;
   isEnabled: boolean;
   localOverride: boolean | null;
+  inUse: boolean;
 };
 
 export default function Toolbar({
@@ -46,8 +48,9 @@ export default function Toolbar({
           (feature) =>
             ({
               key: feature.key,
-              localOverride: bucketClient.getFeatureOverride(feature?.key),
+              localOverride: feature.isEnabledOverride,
               isEnabled: feature.isEnabled,
+              inUse: feature.inUse,
             }) satisfies FeatureItem,
         ),
     );
@@ -101,9 +104,9 @@ export default function Toolbar({
         <DialogContent>
           <FeaturesTable
             features={searchedFeatures}
-            setEnabledOverride={bucketClient.setFeatureOverride.bind(
-              bucketClient,
-            )}
+            setEnabledOverride={(key: string, value: boolean | null) =>
+              bucketClient.getFeature(key).setIsEnabledOverride(value)
+            }
             appBaseUrl={appBaseUrl}
           />
         </DialogContent>

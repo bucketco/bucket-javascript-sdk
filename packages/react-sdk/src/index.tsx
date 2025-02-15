@@ -206,6 +206,15 @@ export function useFeature<TKey extends FeatureKey>(
   const requestFeedback = (opts: RequestFeedbackOptions) =>
     client?.requestFeedback({ ...opts, featureKey: key });
 
+  // mark the feature as in use on the page
+  useEffect(() => {
+    client?.getFeature(key).setInUse(true);
+
+    return () => {
+      client?.getFeature(key).setInUse(false);
+    };
+  }, [key, client]);
+
   if (isLoading || !client) {
     return {
       isLoading,
