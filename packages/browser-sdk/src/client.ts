@@ -778,10 +778,10 @@ export class BucketClient {
       },
       isEnabledOverride: this.featuresClient.getFeatureOverride(key),
       setIsEnabledOverride(isEnabled: boolean | null) {
-        fClient.setFeatureOverride(key, isEnabled);
+        self.featuresClient.setFeatureOverride(key, isEnabled);
       },
       setInUse(inUse: boolean) {
-        fClient.setInUse(key, inUse);
+        self.featuresClient.setInUse(key, inUse);
       },
     };
   }

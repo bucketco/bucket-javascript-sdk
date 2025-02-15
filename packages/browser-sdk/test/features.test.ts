@@ -265,6 +265,7 @@ describe("FeaturesClient", () => {
         key: "featureB",
         targetingVersion: 1,
         isEnabledOverride: null,
+        inUse: false,
       } satisfies RawFeature,
     });
 
@@ -304,6 +305,7 @@ describe("FeaturesClient", () => {
           targetingVersion: 1,
           key: "featureA",
           isEnabledOverride: null,
+          inUse: false,
         } satisfies RawFeature,
       }),
     );
