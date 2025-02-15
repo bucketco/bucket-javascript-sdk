@@ -79,6 +79,11 @@ export type RawFeature = FetchedFeature & {
    * If not null, the result is being overridden locally
    */
   isEnabledOverride: boolean | null;
+
+  /**
+   * If not null, the feature is in use
+   */
+  inUse: boolean;
 };
 
 export type RawFeatures = Record<string, RawFeature>;
@@ -185,6 +190,7 @@ const localStorageFetchedFeaturesKey = `__bucket_fetched_features`;
 const localStorageOverridesKey = `__bucket_overrides`;
 
 type OverridesFeatures = Record<string, boolean | null>;
+type InUseFeatures = Record<string, boolean | null>;
 
 function setOverridesCache(overrides: OverridesFeatures) {
   localStorage.setItem(localStorageOverridesKey, JSON.stringify(overrides));
@@ -209,6 +215,8 @@ export class FeaturesClient {
   private cache: FeatureCache;
   private fetchedFeatures: FetchedFeatures;
   private featureOverrides: OverridesFeatures = {};
+
+  private featureInUse: InUseFeatures = {};
 
   private features: RawFeatures = {};
 
@@ -399,6 +407,16 @@ export class FeaturesClient {
       mergedFeatures[key] = {
         ...fetchedFeature,
         isEnabledOverride,
+        inUse: false,
+      };
+    }
+
+    for (const key in this.featureInUse) {
+      const inUse = this.featureInUse[key] ?? false;
+      mergedFeatures[key] = {
+        ...mergedFeatures[key],
+        key,
+        inUse,
       };
     }
 
@@ -531,5 +549,10 @@ export class FeaturesClient {
 
   getFeatureOverride(key: string): boolean | null {
     return this.featureOverrides[key] ?? null;
+  }
+
+  setInUse(key: string, value: boolean) {
+    this.featureInUse[key] = value;
+    this.triggerFeaturesChanged();
   }
 }
