@@ -85,7 +85,7 @@ describe("BucketClient", () => {
       const featuresUpdated = vi.fn();
 
       client.on("track", trackHook);
-      client.on("user", userhook);
+      client.on("user", userHook);
       client.on("company", companyHook);
       client.on("check-config", checkHookConfig);
       client.on("check-is-enabled", checkHookIsEnabled);

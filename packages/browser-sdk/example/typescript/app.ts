@@ -16,6 +16,12 @@ const bucket = new BucketClient({
     show: true,
     position: { placement: "bottom-right" },
   },
+  hooks: [
+    {
+      type: "check-is-enabled",
+      handler: (check: CheckEvent) => console.log("Check event for", check.key),
+    },
+  ],
 });
 
 document
@@ -34,9 +40,6 @@ bucket.initialize().then(() => {
   if (loadingElem) loadingElem.style.display = "none";
 });
 
-bucket.on("check-is-enabled", (check: CheckEvent) =>
-  console.log(`Check event for ${check.key}`),
-);
 bucket.on("features-updated", (features: RawFeatures) => {
   const { isEnabled } = features[featureKey];
 
