@@ -322,7 +322,7 @@ Hooks allow for capturing various events occurring in the BucketClient. There ar
 Supply a list of `Hook`s in the BucketClient constructor or use the `on()` method to add a hook after construction. See the API reference for details on each hook.
 
 ```ts
-import { BucketClient, CheckEvent } from "@bucketco/browser-sdk";
+import { BucketClient, CheckEvent, RawFeatures } from "@bucketco/browser-sdk";
 
 const client = new BucketClient({
   // other options...
