@@ -1,10 +1,8 @@
-import { BucketClient } from "../../src";
+import { BucketClient, CheckEvent, RawFeatures } from "../../src";
 
 const urlParams = new URLSearchParams(window.location.search);
 const publishableKey = urlParams.get("publishableKey");
 const featureKey = urlParams.get("featureKey") ?? "huddles";
-
-const featureList = ["huddles"];
 
 if (!publishableKey) {
   throw Error("publishableKey is missing");
@@ -18,7 +16,6 @@ const bucket = new BucketClient({
     show: true,
     position: { placement: "bottom-right" },
   },
-  featureList,
 });
 
 document
@@ -37,15 +34,23 @@ bucket.initialize().then(() => {
   if (loadingElem) loadingElem.style.display = "none";
 });
 
-bucket.onFeaturesUpdated(() => {
-  const { isEnabled } = bucket.getFeature("huddles");
+const checkHook = {
+  type: "check-is-enabled",
+  callback: (check: CheckEvent) => console.log(`Check event for ${check.key}`),
+};
 
-  const startHuddleElem = document.getElementById("start-huddle");
-  if (isEnabled) {
-    // show the start-huddle button
-    if (startHuddleElem) startHuddleElem.style.display = "block";
-  } else {
-    // hide the start-huddle button
-    if (startHuddleElem) startHuddleElem.style.display = "none";
-  }
+bucket.on({
+  type: "features-updated",
+  callback: (features: RawFeatures) => {
+    const { isEnabled } = features[featureKey];
+
+    const startHuddleElem = document.getElementById("start-huddle");
+    if (isEnabled) {
+      // show the start-huddle button
+      if (startHuddleElem) startHuddleElem.style.display = "block";
+    } else {
+      // hide the start-huddle button
+      if (startHuddleElem) startHuddleElem.style.display = "none";
+    }
+  },
 });

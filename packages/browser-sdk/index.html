@@ -36,7 +36,6 @@
 
     <script type="module">
       import { BucketClient } from "./src/index.ts";
-      const featureList = ["huddles"];
 
       window.bucket = new BucketClient({
         publishableKey,
@@ -48,7 +47,6 @@
             placement: "bottom-right",
           },
         },
-        featureList,
       });
 
       bucket.initialize().then(() => {
@@ -56,15 +54,27 @@
         document.getElementById("loading").style.display = "none";
       });
 
-      bucket.onFeaturesUpdated(() => {
-        const { isEnabled } = bucket.getFeature("huddles");
-        if (isEnabled) {
-          // show the start-huddle button
-          document.getElementById("start-huddle").style.display = "block";
-        } else {
-          // hide the start-huddle button
-          document.getElementById("start-huddle").style.display = "none";
-        }
+      const checkHook = {
+        type: "check-is-enabled",
+        callback: (check) => console.log(`Check event for ${check.key}`),
+      };
+      bucket.on(checkHook);
+
+      bucket.on({
+        type: "features-updated",
+        callback: (features) => {
+          console.log("Features updated");
+          const feature = bucket.getFeature(featureKey);
+
+          const startHuddleElem = document.getElementById("start-huddle");
+          if (feature.isEnabled) {
+            // show the start-huddle button
+            if (startHuddleElem) startHuddleElem.style.display = "block";
+          } else {
+            // hide the start-huddle button
+            if (startHuddleElem) startHuddleElem.style.display = "none";
+          }
+        },
       });
     </script>
   </body>

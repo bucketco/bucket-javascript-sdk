@@ -33,7 +33,7 @@ export type FeaturesUpdatedHook = {
   callback: (features: RawFeatures) => void;
 };
 
-type trackEvent = {
+type TrackEvent = {
   user: UserContext;
   company?: CompanyContext;
   eventName: string;
@@ -45,7 +45,7 @@ type trackEvent = {
  */
 export type TrackHook = {
   type: "track";
-  callback: (trackEvent: trackEvent) => void;
+  callback: (trackEvent: TrackEvent) => void;
 };
 
 /**
@@ -99,7 +99,7 @@ export class HooksManager {
     this.hooks["company"].forEach((hook) => hook.callback(company));
   }
 
-  triggerTrack(args: trackEvent): void {
+  triggerTrack(args: TrackEvent): void {
     this.hooks["track"].forEach((hook) => hook.callback(args));
   }
 }
