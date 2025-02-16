@@ -28,5 +28,13 @@ export type {
   OnScoreSubmitResult,
   OpenFeedbackFormOptions,
 } from "./feedback/ui/types";
+export type {
+  CheckHook,
+  CompanyHook,
+  FeaturesUpdatedHook,
+  Hook,
+  TrackHook,
+  UserHook,
+} from "./hooksManager";
 export type { Logger } from "./logger";
 export { feedbackContainerId, propagatedEvents } from "./ui/constants";
