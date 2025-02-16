@@ -321,6 +321,22 @@ Hooks allow for capturing various events occurring in the BucketClient. There ar
 
 Supply a list of `Hook`s in the BucketClient constructor or use the `on()` method to add a hook after construction. See the API reference for details on each hook.
 
+```typescript
+import { BucketClient, CheckEvent } from "@bucketco/browser-sdk"
+const checkHook = {
+  type: "check-is-enabled",
+  callback: (check: CheckEvent) => console.log(`Check event for ${check.key}`)
+};
+
+const client = new BucketClient({
+  ...
+  hooks: [checkHook]
+})
+
+// or add the hooks after construction:
+client.on(checkHook)
+```
+
 ### Zero PII
 
 The Bucket Browser SDK doesn't collect any metadata and HTTP IP addresses are _not_ being stored.
