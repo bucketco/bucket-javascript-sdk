@@ -34,23 +34,18 @@ bucket.initialize().then(() => {
   if (loadingElem) loadingElem.style.display = "none";
 });
 
-const checkHook = {
-  type: "check-is-enabled",
-  callback: (check: CheckEvent) => console.log(`Check event for ${check.key}`),
-};
+bucket.on("check-is-enabled", (check: CheckEvent) =>
+  console.log(`Check event for ${check.key}`),
+);
+bucket.on("features-updated", (features: RawFeatures) => {
+  const { isEnabled } = features[featureKey];
 
-bucket.on({
-  type: "features-updated",
-  callback: (features: RawFeatures) => {
-    const { isEnabled } = features[featureKey];
-
-    const startHuddleElem = document.getElementById("start-huddle");
-    if (isEnabled) {
-      // show the start-huddle button
-      if (startHuddleElem) startHuddleElem.style.display = "block";
-    } else {
-      // hide the start-huddle button
-      if (startHuddleElem) startHuddleElem.style.display = "none";
-    }
-  },
+  const startHuddleElem = document.getElementById("start-huddle");
+  if (isEnabled) {
+    // show the start-huddle button
+    if (startHuddleElem) startHuddleElem.style.display = "block";
+  } else {
+    // hide the start-huddle button
+    if (startHuddleElem) startHuddleElem.style.display = "none";
+  }
 });

@@ -295,7 +295,7 @@ Bucket can assist you with collecting your user's feedback by offering a pre-bui
 
 Feedback can be submitted to Bucket using the SDK:
 
-```js
+```ts
 bucketClient.feedback({
   featureId: "my_feature_id", // String (required), copy from Feature feedback tab
   score: 5, // Number: 1-5 (optional)
@@ -321,20 +321,24 @@ Hooks allow for capturing various events occurring in the BucketClient. There ar
 
 Supply a list of `Hook`s in the BucketClient constructor or use the `on()` method to add a hook after construction. See the API reference for details on each hook.
 
-```typescript
-import { BucketClient, CheckEvent } from "@bucketco/browser-sdk"
-const checkHook = {
-  type: "check-is-enabled",
-  callback: (check: CheckEvent) => console.log(`Check event for ${check.key}`)
-};
+```ts
+import { BucketClient, CheckEvent } from "@bucketco/browser-sdk";
 
 const client = new BucketClient({
-  ...
-  hooks: [checkHook]
-})
+  // other options...
+  hooks: [
+    {
+      type: "features-updated",
+      handler: (features: RawFeatures) =>
+        console.log(`features updated: ${features}`),
+    },
+  ],
+});
 
 // or add the hooks after construction:
-client.on(checkHook)
+client.on("check-is-enabled", (check: CheckEvent) =>
+  console.log(`Check event ${check}`),
+);
 ```
 
 ### Zero PII
