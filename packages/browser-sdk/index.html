@@ -54,27 +54,22 @@
         document.getElementById("loading").style.display = "none";
       });
 
-      const checkHook = {
-        type: "check-is-enabled",
-        callback: (check) => console.log(`Check event for ${check.key}`),
-      };
-      bucket.on(checkHook);
+      bucket.on("check-is-enabled", (check) =>
+        console.log(`Check event for ${check.key}`),
+      );
 
-      bucket.on({
-        type: "features-updated",
-        callback: (features) => {
-          console.log("Features updated");
-          const feature = bucket.getFeature(featureKey);
+      bucket.on("features-updated", (features) => {
+        console.log("Features updated");
+        const feature = bucket.getFeature(featureKey);
 
-          const startHuddleElem = document.getElementById("start-huddle");
-          if (feature.isEnabled) {
-            // show the start-huddle button
-            if (startHuddleElem) startHuddleElem.style.display = "block";
-          } else {
-            // hide the start-huddle button
-            if (startHuddleElem) startHuddleElem.style.display = "none";
-          }
-        },
+        const startHuddleElem = document.getElementById("start-huddle");
+        if (feature.isEnabled) {
+          // show the start-huddle button
+          if (startHuddleElem) startHuddleElem.style.display = "block";
+        } else {
+          // hide the start-huddle button
+          if (startHuddleElem) startHuddleElem.style.display = "none";
+        }
       });
     </script>
   </body>
