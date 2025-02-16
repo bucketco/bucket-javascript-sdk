@@ -58,9 +58,9 @@
         type: "check-is-enabled",
         callback: (check) => console.log(`Check event for ${check.key}`),
       };
-      bucket.on(checkHook);
+      bucket.addHook(checkHook);
 
-      bucket.on({
+      bucket.addHook({
         type: "features-updated",
         callback: (features) => {
           console.log("Features updated");

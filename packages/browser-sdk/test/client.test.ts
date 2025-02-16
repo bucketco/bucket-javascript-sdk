@@ -84,12 +84,12 @@ describe("BucketClient", () => {
       const checkHookConfig = vi.fn();
       const featuresUpdated = vi.fn();
 
-      client.on({ type: "track", callback: trackHook });
-      client.on({ type: "user", callback: userHook });
-      client.on({ type: "company", callback: companyHook });
-      client.on({ type: "check-config", callback: checkHookConfig });
-      client.on({ type: "check-is-enabled", callback: checkHookIsEnabled });
-      client.on({ type: "features-updated", callback: featuresUpdated });
+      client.on("track", trackHook);
+      client.on("user", userhook);
+      client.on("company", companyHook);
+      client.on("check-config", checkHookConfig);
+      client.on("check-is-enabled", checkHookIsEnabled);
+      client.on("features-updated", featuresUpdated);
 
       await client.track("test-event");
       expect(trackHook).toHaveBeenCalledWith({
