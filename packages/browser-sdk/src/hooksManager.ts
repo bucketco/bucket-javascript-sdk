@@ -2,35 +2,20 @@ import { CheckEvent, RawFeatures } from "./feature/features";
 import { CompanyContext, UserContext } from "./context";
 
 /**
- * Hook for check event.
+ * @internal
  */
-export type CheckHook = {
-  type: "check-is-enabled" | "check-config";
-  callback: (checkEvent: CheckEvent) => void;
-};
+export interface HookArgs {
+  "check-config": CheckEvent;
+  "check-is-enabled": CheckEvent;
+  "features-updated": RawFeatures;
+  user: UserContext;
+  company: CompanyContext;
+  track: TrackEvent;
+}
 
-/**
- * Hook for company update event.
- */
-export type CompanyHook = {
-  type: "company";
-  callback: (company: CompanyContext) => void;
-};
-
-/**
- * Hook for user update event.
- */
-export type UserHook = {
-  type: "user";
-  callback: (user: UserContext) => void;
-};
-
-/**
- * Hook for features updated event.
- */
-export type FeaturesUpdatedHook = {
-  type: "features-updated";
-  callback: (features: RawFeatures) => void;
+export type Hook<TType extends keyof HookArgs> = {
+  type: TType;
+  handler: (arg: HookArgs[TType]) => void;
 };
 
 type TrackEvent = {
@@ -41,65 +26,37 @@ type TrackEvent = {
 };
 
 /**
- * Hook for track event.
- */
-export type TrackHook = {
-  type: "track";
-  callback: (trackEvent: TrackEvent) => void;
-};
-
-/**
- * Hook definition.
- */
-export type Hook =
-  | CheckHook
-  | FeaturesUpdatedHook
-  | UserHook
-  | CompanyHook
-  | TrackHook;
-
-/**
  * Hooks manager.
  * @internal
  */
 export class HooksManager {
   private hooks: {
-    "check-config": CheckHook[];
-    "check-is-enabled": CheckHook[];
-    "features-updated": FeaturesUpdatedHook[];
-    user: UserHook[];
-    company: CompanyHook[];
-    track: TrackHook[];
+    "check-is-enabled": ((arg0: CheckEvent) => void)[];
+    "check-config": ((arg0: CheckEvent) => void)[];
+    "features-updated": ((arg0: RawFeatures) => void)[];
+    user: ((arg0: UserContext) => void)[];
+    company: ((arg0: CompanyContext) => void)[];
+    track: ((arg0: TrackEvent) => void)[];
   } = {
-    "check-config": [],
     "check-is-enabled": [],
+    "check-config": [],
     "features-updated": [],
     user: [],
     company: [],
     track: [],
   };
 
-  addHook(hook: Hook): void {
-    (this.hooks[hook.type] as Hook[]).push(hook);
+  addHook<THookType extends keyof HookArgs>(
+    event: THookType,
+    cb: (arg0: HookArgs[THookType]) => void,
+  ): void {
+    (this.hooks[event] as any[]).push(cb);
   }
 
-  triggerCheck(checkEvent: CheckEvent): void {
-    this.hooks[checkEvent.action].forEach((hook) => hook.callback(checkEvent));
-  }
-
-  triggerFeaturesUpdated(features: RawFeatures): void {
-    this.hooks["features-updated"].forEach((hook) => hook.callback(features));
-  }
-
-  triggerUser(user: UserContext): void {
-    this.hooks["user"].forEach((hook) => hook.callback(user));
-  }
-
-  triggerCompany(company: CompanyContext): void {
-    this.hooks["company"].forEach((hook) => hook.callback(company));
-  }
-
-  triggerTrack(args: TrackEvent): void {
-    this.hooks["track"].forEach((hook) => hook.callback(args));
+  trigger<THookType extends keyof HookArgs>(
+    event: THookType,
+    arg: HookArgs[THookType],
+  ): void {
+    this.hooks[event].forEach((hook) => hook(arg as any));
   }
 }

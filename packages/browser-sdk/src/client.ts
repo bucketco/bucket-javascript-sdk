@@ -16,7 +16,7 @@ import * as feedbackLib from "./feedback/ui";
 import { ToolbarPosition } from "./toolbar/Toolbar";
 import { API_BASE_URL, APP_BASE_URL, SSE_REALTIME_BASE_URL } from "./config";
 import { BucketContext, CompanyContext, UserContext } from "./context";
-import { Hook, HooksManager } from "./hooksManager";
+import { Hook, HookArgs, HooksManager } from "./hooksManager";
 import { HttpClient } from "./httpClient";
 import { Logger, loggerWithPrefix, quietConsoleLogger } from "./logger";
 import { showToolbarToggle } from "./toolbar";
@@ -446,10 +446,10 @@ export class BucketClient {
     // Register hooks
     this.hooks = new HooksManager();
     opts.hooks?.flat()?.forEach((hook) => {
-      this.hooks.addHook(hook);
+      this.hooks.addHook(hook.type, hook.handler);
     });
     this.featuresClient.onUpdated(() => {
-      this.hooks.triggerFeaturesUpdated(this.featuresClient.getFeatures());
+      this.hooks.trigger("features-updated", this.featuresClient.getFeatures());
     });
   }
 
@@ -486,8 +486,11 @@ export class BucketClient {
    *
    * @param hook Hook to add.
    */
-  on(hook: Hook) {
-    this.hooks.addHook(hook);
+  on<THookType extends keyof HookArgs>(
+    type: THookType,
+    handler: (args0: HookArgs[THookType]) => void,
+  ) {
+    this.hooks.addHook(type, handler);
   }
 
   /**
@@ -844,7 +847,7 @@ export class BucketClient {
 
     const res = await this.httpClient.post({ path: `/company`, body: payload });
     this.logger.debug(`sent company`, res);
-    this.hooks.triggerCompany(this.context.company);
+    this.hooks.trigger("company", this.context.company);
     return res;
   }
 }
