@@ -1,10 +1,8 @@
-import { BucketClient } from "../../src";
+import { BucketClient, CheckEvent, RawFeatures } from "../../src";
 
 const urlParams = new URLSearchParams(window.location.search);
 const publishableKey = urlParams.get("publishableKey");
 const featureKey = urlParams.get("featureKey") ?? "huddles";
-
-const featureList = ["huddles"];
 
 if (!publishableKey) {
   throw Error("publishableKey is missing");
@@ -18,7 +16,6 @@ const bucket = new BucketClient({
     show: true,
     position: { placement: "bottom-right" },
   },
-  featureList,
 });
 
 document
@@ -37,8 +34,11 @@ bucket.initialize().then(() => {
   if (loadingElem) loadingElem.style.display = "none";
 });
 
-bucket.onFeaturesUpdated(() => {
-  const { isEnabled } = bucket.getFeature("huddles");
+bucket.on("check-is-enabled", (check: CheckEvent) =>
+  console.log(`Check event for ${check.key}`),
+);
+bucket.on("features-updated", (features: RawFeatures) => {
+  const { isEnabled } = features[featureKey];
 
   const startHuddleElem = document.getElementById("start-huddle");
   if (isEnabled) {
