@@ -16,14 +16,10 @@ export function FeaturesTable({
     return <div style={{ color: "var(--gray500)" }}>No features found</div>;
   }
 
-  const sortedFeatures = [...features].sort((a, b) =>
-    a.inUse === b.inUse ? 0 : a.inUse ? -1 : 1,
-  );
-
   return (
     <table class="features-table">
       <tbody>
-        {sortedFeatures.map((feature) => (
+        {features.map((feature) => (
           <FeatureRow
             feature={feature}
             appBaseUrl={appBaseUrl}

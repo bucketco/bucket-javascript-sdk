@@ -73,6 +73,19 @@ export default function Toolbar({
   const searchedFeatures =
     search === null ? features : features.filter((f) => f.key.includes(search));
 
+  // if there no search ongoing, sort by inUse
+  if (search === null) {
+    searchedFeatures.sort((a, b) => {
+      if (a.inUse && !b.inUse) {
+        return -1;
+      }
+      if (!a.inUse && b.inUse) {
+        return 1;
+      }
+      return a.key.localeCompare(b.key);
+    });
+  }
+
   const appBaseUrl = bucketClient.getConfig().appBaseUrl;
 
   const { isOpen, close, toggle } = useDialog();
