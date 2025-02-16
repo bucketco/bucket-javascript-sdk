@@ -446,7 +446,7 @@ export class BucketClient {
     // Register hooks
     this.hooks = new HooksManager();
     opts.hooks?.flat()?.forEach((hook) => {
-      this.hooks.addHook(hook.type, hook.handler);
+      this.hooks.addHook(hook.type, hook.handler as any);
     });
     this.featuresClient.onUpdated(() => {
       this.hooks.trigger("features-updated", this.featuresClient.getFeatures());
@@ -591,7 +591,7 @@ export class BucketClient {
     const res = await this.httpClient.post({ path: `/event`, body: payload });
     this.logger.debug(`sent event`, res);
 
-    this.hooks.triggerTrack({
+    this.hooks.trigger("track", {
       eventName,
       attributes,
       user: this.context.user,
@@ -776,7 +776,7 @@ export class BucketClient {
 
   sendCheckEvent(checkEvent: CheckEvent) {
     return this.featuresClient.sendCheckEvent(checkEvent, () => {
-      this.hooks.triggerCheck(checkEvent);
+      this.hooks.trigger(checkEvent.action, checkEvent);
     });
   }
 
@@ -816,7 +816,7 @@ export class BucketClient {
     const res = await this.httpClient.post({ path: `/user`, body: payload });
     this.logger.debug(`sent user`, res);
 
-    this.hooks.triggerUser(this.context.user);
+    this.hooks.trigger("user", this.context.user);
     return res;
   }
 
