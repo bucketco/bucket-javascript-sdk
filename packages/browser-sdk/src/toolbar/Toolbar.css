@@ -161,7 +161,3 @@
     box-shadow: var(--border-color) -1px 1px 1px 0px;
   }
 }
-
-.in-use-show-all {
-  cursor: pointer;
-}
