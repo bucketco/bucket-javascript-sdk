@@ -15,6 +15,7 @@ export function FeaturesTable({
   if (features.length === 0) {
     return <div style={{ color: "var(--gray500)" }}>No features found</div>;
   }
+
   return (
     <table class="features-table">
       <tbody>
@@ -40,7 +41,7 @@ function FeatureRow({
   setEnabledOverride: (key: string, value: boolean | null) => void;
 }) {
   return (
-    <tr key={feature.key}>
+    <tr key={feature.key} class={feature.inUse ? "in-use" : ""}>
       <td class="feature-name-cell">
         <a
           href={`${appBaseUrl}/envs/current/features/by-key/${feature.key}`}

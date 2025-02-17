@@ -1,4 +1,4 @@
-import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, test, vi } from "vitest";
 
 import { version } from "../package.json";
 import {
@@ -16,6 +16,7 @@ import { testLogger } from "./testLogger";
 beforeEach(() => {
   vi.useFakeTimers();
   vi.resetAllMocks();
+  localStorage.clear();
 });
 
 afterAll(() => {
@@ -157,6 +158,7 @@ describe("FeaturesClient", () => {
         config: undefined,
         key: "huddle",
         isEnabledOverride: null,
+        inUse: false,
       },
     });
   });
@@ -184,12 +186,14 @@ describe("FeaturesClient", () => {
         config: { key: "john", payload: { something: "else" } },
         key: "huddle",
         isEnabledOverride: null,
+        inUse: false,
       },
       zoom: {
         isEnabled: true,
         config: undefined,
         key: "zoom",
         isEnabledOverride: null,
+        inUse: false,
       },
     });
   });
@@ -265,6 +269,7 @@ describe("FeaturesClient", () => {
         key: "featureB",
         targetingVersion: 1,
         isEnabledOverride: null,
+        inUse: false,
       } satisfies RawFeature,
     });
 
@@ -304,6 +309,7 @@ describe("FeaturesClient", () => {
           targetingVersion: 1,
           key: "featureA",
           isEnabledOverride: null,
+          inUse: false,
         } satisfies RawFeature,
       }),
     );
@@ -340,7 +346,6 @@ describe("FeaturesClient", () => {
   test("handled overrides", async () => {
     // change the response so we can validate that we'll serve the stale cache
     const { newFeaturesClient } = featuresClientFactory();
-    // localStorage.clear();
     const client = newFeaturesClient();
     await client.initialize();
 
@@ -365,7 +370,6 @@ describe("FeaturesClient", () => {
     // change the response so we can validate that we'll serve the stale cache
     const { newFeaturesClient } = featuresClientFactory();
 
-    // localStorage.clear();
     const client = newFeaturesClient(undefined);
     await client.initialize();
 
@@ -380,6 +384,30 @@ describe("FeaturesClient", () => {
     client.setFeatureOverride("featureC", true);
 
     expect(updated).toBe(true);
-    expect(client.getFeatures().featureC).toBeUndefined();
+    expect(client.getFeatures().featureC).toEqual({
+      isEnabled: false,
+      isEnabledOverride: true,
+      key: "featureC",
+      inUse: false,
+    } satisfies RawFeature);
+  });
+
+  describe("in use", () => {
+    it("handled in use", async () => {
+      // change the response so we can validate that we'll serve the stale cache
+      const { newFeaturesClient } = featuresClientFactory();
+
+      const client = newFeaturesClient(undefined);
+      await client.initialize();
+
+      client.setInUse("featureC", true);
+      expect(client.getFeatures().featureC.isEnabled).toBe(false);
+      expect(client.getFeatures().featureC.isEnabledOverride).toBe(null);
+
+      client.setFeatureOverride("featureC", true);
+
+      expect(client.getFeatures().featureC.isEnabled).toBe(false);
+      expect(client.getFeatures().featureC.isEnabledOverride).toBe(true);
+    });
   });
 });
