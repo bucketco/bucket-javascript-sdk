@@ -328,7 +328,7 @@ const client = new BucketClient({
 });
 
 // or add the hooks after construction:
-const unsub = client.on("isEnabledCheck", (check: CheckEvent) =>
+const unsub = client.on("enabledCheck", (check: CheckEvent) =>
   console.log(`Check event ${check}`),
 );
 // use the returned function to unsubscribe, or call `off()` with the same arguments again
