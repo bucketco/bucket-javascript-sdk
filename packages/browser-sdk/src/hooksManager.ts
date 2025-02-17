@@ -12,12 +12,6 @@ export interface HookArgs {
   company: CompanyContext;
   track: TrackEvent;
 }
-export type Hook = {
-  [K in keyof HookArgs]: {
-    type: K;
-    handler: (arg0: HookArgs[K]) => void;
-  };
-}[keyof HookArgs];
 
 type TrackEvent = {
   user: UserContext;
