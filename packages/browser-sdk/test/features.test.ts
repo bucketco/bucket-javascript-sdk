@@ -16,6 +16,7 @@ import { testLogger } from "./testLogger";
 beforeEach(() => {
   vi.useFakeTimers();
   vi.resetAllMocks();
+  localStorage.clear();
 });
 
 afterAll(() => {
@@ -157,6 +158,7 @@ describe("FeaturesClient", () => {
         config: undefined,
         key: "huddle",
         isEnabledOverride: null,
+        inUse: false,
       },
     });
   });
@@ -184,12 +186,14 @@ describe("FeaturesClient", () => {
         config: { key: "john", payload: { something: "else" } },
         key: "huddle",
         isEnabledOverride: null,
+        inUse: false,
       },
       zoom: {
         isEnabled: true,
         config: undefined,
         key: "zoom",
         isEnabledOverride: null,
+        inUse: false,
       },
     });
   });
@@ -342,7 +346,6 @@ describe("FeaturesClient", () => {
   test("handled overrides", async () => {
     // change the response so we can validate that we'll serve the stale cache
     const { newFeaturesClient } = featuresClientFactory();
-    // localStorage.clear();
     const client = newFeaturesClient();
     await client.initialize();
 
@@ -367,7 +370,6 @@ describe("FeaturesClient", () => {
     // change the response so we can validate that we'll serve the stale cache
     const { newFeaturesClient } = featuresClientFactory();
 
-    // localStorage.clear();
     const client = newFeaturesClient(undefined);
     await client.initialize();
 
@@ -382,7 +384,12 @@ describe("FeaturesClient", () => {
     client.setFeatureOverride("featureC", true);
 
     expect(updated).toBe(true);
-    expect(client.getFeatures().featureC).toBeUndefined();
+    expect(client.getFeatures().featureC).toEqual({
+      isEnabled: false,
+      isEnabledOverride: true,
+      key: "featureC",
+      inUse: false,
+    } satisfies RawFeature);
   });
 
   describe("in use", () => {
@@ -390,7 +397,6 @@ describe("FeaturesClient", () => {
       // change the response so we can validate that we'll serve the stale cache
       const { newFeaturesClient } = featuresClientFactory();
 
-      // localStorage.clear();
       const client = newFeaturesClient(undefined);
       await client.initialize();
 
