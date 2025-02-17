@@ -310,7 +310,7 @@ See details in [Feedback HTTP API](https://docs.bucket.co/reference/http-trackin
 
 ### Event listeners
 
-Event listeners allow for capturing various events occurring in the `BucketClient`. This is useful to build certain integration with other systems. There are 5 kinds of events:
+Event listeners allow for capturing various events occurring in the `BucketClient`. This is useful to build integrations with other system or for various debugging purposes. There are 5 kinds of events:
 
 - FeaturesUpdated
 - User
