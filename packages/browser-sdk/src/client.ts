@@ -440,7 +440,7 @@ export class BucketClient {
     // Register hooks
     this.hooks = new HooksManager();
     this.featuresClient.onUpdated(() => {
-      this.hooks.trigger("features-updated", this.featuresClient.getFeatures());
+      this.hooks.trigger("featuresUpdated", this.featuresClient.getFeatures());
     });
   }
 
@@ -780,7 +780,10 @@ export class BucketClient {
 
   sendCheckEvent(checkEvent: CheckEvent) {
     return this.featuresClient.sendCheckEvent(checkEvent, () => {
-      this.hooks.trigger(checkEvent.action, checkEvent);
+      this.hooks.trigger(
+        checkEvent.action == "check-config" ? "checkConfig" : "checkIsEnabled",
+        checkEvent,
+      );
     });
   }
 

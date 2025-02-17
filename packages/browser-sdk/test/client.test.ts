@@ -87,9 +87,9 @@ describe("BucketClient", () => {
       client.on("track", trackHook);
       client.on("user", userHook);
       client.on("company", companyHook);
-      client.on("check-config", checkHookConfig);
-      client.on("check-is-enabled", checkHookIsEnabled);
-      client.on("features-updated", featuresUpdated);
+      client.on("checkConfig", checkHookConfig);
+      client.on("checkIsEnabled", checkHookIsEnabled);
+      client.on("featuresUpdated", featuresUpdated);
 
       await client.track("test-event");
       expect(trackHook).toHaveBeenCalledWith({
@@ -119,9 +119,9 @@ describe("BucketClient", () => {
       client.off("track", trackHook);
       client.off("user", userHook);
       client.off("company", companyHook);
-      client.off("check-config", checkHookConfig);
-      client.off("check-is-enabled", checkHookIsEnabled);
-      client.off("features-updated", featuresUpdated);
+      client.off("checkConfig", checkHookConfig);
+      client.off("checkIsEnabled", checkHookIsEnabled);
+      client.off("featuresUpdated", featuresUpdated);
 
       // Reset mocks
       trackHook.mockReset();

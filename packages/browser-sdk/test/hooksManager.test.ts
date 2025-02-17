@@ -13,40 +13,40 @@ describe("HookManager", () => {
 
   it("should add and trigger check-is-enabled hooks", () => {
     const callback = vi.fn();
-    hookManager.addHook("check-is-enabled", callback);
+    hookManager.addHook("checkIsEnabled", callback);
 
     const checkEvent: CheckEvent = {
       action: "check-is-enabled",
       key: "test-key",
       value: true,
     };
-    hookManager.trigger("check-is-enabled", checkEvent);
+    hookManager.trigger("checkIsEnabled", checkEvent);
 
     expect(callback).toHaveBeenCalledWith(checkEvent);
   });
 
-  it("should add and trigger check-config hooks", () => {
+  it("should add and trigger checkConfig hooks", () => {
     const callback = vi.fn();
-    hookManager.addHook("check-config", callback);
+    hookManager.addHook("checkConfig", callback);
 
     const checkEvent: CheckEvent = {
       action: "check-config",
       key: "test-key",
       value: { key: "key", payload: "payload" },
     };
-    hookManager.trigger("check-config", checkEvent);
+    hookManager.trigger("checkConfig", checkEvent);
 
     expect(callback).toHaveBeenCalledWith(checkEvent);
   });
 
   it("should add and trigger features-updated hooks", () => {
     const callback = vi.fn();
-    hookManager.addHook("features-updated", callback);
+    hookManager.addHook("featuresUpdated", callback);
 
     const features: RawFeatures = {
       /* mock RawFeatures data */
     };
-    hookManager.trigger("features-updated", features);
+    hookManager.trigger("featuresUpdated", features);
 
     expect(callback).toHaveBeenCalledWith(features);
   });
@@ -94,15 +94,15 @@ describe("HookManager", () => {
     const callback1 = vi.fn();
     const callback2 = vi.fn();
 
-    hookManager.addHook("check-is-enabled", callback1);
-    hookManager.addHook("check-is-enabled", callback2);
+    hookManager.addHook("checkIsEnabled", callback1);
+    hookManager.addHook("checkIsEnabled", callback2);
 
     const checkEvent: CheckEvent = {
       action: "check-is-enabled",
       key: "test-key",
       value: true,
     };
-    hookManager.trigger("check-is-enabled", checkEvent);
+    hookManager.trigger("checkIsEnabled", checkEvent);
 
     expect(callback1).toHaveBeenCalledWith(checkEvent);
     expect(callback2).toHaveBeenCalledWith(checkEvent);
@@ -112,16 +112,35 @@ describe("HookManager", () => {
     const callback1 = vi.fn();
     const callback2 = vi.fn();
 
-    hookManager.addHook("check-is-enabled", callback1);
-    hookManager.addHook("check-is-enabled", callback2);
-    hookManager.removeHook("check-is-enabled", callback1);
+    hookManager.addHook("checkIsEnabled", callback1);
+    hookManager.addHook("checkIsEnabled", callback2);
+    hookManager.removeHook("checkIsEnabled", callback1);
 
     const checkEvent: CheckEvent = {
       action: "check-is-enabled",
       key: "test-key",
       value: true,
     };
-    hookManager.trigger("check-is-enabled", checkEvent);
+    hookManager.trigger("checkIsEnabled", checkEvent);
+
+    expect(callback1).not.toHaveBeenCalled();
+    expect(callback2).toHaveBeenCalledWith(checkEvent);
+  });
+
+  it("should remove the hook using the function returned from addHook", () => {
+    const callback1 = vi.fn();
+    const callback2 = vi.fn();
+
+    const removeHook1 = hookManager.addHook("checkIsEnabled", callback1);
+    hookManager.addHook("checkIsEnabled", callback2);
+    removeHook1();
+
+    const checkEvent: CheckEvent = {
+      action: "check-is-enabled",
+      key: "test-key",
+      value: true,
+    };
+    hookManager.trigger("checkIsEnabled", checkEvent);
 
     expect(callback1).not.toHaveBeenCalled();
     expect(callback2).toHaveBeenCalledWith(checkEvent);
