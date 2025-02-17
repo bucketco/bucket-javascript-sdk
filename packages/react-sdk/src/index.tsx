@@ -30,10 +30,6 @@ type MaterializedFeatures = keyof Features extends never
   : Features;
 
 export type FeatureKey = keyof MaterializedFeatures;
-export type FeatureConfig<TKey extends FeatureKey> =
-  MaterializedFeatures[TKey] extends boolean
-    ? never
-    : MaterializedFeatures[TKey];
 
 type ProviderContextType = {
   client?: BucketClient;
@@ -167,18 +163,22 @@ type RequestFeedbackOptions = Omit<
   "featureKey" | "featureId"
 >;
 
+type EmptyConfig = {
+  key: undefined;
+  payload: undefined;
+};
+
 type Feature<TKey extends FeatureKey> = {
   isEnabled: boolean;
   isLoading: boolean;
-  config:
-    | {
-        key: string;
-        payload: FeatureConfig<TKey>;
-      }
-    | {
-        key: undefined;
-        payload: undefined;
-      };
+  config: MaterializedFeatures[TKey] extends boolean
+    ? EmptyConfig
+    :
+        | {
+            key: string;
+            payload: MaterializedFeatures[TKey];
+          }
+        | EmptyConfig;
   track: () => void;
   requestFeedback: (opts: RequestFeedbackOptions) => void;
 };
@@ -194,7 +194,9 @@ type Feature<TKey extends FeatureKey> = {
  * }
  * ```
  */
-export function useFeature<TKey extends FeatureKey>(key: TKey): Feature<TKey> {
+export function useFeature<TKey extends FeatureKey>(
+  key: TKey,
+): Feature<typeof key> {
   const {
     features: { isLoading },
     client,
@@ -226,7 +228,7 @@ export function useFeature<TKey extends FeatureKey>(key: TKey): Feature<TKey> {
       return feature.isEnabled ?? false;
     },
     get config() {
-      return feature.config ?? { key: undefined, payload: undefined };
+      return feature.config as Feature<typeof key>["config"];
     },
   };
 }
