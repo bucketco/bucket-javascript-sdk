@@ -16,12 +16,6 @@ const bucket = new BucketClient({
     show: true,
     position: { placement: "bottom-right" },
   },
-  hooks: [
-    {
-      type: "checkIsEnabled",
-      handler: (check: CheckEvent) => console.log("Check event for", check.key),
-    },
-  ],
 });
 
 document

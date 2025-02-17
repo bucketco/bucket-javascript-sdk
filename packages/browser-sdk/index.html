@@ -54,7 +54,7 @@
         document.getElementById("loading").style.display = "none";
       });
 
-      bucket.on("checkIsEnabled", (check) =>
+      bucket.on("isEnabledCheck", (check) =>
         console.log(`Check event for ${check.key}`),
       );
 

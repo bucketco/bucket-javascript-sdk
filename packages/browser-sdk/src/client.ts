@@ -781,7 +781,7 @@ export class BucketClient {
   sendCheckEvent(checkEvent: CheckEvent) {
     return this.featuresClient.sendCheckEvent(checkEvent, () => {
       this.hooks.trigger(
-        checkEvent.action == "check-config" ? "checkConfig" : "checkIsEnabled",
+        checkEvent.action == "check-config" ? "configCheck" : "isEnabledCheck",
         checkEvent,
       );
     });

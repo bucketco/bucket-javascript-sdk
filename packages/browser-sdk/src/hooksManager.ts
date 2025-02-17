@@ -5,8 +5,8 @@ import { CompanyContext, UserContext } from "./context";
  * @internal
  */
 export interface HookArgs {
-  checkConfig: CheckEvent;
-  checkIsEnabled: CheckEvent;
+  configCheck: CheckEvent;
+  isEnabledCheck: CheckEvent;
   featuresUpdated: RawFeatures;
   user: UserContext;
   company: CompanyContext;
@@ -26,15 +26,15 @@ type TrackEvent = {
  */
 export class HooksManager {
   private hooks: {
-    checkIsEnabled: ((arg0: CheckEvent) => void)[];
-    checkConfig: ((arg0: CheckEvent) => void)[];
+    isEnabledCheck: ((arg0: CheckEvent) => void)[];
+    configCheck: ((arg0: CheckEvent) => void)[];
     featuresUpdated: ((arg0: RawFeatures) => void)[];
     user: ((arg0: UserContext) => void)[];
     company: ((arg0: CompanyContext) => void)[];
     track: ((arg0: TrackEvent) => void)[];
   } = {
-    checkIsEnabled: [],
-    checkConfig: [],
+    isEnabledCheck: [],
+    configCheck: [],
     featuresUpdated: [],
     user: [],
     company: [],

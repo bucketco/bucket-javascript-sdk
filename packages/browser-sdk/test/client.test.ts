@@ -87,8 +87,8 @@ describe("BucketClient", () => {
       client.on("track", trackHook);
       client.on("user", userHook);
       client.on("company", companyHook);
-      client.on("checkConfig", checkHookConfig);
-      client.on("checkIsEnabled", checkHookIsEnabled);
+      client.on("configCheck", checkHookConfig);
+      client.on("isEnabledCheck", checkHookIsEnabled);
       client.on("featuresUpdated", featuresUpdated);
 
       await client.track("test-event");
@@ -119,8 +119,8 @@ describe("BucketClient", () => {
       client.off("track", trackHook);
       client.off("user", userHook);
       client.off("company", companyHook);
-      client.off("checkConfig", checkHookConfig);
-      client.off("checkIsEnabled", checkHookIsEnabled);
+      client.off("configCheck", checkHookConfig);
+      client.off("isEnabledCheck", checkHookIsEnabled);
       client.off("featuresUpdated", featuresUpdated);
 
       // Reset mocks
