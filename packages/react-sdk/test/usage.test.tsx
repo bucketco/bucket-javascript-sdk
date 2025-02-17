@@ -152,11 +152,11 @@ beforeEach(() => {
 
 describe("<BucketProvider />", () => {
   test("calls initialize", () => {
-    const onFeaturesUpdated = vi.fn();
+    const on = vi.fn();
 
     const newBucketClient = vi.fn().mockReturnValue({
       initialize: vi.fn().mockResolvedValue(undefined),
-      onFeaturesUpdated,
+      on,
     });
 
     const provider = getProvider({
@@ -172,7 +172,6 @@ describe("<BucketProvider />", () => {
       timeoutMs: 1002,
       expireTimeMs: 1003,
       staleWhileRevalidate: true,
-      features: ["feature1"],
       fallbackFeatures: ["feature2"],
       feedback: { enableAutoFeedback: true },
       toolbar: { show: true },
@@ -202,7 +201,6 @@ describe("<BucketProvider />", () => {
         enableTracking: false,
         expireTimeMs: 1003,
         fallbackFeatures: ["feature2"],
-        features: ["feature1"],
         feedback: {
           enableAutoFeedback: true,
         },
@@ -216,7 +214,7 @@ describe("<BucketProvider />", () => {
       },
     ]);
 
-    expect(onFeaturesUpdated).toBeTruthy();
+    expect(on).toBeTruthy();
   });
 
   test("only calls init once with the same args", () => {
