@@ -107,4 +107,23 @@ describe("HookManager", () => {
     expect(callback1).toHaveBeenCalledWith(checkEvent);
     expect(callback2).toHaveBeenCalledWith(checkEvent);
   });
+
+  it("should remove the given hook and no other hooks", () => {
+    const callback1 = vi.fn();
+    const callback2 = vi.fn();
+
+    hookManager.addHook("check-is-enabled", callback1);
+    hookManager.addHook("check-is-enabled", callback2);
+    hookManager.removeHook("check-is-enabled", callback1);
+
+    const checkEvent: CheckEvent = {
+      action: "check-is-enabled",
+      key: "test-key",
+      value: true,
+    };
+    hookManager.trigger("check-is-enabled", checkEvent);
+
+    expect(callback1).not.toHaveBeenCalled();
+    expect(callback2).toHaveBeenCalledWith(checkEvent);
+  });
 });
