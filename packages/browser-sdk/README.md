@@ -309,9 +309,9 @@ If you are not using the Bucket Browser SDK, you can still submit feedback using
 
 See details in [Feedback HTTP API](https://docs.bucket.co/reference/http-tracking-api#feedback)
 
-### Hooks
+### Event listeners
 
-Hooks allow for capturing various events occurring in the BucketClient. There are 5 kinds of events:
+Event listeners allow for capturing various events occurring in the `BucketClient`. This is useful to build integrations with other system or for various debugging purposes. There are 5 kinds of events:
 
 - FeaturesUpdated
 - User
@@ -319,26 +319,21 @@ Hooks allow for capturing various events occurring in the BucketClient. There ar
 - Check
 - Track
 
-Supply a list of `Hook`s in the BucketClient constructor or use the `on()` method to add a hook after construction. See the API reference for details on each hook.
+Use the `on()` method to add an event listener to respond to certain events. See the API reference for details on each hook.
 
 ```ts
 import { BucketClient, CheckEvent, RawFeatures } from "@bucketco/browser-sdk";
 
 const client = new BucketClient({
-  // other options...
-  hooks: [
-    {
-      type: "features-updated",
-      handler: (features: RawFeatures) =>
-        console.log(`features updated: ${features}`),
-    },
-  ],
+  // options
 });
 
 // or add the hooks after construction:
-client.on("check-is-enabled", (check: CheckEvent) =>
+const unsub = client.on("enabledCheck", (check: CheckEvent) =>
   console.log(`Check event ${check}`),
 );
+// use the returned function to unsubscribe, or call `off()` with the same arguments again
+unsub();
 ```
 
 ### Zero PII

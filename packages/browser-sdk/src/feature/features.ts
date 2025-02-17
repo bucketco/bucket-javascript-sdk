@@ -69,7 +69,7 @@ export type FetchedFeature = {
   };
 };
 
-const FEATURES_UPDATED_EVENT = "features-updated";
+const FEATURES_UPDATED_EVENT = "featuresUpdated";
 
 export type FetchedFeatures = Record<string, FetchedFeature | undefined>;
 

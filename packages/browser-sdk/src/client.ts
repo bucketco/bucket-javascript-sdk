@@ -16,7 +16,7 @@ import * as feedbackLib from "./feedback/ui";
 import { ToolbarPosition } from "./toolbar/Toolbar";
 import { API_BASE_URL, APP_BASE_URL, SSE_REALTIME_BASE_URL } from "./config";
 import { BucketContext, CompanyContext, UserContext } from "./context";
-import { Hook, HookArgs, HooksManager } from "./hooksManager";
+import { HookArgs, HooksManager } from "./hooksManager";
 import { HttpClient } from "./httpClient";
 import { Logger, loggerWithPrefix, quietConsoleLogger } from "./logger";
 import { showToolbarToggle } from "./toolbar";
@@ -280,12 +280,6 @@ export type InitOptions = {
    * Toolbar configuration
    */
   toolbar?: ToolbarOptions;
-
-  /**
-   * Hooks to be registered on initialization.
-   * Hooks are functions that are called when certain events occur.
-   */
-  hooks?: Hook[] | Hook[][];
 };
 
 const defaultConfig: Config = {
@@ -458,11 +452,8 @@ export class BucketClient {
 
     // Register hooks
     this.hooks = new HooksManager();
-    opts.hooks?.flat()?.forEach((hook) => {
-      this.hooks.addHook(hook.type, hook.handler as any);
-    });
     this.featuresClient.onUpdated(() => {
-      this.hooks.trigger("features-updated", this.featuresClient.getFeatures());
+      this.hooks.trigger("featuresUpdated", this.featuresClient.getFeatures());
     });
   }
 
@@ -504,6 +495,19 @@ export class BucketClient {
     handler: (args0: HookArgs[THookType]) => void,
   ) {
     this.hooks.addHook(type, handler);
+  }
+
+  /**
+   * Remove a hook from the client.
+   *
+   * @param hook Hook to add.
+   * @returns A function to remove the hook.
+   */
+  off<THookType extends keyof HookArgs>(
+    type: THookType,
+    handler: (args0: HookArgs[THookType]) => void,
+  ) {
+    return this.hooks.removeHook(type, handler);
   }
 
   /**
@@ -788,7 +792,10 @@ export class BucketClient {
 
   sendCheckEvent(checkEvent: CheckEvent) {
     return this.featuresClient.sendCheckEvent(checkEvent, () => {
-      this.hooks.trigger(checkEvent.action, checkEvent);
+      this.hooks.trigger(
+        checkEvent.action == "check-config" ? "configCheck" : "enabledCheck",
+        checkEvent,
+      );
     });
   }
 

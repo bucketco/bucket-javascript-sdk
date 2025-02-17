@@ -54,11 +54,11 @@
         document.getElementById("loading").style.display = "none";
       });
 
-      bucket.on("check-is-enabled", (check) =>
+      bucket.on("enabledCheck", (check) =>
         console.log(`Check event for ${check.key}`),
       );
 
-      bucket.on("features-updated", (features) => {
+      bucket.on("featuresUpdated", (features) => {
         console.log("Features updated");
         const feature = bucket.getFeature(featureKey);
 

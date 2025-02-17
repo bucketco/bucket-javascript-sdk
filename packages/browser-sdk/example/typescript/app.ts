@@ -16,12 +16,6 @@ const bucket = new BucketClient({
     show: true,
     position: { placement: "bottom-right" },
   },
-  hooks: [
-    {
-      type: "check-is-enabled",
-      handler: (check: CheckEvent) => console.log("Check event for", check.key),
-    },
-  ],
 });
 
 document
@@ -40,7 +34,7 @@ bucket.initialize().then(() => {
   if (loadingElem) loadingElem.style.display = "none";
 });
 
-bucket.on("features-updated", (features: RawFeatures) => {
+bucket.on("featuresUpdated", (features: RawFeatures) => {
   const { isEnabled } = features[featureKey];
 
   const startHuddleElem = document.getElementById("start-huddle");
