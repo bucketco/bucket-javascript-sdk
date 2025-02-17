@@ -331,6 +331,19 @@ export interface Feature {
   requestFeedback: (
     options: Omit<RequestFeedbackData, "featureKey" | "featureId">,
   ) => void;
+
+  /**
+   * The current override status of isEnabled for the feature.
+   */
+  isEnabledOverride: boolean | null;
+
+  /**
+   * Set the override status for isEnabled for the feature.
+   * Set to `null` to remove the override.
+   */
+  setIsEnabledOverride(isEnabled: boolean | null): void;
+
+  setInUse(inUse: boolean): void;
 }
 
 function shouldShowToolbar(opts: InitOptions) {
@@ -767,15 +780,14 @@ export class BucketClient {
           ...options,
         });
       },
+      isEnabledOverride: this.featuresClient.getFeatureOverride(key),
+      setIsEnabledOverride(isEnabled: boolean | null) {
+        self.featuresClient.setFeatureOverride(key, isEnabled);
+      },
+      setInUse(inUse: boolean) {
+        self.featuresClient.setInUse(key, inUse);
+      },
     };
-  }
-
-  setFeatureOverride(key: string, isEnabled: boolean | null) {
-    this.featuresClient.setFeatureOverride(key, isEnabled);
-  }
-
-  getFeatureOverride(key: string): boolean | null {
-    return this.featuresClient.getFeatureOverride(key);
   }
 
   sendCheckEvent(checkEvent: CheckEvent) {
