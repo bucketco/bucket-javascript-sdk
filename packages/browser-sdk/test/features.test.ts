@@ -1,4 +1,4 @@
-import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, test, vi } from "vitest";
 
 import { version } from "../package.json";
 import {
@@ -383,5 +383,25 @@ describe("FeaturesClient", () => {
 
     expect(updated).toBe(true);
     expect(client.getFeatures().featureC).toBeUndefined();
+  });
+
+  describe("in use", () => {
+    it("handled in use", async () => {
+      // change the response so we can validate that we'll serve the stale cache
+      const { newFeaturesClient } = featuresClientFactory();
+
+      // localStorage.clear();
+      const client = newFeaturesClient(undefined);
+      await client.initialize();
+
+      client.setInUse("featureC", true);
+      expect(client.getFeatures().featureC.isEnabled).toBe(false);
+      expect(client.getFeatures().featureC.isEnabledOverride).toBe(null);
+
+      client.setFeatureOverride("featureC", true);
+
+      expect(client.getFeatures().featureC.isEnabled).toBe(false);
+      expect(client.getFeatures().featureC.isEnabledOverride).toBe(true);
+    });
   });
 });

@@ -15,6 +15,7 @@ import {
 declare module "../../src" {
   interface Features {
     huddles: { optInCopy: string };
+    "voice-chat": { optInCopy: string };
   }
 }
 
@@ -164,6 +165,9 @@ function Feedback() {
 
 // App.tsx
 function Demos() {
+  const [showVoiceChatOptIn, setShowVoiceChatOptIn] = useState(true);
+  const [showHuddleOptIn, setShowHuddleOptIn] = useState(true);
+
   return (
     <main>
       <h1>React SDK</h1>
@@ -176,7 +180,14 @@ function Demos() {
         <code>optin-huddles IS TRUE</code>. Hit the checkbox below to opt-in/out
         of the feature.
       </div>
-      <FeatureOptIn featureKey={"huddles"} featureName={"Huddles"} />
+      {showHuddleOptIn && <FeatureOptIn featureKey={"huddles"} />}
+      <button onClick={() => setShowHuddleOptIn((prev) => !prev)}>
+        Toggle voice chat opt-in
+      </button>
+      {showVoiceChatOptIn && <FeatureOptIn featureKey={"voice-chat"} />}
+      <button onClick={() => setShowVoiceChatOptIn((prev) => !prev)}>
+        Toggle voice chat opt-in
+      </button>
 
       <UpdateContext />
       <Feedback />
@@ -185,18 +196,10 @@ function Demos() {
   );
 }
 
-// type KeysOfValue<T, TCondition> = {
-//   [K in keyof T]: T[K] extends TCondition ? K : never;
-// }[keyof T];
-
-// type OptInFeature = KeysOfValue<Features, { optInCopy: any }>;
-
 function FeatureOptIn<TKey extends FeatureKey>({
   featureKey,
-  featureName,
 }: {
   featureKey: TKey;
-  featureName: string;
 }) {
   const updateUser = useUpdateUser();
   const [sendingUpdate, setSendingUpdate] = useState(false);
@@ -204,8 +207,11 @@ function FeatureOptIn<TKey extends FeatureKey>({
 
   return (
     <div>
-      <label htmlFor="huddlesOptIn">Opt-in to {featureName} feature</label>
-      <span>{config.payload?.optInCopy ?? "Hit the checkbox to opt-in"}</span>
+      <label htmlFor="huddlesOptIn">
+        {config.payload?.optInCopy ?? "Hit the checkbox to opt-in"}:{" "}
+        {featureKey}
+      </label>
+
       <input
         disabled={sendingUpdate}
         id="huddlesOptIn"

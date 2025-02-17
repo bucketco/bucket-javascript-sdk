@@ -399,29 +399,24 @@ export class FeaturesClient {
   private triggerFeaturesChanged() {
     const mergedFeatures: RawFeatures = {};
 
-    // merge fetched features with overrides into `this.features`
-    for (const key in this.fetchedFeatures) {
-      const fetchedFeature = this.fetchedFeatures[key];
-      if (!fetchedFeature) continue;
-      const isEnabledOverride = this.featureOverrides[key] ?? null;
-      mergedFeatures[key] = {
-        ...fetchedFeature,
-        isEnabledOverride,
-        inUse: false,
-      };
-    }
+    const allKeys = new Set([
+      ...Object.keys(this.fetchedFeatures),
+      ...Object.keys(this.featureInUse),
+      ...Object.keys(this.featureOverrides),
+    ]);
 
-    for (const key in this.featureInUse) {
-      const inUse = this.featureInUse[key] ?? false;
+    for (const key of allKeys) {
       mergedFeatures[key] = {
-        ...mergedFeatures[key],
-        key,
-        inUse,
+        ...(this.fetchedFeatures[key] ?? {
+          key,
+          isEnabled: false,
+        }),
+        isEnabledOverride: this.featureOverrides[key] ?? null,
+        inUse: this.featureInUse[key] ?? false,
       };
     }
 
     this.features = mergedFeatures;
-
     this.eventTarget.dispatchEvent(new Event(FEATURES_UPDATED_EVENT));
   }
 

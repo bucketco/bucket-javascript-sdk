@@ -41,8 +41,8 @@ function FeatureRow({
   setEnabledOverride: (key: string, value: boolean | null) => void;
 }) {
   return (
-    <tr key={feature.key}>
-      <td class="feature-name-cell in-use">
+    <tr key={feature.key} class={feature.inUse ? "in-use" : ""}>
+      <td class="feature-name-cell">
         <a
           href={`${appBaseUrl}/envs/current/features/by-key/${feature.key}`}
           target="_blank"
