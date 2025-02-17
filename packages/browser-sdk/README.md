@@ -109,7 +109,6 @@ type Configuration = {
     staleTimeMs?: number; // at initialization time features are loaded from the cache unless they have gone stale. Defaults to 0 which means the cache is disabled. Increase in the case of a non-SPA
     expireTimeMs?: number; // In case we're unable to fetch features from Bucket, cached/stale features will be used instead until they expire after `expireTimeMs`. Default is 30 days
   };
-  hooks?: Hooks[] | Hooks[][]; // See the "Hooks" section below.
 };
 ```
 
@@ -328,7 +327,7 @@ const client = new BucketClient({
   // options
 });
 
-// or add the hooks after construction:
+// add the event listener
 const unsub = client.on("enabledCheck", (check: CheckEvent) =>
   console.log(`Check event ${check}`),
 );
