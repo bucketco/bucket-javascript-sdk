@@ -74,4 +74,78 @@ describe("BucketClient", () => {
       expect(client.getFeature("featureA").isEnabled).toBe(false);
     });
   });
+
+  describe("hooks integration", () => {
+    it("on adds hooks appropriately, off removes them", async () => {
+      const trackHook = vi.fn();
+      const userHook = vi.fn();
+      const companyHook = vi.fn();
+      const checkHookIsEnabled = vi.fn();
+      const checkHookConfig = vi.fn();
+      const featuresUpdated = vi.fn();
+
+      client.on("track", trackHook);
+      client.on("user", userHook);
+      client.on("company", companyHook);
+      client.on("configCheck", checkHookConfig);
+      client.on("enabledCheck", checkHookIsEnabled);
+      client.on("featuresUpdated", featuresUpdated);
+
+      await client.track("test-event");
+      expect(trackHook).toHaveBeenCalledWith({
+        eventName: "test-event",
+        attributes: undefined,
+        user: client["context"].user,
+        company: client["context"].company,
+      });
+
+      await client["user"]();
+      expect(userHook).toHaveBeenCalledWith(client["context"].user);
+
+      await client["company"]();
+      expect(companyHook).toHaveBeenCalledWith(client["context"].company);
+
+      client.getFeature("featureA").isEnabled;
+      expect(checkHookIsEnabled).toHaveBeenCalled();
+
+      client.getFeature("featureA").config;
+      expect(checkHookConfig).toHaveBeenCalled();
+
+      expect(featuresUpdated).not.toHaveBeenCalled();
+      await client.updateOtherContext({ key: "value" });
+      expect(featuresUpdated).toHaveBeenCalled();
+
+      // Remove hooks
+      client.off("track", trackHook);
+      client.off("user", userHook);
+      client.off("company", companyHook);
+      client.off("configCheck", checkHookConfig);
+      client.off("enabledCheck", checkHookIsEnabled);
+      client.off("featuresUpdated", featuresUpdated);
+
+      // Reset mocks
+      trackHook.mockReset();
+      userHook.mockReset();
+      companyHook.mockReset();
+      checkHookIsEnabled.mockReset();
+      checkHookConfig.mockReset();
+      featuresUpdated.mockReset();
+
+      // Trigger events again
+      await client.track("test-event");
+      await client["user"]();
+      await client["company"]();
+      client.getFeature("featureA").isEnabled;
+      client.getFeature("featureA").config;
+      await client.updateOtherContext({ key: "value" });
+
+      // Ensure hooks are not called
+      expect(trackHook).not.toHaveBeenCalled();
+      expect(userHook).not.toHaveBeenCalled();
+      expect(companyHook).not.toHaveBeenCalled();
+      expect(checkHookIsEnabled).not.toHaveBeenCalled();
+      expect(checkHookConfig).not.toHaveBeenCalled();
+      expect(featuresUpdated).not.toHaveBeenCalled();
+    });
+  });
 });

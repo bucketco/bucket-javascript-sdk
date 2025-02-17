@@ -69,7 +69,7 @@ export type FetchedFeature = {
   };
 };
 
-const FEATURES_UPDATED_EVENT = "features-updated";
+const FEATURES_UPDATED_EVENT = "featuresUpdated";
 
 export type FetchedFeatures = Record<string, FetchedFeature | undefined>;
 
@@ -145,7 +145,7 @@ export interface CheckEvent {
   /**
    * Action to perform.
    */
-  action: "check" | "check-config";
+  action: "check-is-enabled" | "check-config";
 
   /**
    * Feature key.
@@ -299,20 +299,12 @@ export class FeaturesClient {
    * Features are not guaranteed to have actually changed when the callback is called.
    *
    * @param callback this will be called when the features are updated.
-   * @param options passed as-is to addEventListener, except the abort signal is not supported.
    * @returns a function that can be called to remove the listener
    */
-  onUpdated(callback: () => void, options?: AddEventListenerOptions | boolean) {
+  onUpdated(callback: () => void) {
     this.eventTarget.addEventListener(FEATURES_UPDATED_EVENT, callback, {
       signal: this.abortController.signal,
     });
-    return () => {
-      this.eventTarget.removeEventListener(
-        FEATURES_UPDATED_EVENT,
-        callback,
-        options,
-      );
-    };
   }
 
   getFeatures(): RawFeatures {
@@ -365,10 +357,10 @@ export class FeaturesClient {
    *
    *
    * @param checkEvent - The feature to send the event for.
+   * @param cb - Callback to call after the event is sent. Might be skipped if the event was rate limited.
    */
-  async sendCheckEvent(checkEvent: CheckEvent) {
+  async sendCheckEvent(checkEvent: CheckEvent, cb: () => void) {
     const rateLimitKey = `check-event:${this.fetchParams().toString()}:${checkEvent.key}:${checkEvent.version}:${checkEvent.value}`;
-
     await this.rateLimiter.rateLimited(rateLimitKey, async () => {
       const payload = {
         action: checkEvent.action,
@@ -390,6 +382,7 @@ export class FeaturesClient {
         });
 
       this.logger.debug(`sent feature event`, payload);
+      cb();
     });
 
     return checkEvent.value;
