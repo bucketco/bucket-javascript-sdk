@@ -59,7 +59,7 @@ export default function Toolbar({
 
   useEffect(() => {
     updateFeatures();
-    return bucketClient.onFeaturesUpdated(updateFeatures);
+    bucketClient.on("featuresUpdated", updateFeatures);
   }, [bucketClient]);
 
   const [search, setSearch] = useState<string | null>(null);

@@ -294,7 +294,7 @@ Bucket can assist you with collecting your user's feedback by offering a pre-bui
 
 Feedback can be submitted to Bucket using the SDK:
 
-```js
+```ts
 bucketClient.feedback({
   featureId: "my_feature_id", // String (required), copy from Feature feedback tab
   score: 5, // Number: 1-5 (optional)
@@ -307,6 +307,33 @@ bucketClient.feedback({
 If you are not using the Bucket Browser SDK, you can still submit feedback using the HTTP API.
 
 See details in [Feedback HTTP API](https://docs.bucket.co/reference/http-tracking-api#feedback)
+
+### Event listeners
+
+Event listeners allow for capturing various events occurring in the `BucketClient`. This is useful to build integrations with other system or for various debugging purposes. There are 5 kinds of events:
+
+- FeaturesUpdated
+- User
+- Company
+- Check
+- Track
+
+Use the `on()` method to add an event listener to respond to certain events. See the API reference for details on each hook.
+
+```ts
+import { BucketClient, CheckEvent, RawFeatures } from "@bucketco/browser-sdk";
+
+const client = new BucketClient({
+  // options
+});
+
+// or add the hooks after construction:
+const unsub = client.on("enabledCheck", (check: CheckEvent) =>
+  console.log(`Check event ${check}`),
+);
+// use the returned function to unsubscribe, or call `off()` with the same arguments again
+unsub();
+```
 
 ### Zero PII
 
