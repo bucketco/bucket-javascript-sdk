@@ -76,7 +76,7 @@ describe("BucketClient", () => {
   });
 
   describe("hooks integration", () => {
-    it("calls hooks appropriately", async () => {
+    it("on adds hooks appropriately, off removes them", async () => {
       const trackHook = vi.fn();
       const userHook = vi.fn();
       const companyHook = vi.fn();
@@ -114,6 +114,38 @@ describe("BucketClient", () => {
       expect(featuresUpdated).not.toHaveBeenCalled();
       await client.updateOtherContext({ key: "value" });
       expect(featuresUpdated).toHaveBeenCalled();
+
+      // Remove hooks
+      client.off("track", trackHook);
+      client.off("user", userHook);
+      client.off("company", companyHook);
+      client.off("check-config", checkHookConfig);
+      client.off("check-is-enabled", checkHookIsEnabled);
+      client.off("features-updated", featuresUpdated);
+
+      // Reset mocks
+      trackHook.mockReset();
+      userHook.mockReset();
+      companyHook.mockReset();
+      checkHookIsEnabled.mockReset();
+      checkHookConfig.mockReset();
+      featuresUpdated.mockReset();
+
+      // Trigger events again
+      await client.track("test-event");
+      await client["user"]();
+      await client["company"]();
+      client.getFeature("featureA").isEnabled;
+      client.getFeature("featureA").config;
+      await client.updateOtherContext({ key: "value" });
+
+      // Ensure hooks are not called
+      expect(trackHook).not.toHaveBeenCalled();
+      expect(userHook).not.toHaveBeenCalled();
+      expect(companyHook).not.toHaveBeenCalled();
+      expect(checkHookIsEnabled).not.toHaveBeenCalled();
+      expect(checkHookConfig).not.toHaveBeenCalled();
+      expect(featuresUpdated).not.toHaveBeenCalled();
     });
   });
 });

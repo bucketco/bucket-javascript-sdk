@@ -50,8 +50,18 @@ export class HooksManager {
   addHook<THookType extends keyof HookArgs>(
     event: THookType,
     cb: (arg0: HookArgs[THookType]) => void,
-  ): void {
+  ): () => void {
     (this.hooks[event] as any[]).push(cb);
+    return () => {
+      this.removeHook(event, cb);
+    };
+  }
+
+  removeHook<THookType extends keyof HookArgs>(
+    event: THookType,
+    cb: (arg0: HookArgs[THookType]) => void,
+  ): void {
+    this.hooks[event] = this.hooks[event].filter((hook) => hook !== cb) as any;
   }
 
   trigger<THookType extends keyof HookArgs>(
