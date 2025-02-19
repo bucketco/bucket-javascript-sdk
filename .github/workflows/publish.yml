@@ -39,12 +39,12 @@ jobs:
           path: bucket-docs
       - name: Copy generated docs to docs repo
         run: |
-          rm -rf bucket-docs/sdk-docs
-          cp -R dist/docs bucket-docs/sdk-docs
+          rm -rf bucket-docs/sdk
+          cp -R dist/docs bucket-docs/sdk
       - name: Commit and push changes
         run: |
           cd bucket-docs
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@bucket.co"
-          git add sdk-docs
+          git add sdk
           git commit -m "Update documentation" && git push || echo "No docs changes to commit"
