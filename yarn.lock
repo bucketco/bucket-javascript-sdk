@@ -926,6 +926,29 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@bucketco/cli@workspace:packages/cli":
+  version: 0.0.0-use.local
+  resolution: "@bucketco/cli@workspace:packages/cli"
+  dependencies:
+    "@bucketco/eslint-config": "workspace:^"
+    "@bucketco/tsconfig": "workspace:^"
+    "@inquirer/prompts": "npm:^5.3.8"
+    "@sindresorhus/slugify": "npm:^2.2.1"
+    "@types/fs-extra": "npm:^11.0.4"
+    "@types/node": "npm:^22.5.1"
+    axios: "npm:^1.7.5"
+    chalk: "npm:^5.3.0"
+    commander: "npm:^12.1.0"
+    fs-extra: "npm:^11.2.0"
+    open: "npm:^10.1.0"
+    ora: "npm:^8.1.0"
+    ts-node: "npm:^10.9.2"
+    typescript: "npm:^5.5.4"
+  bin:
+    bucket: ./dist/index.js
+  languageName: unknown
+  linkType: soft
+
 "@bucketco/eslint-config@npm:0.0.2, @bucketco/eslint-config@npm:~0.0.2, @bucketco/eslint-config@workspace:^, @bucketco/eslint-config@workspace:packages/eslint-config":
   version: 0.0.0-use.local
   resolution: "@bucketco/eslint-config@workspace:packages/eslint-config"
@@ -5787,29 +5810,6 @@ __metadata:
   checksum: 10c0/2a331aab90503130043ca41dd5d281fa1e89d5e076d07a2d75e76bf4d693bd56e73d5abcd8c4f39119da6328d450578c216cf1cd5c99b82d8a90a2ae6271b465
   languageName: node
   linkType: hard
-
-"bucket-cli@workspace:packages/cli":
-  version: 0.0.0-use.local
-  resolution: "bucket-cli@workspace:packages/cli"
-  dependencies:
-    "@bucketco/eslint-config": "workspace:^"
-    "@bucketco/tsconfig": "workspace:^"
-    "@inquirer/prompts": "npm:^5.3.8"
-    "@sindresorhus/slugify": "npm:^2.2.1"
-    "@types/fs-extra": "npm:^11.0.4"
-    "@types/node": "npm:^22.5.1"
-    axios: "npm:^1.7.5"
-    chalk: "npm:^5.3.0"
-    commander: "npm:^12.1.0"
-    fs-extra: "npm:^11.2.0"
-    open: "npm:^10.1.0"
-    ora: "npm:^8.1.0"
-    ts-node: "npm:^10.9.2"
-    typescript: "npm:^5.5.4"
-  bin:
-    bucket: ./dist/index.js
-  languageName: unknown
-  linkType: soft
 
 "buffer-from@npm:^1.0.0":
   version: 1.1.2

@@ -1,5 +1,5 @@
 {
-  "name": "bucket-cli",
+  "name": "@bucketco/cli",
   "version": "1.0.0",
   "packageManager": "yarn@4.1.1",
   "description": "CLI for Bucket service",

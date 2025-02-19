@@ -2,27 +2,27 @@ import { authRequest } from "../utils/auth.js";
 import { genDTS, genFeatureKey } from "../utils/gen.js";
 
 type Feature = {
-  id: string;
   name: string;
   key: string;
 };
 
-type FeatureNamesResponse = Feature[];
+type FeaturesResponse = {
+  data: Feature[];
+};
 
 export async function listFeatures(appId: string) {
-  const response = await authRequest<FeatureNamesResponse>(
-    `/apps/${appId}/features/names`,
+  const response = await authRequest<FeaturesResponse>(
+    `/apps/${appId}/features`,
   );
-  return response.map(({ name, key }) => ({
+
+  return response.data.map(({ name, key }) => ({
     name,
     key,
   }));
 }
 
 export async function genFeatureTypes(appId: string) {
-  const response = await authRequest<FeatureNamesResponse>(
-    `/apps/${appId}/features/names`,
-  );
+  const response = await listFeatures(appId);
   return genDTS(response.map(({ key }) => key));
 }
 
@@ -32,13 +32,12 @@ type FeatureResponse = {
 
 export async function createFeature(
   appId: string,
-  envId: string,
   name: string,
   key: string | undefined,
 ) {
   const features = await listFeatures(appId);
   const response = await authRequest<FeatureResponse>(
-    `/apps/${appId}/features?envId=${envId}`,
+    `/apps/${appId}/features`,
     {
       method: "POST",
       data: {

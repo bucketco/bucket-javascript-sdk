@@ -76,20 +76,15 @@ export function registerFeaturesCommands(program: Command) {
       `Get all features in the app. Falls back to appId stored in ${CONFIG_FILE}.`,
       getConfig("appId"),
     )
-    .requiredOption(
-      "-e, --envId <envId>",
-      `Get all features in the env. Falls back to envId stored in ${CONFIG_FILE}.`,
-      getConfig("envId"),
-    )
     .option(
       "-k, --key <feature key>",
       `Create a feature in the app with the given feature key. Falls back to a slug of the feature name.`,
     )
-    .action(async (name, { appId, envId, key }) => {
+    .action(async (name, { appId, key }) => {
       const spinner = ora("Creating feature...").start();
       checkAuth();
       try {
-        const feature = await createFeature(appId, envId, name, key);
+        const feature = await createFeature(appId, name, key);
         spinner.succeed();
         console.log(
           chalk.green(

@@ -1,17 +1,40 @@
-import http from "http";
+import http, { IncomingMessage } from "http";
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import open from "open";
 
 import { getConfig, writeConfigFile } from "./config.js";
 import { API_BASE_URL, loginUrl } from "./constants.js";
 
+function readBody(req: IncomingMessage) {
+  return new Promise<string>((resolve) => {
+    let bodyChunks: any = [];
+
+    req.on("data", (chunk) => {
+      bodyChunks.push(chunk);
+    });
+    req.on("end", () => {
+      resolve(Buffer.concat(bodyChunks).toString());
+    });
+  });
+}
+
+function corsHeaders(origin: string): Record<string, string> {
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "GET",
+    "Access-Control-Allow-Headers": "Authorization",
+  };
+}
+
 /**
  * @return {Promise<string>}
  */
 export async function authenticateUser() {
   return new Promise<string>((resolve, reject) => {
-    const server = http.createServer((req, res) => {
+    const server = http.createServer(async (req, res) => {
       const url = new URL(req.url ?? "/", "http://localhost");
+      const origin = new URL(loginUrl(0)).origin;
+      const headers = corsHeaders(origin);
 
       if (url.pathname !== "/cli-login") {
         res.writeHead(404).end("Invalid path");
@@ -22,17 +45,13 @@ export async function authenticateUser() {
 
       // Handle preflight request
       if (req.method === "OPTIONS") {
-        res.writeHead(200, {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST",
-          "Access-Control-Allow-Headers": "Authorization",
-        });
+        res.writeHead(200, corsHeaders(origin));
         res.end();
         return;
       }
 
       if (!req.headers.authorization?.startsWith("Bearer ")) {
-        res.writeHead(400).end("Could not authenticate");
+        res.writeHead(400, headers).end("Could not authenticate");
         server.close();
         reject(new Error("Could not authenticate"));
         return;
@@ -40,9 +59,19 @@ export async function authenticateUser() {
 
       const token = req.headers.authorization.slice("Bearer ".length);
 
-      res.end("You can now close this tab.");
+      const body = JSON.parse(await readBody(req));
+
+      if (body.defaultAppId !== undefined && getConfig("appId") === undefined) {
+        await writeConfigFile("appId", body.defaultAppId);
+      }
+
+      headers["Content-Type"] = "application/json";
+
+      res.writeHead(200, headers);
+      res.end(JSON.stringify({ result: "success" }));
       server.close();
-      writeConfigFile("token", token);
+
+      await writeConfigFile("token", token);
       resolve(token);
     });
 
