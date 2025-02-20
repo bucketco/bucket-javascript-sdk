@@ -166,7 +166,7 @@ type EmptyConfig = {
   payload: undefined;
 };
 
-type Feature<TKey extends FeatureKey> = {
+export type Feature<TKey extends FeatureKey> = {
   isEnabled: boolean;
   isLoading: boolean;
   config: MaterializedFeatures[TKey] extends boolean
@@ -195,12 +195,10 @@ type Feature<TKey extends FeatureKey> = {
 export function useFeature<TKey extends FeatureKey>(
   key: TKey,
 ): Feature<typeof key> {
+  const client = useClient();
   const {
     features: { isLoading },
-    client,
-    provider,
   } = useContext<ProviderContextType>(ProviderContext);
-  ensureProvider(provider);
 
   const track = () => client?.track(key);
   const requestFeedback = (opts: RequestFeedbackOptions) =>
@@ -241,8 +239,7 @@ export function useFeature<TKey extends FeatureKey>(
  * ```
  */
 export function useTrack() {
-  const { client, provider } = useContext<ProviderContextType>(ProviderContext);
-  ensureProvider(provider);
+  const client = useClient();
   return (eventName: string, attributes?: Record<string, any> | null) =>
     client?.track(eventName, attributes);
 }
@@ -262,8 +259,7 @@ export function useTrack() {
  * ```
  */
 export function useRequestFeedback() {
-  const { client, provider } = useContext<ProviderContextType>(ProviderContext);
-  ensureProvider(provider);
+  const client = useClient();
   return (options: RequestFeedbackData) => client?.requestFeedback(options);
 }
 
@@ -284,8 +280,7 @@ export function useRequestFeedback() {
  * ```
  */
 export function useSendFeedback() {
-  const { client, provider } = useContext<ProviderContextType>(ProviderContext);
-  ensureProvider(provider);
+  const client = useClient();
   return (opts: UnassignedFeedback) => client?.feedback(opts);
 }
 
@@ -303,8 +298,7 @@ export function useSendFeedback() {
  * ```
  */
 export function useUpdateUser() {
-  const { client, provider } = useContext<ProviderContextType>(ProviderContext);
-  ensureProvider(provider);
+  const client = useClient();
   return (opts: { [key: string]: string | number | undefined }) =>
     client?.updateUser(opts);
 }
@@ -323,8 +317,7 @@ export function useUpdateUser() {
  * ```
  */
 export function useUpdateCompany() {
-  const { client, provider } = useContext<ProviderContextType>(ProviderContext);
-  ensureProvider(provider);
+  const client = useClient();
 
   return (opts: { [key: string]: string | number | undefined }) =>
     client?.updateCompany(opts);
@@ -345,16 +338,30 @@ export function useUpdateCompany() {
  * ```
  */
 export function useUpdateOtherContext() {
-  const { client, provider } = useContext<ProviderContextType>(ProviderContext);
-  ensureProvider(provider);
+  const client = useClient();
   return (opts: { [key: string]: string | number | undefined }) =>
     client?.updateOtherContext(opts);
 }
 
-function ensureProvider(provider: boolean) {
+/**
+ * Returns the current `BucketClient` used by the `BucketProvider`.
+ *
+ * This is useful if you need to access the `BucketClient` outside of the `BucketProvider`.
+ *
+ * ```ts
+ * const client = useClient();
+ * client.on("configCheck", () => {
+ *   console.log("configCheck hook called");
+ * });
+ * ```
+ */
+export function useClient() {
+  const { client, provider } = useContext<ProviderContextType>(ProviderContext);
   if (!provider) {
     throw new Error(
       "BucketProvider is missing. Please ensure your component is wrapped with a BucketProvider.",
     );
   }
+
+  return client;
 }
