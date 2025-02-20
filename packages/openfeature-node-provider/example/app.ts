@@ -1,15 +1,15 @@
 import express from "express";
 import "./bucket";
 import { EvaluationContext, OpenFeature } from "@openfeature/server-sdk";
-import provider from "./bucket";
+import provider, { CreateTodosConfig } from "./bucket";
 
-// In the following, we assume that targetingKey is a unique identifier for the user
+// In the following, we assume that targetingKey is a unique identifier for the user.
 type Context = EvaluationContext & {
   targetingKey: string;
   companyId: string;
 };
 
-// Augment the Express types to include the some context property on the `res.locals` object
+// Augment the Express types to include the some context property on the `res.locals` object.
 declare global {
   namespace Express {
     interface Locals {
@@ -36,6 +36,7 @@ const todos = ["Buy milk", "Walk the dog"];
 app.get("/", (_req, res) => {
   const ofClient = OpenFeature.getClient();
   ofClient.track("front-page-viewed", res.locals.context);
+
   res.json({ message: "Ready to manage some TODOs!" });
 });
 
@@ -46,7 +47,7 @@ app.get("/todos", async (req, res) => {
   // and that the indexing for feature name below is type-checked at compile time.
   const ofClient = OpenFeature.getClient();
   const isEnabled = await ofClient.getBooleanValue(
-    "show-todo",
+    "show-todos",
     false,
     res.locals.context,
   );
@@ -75,10 +76,23 @@ app.post("/todos", async (req, res) => {
     res.locals.context,
   );
 
-  // Check if the user has the "create-todos" feature enabled
+  // Check if the user has the "create-todos" feature enabled.
   if (isEnabled) {
+    // Get the configuration for the "create-todos" feature.
+    // We expect the configuration to be a JSON object with a `maxLength` property.
+    const config = await ofClient.getObjectValue<CreateTodosConfig>(
+      "create-todos",
+      { maxLength: 100 },
+      res.locals.context,
+    );
+
+    // Check if the todo is too long.
+    if (todo.length > config.maxLength) {
+      return res.status(400).json({ error: "Todo is too long" });
+    }
+
     // Track the feature usage
-    ofClient.track("create-todo", res.locals.context);
+    ofClient.track("create-todos", res.locals.context);
     todos.push(todo);
 
     return res.status(201).json({ todo });
@@ -98,7 +112,7 @@ app.delete("/todos/:idx", async (req, res) => {
 
   const ofClient = OpenFeature.getClient();
   const isEnabled = await ofClient.getBooleanValue(
-    "delete-todo",
+    "delete-todos",
     false,
     res.locals.context,
   );
@@ -106,7 +120,7 @@ app.delete("/todos/:idx", async (req, res) => {
   if (isEnabled) {
     todos.splice(idx, 1);
 
-    ofClient.track("delete-todo", res.locals.context);
+    ofClient.track("delete-todos", res.locals.context);
     return res.json({});
   }
 
