@@ -18,7 +18,17 @@ export async function initOpenFeature() {
     console.error("No publishable key set for Bucket");
     return;
   }
-  bucketProvider = new BucketBrowserSDKProvider({ publishableKey });
+  bucketProvider = new BucketBrowserSDKProvider({
+    publishableKey,
+    fallbackFeatures: {
+      huddle: {
+        key: "zoom",
+        payload: {
+          joinUrl: "https://zoom.us/join",
+        },
+      },
+    },
+  });
   return OpenFeature.setProviderAndWait(bucketProvider);
 }
 
