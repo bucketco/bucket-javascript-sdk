@@ -11,12 +11,10 @@ const featureKey = "huddle";
 
 export const HuddleFeature = () => {
   const isEnabled = useBooleanFlagValue(featureKey, false);
-  const { variant: provider, value: config } = useObjectFlagDetails(
-    featureKey,
-    {
+  const { variant: huddleMeetingProvider, value: config } =
+    useObjectFlagDetails(featureKey, {
       joinUrl: "https://zoom.us/join",
-    },
-  );
+    });
 
   return (
     <div className="border border-gray-300 p-6 rounded-xl dark:border-neutral-800 dark:bg-zinc-800/30">
@@ -25,7 +23,7 @@ export const HuddleFeature = () => {
         <code className="font-mono font-bold">{JSON.stringify(isEnabled)}</code>
       </pre>
       <h3 className="text-xl mb-4">
-        Huddle using <strong>{provider}</strong>:
+        Huddle using <strong>{huddleMeetingProvider}</strong>:
       </h3>
       <pre>
         <code className="font-mono font-bold">
