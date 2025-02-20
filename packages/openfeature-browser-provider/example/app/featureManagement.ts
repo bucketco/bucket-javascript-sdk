@@ -22,7 +22,7 @@ export async function initOpenFeature() {
     publishableKey,
     fallbackFeatures: {
       huddle: {
-        key: "zoom",
+        key: "zoom", // huddleMeetingProvider
         payload: {
           joinUrl: "https://zoom.us/join",
         },
