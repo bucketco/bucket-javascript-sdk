@@ -145,6 +145,7 @@ Example with all options:
 - `appBaseUrl`: Optional base URL for the Bucket application. Use this to override the default app URL,
 - `sseBaseUrl`: Optional base URL for Server-Sent Events. Use this to override the default SSE endpoint,
 - `debug`: Set to `true` to enable debug logging to the console,
+- `onFeaturesUpdated`: Provide a callback that is called when features are fetched from Bucket,
 - `toolbar`: Optional configuration for the Bucket toolbar,
 - `feedback`: Optional configuration for feedback collection:
 
@@ -395,6 +396,27 @@ function FeatureOptIn() {
 ```
 
 Note: To change the `user.id` or `company.id`, you need to update the props passed to `BucketProvider` instead of using these hooks.
+
+### `useClient()`
+
+Returns the `BucketClient` used by the `BucketProvider`. The client offers more functionality that
+is not directly accessible thorough the other hooks.
+
+```tsx
+import { useClient } from "@bucketco/react-sdk";
+
+function LoggingWrapper({ children }: { children: ReactNode }) {
+  const client = useClient();
+
+  useEffect(() => {
+    client.on("enabledCheck", (evt) => {
+      console.log(`The feature ${evt.key} is ${evt.value} for user.`);
+    });
+  }, [client]);
+
+  return children;
+}
+```
 
 ## Content Security Policy (CSP)
 
