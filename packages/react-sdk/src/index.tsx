@@ -69,11 +69,6 @@ export type BucketProps = BucketContext &
     debug?: boolean;
 
     /**
-     * Callback to be called when features are updated.
-     */
-    onFeaturesUpdated?: (features: RawFeatures) => void;
-
-    /**
      * New BucketClient constructor.
      *
      * @internal
@@ -91,7 +86,6 @@ export function BucketProvider({
   user,
   company,
   otherContext,
-  onFeaturesUpdated,
   loadingComponent,
   newBucketClient = (...args) => new BucketClient(...args),
   ...config
@@ -130,12 +124,7 @@ export function BucketProvider({
 
     clientRef.current = client;
 
-    client.on("featuresUpdated", () => {
-      const features = client.getFeatures();
-
-      setRawFeatures(features);
-      onFeaturesUpdated?.(features);
-    });
+    client.on("featuresUpdated", setRawFeatures);
 
     client
       .initialize()
@@ -177,7 +166,7 @@ type EmptyConfig = {
   payload: undefined;
 };
 
-type Feature<TKey extends FeatureKey> = {
+export type Feature<TKey extends FeatureKey> = {
   isEnabled: boolean;
   isLoading: boolean;
   config: MaterializedFeatures[TKey] extends boolean

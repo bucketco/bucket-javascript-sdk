@@ -19,6 +19,7 @@ import { version } from "../package.json";
 import {
   BucketProps,
   BucketProvider,
+  useClient,
   useFeature,
   useRequestFeedback,
   useSendFeedback,
@@ -138,6 +139,7 @@ beforeAll(() =>
     },
   }),
 );
+
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
@@ -311,7 +313,7 @@ describe("useSendFeedback", () => {
 
     await waitFor(async () => {
       await result.current({
-        featureId: "123",
+        featureKey: "huddles",
         score: 5,
       });
       expect(events).toStrictEqual(["FEEDBACK"]);
@@ -427,6 +429,20 @@ describe("useUpdateOtherContext", () => {
       expect(updateOtherContext).toHaveBeenCalledWith({
         optInHuddles: "true",
       });
+    });
+
+    unmount();
+  });
+});
+
+describe("useClient", () => {
+  test("gets the client", async () => {
+    const { result: clientFn, unmount } = renderHook(() => useClient(), {
+      wrapper: ({ children }) => getProvider({ children }),
+    });
+
+    await waitFor(async () => {
+      expect(clientFn.current).toBeDefined();
     });
 
     unmount();

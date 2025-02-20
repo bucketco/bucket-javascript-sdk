@@ -145,7 +145,6 @@ Example with all options:
 - `appBaseUrl`: Optional base URL for the Bucket application. Use this to override the default app URL,
 - `sseBaseUrl`: Optional base URL for Server-Sent Events. Use this to override the default SSE endpoint,
 - `debug`: Set to `true` to enable debug logging to the console,
-- `onFeaturesUpdated`: Provide a callback that is called when features are fetched from Bucket,
 - `toolbar`: Optional configuration for the Bucket toolbar,
 - `feedback`: Optional configuration for feedback collection:
 
