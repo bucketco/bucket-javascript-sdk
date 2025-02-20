@@ -79,6 +79,11 @@ export type RawFeature = FetchedFeature & {
    * If not null, the result is being overridden locally
    */
   isEnabledOverride: boolean | null;
+
+  /**
+   * If not null, the feature is in use
+   */
+  inUse: boolean;
 };
 
 export type RawFeatures = Record<string, RawFeature>;
@@ -185,6 +190,7 @@ const localStorageFetchedFeaturesKey = `__bucket_fetched_features`;
 const localStorageOverridesKey = `__bucket_overrides`;
 
 type OverridesFeatures = Record<string, boolean | null>;
+type InUseFeatures = Record<string, boolean | null>;
 
 function setOverridesCache(overrides: OverridesFeatures) {
   localStorage.setItem(localStorageOverridesKey, JSON.stringify(overrides));
@@ -209,6 +215,8 @@ export class FeaturesClient {
   private cache: FeatureCache;
   private fetchedFeatures: FetchedFeatures;
   private featureOverrides: OverridesFeatures = {};
+
+  private featureInUse: InUseFeatures = {};
 
   private features: RawFeatures = {};
 
@@ -391,19 +399,24 @@ export class FeaturesClient {
   private triggerFeaturesChanged() {
     const mergedFeatures: RawFeatures = {};
 
-    // merge fetched features with overrides into `this.features`
-    for (const key in this.fetchedFeatures) {
-      const fetchedFeature = this.fetchedFeatures[key];
-      if (!fetchedFeature) continue;
-      const isEnabledOverride = this.featureOverrides[key] ?? null;
+    const allKeys = new Set([
+      ...Object.keys(this.fetchedFeatures),
+      ...Object.keys(this.featureInUse),
+      ...Object.keys(this.featureOverrides),
+    ]);
+
+    for (const key of allKeys) {
       mergedFeatures[key] = {
-        ...fetchedFeature,
-        isEnabledOverride,
+        ...(this.fetchedFeatures[key] ?? {
+          key,
+          isEnabled: false,
+        }),
+        isEnabledOverride: this.featureOverrides[key] ?? null,
+        inUse: this.featureInUse[key] ?? false,
       };
     }
 
     this.features = mergedFeatures;
-
     this.eventTarget.dispatchEvent(new Event(FEATURES_UPDATED_EVENT));
   }
 
@@ -531,5 +544,10 @@ export class FeaturesClient {
 
   getFeatureOverride(key: string): boolean | null {
     return this.featureOverrides[key] ?? null;
+  }
+
+  setInUse(key: string, value: boolean) {
+    this.featureInUse[key] = value;
+    this.triggerFeaturesChanged();
   }
 }

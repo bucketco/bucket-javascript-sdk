@@ -14,7 +14,8 @@ import {
 // Extending the Features interface to define the available features
 declare module "../../src" {
   interface Features {
-    huddles: boolean;
+    huddles: { optInCopy: string };
+    "voice-chat": { optInCopy: string };
   }
 }
 
@@ -164,6 +165,9 @@ function Feedback() {
 
 // App.tsx
 function Demos() {
+  const [showVoiceChatOptIn, setShowVoiceChatOptIn] = useState(true);
+  const [showHuddleOptIn, setShowHuddleOptIn] = useState(true);
+
   return (
     <main>
       <h1>React SDK</h1>
@@ -176,7 +180,14 @@ function Demos() {
         <code>optin-huddles IS TRUE</code>. Hit the checkbox below to opt-in/out
         of the feature.
       </div>
-      <FeatureOptIn featureKey={"huddles"} featureName={"Huddles"} />
+      {showHuddleOptIn && <FeatureOptIn featureKey={"huddles"} />}
+      <button onClick={() => setShowHuddleOptIn((prev) => !prev)}>
+        Toggle voice chat opt-in
+      </button>
+      {showVoiceChatOptIn && <FeatureOptIn featureKey={"voice-chat"} />}
+      <button onClick={() => setShowVoiceChatOptIn((prev) => !prev)}>
+        Toggle voice chat opt-in
+      </button>
 
       <UpdateContext />
       <Feedback />
@@ -185,20 +196,22 @@ function Demos() {
   );
 }
 
-function FeatureOptIn({
+function FeatureOptIn<TKey extends FeatureKey>({
   featureKey,
-  featureName,
 }: {
-  featureKey: FeatureKey;
-  featureName: string;
+  featureKey: TKey;
 }) {
   const updateUser = useUpdateUser();
   const [sendingUpdate, setSendingUpdate] = useState(false);
-  const { isEnabled } = useFeature(featureKey);
+  const { isEnabled, config } = useFeature(featureKey);
 
   return (
     <div>
-      <label htmlFor="huddlesOptIn">Opt-in to {featureName} feature</label>
+      <label htmlFor="huddlesOptIn">
+        {config.payload?.optInCopy ?? "Hit the checkbox to opt-in"}:{" "}
+        {featureKey}
+      </label>
+
       <input
         disabled={sendingUpdate}
         id="huddlesOptIn"
@@ -222,12 +235,13 @@ export function App() {
     <BucketProvider
       publishableKey={publishableKey}
       feedback={{
-        enableLiveSatisfaction: true,
+        enableAutoFeedback: true,
       }}
       company={initialCompany}
       user={initialUser}
       otherContext={initialOtherContext}
       apiBaseUrl={apiBaseUrl}
+      // toolbar={true}
     >
       <Demos />
       {}

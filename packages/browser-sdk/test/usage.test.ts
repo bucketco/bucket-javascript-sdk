@@ -80,6 +80,9 @@ describe("usage", () => {
       track: expect.any(Function),
       requestFeedback: expect.any(Function),
       config: { key: undefined, payload: undefined },
+      isEnabledOverride: null,
+      setInUse: expect.any(Function),
+      setIsEnabledOverride: expect.any(Function),
     });
   });
 
@@ -413,6 +416,9 @@ describe(`sends "check" events `, () => {
         config: { key: undefined, payload: undefined },
         track: expect.any(Function),
         requestFeedback: expect.any(Function),
+        isEnabledOverride: null,
+        setInUse: expect.any(Function),
+        setIsEnabledOverride: expect.any(Function),
       });
 
       expect(client.getFeature("featureB")).toStrictEqual({
@@ -426,6 +432,9 @@ describe(`sends "check" events `, () => {
         },
         track: expect.any(Function),
         requestFeedback: expect.any(Function),
+        isEnabledOverride: null,
+        setInUse: expect.any(Function),
+        setIsEnabledOverride: expect.any(Function),
       });
 
       expect(client.getFeature("featureC")).toStrictEqual({
@@ -433,6 +442,9 @@ describe(`sends "check" events `, () => {
         config: { key: undefined, payload: undefined },
         track: expect.any(Function),
         requestFeedback: expect.any(Function),
+        isEnabledOverride: null,
+        setInUse: expect.any(Function),
+        setIsEnabledOverride: expect.any(Function),
       });
     });
 
@@ -564,9 +576,12 @@ describe(`sends "check" events `, () => {
       const featureId1 = client.getFeature("featureId1");
       expect(featureId1).toStrictEqual({
         isEnabled: false,
+        isEnabledOverride: null,
         track: expect.any(Function),
         requestFeedback: expect.any(Function),
         config: { key: undefined, payload: undefined },
+        setInUse: expect.any(Function),
+        setIsEnabledOverride: expect.any(Function),
       });
 
       vi.spyOn(client, "track");
@@ -586,6 +601,9 @@ describe(`sends "check" events `, () => {
         track: expect.any(Function),
         requestFeedback: expect.any(Function),
         config: { key: undefined, payload: undefined },
+        isEnabledOverride: null,
+        setIsEnabledOverride: expect.any(Function),
+        setInUse: expect.any(Function),
       });
 
       vi.spyOn(client, "requestFeedback");

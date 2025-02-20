@@ -36,6 +36,7 @@ export const featuresResult = Object.entries(featureResponse.features).reduce(
       ...feature!,
       config: feature.config,
       isEnabledOverride: null,
+      inUse: false,
     };
     return acc;
   },

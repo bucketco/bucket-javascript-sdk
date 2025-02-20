@@ -40,6 +40,16 @@
 .features-table {
   width: 100%;
   border-collapse: collapse;
+  a {
+    color: var(--text-color);
+    text-decoration: none;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+  .in-use a {
+    color: var(--brand400);
+  }
 }
 
 .feature-name-cell {
@@ -48,14 +58,6 @@
   text-overflow: ellipsis;
   width: auto;
   padding: 6px 6px 6px 0;
-}
-
-.feature-link {
-  color: var(--text-color);
-  text-decoration: none;
-  &:hover {
-    text-decoration: underline;
-  }
 }
 
 .feature-reset-cell {
