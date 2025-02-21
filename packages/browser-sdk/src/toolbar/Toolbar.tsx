@@ -105,6 +105,7 @@ export default function Toolbar({
               bucketClient,
             )}
             appBaseUrl={appBaseUrl}
+            isOpen={isOpen}
           />
         </DialogContent>
       </Dialog>
