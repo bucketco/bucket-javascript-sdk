@@ -1,4 +1,5 @@
 import { h } from "preact";
+import { useEffect, useState } from "preact/hooks";
 
 import { Switch } from "./Switch";
 import { FeatureItem } from "./Toolbar";
@@ -7,10 +8,12 @@ export function FeaturesTable({
   features,
   setEnabledOverride,
   appBaseUrl,
+  isOpen,
 }: {
   features: FeatureItem[];
   setEnabledOverride: (key: string, value: boolean | null) => void;
   appBaseUrl: string;
+  isOpen: boolean;
 }) {
   if (features.length === 0) {
     return <div style={{ color: "var(--gray500)" }}>No features found</div>;
@@ -18,11 +21,13 @@ export function FeaturesTable({
   return (
     <table class="features-table">
       <tbody>
-        {features.map((feature) => (
+        {features.map((feature, index) => (
           <FeatureRow
             feature={feature}
             appBaseUrl={appBaseUrl}
             setEnabledOverride={setEnabledOverride}
+            isOpen={isOpen}
+            index={index}
           />
         ))}
       </tbody>
@@ -34,13 +39,25 @@ function FeatureRow({
   setEnabledOverride,
   appBaseUrl,
   feature,
+  isOpen,
+  index,
 }: {
   feature: FeatureItem;
   appBaseUrl: string;
   setEnabledOverride: (key: string, value: boolean | null) => void;
+  isOpen: boolean;
+  index: number;
 }) {
+  const [show, setShow] = useState(true);
+  useEffect(() => {
+    setShow(isOpen);
+  }, [isOpen]);
   return (
-    <tr key={feature.key}>
+    <tr
+      class={["feature-row", show ? "show" : undefined].join(" ")}
+      key={feature.key}
+      style={{ "--i": index }}
+    >
       <td class="feature-name-cell">
         <a
           href={`${appBaseUrl}/envs/current/features/by-key/${feature.key}`}

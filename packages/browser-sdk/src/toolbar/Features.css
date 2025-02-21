@@ -42,6 +42,20 @@
   border-collapse: collapse;
 }
 
+.feature-row {
+  opacity: 0;
+  transform: translateY(-7px);
+  transition-property: opacity, transform;
+  transition-duration: 0.1s;
+  transition-timing-function: cubic-bezier(0.75, -0.015, 0.565, 1.055);
+
+  &.show {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: calc(0.01s * var(--i));
+  }
+}
+
 .feature-name-cell {
   white-space: nowrap;
   overflow: hidden;
@@ -59,7 +73,7 @@
 }
 
 .feature-reset-cell {
-  width: 30px;
+  width: 32px;
   padding: 6px 0;
   text-align: right;
 }

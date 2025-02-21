@@ -1,6 +1,6 @@
 {
   "name": "@bucketco/browser-sdk",
-  "version": "3.0.0-alpha.4",
+  "version": "3.0.0-alpha.5",
   "packageManager": "yarn@4.1.1",
   "license": "MIT",
   "repository": {

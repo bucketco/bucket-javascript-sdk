@@ -56,8 +56,11 @@
   --gray500: #787c91;
   --black: #1e1f24;
 
-  --bg-color: #1e1f24;
-  --border-color: #292b32;
+  --bg-color: hsla(230, 9%, 13%, 0.85);
+  --bg-light-color: hsla(230, 9%, 11%, 0.85);
+  --border-color: hsl(227, 10%, 18%);
+  --bg-blur: 3px;
+
   --logo-color: white;
   --text-color: white;
   --text-size: 13px;
@@ -83,11 +86,15 @@
 .dialog {
   color: #ffffff;
   box-sizing: border-box;
-  background-color: var(--black);
-  border: 1px solid var(--border-color);
+  background: var(--bg-color);
+  backdrop-filter: blur(var(--bg-blur));
+  -webkit-backdrop-filter: blur(var(--bg-blur));
+
+  border: 0;
   box-shadow:
     0px 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0px 4px 6px -2px rgba(0, 0, 0, 0.05);
+    0px 4px 6px -2px rgba(0, 0, 0, 0.05),
+    inset 0px 1px rgba(255, 255, 255, 0.1);
   border-radius: 7px;
   z-index: 999999;
   min-width: 200px;
@@ -95,8 +102,8 @@
 }
 
 .toolbar-toggle {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   position: fixed;
   z-index: 999999;
   padding: 0;
@@ -105,11 +112,14 @@
 
   color: var(--logo-color);
   background: var(--bg-color);
-  border: 1px solid var(--border-color);
+  backdrop-filter: blur(var(--bg-blur));
+  -webkit-backdrop-filter: blur(var(--bg-blur));
+
   box-shadow:
     0px 10px 15px -3px rgba(0, 0, 0, 0.15),
-    0px 4px 6px -2px rgba(0, 0, 0, 0.1);
-  border-radius: 10px;
+    0px 4px 6px -2px rgba(0, 0, 0, 0.1),
+    inset 0px 1px rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
 
   cursor: pointer;
 
@@ -119,45 +129,30 @@
 
   animation: bounceInUp 1s ease-out;
 
-  transition: color 0.1s ease;
+  transition:
+    color 0.1s ease,
+    background 0.1s ease;
 
   &.open {
     color: var(--gray500);
+    background: var(--bg-light-color);
   }
 
   & .override-indicator {
     position: absolute;
-    top: -3px;
-    right: -3px;
+    top: 1px;
+    right: 1px;
     width: 8px;
     height: 8px;
     background-color: var(--brand400);
     border-radius: 50%;
     opacity: 0;
     transition: opacity 0.1s ease-in-out;
-    border: 1px solid var(--brand300);
+    box-shadow: inset 0px 1px rgba(255, 255, 255, 0.1);
 
     &.show {
       opacity: 1;
       animation: gelatine 0.5s;
     }
-  }
-}
-
-.arrow {
-  background-color: var(--black);
-  box-shadow: var(--border-color) -1px -1px 1px 0px;
-
-  &.bottom {
-    box-shadow: var(--border-color) -1px -1px 1px 0px;
-  }
-  &.top {
-    box-shadow: var(--border-color) 1px 1px 1px 0px;
-  }
-  &.left {
-    box-shadow: var(--border-color) 1px -1px 1px 0px;
-  }
-  &.right {
-    box-shadow: var(--border-color) -1px 1px 1px 0px;
   }
 }
