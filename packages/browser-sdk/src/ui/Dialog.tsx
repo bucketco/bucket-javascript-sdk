@@ -32,6 +32,8 @@ export interface OpenDialogOptions {
 
   containerId: string;
 
+  showArrow?: boolean;
+
   children?: preact.ComponentChildren;
 }
 
@@ -71,6 +73,7 @@ export const Dialog: FunctionComponent<OpenDialogOptions> = ({
   containerId,
   strategy,
   children,
+  showArrow = true,
 }) => {
   const arrowRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -199,7 +202,7 @@ export const Dialog: FunctionComponent<OpenDialogOptions> = ({
       >
         {children && <Fragment>{children}</Fragment>}
 
-        {anchor && (
+        {anchor && showArrow && (
           <DialogArrow
             arrowRef={arrowRef}
             arrowData={middlewareData?.arrow}
