@@ -1,18 +1,20 @@
 import path from "path";
+import { createRequire } from "module";
 
-const baseUrl = process.env.BUCKET_BASE_URL ?? "https://app.bucket.co";
-export const loginUrl = (localPort: number) =>
+// https://github.com/nodejs/node/issues/51347#issuecomment-2111337854
+const packageJson = createRequire(import.meta.url)("../../package.json");
+
+export const CONFIG_FILE_NAME = "bucket.config.json";
+export const AUTH_FILE = path.join(
+  process.env.HOME ?? process.env.USERPROFILE ?? "",
+  ".bucket-auth",
+);
+export const SCHEMA_URL = `https://unpkg.com/@bucketco/cli@${packageJson.version}/schema.json`;
+
+export const DEFAULT_BASE_URL = "https://app.bucket.co";
+export const DEFAULT_API_URL = `${DEFAULT_BASE_URL}/api`;
+export const DEFAULT_TYPES_PATH = path.join("gen", "features.ts");
+
+export const loginUrl = (baseUrl: string, localPort: number) =>
   `${baseUrl}/login?redirect_url=` +
   encodeURIComponent("/cli-login?port=" + localPort);
-export const API_BASE_URL = process.env.BUCKET_API_URL ?? `${baseUrl}/api`;
-
-export const CONFIG_FILE = path.join(
-  process.env.HOME || "",
-  ".bucket-cli-config.json",
-);
-
-export const GEN_TYPES_FILE = path.join(
-  process.cwd(),
-  "gen",
-  "feature-flag-types.ts",
-);

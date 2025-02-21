@@ -1,22 +1,33 @@
-import http, { IncomingMessage } from "http";
+import http from "http";
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import open from "open";
 
-import { getConfig, writeConfigFile } from "./config.js";
-import { API_BASE_URL, loginUrl } from "./constants.js";
+import { AUTH_FILE, loginUrl } from "./constants.js";
+import { mkdir, readFile, writeFile } from "fs/promises";
+import { dirname } from "path";
+import { program } from "commander";
 
-function readBody(req: IncomingMessage) {
-  return new Promise<string>((resolve) => {
-    let bodyChunks: any = [];
-
-    req.on("data", (chunk) => {
-      bodyChunks.push(chunk);
-    });
-    req.on("end", () => {
-      resolve(Buffer.concat(bodyChunks).toString());
-    });
-  });
+export async function getToken() {
+  return readFile(AUTH_FILE, "utf-8");
 }
+
+export async function storeToken(newToken: string) {
+  await mkdir(dirname(AUTH_FILE), { recursive: true });
+  await writeFile(AUTH_FILE, newToken);
+}
+
+// function readBody(req: IncomingMessage) {
+//   return new Promise<string>((resolve) => {
+//     let bodyChunks: any = [];
+
+//     req.on("data", (chunk) => {
+//       bodyChunks.push(chunk);
+//     });
+//     req.on("end", () => {
+//       resolve(Buffer.concat(bodyChunks).toString());
+//     });
+//   });
+// }
 
 function corsHeaders(origin: string): Record<string, string> {
   return {
@@ -31,10 +42,11 @@ function corsHeaders(origin: string): Record<string, string> {
  */
 export async function authenticateUser() {
   return new Promise<string>((resolve, reject) => {
+    const { baseUrl } = program.opts();
+
     const server = http.createServer(async (req, res) => {
       const url = new URL(req.url ?? "/", "http://localhost");
-      const origin = new URL(loginUrl(0)).origin;
-      const headers = corsHeaders(origin);
+      const headers = corsHeaders(baseUrl);
 
       if (url.pathname !== "/cli-login") {
         res.writeHead(404).end("Invalid path");
@@ -45,7 +57,7 @@ export async function authenticateUser() {
 
       // Handle preflight request
       if (req.method === "OPTIONS") {
-        res.writeHead(200, corsHeaders(origin));
+        res.writeHead(200, headers);
         res.end();
         return;
       }
@@ -59,11 +71,7 @@ export async function authenticateUser() {
 
       const token = req.headers.authorization.slice("Bearer ".length);
 
-      const body = JSON.parse(await readBody(req));
-
-      if (body.defaultAppId !== undefined && getConfig("appId") === undefined) {
-        await writeConfigFile("appId", body.defaultAppId);
-      }
+      //const body = JSON.parse(await readBody(req));
 
       headers["Content-Type"] = "application/json";
 
@@ -71,41 +79,45 @@ export async function authenticateUser() {
       res.end(JSON.stringify({ result: "success" }));
       server.close();
 
-      await writeConfigFile("token", token);
+      await storeToken(token);
       resolve(token);
     });
+
+    const timeout = setTimeout(() => {
+      server.close();
+      reject(new Error("Authentication timed out after 30 seconds"));
+    }, 30000);
 
     server.listen();
     const address = server.address();
     if (address && typeof address === "object") {
       const port = address.port;
-      open(loginUrl(port), {
+      open(loginUrl(baseUrl, port), {
         newInstance: true,
       });
     }
-  });
-}
 
-export function checkAuth() {
-  if (!getConfig("token")) {
-    throw new Error(
-      'You are not authenticated. Please run "bucket auth login" first.',
-    );
-  }
+    // Cleanup timeout when server closes
+    server.on("close", () => {
+      clearTimeout(timeout);
+    });
+  });
 }
 
 export async function authRequest<T = Record<string, unknown>>(
   url: string,
   options?: AxiosRequestConfig,
+  retryCount = 0,
 ): Promise<T> {
-  checkAuth();
+  const token = await getToken();
+  const { apiUrl } = program.opts();
   try {
     const response = await axios({
       ...options,
-      url: `${API_BASE_URL}${url}`,
+      url: `${apiUrl}${url}`,
       headers: {
         ...options?.headers,
-        Authorization: "Bearer " + getConfig("token"),
+        Authorization: `Bearer ${token}`,
       },
     });
     return response.data;
@@ -115,9 +127,11 @@ export async function authRequest<T = Record<string, unknown>>(
       error.response &&
       error.response.status === 401
     ) {
-      writeConfigFile("token", undefined);
-      error.message = "Your session has expired. Please login again.";
-      throw error;
+      await storeToken("");
+      if (retryCount < 1) {
+        await authenticateUser();
+        return authRequest(url, options, retryCount + 1);
+      }
     }
     throw error;
   }

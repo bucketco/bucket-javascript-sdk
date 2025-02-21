@@ -8,17 +8,24 @@
   "bin": {
     "bucket": "./dist/index.js"
   },
+  "files": [
+    "dist",
+    "schema.json"
+  ],
   "scripts": {
     "build": "tsc",
-    "start": "yarn build && node dist/index.js"
+    "bucket": "yarn build && node dist/index.js"
   },
   "dependencies": {
     "@inquirer/prompts": "^5.3.8",
     "@sindresorhus/slugify": "^2.2.1",
+    "ajv": "^8.17.1",
     "axios": "^1.7.5",
     "chalk": "^5.3.0",
     "commander": "^12.1.0",
+    "find-up": "^7.0.0",
     "fs-extra": "^11.2.0",
+    "json5": "^2.2.3",
     "open": "^10.1.0",
     "ora": "^8.1.0"
   },
