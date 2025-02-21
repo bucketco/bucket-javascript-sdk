@@ -93,6 +93,7 @@ export default function Toolbar({
           anchor: toggleToolbarRef.current,
           placement: "top-start",
         }}
+        showArrow={false}
         close={close}
       >
         <DialogHeader>
