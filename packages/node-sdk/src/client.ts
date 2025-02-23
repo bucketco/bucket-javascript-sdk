@@ -512,6 +512,8 @@ export class BucketClient {
       key,
       isEnabled: feature?.isEnabled ?? false,
       targetingVersion: feature?.targetingVersion,
+      missingContextFields: feature?.missingContextFields,
+      ruleEvaluationResults: feature?.ruleEvaluationResults,
     });
   }
 
@@ -561,6 +563,7 @@ export class BucketClient {
       companyId,
       additionalContext,
     );
+
     return features[key];
   }
 
@@ -940,6 +943,8 @@ export class BucketClient {
           key: res.featureKey,
           isEnabled: res.value ?? false,
           targetingVersion: keyToVersionMap.get(res.featureKey),
+          ruleEvaluationResults: res.ruleEvaluationResults,
+          missingContextFields: res.missingContextFields,
         };
         return acc;
       },
@@ -964,20 +969,29 @@ export class BucketClient {
   }
 
   private _wrapRawFeature(
-    options: { enableTracking: boolean } & Context,
-    { key, isEnabled, targetingVersion }: RawFeature,
+    { enableTracking, ...context }: { enableTracking: boolean } & Context,
+    {
+      key,
+      isEnabled,
+      targetingVersion,
+      missingContextFields,
+      ruleEvaluationResults,
+    }: RawFeature,
   ): Feature {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const client = this;
 
     return {
       get isEnabled() {
-        if (options.enableTracking) {
+        if (enableTracking) {
           void client
             .sendFeatureEvent({
               action: "check",
               key,
               targetingVersion,
+              evalContext: context,
+              evalMissingFields: missingContextFields,
+              evalRuleResults: ruleEvaluationResults,
               evalResult: isEnabled,
             })
             .catch((err) => {
@@ -992,14 +1006,14 @@ export class BucketClient {
       },
       key,
       track: async () => {
-        if (typeof options.user?.id === "undefined") {
+        if (typeof context.user?.id === "undefined") {
           this._config.logger?.warn("no user set, cannot track event");
           return;
         }
 
-        if (options.enableTracking) {
-          await this.track(options.user.id, key, {
-            companyId: options.company?.id,
+        if (enableTracking) {
+          await this.track(context.user.id, key, {
+            companyId: context.company?.id,
           });
         } else {
           this._config.logger?.debug("tracking disabled, not tracking event");
@@ -1026,6 +1040,7 @@ export class BucketClient {
       ...context,
       enableTracking: true,
     };
+
     checkContextWithTracking(contextWithTracking);
 
     const params = new URLSearchParams(

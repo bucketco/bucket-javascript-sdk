@@ -159,8 +159,8 @@ const evaluatedFeatures = [
     feature: { key: "feature2", version: 2 },
     value: false,
     context: {},
-    ruleEvaluationResults: [false],
-    missingContextFields: ["something"],
+    ruleEvaluationResults: [false, false],
+    missingContextFields: ["one", "two"],
   },
 ];
 
@@ -951,6 +951,7 @@ describe("BucketClient", () => {
 
   describe("getFeature", () => {
     let client: BucketClient;
+
     beforeEach(async () => {
       httpClient.get.mockResolvedValue({
         ok: true,
@@ -1010,6 +1011,7 @@ describe("BucketClient", () => {
         user,
         other: otherContext,
       };
+
       // test that the feature is returned
       await client.initialize();
       const feature = client.getFeature(
@@ -1068,8 +1070,8 @@ describe("BucketClient", () => {
             targetingVersion: 2,
             evalContext: context,
             evalResult: false,
-            evalRuleResults: [false],
-            evalMissingFields: ["something"],
+            evalRuleResults: [false, false],
+            evalMissingFields: ["one", "two"],
           },
           {
             type: "event",
@@ -1081,7 +1083,7 @@ describe("BucketClient", () => {
       );
     });
 
-    it("`isEnabled` sends `check` event", async () => {
+    it("`isEnabled` should send a `check` event with evaluate details", async () => {
       const context = {
         company,
         user,
@@ -1090,10 +1092,10 @@ describe("BucketClient", () => {
 
       // test that the feature is returned
       await client.initialize();
-      const feature = client.getFeature(context, "feature1");
+      const feature = client.getFeature(context, "feature2");
 
       // trigger `check` event
-      expect(feature.isEnabled).toBe(true);
+      expect(feature.isEnabled).toBe(false);
 
       await client.flush();
 
@@ -1116,26 +1118,46 @@ describe("BucketClient", () => {
           {
             type: "feature-flag-event",
             action: "check",
-            evalResult: true,
-            targetingVersion: 1,
-            key: "feature1",
+            evalContext: {
+              company: {
+                employees: 100,
+                id: "company123",
+                name: "Acme Inc.",
+              },
+              other: {
+                custom: "context",
+                key: "value",
+              },
+              user: {
+                age: 1,
+                id: "user123",
+                name: "John",
+              },
+            },
+            evalMissingFields: ["one", "two"],
+            evalResult: false,
+            evalRuleResults: [false, false],
+            key: "feature2",
+            targetingVersion: 2,
           },
         ],
       );
     });
 
-    it("everything works for unknown features", async () => {
+    it("all events should be sent for undefined or local features", async () => {
       const context: Context = {
         company,
         user,
         other: otherContext,
       };
+
       // test that the feature is returned
       await client.initialize();
       const feature = client.getFeature(context, "unknown-feature");
 
       // trigger `check` event
       expect(feature.isEnabled).toBe(false);
+
       await feature.track();
       await client.flush();
 
@@ -1149,28 +1171,19 @@ describe("BucketClient", () => {
           expect.objectContaining({
             type: "user",
           }),
-          {
+          expect.objectContaining({
             type: "feature-flag-event",
             action: "evaluate",
             key: "feature1",
-            targetingVersion: 1,
-            evalContext: context,
-            evalResult: true,
-            evalRuleResults: [true],
-            evalMissingFields: [],
-          },
-          {
+          }),
+          expect.objectContaining({
             type: "feature-flag-event",
             action: "evaluate",
             key: "feature2",
-            targetingVersion: 2,
-            evalContext: context,
-            evalResult: false,
-            evalRuleResults: [false],
-            evalMissingFields: ["something"],
-          },
+          }),
           {
             type: "feature-flag-event",
+            evalContext: context,
             action: "check",
             evalResult: false,
             key: "unknown-feature",
@@ -1285,12 +1298,19 @@ describe("BucketClient", () => {
               other: otherContext,
             },
             evalResult: false,
-            evalRuleResults: [false],
-            evalMissingFields: ["something"],
+            evalRuleResults: [false, false],
+            evalMissingFields: ["one", "two"],
           },
           {
             action: "check",
             evalResult: false,
+            evalContext: {
+              company,
+              user,
+              other: otherContext,
+            },
+            evalRuleResults: [false, false],
+            evalMissingFields: ["one", "two"],
             key: "feature2",
             targetingVersion: 2,
             type: "feature-flag-event",
@@ -1298,9 +1318,77 @@ describe("BucketClient", () => {
           {
             action: "check",
             evalResult: true,
+            evalContext: {
+              company,
+              user,
+              other: otherContext,
+            },
+            evalRuleResults: [true],
+            evalMissingFields: [],
             key: "feature1",
             targetingVersion: 1,
             type: "feature-flag-event",
+          },
+        ],
+      );
+    });
+
+    it("`isEnabled` should send a `check` event with evaluate details", async () => {
+      const context = {
+        company,
+        user,
+        other: otherContext,
+      };
+
+      // test that the feature is returned
+      await client.initialize();
+      const features = client.getFeatures(context);
+
+      // trigger `check` event
+      expect(features.feature2.isEnabled).toBe(false);
+
+      await client.flush();
+
+      expect(httpClient.post).toHaveBeenCalledWith(
+        BULK_ENDPOINT,
+        expectedHeaders,
+        [
+          expect.objectContaining({ type: "company" }),
+          expect.objectContaining({ type: "user" }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "evaluate",
+            key: "feature1",
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "evaluate",
+            key: "feature2",
+          }),
+          {
+            type: "feature-flag-event",
+            action: "check",
+            evalContext: {
+              company: {
+                employees: 100,
+                id: "company123",
+                name: "Acme Inc.",
+              },
+              other: {
+                custom: "context",
+                key: "value",
+              },
+              user: {
+                age: 1,
+                id: "user123",
+                name: "John",
+              },
+            },
+            evalMissingFields: ["one", "two"],
+            evalResult: false,
+            evalRuleResults: [false, false],
+            key: "feature2",
+            targetingVersion: 2,
           },
         ],
       );
@@ -1318,7 +1406,7 @@ describe("BucketClient", () => {
 
       expect(logger.warn).toHaveBeenCalledWith(
         expect.stringMatching(
-          'feature "feature2" has targeting rules that require the following context fields: "something"',
+          'feature "feature2" has targeting rules that require the following context fields: "one", "two"',
         ),
       );
     });
@@ -1384,19 +1472,29 @@ describe("BucketClient", () => {
               user,
             },
             evalResult: false,
-            evalRuleResults: [false],
-            evalMissingFields: ["something"],
+            evalRuleResults: [false, false],
+            evalMissingFields: ["one", "two"],
           },
           {
             action: "check",
+            evalContext: {
+              user,
+            },
             evalResult: false,
+            evalRuleResults: [false, false],
+            evalMissingFields: ["one", "two"],
             key: "feature2",
             targetingVersion: 2,
             type: "feature-flag-event",
           },
           {
             action: "check",
+            evalContext: {
+              user,
+            },
             evalResult: true,
+            evalRuleResults: [true],
+            evalMissingFields: [],
             key: "feature1",
             targetingVersion: 1,
             type: "feature-flag-event",
@@ -1454,12 +1552,17 @@ describe("BucketClient", () => {
               company,
             },
             evalResult: false,
-            evalRuleResults: [false],
-            evalMissingFields: ["something"],
+            evalRuleResults: [false, false],
+            evalMissingFields: ["one", "two"],
           },
           {
             action: "check",
             evalResult: false,
+            evalContext: {
+              company,
+            },
+            evalRuleResults: [false, false],
+            evalMissingFields: ["one", "two"],
             key: "feature2",
             targetingVersion: 2,
             type: "feature-flag-event",
@@ -1467,6 +1570,11 @@ describe("BucketClient", () => {
           {
             action: "check",
             evalResult: true,
+            evalContext: {
+              company,
+            },
+            evalRuleResults: [true],
+            evalMissingFields: [],
             key: "feature1",
             targetingVersion: 1,
             type: "feature-flag-event",
@@ -1533,8 +1641,8 @@ describe("BucketClient", () => {
               other: otherContext,
             },
             evalResult: false,
-            evalRuleResults: [false],
-            evalMissingFields: ["something"],
+            evalRuleResults: [false, false],
+            evalMissingFields: ["one", "two"],
           },
         ],
       );
@@ -1680,6 +1788,9 @@ describe("BucketClient", () => {
           {
             type: "feature-flag-event",
             action: "check",
+            evalContext: {
+              user: { id: "user123" },
+            },
             key: "key",
             evalResult: true,
           },
@@ -1687,7 +1798,7 @@ describe("BucketClient", () => {
       );
     });
 
-    it("should not fail if sendFeatureEvent fails to send evaluate event", async () => {
+    it("should not fail if `sendFeatureEvent` fails to send evaluate event", async () => {
       httpClient.post.mockRejectedValueOnce(new Error("Network error"));
 
       await client.initialize();
@@ -1714,7 +1825,7 @@ describe("BucketClient", () => {
       });
     });
 
-    it("should not fail if sendFeatureEvent fails to send check event", async () => {
+    it("should not fail if `sendFeatureEvent` fails to send check event", async () => {
       httpClient.post.mockResolvedValue({
         status: 200,
         body: { success: true },
@@ -1802,7 +1913,8 @@ describe("BucketClient", () => {
               key: "feature2",
               targetingVersion: 2,
               isEnabled: false,
-              missingContextFields: ["something"],
+              missingContextFields: ["one", "two"],
+              ruleEvaluationResults: [false, false],
             },
           },
         },
@@ -1841,6 +1953,36 @@ describe("BucketClient", () => {
       );
     });
 
+    it("`isEnabled` should send `check` event with details received remotely", async () => {
+      const result = await client.getFeaturesRemote("c1", "u1", {
+        other: otherContext,
+      });
+
+      expect(result.feature2.isEnabled).toBe(false); // force an event
+      await client.flush();
+
+      expect(httpClient.post).toHaveBeenCalledWith(
+        BULK_ENDPOINT,
+        expectedHeaders,
+        [
+          {
+            action: "check",
+            key: "feature2",
+            targetingVersion: 2,
+            type: "feature-flag-event",
+            evalContext: {
+              user: { id: "c1" },
+              company: { id: "u1" },
+              other: otherContext,
+            },
+            evalMissingFields: ["one", "two"],
+            evalResult: false,
+            evalRuleResults: [false, false],
+          },
+        ],
+      );
+    });
+
     it("should not try to append the context if it's empty", async () => {
       await client.getFeaturesRemote();
 
@@ -1855,7 +1997,7 @@ describe("BucketClient", () => {
     it("should warn if missing context fields", async () => {
       await client.getFeaturesRemote();
       expect(logger.warn).toHaveBeenCalledWith(
-        'feature "feature2" has targeting rules that require the following context fields: "something"',
+        'feature "feature2" has targeting rules that require the following context fields: "one", "two"',
       );
     });
   });
@@ -1876,6 +2018,7 @@ describe("BucketClient", () => {
               targetingVersion: 1,
               isEnabled: true,
               missingContextFields: ["one", "two"],
+              ruleEvaluationResults: [true, false],
             },
           },
         },
@@ -1886,6 +2029,36 @@ describe("BucketClient", () => {
 
     afterEach(() => {
       httpClient.get.mockClear();
+    });
+
+    it("`isEnabled` should send `check` event with details received remotely", async () => {
+      const result = await client.getFeatureRemote("feature1", "c1", "u1", {
+        other: otherContext,
+      });
+
+      expect(result.isEnabled).toBe(true); // force an event
+      await client.flush();
+
+      expect(httpClient.post).toHaveBeenCalledWith(
+        BULK_ENDPOINT,
+        expectedHeaders,
+        [
+          {
+            action: "check",
+            key: "feature1",
+            targetingVersion: 1,
+            type: "feature-flag-event",
+            evalContext: {
+              user: { id: "c1" },
+              company: { id: "u1" },
+              other: otherContext,
+            },
+            evalMissingFields: ["one", "two"],
+            evalResult: true,
+            evalRuleResults: [true, false],
+          },
+        ],
+      );
     });
 
     it("should return evaluated feature", async () => {
@@ -1931,12 +2104,23 @@ describe("BucketClient", () => {
       client = new BucketClient({
         ...validOptions,
         offline: true,
+        fallbackFeatures: ["feature1", "feature2"],
+        featureOverrides: () => ({
+          feature1: true,
+          feature2: false,
+        }),
       });
+
       await client.initialize();
     });
 
     it("should send not send or fetch anything", async () => {
-      client.getFeatures({});
+      const feature = client.getFeature({ user }, "feature1");
+
+      expect(feature.isEnabled).toBe(true);
+
+      await feature.track();
+      await client.flush();
 
       expect(httpClient.get).toHaveBeenCalledTimes(0);
       expect(httpClient.post).toHaveBeenCalledTimes(0);
