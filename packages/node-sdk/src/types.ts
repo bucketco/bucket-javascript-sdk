@@ -75,6 +75,11 @@ export interface RawFeature {
   targetingVersion?: number;
 
   /**
+   * The rule results of the evaluation (optional).
+   */
+  ruleEvaluationResults?: boolean[];
+
+  /**
    * The missing fields in the evaluation context (optional).
    */
   missingContextFields?: string[];
