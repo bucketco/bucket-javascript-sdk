@@ -12,7 +12,7 @@ export const loginAction = async () => {
     await authenticateUser();
     spinner.succeed(`Logged in to ${chalk.cyan(baseUrl)} successfully! 🎉`);
   } catch (error) {
-    spinner.fail();
+    spinner.fail("Login failed");
     handleError(error, "Login");
   }
 };
@@ -23,7 +23,7 @@ export const logoutAction = async () => {
     await storeToken("");
     spinner.succeed("Logged out successfully! 👋");
   } catch (error) {
-    spinner.fail();
+    spinner.fail("Logout failed");
     handleError(error, "Logout");
   }
 };

@@ -9,7 +9,7 @@ type FeaturesResponse = {
   data: Feature[];
 };
 
-export async function listFeatures(appId: string) {
+export async function listFeatures(appId: string): Promise<Feature[]> {
   const response = await authRequest<FeaturesResponse>(
     `/apps/${appId}/features`,
   );
@@ -24,7 +24,11 @@ type FeatureResponse = {
   feature: Feature;
 };
 
-export async function createFeature(appId: string, name: string, key: string) {
+export async function createFeature(
+  appId: string,
+  name: string,
+  key: string,
+): Promise<Feature> {
   const response = await authRequest<FeatureResponse>(
     `/apps/${appId}/features`,
     {

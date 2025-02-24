@@ -148,7 +148,7 @@ export async function createConfig(newConfig: Config, overwrite = false) {
       config = newConfig;
     } else {
       // Write to the nearest package.json directory
-      const configPath = join(getProjectPath(), CONFIG_FILE_NAME);
+      configPath = join(getProjectPath(), CONFIG_FILE_NAME);
       await writeFile(configPath, configJSON);
       config = newConfig;
     }

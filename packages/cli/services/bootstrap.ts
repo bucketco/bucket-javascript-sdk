@@ -1,20 +1,25 @@
 import { authRequest } from "../utils/auth.js";
 import { KeyFormat } from "../utils/config.js";
 
-type App = {
-  id: string;
-  name: string;
-  demo: boolean;
-};
-
 type BootstrapResponse = {
   org: {
-    apps: App[];
+    apps: {
+      id: string;
+      name: string;
+      demo: boolean;
+    }[];
     featureKeyFormat?: KeyFormat;
   };
 };
 
-export async function listApps() {
+export type App = {
+  id: string;
+  name: string;
+  demo: boolean;
+  featureKeyFormat: KeyFormat;
+};
+
+export async function listApps(): Promise<App[]> {
   const response = await authRequest<BootstrapResponse>(`/bootstrap`);
   const org = response.org;
   if (!org) {
@@ -27,6 +32,6 @@ export async function listApps() {
     id,
     name,
     demo,
-    featureKeyFormat: org.featureKeyFormat,
+    featureKeyFormat: org.featureKeyFormat ?? "custom",
   }));
 }

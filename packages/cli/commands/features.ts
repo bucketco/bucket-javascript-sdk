@@ -2,7 +2,7 @@ import chalk from "chalk";
 import { Command, program } from "commander";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join, isAbsolute } from "node:path";
-import ora from "ora";
+import ora, { Ora } from "ora";
 
 import { createFeature, listFeatures } from "../services/features.js";
 import { getConfig, getProjectPath } from "../utils/config.js";
@@ -28,16 +28,23 @@ export const createFeatureAction = async (
   { appId, key }: CreateFeatureArgs,
 ) => {
   const { baseUrl } = program.opts();
-  const spinner = ora(
-    `Loading features from app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}...`,
-  ).start();
+  let spinner: Ora | undefined;
+  let existingKeys: string[] = [];
   try {
+    spinner = ora(
+      `Loading features of app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}...`,
+    ).start();
     const features = await listFeatures(appId);
-    const existingKeys = features.map((f) => f.key);
+    existingKeys = features.map((f) => f.key);
     spinner.succeed(
-      `Loaded features app ${chalk.cyan(appId)} at from ${chalk.cyan(baseUrl)}`,
+      `Loaded features of app ${chalk.cyan(appId)} at from ${chalk.cyan(baseUrl)}`,
     );
+  } catch (error) {
+    spinner?.fail("Loading features failed");
+    handleError(error, "Features Create");
+  }
 
+  try {
     if (!name) {
       name = await input({
         message: "New feature name:",
@@ -54,13 +61,13 @@ export const createFeatureAction = async (
       });
     }
 
-    spinner.start("Creating feature...");
+    spinner = ora("Creating feature...").start();
     const feature = await createFeature(appId, name, key);
     spinner.succeed(
       `Created feature ${chalk.cyan(feature.name)} with key ${chalk.cyan(feature.key)}. 🎉`,
     );
   } catch (error) {
-    spinner.fail();
+    spinner?.fail("Feature creation failed");
     handleError(error, "Features Create");
   }
 };
@@ -68,16 +75,16 @@ export const createFeatureAction = async (
 export const listFeaturesAction = async ({ appId }: AppIdArgs) => {
   const { baseUrl } = program.opts();
   const spinner = ora(
-    `Loading features from app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}...`,
+    `Loading features of app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}...`,
   ).start();
   try {
     const features = await listFeatures(appId);
     spinner.succeed(
-      `Loaded features from app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}`,
+      `Loaded features of app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}`,
     );
     console.table(features);
   } catch (error) {
-    spinner.fail();
+    spinner.fail("Loading features failed");
     handleError(error, "Features List");
   }
 };
@@ -87,24 +94,31 @@ export const generateTypesAction = async ({
   out,
 }: GenerateTypesArgs) => {
   const { baseUrl } = program.opts();
-  let spinner = ora(
-    `Loading features from app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}...`,
-  ).start();
+  let spinner: Ora | undefined;
+  let featureKeys: string[] = [];
   try {
-    const feature = await listFeatures(appId);
+    spinner = ora(
+      `Loading features of app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}...`,
+    ).start();
+    featureKeys = (await listFeatures(appId)).map(({ key }) => key);
     spinner.succeed(
-      `Loaded features from app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}`,
+      `Loaded features of app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}`,
     );
+  } catch (error) {
+    spinner?.fail("Loading features failed");
+    handleError(error, "Features Types");
+  }
 
+  try {
     spinner = ora("Generating feature types...").start();
-    const types = genDTS(feature.map(({ key }) => key));
+    const types = genDTS(featureKeys);
     const outPath = isAbsolute(out) ? out : join(getProjectPath(), out);
     await mkdir(dirname(outPath), { recursive: true });
     await writeFile(outPath, types);
     spinner.succeed("Generated feature types successfully");
     console.log(chalk.green(`Generated types for ${appId}.`));
   } catch (error) {
-    spinner.fail();
+    spinner?.fail("Type generation failed");
     handleError(error, "Features Types");
   }
 };
