@@ -4,26 +4,27 @@ import { program } from "commander";
 import { registerAuthCommands } from "./commands/auth.js";
 import { registerFeatureCommands } from "./commands/features.js";
 import { registerInitCommand } from "./commands/init.js";
-import { getConfig, readConfigFile } from "./utils/config.js";
+import { getConfig, getConfigPath, loadConfig } from "./utils/config.js";
 import { registerAppCommands } from "./commands/apps.js";
 import chalk from "chalk";
-import { DEFAULT_API_URL, DEFAULT_BASE_URL } from "./utils/constants.js";
+import { registerNewCommand } from "./commands/new.js";
+import { options } from "./utils/options.js";
 
 async function main() {
-  // Read the config file
-  const config = await readConfigFile();
+  // Must load config before anything else
+  await loadConfig();
 
   // Global options
-  program.option("--debug", "Enable debug mode", false);
+  program.option(options.debug.flags, options.debug.description, false);
   program.requiredOption(
-    "--base-url [url]",
-    "Specify the Bucket base url",
-    getConfig("baseUrl") ?? DEFAULT_BASE_URL,
+    options.baseUrl.flags,
+    options.baseUrl.description,
+    getConfig(options.baseUrl.configKey) ?? options.baseUrl.fallback,
   );
   program.option(
-    "--api-url [url]",
-    "Specify the Bucket API url",
-    getConfig("apiUrl") ?? DEFAULT_API_URL,
+    options.apiUrl.flags,
+    options.apiUrl.description,
+    getConfig(options.apiUrl.configKey),
   );
 
   // Pre-action hook
@@ -31,11 +32,13 @@ async function main() {
     const { debug } = program.opts();
     if (debug) {
       console.debug(chalk.cyan("\nDebug mode enabled"));
-      console.table(config);
+      console.debug("Reading config from", chalk.green(getConfigPath()));
+      console.table(getConfig());
     }
   });
 
   // Main program
+  registerNewCommand(program);
   registerInitCommand(program);
   registerAuthCommands(program);
   registerAppCommands(program);

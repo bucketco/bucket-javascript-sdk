@@ -1,8 +1,6 @@
 {
   "$schema": "https://unpkg.com/@bucketco/cli@0.0.1/schema.json",
+  "appId": "apbW6RrMgL2IhC",
   "baseUrl": "https://staging.app.bucket.co",
-  "apiUrl": "https://staging.app.bucket.co/api",
-  "appId": "aptC9gNxk8u7IE",
-  "typesPath": "gen/features.ts",
-  "keyFormat": "custom"
+  "keyFormat": "snakeCaseUppers"
 }

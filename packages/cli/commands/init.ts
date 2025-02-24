@@ -1,27 +1,40 @@
 import { input, select } from "@inquirer/prompts";
 import chalk from "chalk";
 import { Command, program } from "commander";
-import ora from "ora";
+import ora, { Ora } from "ora";
 
 import { listApps } from "../services/bootstrap.js";
-import { createConfigFile } from "../utils/config.js";
+import { createConfig, getConfigPath } from "../utils/config.js";
 
-import { DEFAULT_TYPES_PATH } from "../utils/constants.js";
+import { chalkBrand, DEFAULT_TYPES_PATH } from "../utils/constants.js";
 import { handleError } from "../utils/error.js";
+import { options } from "../utils/options.js";
 
 type InitArgs = {
   force?: boolean;
 };
 
 export const initAction = async (args: InitArgs) => {
-  console.log(chalk.magenta("\nWelcome to Bucket! 🪣\n"));
-  const { baseUrl, apiUrl } = program.opts();
+  let spinner: Ora | undefined;
 
   try {
-    // Check if already authenticated
-    let spinner = ora(`Authenticating with ${baseUrl}...`).start();
+    // Check if already initialized
+    const configPath = getConfigPath();
+    if (configPath) {
+      if (!args.force) {
+        throw new Error(
+          "Bucket is already initialized. Use --force to overwrite.",
+        );
+      }
+    }
+
+    console.log(chalkBrand("\nWelcome to Bucket! 🪣\n"));
+    const { baseUrl, apiUrl } = program.opts();
+
+    // Load apps
+    spinner = ora(`Loading apps from ${chalk.cyan(baseUrl)}...`).start();
     const apps = await listApps();
-    spinner.succeed("Authenticated");
+    spinner.succeed(`Loaded apps from ${chalk.cyan(baseUrl)}`);
 
     let appId: string | undefined;
 
@@ -57,7 +70,7 @@ export const initAction = async (args: InitArgs) => {
 
     // Create config file
     spinner = ora("Creating configuration...").start();
-    await createConfigFile(
+    await createConfig(
       {
         baseUrl,
         apiUrl,
@@ -67,16 +80,10 @@ export const initAction = async (args: InitArgs) => {
       },
       args.force,
     );
-    spinner.succeed("Configuration created");
-
-    console.log(chalk.green("\nBucket initialized successfully! 🎉"));
-    console.log(
-      chalk.gray(
-        "\nNext steps:\n1. Run 'bucket features sync' to sync your feature flags\n2. Import the generated types in your code",
-      ),
-    );
+    spinner.succeed(`Configuration created at ${getConfigPath()}! 🎉`);
   } catch (error) {
-    handleError(error, "Initialization failed:");
+    spinner?.fail();
+    handleError(error, "Initialization");
   }
 };
 
@@ -84,9 +91,6 @@ export function registerInitCommand(program: Command) {
   program
     .command("init")
     .description("Initialize a new Bucket configuration")
-    .option(
-      "-f, --force",
-      "Force initialization overwriting existing configuration",
-    )
+    .option(options.initOverride.flags, options.initOverride.description)
     .action(initAction);
 }

@@ -1,76 +1,111 @@
 import chalk from "chalk";
-import { Command } from "commander";
-import { outputFile } from "fs-extra/esm";
+import { Command, program } from "commander";
+import { mkdir, writeFile } from "node:fs/promises";
+import { dirname, join, isAbsolute } from "node:path";
 import ora from "ora";
 
-import {
-  createFeature,
-  genFeatureTypes,
-  listFeatures,
-} from "../services/features.js";
-import { getConfig } from "../utils/config.js";
-import {
-  CONFIG_FILE_NAME,
-  DEFAULT_TYPES_PATH as DEFAULT_TYPES_PATH,
-} from "../utils/constants.js";
+import { createFeature, listFeatures } from "../services/features.js";
+import { getConfig, getProjectPath } from "../utils/config.js";
 import { handleError } from "../utils/error.js";
-import { appIdOption } from "../utils/options.js";
+import { input } from "@inquirer/prompts";
+import { genDTS, genFeatureKey, KeyFormatPatterns } from "../utils/gen.js";
+import { options } from "../utils/options.js";
 
 type AppIdArgs = {
   appId: string;
-};
-
-export const listFeaturesAction = async ({ appId }: AppIdArgs) => {
-  const spinner = ora("Loading features...").start();
-  try {
-    const features = await listFeatures(appId);
-    spinner.succeed();
-    console.log(chalk.green(`Features in ${appId}:`));
-    console.table(features);
-  } catch (error) {
-    spinner.fail();
-    handleError(error, "Failed to list features:");
-  }
-};
-
-type GenerateTypesArgs = AppIdArgs & {
-  out: string;
-};
-
-export const generateTypesAction = async ({
-  appId,
-  out,
-}: GenerateTypesArgs) => {
-  const spinner = ora("Generating feature types...").start();
-  try {
-    const types = await genFeatureTypes(appId);
-    await outputFile(out, types);
-    spinner.succeed();
-    console.log(chalk.green(`Generated features for ${appId}.`));
-  } catch (error) {
-    spinner.fail();
-    handleError(error, "Failed to generate feature types:");
-  }
 };
 
 type CreateFeatureArgs = AppIdArgs & {
   key?: string;
 };
 
+type GenerateTypesArgs = AppIdArgs & {
+  out: string;
+};
+
 export const createFeatureAction = async (
-  name: string,
+  name: string | undefined,
   { appId, key }: CreateFeatureArgs,
 ) => {
-  const spinner = ora("Creating feature...").start();
+  const { baseUrl } = program.opts();
+  const spinner = ora(
+    `Loading features from app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}...`,
+  ).start();
   try {
+    const features = await listFeatures(appId);
+    const existingKeys = features.map((f) => f.key);
+    spinner.succeed(
+      `Loaded features app ${chalk.cyan(appId)} at from ${chalk.cyan(baseUrl)}`,
+    );
+
+    if (!name) {
+      name = await input({
+        message: "New feature name:",
+        validate: (input) => input.length > 0 || "Name is required",
+      });
+    }
+
+    if (!key) {
+      const keyFormat = getConfig("keyFormat") ?? "custom";
+      key = await input({
+        message: "New feature key:",
+        default: genFeatureKey(name, keyFormat, existingKeys),
+        validate: KeyFormatPatterns[keyFormat].validate,
+      });
+    }
+
+    spinner.start("Creating feature...");
     const feature = await createFeature(appId, name, key);
-    spinner.succeed();
-    console.log(
-      chalk.green(`Created feature ${feature.name} with key ${feature.key}.`),
+    spinner.succeed(
+      `Created feature ${chalk.cyan(feature.name)} with key ${chalk.cyan(feature.key)}. 🎉`,
     );
   } catch (error) {
     spinner.fail();
-    handleError(error, "Failed to create feature:");
+    handleError(error, "Features Create");
+  }
+};
+
+export const listFeaturesAction = async ({ appId }: AppIdArgs) => {
+  const { baseUrl } = program.opts();
+  const spinner = ora(
+    `Loading features from app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}...`,
+  ).start();
+  try {
+    const features = await listFeatures(appId);
+    spinner.succeed(
+      `Loaded features from app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}`,
+    );
+    console.table(features);
+  } catch (error) {
+    spinner.fail();
+    handleError(error, "Features List");
+  }
+};
+
+export const generateTypesAction = async ({
+  appId,
+  out,
+}: GenerateTypesArgs) => {
+  const { baseUrl } = program.opts();
+  let spinner = ora(
+    `Loading features from app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}...`,
+  ).start();
+  try {
+    const feature = await listFeatures(appId);
+    spinner.succeed(
+      `Loaded features from app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}`,
+    );
+
+    spinner = ora("Generating feature types...").start();
+    const types = genDTS(feature.map(({ key }) => key));
+    const outPath = isAbsolute(out) ? out : join(getProjectPath(), out);
+    await mkdir(dirname(outPath), { recursive: true });
+    await writeFile(outPath, types);
+    spinner.succeed("Generated feature types successfully");
+    console.log(chalk.green(`Generated types for ${appId}.`));
+  } catch (error) {
+    spinner.fail();
+    handleError(error, "Features Types");
   }
 };
 
@@ -80,32 +115,41 @@ export function registerFeatureCommands(program: Command) {
   );
 
   featuresCommand
+    .command("create")
+    .description("Create a new feature")
+    .requiredOption(
+      options.appId.flags,
+      options.appId.description,
+      getConfig(options.appId.configKey),
+    )
+    .option(options.featureKey.flags, options.featureKey.description)
+    .argument(options.featureName.flags, options.featureName.description)
+    .action(createFeatureAction);
+
+  featuresCommand
     .command("list")
     .description("List all features")
-    .addOption(appIdOption)
+    .requiredOption(
+      options.appId.flags,
+      options.appId.description,
+      getConfig(options.appId.configKey),
+    )
     .action(listFeaturesAction);
 
   featuresCommand
     .command("types")
     .description("Generate feature types")
-    .addOption(appIdOption)
-    .option(
-      "-o, --out <path>",
-      `Generate types for features at the output path. Falls back to typePath stored in ${CONFIG_FILE_NAME} or ${DEFAULT_TYPES_PATH}.`,
-      getConfig("typesPath") ?? DEFAULT_TYPES_PATH,
+    .requiredOption(
+      options.appId.flags,
+      options.appId.description,
+      getConfig(options.appId.configKey),
+    )
+    .requiredOption(
+      options.typesOut.flags,
+      options.typesOut.description,
+      getConfig(options.typesOut.configKey) ?? options.typesOut.fallback,
     )
     .action(generateTypesAction);
-
-  featuresCommand
-    .command("create")
-    .description("Create a new feature")
-    .argument("<name>", "Name of the feature")
-    .addOption(appIdOption)
-    .option(
-      "-k, --key <feature key>",
-      `Create a feature in the app with the given feature key. Falls back to a slug of the feature name.`,
-    )
-    .action(createFeatureAction);
 
   program.addCommand(featuresCommand);
 }

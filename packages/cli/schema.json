@@ -28,5 +28,5 @@
       ]
     }
   },
-  "required": ["appId", "typesPath", "keyFormat"]
+  "required": ["appId"]
 }

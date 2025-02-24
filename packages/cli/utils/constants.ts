@@ -1,5 +1,6 @@
 import path from "path";
 import { createRequire } from "module";
+import chalk from "chalk";
 
 // https://github.com/nodejs/node/issues/51347#issuecomment-2111337854
 const packageJson = createRequire(import.meta.url)("../../package.json");
@@ -18,3 +19,5 @@ export const DEFAULT_TYPES_PATH = path.join("gen", "features.ts");
 export const loginUrl = (baseUrl: string, localPort: number) =>
   `${baseUrl}/login?redirect_url=` +
   encodeURIComponent("/cli-login?port=" + localPort);
+
+export const chalkBrand = chalk.hex("#847CFB");

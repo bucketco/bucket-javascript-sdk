@@ -16,19 +16,6 @@ export async function storeToken(newToken: string) {
   await writeFile(AUTH_FILE, newToken);
 }
 
-// function readBody(req: IncomingMessage) {
-//   return new Promise<string>((resolve) => {
-//     let bodyChunks: any = [];
-
-//     req.on("data", (chunk) => {
-//       bodyChunks.push(chunk);
-//     });
-//     req.on("end", () => {
-//       resolve(Buffer.concat(bodyChunks).toString());
-//     });
-//   });
-// }
-
 function corsHeaders(origin: string): Record<string, string> {
   return {
     "Access-Control-Allow-Origin": origin,
@@ -37,21 +24,24 @@ function corsHeaders(origin: string): Record<string, string> {
   };
 }
 
-/**
- * @return {Promise<string>}
- */
 export async function authenticateUser() {
   return new Promise<string>((resolve, reject) => {
     const { baseUrl } = program.opts();
+    let isResolved = false;
 
     const server = http.createServer(async (req, res) => {
       const url = new URL(req.url ?? "/", "http://localhost");
       const headers = corsHeaders(baseUrl);
 
+      // Ensure we don't process requests after resolution
+      if (isResolved) {
+        res.writeHead(503, headers).end();
+        return;
+      }
+
       if (url.pathname !== "/cli-login") {
         res.writeHead(404).end("Invalid path");
-        server.close();
-        reject(new Error("Could not authenticate: Invalid path"));
+        cleanupAndReject(new Error("Could not authenticate: Invalid path"));
         return;
       }
 
@@ -64,29 +54,52 @@ export async function authenticateUser() {
 
       if (!req.headers.authorization?.startsWith("Bearer ")) {
         res.writeHead(400, headers).end("Could not authenticate");
-        server.close();
-        reject(new Error("Could not authenticate"));
+        cleanupAndReject(new Error("Could not authenticate"));
         return;
       }
 
       const token = req.headers.authorization.slice("Bearer ".length);
-
-      //const body = JSON.parse(await readBody(req));
-
       headers["Content-Type"] = "application/json";
-
       res.writeHead(200, headers);
       res.end(JSON.stringify({ result: "success" }));
-      server.close();
 
-      await storeToken(token);
-      resolve(token);
+      try {
+        await storeToken(token);
+        cleanupAndResolve(token);
+      } catch (error) {
+        cleanupAndReject(
+          error instanceof Error ? error : new Error("Failed to store token"),
+        );
+      }
     });
 
     const timeout = setTimeout(() => {
-      server.close();
-      reject(new Error("Authentication timed out after 30 seconds"));
+      cleanupAndReject(new Error("Authentication timed out after 30 seconds"));
     }, 30000);
+
+    function cleanupAndResolve(token: string) {
+      if (isResolved) return;
+      isResolved = true;
+      cleanup();
+      resolve(token);
+    }
+
+    function cleanupAndReject(error: Error) {
+      if (isResolved) return;
+      isResolved = true;
+      cleanup();
+      reject(error);
+    }
+
+    function cleanup() {
+      clearTimeout(timeout);
+      server.close();
+      // Force-close any remaining connections
+      server.getConnections((err, count) => {
+        if (err || count === 0) return;
+        server.closeAllConnections();
+      });
+    }
 
     server.listen();
     const address = server.address();
@@ -96,11 +109,6 @@ export async function authenticateUser() {
         newInstance: true,
       });
     }
-
-    // Cleanup timeout when server closes
-    server.on("close", () => {
-      clearTimeout(timeout);
-    });
   });
 }
 
@@ -110,7 +118,8 @@ export async function authRequest<T = Record<string, unknown>>(
   retryCount = 0,
 ): Promise<T> {
   const token = await getToken();
-  const { apiUrl } = program.opts();
+  let { baseUrl, apiUrl } = program.opts();
+  apiUrl = apiUrl ?? `${baseUrl}/api`;
   try {
     const response = await axios({
       ...options,

@@ -1,19 +1,19 @@
-import chalk from "chalk";
-import { Command } from "commander";
+import { Command, program } from "commander";
 import ora from "ora";
+import chalk from "chalk";
 
 import { authenticateUser, storeToken } from "../utils/auth.js";
 import { handleError } from "../utils/error.js";
 
 export const loginAction = async () => {
-  const spinner = ora("Logging in...").start();
+  const { baseUrl } = program.opts();
+  const spinner = ora(`Logging in to ${chalk.cyan(baseUrl)}...`).start();
   try {
     await authenticateUser();
-    spinner.succeed();
-    console.log(chalk.green("Logged in successfully!"));
+    spinner.succeed(`Logged in to ${chalk.cyan(baseUrl)} successfully! 🎉`);
   } catch (error) {
     spinner.fail();
-    handleError(error, "Authentication failed:");
+    handleError(error, "Login");
   }
 };
 
@@ -21,11 +21,10 @@ export const logoutAction = async () => {
   const spinner = ora("Logging out...").start();
   try {
     await storeToken("");
-    spinner.succeed();
-    console.log(chalk.green("Logged out successfully!"));
+    spinner.succeed("Logged out successfully! 👋");
   } catch (error) {
     spinner.fail();
-    handleError(error, "Logout failed:");
+    handleError(error, "Logout");
   }
 };
 

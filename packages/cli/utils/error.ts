@@ -1,15 +1,12 @@
 import { AxiosError } from "axios";
 import chalk from "chalk";
 
-export function handleError(error: unknown, message?: string | null) {
+export function handleError(error: unknown, tag: string) {
+  tag = chalk.bold(`[${tag}] error:`);
+
   if (error instanceof AxiosError && error.response?.data) {
     const data = error.response.data;
-    console.error(
-      chalk.red(
-        message ?? "Network request error:",
-        data.error?.message ?? data.error?.code,
-      ),
-    );
+    console.error(chalk.red(tag, data.error?.message ?? data.error?.code));
     if (data.validationErrors) {
       console.table(
         data.validationErrors.map(
@@ -21,11 +18,11 @@ export function handleError(error: unknown, message?: string | null) {
       );
     }
   } else if (error instanceof Error) {
-    console.error(message, error.message);
+    console.error(chalk.red(tag, error.message));
   } else if (typeof error === "string") {
-    console.error(message, error);
+    console.error(chalk.red(tag, error));
   } else {
-    console.error(message ?? "An unknown error occurred:", error);
+    console.error(chalk.red(tag ?? "An unknown error occurred:", error));
   }
   process.exit(1);
 }
