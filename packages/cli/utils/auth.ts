@@ -33,6 +33,10 @@ async function saveTokens(newTokens: Map<string, string>) {
   tokens = newTokens;
 }
 
+export function getToken(baseUrl: string) {
+  return tokens.get(baseUrl);
+}
+
 export async function setToken(baseUrl: string, newToken?: string) {
   if (newToken) {
     tokens.set(baseUrl, newToken);
@@ -42,9 +46,9 @@ export async function setToken(baseUrl: string, newToken?: string) {
   await saveTokens(tokens);
 }
 
-function corsHeaders(origin: string): Record<string, string> {
+function corsHeaders(baseUrl: string): Record<string, string> {
   return {
-    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Origin": baseUrl,
     "Access-Control-Allow-Methods": "GET",
     "Access-Control-Allow-Headers": "Authorization",
   };
@@ -144,7 +148,8 @@ export async function authRequest<T = Record<string, unknown>>(
   retryCount = 0,
 ): Promise<T> {
   let { baseUrl, apiUrl } = program.opts();
-  const token = tokens.get(baseUrl);
+  const token = getToken(baseUrl);
+  console.log(token);
   apiUrl = apiUrl ?? `${baseUrl}/api`;
 
   if (!token) {
