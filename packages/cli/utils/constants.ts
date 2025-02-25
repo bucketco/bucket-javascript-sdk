@@ -1,5 +1,5 @@
-import { join } from "path";
 import { createRequire } from "module";
+import { join } from "path";
 import chalk from "chalk";
 
 // https://github.com/nodejs/node/issues/51347#issuecomment-2111337854

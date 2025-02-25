@@ -1,13 +1,13 @@
+import { input } from "@inquirer/prompts";
 import chalk from "chalk";
 import { Command, program } from "commander";
 import { mkdir, writeFile } from "node:fs/promises";
-import { dirname, join, isAbsolute } from "node:path";
+import { dirname, isAbsolute, join } from "node:path";
 import ora, { Ora } from "ora";
 
 import { createFeature, listFeatures } from "../services/features.js";
 import { getConfig, getProjectPath } from "../utils/config.js";
 import { handleError } from "../utils/error.js";
-import { input } from "@inquirer/prompts";
 import { genDTS, genFeatureKey, KeyFormatPatterns } from "../utils/gen.js";
 import { options } from "../utils/options.js";
 

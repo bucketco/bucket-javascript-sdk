@@ -1,6 +1,6 @@
+import chalk from "chalk";
 import { Command, program } from "commander";
 import ora from "ora";
-import chalk from "chalk";
 
 import { authenticateUser, setToken } from "../utils/auth.js";
 import { handleError } from "../utils/error.js";

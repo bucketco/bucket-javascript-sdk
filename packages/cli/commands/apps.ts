@@ -1,9 +1,9 @@
+import chalk from "chalk";
 import { Command, program } from "commander";
 import ora from "ora";
 
 import { listApps } from "../services/bootstrap.js";
 import { handleError } from "../utils/error.js";
-import chalk from "chalk";
 
 export const listAppsAction = async () => {
   const { baseUrl } = program.opts();

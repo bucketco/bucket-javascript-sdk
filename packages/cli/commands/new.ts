@@ -1,11 +1,13 @@
 import { Command } from "commander";
 import { findUp } from "find-up";
-import { CONFIG_FILE_NAME } from "../utils/constants.js";
-import { initAction } from "./init.js";
-import { createFeatureAction, generateTypesAction } from "./features.js";
-import { handleError } from "../utils/error.js";
+
 import { getConfig } from "../utils/config.js";
+import { CONFIG_FILE_NAME } from "../utils/constants.js";
+import { handleError } from "../utils/error.js";
 import { options } from "../utils/options.js";
+
+import { createFeatureAction, generateTypesAction } from "./features.js";
+import { initAction } from "./init.js";
 
 type NewArgs = {
   appId?: string;

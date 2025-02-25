@@ -1,7 +1,10 @@
 import { readFile, writeFile } from "fs/promises";
-import { Ajv } from "ajv";
-import JSON5 from "json5";
 import { createRequire } from "module";
+import { dirname, join } from "path";
+import { Ajv } from "ajv";
+import { findUp } from "find-up";
+import JSON5 from "json5";
+
 import {
   CONFIG_FILE_NAME,
   DEFAULT_API_URL,
@@ -9,9 +12,7 @@ import {
   DEFAULT_TYPES_PATH,
   SCHEMA_URL,
 } from "./constants.js";
-import { findUp } from "find-up";
 import { handleError } from "./error.js";
-import { dirname, join } from "path";
 
 // https://github.com/nodejs/node/issues/51347#issuecomment-2111337854
 const schema = createRequire(import.meta.url)("../../schema.json");
@@ -100,7 +101,7 @@ export async function loadConfig() {
       handleError(new ConfigValidationError(validateConfig.errors), "Config");
     }
     config = parsed;
-  } catch (error) {
+  } catch {
     // No config file found
   }
 }
@@ -139,20 +140,16 @@ export async function saveConfig(newConfig: Config, overwrite = false) {
 
   const configJSON = JSON.stringify(configWithoutDefaults, null, 2);
 
-  try {
-    if (configPath) {
-      if (!overwrite) {
-        throw new Error("Config file already exists");
-      }
-      await writeFile(configPath, configJSON);
-      config = newConfig;
-    } else {
-      // Write to the nearest package.json directory
-      configPath = join(getProjectPath(), CONFIG_FILE_NAME);
-      await writeFile(configPath, configJSON);
-      config = newConfig;
+  if (configPath) {
+    if (!overwrite) {
+      throw new Error("Config file already exists");
     }
-  } catch (error) {
-    throw error;
+    await writeFile(configPath, configJSON);
+    config = newConfig;
+  } else {
+    // Write to the nearest package.json directory
+    configPath = join(getProjectPath(), CONFIG_FILE_NAME);
+    await writeFile(configPath, configJSON);
+    config = newConfig;
   }
 }

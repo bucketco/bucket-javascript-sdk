@@ -1,15 +1,14 @@
 import { input, select } from "@inquirer/prompts";
 import chalk from "chalk";
 import { Command, program } from "commander";
+import { relative } from "node:path";
 import ora, { Ora } from "ora";
 
 import { App, listApps } from "../services/bootstrap.js";
-import { saveConfig, getConfigPath } from "../utils/config.js";
-
+import { getConfigPath, saveConfig } from "../utils/config.js";
 import { chalkBrand, DEFAULT_TYPES_PATH } from "../utils/constants.js";
 import { handleError } from "../utils/error.js";
 import { options } from "../utils/options.js";
-import { relative } from "node:path";
 
 type InitArgs = {
   force?: boolean;

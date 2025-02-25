@@ -1,9 +1,10 @@
-import http from "http";
-import open from "open";
-import { AUTH_FILE, loginUrl } from "./constants.js";
 import { mkdir, readFile, writeFile } from "fs/promises";
+import http from "http";
 import { dirname } from "path";
 import { program } from "commander";
+import open from "open";
+
+import { AUTH_FILE, loginUrl } from "./constants.js";
 
 let tokens: Map<string, string> = new Map();
 
@@ -19,7 +20,7 @@ export async function loadTokens() {
           return [baseUrl, token];
         }),
     );
-  } catch (error) {
+  } catch {
     // No tokens file found
   }
 }
@@ -147,17 +148,16 @@ export async function authRequest<T = Record<string, unknown>>(
   options?: RequestInit,
   retryCount = 0,
 ): Promise<T> {
-  let { baseUrl, apiUrl } = program.opts();
+  const { baseUrl, apiUrl } = program.opts();
   const token = getToken(baseUrl);
-  console.log(token);
-  apiUrl = apiUrl ?? `${baseUrl}/api`;
+  const resolvedApiUrl = apiUrl ?? `${baseUrl}/api`;
 
   if (!token) {
     await authenticateUser();
     return authRequest(url, options);
   }
 
-  const response = await fetch(`${apiUrl}${url}`, {
+  const response = await fetch(`${resolvedApiUrl}${url}`, {
     ...options,
     headers: {
       ...options?.headers,
