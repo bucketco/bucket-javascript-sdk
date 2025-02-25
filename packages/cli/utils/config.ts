@@ -117,7 +117,7 @@ const getDefaultConfig = (): Partial<Config> => ({
   keyFormat: "custom",
 });
 
-export async function createConfig(newConfig: Config, overwrite = false) {
+export async function saveConfig(newConfig: Config, overwrite = false) {
   if (!validateConfig(newConfig)) {
     handleError(new ConfigValidationError(validateConfig.errors), "Config");
   }

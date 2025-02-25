@@ -9,9 +9,11 @@ import { registerAppCommands } from "./commands/apps.js";
 import chalk from "chalk";
 import { registerNewCommand } from "./commands/new.js";
 import { options } from "./utils/options.js";
+import { loadTokens } from "./utils/auth.js";
 
 async function main() {
-  // Must load config before anything else
+  // Must load tokens and config before anything else
+  await loadTokens();
   await loadConfig();
 
   // Global options

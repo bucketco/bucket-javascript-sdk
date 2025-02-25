@@ -1,18 +1,45 @@
 import http from "http";
 import open from "open";
-
 import { AUTH_FILE, loginUrl } from "./constants.js";
 import { mkdir, readFile, writeFile } from "fs/promises";
 import { dirname } from "path";
 import { program } from "commander";
 
-export async function getToken() {
-  return readFile(AUTH_FILE, "utf-8");
+let tokens: Map<string, string> = new Map();
+
+export async function loadTokens() {
+  try {
+    const content = await readFile(AUTH_FILE, "utf-8");
+    tokens = new Map(
+      content
+        .split("\n")
+        .filter(Boolean)
+        .map((line) => {
+          const [baseUrl, token] = line.split("|");
+          return [baseUrl, token];
+        }),
+    );
+  } catch (error) {
+    // No tokens file found
+  }
 }
 
-export async function storeToken(newToken: string) {
+async function saveTokens(newTokens: Map<string, string>) {
+  const content = Array.from(newTokens.entries())
+    .map(([baseUrl, token]) => `${baseUrl}|${token}`)
+    .join("\n");
   await mkdir(dirname(AUTH_FILE), { recursive: true });
-  await writeFile(AUTH_FILE, newToken);
+  await writeFile(AUTH_FILE, content);
+  tokens = newTokens;
+}
+
+export async function setToken(baseUrl: string, newToken?: string) {
+  if (newToken) {
+    tokens.set(baseUrl, newToken);
+  } else {
+    tokens.delete(baseUrl);
+  }
+  await saveTokens(tokens);
 }
 
 function corsHeaders(origin: string): Record<string, string> {
@@ -63,7 +90,7 @@ export async function authenticateUser() {
       res.end(JSON.stringify({ result: "success" }));
 
       try {
-        await storeToken(token);
+        await setToken(baseUrl, token);
         cleanupAndResolve(token);
       } catch (error) {
         cleanupAndReject(
@@ -116,9 +143,14 @@ export async function authRequest<T = Record<string, unknown>>(
   options?: RequestInit,
   retryCount = 0,
 ): Promise<T> {
-  const token = await getToken();
   let { baseUrl, apiUrl } = program.opts();
+  const token = tokens.get(baseUrl);
   apiUrl = apiUrl ?? `${baseUrl}/api`;
+
+  if (!token) {
+    await authenticateUser();
+    return authRequest(url, options);
+  }
 
   const response = await fetch(`${apiUrl}${url}`, {
     ...options,
@@ -130,7 +162,7 @@ export async function authRequest<T = Record<string, unknown>>(
 
   if (!response.ok) {
     if (response.status === 401) {
-      await storeToken("");
+      await setToken(baseUrl, undefined);
       if (retryCount < 1) {
         await authenticateUser();
         return authRequest(url, options, retryCount + 1);

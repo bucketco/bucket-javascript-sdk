@@ -2,7 +2,7 @@ import { Command, program } from "commander";
 import ora from "ora";
 import chalk from "chalk";
 
-import { authenticateUser, storeToken } from "../utils/auth.js";
+import { authenticateUser, setToken } from "../utils/auth.js";
 import { handleError } from "../utils/error.js";
 
 export const loginAction = async () => {
@@ -18,9 +18,10 @@ export const loginAction = async () => {
 };
 
 export const logoutAction = async () => {
+  const { baseUrl } = program.opts();
   const spinner = ora("Logging out...").start();
   try {
-    await storeToken("");
+    await setToken(baseUrl, undefined);
     spinner.succeed("Logged out successfully! 👋");
   } catch (error) {
     spinner.fail("Logout failed");

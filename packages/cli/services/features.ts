@@ -33,11 +33,11 @@ export async function createFeature(
     `/apps/${appId}/features`,
     {
       method: "POST",
-      data: {
+      body: JSON.stringify({
         name,
         key,
         source: "event",
-      },
+      }),
     },
   );
   return response.feature;
