@@ -7,9 +7,16 @@ const globals = require("globals");
 const tsPlugin = require("@typescript-eslint/eslint-plugin");
 const tsParser = require("@typescript-eslint/parser");
 const prettierConfig = require("eslint-config-prettier");
+const reactPlugin = require("eslint-plugin-react");
+const hooksPlugin = require("eslint-plugin-react-hooks");
 
 module.exports = [
   {
+    // Blacklisted Folders, including **/node_modules/ and .git/
+    ignores: ["build/", "**/gen"],
+  },
+  {
+    // All files
     files: [
       "**/*.js",
       "**/*.cjs",
@@ -22,6 +29,8 @@ module.exports = [
       import: importsPlugin,
       "unused-imports": unusedImportsPlugin,
       "simple-import-sort": sortImportsPlugin,
+      react: reactPlugin,
+      "react-hooks": hooksPlugin,
     },
     languageOptions: {
       globals: {
@@ -33,10 +42,12 @@ module.exports = [
         // This is required to avoid ecmaVersion < 2015 error or 'import' / 'export' error
         ecmaVersion: "latest",
         sourceType: "module",
-        project: "./tsconfig.json",
       },
     },
     settings: {
+      react: {
+        version: "detect",
+      },
       "import/parsers": {
         // Workaround until import supports flat config
         // https://github.com/import-js/eslint-plugin-import/issues/2556
@@ -46,6 +57,27 @@ module.exports = [
     rules: {
       ...jsPlugin.configs.recommended.rules,
       ...importsPlugin.configs.recommended.rules,
+      ...reactPlugin.configs.recommended.rules,
+      ...hooksPlugin.configs.recommended.rules,
+
+      "react/jsx-filename-extension": [
+        "warn",
+        {
+          extensions: [".mdx", ".jsx", ".tsx"],
+        },
+      ],
+      "react/react-in-jsx-scope": ["off"],
+      "react/jsx-sort-props": [
+        "error",
+        {
+          callbacksLast: true,
+          shorthandFirst: false,
+          shorthandLast: true,
+          ignoreCase: true,
+          noSortAlphabetically: false,
+          reservedFirst: true,
+        },
+      ],
 
       // Imports
       "unused-imports/no-unused-vars": [
@@ -124,6 +156,12 @@ module.exports = [
       "@typescript-eslint/no-explicit-any": ["off"],
       "@typescript-eslint/no-use-before-define": ["off"],
       "@typescript-eslint/no-shadow": ["warn"],
+    },
+  },
+  {
+    files: ["**/*.tsx"],
+    rules: {
+      "react/prop-types": "off",
     },
   },
   {

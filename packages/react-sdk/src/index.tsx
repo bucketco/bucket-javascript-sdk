@@ -22,6 +22,7 @@ import {
 
 import { version } from "../package.json";
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface Features {}
 
 const SDK_VERSION = `react-sdk/${version}`;
@@ -142,6 +143,7 @@ export function BucketProvider({
       .finally(() => {
         setFeaturesLoading(false);
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- should only run once
   }, [contextKey]);
 
   const context: ProviderContextType = {
@@ -152,14 +154,11 @@ export function BucketProvider({
     client: clientRef.current,
   };
   return (
-    <ProviderContext.Provider
-      children={
-        featuresLoading && typeof loadingComponent !== "undefined"
-          ? loadingComponent
-          : children
-      }
-      value={context}
-    />
+    <ProviderContext.Provider value={context}>
+      {featuresLoading && typeof loadingComponent !== "undefined"
+        ? loadingComponent
+        : children}
+    </ProviderContext.Provider>
   );
 }
 

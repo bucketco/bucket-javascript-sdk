@@ -16,7 +16,7 @@ beforeEach(() => {
 });
 
 afterAll(() => {
-  vi.useRealTimers;
+  vi.useRealTimers();
 });
 
 const TEST_STALE_MS = 1000;

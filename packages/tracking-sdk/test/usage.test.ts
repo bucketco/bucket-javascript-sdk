@@ -676,7 +676,7 @@ describe("feedback state management", () => {
 
     await flushPromises();
 
-    expect(callback).not.toBeCalled;
+    expect(callback).not.toHaveBeenCalled();
 
     expect(n1.isDone()).toBe(false);
 
@@ -704,7 +704,7 @@ describe("feedback state management", () => {
     await nockWait(n1);
     await flushPromises();
 
-    expect(callback).not.toBeCalled;
+    expect(callback).not.toHaveBeenCalled();
 
     expect(markPromptMessageCompleted).not.toHaveBeenCalledOnce();
 
@@ -721,7 +721,7 @@ describe("feedback state management", () => {
     await bucketInstance.initLiveSatisfaction("foo");
 
     await flushPromises();
-    expect(callback).not.toBeCalled;
+    expect(callback).not.toHaveBeenCalled();
 
     expect(checkPromptMessageCompleted).toHaveBeenCalledOnce();
     expect(checkPromptMessageCompleted).toHaveBeenCalledWith("foo", "123");
@@ -866,7 +866,7 @@ describe("feedback state management", () => {
       bucketInstance.initLiveSatisfaction("foo"),
     ).rejects.toThrowError();
 
-    expect(callback).not.toBeCalled;
+    expect(callback).not.toHaveBeenCalled();
   });
 });
 
