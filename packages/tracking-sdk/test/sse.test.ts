@@ -405,7 +405,6 @@ describe("message handling", () => {
       sseHost,
       vi.fn(),
     );
-    sseHost;
     let errorCallback: ((e: Event) => Promise<void>) | undefined = undefined;
     const addEventListener = (event: string, cb: (e: Event) => void) => {
       if (event === "error") {

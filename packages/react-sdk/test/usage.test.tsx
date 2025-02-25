@@ -44,10 +44,10 @@ const otherContext = { test: "test" };
 function getProvider(props: Partial<BucketProps> = {}) {
   return (
     <BucketProvider
-      publishableKey={publishableKey}
       company={company}
-      user={user}
       otherContext={otherContext}
+      publishableKey={publishableKey}
+      user={user}
       {...props}
     />
   );

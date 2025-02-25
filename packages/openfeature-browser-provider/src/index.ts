@@ -13,12 +13,10 @@ import {
 
 import { BucketClient, InitOptions } from "@bucketco/browser-sdk";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ContextTranslationFn = (
   context?: EvaluationContext,
 ) => Record<string, any>;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function defaultContextTranslator(
   context?: EvaluationContext,
 ): Record<string, any> {
@@ -81,7 +79,7 @@ export class BucketBrowserSDKProvider implements Provider {
       await client.initialize();
       this.status = ProviderStatus.READY;
       this._client = client;
-    } catch (e) {
+    } catch {
       this.status = ProviderStatus.ERROR;
     }
   }

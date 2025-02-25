@@ -65,7 +65,7 @@ export class FlagCache {
       if (cachedResponseRaw) {
         cacheData = validateCacheData(JSON.parse(cachedResponseRaw)) ?? {};
       }
-    } catch (e) {
+    } catch {
       // ignore errors
     }
 

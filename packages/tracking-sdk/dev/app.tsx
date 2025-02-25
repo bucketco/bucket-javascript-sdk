@@ -73,31 +73,31 @@ export function App() {
         <label htmlFor="offsetX">Offset X</label>
         <input
           id="offsetX"
-          type="text"
           placeholder="Offset X"
+          type="text"
           value={offsetX}
           onChange={(e) => setOffsetX(e.currentTarget.value)}
         />
         <label htmlFor="offsetY">Offset Y</label>
         <input
           id="offsetY"
-          type="text"
           placeholder="Offset Y"
+          type="text"
           value={offsetY}
           onChange={(e) => setOffsetY(e.currentTarget.value)}
         />
         <label>
           <input
-            type="checkbox"
             checked={customTranslations}
+            type="checkbox"
             onInput={(e) => setCustomTranslations(e.currentTarget.checked)}
           />
           Use custom translations?
         </label>
         <label>
           <input
-            type="checkbox"
             checked={openWithCommentVisible}
+            type="checkbox"
             onInput={(e) => setOpenWithCommentVisible(e.currentTarget.checked)}
           />
           Start with comment expanded?
@@ -178,8 +178,8 @@ export function App() {
         </button>
       </div>
 
-      {Array.from({ length: 100 }).map((_) => (
-        <br />
+      {Array.from({ length: 100 }).map((_, index) => (
+        <br key={index} />
       ))}
     </main>
   );

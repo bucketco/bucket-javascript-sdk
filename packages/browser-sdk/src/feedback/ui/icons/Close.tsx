@@ -4,10 +4,10 @@ export const Close: FunctionComponent<h.JSX.SVGAttributes<SVGSVGElement>> = (
   props,
 ) => (
   <svg
-    width="22"
+    fill="none"
     height="22"
     viewBox="0 0 24 24"
-    fill="none"
+    width="22"
     xmlns="http://www.w3.org/2000/svg"
     {...props}
   >

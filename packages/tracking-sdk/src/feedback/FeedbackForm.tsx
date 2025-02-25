@@ -150,10 +150,10 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
   ]);
 
   return (
-    <div ref={containerRef} class="container">
-      <div ref={submittedRef} class="submitted">
+    <div ref={containerRef} className="container">
+      <div ref={submittedRef} className="submitted">
         <div className="submitted-check">
-          <CheckCircle width={24} height={24} />
+          <CheckCircle height={24} width={24} />
         </div>
         <p className="text">{t.SuccessMessage}</p>
         <Plug />
@@ -161,26 +161,26 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
       {showForm && (
         <form
           ref={formRef}
-          onSubmit={handleSubmit}
+          className="form"
           method="dialog"
-          class="form"
+          style={{ opacity: 1 }}
+          onClick={onInteraction}
           onFocus={onInteraction}
           onFocusCapture={onInteraction}
-          onClick={onInteraction}
-          style={{ opacity: 1 }}
+          onSubmit={handleSubmit}
         >
           <div
             ref={headerRef}
-            role="group"
-            class="form-control"
             aria-labelledby="bucket-feedback-score-label"
+            className="form-control"
+            role="group"
           >
-            <div id="bucket-feedback-score-label" class="title">
+            <div className="title" id="bucket-feedback-score-label">
               {question}
             </div>
             <StarRating
-              t={t}
               name="score"
+              t={t}
               onChange={async (e) => {
                 setHasRating(true);
                 await onScoreSubmit({
@@ -190,29 +190,29 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
               }}
             />
 
-            <ScoreStatus t={t} scoreState={scoreState} />
+            <ScoreStatus scoreState={scoreState} t={t} />
           </div>
 
-          <div ref={expandedContentRef} class="form-expanded-content">
-            <div class="form-control">
+          <div ref={expandedContentRef} className="form-expanded-content">
+            <div className="form-control">
               <textarea
+                className="textarea"
                 id="bucket-feedback-comment-label"
-                class="textarea"
                 name="comment"
                 placeholder={t.QuestionPlaceholder}
                 rows={4}
               />
             </div>
 
-            {error && <p class="error">{error}</p>}
+            {error && <p className="error">{error}</p>}
 
             <Button
-              type="submit"
               disabled={
                 !hasRating ||
                 status === "submitting" ||
                 scoreState === "submitting"
               }
+              type="submit"
             >
               {t.SendButton}
             </Button>
@@ -274,7 +274,7 @@ const ScoreStatus: FunctionComponent<{
       </div>
 
       <span className="score-status" style={{ opacity: showSubmitted ? 1 : 0 }}>
-        <Check width={14} height={14} style={{ marginRight: 3 }} />{" "}
+        <Check height={14} style={{ marginRight: 3 }} width={14} />{" "}
         {t.ScoreStatusReceived}
       </span>
     </div>
