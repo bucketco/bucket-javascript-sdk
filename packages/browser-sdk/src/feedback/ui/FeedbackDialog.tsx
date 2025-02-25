@@ -222,10 +222,10 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: styles }}></style>
+      <style dangerouslySetInnerHTML={{ __html: styles }} />
       <dialog
         ref={refs.setFloating}
-        className={[
+        class={[
           "dialog",
           position.type === "MODAL"
             ? "modal"
@@ -247,7 +247,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
           onSubmit={submit}
         />
 
-        <button className="close" onClick={dismiss}>
+        <button class="close" onClick={dismiss}>
           {!autoClose.stopped && autoClose.elapsedFraction > 0 && (
             <RadialProgress
               diameter={28}
@@ -260,9 +260,9 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
         {anchor && (
           <div
             ref={arrowRef}
-            className={["arrow", actualPlacement].join(" ")}
+            class={["arrow", actualPlacement].join(" ")}
             style={arrowStyles}
-          ></div>
+          />
         )}
       </dialog>
     </>

@@ -12,7 +12,7 @@ export const Button: FunctionComponent<ButtonProps> = ({
   const classes = ["button", variant].join(" ");
 
   return (
-    <button className={classes} {...rest}>
+    <button class={classes} {...rest}>
       {children}
     </button>
   );

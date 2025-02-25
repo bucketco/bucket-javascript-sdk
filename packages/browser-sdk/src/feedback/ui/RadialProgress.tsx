@@ -10,7 +10,7 @@ export const RadialProgress: FunctionComponent<{
   const filled = circumference * progress;
 
   return (
-    <svg className="radial-progress" height={diameter} width={diameter}>
+    <svg class="radial-progress" height={diameter} width={diameter}>
       <circle
         cx={radius + stroke}
         cy={radius + stroke}

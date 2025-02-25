@@ -150,18 +150,18 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
   ]);
 
   return (
-    <div ref={containerRef} className="container">
-      <div ref={submittedRef} className="submitted">
-        <div className="submitted-check">
+    <div ref={containerRef} class="container">
+      <div ref={submittedRef} class="submitted">
+        <div class="submitted-check">
           <CheckCircle height={24} width={24} />
         </div>
-        <p className="text">{t.SuccessMessage}</p>
+        <p class="text">{t.SuccessMessage}</p>
         <Plug />
       </div>
       {showForm && (
         <form
           ref={formRef}
-          className="form"
+          class="form"
           method="dialog"
           style={{ opacity: 1 }}
           onClick={onInteraction}
@@ -172,10 +172,10 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
           <div
             ref={headerRef}
             aria-labelledby="bucket-feedback-score-label"
-            className="form-control"
+            class="form-control"
             role="group"
           >
-            <div className="title" id="bucket-feedback-score-label">
+            <div class="title" id="bucket-feedback-score-label">
               {question}
             </div>
             <StarRating
@@ -193,10 +193,10 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
             <ScoreStatus scoreState={scoreState} t={t} />
           </div>
 
-          <div ref={expandedContentRef} className="form-expanded-content">
-            <div className="form-control">
+          <div ref={expandedContentRef} class="form-expanded-content">
+            <div class="form-control">
               <textarea
-                className="textarea"
+                class="textarea"
                 id="bucket-feedback-comment-label"
                 name="comment"
                 placeholder={t.QuestionPlaceholder}
@@ -204,7 +204,7 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
               />
             </div>
 
-            {error && <p className="error">{error}</p>}
+            {error && <p class="error">{error}</p>}
 
             <Button
               disabled={
@@ -264,16 +264,16 @@ const ScoreStatus: FunctionComponent<{
   const showSubmitted = scoreState === "submitted" || hasBeenSubmitted;
 
   return (
-    <div className="score-status-container">
-      <span className="score-status" style={{ opacity: showIdle ? 1 : 0 }}>
+    <div class="score-status-container">
+      <span class="score-status" style={{ opacity: showIdle ? 1 : 0 }}>
         {t.ScoreStatusDescription}
       </span>
 
-      <div className="score-status" style={{ opacity: showLoading ? 1 : 0 }}>
+      <div class="score-status" style={{ opacity: showLoading ? 1 : 0 }}>
         {t.ScoreStatusLoading}
       </div>
 
-      <span className="score-status" style={{ opacity: showSubmitted ? 1 : 0 }}>
+      <span class="score-status" style={{ opacity: showSubmitted ? 1 : 0 }}>
         <Check height={14} style={{ marginRight: 3 }} width={14} />{" "}
         {t.ScoreStatusReceived}
       </span>

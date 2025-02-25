@@ -63,7 +63,7 @@ export const StarRating: FunctionComponent<StarRatingProps> = ({
   onChange,
 }) => {
   return (
-    <div className="star-rating">
+    <div class="star-rating">
       <style>
         {scores.map(
           ({ bg, color }, index) => `
@@ -87,7 +87,7 @@ export const StarRating: FunctionComponent<StarRatingProps> = ({
           `,
         )}
       </style>
-      <div className="star-rating-icons">
+      <div class="star-rating-icons">
         {scores.map((score) => (
           <Score
             key={score.value}
@@ -140,7 +140,7 @@ const Score = ({
       <label
         ref={refs.setReference}
         aria-label={score.getLabel(t)}
-        className="button"
+        class="button"
         htmlFor={`bucket-feedback-score-${score.value}`}
         style={{ color: score.color }}
       >
@@ -159,15 +159,11 @@ const Score = ({
           {score.icon}
         </span>
       </label>
-      <div
-        ref={refs.setFloating}
-        className="button-tooltip"
-        style={floatingStyles}
-      >
+      <div ref={refs.setFloating} class="button-tooltip" style={floatingStyles}>
         {score.getLabel(t)}
         <div
           ref={arrowRef}
-          className="button-tooltip-arrow"
+          class="button-tooltip-arrow"
           style={{
             left:
               middlewareData.arrow?.x != null
@@ -178,7 +174,7 @@ const Score = ({
                 ? `${middlewareData.arrow.y}px`
                 : "",
           }}
-        ></div>
+        />
       </div>
     </>
   );
