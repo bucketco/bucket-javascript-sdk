@@ -129,14 +129,20 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
   const close = useCallback(() => {
     const dialog = refs.floating.current as HTMLDialogElement | null;
     dialog?.close();
-    autoClose.stop();
     onClose?.();
-  }, [onClose]);
+  }, [onClose, refs.floating]);
+
+  const autoClose = useTimer({
+    enabled: position.type === "DIALOG",
+    initialDuration: INACTIVE_DURATION_MS,
+    onEnd: close,
+  });
 
   const dismiss = useCallback(() => {
+    autoClose.stop();
     close();
     onDismiss?.();
-  }, [close, onDismiss]);
+  }, [autoClose, close, onDismiss]);
 
   const [feedbackId, setFeedbackId] = useState<string | undefined>(undefined);
   const [scoreState, setScoreState] = useState<
@@ -148,7 +154,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
       await onSubmit({ ...data, feedbackId });
       autoClose.startWithDuration(SUCCESS_DURATION_MS);
     },
-    [feedbackId, onSubmit],
+    [autoClose, feedbackId, onSubmit],
   );
 
   const submitScore = useCallback(
@@ -161,14 +167,8 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
         setScoreState("submitted");
       }
     },
-    [feedbackId, onSubmit],
+    [feedbackId, onScoreSubmit],
   );
-
-  const autoClose = useTimer({
-    enabled: position.type === "DIALOG",
-    initialDuration: INACTIVE_DURATION_MS,
-    onEnd: close,
-  });
 
   useEffect(() => {
     // Only enable 'quick dismiss' for popovers
@@ -199,6 +199,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
         });
 
         if (hasBeenRemoved) {
+          autoClose.stop();
           close();
         }
       });
@@ -216,14 +217,15 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
       window.removeEventListener("keydown", escapeHandler);
       observer.disconnect();
     };
-  }, [position.type, close]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- disabled due to cast for anchor
+  }, [autoClose, close, dismiss, position.type, (position as any).anchor]);
 
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: styles }}></style>
       <dialog
         ref={refs.setFloating}
-        class={[
+        className={[
           "dialog",
           position.type === "MODAL"
             ? "modal"
@@ -235,17 +237,17 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
         style={anchor ? floatingStyles : unanchoredPosition}
       >
         <FeedbackForm
-          t={{ ...DEFAULT_TRANSLATIONS, ...translations }}
           key={key}
-          question={title}
           openWithCommentVisible={openWithCommentVisible}
-          onSubmit={submit}
-          onScoreSubmit={submitScore}
+          question={title}
           scoreState={scoreState}
+          t={{ ...DEFAULT_TRANSLATIONS, ...translations }}
           onInteraction={autoClose.stop}
+          onScoreSubmit={submitScore}
+          onSubmit={submit}
         />
 
-        <button onClick={dismiss} class="close">
+        <button className="close" onClick={dismiss}>
           {!autoClose.stopped && autoClose.elapsedFraction > 0 && (
             <RadialProgress
               diameter={28}
@@ -258,7 +260,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
         {anchor && (
           <div
             ref={arrowRef}
-            class={["arrow", actualPlacement].join(" ")}
+            className={["arrow", actualPlacement].join(" ")}
             style={arrowStyles}
           ></div>
         )}
