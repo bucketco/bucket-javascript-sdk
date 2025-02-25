@@ -33,6 +33,9 @@ export async function createFeature(
     `/apps/${appId}/features`,
     {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
         name,
         key,

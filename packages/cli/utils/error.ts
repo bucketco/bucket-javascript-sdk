@@ -1,7 +1,7 @@
 import chalk from "chalk";
 
 export async function handleError(error: unknown, tag: string) {
-  tag = chalk.bold(`[${tag}] error:`);
+  tag = chalk.bold(`\n[${tag}] error:`);
 
   if (error instanceof Response) {
     const data = await error.json();
