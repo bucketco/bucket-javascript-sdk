@@ -1,5 +1,4 @@
 import http from "http";
-import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import open from "open";
 
 import { AUTH_FILE, loginUrl } from "./constants.js";
@@ -114,34 +113,31 @@ export async function authenticateUser() {
 
 export async function authRequest<T = Record<string, unknown>>(
   url: string,
-  options?: AxiosRequestConfig,
+  options?: RequestInit,
   retryCount = 0,
 ): Promise<T> {
   const token = await getToken();
   let { baseUrl, apiUrl } = program.opts();
   apiUrl = apiUrl ?? `${baseUrl}/api`;
-  try {
-    const response = await axios({
-      ...options,
-      url: `${apiUrl}${url}`,
-      headers: {
-        ...options?.headers,
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    return response.data;
-  } catch (error) {
-    if (
-      error instanceof AxiosError &&
-      error.response &&
-      error.response.status === 401
-    ) {
+
+  const response = await fetch(`${apiUrl}${url}`, {
+    ...options,
+    headers: {
+      ...options?.headers,
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    if (response.status === 401) {
       await storeToken("");
       if (retryCount < 1) {
         await authenticateUser();
         return authRequest(url, options, retryCount + 1);
       }
     }
-    throw error;
+    throw response;
   }
+
+  return response.json();
 }

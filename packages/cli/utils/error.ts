@@ -1,11 +1,10 @@
-import { AxiosError } from "axios";
 import chalk from "chalk";
 
-export function handleError(error: unknown, tag: string) {
+export async function handleError(error: unknown, tag: string) {
   tag = chalk.bold(`[${tag}] error:`);
 
-  if (error instanceof AxiosError && error.response?.data) {
-    const data = error.response.data;
+  if (error instanceof Response) {
+    const data = await error.json();
     console.error(chalk.red(tag, data.error?.message ?? data.error?.code));
     if (data.validationErrors) {
       console.table(
