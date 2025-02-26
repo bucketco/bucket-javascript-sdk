@@ -226,7 +226,7 @@ const client = new BucketClient({
 });
 ```
 
-### Remote config
+### Remote config (beta)
 
 Similar to `isEnabled`, each feature has a `config` property. This configuration is managed from within Bucket.
 It is managed similar to the way access to features is managed, but instead of the binary `isEnabled` you can have

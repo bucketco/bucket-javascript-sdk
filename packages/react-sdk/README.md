@@ -111,7 +111,7 @@ To retrieve features along with their targeting information, use `useFeature(key
 Note that accessing `isEnabled` on the object returned by `useFeature()` automatically
 generates a `check` event.
 
-## Remote config
+## Remote config (beta)
 
 In addition to toggling features on/off, Bucket supports remote configuration of features through Remote config.
 
