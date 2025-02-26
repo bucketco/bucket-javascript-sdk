@@ -100,15 +100,13 @@ type Configuration = {
   sseBaseUrl?: "https://livemessaging.bucket.co";
   feedback?: undefined; // See FEEDBACK.md
   enableTracking?: true; // set to `false` to stop sending track events and user/company updates to Bucket servers. Useful when you're impersonating a user
-  featureOptions?: {
-    fallbackFeatures?:
-      | string[]
-      | Record<string, { key: string; payload: any } | true>; // Enable these features if unable to contact bucket.co. Can be a list of feature keys or a record with configuration values
-    timeoutMs?: number; // Timeout for fetching features (default: 5000ms)
-    staleWhileRevalidate?: boolean; // Revalidate in the background when cached features turn stale to avoid latency in the UI (default: false)
-    staleTimeMs?: number; // at initialization time features are loaded from the cache unless they have gone stale. Defaults to 0 which means the cache is disabled. Increase in the case of a non-SPA
-    expireTimeMs?: number; // In case we're unable to fetch features from Bucket, cached/stale features will be used instead until they expire after `expireTimeMs`. Default is 30 days
-  };
+  fallbackFeatures?:
+    | string[]
+    | Record<string, { key: string; payload: any } | true>; // Enable these features if unable to contact bucket.co. Can be a list of feature keys or a record with configuration values
+  timeoutMs?: number; // Timeout for fetching features (default: 5000ms)
+  staleWhileRevalidate?: boolean; // Revalidate in the background when cached features turn stale to avoid latency in the UI (default: false)
+  staleTimeMs?: number; // at initialization time features are loaded from the cache unless they have gone stale. Defaults to 0 which means the cache is disabled. Increase in the case of a non-SPA
+  expireTimeMs?: number; // In case we're unable to fetch features from Bucket, cached/stale features will be used instead until they expire after `expireTimeMs`. Default is 30 days
 };
 ```
 
@@ -193,23 +191,6 @@ const override = bucketClient.getFeatureOverride("huddle"); // returns boolean |
 ```
 
 Feature overrides are persisted in `localStorage` and will be restored when the page is reloaded.
-
-### Feature Updates
-
-You can listen for feature updates using `onFeaturesUpdated`:
-
-```ts
-// Register a callback for feature updates
-const unsubscribe = bucketClient.onFeaturesUpdated(() => {
-  console.log("Features were updated");
-});
-
-// Later, stop listening for updates
-unsubscribe();
-```
-
-> [!NOTE]
-> Note that the callback may be called even if features haven't actually changed.
 
 ### Remote config
 
@@ -312,11 +293,12 @@ See details in [Feedback HTTP API](https://docs.bucket.co/reference/http-trackin
 
 Event listeners allow for capturing various events occurring in the `BucketClient`. This is useful to build integrations with other system or for various debugging purposes. There are 5 kinds of events:
 
-- FeaturesUpdated
-- User
-- Company
-- Check
-- Track
+- `configCheck`: Your code used a feature config
+- `enabledCheck`: Your code checked whether a specific feature should be enabled
+- `featuresUpdated`: Features were updated. Either because they were loaded as part of initialization or because the user/company updated
+- `user`: User information updated (similar to the `identify` call used in tracking terminology)
+- `company`: Company information updated (sometimes to the `group` call used in tracking terminology)
+- `track`: Track event occurred.
 
 Use the `on()` method to add an event listener to respond to certain events. See the API reference for details on each hook.
 
