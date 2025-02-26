@@ -95,11 +95,12 @@ export const StarRating: FunctionComponent<StarRatingProps> = ({
       <div class="star-rating-icons">
         {scores.map((score) => (
           <Score
+            key={score.value}
             isSelected={score.value === selectedValue}
             name={name}
-            onChange={onChange}
             score={score}
             t={t}
+            onChange={onChange}
           />
         ))}
       </div>
@@ -134,19 +135,19 @@ const Score = ({
   return (
     <>
       <input
-        id={`bucket-feedback-score-${score.value}`}
-        type="radio"
-        name={name}
-        value={score.value}
         defaultChecked={isSelected}
+        id={`bucket-feedback-score-${score.value}`}
+        name={name}
+        type="radio"
+        value={score.value}
         onChange={onChange}
       />
       <label
         ref={refs.setReference}
-        for={`bucket-feedback-score-${score.value}`}
-        class="button"
-        style={{ color: score.color }}
         aria-label={score.getLabel(t)}
+        class="button"
+        for={`bucket-feedback-score-${score.value}`}
+        style={{ color: score.color }}
       >
         <div
           style={{
@@ -178,7 +179,7 @@ const Score = ({
                 ? `${middlewareData.arrow.y}px`
                 : "",
           }}
-        ></div>
+        />
       </div>
     </>
   );

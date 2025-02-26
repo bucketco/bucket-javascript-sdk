@@ -88,7 +88,7 @@ export class FeatureCache {
       if (cachedResponseRaw) {
         cacheData = validateCacheData(JSON.parse(cachedResponseRaw)) ?? {};
       }
-    } catch (e) {
+    } catch {
       // ignore errors
     }
 
@@ -123,7 +123,7 @@ export class FeatureCache {
           };
         }
       }
-    } catch (e) {
+    } catch {
       // ignore errors
     }
     return;

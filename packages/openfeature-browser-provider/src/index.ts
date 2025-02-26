@@ -82,7 +82,7 @@ export class BucketBrowserSDKProvider implements Provider {
       await client.initialize();
       this.status = ProviderStatus.READY;
       this._client = client;
-    } catch (e) {
+    } catch {
       this.status = ProviderStatus.ERROR;
     }
   }

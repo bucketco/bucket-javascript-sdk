@@ -23,11 +23,12 @@ export function FeaturesTable({
       <tbody>
         {features.map((feature, index) => (
           <FeatureRow
-            feature={feature}
+            key={feature.key}
             appBaseUrl={appBaseUrl}
-            setEnabledOverride={setEnabledOverride}
-            isOpen={isOpen}
+            feature={feature}
             index={index}
+            isOpen={isOpen}
+            setEnabledOverride={setEnabledOverride}
           />
         ))}
       </tbody>
@@ -54,15 +55,16 @@ function FeatureRow({
   }, [isOpen]);
   return (
     <tr
-      class={["feature-row", show ? "show" : undefined].join(" ")}
       key={feature.key}
+      class={["feature-row", show ? "show" : undefined].join(" ")}
       style={{ "--i": index }}
     >
       <td class="feature-name-cell">
         <a
-          href={`${appBaseUrl}/envs/current/features/by-key/${feature.key}`}
-          target="_blank"
           class="feature-link"
+          href={`${appBaseUrl}/envs/current/features/by-key/${feature.key}`}
+          rel="noreferrer"
+          target="_blank"
         >
           {feature.key}
         </a>
@@ -70,8 +72,8 @@ function FeatureRow({
       <td class="feature-reset-cell">
         {feature.localOverride !== null ? (
           <Reset
-            setEnabledOverride={setEnabledOverride}
             featureKey={feature.key}
+            setEnabledOverride={setEnabledOverride}
           />
         ) : null}
       </td>
@@ -99,11 +101,11 @@ export function FeatureSearch({
 }) {
   return (
     <input
-      type="search"
-      placeholder="Search features"
-      onInput={(s) => onSearch(s.currentTarget.value)}
-      autoFocus
       class="search-input"
+      placeholder="Search features"
+      type="search"
+      autoFocus
+      onInput={(s) => onSearch(s.currentTarget.value)}
     />
   );
 }
@@ -117,8 +119,8 @@ function Reset({
 }) {
   return (
     <a
-      href=""
       class="reset"
+      href=""
       onClick={(e) => {
         e.preventDefault();
         setEnabledOverride(featureKey, null);

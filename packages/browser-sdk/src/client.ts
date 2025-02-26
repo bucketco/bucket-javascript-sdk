@@ -770,15 +770,21 @@ export class BucketClient {
     };
   }
 
+  /**
+   * @internal
+   */
   setFeatureOverride(key: string, isEnabled: boolean | null) {
     this.featuresClient.setFeatureOverride(key, isEnabled);
   }
 
+  /**
+   * @internal
+   */
   getFeatureOverride(key: string): boolean | null {
     return this.featuresClient.getFeatureOverride(key);
   }
 
-  sendCheckEvent(checkEvent: CheckEvent) {
+  private sendCheckEvent(checkEvent: CheckEvent) {
     return this.featuresClient.sendCheckEvent(checkEvent, () => {
       this.hooks.trigger(
         checkEvent.action == "check-config" ? "configCheck" : "enabledCheck",

@@ -321,6 +321,8 @@ export function evaluate(
     }
     case "SET":
       return fieldValue != "";
+    case "NOT_SET":
+      return fieldValue == "";
     case "IS":
       return fieldValue === value;
     case "IS_NOT":

@@ -105,9 +105,11 @@ describe("BucketClient", () => {
       await client["company"]();
       expect(companyHook).toHaveBeenCalledWith(client["context"].company);
 
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions -- special getter triggering event
       client.getFeature("featureA").isEnabled;
       expect(checkHookIsEnabled).toHaveBeenCalled();
 
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions -- special getter triggering event
       client.getFeature("featureA").config;
       expect(checkHookConfig).toHaveBeenCalled();
 
@@ -135,7 +137,9 @@ describe("BucketClient", () => {
       await client.track("test-event");
       await client["user"]();
       await client["company"]();
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions -- special getter triggering event
       client.getFeature("featureA").isEnabled;
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions -- special getter triggering event
       client.getFeature("featureA").config;
       await client.updateOtherContext({ key: "value" });
 

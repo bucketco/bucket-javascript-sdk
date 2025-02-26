@@ -38,7 +38,7 @@ export const useTimer = ({
     return () => {
       clearTimeout(t);
     };
-  }, [stopped]);
+  }, [duration, onEnd, startTime, stopped]);
 
   const stop = useCallback(() => {
     setStopped(true);
