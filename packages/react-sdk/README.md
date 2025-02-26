@@ -10,7 +10,7 @@ Install via npm:
 npm i @bucketco/react-sdk
 ```
 
-## Setup
+## Get started
 
 ### 1. Define Features (optional)
 
@@ -39,8 +39,7 @@ declare module "@bucketco/react-sdk" {
 
 ### 2. Add the `BucketProvider` context provider
 
-Add the `BucketProvider` context provider to your application.
-This will initialize the Bucket SDK, fetch features and start listening for automated feedback survey events.
+Add the `BucketProvider` context provider to your application:
 
 **Example:**
 
@@ -52,107 +51,33 @@ import { BucketProvider } from "@bucketco/react-sdk";
   company={{ id: "acme_inc", plan: "pro" }}
   user={{ id: "john doe" }}
   loadingComponent={<Loading />}
-  featureOptions={{ fallbackFeatures: ["huddle"] }}
 >
   {/* children here are shown when loading finishes or immediately if no `loadingComponent` is given */}
 </BucketProvider>;
 ```
 
-- `publishableKey` is used to connect the provider to an _environment_ on Bucket. Find your `publishableKey` under [environment settings](https://app.bucket.co/envs/current/settings/app-environments) in Bucket,
-- `company`, `user` and `otherContext` make up the _context_ that is used to determine if a feature is enabled or not. `company` and `user` contexts are automatically transmitted to Bucket servers so the Bucket app can show you which companies have access to which features etc.
-  > [!Note]
-  > If you specify `company` and/or `user` they must have at least the `id` property, otherwise they will be ignored in their entirety. You should also supply anything additional you want to be able to evaluate feature targeting against,
-- `featureOptions` contains configuration for features:
+### 3. Use `useFeature(<featureKey>)` to get feature status
 
-  - `fallbackFeatures`: A list of strings which specify which features to consider enabled if the SDK is unable to fetch features. Can be provided in two formats:
+Using the `useFeature` hook from your components lets you toggle features on/off and configure features through Remote Config:
 
-    ```ts
-    // Simple array of feature keys
-    featureOptions={{
-      fallbackFeatures: ["feature1", "feature2"]
-    }}
-
-    // Or with configuration overrides
-    featureOptions={{
-      fallbackFeatures: {
-        "feature1": true,  // just enable the feature
-        "feature2": {      // enable with configuration
-          key: "variant-a",
-          payload: {
-            limit: 100,
-            mode: "test"
-          }
-        }
-      }
-    }}
-    ```
-
-  - `timeoutMs`: Timeout in milliseconds when fetching features from the server,
-  - `staleWhileRevalidate`: If set to `true`, stale features will be returned while refetching features in the background,
-  - `expireTimeMs`: If set, features will be cached between page loads for this duration (in milliseconds),
-  - `staleTimeMs`: Maximum time (in milliseconds) that stale features will be returned if `staleWhileRevalidate` is true and new features cannot be fetched.
-
-Example with all options:
+**Example:**
 
 ```tsx
-<BucketProvider
-  publishableKey={YOUR_PUBLISHABLE_KEY}
-  featureOptions={{
-    // Fallback features if server is unreachable
-    fallbackFeatures: {
-      "premium-feature": {
-        key: "basic",
-        payload: { maxItems: 10 },
-      },
-    },
-    // Timeout after 5 seconds
-    timeoutMs: 5000,
-    // Return stale data while fetching
-    staleWhileRevalidate: true,
-    // Cache features for 1 hour
-    expireTimeMs: 60 * 60 * 1000,
-    // Allow stale data up to 5 minutes
-    staleTimeMs: 5 * 60 * 1000,
-  }}
-  // ... other props
->
-  {children}
-</BucketProvider>
+function StartHuddleButton() {
+  const {
+    isEnabled, // boolean indicating if the feature is enabled
+    track, // track usage of the feature
+  } = useFeature("huddle");
+
+  if (!isEnabled) {
+    return null;
+  }
+
+  return <button onClick={track}>Start huddle!</button>;
+}
 ```
 
-- `loadingComponent` lets you specify an React component to be rendered instead of the children while the Bucket provider is initializing. If you want more control over loading screens, `useFeature()` returns `isLoading` which you can use to customize the loading experience:
-
-  ```tsx
-  function LoadingBucket({ children }) {
-    const { isLoading } = useFeature("myFeature")
-    if (isLoading) {
-      return <Spinner />
-    }
-
-    return children
-  }
-
-  //-- Initialize the Bucket provider
-  <BucketProvider publishableKey={YOUR_PUBLISHABLE_KEY} /*...*/>
-    <LoadingBucket>
-    {/* children here are shown when loading finishes */}
-    </LoadingBucket>
-  <BucketProvider>
-  ```
-
-- `enableTracking` (default: `true`): Set to `false` to stop sending tracking events and user/company updates to Bucket. Useful when you're impersonating a user,
-- `apiBaseUrl`: Optional base URL for the Bucket API. Use this to override the default API endpoint,
-- `appBaseUrl`: Optional base URL for the Bucket application. Use this to override the default app URL,
-- `sseBaseUrl`: Optional base URL for Server-Sent Events. Use this to override the default SSE endpoint,
-- `debug`: Set to `true` to enable debug logging to the console,
-- `toolbar`: Optional configuration for the Bucket toolbar,
-- `feedback`: Optional configuration for feedback collection:
-
-  ```ts
-  {
-    enableLiveSatisfaction: boolean; // Enable/disable live satisfaction surveys
-  }
-  ```
+`useFeature` can help you do much more. See a full example for `useFeature` [see below](#usefeature).
 
 ## Feature toggles
 
@@ -162,7 +87,7 @@ If you supply `user` or `company` objects, they must include at least the `id` p
 In addition to the `id`, you must also supply anything additional that you want to be able to evaluate feature targeting rules against.
 The additional attributes are supplied using the `otherContext` prop.
 
-Attributes cannot be nested (multiple levels) and must be either strings, integers or booleans.
+Attributes cannot be nested (multiple levels) and must be either strings, numbers or booleans.
 A number of special attributes exist:
 
 - `name` -- display name for `user`/`company`,
@@ -212,6 +137,65 @@ configuration in your application.
 Note that, similar to `isEnabled`, accessing `config` on the object returned by `useFeature()` automatically
 generates a `check` event.
 
+## `<BucketProvider>` component
+
+The `<BucketProvider>` initializes the Bucket SDK, fetches features and starts listening for automated feedback survey events. The component can be configured using a number of props:
+
+- `publishableKey` is used to connect the provider to an _environment_ on Bucket. Find your `publishableKey` under [environment settings](https://app.bucket.co/envs/current/settings/app-environments) in Bucket,
+- `company`, `user` and `otherContext` make up the _context_ that is used to determine if a feature is enabled or not. `company` and `user` contexts are automatically transmitted to Bucket servers so the Bucket app can show you which companies have access to which features etc.
+  > [!Note]
+  > If you specify `company` and/or `user` they must have at least the `id` property, otherwise they will be ignored in their entirety. You should also supply anything additional you want to be able to evaluate feature targeting against,
+- `fallbackFeatures`: A list of strings which specify which features to consider enabled if the SDK is unable to fetch features. Can be provided in two formats:
+
+  ```ts
+  // Simple array of feature keys
+  fallbackFeatures={["feature1", "feature2"]}
+
+  // Or with configuration overrides
+  fallbackFeatures: {
+      "feature1": true,  // just enable the feature
+      "feature2": {      // enable with configuration
+        key: "variant-a",
+        payload: {
+          limit: 100,
+          mode: "test"
+        }
+      }
+  }
+  ```
+
+- `timeoutMs`: Timeout in milliseconds when fetching features from the server,
+- `staleWhileRevalidate`: If set to `true`, stale features will be returned while refetching features in the background,
+- `expireTimeMs`: If set, features will be cached between page loads for this duration (in milliseconds),
+- `staleTimeMs`: Maximum time (in milliseconds) that stale features will be returned if `staleWhileRevalidate` is true and new features cannot be fetched.
+- `loadingComponent` lets you specify an React component to be rendered instead of the children while the Bucket provider is initializing. If you want more control over loading screens, `useFeature()` returns `isLoading` which you can use to customize the loading experience:
+
+  ```tsx
+  function LoadingBucket({ children }) {
+    const { isLoading } = useFeature("myFeature")
+    if (isLoading) {
+      return <Spinner />
+    }
+
+    return children
+  }
+
+  //-- Initialize the Bucket provider
+  <BucketProvider publishableKey={YOUR_PUBLISHABLE_KEY} /*...*/>
+    <LoadingBucket>
+    {/* children here are shown when loading finishes */}
+    </LoadingBucket>
+  <BucketProvider>
+  ```
+
+- `enableTracking`: Set to `false` to stop sending tracking events and user/company updates to Bucket. Useful when you're impersonating a user (defaults to `true`),
+- `apiBaseUrl`: Optional base URL for the Bucket API. Use this to override the default API endpoint,
+- `appBaseUrl`: Optional base URL for the Bucket application. Use this to override the default app URL,
+- `sseBaseUrl`: Optional base URL for Server-Sent Events. Use this to override the default SSE endpoint,
+- `debug`: Set to `true` to enable debug logging to the console,
+- `toolbar`: Optional configuration for the Bucket toolbar,
+- `feedback`: Optional configuration for feedback collection
+
 ## Hooks
 
 ### `useFeature()`
@@ -248,7 +232,7 @@ function StartHuddleButton() {
       <button
         onClick={(e) =>
           requestFeedback({
-            title: payload?.question ?? "How do you like Huddles?",
+            title: payload?.question ?? "How do you like the Huddles feature?",
             position: {
               type: "POPOVER",
               anchor: e.currentTarget as HTMLElement,

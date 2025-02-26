@@ -221,9 +221,6 @@ export function App() {
   return (
     <BucketProvider
       publishableKey={publishableKey}
-      feedback={{
-        enableLiveSatisfaction: true,
-      }}
       company={initialCompany}
       user={initialUser}
       otherContext={initialOtherContext}
