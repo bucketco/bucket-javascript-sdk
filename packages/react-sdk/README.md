@@ -2,7 +2,7 @@
 
 React client side library for [Bucket.co](https://bucket.co)
 
-Bucket supports toggling features, tracking feature usage, [requesting feedback](#userequestfeedback) on features and [remotely configuring features](#remote-config).
+Bucket supports feature toggling, tracking feature usage, [requesting feedback](#userequestfeedback) on features, and [remotely configuring features](#remote-config).
 
 ## Install
 
@@ -56,7 +56,7 @@ import { BucketProvider } from "@bucketco/react-sdk";
 
 ### 3. Use `useFeature(<featureKey>)` to get feature status
 
-Using the `useFeature` hook from your components lets you toggle features on/off and send track when users actually use your features:
+Using the `useFeature` hook from your components lets you toggle features on/off and track feature usage:
 
 **Example:**
 
@@ -79,7 +79,8 @@ function StartHuddleButton() {
 
 ## Setting `user` and `company`
 
-Bucket determines which features are active for a given `user`/`company` / `otherContext`. You pass these to the `BucketProvider` as props.
+Bucket determines which features are active for a given `user`, `company`, or `otherContext`.
+You pass these to the `BucketProvider` as props.
 
 If you supply `user` or `company` objects, they must include at least the `id` property otherwise they will be ignored in their entirety.
 In addition to the `id`, you must also supply anything additional that you want to be able to evaluate feature targeting rules against.
@@ -112,9 +113,9 @@ generates a `check` event.
 
 ## Remote config
 
-In addition to just turning features on/off, Bucket supports remotely configuring features through Remote config.
+In addition to toggling features on/off, Bucket supports remote configuration of features through Remote config.
 
-Similar to `isEnabled`, each feature accessed using `useFeature()` hook, has a `config` property. This configuration is managed from within Bucket. It is managed similar to the way access to features is managed, but instead of the
+Similar to `isEnabled`, each feature accessed using the `useFeature()` hook, has a `config` property. This configuration is managed from within Bucket. It is managed similar to the way access to features is managed, but instead of the
 binary `isEnabled` you can have multiple configuration values which are given to different user/companies.
 
 ### Get started with Remote config
@@ -149,8 +150,8 @@ const {
 ```
 
 The `key` is always present while the `payload` is a optional JSON value for arbitrary configuration needs.
-If the feature has no configuration or, no configuration value was matched against the context, the `config` object
-will be empty, thus, `key` will be `undefined`. Make sure to check against this case when trying to use the
+If a feature has no configuration or no configuration value was matched against the context, the config object will be empty.
+Thus, `key` will be `undefined`. Make sure to check against this case when trying to use the
 configuration in your application.
 
 Note that, similar to `isEnabled`, accessing `config` on the object returned by `useFeature()` automatically

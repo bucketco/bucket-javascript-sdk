@@ -1,6 +1,8 @@
 # Bucket Node.js SDK
 
-Node.js, JavaScriptS/Typescript feature flag and tracking client for [Bucket.co](https://bucket.co).
+Node.js, JavaScriptS/Typescript client for [Bucket.co](https://bucket.co).
+
+Bucket supports feature toggling, tracking feature usage, collecting feedback on features, and [remotely configuring features](#remote-config).
 
 ## Installation
 
