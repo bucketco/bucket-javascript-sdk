@@ -14,7 +14,9 @@ module.exports = [
       },
     },
     rules: {
-      "react/no-unknown-property": ["error", { ignore: ["class"] }],
+      // Ignore React attributes that are not valid in Preact.
+      // Alternatively, we could use the preact/compat alias or turn off the rule.
+      "react/no-unknown-property": ["off"],
     },
   },
   { ignores: ["dist/", "example/"] },

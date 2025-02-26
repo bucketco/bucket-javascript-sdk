@@ -16,9 +16,9 @@ export const RadialProgress: FunctionComponent<{
         cy={radius + stroke}
         fill="transparent"
         r={radius}
-        strokeDasharray={circumference}
-        strokeDashoffset={filled}
-        strokeWidth={stroke}
+        stroke-dasharray={circumference}
+        stroke-dashoffset={filled}
+        stroke-width={stroke}
         transform={`rotate(-90) translate(-${radius * 2 + stroke * 2} 0)`}
       />
     </svg>

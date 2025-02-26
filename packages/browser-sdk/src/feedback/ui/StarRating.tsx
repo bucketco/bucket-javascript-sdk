@@ -146,7 +146,7 @@ const Score = ({
         ref={refs.setReference}
         aria-label={score.getLabel(t)}
         class="button"
-        htmlFor={`bucket-feedback-score-${score.value}`}
+        for={`bucket-feedback-score-${score.value}`}
         style={{ color: score.color }}
       >
         <div
