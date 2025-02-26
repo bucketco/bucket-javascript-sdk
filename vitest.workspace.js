@@ -6,6 +6,4 @@ export default defineWorkspace([
   "./packages/openfeature-node-provider/vite.config.js",
   "./packages/node-sdk/vite.config.js",
   "./packages/react-sdk/vite.config.mjs",
-  "./packages/tracking-sdk/vite.e2e.config.js",
-  "./packages/tracking-sdk/vite.config.js",
 ]);

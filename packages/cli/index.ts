@@ -49,4 +49,4 @@ async function main() {
   program.parse(process.argv);
 }
 
-main();
+void main();

@@ -14,11 +14,11 @@ export const listAppsAction = async () => {
     console.table(apps);
   } catch (error) {
     spinner.fail("Failed to list apps");
-    handleError(error, "Apps List");
+    void handleError(error, "Apps List");
   }
 };
 
-export function registerAppCommands(program: Command) {
+export function registerAppCommands(cli: Command) {
   const appsCommand = new Command("apps").description("Manage apps");
 
   appsCommand
@@ -26,5 +26,5 @@ export function registerAppCommands(program: Command) {
     .description("List all available apps")
     .action(listAppsAction);
 
-  program.addCommand(appsCommand);
+  cli.addCommand(appsCommand);
 }

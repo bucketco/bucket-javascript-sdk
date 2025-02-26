@@ -136,7 +136,7 @@ export async function authenticateUser() {
     const address = server.address();
     if (address && typeof address === "object") {
       const port = address.port;
-      open(loginUrl(baseUrl, port), {
+      void open(loginUrl(baseUrl, port), {
         newInstance: true,
       });
     }

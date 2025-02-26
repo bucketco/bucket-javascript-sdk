@@ -13,7 +13,7 @@ export const loginAction = async () => {
     spinner.succeed(`Logged in to ${chalk.cyan(baseUrl)} successfully! 🎉`);
   } catch (error) {
     spinner.fail("Login failed");
-    handleError(error, "Login");
+    void handleError(error, "Login");
   }
 };
 
@@ -25,15 +25,12 @@ export const logoutAction = async () => {
     spinner.succeed("Logged out successfully! 👋");
   } catch (error) {
     spinner.fail("Logout failed");
-    handleError(error, "Logout");
+    void handleError(error, "Logout");
   }
 };
 
-export function registerAuthCommands(program: Command) {
-  program.command("login").description("Login to Bucket").action(loginAction);
+export function registerAuthCommands(cli: Command) {
+  cli.command("login").description("Login to Bucket").action(loginAction);
 
-  program
-    .command("logout")
-    .description("Logout from Bucket")
-    .action(logoutAction);
+  cli.command("logout").description("Logout from Bucket").action(logoutAction);
 }

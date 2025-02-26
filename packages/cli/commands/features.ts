@@ -41,14 +41,14 @@ export const createFeatureAction = async (
     );
   } catch (error) {
     spinner?.fail("Loading features failed");
-    handleError(error, "Features Create");
+    void handleError(error, "Features Create");
   }
 
   try {
     if (!name) {
       name = await input({
         message: "New feature name:",
-        validate: (input) => input.length > 0 || "Name is required",
+        validate: (text) => text.length > 0 || "Name is required",
       });
     }
 
@@ -68,7 +68,7 @@ export const createFeatureAction = async (
     );
   } catch (error) {
     spinner?.fail("Feature creation failed");
-    handleError(error, "Features Create");
+    void handleError(error, "Features Create");
   }
 };
 
@@ -85,7 +85,7 @@ export const listFeaturesAction = async ({ appId }: AppIdArgs) => {
     console.table(features);
   } catch (error) {
     spinner.fail("Loading features failed");
-    handleError(error, "Features List");
+    void handleError(error, "Features List");
   }
 };
 
@@ -106,7 +106,7 @@ export const generateTypesAction = async ({
     );
   } catch (error) {
     spinner?.fail("Loading features failed");
-    handleError(error, "Features Types");
+    void handleError(error, "Features Types");
   }
 
   try {
@@ -119,11 +119,11 @@ export const generateTypesAction = async ({
     console.log(chalk.green(`Generated types for ${appId}.`));
   } catch (error) {
     spinner?.fail("Type generation failed");
-    handleError(error, "Features Types");
+    void handleError(error, "Features Types");
   }
 };
 
-export function registerFeatureCommands(program: Command) {
+export function registerFeatureCommands(cli: Command) {
   const featuresCommand = new Command("features").description(
     "Manage features",
   );
@@ -165,5 +165,5 @@ export function registerFeatureCommands(program: Command) {
     )
     .action(generateTypesAction);
 
-  program.addCommand(featuresCommand);
+  cli.addCommand(featuresCommand);
 }

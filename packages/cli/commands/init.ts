@@ -36,7 +36,7 @@ export const initAction = async (args: InitArgs) => {
     spinner.succeed(`Loaded apps from ${chalk.cyan(baseUrl)}`);
   } catch (error) {
     spinner?.fail("Loading apps failed");
-    handleError(error, "Initialization");
+    void handleError(error, "Initialization");
   }
 
   try {
@@ -89,12 +89,12 @@ export const initAction = async (args: InitArgs) => {
     );
   } catch (error) {
     spinner?.fail("Configuration creation failed");
-    handleError(error, "Initialization");
+    void handleError(error, "Initialization");
   }
 };
 
-export function registerInitCommand(program: Command) {
-  program
+export function registerInitCommand(cli: Command) {
+  cli
     .command("init")
     .description("Initialize a new Bucket configuration")
     .option(options.initOverride.flags, options.initOverride.description)

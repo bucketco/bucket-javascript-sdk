@@ -98,7 +98,10 @@ export async function loadConfig() {
     const content = await readFile(configPath, "utf-8");
     const parsed = JSON5.parse<Config>(content);
     if (!validateConfig(parsed)) {
-      handleError(new ConfigValidationError(validateConfig.errors), "Config");
+      void handleError(
+        new ConfigValidationError(validateConfig.errors),
+        "Config",
+      );
     }
     config = parsed;
   } catch {
@@ -120,7 +123,10 @@ const getDefaultConfig = (): Partial<Config> => ({
 
 export async function saveConfig(newConfig: Config, overwrite = false) {
   if (!validateConfig(newConfig)) {
-    handleError(new ConfigValidationError(validateConfig.errors), "Config");
+    void handleError(
+      new ConfigValidationError(validateConfig.errors),
+      "Config",
+    );
   }
 
   const defaults = getDefaultConfig();

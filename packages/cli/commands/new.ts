@@ -38,12 +38,12 @@ export const newAction = async (
       out,
     });
   } catch (error) {
-    handleError(error, "New");
+    void handleError(error, "New");
   }
 };
 
-export function registerNewCommand(program: Command) {
-  program
+export function registerNewCommand(cli: Command) {
+  cli
     .command("new")
     .description(
       "Initialize the Bucket CLI, authenticates, and creates a new feature",
