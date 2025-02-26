@@ -2,6 +2,8 @@
 
 React client side library for [Bucket.co](https://bucket.co)
 
+Bucket supports feature toggling, tracking feature usage, [requesting feedback](#userequestfeedback) on features, and [remotely configuring features](#remote-config-beta).
+
 ## Install
 
 Install via npm:
@@ -29,10 +31,6 @@ declare module "@bucketco/react-sdk" {
   interface Features {
     huddle: boolean;
     recordVideo: boolean;
-    questionnaire?: {
-      showAll: boolean;
-      time: 600000;
-    };
   }
 }
 ```
@@ -58,7 +56,7 @@ import { BucketProvider } from "@bucketco/react-sdk";
 
 ### 3. Use `useFeature(<featureKey>)` to get feature status
 
-Using the `useFeature` hook from your components lets you toggle features on/off and configure features through Remote Config:
+Using the `useFeature` hook from your components lets you toggle features on/off and track feature usage:
 
 **Example:**
 
@@ -79,13 +77,14 @@ function StartHuddleButton() {
 
 `useFeature` can help you do much more. See a full example for `useFeature` [see below](#usefeature).
 
-## Feature toggles
+## Setting `user` and `company`
 
-Bucket determines which features are active for a given `user`/`company`. The `user`/`company` are given in the `BucketProvider` as props.
+Bucket determines which features are active for a given `user`, `company`, or `otherContext`.
+You pass these to the `BucketProvider` as props.
 
 If you supply `user` or `company` objects, they must include at least the `id` property otherwise they will be ignored in their entirety.
 In addition to the `id`, you must also supply anything additional that you want to be able to evaluate feature targeting rules against.
-The additional attributes are supplied using the `otherContext` prop.
+Attributes which are not properties of the `user` or `company` can be supplied using the `otherContext` prop.
 
 Attributes cannot be nested (multiple levels) and must be either strings, numbers or booleans.
 A number of special attributes exist:
@@ -112,11 +111,32 @@ To retrieve features along with their targeting information, use `useFeature(key
 Note that accessing `isEnabled` on the object returned by `useFeature()` automatically
 generates a `check` event.
 
-## Remote config
+## Remote config (beta)
 
-Similar to `isEnabled`, each feature accessed using `useFeature()` hook, has a `config` property. This configuration
-is managed from within Bucket. It is managed similar to the way access to features is managed, but instead of the
+In addition to toggling features on/off, Bucket supports remote configuration of features through Remote config.
+
+Similar to `isEnabled`, each feature accessed using the `useFeature()` hook, has a `config` property. This configuration is managed from within Bucket. It is managed similar to the way access to features is managed, but instead of the
 binary `isEnabled` you can have multiple configuration values which are given to different user/companies.
+
+### Get started with Remote config
+
+1. Update your feature definitions:
+
+```typescript
+import "@bucketco/react-sdk";
+
+// Define your features by extending the `Features` interface in @bucketco/react-sdk
+declare module "@bucketco/react-sdk" {
+  interface Features {
+    huddle: {
+      // change from `boolean` to an object which sets
+      // a type for the remote config for `questionnaire`
+      maxTokens: number;
+      model: string;
+    };
+  }
+}
+```
 
 ```ts
 const {
@@ -130,8 +150,8 @@ const {
 ```
 
 The `key` is always present while the `payload` is a optional JSON value for arbitrary configuration needs.
-If feature has no configuration or, no configuration value was matched against the context, the `config` object
-will be empty, thus, `key` will be `undefined`. Make sure to check against this case when trying to use the
+If a feature has no configuration or no configuration value was matched against the context, the config object will be empty.
+Thus, `key` will be `undefined`. Make sure to check against this case when trying to use the
 configuration in your application.
 
 Note that, similar to `isEnabled`, accessing `config` on the object returned by `useFeature()` automatically
