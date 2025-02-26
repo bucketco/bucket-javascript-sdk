@@ -196,6 +196,8 @@ Feature overrides are persisted in `localStorage` and will be restored when the 
 
 ### Remote config (beta)
 
+Remote config is a dynamic and flexible approach to configuring feature behavior outside of your app – without needing to re-deploy it.
+
 Similar to `isEnabled`, each feature has a `config` property. This configuration is managed from within Bucket.
 It is managed similar to the way access to features is managed, but instead of the binary `isEnabled` you can have
 multiple configuration values which are given to different user/companies.
