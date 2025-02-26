@@ -1,3 +1,3 @@
-const base = require("@bucketco/eslint-config/base");
+const base = require("@bucketco/eslint-config");
 
 module.exports = [...base, { ignores: ["dist/"] }];

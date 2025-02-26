@@ -369,7 +369,6 @@ describe("message handling", () => {
 
   test("disconnects on unknown event source errors with data", async () => {
     const sse = createSSEChannel();
-    sseHost;
     let errorCallback: ((e: Event) => Promise<void>) | undefined = undefined;
     const addEventListener = (event: string, cb: (e: Event) => void) => {
       if (event === "error") {

@@ -20,6 +20,7 @@ export type FetchedFeature = {
 
   /**
    * Result of feature flag evaluation.
+   * Note: does not take local overrides into account.
    */
   isEnabled: boolean;
 
@@ -71,9 +72,11 @@ export type FetchedFeature = {
 
 const FEATURES_UPDATED_EVENT = "featuresUpdated";
 
+/**
+ * @internal
+ */
 export type FetchedFeatures = Record<string, FetchedFeature | undefined>;
 
-// todo: on next major, come up with a better name for this type. Maybe `LocalFeature`.
 export type RawFeature = FetchedFeature & {
   /**
    * If not null, the result is being overridden locally
@@ -328,7 +331,7 @@ export class FeaturesClient {
         let errorBody = null;
         try {
           errorBody = await res.json();
-        } catch (e) {
+        } catch {
           // ignore
         }
 

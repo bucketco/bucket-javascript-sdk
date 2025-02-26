@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type */
+
 import { RuleFilter } from "@bucketco/flag-evaluation";
 
 /**

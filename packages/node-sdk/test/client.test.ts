@@ -126,7 +126,6 @@ const featureDefinitions: FeaturesAPIResponse = {
               values: ["company123"],
             },
             key: "config-1",
-            default: true,
             payload: { something: "else" },
           },
         ],
@@ -1052,7 +1051,8 @@ describe("BucketClient", () => {
               },
               featureKey,
               context: context,
-              ruleEvaluationResults: evalFeature.config?.ruleEvaluationResults,
+              ruleEvaluationResults:
+                evalFeature.config?.ruleEvaluationResults || [],
               missingContextFields: evalFeature.config?.missingContextFields,
             };
           }
@@ -1390,7 +1390,8 @@ describe("BucketClient", () => {
               },
               featureKey,
               context: context,
-              ruleEvaluationResults: evalFeature.config?.ruleEvaluationResults,
+              ruleEvaluationResults:
+                evalFeature.config?.ruleEvaluationResults || [],
               missingContextFields: evalFeature.config?.missingContextFields,
             };
           }

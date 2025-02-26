@@ -138,8 +138,10 @@ function updateSha1Hash(hash: Hash, value: any) {
       case "boolean":
       case "symbol":
       case "bigint":
+      case "function":
         hash.update(value.toString());
         break;
+      case "undefined":
       default:
         break;
     }

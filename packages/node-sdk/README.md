@@ -1,6 +1,8 @@
 # Bucket Node.js SDK
 
-Node.js, JavaScriptS/Typescript feature flag and tracking client for [Bucket.co](https://bucket.co).
+Node.js, JavaScriptS/Typescript client for [Bucket.co](https://bucket.co).
+
+Bucket supports feature toggling, tracking feature usage, collecting feedback on features, and [remotely configuring features](#remote-config-beta).
 
 ## Installation
 
@@ -224,7 +226,7 @@ const client = new BucketClient({
 });
 ```
 
-### Remote config
+### Remote config (beta)
 
 Similar to `isEnabled`, each feature has a `config` property. This configuration is managed from within Bucket.
 It is managed similar to the way access to features is managed, but instead of the binary `isEnabled` you can have
