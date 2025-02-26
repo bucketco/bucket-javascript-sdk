@@ -2,6 +2,8 @@
 
 React client side library for [Bucket.co](https://bucket.co)
 
+Bucket supports toggling features, tracking feature usage, [requesting feedback](#userequestfeedback) on features and [remotely configuring features](#remote-config).
+
 ## Install
 
 Install via npm:
@@ -147,7 +149,7 @@ const {
 ```
 
 The `key` is always present while the `payload` is a optional JSON value for arbitrary configuration needs.
-If tjhe feature has no configuration or, no configuration value was matched against the context, the `config` object
+If the feature has no configuration or, no configuration value was matched against the context, the `config` object
 will be empty, thus, `key` will be `undefined`. Make sure to check against this case when trying to use the
 configuration in your application.
 
