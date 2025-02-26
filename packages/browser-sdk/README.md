@@ -172,26 +172,6 @@ by down-stream clients, like the React SDK.
 Note that accessing `isEnabled` on the object returned by `getFeatures` does not automatically
 generate a `check` event, contrary to the `isEnabled` property on the object returned by `getFeature`.
 
-### Feature Overrides
-
-You can override feature flags locally for testing purposes using `setFeatureOverride`:
-
-```ts
-// Override a feature to be enabled
-bucketClient.setFeatureOverride("huddle", true);
-
-// Override a feature to be disabled
-bucketClient.setFeatureOverride("huddle", false);
-
-// Remove the override
-bucketClient.setFeatureOverride("huddle", null);
-
-// Get current override value
-const override = bucketClient.getFeatureOverride("huddle"); // returns boolean | null
-```
-
-Feature overrides are persisted in `localStorage` and will be restored when the page is reloaded.
-
 ### Remote config
 
 Similar to `isEnabled`, each feature has a `config` property. This configuration is managed from within Bucket.
