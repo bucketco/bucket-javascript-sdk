@@ -19,6 +19,7 @@ import { version } from "../package.json";
 import {
   BucketProps,
   BucketProvider,
+  useClient,
   useFeature,
   useRequestFeedback,
   useSendFeedback,
@@ -72,7 +73,7 @@ const server = setupServer(
       { status: 200 },
     );
   }),
-  http.get(/\/features\/enabled$/, () => {
+  http.get(/\/features\/evaluated$/, () => {
     return new HttpResponse(
       JSON.stringify({
         success: true,
@@ -81,6 +82,11 @@ const server = setupServer(
             key: "abc",
             isEnabled: true,
             targetingVersion: 1,
+            config: {
+              key: "gpt3",
+              payload: { model: "gpt-something", temperature: 0.5 },
+              version: 2,
+            },
           },
           def: {
             key: "def",
@@ -133,6 +139,7 @@ beforeAll(() =>
     },
   }),
 );
+
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
@@ -147,21 +154,29 @@ beforeEach(() => {
 
 describe("<BucketProvider />", () => {
   test("calls initialize", () => {
-    const onFeaturesUpdated = vi.fn();
+    const on = vi.fn();
 
     const newBucketClient = vi.fn().mockReturnValue({
       initialize: vi.fn().mockResolvedValue(undefined),
-      onFeaturesUpdated,
+      on,
     });
 
     const provider = getProvider({
       publishableKey: "KEY",
-      apiBaseUrl: "https://test.com",
-      sseBaseUrl: "https://test.com",
+      apiBaseUrl: "https://apibaseurl.com",
+      sseBaseUrl: "https://ssebaseurl.com",
       company: { id: "123", name: "test" },
       user: { id: "456", name: "test" },
       otherContext: { test: "test" },
       enableTracking: false,
+      appBaseUrl: "https://appbaseurl.com",
+      staleTimeMs: 1001,
+      timeoutMs: 1002,
+      expireTimeMs: 1003,
+      staleWhileRevalidate: true,
+      fallbackFeatures: ["feature2"],
+      feedback: { enableAutoFeedback: true },
+      toolbar: { show: true },
       newBucketClient,
     });
 
@@ -181,19 +196,27 @@ describe("<BucketProvider />", () => {
         otherContext: {
           test: "test",
         },
-        apiBaseUrl: "https://test.com",
-        host: undefined,
+        apiBaseUrl: "https://apibaseurl.com",
+        appBaseUrl: "https://appbaseurl.com",
+        sseBaseUrl: "https://ssebaseurl.com",
         logger: undefined,
-        sseBaseUrl: "https://test.com",
-        sseHost: undefined,
         enableTracking: false,
-        feedback: undefined,
-        features: {},
+        expireTimeMs: 1003,
+        fallbackFeatures: ["feature2"],
+        feedback: {
+          enableAutoFeedback: true,
+        },
+        staleTimeMs: 1001,
+        staleWhileRevalidate: true,
+        timeoutMs: 1002,
+        toolbar: {
+          show: true,
+        },
         sdkVersion: `react-sdk/${version}`,
       },
     ]);
 
-    expect(onFeaturesUpdated).toBeTruthy();
+    expect(on).toBeTruthy();
   });
 
   test("only calls init once with the same args", () => {
@@ -219,6 +242,7 @@ describe("useFeature", () => {
     expect(result.current).toStrictEqual({
       isEnabled: false,
       isLoading: true,
+      config: { key: undefined, payload: undefined },
       track: expect.any(Function),
       requestFeedback: expect.any(Function),
     });
@@ -233,8 +257,30 @@ describe("useFeature", () => {
 
     await waitFor(() => {
       expect(result.current).toStrictEqual({
+        config: { key: undefined, payload: undefined },
         isEnabled: false,
         isLoading: false,
+        track: expect.any(Function),
+        requestFeedback: expect.any(Function),
+      });
+    });
+
+    unmount();
+  });
+
+  test("provides the expected values if feature is enabled", async () => {
+    const { result, unmount } = renderHook(() => useFeature("abc"), {
+      wrapper: ({ children }) => getProvider({ children }),
+    });
+
+    await waitFor(() => {
+      expect(result.current).toStrictEqual({
+        isEnabled: true,
+        isLoading: false,
+        config: {
+          key: "gpt3",
+          payload: { model: "gpt-something", temperature: 0.5 },
+        },
         track: expect.any(Function),
         requestFeedback: expect.any(Function),
       });
@@ -267,7 +313,7 @@ describe("useSendFeedback", () => {
 
     await waitFor(async () => {
       await result.current({
-        featureId: "123",
+        featureKey: "huddles",
         score: 5,
       });
       expect(events).toStrictEqual(["FEEDBACK"]);
@@ -289,15 +335,15 @@ describe("useRequestFeedback", () => {
 
     await waitFor(async () => {
       result.current({
-        featureId: "123",
+        featureKey: "huddles",
         title: "Test question",
         companyId: "456",
       });
 
       expect(requestFeedback).toHaveBeenCalledOnce();
       expect(requestFeedback).toHaveBeenCalledWith({
+        featureKey: "huddles",
         companyId: "456",
-        featureId: "123",
         title: "Test question",
       });
     });
@@ -383,6 +429,20 @@ describe("useUpdateOtherContext", () => {
       expect(updateOtherContext).toHaveBeenCalledWith({
         optInHuddles: "true",
       });
+    });
+
+    unmount();
+  });
+});
+
+describe("useClient", () => {
+  test("gets the client", async () => {
+    const { result: clientFn, unmount } = renderHook(() => useClient(), {
+      wrapper: ({ children }) => getProvider({ children }),
+    });
+
+    await waitFor(async () => {
+      expect(clientFn.current).toBeDefined();
     });
 
     unmount();

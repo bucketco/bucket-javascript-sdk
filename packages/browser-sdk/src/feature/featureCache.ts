@@ -1,4 +1,4 @@
-import { RawFeatures } from "./features";
+import { FetchedFeatures } from "./features";
 
 interface StorageItem {
   get(): string | null;
@@ -8,45 +8,56 @@ interface StorageItem {
 interface cacheEntry {
   expireAt: number;
   staleAt: number;
-  features: RawFeatures;
+  features: FetchedFeatures;
 }
 
 // Parse and validate an API feature response
 export function parseAPIFeaturesResponse(
   featuresInput: any,
-): RawFeatures | undefined {
+): FetchedFeatures | undefined {
   if (!isObject(featuresInput)) {
     return;
   }
 
-  const features: RawFeatures = {};
+  const features: FetchedFeatures = {};
   for (const key in featuresInput) {
     const feature = featuresInput[key];
+
     if (
       typeof feature.isEnabled !== "boolean" ||
       feature.key !== key ||
-      typeof feature.targetingVersion !== "number"
+      typeof feature.targetingVersion !== "number" ||
+      (feature.config && typeof feature.config !== "object") ||
+      (feature.missingContextFields &&
+        !Array.isArray(feature.missingContextFields)) ||
+      (feature.ruleEvaluationResults &&
+        !Array.isArray(feature.ruleEvaluationResults))
     ) {
       return;
     }
+
     features[key] = {
       isEnabled: feature.isEnabled,
       targetingVersion: feature.targetingVersion,
       key,
+      config: feature.config,
+      missingContextFields: feature.missingContextFields,
+      ruleEvaluationResults: feature.ruleEvaluationResults,
     };
   }
+
   return features;
 }
 
 export interface CacheResult {
-  features: RawFeatures;
+  features: FetchedFeatures;
   stale: boolean;
 }
 
 export class FeatureCache {
   private storage: StorageItem;
-  private staleTimeMs: number;
-  private expireTimeMs: number;
+  private readonly staleTimeMs: number;
+  private readonly expireTimeMs: number;
 
   constructor({
     storage,
@@ -67,7 +78,7 @@ export class FeatureCache {
     {
       features,
     }: {
-      features: RawFeatures;
+      features: FetchedFeatures;
     },
   ) {
     let cacheData: CacheData = {};

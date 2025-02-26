@@ -1,11 +1,9 @@
 import { FunctionComponent, h } from "preact";
 
 export const Logo: FunctionComponent<h.JSX.SVGAttributes<SVGSVGElement>> = (
-  props,
+  props = { height: "10px", width: "10px" },
 ) => (
   <svg
-    fill="none"
-    height="10px"
     viewBox="0 0 300 316"
     width="10px"
     xmlns="http://www.w3.org/2000/svg"

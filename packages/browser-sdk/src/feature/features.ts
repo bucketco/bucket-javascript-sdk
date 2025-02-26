@@ -9,71 +9,97 @@ import {
   parseAPIFeaturesResponse,
 } from "./featureCache";
 
-export type RawFeature = {
+/**
+ * A feature fetched from the server.
+ */
+export type FetchedFeature = {
   /**
-   * Feature key
+   * Feature key.
    */
   key: string;
 
   /**
-   * Result of feature flag evaluation
+   * Result of feature flag evaluation.
    */
   isEnabled: boolean;
 
   /**
-   * Version of targeting rules
+   * Version of targeting rules.
    */
   targetingVersion?: number;
+
+  /**
+   * Rule evaluation results.
+   */
+  ruleEvaluationResults?: boolean[];
+
+  /**
+   * Missing context fields.
+   */
+  missingContextFields?: string[];
+
+  /**
+   * Optional user-defined dynamic configuration.
+   */
+  config?: {
+    /**
+     * The key of the matched configuration value.
+     */
+    key: string;
+
+    /**
+     * The version of the matched configuration value.
+     */
+    version?: number;
+
+    /**
+     * The optional user-supplied payload data.
+     */
+    payload?: any;
+
+    /**
+     * The rule evaluation results.
+     */
+    ruleEvaluationResults?: boolean[];
+
+    /**
+     * The missing context fields.
+     */
+    missingContextFields?: string[];
+  };
 };
 
-const FEATURES_UPDATED_EVENT = "features-updated";
+const FEATURES_UPDATED_EVENT = "featuresUpdated";
 
-export type RawFeatures = Record<string, RawFeature | undefined>;
+export type FetchedFeatures = Record<string, FetchedFeature | undefined>;
 
-export type FeaturesOptions = {
+// todo: on next major, come up with a better name for this type. Maybe `LocalFeature`.
+export type RawFeature = FetchedFeature & {
   /**
-   * Feature keys for which `isEnabled` should fallback to true
-   * if SDK fails to fetch features from Bucket servers.
+   * If not null, the result is being overridden locally
    */
-  fallbackFeatures?: string[];
-
-  /**
-   * Timeout in miliseconds
-   */
-  timeoutMs?: number;
-
-  /**
-   * If set to true client will return cached value when its stale
-   * but refetching
-   */
-  staleWhileRevalidate?: boolean;
-  staleTimeMs?: number;
-  expireTimeMs?: number;
+  isEnabledOverride: boolean | null;
 };
+
+export type RawFeatures = Record<string, RawFeature>;
+
+export type FallbackFeatureOverride =
+  | {
+      key: string;
+      payload: any;
+    }
+  | true;
 
 type Config = {
-  fallbackFeatures: string[];
+  fallbackFeatures: Record<string, FallbackFeatureOverride>;
   timeoutMs: number;
   staleWhileRevalidate: boolean;
 };
 
 export const DEFAULT_FEATURES_CONFIG: Config = {
-  fallbackFeatures: [],
+  fallbackFeatures: {},
   timeoutMs: 5000,
   staleWhileRevalidate: false,
-};
-
-// Deep merge two objects.
-export type FeaturesResponse = {
-  /**
-   * `true` if call was successful
-   */
-  success: boolean;
-
-  /**
-   * List of enabled features
-   */
-  features: RawFeatures;
 };
 
 export function validateFeaturesResponse(response: any) {
@@ -84,7 +110,9 @@ export function validateFeaturesResponse(response: any) {
   if (typeof response.success !== "boolean" || !isObject(response.features)) {
     return;
   }
+
   const features = parseAPIFeaturesResponse(response.features);
+
   if (!features) {
     return;
   }
@@ -115,19 +143,34 @@ export function flattenJSON(obj: Record<string, any>): Record<string, any> {
  */
 export interface CheckEvent {
   /**
-   * Feature key
+   * Action to perform.
+   */
+  action: "check-is-enabled" | "check-config";
+
+  /**
+   * Feature key.
    */
   key: string;
 
   /**
-   * Result of feature flag evaluation
+   * Result of feature flag or configuration evaluation.
    */
-  value: boolean;
+  value: any;
 
   /**
-   * Version of targeting rules
+   * Version of targeting rules.
    */
   version?: number;
+
+  /**
+   * Rule evaluation results.
+   */
+  ruleEvaluationResults?: boolean[];
+
+  /**
+   * Missing context fields.
+   */
+  missingContextFields?: string[];
 }
 
 type context = {
@@ -138,14 +181,37 @@ type context = {
 
 export const FEATURES_EXPIRE_MS = 30 * 24 * 60 * 60 * 1000; // expire entirely after 30 days
 
-const localStorageCacheKey = `__bucket_features`;
+const localStorageFetchedFeaturesKey = `__bucket_fetched_features`;
+const localStorageOverridesKey = `__bucket_overrides`;
+
+type OverridesFeatures = Record<string, boolean | null>;
+
+function setOverridesCache(overrides: OverridesFeatures) {
+  localStorage.setItem(localStorageOverridesKey, JSON.stringify(overrides));
+}
+
+function getOverridesCache(): OverridesFeatures {
+  const cachedOverrides = JSON.parse(
+    localStorage.getItem(localStorageOverridesKey) || "{}",
+  );
+
+  if (!isObject(cachedOverrides)) {
+    return {};
+  }
+
+  return cachedOverrides;
+}
 
 /**
  * @internal
  */
 export class FeaturesClient {
   private cache: FeatureCache;
-  private features: RawFeatures;
+  private fetchedFeatures: FetchedFeatures;
+  private featureOverrides: OverridesFeatures = {};
+
+  private features: RawFeatures = {};
+
   private config: Config;
   private rateLimiter: RateLimiter;
   private readonly logger: Logger;
@@ -157,32 +223,63 @@ export class FeaturesClient {
     private httpClient: HttpClient,
     private context: context,
     logger: Logger,
-    options?: FeaturesOptions & {
+    options?: {
+      fallbackFeatures?: Record<string, FallbackFeatureOverride> | string[];
+      timeoutMs?: number;
+      staleTimeMs?: number;
+      expireTimeMs?: number;
       cache?: FeatureCache;
       rateLimiter?: RateLimiter;
     },
   ) {
-    this.features = {};
+    this.fetchedFeatures = {};
     this.logger = loggerWithPrefix(logger, "[Features]");
     this.cache = options?.cache
       ? options.cache
       : new FeatureCache({
           storage: {
-            get: () => localStorage.getItem(localStorageCacheKey),
-            set: (value) => localStorage.setItem(localStorageCacheKey, value),
+            get: () => localStorage.getItem(localStorageFetchedFeaturesKey),
+            set: (value) =>
+              localStorage.setItem(localStorageFetchedFeaturesKey, value),
           },
           staleTimeMs: options?.staleTimeMs ?? 0,
           expireTimeMs: options?.expireTimeMs ?? FEATURES_EXPIRE_MS,
         });
-    this.config = { ...DEFAULT_FEATURES_CONFIG, ...options };
+
+    let fallbackFeatures: Record<string, FallbackFeatureOverride>;
+
+    if (Array.isArray(options?.fallbackFeatures)) {
+      fallbackFeatures = options.fallbackFeatures.reduce(
+        (acc, key) => {
+          acc[key] = true;
+          return acc;
+        },
+        {} as Record<string, FallbackFeatureOverride>,
+      );
+    } else {
+      fallbackFeatures = options?.fallbackFeatures ?? {};
+    }
+
+    this.config = { ...DEFAULT_FEATURES_CONFIG, ...options, fallbackFeatures };
+
     this.rateLimiter =
       options?.rateLimiter ??
       new RateLimiter(FEATURE_EVENTS_PER_MIN, this.logger);
+
+    try {
+      const storedFeatureOverrides = getOverridesCache();
+      for (const key in storedFeatureOverrides) {
+        this.featureOverrides[key] = storedFeatureOverrides[key];
+      }
+    } catch (e) {
+      this.logger.warn("error getting feature overrides from cache", e);
+      this.featureOverrides = {};
+    }
   }
 
   async initialize() {
     const features = (await this.maybeFetchFeatures()) || {};
-    this.setFeatures(features);
+    this.setFetchedFeatures(features);
   }
 
   async setContext(context: context) {
@@ -202,31 +299,27 @@ export class FeaturesClient {
    * Features are not guaranteed to have actually changed when the callback is called.
    *
    * @param callback this will be called when the features are updated.
-   * @param options passed as-is to addEventListener, except the abort signal is not supported.
    * @returns a function that can be called to remove the listener
    */
-  onUpdated(callback: () => void, options?: AddEventListenerOptions | boolean) {
+  onUpdated(callback: () => void) {
     this.eventTarget.addEventListener(FEATURES_UPDATED_EVENT, callback, {
       signal: this.abortController.signal,
     });
-    return () => {
-      this.eventTarget.removeEventListener(
-        FEATURES_UPDATED_EVENT,
-        callback,
-        options,
-      );
-    };
   }
 
   getFeatures(): RawFeatures {
     return this.features;
   }
 
-  public async fetchFeatures(): Promise<RawFeatures | undefined> {
+  getFetchedFeatures(): FetchedFeatures {
+    return this.fetchedFeatures;
+  }
+
+  public async fetchFeatures(): Promise<FetchedFeatures | undefined> {
     const params = this.fetchParams();
     try {
       const res = await this.httpClient.get({
-        path: "/features/enabled",
+        path: "/features/evaluated",
         timeoutMs: this.config.timeoutMs,
         params,
       });
@@ -246,6 +339,7 @@ export class FeaturesClient {
             JSON.stringify(errorBody),
         );
       }
+
       const typeRes = validateFeaturesResponse(await res.json());
       if (!typeRes || !typeRes.success) {
         throw new Error("unable to validate response");
@@ -263,17 +357,19 @@ export class FeaturesClient {
    *
    *
    * @param checkEvent - The feature to send the event for.
+   * @param cb - Callback to call after the event is sent. Might be skipped if the event was rate limited.
    */
-  async sendCheckEvent(checkEvent: CheckEvent) {
-    const rateLimitKey = `${this.fetchParams().toString()}:${checkEvent.key}:${checkEvent.version}:${checkEvent.value}`;
-
+  async sendCheckEvent(checkEvent: CheckEvent, cb: () => void) {
+    const rateLimitKey = `check-event:${this.fetchParams().toString()}:${checkEvent.key}:${checkEvent.version}:${checkEvent.value}`;
     await this.rateLimiter.rateLimited(rateLimitKey, async () => {
       const payload = {
-        action: "check",
+        action: checkEvent.action,
         key: checkEvent.key,
         targetingVersion: checkEvent.version,
         evalContext: this.context,
         evalResult: checkEvent.value,
+        evalRuleResults: checkEvent.ruleEvaluationResults,
+        evalMissingFields: checkEvent.missingContextFields,
       };
 
       this.httpClient
@@ -286,14 +382,34 @@ export class FeaturesClient {
         });
 
       this.logger.debug(`sent feature event`, payload);
+      cb();
     });
 
     return checkEvent.value;
   }
 
-  private setFeatures(features: RawFeatures) {
-    this.features = features;
+  private triggerFeaturesChanged() {
+    const mergedFeatures: RawFeatures = {};
+
+    // merge fetched features with overrides into `this.features`
+    for (const key in this.fetchedFeatures) {
+      const fetchedFeature = this.fetchedFeatures[key];
+      if (!fetchedFeature) continue;
+      const isEnabledOverride = this.featureOverrides[key] ?? null;
+      mergedFeatures[key] = {
+        ...fetchedFeature,
+        isEnabledOverride,
+      };
+    }
+
+    this.features = mergedFeatures;
+
     this.eventTarget.dispatchEvent(new Event(FEATURES_UPDATED_EVENT));
+  }
+
+  private setFetchedFeatures(features: FetchedFeatures) {
+    this.fetchedFeatures = features;
+    this.triggerFeaturesChanged();
   }
 
   private fetchParams() {
@@ -308,7 +424,33 @@ export class FeaturesClient {
     return params;
   }
 
-  private async maybeFetchFeatures(): Promise<RawFeatures | undefined> {
+  private warnMissingFeatureContextFields(features: FetchedFeatures) {
+    const report: Record<string, string[]> = {};
+    for (const featureKey in features) {
+      const feature = features[featureKey];
+      if (feature?.missingContextFields?.length) {
+        report[feature.key] = feature.missingContextFields;
+      }
+
+      if (feature?.config?.missingContextFields?.length) {
+        report[`${feature.key}.config`] = feature.config.missingContextFields;
+      }
+    }
+
+    if (Object.keys(report).length > 0) {
+      this.rateLimiter.rateLimited(
+        `feature-missing-context-fields:${this.fetchParams().toString()}`,
+        () => {
+          this.logger.warn(
+            `feature/remote config targeting rules might not be correctly evaluated due to missing context fields.`,
+            report,
+          );
+        },
+      );
+    }
+  }
+
+  private async maybeFetchFeatures(): Promise<FetchedFeatures | undefined> {
     const cacheKey = this.fetchParams().toString();
     const cachedItem = this.cache.get(cacheKey);
 
@@ -325,7 +467,7 @@ export class FeaturesClient {
             this.cache.set(cacheKey, {
               features,
             });
-            this.setFeatures(features);
+            this.setFetchedFeatures(features);
           })
           .catch(() => {
             // we don't care about the result, we just want to re-fetch
@@ -343,6 +485,7 @@ export class FeaturesClient {
         features: fetchedFeatures,
       });
 
+      this.warnMissingFeatureContextFields(fetchedFeatures);
       return fetchedFeatures;
     }
 
@@ -352,12 +495,41 @@ export class FeaturesClient {
     }
 
     // fetch failed, nothing cached => return fallbacks
-    return this.config.fallbackFeatures.reduce((acc, key) => {
-      acc[key] = {
-        key,
-        isEnabled: true,
-      };
-      return acc;
-    }, {} as RawFeatures);
+    return Object.entries(this.config.fallbackFeatures).reduce(
+      (acc, [key, override]) => {
+        acc[key] = {
+          key,
+          isEnabled: !!override,
+          config:
+            typeof override === "object" && "key" in override
+              ? {
+                  key: override.key,
+                  payload: override.payload,
+                }
+              : undefined,
+        };
+        return acc;
+      },
+      {} as FetchedFeatures,
+    );
+  }
+
+  setFeatureOverride(key: string, isEnabled: boolean | null) {
+    if (!(typeof isEnabled === "boolean" || isEnabled === null)) {
+      throw new Error("setFeatureOverride: isEnabled must be boolean or null");
+    }
+
+    if (isEnabled === null) {
+      delete this.featureOverrides[key];
+    } else {
+      this.featureOverrides[key] = isEnabled;
+    }
+    setOverridesCache(this.featureOverrides);
+
+    this.triggerFeaturesChanged();
+  }
+
+  getFeatureOverride(key: string): boolean | null {
+    return this.featureOverrides[key] ?? null;
   }
 }

@@ -115,6 +115,22 @@ const featureDefinitions: FeaturesAPIResponse = {
           },
         ],
       },
+      config: {
+        version: 1,
+        variants: [
+          {
+            filter: {
+              type: "context",
+              field: "company.id",
+              operator: "IS",
+              values: ["company123"],
+            },
+            key: "config-1",
+            default: true,
+            payload: { something: "else" },
+          },
+        ],
+      },
     },
     {
       key: "feature2",
@@ -152,6 +168,12 @@ const evaluatedFeatures = [
     feature: { key: "feature1", version: 1 },
     value: true,
     context: {},
+    config: {
+      key: "config-1",
+      payload: { something: "else" },
+      ruleEvaluationResults: [true],
+      missingContextFields: [],
+    },
     ruleEvaluationResults: [true],
     missingContextFields: [],
   },
@@ -179,6 +201,56 @@ describe("BucketClient", () => {
       } finally {
         process.env.BUCKET_SECRET_KEY = secretKeyEnv;
       }
+    });
+
+    it("should accept fallback features as an array", async () => {
+      const bucketInstance = new BucketClient({
+        secretKey: "validSecretKeyWithMoreThan22Chars",
+        fallbackFeatures: ["feature1", "feature2"],
+      });
+
+      expect(bucketInstance["_config"].fallbackFeatures).toEqual({
+        feature1: {
+          isEnabled: true,
+          key: "feature1",
+        },
+        feature2: {
+          isEnabled: true,
+          key: "feature2",
+        },
+      });
+    });
+
+    it("should accept fallback features as an object", async () => {
+      const bucketInstance = new BucketClient({
+        secretKey: "validSecretKeyWithMoreThan22Chars",
+        fallbackFeatures: {
+          feature1: true,
+          feature2: {
+            isEnabled: true,
+            config: {
+              key: "config1",
+              payload: { value: true },
+            },
+          },
+        },
+      });
+
+      expect(bucketInstance["_config"].fallbackFeatures).toStrictEqual({
+        feature1: {
+          key: "feature1",
+          config: undefined,
+          isEnabled: true,
+        },
+        feature2: {
+          key: "feature2",
+          isEnabled: true,
+          config: {
+            key: "config1",
+            payload: { value: true },
+          },
+        },
+      });
     });
 
     it("should create a client instance with valid options", () => {
@@ -293,7 +365,7 @@ describe("BucketClient", () => {
         fallbackFeatures: "invalid" as any,
       };
       expect(() => new BucketClient(invalidOptions)).toThrow(
-        "fallbackFeatures must be an object",
+        "fallbackFeatures must be an array or object",
       );
     });
 
@@ -951,6 +1023,7 @@ describe("BucketClient", () => {
 
   describe("getFeature", () => {
     let client: BucketClient;
+    let featureEvalSequence: Record<string, boolean>;
 
     beforeEach(async () => {
       httpClient.get.mockResolvedValue({
@@ -964,12 +1037,27 @@ describe("BucketClient", () => {
 
       client = new BucketClient(validOptions);
 
+      featureEvalSequence = {};
       vi.mocked(evaluateFeatureRules).mockImplementation(
         ({ featureKey, context }) => {
           const evalFeature = evaluatedFeatures.find(
             (f) => f.feature.key === featureKey,
           )!;
 
+          if (featureEvalSequence[featureKey]) {
+            return {
+              value: evalFeature.config && {
+                key: evalFeature.config.key,
+                payload: evalFeature.config.payload,
+              },
+              featureKey,
+              context: context,
+              ruleEvaluationResults: evalFeature.config?.ruleEvaluationResults,
+              missingContextFields: evalFeature.config?.missingContextFields,
+            };
+          }
+
+          featureEvalSequence[featureKey] = true;
           return {
             value: evalFeature.value,
             featureKey,
@@ -987,7 +1075,6 @@ describe("BucketClient", () => {
     });
 
     it("returns a feature", async () => {
-      // test that the feature is returned
       await client.initialize();
       const feature = client.getFeature(
         {
@@ -998,9 +1085,13 @@ describe("BucketClient", () => {
         "feature1",
       );
 
-      expect(feature).toEqual({
+      expect(feature).toStrictEqual({
         key: "feature1",
         isEnabled: true,
+        config: {
+          key: "config-1",
+          payload: { something: "else" },
+        },
         track: expect.any(Function),
       });
     });
@@ -1024,6 +1115,7 @@ describe("BucketClient", () => {
         },
         "feature1",
       );
+
       await feature.track();
       await client.flush();
 
@@ -1060,6 +1152,21 @@ describe("BucketClient", () => {
             targetingVersion: 1,
             evalContext: context,
             evalResult: true,
+            evalRuleResults: [true],
+            evalMissingFields: [],
+          },
+          {
+            type: "feature-flag-event",
+            action: "evaluate-config",
+            key: "feature1",
+            targetingVersion: 1,
+            evalContext: context,
+            evalResult: {
+              key: "config-1",
+              payload: {
+                something: "else",
+              },
+            },
             evalRuleResults: [true],
             evalMissingFields: [],
           },
@@ -1112,33 +1219,79 @@ describe("BucketClient", () => {
           }),
           expect.objectContaining({
             type: "feature-flag-event",
+            action: "evaluate-config",
+            key: "feature1",
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
             action: "evaluate",
             key: "feature2",
           }),
           {
             type: "feature-flag-event",
             action: "check",
-            evalContext: {
-              company: {
-                employees: 100,
-                id: "company123",
-                name: "Acme Inc.",
-              },
-              other: {
-                custom: "context",
-                key: "value",
-              },
-              user: {
-                age: 1,
-                id: "user123",
-                name: "John",
+            key: "feature1",
+            targetingVersion: 1,
+            evalResult: true,
+            evalContext: context,
+            evalRuleResults: [true],
+            evalMissingFields: [],
+          },
+        ],
+      );
+    });
+
+    it("`config` sends `check` event", async () => {
+      const context = {
+        company,
+        user,
+        other: otherContext,
+      };
+
+      // test that the feature is returned
+      await client.initialize();
+      const feature = client.getFeature(context, "feature1");
+
+      // trigger `check` event
+      expect(feature.config).toBeDefined();
+
+      await client.flush();
+
+      expect(httpClient.post).toHaveBeenCalledWith(
+        BULK_ENDPOINT,
+        expectedHeaders,
+        [
+          expect.objectContaining({ type: "company" }),
+          expect.objectContaining({ type: "user" }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "evaluate",
+            key: "feature1",
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "evaluate-config",
+            key: "feature1",
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "evaluate",
+            key: "feature2",
+          }),
+          {
+            type: "feature-flag-event",
+            action: "check-config",
+            key: "feature1",
+            evalResult: {
+              key: "config-1",
+              payload: {
+                something: "else",
               },
             },
-            evalMissingFields: ["one", "two"],
-            evalResult: false,
-            evalRuleResults: [false, false],
-            key: "feature2",
-            targetingVersion: 2,
+            targetingVersion: 1,
+            evalContext: context,
+            evalRuleResults: [true],
+            evalMissingFields: [],
           },
         ],
       );
@@ -1178,6 +1331,11 @@ describe("BucketClient", () => {
           }),
           expect.objectContaining({
             type: "feature-flag-event",
+            action: "evaluate-config",
+            key: "feature1",
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
             action: "evaluate",
             key: "feature2",
           }),
@@ -1185,8 +1343,12 @@ describe("BucketClient", () => {
             type: "feature-flag-event",
             evalContext: context,
             action: "check",
-            evalResult: false,
             key: "unknown-feature",
+            targetingVersion: undefined,
+            evalContext: context,
+            evalResult: false,
+            evalRuleResults: undefined,
+            evalMissingFields: undefined,
           },
           {
             type: "event",
@@ -1201,6 +1363,7 @@ describe("BucketClient", () => {
 
   describe("getFeatures", () => {
     let client: BucketClient;
+    let featureEvalSequence: Record<string, boolean>;
 
     beforeEach(async () => {
       httpClient.get.mockResolvedValue({
@@ -1214,12 +1377,27 @@ describe("BucketClient", () => {
 
       client = new BucketClient(validOptions);
 
+      featureEvalSequence = {};
       vi.mocked(evaluateFeatureRules).mockImplementation(
         ({ featureKey, context }) => {
           const evalFeature = evaluatedFeatures.find(
             (f) => f.feature.key === featureKey,
           )!;
 
+          if (featureEvalSequence[featureKey]) {
+            return {
+              value: evalFeature.config && {
+                key: evalFeature.config.key,
+                payload: evalFeature.config.payload,
+              },
+              featureKey,
+              context: context,
+              ruleEvaluationResults: evalFeature.config?.ruleEvaluationResults,
+              missingContextFields: evalFeature.config?.missingContextFields,
+            };
+          }
+
+          featureEvalSequence[featureKey] = true;
           return {
             value: evalFeature.value,
             featureKey,
@@ -1249,22 +1427,29 @@ describe("BucketClient", () => {
         other: otherContext,
       });
 
-      expect(result).toEqual({
+      expect(result).toStrictEqual({
         feature1: {
           key: "feature1",
           isEnabled: true,
+          config: {
+            key: "config-1",
+            payload: {
+              something: "else",
+            },
+          },
           track: expect.any(Function),
         },
         feature2: {
           key: "feature2",
           isEnabled: false,
+          config: { key: undefined, payload: undefined },
           track: expect.any(Function),
         },
       });
 
       await client.flush();
 
-      expect(evaluateFeatureRules).toHaveBeenCalledTimes(2);
+      expect(evaluateFeatureRules).toHaveBeenCalledTimes(3);
       expect(httpClient.post).toHaveBeenCalledTimes(1);
 
       expect(httpClient.post).toHaveBeenCalledWith(
@@ -1289,6 +1474,25 @@ describe("BucketClient", () => {
           },
           {
             type: "feature-flag-event",
+            action: "evaluate-config",
+            key: "feature1",
+            targetingVersion: 1,
+            evalContext: {
+              company,
+              user,
+              other: otherContext,
+            },
+            evalResult: {
+              key: "config-1",
+              payload: {
+                something: "else",
+              },
+            },
+            evalRuleResults: [true],
+            evalMissingFields: [],
+          },
+          {
+            type: "feature-flag-event",
             action: "evaluate",
             key: "feature2",
             targetingVersion: 2,
@@ -1302,7 +1506,29 @@ describe("BucketClient", () => {
             evalMissingFields: ["one", "two"],
           },
           {
+            action: "check-config",
+            evalContext: {
+              company,
+              user,
+              other: otherContext,
+            },
+            evalResult: {
+              key: undefined,
+              payload: undefined,
+            },
+            key: "feature2",
+            type: "feature-flag-event",
+            targetingVersion: undefined,
+            evalRuleResults: undefined,
+            evalMissingFields: undefined,
+          },
+          {
             action: "check",
+            evalContext: {
+              company,
+              user,
+              other: otherContext,
+            },
             evalResult: false,
             evalContext: {
               company,
@@ -1314,9 +1540,35 @@ describe("BucketClient", () => {
             key: "feature2",
             targetingVersion: 2,
             type: "feature-flag-event",
+            evalMissingFields: ["something"],
+            evalRuleResults: [false],
+          },
+          {
+            action: "check-config",
+            evalContext: {
+              company,
+              user,
+              other: otherContext,
+            },
+            evalResult: {
+              key: "config-1",
+              payload: {
+                something: "else",
+              },
+            },
+            key: "feature1",
+            targetingVersion: 1,
+            type: "feature-flag-event",
+            evalRuleResults: [true],
+            evalMissingFields: [],
           },
           {
             action: "check",
+            evalContext: {
+              company,
+              user,
+              other: otherContext,
+            },
             evalResult: true,
             evalContext: {
               company,
@@ -1328,6 +1580,8 @@ describe("BucketClient", () => {
             key: "feature1",
             targetingVersion: 1,
             type: "feature-flag-event",
+            evalRuleResults: [true],
+            evalMissingFields: [],
           },
         ],
       );
@@ -1405,9 +1659,10 @@ describe("BucketClient", () => {
       });
 
       expect(logger.warn).toHaveBeenCalledWith(
-        expect.stringMatching(
-          'feature "feature2" has targeting rules that require the following context fields: "one", "two"',
-        ),
+        "feature/remote config targeting rules might not be correctly evaluated due to missing context fields.",
+        {
+          feature2: ["something"],
+        },
       );
     });
 
@@ -1428,22 +1683,29 @@ describe("BucketClient", () => {
       await client.initialize();
       const features = client.getFeatures({ user });
 
-      expect(features).toEqual({
+      expect(features).toStrictEqual({
         feature1: {
           isEnabled: true,
           key: "feature1",
+          config: {
+            key: "config-1",
+            payload: {
+              something: "else",
+            },
+          },
           track: expect.any(Function),
         },
         feature2: {
           key: "feature2",
           isEnabled: false,
+          config: { key: undefined, payload: undefined },
           track: expect.any(Function),
         },
       });
 
       await client.flush();
 
-      expect(evaluateFeatureRules).toHaveBeenCalledTimes(2);
+      expect(evaluateFeatureRules).toHaveBeenCalledTimes(3);
       expect(httpClient.post).toHaveBeenCalledTimes(1);
 
       expect(httpClient.post).toHaveBeenCalledWith(
@@ -1451,54 +1713,62 @@ describe("BucketClient", () => {
         expectedHeaders,
         [
           expect.objectContaining({ type: "user" }),
-          {
+          expect.objectContaining({
             type: "feature-flag-event",
             action: "evaluate",
             key: "feature1",
-            targetingVersion: 1,
             evalContext: {
               user,
             },
-            evalResult: true,
-            evalRuleResults: [true],
-            evalMissingFields: [],
-          },
-          {
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "evaluate-config",
+            key: "feature1",
+            evalContext: {
+              user,
+            },
+          }),
+          expect.objectContaining({
             type: "feature-flag-event",
             action: "evaluate",
             key: "feature2",
-            targetingVersion: 2,
             evalContext: {
               user,
             },
-            evalResult: false,
-            evalRuleResults: [false, false],
-            evalMissingFields: ["one", "two"],
-          },
-          {
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "check-config",
+            evalContext: {
+              user,
+            },
+            key: "feature2",
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
             action: "check",
             evalContext: {
               user,
             },
-            evalResult: false,
-            evalRuleResults: [false, false],
-            evalMissingFields: ["one", "two"],
             key: "feature2",
-            targetingVersion: 2,
+          }),
+          expect.objectContaining({
             type: "feature-flag-event",
-          },
-          {
+            action: "check-config",
+            evalContext: {
+              user,
+            },
+            key: "feature1",
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
             action: "check",
             evalContext: {
               user,
             },
-            evalResult: true,
-            evalRuleResults: [true],
-            evalMissingFields: [],
             key: "feature1",
-            targetingVersion: 1,
-            type: "feature-flag-event",
-          },
+          }),
         ],
       );
     });
@@ -1508,22 +1778,29 @@ describe("BucketClient", () => {
       const features = client.getFeatures({ company });
 
       // expect will trigger the `isEnabled` getter and send a `check` event
-      expect(features).toEqual({
+      expect(features).toStrictEqual({
         feature1: {
           isEnabled: true,
           key: "feature1",
+          config: {
+            key: "config-1",
+            payload: {
+              something: "else",
+            },
+          },
           track: expect.any(Function),
         },
         feature2: {
           key: "feature2",
           isEnabled: false,
+          config: { key: undefined, payload: undefined },
           track: expect.any(Function),
         },
       });
 
       await client.flush();
 
-      expect(evaluateFeatureRules).toHaveBeenCalledTimes(2);
+      expect(evaluateFeatureRules).toHaveBeenCalledTimes(3);
       expect(httpClient.post).toHaveBeenCalledTimes(1);
 
       expect(httpClient.post).toHaveBeenCalledWith(
@@ -1531,54 +1808,62 @@ describe("BucketClient", () => {
         expectedHeaders,
         [
           expect.objectContaining({ type: "company" }),
-          {
+          expect.objectContaining({
             type: "feature-flag-event",
             action: "evaluate",
             key: "feature1",
-            targetingVersion: 1,
             evalContext: {
               company,
             },
-            evalResult: true,
-            evalRuleResults: [true],
-            evalMissingFields: [],
-          },
-          {
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "evaluate-config",
+            key: "feature1",
+            evalContext: {
+              company,
+            },
+          }),
+          expect.objectContaining({
             type: "feature-flag-event",
             action: "evaluate",
             key: "feature2",
-            targetingVersion: 2,
             evalContext: {
               company,
             },
-            evalResult: false,
-            evalRuleResults: [false, false],
-            evalMissingFields: ["one", "two"],
-          },
-          {
-            action: "check",
-            evalResult: false,
-            evalContext: {
-              company,
-            },
-            evalRuleResults: [false, false],
-            evalMissingFields: ["one", "two"],
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "check-config",
             key: "feature2",
-            targetingVersion: 2,
-            type: "feature-flag-event",
-          },
-          {
-            action: "check",
-            evalResult: true,
             evalContext: {
               company,
             },
-            evalRuleResults: [true],
-            evalMissingFields: [],
-            key: "feature1",
-            targetingVersion: 1,
+          }),
+          expect.objectContaining({
             type: "feature-flag-event",
-          },
+            action: "check",
+            key: "feature2",
+            evalContext: {
+              company,
+            },
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "check-config",
+            key: "feature1",
+            evalContext: {
+              company,
+            },
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "check",
+            key: "feature1",
+            evalContext: {
+              company,
+            },
+          }),
         ],
       );
     });
@@ -1588,22 +1873,29 @@ describe("BucketClient", () => {
       const features = client.getFeatures({ company, enableTracking: false });
 
       // expect will trigger the `isEnabled` getter and send a `check` event
-      expect(features).toEqual({
+      expect(features).toStrictEqual({
         feature1: {
           isEnabled: true,
           key: "feature1",
+          config: {
+            key: "config-1",
+            payload: {
+              something: "else",
+            },
+          },
           track: expect.any(Function),
         },
         feature2: {
           key: "feature2",
           isEnabled: false,
+          config: { key: undefined, payload: undefined },
           track: expect.any(Function),
         },
       });
 
       await client.flush();
 
-      expect(evaluateFeatureRules).toHaveBeenCalledTimes(2);
+      expect(evaluateFeatureRules).toHaveBeenCalledTimes(3);
       expect(httpClient.post).not.toHaveBeenCalled();
     });
 
@@ -1613,7 +1905,7 @@ describe("BucketClient", () => {
 
       await client.flush();
 
-      expect(evaluateFeatureRules).toHaveBeenCalledTimes(2);
+      expect(evaluateFeatureRules).toHaveBeenCalledTimes(3);
       expect(httpClient.post).toHaveBeenCalledTimes(1);
 
       expect(httpClient.post).toHaveBeenCalledWith(
@@ -1631,6 +1923,23 @@ describe("BucketClient", () => {
             evalResult: true,
             evalRuleResults: [true],
             evalMissingFields: [],
+          },
+          {
+            type: "feature-flag-event",
+            action: "evaluate-config",
+            evalContext: {
+              other: otherContext,
+            },
+            evalResult: {
+              key: "config-1",
+              payload: {
+                something: "else",
+              },
+            },
+            key: "feature1",
+            targetingVersion: 1,
+            evalMissingFields: [],
+            evalRuleResults: [true],
           },
           {
             type: "feature-flag-event",
@@ -1651,12 +1960,14 @@ describe("BucketClient", () => {
     it("should send `track` with user and company if provided", async () => {
       await client.initialize();
       const feature1 = client.getFeature({ company, user }, "feature1");
+      await client.flush();
 
       await feature1.track();
       await client.flush();
 
-      expect(httpClient.post).toHaveBeenCalledTimes(1);
-      expect(httpClient.post).toHaveBeenCalledWith(
+      expect(httpClient.post).toHaveBeenCalledTimes(2);
+      expect(httpClient.post).toHaveBeenNthCalledWith(
+        1,
         BULK_ENDPOINT,
         expectedHeaders,
         [
@@ -1669,6 +1980,16 @@ describe("BucketClient", () => {
           expect.objectContaining({
             type: "feature-flag-event",
             action: "evaluate",
+            key: "feature1",
+            evalContext: {
+              company,
+              user,
+            },
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "evaluate-config",
+            key: "feature1",
             evalContext: {
               company,
               user,
@@ -1677,7 +1998,15 @@ describe("BucketClient", () => {
           expect.objectContaining({
             type: "feature-flag-event",
             action: "evaluate",
+            key: "feature2",
           }),
+        ],
+      );
+      expect(httpClient.post).toHaveBeenNthCalledWith(
+        2,
+        BULK_ENDPOINT,
+        expectedHeaders,
+        [
           {
             companyId: "company123",
             event: "feature1",
@@ -1692,11 +2021,13 @@ describe("BucketClient", () => {
       await client.initialize();
       const feature = client.getFeature({ user }, "feature1");
 
+      await client.flush();
       await feature.track();
       await client.flush();
 
-      expect(httpClient.post).toHaveBeenCalledTimes(1);
-      expect(httpClient.post).toHaveBeenCalledWith(
+      expect(httpClient.post).toHaveBeenCalledTimes(2);
+      expect(httpClient.post).toHaveBeenNthCalledWith(
+        1,
         BULK_ENDPOINT,
         expectedHeaders,
         [
@@ -1706,14 +2037,31 @@ describe("BucketClient", () => {
           expect.objectContaining({
             type: "feature-flag-event",
             action: "evaluate",
+            key: "feature1",
             evalContext: {
               user,
             },
           }),
           expect.objectContaining({
             type: "feature-flag-event",
+            action: "evaluate-config",
+            key: "feature1",
+            evalContext: {
+              user,
+            },
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            key: "feature2",
             action: "evaluate",
           }),
+        ],
+      );
+      expect(httpClient.post).toHaveBeenNthCalledWith(
+        2,
+        BULK_ENDPOINT,
+        expectedHeaders,
+        [
           {
             event: "feature1",
             type: "event",
@@ -1748,6 +2096,13 @@ describe("BucketClient", () => {
           }),
           expect.objectContaining({
             type: "feature-flag-event",
+            action: "evaluate-config",
+            evalContext: {
+              company,
+            },
+          }),
+          expect.objectContaining({
+            type: "feature-flag-event",
             action: "evaluate",
           }),
         ],
@@ -1765,9 +2120,10 @@ describe("BucketClient", () => {
         "key",
       );
 
-      expect(result).toEqual({
+      expect(result).toStrictEqual({
         key: "key",
         isEnabled: true,
+        config: { key: undefined, payload: undefined },
         track: expect.any(Function),
       });
 
@@ -1785,7 +2141,12 @@ describe("BucketClient", () => {
         expectedHeaders,
         [
           expect.objectContaining({ type: "user" }),
-          {
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "check-config",
+            key: "key",
+          }),
+          expect.objectContaining({
             type: "feature-flag-event",
             action: "check",
             evalContext: {
@@ -1793,7 +2154,7 @@ describe("BucketClient", () => {
             },
             key: "key",
             evalResult: true,
-          },
+          }),
         ],
       );
     });
@@ -1811,15 +2172,22 @@ describe("BucketClient", () => {
         expect.any(Error),
       );
 
-      expect(features).toEqual({
+      expect(features).toStrictEqual({
         feature1: {
           key: "feature1",
           isEnabled: true,
+          config: {
+            key: "config-1",
+            payload: {
+              something: "else",
+            },
+          },
           track: expect.any(Function),
         },
         feature2: {
           key: "feature2",
           isEnabled: false,
+          config: { key: undefined, payload: undefined },
           track: expect.any(Function),
         },
       });
@@ -1837,10 +2205,16 @@ describe("BucketClient", () => {
       const result = client.getFeatures({});
 
       // Trigger a feature check
-      expect(result.feature1).toEqual({
+      expect(result.feature1).toStrictEqual({
         key: "feature1",
         isEnabled: true,
         track: expect.any(Function),
+        config: {
+          key: "config-1",
+          payload: {
+            something: "else",
+          },
+        },
       });
 
       await client.flush();
@@ -1860,20 +2234,34 @@ describe("BucketClient", () => {
         feature1: {
           key: "feature1",
           isEnabled: true,
+          config: {
+            key: "config-1",
+            payload: {
+              something: "else",
+            },
+          },
           track: expect.any(Function),
         },
         feature2: {
           key: "feature2",
           isEnabled: false,
+          config: { key: undefined, payload: undefined },
           track: expect.any(Function),
         },
       });
 
       client.featureOverrides = (_context: Context) => {
-        expect(context).toEqual(context);
+        expect(context).toStrictEqual(context);
         return {
-          feature1: false,
+          feature1: { isEnabled: false },
           feature2: true,
+          feature3: {
+            isEnabled: true,
+            config: {
+              key: "config-1",
+              payload: { something: "else" },
+            },
+          },
         };
       };
       const features = client.getFeatures(context);
@@ -1882,11 +2270,22 @@ describe("BucketClient", () => {
         feature1: {
           key: "feature1",
           isEnabled: false,
+          config: { key: undefined, payload: undefined },
           track: expect.any(Function),
         },
         feature2: {
           key: "feature2",
           isEnabled: true,
+          config: { key: undefined, payload: undefined },
+          track: expect.any(Function),
+        },
+        feature3: {
+          key: "feature3",
+          isEnabled: true,
+          config: {
+            key: "config-1",
+            payload: { something: "else" },
+          },
           track: expect.any(Function),
         },
       });
@@ -1908,13 +2307,25 @@ describe("BucketClient", () => {
               key: "feature1",
               targetingVersion: 1,
               isEnabled: true,
+              config: {
+                key: "config-1",
+                version: 3,
+                default: true,
+                payload: { something: "else" },
+                missingContextFields: ["funny"],
+              },
+              missingContextFields: ["something", "funny"],
             },
             feature2: {
               key: "feature2",
               targetingVersion: 2,
               isEnabled: false,
-              missingContextFields: ["one", "two"],
-              ruleEvaluationResults: [false, false],
+              missingContextFields: ["another"],
+            },
+            feature3: {
+              key: "feature3",
+              targetingVersion: 5,
+              isEnabled: true,
             },
           },
         },
@@ -1932,15 +2343,26 @@ describe("BucketClient", () => {
         other: otherContext,
       });
 
-      expect(result).toEqual({
+      expect(result).toStrictEqual({
         feature1: {
           key: "feature1",
           isEnabled: true,
+          config: {
+            key: "config-1",
+            payload: { something: "else" },
+          },
           track: expect.any(Function),
         },
         feature2: {
           key: "feature2",
           isEnabled: false,
+          config: { key: undefined, payload: undefined },
+          track: expect.any(Function),
+        },
+        feature3: {
+          key: "feature3",
+          isEnabled: true,
+          config: { key: undefined, payload: undefined },
           track: expect.any(Function),
         },
       });
@@ -1997,7 +2419,12 @@ describe("BucketClient", () => {
     it("should warn if missing context fields", async () => {
       await client.getFeaturesRemote();
       expect(logger.warn).toHaveBeenCalledWith(
-        'feature "feature2" has targeting rules that require the following context fields: "one", "two"',
+        "feature/remote config targeting rules might not be correctly evaluated due to missing context fields.",
+        {
+          feature1: ["something", "funny"],
+          "feature1.config": ["funny"],
+          feature2: ["another"],
+        },
       );
     });
   });
@@ -2017,6 +2444,13 @@ describe("BucketClient", () => {
               key: "feature1",
               targetingVersion: 1,
               isEnabled: true,
+              config: {
+                key: "config-1",
+                version: 3,
+                default: true,
+                payload: { something: "else" },
+                missingContextFields: ["two"],
+              },
               missingContextFields: ["one", "two"],
               ruleEvaluationResults: [true, false],
             },
@@ -2066,10 +2500,14 @@ describe("BucketClient", () => {
         other: otherContext,
       });
 
-      expect(result).toEqual({
+      expect(result).toStrictEqual({
         key: "feature1",
         isEnabled: true,
         track: expect.any(Function),
+        config: {
+          key: "config-1",
+          payload: { something: "else" },
+        },
       });
 
       expect(httpClient.get).toHaveBeenCalledTimes(1);
@@ -2092,7 +2530,11 @@ describe("BucketClient", () => {
     it("should warn if missing context fields", async () => {
       await client.getFeatureRemote("feature1");
       expect(logger.warn).toHaveBeenCalledWith(
-        'feature "feature1" has targeting rules that require the following context fields: "one", "two"',
+        "feature/remote config targeting rules might not be correctly evaluated due to missing context fields.",
+        {
+          feature1: ["one", "two"],
+          "feature1.config": ["two"],
+        },
       );
     });
   });
@@ -2280,6 +2722,13 @@ describe("BoundBucketClient", () => {
               key: "feature1",
               targetingVersion: 1,
               isEnabled: true,
+              config: {
+                key: "config-1",
+                version: 3,
+                default: true,
+                payload: { something: "else" },
+                missingContextFields: ["else"],
+              },
             },
             feature2: {
               key: "feature2",
@@ -2301,15 +2750,17 @@ describe("BoundBucketClient", () => {
 
       const result = await boundClient.getFeaturesRemote();
 
-      expect(result).toEqual({
+      expect(result).toStrictEqual({
         feature1: {
           key: "feature1",
           isEnabled: true,
+          config: { key: "config-1", payload: { something: "else" } },
           track: expect.any(Function),
         },
         feature2: {
           key: "feature2",
           isEnabled: false,
+          config: { key: undefined, payload: undefined },
           track: expect.any(Function),
         },
       });
@@ -2331,9 +2782,10 @@ describe("BoundBucketClient", () => {
 
       const result = await boundClient.getFeatureRemote("feature1");
 
-      expect(result).toEqual({
+      expect(result).toStrictEqual({
         key: "feature1",
         isEnabled: true,
+        config: { key: "config-1", payload: { something: "else" } },
         track: expect.any(Function),
       });
 

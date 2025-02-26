@@ -3,11 +3,8 @@ import { expect, Locator, Page, test } from "@playwright/test";
 
 import { InitOptions } from "../../src/client";
 import { DEFAULT_TRANSLATIONS } from "../../src/feedback/ui/config/defaultTranslations";
-import {
-  feedbackContainerId,
-  propagatedEvents,
-} from "../../src/feedback/ui/constants";
 import { FeedbackTranslations } from "../../src/feedback/ui/types";
+import { feedbackContainerId, propagatedEvents } from "../../src/ui/constants";
 
 const KEY = randomUUID();
 const API_HOST = `https://front.bucket.co`;
@@ -36,7 +33,7 @@ async function getOpenedWidgetContainer(
     await route.fulfill({ status: 200 });
   });
 
-  await page.route(`${API_HOST}/features/enabled*`, async (route) => {
+  await page.route(`${API_HOST}/features/evaluated*`, async (route) => {
     await route.fulfill({
       status: 200,
       body: JSON.stringify({
@@ -53,8 +50,49 @@ async function getOpenedWidgetContainer(
       const bucket = new BucketClient({publishableKey: "${KEY}", user: {id: "foo"}, company: {id: "bar"}, ...${JSON.stringify(initOptions ?? {})}});
       await bucket.initialize();
       await bucket.requestFeedback({
-        featureId: "featureId1",
+        featureKey: "feature1",
         title: "baz",
+      });
+    })()
+  `);
+
+  return page.locator(`#${feedbackContainerId}`);
+}
+
+async function getGiveFeedbackPageContainer(
+  page: Page,
+  initOptions: Omit<InitOptions, "publishableKey"> = {},
+) {
+  await page.goto("http://localhost:8001/test/e2e/give-feedback-button.html");
+
+  // Mock API calls
+  await page.route(`${API_HOST}/user`, async (route) => {
+    await route.fulfill({ status: 200 });
+  });
+
+  await page.route(`${API_HOST}/features/evaluated*`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      body: JSON.stringify({
+        success: true,
+        features: {},
+      }),
+    });
+  });
+
+  // Golden path requests
+  await page.evaluate(`
+    ;(async () => {
+      const { BucketClient } = await import("/dist/bucket-browser-sdk.mjs");
+      const bucket = new BucketClient({publishableKey: "${KEY}", user: {id: "foo"}, company: {id: "bar"}, ...${JSON.stringify(initOptions ?? {})}});
+      await bucket.initialize();
+      console.log("setup clicky", document.querySelector("#give-feedback-button"))
+      document.querySelector("#give-feedback-button")?.addEventListener("click", () => {
+        console.log("cliked!");
+        bucket.requestFeedback({
+          featureKey: "feature1",
+          title: "baz",
+        });
       });
     })()
   `);
@@ -103,6 +141,23 @@ test.beforeEach(async ({ page, browserName }) => {
 test("Opens a feedback widget", async ({ page }) => {
   const container = await getOpenedWidgetContainer(page);
 
+  await expect(container).toBeAttached();
+  await expect(container.locator("dialog")).toHaveAttribute("open", "");
+});
+
+test("Opens a feedback widget multiple times in same session", async ({
+  page,
+}) => {
+  const container = await getGiveFeedbackPageContainer(page);
+
+  await page.getByTestId("give-feedback-button").click();
+  await expect(container).toBeAttached();
+  await expect(container.locator("dialog")).toHaveAttribute("open", "");
+
+  await container.locator("dialog .close").click();
+  await expect(container.locator("dialog")).not.toHaveAttribute("open", "");
+
+  await page.getByTestId("give-feedback-button").click();
   await expect(container).toBeAttached();
   await expect(container.locator("dialog")).toHaveAttribute("open", "");
 });
@@ -195,7 +250,7 @@ test("Sends a request when choosing a score immediately", async ({ page }) => {
     .poll(() => sentJSON)
     .toEqual({
       companyId: "bar",
-      featureId: "featureId1",
+      key: "feature1",
       score: expectedScore,
       question: "baz",
       userId: "foo",
@@ -254,7 +309,7 @@ test("Updates the score on every change", async ({ page }) => {
     .toEqual({
       feedbackId: "123",
       companyId: "bar",
-      featureId: "featureId1",
+      key: "feature1",
       question: "baz",
       score: 3,
       userId: "foo",
@@ -314,7 +369,7 @@ test("Sends a request with both the score and comment when submitting", async ({
     score: expectedScore,
     companyId: "bar",
     question: "baz",
-    featureId: "featureId1",
+    key: "feature1",
     feedbackId: "123",
     userId: "foo",
     source: "widget",

@@ -13,8 +13,7 @@ import canonicalJSON from "canonical-json";
 import {
   BucketClient,
   BucketContext,
-  FeaturesOptions,
-  FeedbackOptions,
+  InitOptions,
   RawFeatures,
   RequestFeedbackData,
   UnassignedFeedback,
@@ -27,9 +26,11 @@ export interface Features {}
 
 const SDK_VERSION = `react-sdk/${version}`;
 
-export type FeatureKey = keyof (keyof Features extends never
-  ? Record<string, boolean>
-  : Features);
+type MaterializedFeatures = keyof Features extends never
+  ? Record<string, any>
+  : Features;
+
+export type FeatureKey = keyof MaterializedFeatures;
 
 type ProviderContextType = {
   client?: BucketClient;
@@ -37,6 +38,7 @@ type ProviderContextType = {
     features: RawFeatures;
     isLoading: boolean;
   };
+  provider: boolean;
 };
 
 const ProviderContext = createContext<ProviderContextType>({
@@ -44,51 +46,53 @@ const ProviderContext = createContext<ProviderContextType>({
     features: {},
     isLoading: false,
   },
+  provider: false,
 });
 
-export type BucketProps = BucketContext & {
-  publishableKey: string;
-  featureOptions?: Omit<FeaturesOptions, "fallbackFeatures"> & {
-    fallbackFeatures?: FeatureKey[];
+/**
+ * Props for the BucketProvider.
+ */
+export type BucketProps = BucketContext &
+  InitOptions & {
+    /**
+     * Children to be rendered.
+     */
+    children?: ReactNode;
+
+    /**
+     * Loading component to be rendered while features are loading.
+     */
+    loadingComponent?: ReactNode;
+
+    /**
+     * Whether to enable debug mode (optional).
+     */
+    debug?: boolean;
+
+    /**
+     * New BucketClient constructor.
+     *
+     * @internal
+     */
+    newBucketClient?: (
+      ...args: ConstructorParameters<typeof BucketClient>
+    ) => BucketClient;
   };
-  children?: ReactNode;
-  loadingComponent?: ReactNode;
-  feedback?: FeedbackOptions;
-  /**
-   * @deprecated
-   * Use `apiBaseUrl` instead.
-   */
-  host?: string;
-  apiBaseUrl?: string;
 
-  /**
-   * @deprecated
-   * Use `sseBaseUrl` instead.
-   */
-  sseHost?: string;
-  sseBaseUrl?: string;
-  debug?: boolean;
-  enableTracking?: boolean;
-
-  // for testing
-  newBucketClient?: (
-    ...args: ConstructorParameters<typeof BucketClient>
-  ) => BucketClient;
-};
-
+/**
+ * Provider for the BucketClient.
+ */
 export function BucketProvider({
   children,
   user,
   company,
   otherContext,
-  publishableKey,
-  featureOptions,
   loadingComponent,
   newBucketClient = (...args) => new BucketClient(...args),
   ...config
 }: BucketProps) {
   const [featuresLoading, setFeaturesLoading] = useState(true);
-  const [features, setFeatures] = useState<RawFeatures>({});
+  const [rawFeatures, setRawFeatures] = useState<RawFeatures>({});
 
   const clientRef = useRef<BucketClient>();
   const contextKeyRef = useRef<string>();
@@ -110,30 +114,18 @@ export function BucketProvider({
     }
 
     const client = newBucketClient({
-      publishableKey,
+      ...config,
       user,
       company,
       otherContext,
 
-      host: config.host,
-      apiBaseUrl: config.apiBaseUrl,
-      sseHost: config.sseHost,
-      sseBaseUrl: config.sseBaseUrl,
-
-      enableTracking: config.enableTracking,
-
-      features: {
-        ...featureOptions,
-      },
-      feedback: config.feedback,
       logger: config.debug ? console : undefined,
       sdkVersion: SDK_VERSION,
     });
+
     clientRef.current = client;
 
-    client.onFeaturesUpdated(() => {
-      setFeatures(client.getFeatures());
-    });
+    client.on("featuresUpdated", setRawFeatures);
 
     client
       .initialize()
@@ -148,10 +140,11 @@ export function BucketProvider({
 
   const context: ProviderContextType = {
     features: {
-      features,
+      features: rawFeatures,
       isLoading: featuresLoading,
     },
     client: clientRef.current,
+    provider: true,
   };
   return (
     <ProviderContext.Provider value={context}>
@@ -162,56 +155,75 @@ export function BucketProvider({
   );
 }
 
+type RequestFeedbackOptions = Omit<
+  RequestFeedbackData,
+  "featureKey" | "featureId"
+>;
+
+type EmptyConfig = {
+  key: undefined;
+  payload: undefined;
+};
+
+export type Feature<TKey extends FeatureKey> = {
+  isEnabled: boolean;
+  isLoading: boolean;
+  config: MaterializedFeatures[TKey] extends boolean
+    ? EmptyConfig
+    :
+        | {
+            key: string;
+            payload: MaterializedFeatures[TKey];
+          }
+        | EmptyConfig;
+  track: () => void;
+  requestFeedback: (opts: RequestFeedbackOptions) => void;
+};
+
 /**
  * Returns the state of a given feature for the current context, e.g.
  *
  * ```ts
  * function HuddleButton() {
- *   const {isEnabled, track} = useFeature("huddle");
+ *   const {isEnabled, config: { payload }, track} = useFeature("huddle");
  *   if (isEnabled) {
- *    return <button onClick={() => track()}>Start Huddle</button>;
- *   }
+ *    return <button onClick={() => track()}>{payload?.buttonTitle ?? "Start Huddle"}</button>;
  * }
  * ```
  */
-export function useFeature(key: FeatureKey) {
+export function useFeature<TKey extends FeatureKey>(
+  key: TKey,
+): Feature<typeof key> {
+  const client = useClient();
   const {
-    features: { features, isLoading },
-    client,
+    features: { isLoading },
   } = useContext<ProviderContextType>(ProviderContext);
 
   const track = () => client?.track(key);
-  const requestFeedback = (
-    opts: Omit<RequestFeedbackData, "featureKey" | "featureId">,
-  ) => client?.requestFeedback({ ...opts, featureKey: key });
+  const requestFeedback = (opts: RequestFeedbackOptions) =>
+    client?.requestFeedback({ ...opts, featureKey: key });
 
-  if (isLoading) {
+  if (isLoading || !client) {
     return {
       isLoading,
       isEnabled: false,
+      config: { key: undefined, payload: undefined },
       track,
       requestFeedback,
     };
   }
 
-  const feature = features[key];
-  const enabled = feature?.isEnabled ?? false;
+  const feature = client.getFeature(key);
 
   return {
     isLoading,
     track,
     requestFeedback,
     get isEnabled() {
-      client
-        ?.sendCheckEvent({
-          key,
-          value: enabled,
-          version: feature?.targetingVersion,
-        })
-        .catch(() => {
-          // ignore
-        });
-      return enabled;
+      return feature.isEnabled ?? false;
+    },
+    get config() {
+      return feature.config as Feature<typeof key>["config"];
     },
   };
 }
@@ -226,7 +238,7 @@ export function useFeature(key: FeatureKey) {
  * ```
  */
 export function useTrack() {
-  const { client } = useContext<ProviderContextType>(ProviderContext);
+  const client = useClient();
   return (eventName: string, attributes?: Record<string, any> | null) =>
     client?.track(eventName, attributes);
 }
@@ -240,13 +252,13 @@ export function useTrack() {
  * ```ts
  * const requestFeedback = useRequestFeedback();
  * bucket.requestFeedback({
- *   featureId: "bucket-feature-id",
+ *   featureKey: "file-uploads",
  *   title: "How satisfied are you with file uploads?",
  * });
  * ```
  */
 export function useRequestFeedback() {
-  const { client } = useContext<ProviderContextType>(ProviderContext);
+  const client = useClient();
   return (options: RequestFeedbackData) => client?.requestFeedback(options);
 }
 
@@ -259,7 +271,7 @@ export function useRequestFeedback() {
  * ```ts
  * const sendFeedback = useSendFeedback();
  * sendFeedback({
- *   featureId: "fe2323223";;
+ *   featureKey: "huddle";
  *   question: "How did you like the new huddle feature?";
  *   score: 5;
  *   comment: "I loved it!";
@@ -267,7 +279,7 @@ export function useRequestFeedback() {
  * ```
  */
 export function useSendFeedback() {
-  const { client } = useContext<ProviderContextType>(ProviderContext);
+  const client = useClient();
   return (opts: UnassignedFeedback) => client?.feedback(opts);
 }
 
@@ -285,7 +297,7 @@ export function useSendFeedback() {
  * ```
  */
 export function useUpdateUser() {
-  const { client } = useContext<ProviderContextType>(ProviderContext);
+  const client = useClient();
   return (opts: { [key: string]: string | number | undefined }) =>
     client?.updateUser(opts);
 }
@@ -304,7 +316,8 @@ export function useUpdateUser() {
  * ```
  */
 export function useUpdateCompany() {
-  const { client } = useContext<ProviderContextType>(ProviderContext);
+  const client = useClient();
+
   return (opts: { [key: string]: string | number | undefined }) =>
     client?.updateCompany(opts);
 }
@@ -324,7 +337,30 @@ export function useUpdateCompany() {
  * ```
  */
 export function useUpdateOtherContext() {
-  const { client } = useContext<ProviderContextType>(ProviderContext);
+  const client = useClient();
   return (opts: { [key: string]: string | number | undefined }) =>
     client?.updateOtherContext(opts);
+}
+
+/**
+ * Returns the current `BucketClient` used by the `BucketProvider`.
+ *
+ * This is useful if you need to access the `BucketClient` outside of the `BucketProvider`.
+ *
+ * ```ts
+ * const client = useClient();
+ * client.on("configCheck", () => {
+ *   console.log("configCheck hook called");
+ * });
+ * ```
+ */
+export function useClient() {
+  const { client, provider } = useContext<ProviderContextType>(ProviderContext);
+  if (!provider) {
+    throw new Error(
+      "BucketProvider is missing. Please ensure your component is wrapped with a BucketProvider.",
+    );
+  }
+
+  return client;
 }

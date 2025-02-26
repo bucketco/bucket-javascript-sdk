@@ -1,24 +1,46 @@
 import { DefaultBodyType, http, HttpResponse, StrictRequest } from "msw";
 
-import { Features } from "../../../node-sdk/src/types";
-import { FeaturesResponse } from "../../src/feature/features";
+import { RawFeatures } from "../../src/feature/features";
 
 export const testChannel = "testChannel";
 
-export const featureResponse: FeaturesResponse = {
+export const featureResponse = {
   success: true,
   features: {
-    featureA: { isEnabled: true, key: "featureA", targetingVersion: 1 },
+    featureA: {
+      isEnabled: true,
+      key: "featureA",
+      targetingVersion: 1,
+      config: undefined,
+      ruleEvaluationResults: [false, true],
+      missingContextFields: ["field1", "field2"],
+    },
+    featureB: {
+      isEnabled: true,
+      targetingVersion: 11,
+      key: "featureB",
+      config: {
+        version: 12,
+        key: "gpt3",
+        payload: { model: "gpt-something", temperature: 0.5 },
+        ruleEvaluationResults: [true, false, false],
+        missingContextFields: ["field3"],
+      },
+    },
   },
 };
 
-export const featuresResult: Features = {
-  featureA: {
-    isEnabled: true,
-    key: "featureA",
-    targetingVersion: 1,
+export const featuresResult = Object.entries(featureResponse.features).reduce(
+  (acc, [key, feature]) => {
+    acc[key] = {
+      ...feature!,
+      config: feature.config,
+      isEnabledOverride: null,
+    };
+    return acc;
   },
-};
+  {} as RawFeatures,
+);
 
 function checkRequest(request: StrictRequest<DefaultBodyType>) {
   const url = new URL(request.url);
@@ -67,7 +89,7 @@ export const handlers = [
       !data["userId"] ||
       !data["attributes"]
     ) {
-      return new HttpResponse(null, { status: 400 });
+      return HttpResponse.error();
     }
 
     return HttpResponse.json({
@@ -84,7 +106,7 @@ export const handlers = [
       !data["companyId"] ||
       !data["attributes"]
     ) {
-      return new HttpResponse(null, { status: 400 });
+      return HttpResponse.error();
     }
 
     return HttpResponse.json({
@@ -96,7 +118,19 @@ export const handlers = [
     const data = await request.json();
 
     if (typeof data !== "object" || !data || !data["userId"]) {
-      return new HttpResponse(null, { status: 400 });
+      return HttpResponse.error();
+    }
+
+    return HttpResponse.json({
+      success: true,
+    });
+  }),
+  http.post("https://front.bucket.co/features/events", async ({ request }) => {
+    if (!checkRequest(request)) return invalidReqResponse;
+    const data = await request.json();
+
+    if (typeof data !== "object" || !data || !data["userId"]) {
+      return HttpResponse.error();
     }
 
     return HttpResponse.json({
@@ -111,9 +145,9 @@ export const handlers = [
       !data ||
       !data["userId"] ||
       typeof data["score"] !== "number" ||
-      (!data["featureId"] && !data["featureKey"])
+      (!data["featureId"] && !data["key"])
     ) {
-      return new HttpResponse(null, { status: 400 });
+      return HttpResponse.error();
     }
 
     return HttpResponse.json({
@@ -121,6 +155,7 @@ export const handlers = [
     });
   }),
   http.get("https://front.bucket.co/features/enabled", getFeatures),
+  http.get("https://front.bucket.co/features/evaluated", getFeatures),
   http.post(
     "https://front.bucket.co/feedback/prompting-init",
     ({ request }) => {
@@ -133,4 +168,19 @@ export const handlers = [
     if (!checkRequest(request)) return invalidReqResponse;
     return HttpResponse.json({ success: true, keyName: "keyName" });
   }),
+  http.post(
+    "https://livemessaging.bucket.co/keys/keyName/requestToken",
+    async ({ request }) => {
+      const data = await request.json();
+      if (typeof data !== "object") {
+        return HttpResponse.error();
+      }
+
+      return HttpResponse.json({
+        success: true,
+        token: "token",
+        expires: 1234567890,
+      });
+    },
+  ),
 ];

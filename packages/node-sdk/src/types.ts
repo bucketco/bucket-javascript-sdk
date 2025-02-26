@@ -24,7 +24,7 @@ export type FeatureEvent = {
   /**
    * The action that was performed.
    **/
-  action: "evaluate" | "check";
+  action: "evaluate" | "evaluate-config" | "check" | "check-config";
 
   /**
    * The feature key.
@@ -39,7 +39,10 @@ export type FeatureEvent = {
   /**
    * The result of targeting evaluation.
    **/
-  evalResult: boolean;
+  evalResult:
+    | boolean
+    | { key: string; payload: any }
+    | { key: undefined; payload: undefined };
 
   /**
    * The context that was used for evaluation.
@@ -58,7 +61,37 @@ export type FeatureEvent = {
 };
 
 /**
- * Describes a feature
+ * A remotely managed configuration value for a feature.
+ */
+export type RawFeatureRemoteConfig = {
+  /**
+   * The key of the matched configuration value.
+   */
+  key: string;
+
+  /**
+   * The version of the targeting rules used to select the config value.
+   */
+  targetingVersion?: number;
+
+  /**
+   * The optional user-supplied payload data.
+   */
+  payload: any;
+
+  /**
+   * The rule results of the evaluation (optional).
+   */
+  ruleEvaluationResults?: boolean[];
+
+  /**
+   * The missing fields in the evaluation context (optional).
+   */
+  missingContextFields?: string[];
+};
+
+/**
+ * Describes a feature.
  */
 export interface RawFeature {
   /**
@@ -77,6 +110,11 @@ export interface RawFeature {
   targetingVersion?: number;
 
   /**
+   * The remote configuration value for the feature.
+   */
+  config?: RawFeatureRemoteConfig;
+
+  /**
    * The rule results of the evaluation (optional).
    */
   ruleEvaluationResults?: boolean[];
@@ -87,10 +125,31 @@ export interface RawFeature {
   missingContextFields?: string[];
 }
 
+type EmptyFeatureRemoteConfig = { key: undefined; payload: undefined };
+
+/**
+ * A remotely managed configuration value for a feature.
+ */
+export type FeatureRemoteConfig =
+  | {
+      /**
+       * The key of the matched configuration value.
+       */
+      key: string;
+
+      /**
+       * The optional user-supplied payload data.
+       */
+      payload: any;
+    }
+  | EmptyFeatureRemoteConfig;
+
 /**
  * Describes a feature
  */
-export interface Feature {
+export interface Feature<
+  TConfig extends FeatureRemoteConfig | undefined = EmptyFeatureRemoteConfig,
+> {
   /**
    * The key of the feature.
    */
@@ -101,11 +160,26 @@ export interface Feature {
    */
   isEnabled: boolean;
 
+  /*
+   * Optional user-defined configuration.
+   */
+  config: TConfig extends undefined ? EmptyFeatureRemoteConfig : TConfig;
+
   /**
    * Track feature usage in Bucket.
    */
   track(): Promise<void>;
 }
+
+type FullFeatureOverride = {
+  isEnabled: boolean;
+  config?: {
+    key: string;
+    payload: any;
+  };
+};
+
+type FeatureOverride = FullFeatureOverride | boolean;
 
 /**
  * Describes a collection of evaluated features.
@@ -125,48 +199,136 @@ export interface Features {}
  */
 export type TypedFeatures = keyof Features extends never
   ? Record<string, Feature>
-  : Record<keyof Features, Feature>;
+  : {
+      [FeatureKey in keyof Features]: Features[FeatureKey] extends FullFeatureOverride
+        ? Feature<Features[FeatureKey]["config"]>
+        : Feature;
+    };
+
+type TypedFeatureKey = keyof TypedFeatures;
 
 /**
  * Describes the feature overrides.
  */
-export type FeatureOverrides = Partial<Record<keyof TypedFeatures, boolean>>;
+export type FeatureOverrides = Partial<
+  keyof Features extends never
+    ? Record<string, FeatureOverride>
+    : {
+        [FeatureKey in keyof Features]: Features[FeatureKey] extends FullFeatureOverride
+          ? Features[FeatureKey]
+          : Exclude<FeatureOverride, "config">;
+      }
+>;
+
 export type FeatureOverridesFn = (context: Context) => FeatureOverrides;
 
 /**
- * Describes a specific feature in the API response
+ * (Internal) Describes a remote feature config variant.
+ *
+ * @internal
  */
-type FeatureAPIResponse = {
+export type FeatureConfigVariant = {
+  /**
+   * The filter for the variant.
+   */
+  filter: RuleFilter;
+
+  /**
+   * The optional user-supplied payload data.
+   */
+  payload: any;
+
+  /**
+   * The key of the variant.
+   */
   key: string;
+};
+
+/**
+ * (Internal) Describes a specific feature in the API response.
+ *
+ * @internal
+ */
+export type FeatureAPIResponse = {
+  /**
+   * The key of the feature.
+   */
+  key: string;
+
+  /**
+   * The targeting rules for the feature.
+   */
   targeting: {
+    /**
+     * The version of the targeting rules.
+     */
     version: number;
+
+    /**
+     * The targeting rules.
+     */
     rules: {
+      /**
+       * The filter for the rule.
+       */
       filter: RuleFilter;
     }[];
+  };
+
+  /**
+   * The remote configuration for the feature.
+   */
+  config?: {
+    /**
+     * The version of the remote configuration.
+     */
+    version: number;
+
+    /**
+     * The variants of the remote configuration.
+     */
+    variants: FeatureConfigVariant[];
   };
 };
 
 /**
- * Describes the response of the features endpoint
+ * (Internal) Describes the response of the features endpoint.
+ *
+ * @internal
  */
 export type FeaturesAPIResponse = {
-  /** The feature definitions */
+  /**
+   * The feature definitions.
+   */
   features: FeatureAPIResponse[];
 };
 
+/**
+ * (Internal) Describes the response of the evaluated features endpoint.
+ *
+ * @internal
+ */
 export type EvaluatedFeaturesAPIResponse = {
-  /** True if request successful */
+  /**
+   * True if request successful.
+   */
   success: boolean;
-  /** True if additional context for user or company was found and used for evaluation on the remote server */
+
+  /**
+   * True if additional context for user or company was found and used for evaluation on the remote server.
+   */
   remoteContextUsed: boolean;
-  /** The feature definitions */
+
+  /**
+   * The feature definitions.
+   */
   features: RawFeature[];
 };
 
 /**
  * Describes the response of a HTTP client.
- * @typeParam TResponse - The type of the response body.
  *
+ * @typeParam TResponse - The type of the response body.
  */
 export type HttpClientResponse<TResponse> = {
   /**
@@ -348,8 +510,14 @@ export type ClientOptions = {
 
   /**
    * The features to "enable" as fallbacks when the API is unavailable (optional).
+   * Can be an array of feature keys, or a record of feature keys and boolean or object values.
+   *
+   * If a record is supplied instead of array, the values of each key are either the
+   * configuration values or the boolean value `true`.
    **/
-  fallbackFeatures?: (keyof TypedFeatures)[];
+  fallbackFeatures?:
+    | TypedFeatureKey[]
+    | Record<TypedFeatureKey, Exclude<FeatureOverride, false>>;
 
   /**
    * The HTTP client to use for sending requests (optional). Default is the built-in fetch client.
@@ -365,16 +533,14 @@ export type ClientOptions = {
   /**
    * If a filename is specified, feature targeting results be overridden with
    * the values from this file. The file should be a JSON object with feature
-   * keys as keys and boolean values as values.
+   * keys as keys, and boolean or object as values.
    *
    * If a function is specified, the function will be called with the context
-   * and should return a record of feature keys and boolean values.
+   * and should return a record of feature keys and boolean or object values.
    *
    * Defaults to "bucketFeatures.json".
    **/
-  featureOverrides?:
-    | string
-    | ((context: Context) => Partial<Record<keyof TypedFeatures, boolean>>);
+  featureOverrides?: string | ((context: Context) => FeatureOverrides);
 
   /**
    * In offline mode, no data is sent or fetched from the the Bucket API.

@@ -1,6 +1,6 @@
 {
   "name": "@bucketco/react-sdk",
-  "version": "2.5.3",
+  "version": "3.0.0-alpha.8",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -34,8 +34,9 @@
     }
   },
   "dependencies": {
-    "@bucketco/browser-sdk": "2.5.2",
-    "canonical-json": "^0.0.4"
+    "@bucketco/browser-sdk": "workspace:^",
+    "canonical-json": "^0.0.4",
+    "rollup": "^4.2.0"
   },
   "peerDependencies": {
     "react": "*",
