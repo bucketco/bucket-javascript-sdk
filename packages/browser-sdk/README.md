@@ -214,10 +214,7 @@ const features = bucketClient.getFeatures();
 // }
 ```
 
-The `key` is always present while the `payload` is a optional JSON value for arbitrary configuration needs.
-If feature has no configuration or, no configuration value was matched against the context, the `config` object
-will be empty, thus, `key` will be `undefined`. Make sure to check against this case when trying to use the
-configuration in your application.
+`key` is mandatory for a config, but if a feature has no config or no config value was matched against the context, the `key` will be `undefined`. Make sure to check against this case when trying to use the configuration in your application. `payload` is an optional JSON value for arbitrary configuration needs.
 
 Just as `isEnabled`, accessing `config` on the object returned by `getFeatures` does not automatically
 generate a `check` event, contrary to the `config` property on the object returned by `getFeature`.
