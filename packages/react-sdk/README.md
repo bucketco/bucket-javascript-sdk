@@ -10,7 +10,7 @@ Install via npm:
 npm i @bucketco/react-sdk
 ```
 
-## Setup
+## Get started
 
 ### 1. Define Features (optional)
 
