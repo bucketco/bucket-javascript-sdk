@@ -165,7 +165,8 @@ export const Dialog: FunctionComponent<OpenDialogOptions> = ({
       window.removeEventListener("keydown", escapeHandler);
       observer.disconnect();
     };
-  }, [position.type, close]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- anchor only exists in popover
+  }, [position.type, close, (position as any).anchor, dismiss, containerId]);
 
   function setDiagRef(node: HTMLDialogElement | null) {
     refs.setFloating(node);
@@ -194,7 +195,7 @@ export const Dialog: FunctionComponent<OpenDialogOptions> = ({
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: styles }}></style>
+      <style dangerouslySetInnerHTML={{ __html: styles }} />
       <dialog
         ref={setDiagRef}
         class={classes}
@@ -204,8 +205,8 @@ export const Dialog: FunctionComponent<OpenDialogOptions> = ({
 
         {anchor && showArrow && (
           <DialogArrow
-            arrowRef={arrowRef}
             arrowData={middlewareData?.arrow}
+            arrowRef={arrowRef}
             placement={actualPlacement}
           />
         )}
@@ -245,7 +246,7 @@ function DialogArrow({
       ref={arrowRef}
       class={["arrow", placement].join(" ")}
       style={arrowStyles}
-    ></div>
+    />
   );
 }
 

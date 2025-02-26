@@ -78,7 +78,7 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: styles }}></style>
+      <style dangerouslySetInnerHTML={{ __html: styles }} />
       <Dialog
         key={key}
         close={close}
