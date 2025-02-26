@@ -429,7 +429,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@bucketco/browser-sdk@npm:3.0.0-alpha.5, @bucketco/browser-sdk@workspace:packages/browser-sdk":
+"@bucketco/browser-sdk@npm:3.0.0-alpha.6, @bucketco/browser-sdk@workspace:packages/browser-sdk":
   version: 0.0.0-use.local
   resolution: "@bucketco/browser-sdk@workspace:packages/browser-sdk"
   dependencies:
@@ -495,7 +495,16 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@bucketco/node-sdk@npm:1.6.0-alpha.4, @bucketco/node-sdk@workspace:packages/node-sdk":
+"@bucketco/node-sdk@npm:1.6.0-alpha.4":
+  version: 1.6.0-alpha.4
+  resolution: "@bucketco/node-sdk@npm:1.6.0-alpha.4"
+  dependencies:
+    "@bucketco/flag-evaluation": "npm:~0.1.0"
+  checksum: 10c0/c571aada5e53f4cd0a48bed39c9d575d3cdf34a3f60f7dba49cce4690820bbddb92284206326d41fe8fffdb3d0cd0325e21f0f2fd36d58c789ef05fef2ec440e
+  languageName: node
+  linkType: hard
+
+"@bucketco/node-sdk@workspace:packages/node-sdk":
   version: 0.0.0-use.local
   resolution: "@bucketco/node-sdk@workspace:packages/node-sdk"
   dependencies:
@@ -567,7 +576,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@bucketco/react-sdk@workspace:packages/react-sdk"
   dependencies:
-    "@bucketco/browser-sdk": "npm:3.0.0-alpha.5"
+    "@bucketco/browser-sdk": "npm:3.0.0-alpha.6"
     "@bucketco/eslint-config": "workspace:^"
     "@bucketco/tsconfig": "workspace:^"
     "@testing-library/react": "npm:^15.0.7"
