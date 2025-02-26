@@ -34,5 +34,6 @@ export default defineConfig({
     // separate port to let the app run alongside the tracking sdk tests
     command: "npx http-server . -p 8001",
     timeout: 120 * 1000,
+    port: 8001,
   },
 });
