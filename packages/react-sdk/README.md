@@ -39,8 +39,7 @@ declare module "@bucketco/react-sdk" {
 
 ### 2. Add the `BucketProvider` context provider
 
-Add the `BucketProvider` context provider to your application.
-This will initialize the Bucket SDK, fetch features and start listening for automated feedback survey events.
+Add the `BucketProvider` context provider to your application:
 
 **Example:**
 
@@ -138,6 +137,8 @@ Note that, similar to `isEnabled`, accessing `config` on the object returned by 
 generates a `check` event.
 
 ## `<BucketProvider>` component
+
+The `<BucketProvider>` initializes the Bucket SDK, fetch features and start listening for automated feedback survey events. The component can be configured using a number of props:
 
 - `publishableKey` is used to connect the provider to an _environment_ on Bucket. Find your `publishableKey` under [environment settings](https://app.bucket.co/envs/current/settings/app-environments) in Bucket,
 - `company`, `user` and `otherContext` make up the _context_ that is used to determine if a feature is enabled or not. `company` and `user` contexts are automatically transmitted to Bucket servers so the Bucket app can show you which companies have access to which features etc.
