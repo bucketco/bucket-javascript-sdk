@@ -7,6 +7,8 @@ const globals = require("globals");
 const tsPlugin = require("@typescript-eslint/eslint-plugin");
 const tsParser = require("@typescript-eslint/parser");
 const prettierConfig = require("eslint-config-prettier");
+const reactPlugin = require("eslint-plugin-react");
+const hooksPlugin = require("eslint-plugin-react-hooks");
 
 module.exports = [
   {
@@ -27,6 +29,8 @@ module.exports = [
       import: importsPlugin,
       "unused-imports": unusedImportsPlugin,
       "simple-import-sort": sortImportsPlugin,
+      react: reactPlugin,
+      "react-hooks": hooksPlugin,
     },
     languageOptions: {
       globals: {
@@ -36,11 +40,19 @@ module.exports = [
       parserOptions: {
         // Eslint doesn't supply ecmaVersion in `parser.js` `context.parserOptions`
         // This is required to avoid ecmaVersion < 2015 error or 'import' / 'export' error
-        ecmaVersion: "latest",
         sourceType: "module",
+        ecmaVersion: "latest",
+        ecmaFeatures: {
+          modules: true,
+          impliedStrict: true,
+          jsx: true,
+        },
       },
     },
     settings: {
+      react: {
+        version: "detect",
+      },
       "import/parsers": {
         // Workaround until import supports flat config
         // https://github.com/import-js/eslint-plugin-import/issues/2556
@@ -50,6 +62,38 @@ module.exports = [
     rules: {
       ...jsPlugin.configs.recommended.rules,
       ...importsPlugin.configs.recommended.rules,
+      ...reactPlugin.configs.recommended.rules,
+      ...hooksPlugin.configs.recommended.rules,
+
+      "react/jsx-key": [
+        "error",
+        {
+          checkFragmentShorthand: true,
+        },
+      ],
+      "react/self-closing-comp": ["error"],
+      "react/prefer-es6-class": ["error"],
+      "react/prefer-stateless-function": ["warn"],
+      "react/no-did-mount-set-state": ["error"],
+      "react/no-did-update-set-state": ["error"],
+      "react/jsx-filename-extension": [
+        "warn",
+        {
+          extensions: [".mdx", ".jsx", ".tsx"],
+        },
+      ],
+      "react/react-in-jsx-scope": ["off"],
+      "react/jsx-sort-props": [
+        "error",
+        {
+          callbacksLast: true,
+          shorthandFirst: false,
+          shorthandLast: true,
+          ignoreCase: true,
+          noSortAlphabetically: false,
+          reservedFirst: true,
+        },
+      ],
 
       // Imports
       "unused-imports/no-unused-vars": [
@@ -127,6 +171,13 @@ module.exports = [
       "@typescript-eslint/no-explicit-any": ["off"],
       "@typescript-eslint/no-use-before-define": ["off"], // todo: discuss enabling this rule
       "@typescript-eslint/no-shadow": ["off"], // todo: discuss enabling this rule
+    },
+  },
+
+  {
+    files: ["**/*.tsx"],
+    rules: {
+      "react/prop-types": "off",
     },
   },
   {

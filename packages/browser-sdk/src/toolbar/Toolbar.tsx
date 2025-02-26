@@ -1,5 +1,11 @@
 import { h } from "preact";
-import { useEffect, useMemo, useRef, useState } from "preact/hooks";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "preact/hooks";
 
 import { BucketClient } from "../client";
 import { toolbarContainerId } from "../ui/constants";
@@ -37,7 +43,7 @@ export default function Toolbar({
   const toggleToolbarRef = useRef<HTMLDivElement>(null);
   const [features, setFeatures] = useState<Feature[]>([]);
 
-  function updateFeatures() {
+  const updateFeatures = useCallback(() => {
     const rawFeatures = bucketClient.getFeatures();
     setFeatures(
       Object.values(rawFeatures)
@@ -51,7 +57,7 @@ export default function Toolbar({
             }) satisfies FeatureItem,
         ),
     );
-  }
+  }, [bucketClient]);
 
   const hasAnyOverrides = useMemo(() => {
     return features.some((f) => f.localOverride !== null);
@@ -60,7 +66,7 @@ export default function Toolbar({
   useEffect(() => {
     updateFeatures();
     bucketClient.on("featuresUpdated", updateFeatures);
-  }, [bucketClient]);
+  }, [bucketClient, updateFeatures]);
 
   const [search, setSearch] = useState<string | null>(null);
   const onSearch = (val: string) => {
@@ -76,35 +82,37 @@ export default function Toolbar({
 
   return (
     <div class="toolbar">
-      <style dangerouslySetInnerHTML={{ __html: styles }}></style>
+      <style dangerouslySetInnerHTML={{ __html: styles }} />
       <ToolbarToggle
-        innerRef={toggleToolbarRef}
-        position={position}
         hasAnyOverrides={hasAnyOverrides}
+        innerRef={toggleToolbarRef}
         isOpen={isOpen}
+        position={position}
         onClick={toggle}
       />
       <Dialog
-        strategy="fixed"
-        isOpen={isOpen}
+        close={close}
         containerId={toolbarContainerId}
+        isOpen={isOpen}
         position={{
           type: "POPOVER",
           anchor: toggleToolbarRef.current,
           placement: "top-start",
         }}
-        close={close}
+        showArrow={false}
+        strategy="fixed"
       >
         <DialogHeader>
           <FeatureSearch onSearch={onSearch} />
         </DialogHeader>
         <DialogContent>
           <FeaturesTable
+            appBaseUrl={appBaseUrl}
             features={searchedFeatures}
+            isOpen={isOpen}
             setEnabledOverride={bucketClient.setFeatureOverride.bind(
               bucketClient,
             )}
-            appBaseUrl={appBaseUrl}
           />
         </DialogContent>
       </Dialog>
@@ -138,8 +146,8 @@ function ToolbarToggle({
   ].join(" ");
 
   return (
-    <div ref={innerRef} class={toggleClasses} onClick={onClick} style={offsets}>
-      <div class={indicatorClasses}></div>
+    <div ref={innerRef} class={toggleClasses} style={offsets} onClick={onClick}>
+      <div class={indicatorClasses} />
       <Logo height="13px" width="13px" />
     </div>
   );

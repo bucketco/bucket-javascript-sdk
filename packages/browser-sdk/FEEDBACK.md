@@ -351,13 +351,7 @@ properties to your page in your CSS `:root`-scope.
 
 For example, a dark mode theme might look like this:
 
-```html
-<img
-  width="276"
-  alt="image"
-  src="https://github.com/bucketco/bucket-tracking-sdk/assets/34348/5d579b7b-a830-4530-8b40-864488a8597e"
-/>
-```
+![image](https://github.com/bucketco/bucket-tracking-sdk/assets/34348/5d579b7b-a830-4530-8b40-864488a8597e)
 
 ```css
 :root {

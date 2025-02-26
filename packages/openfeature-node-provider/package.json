@@ -1,6 +1,6 @@
 {
   "name": "@bucketco/openfeature-node-provider",
-  "version": "0.2.1",
+  "version": "0.3.0-alpha.0",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -34,9 +34,9 @@
     "@openfeature/core": "^1.5.0",
     "@openfeature/server-sdk": ">=1.16.1",
     "@types/node": "^22.12.0",
-    "eslint": "~8.56.0",
+    "eslint": "^9.21.0",
     "flush-promises": "~1.0.2",
-    "prettier": "~3.3.2",
+    "prettier": "^3.5.2",
     "ts-node": "~10.9.2",
     "typescript": "^5.7.3",
     "vite": "~5.3.3",
@@ -44,7 +44,7 @@
     "vitest": "~1.6.0"
   },
   "dependencies": {
-    "@bucketco/node-sdk": ">=1.4.2"
+    "@bucketco/node-sdk": "1.6.0-alpha.4"
   },
   "peerDependencies": {
     "@openfeature/server-sdk": ">=1.16.1"

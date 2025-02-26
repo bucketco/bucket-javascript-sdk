@@ -255,7 +255,7 @@ describe("feedback state management", () => {
 
     await createBucketInstance(callback);
 
-    expect(callback).not.toBeCalled;
+    expect(callback).not.toHaveBeenCalled();
 
     expect(markPromptMessageCompleted).not.toHaveBeenCalledOnce();
 
@@ -271,7 +271,7 @@ describe("feedback state management", () => {
 
     await createBucketInstance(callback);
 
-    expect(callback).not.toBeCalled;
+    expect(callback).not.toHaveBeenCalled();
     await vi.waitFor(() =>
       expect(checkPromptMessageCompleted).toHaveBeenCalledOnce(),
     );

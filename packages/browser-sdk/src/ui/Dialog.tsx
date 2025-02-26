@@ -32,6 +32,8 @@ export interface OpenDialogOptions {
 
   containerId: string;
 
+  showArrow?: boolean;
+
   children?: preact.ComponentChildren;
 }
 
@@ -45,21 +47,26 @@ export function useDialog({
   initialValue?: boolean;
 } = {}) {
   const [isOpen, setIsOpen] = useState<boolean>(initialValue);
+
+  const open = useCallback(() => {
+    setIsOpen(true);
+    onOpen?.();
+  }, [onOpen]);
+  const close = useCallback(() => {
+    setIsOpen(false);
+    onClose?.();
+  }, [onClose]);
+  const toggle = useCallback(() => {
+    if (isOpen) onClose?.();
+    else onOpen?.();
+    setIsOpen((prev) => !prev);
+  }, [isOpen, onClose, onOpen]);
+
   return {
     isOpen,
-    open: () => {
-      setIsOpen(true);
-      onOpen?.();
-    },
-    close: () => {
-      setIsOpen(false);
-      onClose?.();
-    },
-    toggle: () => {
-      if (isOpen) onClose?.();
-      else onOpen?.();
-      setIsOpen((prev) => !prev);
-    },
+    open,
+    close,
+    toggle,
   };
 }
 
@@ -71,6 +78,7 @@ export const Dialog: FunctionComponent<OpenDialogOptions> = ({
   containerId,
   strategy,
   children,
+  showArrow = true,
 }) => {
   const arrowRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -162,7 +170,8 @@ export const Dialog: FunctionComponent<OpenDialogOptions> = ({
       window.removeEventListener("keydown", escapeHandler);
       observer.disconnect();
     };
-  }, [position.type, close]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- anchor only exists in popover
+  }, [position.type, close, (position as any).anchor, dismiss, containerId]);
 
   function setDiagRef(node: HTMLDialogElement | null) {
     refs.setFloating(node);
@@ -191,7 +200,7 @@ export const Dialog: FunctionComponent<OpenDialogOptions> = ({
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: styles }}></style>
+      <style dangerouslySetInnerHTML={{ __html: styles }} />
       <dialog
         ref={setDiagRef}
         class={classes}
@@ -199,10 +208,10 @@ export const Dialog: FunctionComponent<OpenDialogOptions> = ({
       >
         {children && <Fragment>{children}</Fragment>}
 
-        {anchor && (
+        {anchor && showArrow && (
           <DialogArrow
-            arrowRef={arrowRef}
             arrowData={middlewareData?.arrow}
+            arrowRef={arrowRef}
             placement={actualPlacement}
           />
         )}
@@ -242,7 +251,7 @@ function DialogArrow({
       ref={arrowRef}
       class={["arrow", placement].join(" ")}
       style={arrowStyles}
-    ></div>
+    />
   );
 }
 

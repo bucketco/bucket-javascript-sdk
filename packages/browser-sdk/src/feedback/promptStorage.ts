@@ -51,7 +51,7 @@ export const getAuthToken = (userId: string) => {
       channel,
       token,
     };
-  } catch (e) {
+  } catch {
     return undefined;
   }
 };

@@ -1,6 +1,6 @@
 {
   "name": "@bucketco/react-sdk",
-  "version": "3.0.0-alpha.6",
+  "version": "3.0.0-alpha.9",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -34,7 +34,7 @@
     }
   },
   "dependencies": {
-    "@bucketco/browser-sdk": "3.0.0-alpha.4",
+    "@bucketco/browser-sdk": "3.0.0-alpha.6",
     "canonical-json": "^0.0.4",
     "rollup": "^4.2.0"
   },
@@ -51,10 +51,10 @@
     "@types/react": "^18.3.2",
     "@types/react-dom": "^18.3.0",
     "@types/webpack": "^5.28.5",
-    "eslint": "^8.57.0",
+    "eslint": "^9.21.0",
     "jsdom": "^24.1.0",
     "msw": "^2.3.5",
-    "prettier": "^3.3.3",
+    "prettier": "^3.5.2",
     "react": "*",
     "react-dom": "*",
     "rollup-preserve-directives": "^1.1.2",

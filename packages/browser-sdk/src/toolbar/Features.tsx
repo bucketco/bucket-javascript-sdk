@@ -1,4 +1,5 @@
 import { h } from "preact";
+import { useEffect, useState } from "preact/hooks";
 
 import { Switch } from "./Switch";
 import { FeatureItem } from "./Toolbar";
@@ -7,10 +8,12 @@ export function FeaturesTable({
   features,
   setEnabledOverride,
   appBaseUrl,
+  isOpen,
 }: {
   features: FeatureItem[];
   setEnabledOverride: (key: string, value: boolean | null) => void;
   appBaseUrl: string;
+  isOpen: boolean;
 }) {
   if (features.length === 0) {
     return <div style={{ color: "var(--gray500)" }}>No features found</div>;
@@ -18,10 +21,13 @@ export function FeaturesTable({
   return (
     <table class="features-table">
       <tbody>
-        {features.map((feature) => (
+        {features.map((feature, index) => (
           <FeatureRow
-            feature={feature}
+            key={feature.key}
             appBaseUrl={appBaseUrl}
+            feature={feature}
+            index={index}
+            isOpen={isOpen}
             setEnabledOverride={setEnabledOverride}
           />
         ))}
@@ -34,18 +40,31 @@ function FeatureRow({
   setEnabledOverride,
   appBaseUrl,
   feature,
+  isOpen,
+  index,
 }: {
   feature: FeatureItem;
   appBaseUrl: string;
   setEnabledOverride: (key: string, value: boolean | null) => void;
+  isOpen: boolean;
+  index: number;
 }) {
+  const [show, setShow] = useState(true);
+  useEffect(() => {
+    setShow(isOpen);
+  }, [isOpen]);
   return (
-    <tr key={feature.key}>
+    <tr
+      key={feature.key}
+      class={["feature-row", show ? "show" : undefined].join(" ")}
+      style={{ "--i": index }}
+    >
       <td class="feature-name-cell">
         <a
-          href={`${appBaseUrl}/envs/current/features/by-key/${feature.key}`}
-          target="_blank"
           class="feature-link"
+          href={`${appBaseUrl}/envs/current/features/by-key/${feature.key}`}
+          rel="noreferrer"
+          target="_blank"
         >
           {feature.key}
         </a>
@@ -53,8 +72,8 @@ function FeatureRow({
       <td class="feature-reset-cell">
         {feature.localOverride !== null ? (
           <Reset
-            setEnabledOverride={setEnabledOverride}
             featureKey={feature.key}
+            setEnabledOverride={setEnabledOverride}
           />
         ) : null}
       </td>
@@ -82,11 +101,11 @@ export function FeatureSearch({
 }) {
   return (
     <input
-      type="search"
-      placeholder="Search features"
-      onInput={(s) => onSearch(s.currentTarget.value)}
-      autoFocus
       class="search-input"
+      placeholder="Search features"
+      type="search"
+      autoFocus
+      onInput={(s) => onSearch(s.currentTarget.value)}
     />
   );
 }
@@ -100,8 +119,8 @@ function Reset({
 }) {
   return (
     <a
-      href=""
       class="reset"
+      href=""
       onClick={(e) => {
         e.preventDefault();
         setEnabledOverride(featureKey, null);

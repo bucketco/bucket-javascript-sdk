@@ -3,12 +3,13 @@ import { readFileSync } from "fs";
 import { version } from "../package.json";
 
 import { LOG_LEVELS } from "./types";
-import { ok } from "./utils";
+import { isObject, ok } from "./utils";
 
 export const API_BASE_URL = "https://front.bucket.co";
 export const SDK_VERSION_HEADER_NAME = "bucket-sdk-version";
 export const SDK_VERSION = `node-sdk/${version}`;
 export const API_TIMEOUT_MS = 5000;
+export const END_FLUSH_TIMEOUT_MS = 5000;
 
 export const BUCKET_LOG_PREFIX = "[Bucket]";
 
@@ -21,19 +22,33 @@ export const BATCH_INTERVAL_MS = 10 * 1000;
 
 function parseOverrides(config: object | undefined) {
   if (!config) return {};
-  if (
-    "featureOverrides" in config &&
-    typeof config.featureOverrides === "object"
-  ) {
-    const overrides = config.featureOverrides as object;
-    Object.entries(overrides).forEach(([key, value]) => {
+  if ("featureOverrides" in config && isObject(config.featureOverrides)) {
+    Object.entries(config.featureOverrides).forEach(([key, value]) => {
       ok(
-        typeof value === "boolean",
-        `invalid type "${typeof value}" for key ${key}, expected boolean`,
+        typeof value === "boolean" || isObject(value),
+        `invalid type "${typeof value}" for key ${key}, expected boolean or object`,
       );
+      if (isObject(value)) {
+        ok(
+          "isEnabled" in value && typeof value.isEnabled === "boolean",
+          `invalid type "${typeof value.isEnabled}" for key ${key}.isEnabled, expected boolean`,
+        );
+        ok(
+          value.config === undefined || isObject(value.config),
+          `invalid type "${typeof value.config}" for key ${key}.config, expected object or undefined`,
+        );
+        if (isObject(value.config)) {
+          ok(
+            "key" in value.config && typeof value.config.key === "string",
+            `invalid type "${typeof value.config.key}" for key ${key}.config.key, expected string`,
+          );
+        }
+      }
     });
-    return overrides;
+
+    return config.featureOverrides;
   }
+
   return {};
 }
 

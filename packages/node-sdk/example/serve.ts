@@ -1,3 +1,5 @@
+import "dotenv/config";
+
 import bucket from "./bucket";
 import app from "./app";
 

@@ -65,10 +65,18 @@ app.post("/todos", (req, res) => {
     return res.status(400).json({ error: "Invalid todo" });
   }
 
-  const { track, isEnabled } = res.locals.bucketUser.getFeature("create-todos");
+  const { track, isEnabled, config } =
+    res.locals.bucketUser.getFeature("create-todos");
 
   // Check if the user has the "create-todos" feature enabled
   if (isEnabled) {
+    // Check if the todo is at least N characters long
+    if (todo.length < config.payload.minimumLength) {
+      return res
+        .status(400)
+        .json({ error: "Todo must be at least 5 characters long" });
+    }
+
     // Track the feature usage
     track();
     todos.push(todo);

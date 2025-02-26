@@ -138,8 +138,10 @@ function updateSha1Hash(hash: Hash, value: any) {
       case "boolean":
       case "symbol":
       case "bigint":
+      case "function":
         hash.update(value.toString());
         break;
+      case "undefined":
       default:
         break;
     }
@@ -174,4 +176,45 @@ export function once<T extends () => ReturnType<T>>(
     called = true;
     return returned;
   };
+}
+
+export class TimeoutError extends Error {
+  constructor(timeoutMs: number) {
+    super(`Operation timed out after ${timeoutMs}ms`);
+    this.name = "TimeoutError";
+  }
+}
+
+/**
+ * Wraps a promise with a timeout. If the promise doesn't resolve within the specified
+ * timeout, it will reject with a timeout error. The original promise will still
+ * continue to execute but its result will be ignored.
+ *
+ * @param promise - The promise to wrap with a timeout
+ * @param timeoutMs - The timeout in milliseconds
+ * @returns A promise that resolves with the original promise result or rejects with a timeout error
+ * @throws {Error} If the timeout is reached before the promise resolves
+ **/
+export function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+): Promise<T> {
+  ok(timeoutMs > 0, "timeout must be a positive number");
+
+  return new Promise((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      reject(new TimeoutError(timeoutMs));
+    }, timeoutMs);
+
+    promise
+      .then((result) => {
+        resolve(result);
+      })
+      .catch((error) => {
+        reject(error);
+      })
+      .finally(() => {
+        clearTimeout(timeoutId);
+      });
+  });
 }

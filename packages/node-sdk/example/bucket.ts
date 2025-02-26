@@ -1,23 +1,39 @@
 import { BucketClient, Context } from "../src";
 import { FeatureOverrides } from "../src/types";
 
+type CreateConfig = {
+  minimumLength: number;
+};
+
 // Extending the Features interface to define the available features
 declare module "../src/types" {
   interface Features {
     "show-todos": boolean;
-    "create-todos": boolean;
+    "create-todos": {
+      isEnabled: boolean;
+      config: {
+        key: string;
+        payload: CreateConfig;
+      };
+    };
     "delete-todos": boolean;
+    "some-else": {};
   }
 }
 
-let featureOverrides = (context: Context): FeatureOverrides => {
-  return { "delete-todos": true }; // feature keys checked at compile time
+let featureOverrides = (_: Context): FeatureOverrides => {
+  return {
+    "create-todos": {
+      isEnabled: true,
+      config: {
+        key: "short",
+        payload: {
+          minimumLength: 10,
+        },
+      },
+    },
+  }; // feature keys checked at compile time
 };
-
-let host = undefined;
-if (process.env.BUCKET_HOST) {
-  host = process.env.BUCKET_HOST;
-}
 
 // Create a new BucketClient instance with the secret key and default features
 // The default features will be used if the user does not have any features set
