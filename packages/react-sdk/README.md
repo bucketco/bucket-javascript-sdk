@@ -76,7 +76,7 @@ function StartHuddleButton() {
 }
 ```
 
-See a full example for `useFeature` [see below](#usefeature).
+`useFeature` can help you do much more. See a full example for `useFeature` [see below](#usefeature).
 
 ## Feature toggles
 
