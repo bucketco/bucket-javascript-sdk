@@ -2,7 +2,7 @@
 
 Basic client for Bucket.co. If you're using React, you'll be better off with the Bucket React SDK.
 
-Bucket supports feature toggling, tracking feature usage, [collecting feedback](#qualitative-feedback) on features, and [remotely configuring features](#remote-config).
+Bucket supports feature toggling, tracking feature usage, [collecting feedback](#qualitative-feedback) on features, and [remotely configuring features](#remote-config-beta).
 
 ## Install
 

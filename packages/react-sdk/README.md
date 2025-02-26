@@ -2,7 +2,7 @@
 
 React client side library for [Bucket.co](https://bucket.co)
 
-Bucket supports feature toggling, tracking feature usage, [requesting feedback](#userequestfeedback) on features, and [remotely configuring features](#remote-config).
+Bucket supports feature toggling, tracking feature usage, [requesting feedback](#userequestfeedback) on features, and [remotely configuring features](#remote-config-beta).
 
 ## Install
 
