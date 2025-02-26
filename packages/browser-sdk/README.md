@@ -2,6 +2,8 @@
 
 Basic client for Bucket.co. If you're using React, you'll be better off with the Bucket React SDK.
 
+Bucket supports feature toggling, tracking feature usage, [collecting feedback](#qualitative-feedback) on features, and [remotely configuring features](#remote-config-beta).
+
 ## Install
 
 First find your `publishableKey` under [environment settings](https://app.bucket.co/envs/current/settings/app-environments) in Bucket.
@@ -172,7 +174,7 @@ by down-stream clients, like the React SDK.
 Note that accessing `isEnabled` on the object returned by `getFeatures` does not automatically
 generate a `check` event, contrary to the `isEnabled` property on the object returned by `getFeature`.
 
-### Remote config
+### Remote config (beta)
 
 Similar to `isEnabled`, each feature has a `config` property. This configuration is managed from within Bucket.
 It is managed similar to the way access to features is managed, but instead of the binary `isEnabled` you can have
