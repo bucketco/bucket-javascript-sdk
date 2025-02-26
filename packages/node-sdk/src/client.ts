@@ -184,7 +184,8 @@ export class BucketClient {
 
     if (!options.configFile) {
       options.configFile =
-        process.env.BUCKET_CONFIG_FILE ?? fs.existsSync(bucketConfigDefaultFile)
+        (process.env.BUCKET_CONFIG_FILE ??
+        fs.existsSync(bucketConfigDefaultFile))
           ? bucketConfigDefaultFile
           : undefined;
     }
@@ -590,6 +591,7 @@ export class BucketClient {
       companyId,
       additionalContext,
     );
+
     return features[key];
   }
 

@@ -331,7 +331,7 @@ export class FeaturesClient {
         let errorBody = null;
         try {
           errorBody = await res.json();
-        } catch (e) {
+        } catch {
           // ignore
         }
 

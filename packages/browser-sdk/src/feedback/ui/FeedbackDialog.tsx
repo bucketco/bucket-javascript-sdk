@@ -41,12 +41,20 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
     "idle" | "submitting" | "submitted"
   >("idle");
 
+  const { isOpen, close } = useDialog({ onClose, initialValue: true });
+
+  const autoClose = useTimer({
+    enabled: position.type === "DIALOG",
+    initialDuration: INACTIVE_DURATION_MS,
+    onEnd: close,
+  });
+
   const submit = useCallback(
     async (data: Omit<FeedbackSubmission, "feedbackId">) => {
       await onSubmit({ ...data, feedbackId });
       autoClose.startWithDuration(SUCCESS_DURATION_MS);
     },
-    [feedbackId, onSubmit],
+    [autoClose, feedbackId, onSubmit],
   );
 
   const submitScore = useCallback(
@@ -59,17 +67,8 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
         setScoreState("submitted");
       }
     },
-    [feedbackId, onSubmit],
+    [feedbackId, onScoreSubmit],
   );
-
-  const { isOpen, close } = useDialog({ onClose, initialValue: true });
-
-  const autoClose = useTimer({
-    enabled: position.type === "DIALOG",
-    initialDuration: INACTIVE_DURATION_MS,
-    onEnd: close,
-  });
-
   const dismiss = useCallback(() => {
     autoClose.stop();
     close();
@@ -78,25 +77,25 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: styles }}></style>
+      <style dangerouslySetInnerHTML={{ __html: styles }} />
       <Dialog
-        isOpen={isOpen}
-        containerId={feedbackContainerId}
         key={key}
-        position={position}
         close={close}
+        containerId={feedbackContainerId}
+        isOpen={isOpen}
+        position={position}
         onDismiss={onDismiss}
       >
         <>
           <FeedbackForm
-            t={{ ...DEFAULT_TRANSLATIONS, ...translations }}
             key={key}
-            question={title}
             openWithCommentVisible={openWithCommentVisible}
-            onSubmit={submit}
-            onScoreSubmit={submitScore}
+            question={title}
             scoreState={scoreState}
+            t={{ ...DEFAULT_TRANSLATIONS, ...translations }}
             onInteraction={autoClose.stop}
+            onScoreSubmit={submitScore}
+            onSubmit={submit}
           />
 
           <button class="close" onClick={dismiss}>

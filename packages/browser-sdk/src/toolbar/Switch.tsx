@@ -18,21 +18,22 @@ export function Switch({
     <>
       <label class="switch" data-enabled={checked}>
         <input
-          type="checkbox"
           checked={checked}
-          style={{ display: "none" }}
           name="enabled"
+          style={{ display: "none" }}
+          type="checkbox"
           {...props}
         />
         <div
+          class="switch-track"
           style={{
             width: `${width}px`,
             height: `${height}px`,
             borderRadius: `${height}px`,
           }}
-          class="switch-track"
         >
           <div
+            class="switch-dot"
             style={{
               width: `${height - gutter * 2}px`,
               height: `${height - gutter * 2}px`,
@@ -41,7 +42,6 @@ export function Switch({
                 : `translateX(${gutter}px)`,
               top: `${gutter}px`,
             }}
-            class="switch-dot"
           />
         </div>
       </label>
