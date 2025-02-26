@@ -176,6 +176,8 @@ generate a `check` event, contrary to the `isEnabled` property on the object ret
 
 ### Remote config (beta)
 
+Remote config is a dynamic and flexible approach to configuring feature behavior outside of your app – without needing to re-deploy it.
+
 Similar to `isEnabled`, each feature has a `config` property. This configuration is managed from within Bucket.
 It is managed similar to the way access to features is managed, but instead of the binary `isEnabled` you can have
 multiple configuration values which are given to different user/companies.
@@ -194,10 +196,7 @@ const features = bucketClient.getFeatures();
 // }
 ```
 
-The `key` is always present while the `payload` is a optional JSON value for arbitrary configuration needs.
-If feature has no configuration or, no configuration value was matched against the context, the `config` object
-will be empty, thus, `key` will be `undefined`. Make sure to check against this case when trying to use the
-configuration in your application.
+`key` is mandatory for a config, but if a feature has no config or no config value was matched against the context, the `key` will be `undefined`. Make sure to check against this case when trying to use the configuration in your application. `payload` is an optional JSON value for arbitrary configuration needs.
 
 Just as `isEnabled`, accessing `config` on the object returned by `getFeatures` does not automatically
 generate a `check` event, contrary to the `config` property on the object returned by `getFeature`.
