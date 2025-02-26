@@ -66,6 +66,7 @@ Using the `useFeature` hook from your components lets you toggle features on/off
 function StartHuddleButton() {
   const {
     isEnabled, // boolean indicating if the feature is enabled
+    track, // track usage of the feature
   } = useFeature("huddle");
 
   if (!isEnabled) {
@@ -86,7 +87,7 @@ If you supply `user` or `company` objects, they must include at least the `id` p
 In addition to the `id`, you must also supply anything additional that you want to be able to evaluate feature targeting rules against.
 The additional attributes are supplied using the `otherContext` prop.
 
-Attributes cannot be nested (multiple levels) and must be either strings, integers or booleans.
+Attributes cannot be nested (multiple levels) and must be either strings, numbers or booleans.
 A number of special attributes exist:
 
 - `name` -- display name for `user`/`company`,
@@ -138,7 +139,7 @@ generates a `check` event.
 
 ## `<BucketProvider>` component
 
-The `<BucketProvider>` initializes the Bucket SDK, fetch features and start listening for automated feedback survey events. The component can be configured using a number of props:
+The `<BucketProvider>` initializes the Bucket SDK, fetches features and starts listening for automated feedback survey events. The component can be configured using a number of props:
 
 - `publishableKey` is used to connect the provider to an _environment_ on Bucket. Find your `publishableKey` under [environment settings](https://app.bucket.co/envs/current/settings/app-environments) in Bucket,
 - `company`, `user` and `otherContext` make up the _context_ that is used to determine if a feature is enabled or not. `company` and `user` contexts are automatically transmitted to Bucket servers so the Bucket app can show you which companies have access to which features etc.
@@ -187,7 +188,7 @@ The `<BucketProvider>` initializes the Bucket SDK, fetch features and start list
   <BucketProvider>
   ```
 
-- `enableTracking` Set to `false` to stop sending tracking events and user/company updates to Bucket. Useful when you're impersonating a user (defaults to `true`),
+- `enableTracking`: Set to `false` to stop sending tracking events and user/company updates to Bucket. Useful when you're impersonating a user (defaults to `true`),
 - `apiBaseUrl`: Optional base URL for the Bucket API. Use this to override the default API endpoint,
 - `appBaseUrl`: Optional base URL for the Bucket application. Use this to override the default app URL,
 - `sseBaseUrl`: Optional base URL for Server-Sent Events. Use this to override the default SSE endpoint,
@@ -231,7 +232,7 @@ function StartHuddleButton() {
       <button
         onClick={(e) =>
           requestFeedback({
-            title: payload?.question ?? "How do you like Huddles?",
+            title: payload?.question ?? "How do you like the Huddles feature?",
             position: {
               type: "POPOVER",
               anchor: e.currentTarget as HTMLElement,
