@@ -1,6 +1,0 @@
-.radial-progress {
-  > circle {
-    stroke: var(--bucket-feedback-dialog-color, #1e1f24);
-    opacity: 0.2;
-  }
-}
