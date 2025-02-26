@@ -41,6 +41,14 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
     "idle" | "submitting" | "submitted"
   >("idle");
 
+  const { isOpen, close } = useDialog({ onClose, initialValue: true });
+
+  const autoClose = useTimer({
+    enabled: position.type === "DIALOG",
+    initialDuration: INACTIVE_DURATION_MS,
+    onEnd: close,
+  });
+
   const submit = useCallback(
     async (data: Omit<FeedbackSubmission, "feedbackId">) => {
       await onSubmit({ ...data, feedbackId });
@@ -61,15 +69,6 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
     },
     [feedbackId, onScoreSubmit],
   );
-
-  const { isOpen, close } = useDialog({ onClose, initialValue: true });
-
-  const autoClose = useTimer({
-    enabled: position.type === "DIALOG",
-    initialDuration: INACTIVE_DURATION_MS,
-    onEnd: close,
-  });
-
   const dismiss = useCallback(() => {
     autoClose.stop();
     close();

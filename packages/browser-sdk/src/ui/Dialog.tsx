@@ -47,21 +47,26 @@ export function useDialog({
   initialValue?: boolean;
 } = {}) {
   const [isOpen, setIsOpen] = useState<boolean>(initialValue);
+
+  const open = useCallback(() => {
+    setIsOpen(true);
+    onOpen?.();
+  }, [onOpen]);
+  const close = useCallback(() => {
+    setIsOpen(false);
+    onClose?.();
+  }, [onClose]);
+  const toggle = useCallback(() => {
+    if (isOpen) onClose?.();
+    else onOpen?.();
+    setIsOpen((prev) => !prev);
+  }, [isOpen, onClose, onOpen]);
+
   return {
     isOpen,
-    open: () => {
-      setIsOpen(true);
-      onOpen?.();
-    },
-    close: () => {
-      setIsOpen(false);
-      onClose?.();
-    },
-    toggle: () => {
-      if (isOpen) onClose?.();
-      else onOpen?.();
-      setIsOpen((prev) => !prev);
-    },
+    open,
+    close,
+    toggle,
   };
 }
 
