@@ -14,12 +14,6 @@ import {
 } from "./constants.js";
 import { handleError } from "./error.js";
 
-// https://github.com/nodejs/node/issues/51347#issuecomment-2111337854
-const schema = createRequire(import.meta.url)("../../schema.json");
-
-const ajv = new Ajv();
-const validateConfig = ajv.compile(schema);
-
 export const keyFormats = [
   "custom",
   "pascalCase",
@@ -31,6 +25,21 @@ export const keyFormats = [
 ] as const;
 
 export type KeyFormat = (typeof keyFormats)[number];
+
+type Config = {
+  $schema?: string;
+  baseUrl?: string;
+  apiUrl?: string;
+  appId: string;
+  typesPath?: string;
+  keyFormat?: KeyFormat;
+};
+
+// https://github.com/nodejs/node/issues/51347#issuecomment-2111337854
+// todo: rework this as it's too fragile and breaks if path isn't exactly right
+const schema = createRequire(import.meta.url)("../../schema.json");
+const ajv = new Ajv();
+const validateConfig = ajv.compile(schema);
 
 class ConfigValidationError extends Error {
   constructor(errors: typeof validateConfig.errors) {
@@ -47,15 +56,6 @@ class ConfigValidationError extends Error {
     this.name = "ConfigValidationError";
   }
 }
-
-type Config = {
-  $schema?: string;
-  baseUrl?: string;
-  apiUrl?: string;
-  appId: string;
-  typesPath?: string;
-  keyFormat?: KeyFormat;
-};
 
 let config: Config | undefined;
 let configPath: string | undefined;
@@ -87,32 +87,7 @@ export function getProjectPath() {
 }
 
 /**
- * Load the configuration file.
- */
-export async function loadConfig() {
-  try {
-    const packageJSONPath = await findUp("package.json");
-    configPath = await findUp(CONFIG_FILE_NAME);
-    projectPath = dirname(configPath ?? packageJSONPath ?? process.cwd());
-    if (!configPath) return;
-    const content = await readFile(configPath, "utf-8");
-    const parsed = JSON5.parse<Config>(content);
-    if (!validateConfig(parsed)) {
-      void handleError(
-        new ConfigValidationError(validateConfig.errors),
-        "Config",
-      );
-    }
-    config = parsed;
-  } catch {
-    // No config file found
-  }
-}
-
-/**
- * Create a new config file with initial values.
- * @param newConfig The configuration object to write
- * @param overwrite If true, overwrites existing config file. Defaults to false
+ * Returns default configuration values
  */
 const getDefaultConfig = (): Partial<Config> => ({
   baseUrl: DEFAULT_BASE_URL,
@@ -121,7 +96,43 @@ const getDefaultConfig = (): Partial<Config> => ({
   keyFormat: "custom",
 });
 
-export async function saveConfig(newConfig: Config, overwrite = false) {
+/**
+ * Load the configuration file.
+ */
+export async function loadConfigFile() {
+  try {
+    const packageJSONPath = await findUp("package.json");
+    configPath = await findUp(CONFIG_FILE_NAME);
+    projectPath = dirname(configPath ?? packageJSONPath ?? process.cwd());
+
+    if (!configPath) return;
+
+    const content = await readFile(configPath, "utf-8");
+    const parsed = JSON5.parse<Config>(content);
+
+    if (!validateConfig(parsed)) {
+      void handleError(
+        new ConfigValidationError(validateConfig.errors),
+        "Config",
+      );
+    }
+
+    config = parsed;
+  } catch {
+    // No config file found
+  }
+}
+
+export function updateConfig(newConfig: Partial<Config>) {
+  config = { ...config, ...newConfig } as Config;
+}
+
+/**
+ * Create a new config file with initial values.
+ * @param newConfig The configuration object to write
+ * @param overwrite If true, overwrites existing config file. Defaults to false
+ */
+export async function createConfigFile(newConfig: Config, overwrite = false) {
   if (!validateConfig(newConfig)) {
     void handleError(
       new ConfigValidationError(validateConfig.errors),
@@ -146,16 +157,17 @@ export async function saveConfig(newConfig: Config, overwrite = false) {
 
   const configJSON = JSON.stringify(configWithoutDefaults, null, 2);
 
+  if (configPath && !overwrite) {
+    throw new Error("Config file already exists");
+  }
+
   if (configPath) {
-    if (!overwrite) {
-      throw new Error("Config file already exists");
-    }
     await writeFile(configPath, configJSON);
-    config = newConfig;
   } else {
     // Write to the nearest package.json directory
     configPath = join(getProjectPath(), CONFIG_FILE_NAME);
     await writeFile(configPath, configJSON);
-    config = newConfig;
   }
+
+  config = newConfig;
 }

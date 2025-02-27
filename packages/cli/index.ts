@@ -1,4 +1,6 @@
-#!/usr/bin/env node --no-warnings=ExperimentalWarning
+#!/usr/bin/env node
+import { resolve } from "path";
+import { fileURLToPath } from "url";
 import chalk from "chalk";
 import { program } from "commander";
 
@@ -7,14 +9,14 @@ import { registerAuthCommands } from "./commands/auth.js";
 import { registerFeatureCommands } from "./commands/features.js";
 import { registerInitCommand } from "./commands/init.js";
 import { registerNewCommand } from "./commands/new.js";
-import { loadTokens } from "./utils/auth.js";
-import { getConfig, getConfigPath, loadConfig } from "./utils/config.js";
+import { loadTokenFile } from "./utils/auth.js";
+import { getConfig, getConfigPath, loadConfigFile } from "./utils/config.js";
 import { options } from "./utils/options.js";
 
 async function main() {
   // Must load tokens and config before anything else
-  await loadTokens();
-  await loadConfig();
+  await loadTokenFile();
+  await loadConfigFile();
 
   // Global options
   program.option(options.debug.flags, options.debug.description, false);
@@ -49,4 +51,7 @@ async function main() {
   program.parse(process.argv);
 }
 
-void main();
+// Run the main function if this file is run directly and not imported
+if (resolve(fileURLToPath(import.meta.url)) === resolve(process.argv[1])) {
+  void main();
+}

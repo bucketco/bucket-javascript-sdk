@@ -9,7 +9,7 @@ export const loginAction = async () => {
   const { baseUrl } = program.opts();
   const spinner = ora(`Logging in to ${chalk.cyan(baseUrl)}...`).start();
   try {
-    await authenticateUser();
+    await authenticateUser(baseUrl);
     spinner.succeed(`Logged in to ${chalk.cyan(baseUrl)} successfully! 🎉`);
   } catch (error) {
     spinner.fail("Login failed");

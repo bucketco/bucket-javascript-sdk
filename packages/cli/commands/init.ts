@@ -5,7 +5,7 @@ import { relative } from "node:path";
 import ora, { Ora } from "ora";
 
 import { App, listApps } from "../services/bootstrap.js";
-import { getConfigPath, saveConfig } from "../utils/config.js";
+import { createConfigFile, getConfigPath } from "../utils/config.js";
 import { chalkBrand, DEFAULT_TYPES_PATH } from "../utils/constants.js";
 import { handleError } from "../utils/error.js";
 import { options } from "../utils/options.js";
@@ -74,7 +74,7 @@ export const initAction = async (args: InitArgs) => {
 
     // Create config file
     spinner = ora("Creating configuration...").start();
-    await saveConfig(
+    await createConfigFile(
       {
         baseUrl,
         apiUrl,
