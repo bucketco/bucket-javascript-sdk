@@ -322,7 +322,7 @@ The two cookies are:
 
 ### Upgrading to 3.0 from 2.0
 
-- `client.onFeatureUpdated()` is now replaced by [event listeners](#event-listeners)
+- `client.onFeaturesUpdated()` is now replaced by [event listeners](#event-listeners)
 - Arguments to the `BucketClient` constructor which were previously under `featureOptions` are now supplied directly in the root.
 
 ### TypeScript
