@@ -1,7 +1,6 @@
 export type { Feature, InitOptions, ToolbarOptions } from "./client";
 export { BucketClient } from "./client";
 export type { BucketContext, CompanyContext, UserContext } from "./context";
-export type { TrackEvent } from "./hooksManager";
 export type {
   CheckEvent,
   FallbackFeatureOverride,
@@ -29,5 +28,6 @@ export type {
   OnScoreSubmitResult,
   OpenFeedbackFormOptions,
 } from "./feedback/ui/types";
+export type { TrackEvent } from "./hooksManager";
 export type { Logger } from "./logger";
 export { feedbackContainerId, propagatedEvents } from "./ui/constants";
