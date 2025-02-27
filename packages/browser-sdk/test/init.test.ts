@@ -89,4 +89,19 @@ describe("init", () => {
 
     expect(post).not.toHaveBeenCalled();
   });
+
+  test("passes credentials correctly to httpClient", async () => {
+    const credentials = "include";
+    const bucketInstance = new BucketClient({
+      publishableKey: KEY,
+      user: { id: "foo" },
+      credentials,
+    });
+
+    await bucketInstance.initialize();
+
+    expect(bucketInstance["httpClient"]["fetchOptions"].credentials).toBe(
+      credentials,
+    );
+  });
 });

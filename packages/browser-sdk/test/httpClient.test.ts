@@ -1,4 +1,4 @@
-import { expect, test } from "vitest";
+import { expect, test, describe, vi, beforeEach, afterEach } from "vitest";
 
 import { HttpClient } from "../src/httpClient";
 
@@ -19,4 +19,45 @@ test.each(cases)(
 test.each(cases)("url construction with `path`: %s -> %s", (base, expected) => {
   const client = new HttpClient("publishableKey", { baseUrl: base });
   expect(client.getUrl("path").toString()).toBe(expected);
+});
+
+describe("sets `credentials`", () => {
+  beforeEach(() => {
+    vi.spyOn(global, "fetch").mockResolvedValue(new Response());
+  });
+
+  afterEach(() => {
+    vi.resetAllMocks();
+  });
+  test("default credentials", async () => {
+    const client = new HttpClient("publishableKey");
+
+    await client.get({ path: "/test" });
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.any(URL),
+      expect.objectContaining({ credentials: undefined }),
+    );
+
+    await client.post({ path: "/test", body: {} });
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.any(URL),
+      expect.objectContaining({ credentials: undefined }),
+    );
+  });
+
+  test("custom credentials", async () => {
+    const client = new HttpClient("publishableKey", { credentials: "include" });
+
+    await client.get({ path: "/test" });
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.any(URL),
+      expect.objectContaining({ credentials: "include" }),
+    );
+
+    await client.post({ path: "/test", body: {} });
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.any(URL),
+      expect.objectContaining({ credentials: "include" }),
+    );
+  });
 });
