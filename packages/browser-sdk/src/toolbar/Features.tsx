@@ -19,7 +19,7 @@ export function FeaturesTable({
     return <div style={{ color: "var(--gray500)" }}>No features found</div>;
   }
   return (
-    <table class="features-table">
+    <table class="features-table" style={{ "--n": features.length }}>
       <tbody>
         {features.map((feature, index) => (
           <FeatureRow
