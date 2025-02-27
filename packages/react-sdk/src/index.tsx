@@ -17,8 +17,13 @@ import {
   RawFeatures,
   RequestFeedbackData,
   UnassignedFeedback,
+  TrackEvent,
+  UserContext,
+  CompanyContext,
+  CheckEvent,
 } from "@bucketco/browser-sdk";
 
+export { TrackEvent, UserContext, CompanyContext, CheckEvent, RawFeatures };
 import { version } from "../package.json";
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -349,9 +354,11 @@ export function useUpdateOtherContext() {
  *
  * ```ts
  * const client = useClient();
- * client.on("configCheck", () => {
- *   console.log("configCheck hook called");
- * });
+ * useEffect(() => {
+ *   return client?.on("enabledCheck", () => {
+ *     console.log("enabledCheck hook called");
+ *   });
+ * }, [client]);
  * ```
  */
 export function useClient() {

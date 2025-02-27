@@ -1,6 +1,7 @@
 export type { Feature, InitOptions, ToolbarOptions } from "./client";
 export { BucketClient } from "./client";
 export type { BucketContext, CompanyContext, UserContext } from "./context";
+export type { TrackEvent } from "./hooksManager";
 export type {
   CheckEvent,
   FallbackFeatureOverride,

@@ -482,6 +482,7 @@ export class BucketClient {
     handler: (args0: HookArgs[THookType]) => void,
   ) {
     this.hooks.addHook(type, handler);
+    return () => this.hooks.removeHook(type, handler);
   }
 
   /**
