@@ -394,6 +394,7 @@ export class BucketClient {
     this.httpClient = new HttpClient(this.publishableKey, {
       baseUrl: this.config.apiBaseUrl,
       sdkVersion: opts?.sdkVersion,
+      credentials: opts?.credentials,
     });
 
     this.featuresClient = new FeaturesClient(
@@ -465,7 +466,6 @@ export class BucketClient {
     }
 
     await this.featuresClient.initialize();
-
     if (this.context.user && this.config.enableTracking) {
       this.user().catch((e) => {
         this.logger.error("error sending user", e);

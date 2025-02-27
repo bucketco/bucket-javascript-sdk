@@ -17,7 +17,7 @@ const logger = {
 };
 
 beforeEach(() => {
-  vi.resetAllMocks();
+  vi.clearAllMocks();
 });
 
 describe("init", () => {
@@ -92,6 +92,7 @@ describe("init", () => {
 
   test("passes credentials correctly to httpClient", async () => {
     const credentials = "include";
+
     const bucketInstance = new BucketClient({
       publishableKey: KEY,
       user: { id: "foo" },
