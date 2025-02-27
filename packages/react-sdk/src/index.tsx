@@ -17,13 +17,19 @@ import {
   RawFeatures,
   RequestFeedbackData,
   UnassignedFeedback,
+  UserContext,
+  CompanyContext,
+  CheckEvent,
+  TrackEvent,
+} from "@bucketco/browser-sdk";
+
+export type {
   TrackEvent,
   UserContext,
   CompanyContext,
   CheckEvent,
-} from "@bucketco/browser-sdk";
-
-export { TrackEvent, UserContext, CompanyContext, CheckEvent, RawFeatures };
+  RawFeatures,
+};
 import { version } from "../package.json";
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
