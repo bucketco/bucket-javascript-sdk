@@ -76,6 +76,10 @@ export default function Toolbar({
   const searchedFeatures =
     search === null ? features : features.filter((f) => f.key.includes(search));
 
+  const sortedFeatures = searchedFeatures.sort((a, b) =>
+    a.key.localeCompare(b.key),
+  );
+
   const appBaseUrl = bucketClient.getConfig().appBaseUrl;
 
   const { isOpen, close, toggle } = useDialog();
@@ -108,7 +112,7 @@ export default function Toolbar({
         <DialogContent>
           <FeaturesTable
             appBaseUrl={appBaseUrl}
-            features={searchedFeatures}
+            features={sortedFeatures}
             isOpen={isOpen}
             setEnabledOverride={bucketClient.setFeatureOverride.bind(
               bucketClient,
