@@ -320,7 +320,9 @@ The two cookies are:
 - `bucket-prompt-${userId}`: store the last automated feedback prompt message ID received to avoid repeating surveys
 - `bucket-token-${userId}`: caching a token used to connect to Bucket's live messaging infrastructure that is used to deliver automated feedback surveys in real time.
 
-### Upgrading to 3.0 from 2.0
+### Upgrading to 3.0 from 2.x
+
+Breaking changes:
 
 - `client.onFeaturesUpdated()` is now replaced by [event listeners](#event-listeners)
 - Arguments to the `BucketClient` constructor which were previously under `featureOptions` are now supplied directly in the root.
