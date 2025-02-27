@@ -76,7 +76,7 @@ export default function Toolbar({
   const searchedFeatures =
     search === null ? features : features.filter((f) => f.key.includes(search));
 
-  const sortedFeatures = searchedFeatures.sort((a, b) =>
+  const sortedFeatures = [...searchedFeatures].sort((a, b) =>
     a.key.localeCompare(b.key),
   );
 
