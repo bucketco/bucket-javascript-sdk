@@ -796,8 +796,6 @@ export class BucketClient {
   /**
    * Stop the SDK.
    * This will stop any automated feedback surveys.
-   * It will also stop the features client, including removing
-   * any onFeaturesUpdated listeners.
    *
    **/
   async stop() {
