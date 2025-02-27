@@ -257,6 +257,13 @@ export type InitOptions = {
   staleTimeMs?: number;
 
   /**
+   * When proxying requests, you may want to include credentials like cookies
+   * so you can authorize the request in the proxy.
+   * This option controls the `credentials` option of the fetch API.
+   */
+  credentials?: "include" | "same-origin" | "omit";
+
+  /**
    * Base URL of Bucket servers for SSE connections used by AutoFeedback.
    */
   sseBaseUrl?: string;
