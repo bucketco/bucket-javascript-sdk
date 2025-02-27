@@ -476,6 +476,7 @@ export class BucketClient {
    * Add a hook to the client.
    *
    * @param hook Hook to add.
+   * @returns A function to remove the hook.
    */
   on<THookType extends keyof HookArgs>(
     type: THookType,
