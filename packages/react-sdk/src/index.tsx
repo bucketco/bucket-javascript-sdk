@@ -13,13 +13,25 @@ import canonicalJSON from "canonical-json";
 import {
   BucketClient,
   BucketContext,
+  CheckEvent,
+  CompanyContext,
   InitOptions,
   RawFeatures,
   RequestFeedbackData,
+  TrackEvent,
   UnassignedFeedback,
+  UserContext,
 } from "@bucketco/browser-sdk";
 
 import { version } from "../package.json";
+
+export type {
+  CheckEvent,
+  CompanyContext,
+  RawFeatures,
+  TrackEvent,
+  UserContext,
+};
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface Features {}
@@ -349,9 +361,11 @@ export function useUpdateOtherContext() {
  *
  * ```ts
  * const client = useClient();
- * client.on("configCheck", () => {
- *   console.log("configCheck hook called");
- * });
+ * useEffect(() => {
+ *   return client?.on("enabledCheck", () => {
+ *     console.log("enabledCheck hook called");
+ *   });
+ * }, [client]);
  * ```
  */
 export function useClient() {

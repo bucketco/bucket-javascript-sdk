@@ -13,7 +13,7 @@ export interface HookArgs {
   track: TrackEvent;
 }
 
-type TrackEvent = {
+export type TrackEvent = {
   user: UserContext;
   company?: CompanyContext;
   eventName: string;
