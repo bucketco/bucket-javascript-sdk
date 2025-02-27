@@ -99,7 +99,12 @@
   z-index: 999999;
   min-width: 200px;
   padding: 0;
-  max-height: calc(100vh - 36px - 35px);
+
+  --visible-features: 15;
+  max-height: min(
+    calc(100vh - 36px - 35px),
+    calc(45px + (var(--visible-features) * 27px))
+  );
 
   &[open] {
     display: flex;
