@@ -1,4 +1,4 @@
-import { expect, test, describe, vi, beforeEach, afterEach } from "vitest";
+import { afterEach,beforeEach, describe, expect, test, vi } from "vitest";
 
 import { HttpClient } from "../src/httpClient";
 
