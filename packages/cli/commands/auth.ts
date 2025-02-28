@@ -1,12 +1,14 @@
 import chalk from "chalk";
-import { Command, program } from "commander";
+import { Command } from "commander";
 import ora from "ora";
 
-import { authenticateUser, setToken } from "../utils/auth.js";
-import { handleError } from "../utils/error.js";
+import { authStore } from "../stores/auth.js";
+import { configStore } from "../stores/config.js";
+import { authenticateUser } from "../utils/auth.js";
+import { handleError } from "../utils/errors.js";
 
 export const loginAction = async () => {
-  const { baseUrl } = program.opts();
+  const baseUrl = configStore.getConfig("baseUrl");
   const spinner = ora(`Logging in to ${chalk.cyan(baseUrl)}...`).start();
   try {
     await authenticateUser(baseUrl);
@@ -18,10 +20,10 @@ export const loginAction = async () => {
 };
 
 export const logoutAction = async () => {
-  const { baseUrl } = program.opts();
+  const baseUrl = configStore.getConfig("baseUrl");
   const spinner = ora("Logging out...").start();
   try {
-    await setToken(baseUrl, undefined);
+    await authStore.setToken(baseUrl, undefined);
     spinner.succeed("Logged out successfully! 👋");
   } catch (error) {
     spinner.fail("Logout failed");

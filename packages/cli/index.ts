@@ -9,35 +9,32 @@ import { registerAuthCommands } from "./commands/auth.js";
 import { registerFeatureCommands } from "./commands/features.js";
 import { registerInitCommand } from "./commands/init.js";
 import { registerNewCommand } from "./commands/new.js";
-import { loadTokenFile } from "./utils/auth.js";
-import { getConfig, getConfigPath, loadConfigFile } from "./utils/config.js";
-import { options } from "./utils/options.js";
+import { authStore } from "./stores/auth.js";
+import { configStore } from "./stores/config.js";
+import { apiUrlOption, baseUrlOption, debugOption } from "./utils/options.js";
 
 async function main() {
   // Must load tokens and config before anything else
-  await loadTokenFile();
-  await loadConfigFile();
+  await authStore.initialize();
+  await configStore.initialize();
 
   // Global options
-  program.option(options.debug.flags, options.debug.description, false);
-  program.requiredOption(
-    options.baseUrl.flags,
-    options.baseUrl.description,
-    getConfig(options.baseUrl.configKey) ?? options.baseUrl.fallback,
-  );
-  program.option(
-    options.apiUrl.flags,
-    options.apiUrl.description,
-    getConfig(options.apiUrl.configKey),
-  );
+  program.addOption(debugOption);
+  program.addOption(baseUrlOption);
+  program.addOption(apiUrlOption);
 
   // Pre-action hook
   program.hook("preAction", () => {
-    const { debug } = program.opts();
+    const { debug, baseUrl, apiUrl } = program.opts();
+    configStore.setConfig({ baseUrl, apiUrl: apiUrl ?? baseUrl + "/api" });
+
     if (debug) {
       console.debug(chalk.cyan("\nDebug mode enabled"));
-      console.debug("Reading config from", chalk.green(getConfigPath()));
-      console.table(getConfig());
+      console.debug(
+        "Reading config from",
+        chalk.green(configStore.getConfigPath()),
+      );
+      console.table(configStore.getConfig());
     }
   });
 

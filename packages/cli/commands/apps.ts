@@ -1,12 +1,13 @@
 import chalk from "chalk";
-import { Command, program } from "commander";
+import { Command } from "commander";
 import ora from "ora";
 
 import { listApps } from "../services/bootstrap.js";
-import { handleError } from "../utils/error.js";
+import { configStore } from "../stores/config.js";
+import { handleError } from "../utils/errors.js";
 
 export const listAppsAction = async () => {
-  const { baseUrl } = program.opts();
+  const baseUrl = configStore.getConfig("baseUrl");
   const spinner = ora(`Loading apps from ${chalk.cyan(baseUrl)}...`).start();
   try {
     const apps = await listApps();

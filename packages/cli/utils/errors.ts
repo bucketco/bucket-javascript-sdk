@@ -1,4 +1,30 @@
+import { ErrorObject } from "ajv";
 import chalk from "chalk";
+
+export class MissingAppIdError extends Error {
+  constructor() {
+    super(
+      "App ID is required. Please provide it with --appId or in the config file.",
+    );
+    this.name = "MissingAppIdError";
+  }
+}
+
+export class ConfigValidationError extends Error {
+  constructor(errors?: ErrorObject[] | null) {
+    const messages = errors
+      ?.map((e) => {
+        const path = e.instancePath || "config";
+        const value = e.params?.allowedValues
+          ? `: ${e.params.allowedValues.join(", ")}`
+          : "";
+        return `${path}: ${e.message}${value}`;
+      })
+      .join("\n");
+    super(messages);
+    this.name = "ConfigValidationError";
+  }
+}
 
 export async function handleError(error: unknown, tag: string) {
   tag = chalk.bold(`\n[${tag}] error:`);

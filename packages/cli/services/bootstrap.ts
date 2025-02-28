@@ -1,5 +1,5 @@
+import { KeyFormat } from "../stores/config.js";
 import { authRequest } from "../utils/auth.js";
-import { KeyFormat } from "../utils/config.js";
 
 type BootstrapResponse = {
   org: {

@@ -1,51 +1,10 @@
-import { mkdir, readFile, writeFile } from "fs/promises";
 import http from "http";
-import { dirname } from "path";
-import { program } from "commander";
 import open from "open";
 
-import { AUTH_FILE, loginUrl } from "./constants.js";
+import { authStore } from "../stores/auth.js";
+import { configStore } from "../stores/config.js";
 
-let tokens: Map<string, string> = new Map();
-
-export async function loadTokenFile() {
-  try {
-    const content = await readFile(AUTH_FILE, "utf-8");
-    tokens = new Map(
-      content
-        .split("\n")
-        .filter(Boolean)
-        .map((line) => {
-          const [baseUrl, token] = line.split("|");
-          return [baseUrl, token];
-        }),
-    );
-  } catch {
-    // No tokens file found
-  }
-}
-
-async function saveTokenFile(newTokens: Map<string, string>) {
-  const content = Array.from(newTokens.entries())
-    .map(([baseUrl, token]) => `${baseUrl}|${token}`)
-    .join("\n");
-  await mkdir(dirname(AUTH_FILE), { recursive: true });
-  await writeFile(AUTH_FILE, content);
-  tokens = newTokens;
-}
-
-export function getToken(baseUrl: string) {
-  return tokens.get(baseUrl);
-}
-
-export async function setToken(baseUrl: string, newToken?: string) {
-  if (newToken) {
-    tokens.set(baseUrl, newToken);
-  } else {
-    tokens.delete(baseUrl);
-  }
-  await saveTokenFile(tokens);
-}
+import { loginUrl } from "./constants.js";
 
 function corsHeaders(baseUrl: string): Record<string, string> {
   return {
@@ -94,7 +53,7 @@ export async function authenticateUser(baseUrl: string) {
       res.end(JSON.stringify({ result: "success" }));
 
       try {
-        await setToken(baseUrl, token);
+        await authStore.setToken(baseUrl, token);
         cleanupAndResolve(token);
       } catch (error) {
         cleanupAndReject(
@@ -147,17 +106,15 @@ export async function authRequest<T = Record<string, unknown>>(
   options?: RequestInit,
   retryCount = 0,
 ): Promise<T> {
-  // todo: rework to remove reliance on program.opts() when used in non-cli contexts
-  const { baseUrl, apiUrl } = program.opts();
-  const token = getToken(baseUrl);
-  const resolvedApiUrl = apiUrl ?? `${baseUrl}/api`;
+  const { baseUrl, apiUrl } = configStore.getConfig();
+  const token = authStore.getToken(baseUrl);
 
   if (!token) {
     await authenticateUser(baseUrl);
     return authRequest(url, options);
   }
 
-  const response = await fetch(`${resolvedApiUrl}${url}`, {
+  const response = await fetch(`${apiUrl}${url}`, {
     ...options,
     headers: {
       ...options?.headers,
@@ -167,7 +124,7 @@ export async function authRequest<T = Record<string, unknown>>(
 
   if (!response.ok) {
     if (response.status === 401) {
-      await setToken(baseUrl, undefined);
+      await authStore.setToken(baseUrl, undefined);
       if (retryCount < 1) {
         await authenticateUser(baseUrl);
         return authRequest(url, options, retryCount + 1);

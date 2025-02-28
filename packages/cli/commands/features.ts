@@ -1,36 +1,35 @@
 import { input } from "@inquirer/prompts";
 import chalk from "chalk";
-import { Command, program } from "commander";
+import { Command } from "commander";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, join } from "node:path";
 import ora, { Ora } from "ora";
 
 import { createFeature, listFeatures } from "../services/features.js";
-import { getConfig, getProjectPath } from "../utils/config.js";
-import { handleError } from "../utils/error.js";
+import { configStore } from "../stores/config.js";
+import { handleError, MissingAppIdError } from "../utils/errors.js";
 import { genDTS, genFeatureKey, KeyFormatPatterns } from "../utils/gen.js";
-import { options } from "../utils/options.js";
+import {
+  appIdOption,
+  featureKeyOption,
+  featureNameArgument,
+  typesOutOption,
+} from "../utils/options.js";
 
-type AppIdArgs = {
-  appId: string;
-};
-
-type CreateFeatureArgs = AppIdArgs & {
+type CreateFeatureArgs = {
   key?: string;
-};
-
-type GenerateTypesArgs = AppIdArgs & {
-  out: string;
 };
 
 export const createFeatureAction = async (
   name: string | undefined,
-  { appId, key }: CreateFeatureArgs,
+  { key }: CreateFeatureArgs,
 ) => {
-  const { baseUrl } = program.opts();
+  const { baseUrl, appId } = configStore.getConfig();
   let spinner: Ora | undefined;
   let existingKeys: string[] = [];
+
   try {
+    if (!appId) throw new MissingAppIdError();
     spinner = ora(
       `Loading features of app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}...`,
     ).start();
@@ -42,6 +41,7 @@ export const createFeatureAction = async (
   } catch (error) {
     spinner?.fail("Loading features failed");
     void handleError(error, "Features Create");
+    return;
   }
 
   try {
@@ -53,7 +53,7 @@ export const createFeatureAction = async (
     }
 
     if (!key) {
-      const keyFormat = getConfig("keyFormat") ?? "custom";
+      const keyFormat = configStore.getConfig("keyFormat") ?? "custom";
       key = await input({
         message: "New feature key:",
         default: genFeatureKey(name, keyFormat, existingKeys),
@@ -72,31 +72,32 @@ export const createFeatureAction = async (
   }
 };
 
-export const listFeaturesAction = async ({ appId }: AppIdArgs) => {
-  const { baseUrl } = program.opts();
-  const spinner = ora(
-    `Loading features of app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}...`,
-  ).start();
+export const listFeaturesAction = async () => {
+  const { baseUrl, appId } = configStore.getConfig();
+  let spinner: Ora | undefined;
+
   try {
+    if (!appId) throw new MissingAppIdError();
+    spinner = ora(
+      `Loading features of app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}...`,
+    ).start();
     const features = await listFeatures(appId);
     spinner.succeed(
       `Loaded features of app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}`,
     );
     console.table(features);
   } catch (error) {
-    spinner.fail("Loading features failed");
+    spinner?.fail("Loading features failed");
     void handleError(error, "Features List");
   }
 };
 
-export const generateTypesAction = async ({
-  appId,
-  out,
-}: GenerateTypesArgs) => {
-  const { baseUrl } = program.opts();
+export const generateTypesAction = async () => {
+  const { baseUrl, appId, typesPath } = configStore.getConfig();
   let spinner: Ora | undefined;
   let featureKeys: string[] = [];
   try {
+    if (!appId) throw new MissingAppIdError();
     spinner = ora(
       `Loading features of app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}...`,
     ).start();
@@ -107,12 +108,15 @@ export const generateTypesAction = async ({
   } catch (error) {
     spinner?.fail("Loading features failed");
     void handleError(error, "Features Types");
+    return;
   }
 
   try {
     spinner = ora("Generating feature types...").start();
     const types = genDTS(featureKeys);
-    const outPath = isAbsolute(out) ? out : join(getProjectPath(), out);
+    const outPath = isAbsolute(typesPath)
+      ? typesPath
+      : join(configStore.getProjectPath(), typesPath);
     await mkdir(dirname(outPath), { recursive: true });
     await writeFile(outPath, types);
     spinner.succeed("Generated feature types successfully");
@@ -131,39 +135,29 @@ export function registerFeatureCommands(cli: Command) {
   featuresCommand
     .command("create")
     .description("Create a new feature")
-    .requiredOption(
-      options.appId.flags,
-      options.appId.description,
-      getConfig(options.appId.configKey),
-    )
-    .option(options.featureKey.flags, options.featureKey.description)
-    .argument(options.featureName.flags, options.featureName.description)
+    .addOption(appIdOption)
+    .addOption(featureKeyOption)
+    .addArgument(featureNameArgument)
     .action(createFeatureAction);
 
   featuresCommand
     .command("list")
     .description("List all features")
-    .requiredOption(
-      options.appId.flags,
-      options.appId.description,
-      getConfig(options.appId.configKey),
-    )
+    .addOption(appIdOption)
     .action(listFeaturesAction);
 
   featuresCommand
     .command("types")
     .description("Generate feature types")
-    .requiredOption(
-      options.appId.flags,
-      options.appId.description,
-      getConfig(options.appId.configKey),
-    )
-    .requiredOption(
-      options.typesOut.flags,
-      options.typesOut.description,
-      getConfig(options.typesOut.configKey) ?? options.typesOut.fallback,
-    )
+    .addOption(appIdOption)
+    .addOption(typesOutOption)
     .action(generateTypesAction);
+
+  // Update the config with the cli override values
+  featuresCommand.hook("preAction", (command) => {
+    const { appId, out } = command.opts();
+    configStore.setConfig({ appId, typesPath: out });
+  });
 
   cli.addCommand(featuresCommand);
 }
