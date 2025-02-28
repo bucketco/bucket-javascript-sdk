@@ -19,8 +19,8 @@ export function Switch({
       <label class="switch" data-enabled={checked}>
         <input
           checked={checked}
+          class="switch-input"
           name="enabled"
-          style={{ display: "none" }}
           type="checkbox"
           {...props}
         />
