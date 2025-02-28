@@ -44,11 +44,11 @@
 
   &[open] {
     animation: /* easeOutQuint */
-      scale 200ms cubic-bezier(0.22, 1, 0.36, 1),
-      fade 200ms cubic-bezier(0.22, 1, 0.36, 1);
+      scale 150ms cubic-bezier(0.22, 1, 0.36, 1),
+      fade 150ms cubic-bezier(0.22, 1, 0.36, 1);
 
     &::backdrop {
-      animation: fade 200ms cubic-bezier(0.22, 1, 0.36, 1);
+      animation: fade 150ms cubic-bezier(0.22, 1, 0.36, 1);
     }
   }
 }
@@ -61,8 +61,8 @@
 
   &[open] {
     animation: /* easeOutQuint */
-      scale 200ms cubic-bezier(0.22, 1, 0.36, 1),
-      fade 200ms cubic-bezier(0.22, 1, 0.36, 1);
+      scale 150ms cubic-bezier(0.22, 1, 0.36, 1),
+      fade 150ms cubic-bezier(0.22, 1, 0.36, 1);
   }
   &.bottom {
     transform-origin: top center;

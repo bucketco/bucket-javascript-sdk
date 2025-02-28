@@ -48,15 +48,19 @@
   opacity: 0;
   transform: translateY(-7px);
   transition-property: opacity, transform;
-  transition-duration: calc(0.1s * var(--transition-speed));
+  transition-duration: 0.075s;
   transition-timing-function: cubic-bezier(0.75, -0.015, 0.565, 1.055);
 
   &.show {
     opacity: 1;
     transform: translateY(0);
-    transition-delay: calc(
-      0.075s * var(--transition-speed) / var(--n) * var(--i)
-    );
+/* stagger effect where first item (i=0) has no delay,
+       and delay is based on item count (n) so total animation time always is 509ms */
+    transition-delay: calc(0.05s * var(--i) / max(var(--n) - 1, 1));
+}
+
+  &.hide {
+    visibility: hidden;
   }
 }
 
