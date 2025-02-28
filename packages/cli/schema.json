@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Bucket cli schema",
+  "type": "object",
+  "properties": {
+    "baseUrl": {
+      "type": "string"
+    },
+    "apiUrl": {
+      "type": "string"
+    },
+    "appId": {
+      "type": "string"
+    },
+    "typesPath": {
+      "type": "string"
+    },
+    "keyFormat": {
+      "type": "string",
+      "enum": [
+        "custom",
+        "pascalCase",
+        "camelCase",
+        "snakeCaseUpper",
+        "snakeCaseLower",
+        "kebabCaseUpper",
+        "kebabCaseLower"
+      ]
+    }
+  },
+  "required": ["appId"]
+}
