@@ -2,7 +2,7 @@ import { input } from "@inquirer/prompts";
 import chalk from "chalk";
 import { Command } from "commander";
 import { mkdir, writeFile } from "node:fs/promises";
-import { dirname, isAbsolute, join } from "node:path";
+import { dirname, isAbsolute, join, relative } from "node:path";
 import ora, { Ora } from "ora";
 
 import { createFeature, listFeatures } from "../services/features.js";
@@ -63,6 +63,7 @@ export const createFeatureAction = async (
 
     spinner = ora("Creating feature...").start();
     const feature = await createFeature(appId, name, key);
+    // todo: would like to link to feature here but we don't have the env id, only app id
     spinner.succeed(
       `Created feature ${chalk.cyan(feature.name)} with key ${chalk.cyan(feature.key)}. 🎉`,
     );
@@ -94,6 +95,7 @@ export const listFeaturesAction = async () => {
 
 export const generateTypesAction = async () => {
   const { baseUrl, appId, typesPath } = configStore.getConfig();
+
   let spinner: Ora | undefined;
   let featureKeys: string[] = [];
   try {
@@ -114,13 +116,15 @@ export const generateTypesAction = async () => {
   try {
     spinner = ora("Generating feature types...").start();
     const types = genDTS(featureKeys);
+    const projectPath = configStore.getProjectPath();
     const outPath = isAbsolute(typesPath)
       ? typesPath
-      : join(configStore.getProjectPath(), typesPath);
+      : join(projectPath, typesPath);
     await mkdir(dirname(outPath), { recursive: true });
     await writeFile(outPath, types);
-    spinner.succeed("Generated feature types successfully");
-    console.log(chalk.green(`Generated types for ${appId}.`));
+    spinner.succeed(
+      `Generated types for ${chalk.cyan(appId)} in ${chalk.cyan(relative(projectPath, outPath))}.`,
+    );
   } catch (error) {
     spinner?.fail("Type generation failed");
     void handleError(error, "Features Types");

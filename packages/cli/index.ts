@@ -26,7 +26,10 @@ async function main() {
   // Pre-action hook
   program.hook("preAction", () => {
     const { debug, baseUrl, apiUrl } = program.opts();
-    configStore.setConfig({ baseUrl, apiUrl: apiUrl ?? baseUrl + "/api" });
+    configStore.setConfig({
+      baseUrl,
+      apiUrl: apiUrl || (baseUrl && `${baseUrl}/api`),
+    });
 
     if (debug) {
       console.debug(chalk.cyan("\nDebug mode enabled"));

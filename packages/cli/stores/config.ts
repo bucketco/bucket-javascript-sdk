@@ -92,7 +92,7 @@ class ConfigStore {
         );
       }
 
-      this.config = parsed;
+      this.config = { ...this.config, ...parsed };
     } catch {
       // No config file found
     }
