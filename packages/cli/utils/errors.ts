@@ -1,3 +1,4 @@
+import { ExitPromptError } from "@inquirer/core";
 import { ErrorObject } from "ajv";
 import chalk from "chalk";
 
@@ -29,7 +30,9 @@ export class ConfigValidationError extends Error {
 export async function handleError(error: unknown, tag: string) {
   tag = chalk.bold(`\n[${tag}] error:`);
 
-  if (error instanceof Response) {
+  if (error instanceof ExitPromptError) {
+    process.exit(0);
+  } else if (error instanceof Response) {
     const data = await error.json();
     console.error(chalk.red(tag, data.error?.message ?? data.error?.code));
     if (data.validationErrors) {

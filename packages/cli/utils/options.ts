@@ -31,9 +31,14 @@ export const typesOutOption = new Option(
   `Output path for generated feature types. Falls back to typesPath value in ${CONFIG_FILE_NAME}.`,
 );
 
+export const keyFormatOption = new Option(
+  "--key-format [format]",
+  `Feature key format. Falls back to keyFormat value in ${CONFIG_FILE_NAME}.`,
+).choices(keyFormats);
+
 export const featureKeyOption = new Option(
   "-k, --key [feature key]",
   "Feature key. If not provided, a key is generated from the feature's name.",
-).choices(keyFormats);
+);
 
 export const featureNameArgument = new Argument("[name]", "Feature's name.");

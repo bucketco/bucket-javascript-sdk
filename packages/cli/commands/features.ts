@@ -13,6 +13,7 @@ import {
   appIdOption,
   featureKeyOption,
   featureNameArgument,
+  keyFormatOption,
   typesOutOption,
 } from "../utils/options.js";
 
@@ -26,25 +27,8 @@ export const createFeatureAction = async (
 ) => {
   const { baseUrl, appId } = configStore.getConfig();
   let spinner: Ora | undefined;
-  let existingKeys: string[] = [];
-
   try {
     if (!appId) throw new MissingAppIdError();
-    spinner = ora(
-      `Loading features of app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}...`,
-    ).start();
-    const features = await listFeatures(appId);
-    existingKeys = features.map((f) => f.key);
-    spinner.succeed(
-      `Loaded features of app ${chalk.cyan(appId)} at from ${chalk.cyan(baseUrl)}`,
-    );
-  } catch (error) {
-    spinner?.fail("Loading features failed");
-    void handleError(error, "Features Create");
-    return;
-  }
-
-  try {
     if (!name) {
       name = await input({
         message: "New feature name:",
@@ -56,16 +40,18 @@ export const createFeatureAction = async (
       const keyFormat = configStore.getConfig("keyFormat") ?? "custom";
       key = await input({
         message: "New feature key:",
-        default: genFeatureKey(name, keyFormat, existingKeys),
+        default: genFeatureKey(name, keyFormat),
         validate: KeyFormatPatterns[keyFormat].validate,
       });
     }
 
-    spinner = ora("Creating feature...").start();
+    spinner = ora(
+      `Creating feature for app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}...`,
+    ).start();
     const feature = await createFeature(appId, name, key);
     // todo: would like to link to feature here but we don't have the env id, only app id
     spinner.succeed(
-      `Created feature ${chalk.cyan(feature.name)} with key ${chalk.cyan(feature.key)}. 🎉`,
+      `Created feature ${chalk.cyan(feature.name)} with key ${chalk.cyan(feature.key)} at ${chalk.cyan(baseUrl)}. 🎉`,
     );
   } catch (error) {
     spinner?.fail("Feature creation failed");
@@ -140,6 +126,7 @@ export function registerFeatureCommands(cli: Command) {
     .command("create")
     .description("Create a new feature")
     .addOption(appIdOption)
+    .addOption(keyFormatOption)
     .addOption(featureKeyOption)
     .addArgument(featureNameArgument)
     .action(createFeatureAction);
@@ -158,9 +145,9 @@ export function registerFeatureCommands(cli: Command) {
     .action(generateTypesAction);
 
   // Update the config with the cli override values
-  featuresCommand.hook("preAction", (command) => {
-    const { appId, out } = command.opts();
-    configStore.setConfig({ appId, typesPath: out });
+  featuresCommand.hook("preAction", (_, command) => {
+    const { appId, keyFormat, out } = command.opts();
+    configStore.setConfig({ appId, keyFormat, typesPath: out });
   });
 
   cli.addCommand(featuresCommand);

@@ -63,28 +63,8 @@ export const KeyFormatPatterns: Record<KeyFormat, KeyFormatPattern> = {
   },
 };
 
-function nextAvailableKey(
-  baseKey: string,
-  format: KeyFormat,
-  existingKeys: string[],
-  attempt: number = 1,
-): string {
-  const separator = format.includes("snake") ? "_" : "-";
-  const suggestedKey =
-    attempt === 1 ? baseKey : `${baseKey}${separator}${attempt}`;
-
-  return existingKeys.includes(suggestedKey)
-    ? nextAvailableKey(baseKey, format, existingKeys, attempt + 1)
-    : suggestedKey;
-}
-
-export function genFeatureKey(
-  input: string,
-  format: KeyFormat,
-  existingKeys: string[],
-): string {
-  const key = KeyFormatPatterns[format].transform(input);
-  return nextAvailableKey(key, format, existingKeys);
+export function genFeatureKey(input: string, format: KeyFormat): string {
+  return KeyFormatPatterns[format].transform(input);
 }
 
 export const genDTS = (keys: string[]) => {
