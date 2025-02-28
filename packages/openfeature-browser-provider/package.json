@@ -35,7 +35,7 @@
     }
   },
   "dependencies": {
-    "@bucketco/browser-sdk": "3.0.0"
+    "@bucketco/browser-sdk": "3.0.1"
   },
   "devDependencies": {
     "@bucketco/eslint-config": "0.0.2",
