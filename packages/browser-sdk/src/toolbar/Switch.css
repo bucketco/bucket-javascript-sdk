@@ -1,11 +1,30 @@
 .switch {
   cursor: pointer;
+  position: relative;
+}
+
+.switch-input {
+  border: 0px;
+  clip: rect(0px, 0px, 0px, 0px);
+  height: 1px;
+  width: 1px;
+  margin: -1px;
+  padding: 0px;
+  overflow: hidden;
+  white-space: nowrap;
+  position: absolute;
+}
+
+.switch-input:focus-visible + .switch-track {
+  outline: none;
+  box-shadow: 0 0 0 1px #fff;
 }
 
 .switch-track {
   position: relative;
   transition: background 0.1s ease;
   background: #606476;
+  border-radius: 999px;
 }
 
 .switch[data-enabled="true"] .switch-track {
