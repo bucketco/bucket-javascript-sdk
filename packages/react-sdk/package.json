@@ -1,6 +1,6 @@
 {
   "name": "@bucketco/react-sdk",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -34,7 +34,7 @@
     }
   },
   "dependencies": {
-    "@bucketco/browser-sdk": "3.0.0",
+    "@bucketco/browser-sdk": "3.0.1",
     "canonical-json": "^0.0.4",
     "rollup": "^4.2.0"
   },
