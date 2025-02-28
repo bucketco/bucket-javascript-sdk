@@ -77,10 +77,6 @@ export default function Toolbar({
     a.key.localeCompare(b.key),
   );
 
-  const sortedFeatures = [...searchedFeatures].sort((a, b) =>
-    a.key.localeCompare(b.key),
-  );
-
   const appBaseUrl = bucketClient.getConfig().appBaseUrl;
 
   const { isOpen, close, toggle } = useDialog();
