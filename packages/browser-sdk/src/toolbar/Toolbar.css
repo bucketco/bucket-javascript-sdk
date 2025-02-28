@@ -59,6 +59,7 @@
   --bg-color: hsla(230, 9%, 8%, 0.85);
   --bg-light-color: hsla(230, 9%, 6%, 0.85);
   --border-color: hsla(0, 0%, 100%, 0.1);
+  --dimmed-color: hsla(230, 9%, 40%, 1);
   --bg-blur: 3px;
 
   --logo-color: white;
@@ -97,7 +98,7 @@
     inset 0px 1px rgba(255, 255, 255, 0.1);
   border-radius: 7px;
   z-index: 999999;
-  min-width: 200px;
+  min-width: 220px;
   padding: 0;
 
   --visible-features: 15;

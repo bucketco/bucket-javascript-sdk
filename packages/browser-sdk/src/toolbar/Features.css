@@ -65,6 +65,15 @@
   text-overflow: ellipsis;
   width: auto;
   padding: 6px 6px 6px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .feature-icon {
+    height: 15px;
+    width: 15px;
+    color: var(--dimmed-color);
+  }
 }
 
 .feature-link {

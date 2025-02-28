@@ -1,6 +1,8 @@
 import { h } from "preact";
 import { useEffect, useState } from "preact/hooks";
 
+import { Feature } from "../ui/icons/Feature";
+
 import { Switch } from "./Switch";
 import { FeatureItem } from "./Toolbar";
 
@@ -60,6 +62,7 @@ function FeatureRow({
       style={{ "--i": index }}
     >
       <td class="feature-name-cell">
+        <Feature class="feature-icon" />
         <a
           class="feature-link"
           href={`${appBaseUrl}/envs/current/features/by-key/${feature.key}`}
