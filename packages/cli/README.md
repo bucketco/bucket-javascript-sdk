@@ -24,6 +24,7 @@ pnpm add --save-dev @bucketco/cli
 When installed locally, use the CLI with npx:
 
 ```bash
+# npm
 npx bucket <command>
 ```
 
@@ -35,6 +36,14 @@ or as a `package.json` script
     "bucket": "bucket"
   }
 }
+```
+
+```bash
+# npm
+npm bucket <command>
+
+# yarn
+yarn bucket <command>
 ```
 
 ### Global Installation
