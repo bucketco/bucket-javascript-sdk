@@ -8,7 +8,7 @@ import {
   CONFIG_FILE_NAME,
   DEFAULT_API_URL,
   DEFAULT_BASE_URL,
-  DEFAULT_TYPES_PATH,
+  DEFAULT_TYPES_OUTPUT,
   SCHEMA_URL,
 } from "../utils/constants.js";
 import { ConfigValidationError, handleError } from "../utils/errors.js";
@@ -30,7 +30,7 @@ type Config = {
   baseUrl: string;
   apiUrl: string;
   appId: string | undefined;
-  typesPath: string;
+  typesOutput: string;
   keyFormat: KeyFormat;
 };
 
@@ -39,7 +39,7 @@ const defaultConfig: Config = {
   baseUrl: DEFAULT_BASE_URL,
   apiUrl: DEFAULT_API_URL,
   appId: undefined,
-  typesPath: DEFAULT_TYPES_PATH,
+  typesOutput: DEFAULT_TYPES_OUTPUT,
   keyFormat: "custom",
 };
 

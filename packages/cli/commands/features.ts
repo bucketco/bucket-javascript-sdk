@@ -80,7 +80,7 @@ export const listFeaturesAction = async () => {
 };
 
 export const generateTypesAction = async () => {
-  const { baseUrl, appId, typesPath } = configStore.getConfig();
+  const { baseUrl, appId, typesOutput } = configStore.getConfig();
 
   let spinner: Ora | undefined;
   let featureKeys: string[] = [];
@@ -103,9 +103,9 @@ export const generateTypesAction = async () => {
     spinner = ora("Generating feature types...").start();
     const types = genDTS(featureKeys);
     const projectPath = configStore.getProjectPath();
-    const outPath = isAbsolute(typesPath)
-      ? typesPath
-      : join(projectPath, typesPath);
+    const outPath = isAbsolute(typesOutput)
+      ? typesOutput
+      : join(projectPath, typesOutput);
     await mkdir(dirname(outPath), { recursive: true });
     await writeFile(outPath, types);
     spinner.succeed(
@@ -147,7 +147,7 @@ export function registerFeatureCommands(cli: Command) {
   // Update the config with the cli override values
   featuresCommand.hook("preAction", (_, command) => {
     const { appId, keyFormat, out } = command.opts();
-    configStore.setConfig({ appId, keyFormat, typesPath: out });
+    configStore.setConfig({ appId, keyFormat, typesOutput: out });
   });
 
   cli.addCommand(featuresCommand);

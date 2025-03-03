@@ -12,7 +12,7 @@
     "appId": {
       "type": "string"
     },
-    "typesPath": {
+    "typesOutput": {
       "type": "string"
     },
     "keyFormat": {

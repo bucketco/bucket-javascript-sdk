@@ -6,7 +6,7 @@ import ora, { Ora } from "ora";
 
 import { App, listApps } from "../services/bootstrap.js";
 import { configStore } from "../stores/config.js";
-import { chalkBrand, DEFAULT_TYPES_PATH } from "../utils/constants.js";
+import { chalkBrand, DEFAULT_TYPES_OUTPUT } from "../utils/constants.js";
 import { handleError } from "../utils/errors.js";
 import { initOverrideOption } from "../utils/options.js";
 
@@ -69,16 +69,16 @@ export const initAction = async (args: InitArgs = {}) => {
       apps.find((app) => app.id === appId)?.featureKeyFormat ?? "custom";
 
     // Get types output path
-    const typesPath = await input({
+    const typesOutput = await input({
       message: "Where should we generate the types?",
-      default: DEFAULT_TYPES_PATH,
+      default: DEFAULT_TYPES_OUTPUT,
     });
 
     // Update config
     configStore.setConfig({
       appId,
       keyFormat,
-      typesPath,
+      typesOutput,
     });
 
     // Create config file
