@@ -257,6 +257,13 @@ export type InitOptions = {
   staleTimeMs?: number;
 
   /**
+   * When proxying requests, you may want to include credentials like cookies
+   * so you can authorize the request in the proxy.
+   * This option controls the `credentials` option of the fetch API.
+   */
+  credentials?: "include" | "same-origin" | "omit";
+
+  /**
    * Base URL of Bucket servers for SSE connections used by AutoFeedback.
    */
   sseBaseUrl?: string;
@@ -387,6 +394,7 @@ export class BucketClient {
     this.httpClient = new HttpClient(this.publishableKey, {
       baseUrl: this.config.apiBaseUrl,
       sdkVersion: opts?.sdkVersion,
+      credentials: opts?.credentials,
     });
 
     this.featuresClient = new FeaturesClient(
@@ -458,7 +466,6 @@ export class BucketClient {
     }
 
     await this.featuresClient.initialize();
-
     if (this.context.user && this.config.enableTracking) {
       this.user().catch((e) => {
         this.logger.error("error sending user", e);
@@ -476,12 +483,14 @@ export class BucketClient {
    * Add a hook to the client.
    *
    * @param hook Hook to add.
+   * @returns A function to remove the hook.
    */
   on<THookType extends keyof HookArgs>(
     type: THookType,
     handler: (args0: HookArgs[THookType]) => void,
   ) {
     this.hooks.addHook(type, handler);
+    return () => this.hooks.removeHook(type, handler);
   }
 
   /**
@@ -796,8 +805,6 @@ export class BucketClient {
   /**
    * Stop the SDK.
    * This will stop any automated feedback surveys.
-   * It will also stop the features client, including removing
-   * any onFeaturesUpdated listeners.
    *
    **/
   async stop() {

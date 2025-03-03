@@ -3,11 +3,14 @@ import { API_BASE_URL, SDK_VERSION, SDK_VERSION_HEADER_NAME } from "./config";
 export interface HttpClientOptions {
   baseUrl?: string;
   sdkVersion?: string;
+  credentials?: RequestCredentials;
 }
 
 export class HttpClient {
   private readonly baseUrl: string;
   private readonly sdkVersion: string;
+
+  private readonly fetchOptions: RequestInit;
 
   constructor(
     public publishableKey: string,
@@ -21,6 +24,7 @@ export class HttpClient {
       this.baseUrl += "/";
     }
     this.sdkVersion = opts.sdkVersion ?? SDK_VERSION;
+    this.fetchOptions = { credentials: opts.credentials };
   }
 
   getUrl(path: string): URL {
@@ -50,13 +54,14 @@ export class HttpClient {
     url.search = params.toString();
 
     if (timeoutMs === undefined) {
-      return fetch(url);
+      return fetch(url, this.fetchOptions);
     }
 
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeoutMs);
 
     const res = await fetch(url, {
+      ...this.fetchOptions,
       signal: controller.signal,
     });
     clearTimeout(id);
@@ -73,6 +78,7 @@ export class HttpClient {
     body: any;
   }): ReturnType<typeof fetch> {
     return fetch(this.getUrl(path), {
+      ...this.fetchOptions,
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -47,13 +47,19 @@
   opacity: 0;
   transform: translateY(-7px);
   transition-property: opacity, transform;
-  transition-duration: 0.1s;
+  transition-duration: 0.075s;
   transition-timing-function: cubic-bezier(0.75, -0.015, 0.565, 1.055);
 
-  &.show {
+  &.show-on-open {
     opacity: 1;
     transform: translateY(0);
-    transition-delay: calc(0.01s * var(--i));
+    /* stagger effect where first item (i=0) has no delay,
+       and delay is based on item count (n) so total animation time always is 509ms */
+    transition-delay: calc(0.05s * var(--i) / max(var(--n) - 1, 1));
+  }
+
+  &.not-visible {
+    visibility: hidden;
   }
 }
 
@@ -63,12 +69,23 @@
   text-overflow: ellipsis;
   width: auto;
   padding: 6px 6px 6px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .feature-icon {
+    height: 15px;
+    width: 15px;
+    color: var(--dimmed-color);
+  }
 }
 
 .feature-link {
   color: var(--text-color);
   text-decoration: none;
-  &:hover {
+
+  &:hover,
+  &:focus-visible {
     text-decoration: underline;
   }
 }
@@ -81,6 +98,13 @@
 
 .reset {
   color: var(--brand300);
+
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration: underline;
+  }
 }
 
 .feature-switch-cell {
