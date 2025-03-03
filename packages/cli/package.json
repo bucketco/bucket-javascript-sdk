@@ -6,7 +6,7 @@
   "main": "./dist/index.js",
   "type": "module",
   "license": "MIT",
-  "author": "Bucket Co.",
+  "author": "Bucket.",
   "homepage": "https://docs.bucket.co/",
   "repository": {
     "type": "git",

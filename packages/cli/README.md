@@ -2,13 +2,16 @@
 
 Command-line interface for interacting with Bucket services. The CLI allows you to manage apps, features, authentication, and generate TypeScript types for your Bucket features. With this tool, you can streamline your feature flagging workflow directly from your terminal.
 
-## Installation
+## Quick Start
 
-You can install the Bucket CLI either locally to your project or globally on your system.
+Get started quickly by running the CLI directly: initializing the CLI, creating a feature, and generate the types all at once.
 
-### Local Installation (Recommended)
+```bash
+# Initialize CLI (if not setup), create a feature, and generate types all at once
+npx @bucketco/cli new
+```
 
-Local installation is recommended for project-specific usage and ensures consistent CLI versions across your team.
+or install it locally
 
 ```bash
 # npm
@@ -16,68 +19,34 @@ npm install --save-dev @bucketco/cli
 
 # yarn
 yarn add --dev @bucketco/cli
-
-# pnpm
-pnpm add --save-dev @bucketco/cli
 ```
 
-When installed locally, use the CLI with npx:
+then
 
 ```bash
 # npm
-npx bucket <command>
-```
-
-or as a `package.json` script
-
-```json
-{
-  "scripts": {
-    "bucket": "bucket"
-  }
-}
-```
-
-```bash
-# npm
-npm bucket <command>
+npx bucket new
 
 # yarn
-yarn bucket <command>
+yarn bucket new
 ```
 
-### Global Installation
+### Global installation
 
-Global installation makes the CLI available system-wide.
+You can also install the CLI globally adding the it to your PATH allowing you to use the shorthand `bucket`
 
 ```bash
-# npm
 npm install -g @bucketco/cli
 
-# yarn
-yarn global add @bucketco/cli
-
-# pnpm
-pnpm add -g @bucketco/cli
-```
-
-When installed globally, use the CLI directly:
-
-```bash
 bucket <command>
 ```
 
-## Quick Start
+### Individual commands
 
-Get started quickly with the following commands:
+Instead of running `new` you can call each step individually.
 
 ```bash
-# Initialize CLI (if not setup), create a feature, and generate types all at once
-bucket new "My Feature"
-
-# Or perform operations individually:
-
-# Initialize Bucket in your project
+# Initialize Bucket in your project (if not already setup)
 bucket init
 
 # Create a new feature
