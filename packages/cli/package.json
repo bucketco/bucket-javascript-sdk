@@ -1,6 +1,6 @@
 {
   "name": "@bucketco/cli",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "packageManager": "yarn@4.1.1",
   "description": "CLI for Bucket service",
   "main": "./dist/index.js",
@@ -29,8 +29,8 @@
     ".": "./dist/index.js"
   },
   "scripts": {
-    "build": "tsc",
-    "bucket": "yarn build && node dist/index.js",
+    "build": "tsc && shx chmod +x dist/index.js",
+    "bucket": "yarn build && ./dist/index.js",
     "lint": "eslint .",
     "lint:ci": "eslint --output-file eslint-report.json --format json .",
     "prettier": "prettier --check .",
@@ -53,6 +53,7 @@
     "@types/node": "^22.5.1",
     "eslint": "^9.21.0",
     "prettier": "^3.5.2",
+    "shx": "^0.3.4",
     "typescript": "^5.5.4"
   }
 }

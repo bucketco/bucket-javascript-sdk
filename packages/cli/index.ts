@@ -52,7 +52,7 @@ async function main() {
 
 // Run the main function if this file is run directly and not imported
 if (
-  process.argv[1].endsWith(join("@bucketco", "cli", "dist", "index.js")) ||
+  process.argv[1].endsWith(join("cli", "dist", "index.js")) ||
   process.argv[1].endsWith(join(".bin", "bucket"))
 ) {
   void main();
