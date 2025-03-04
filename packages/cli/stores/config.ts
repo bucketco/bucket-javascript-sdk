@@ -3,6 +3,7 @@ import { findUp } from "find-up";
 import JSON5 from "json5";
 import { readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import {
   CONFIG_FILE_NAME,
@@ -56,11 +57,12 @@ class ConfigStore {
 
   protected async createValidator() {
     try {
-      const schemaPath = await findUp("schema.json", {
-        cwd: import.meta.url,
-        stopAt: "cli",
-      });
-      if (!schemaPath) return;
+      // Using current config store file, resolve the schema.json path
+      const filePath = fileURLToPath(import.meta.url);
+      const schemaPath = join(
+        filePath.substring(0, filePath.indexOf("cli") + 3),
+        "schema.json",
+      );
       const content = await readFile(schemaPath, "utf-8");
       const parsed = JSON5.parse<Config>(content);
       const ajv = new Ajv();
