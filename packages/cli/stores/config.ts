@@ -56,7 +56,10 @@ class ConfigStore {
 
   protected async createValidator() {
     try {
-      const schemaPath = await findUp("schema.json");
+      const schemaPath = await findUp("schema.json", {
+        cwd: import.meta.url,
+        stopAt: "cli",
+      });
       if (!schemaPath) return;
       const content = await readFile(schemaPath, "utf-8");
       const parsed = JSON5.parse<Config>(content);
