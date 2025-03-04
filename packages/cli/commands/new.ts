@@ -46,6 +46,6 @@ export function registerNewCommand(cli: Command) {
   // Update the config with the cli override values
   cli.hook("preAction", (command) => {
     const { appId, keyFormat, out } = command.opts();
-    configStore.setConfig({ appId, keyFormat, typesPath: out });
+    configStore.setConfig({ appId, keyFormat, typesOutput: out });
   });
 }

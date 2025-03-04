@@ -28,7 +28,7 @@ export const initOverrideOption = new Option(
 
 export const typesOutOption = new Option(
   "-o, --out [path]",
-  `Output path for generated feature types. Falls back to typesPath value in ${CONFIG_FILE_NAME}.`,
+  `Output path for generated feature types. Falls back to typesOutput value in ${CONFIG_FILE_NAME}.`,
 );
 
 export const keyFormatOption = new Option(

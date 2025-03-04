@@ -1,10 +1,17 @@
 {
   "name": "@bucketco/cli",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "packageManager": "yarn@4.1.1",
   "description": "CLI for Bucket service",
   "main": "./dist/index.js",
   "type": "module",
+  "license": "MIT",
+  "author": "Bucket.",
+  "homepage": "https://docs.bucket.co/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bucketco/bucket-javascript-sdk.git"
+  },
   "engines": {
     "node": ">=18.0.0"
   },
@@ -15,6 +22,9 @@
     "dist",
     "schema.json"
   ],
+  "exports": {
+    ".": "./dist/index.js"
+  },
   "scripts": {
     "build": "tsc",
     "bucket": "yarn build && node dist/index.js",
