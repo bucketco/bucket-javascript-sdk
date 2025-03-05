@@ -136,6 +136,7 @@ describe("BucketClient", () => {
       trackHook.mockReset();
       userHook.mockReset();
       companyHook.mockReset();
+      checkHook.mockReset();
       checkHookIsEnabled.mockReset();
       checkHookConfig.mockReset();
       featuresUpdated.mockReset();
