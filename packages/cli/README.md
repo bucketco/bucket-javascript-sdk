@@ -93,12 +93,12 @@ You can override these settings using command-line options for individual comman
 Initialize a new Bucket configuration in your project. This creates a `bucket.config.json` file with your settings and prompts for any required information not provided via options.
 
 ```bash
-bucket init [--force]
+bucket init [--overwrite]
 ```
 
 Options:
 
-- `--force`: Overwrite existing configuration file if one exists
+- `--overwrite`: Overwrite existing configuration file if one exists
 - `--app-id <id>`: Set the application ID
 - `--key-format <format>`: Set the key format for features
 
