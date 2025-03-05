@@ -249,7 +249,7 @@ export class BucketClient {
       apiBaseUrl: (config.apiBaseUrl ?? config.host) || API_BASE_URL,
       headers: {
         "Content-Type": "application/json",
-        [SDK_VERSION_HEADER_NAME]: SDK_VERSION,
+        [SDK_VERSION_HEADER_NAME]: options.clientVersion ?? SDK_VERSION,
         ["Authorization"]: `Bearer ${config.secretKey}`,
       },
       rateLimiter: newRateLimiter(FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS),

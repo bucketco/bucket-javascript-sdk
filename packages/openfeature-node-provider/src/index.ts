@@ -17,9 +17,13 @@ import {
   Context as BucketContext,
 } from "@bucketco/node-sdk";
 
+import { version } from "../package.json";
+
 type ProviderOptions = ClientOptions & {
   contextTranslator?: (context: EvaluationContext) => BucketContext;
 };
+
+export const SDK_VERSION = `of-node-sdk/${version}`;
 
 export const defaultContextTranslator = (
   context: EvaluationContext,
@@ -65,7 +69,7 @@ export class BucketNodeProvider implements Provider {
   }
 
   constructor({ contextTranslator, ...opts }: ProviderOptions) {
-    this._client = new BucketClient(opts);
+    this._client = new BucketClient({ clientVersion: SDK_VERSION, opts });
     this.contextTranslator = contextTranslator ?? defaultContextTranslator;
   }
 

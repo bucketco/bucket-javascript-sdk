@@ -554,6 +554,13 @@ export type ClientOptions = {
    * set through the environment variable BUCKET_CONFIG_FILE.
    */
   configFile?: string;
+
+  /**
+   * Send this string to the bucket servers as Bucket-Sdk-Version header.
+   * This is used for debugging and support purposes.
+   * @internal
+   */
+  clientVersion?: string;
 };
 
 /**
