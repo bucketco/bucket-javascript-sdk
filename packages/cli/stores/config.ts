@@ -13,6 +13,7 @@ import {
   SCHEMA_URL,
 } from "../utils/constants.js";
 import { ConfigValidationError, handleError } from "../utils/errors.js";
+import { stripTrailingSlash } from "../utils/path.js";
 
 export const keyFormats = [
   "custom",
@@ -88,7 +89,9 @@ class ConfigStore {
       if (!this.configPath) return;
 
       const content = await readFile(this.configPath, "utf-8");
-      const parsed = JSON5.parse<Config>(content);
+      const parsed = JSON5.parse<Partial<Config>>(content);
+      parsed.baseUrl = stripTrailingSlash(parsed.baseUrl?.trim());
+      parsed.apiUrl = stripTrailingSlash(parsed.apiUrl?.trim());
 
       if (!this.validateConfig!(parsed)) {
         void handleError(
