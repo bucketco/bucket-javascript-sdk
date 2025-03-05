@@ -480,30 +480,31 @@ export class BucketClient {
   }
 
   /**
-   * Add a hook to the client.
+   * Add an event listener
    *
-   * @param hook Hook to add.
+   * @param type Type of events to listen for
+   * @param handler The function to call when the event is triggered.
    * @returns A function to remove the hook.
    */
   on<THookType extends keyof HookArgs>(
     type: THookType,
     handler: (args0: HookArgs[THookType]) => void,
   ) {
-    this.hooks.addHook(type, handler);
-    return () => this.hooks.removeHook(type, handler);
+    return this.hooks.addHook(type, handler);
   }
 
   /**
-   * Remove a hook from the client.
+   * Remove an event listener
    *
-   * @param hook Hook to add.
-   * @returns A function to remove the hook.
+   * @param type Type of event to remove.
+   * @param handler The same function that was passed to `on`.
+   *
    */
   off<THookType extends keyof HookArgs>(
     type: THookType,
     handler: (args0: HookArgs[THookType]) => void,
   ) {
-    return this.hooks.removeHook(type, handler);
+    this.hooks.removeHook(type, handler);
   }
 
   /**
