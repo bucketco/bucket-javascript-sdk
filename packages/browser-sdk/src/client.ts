@@ -799,6 +799,7 @@ export class BucketClient {
         checkEvent.action == "check-config" ? "configCheck" : "enabledCheck",
         checkEvent,
       );
+      this.hooks.trigger("check", checkEvent);
     });
   }
 
