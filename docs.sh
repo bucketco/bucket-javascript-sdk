@@ -2,7 +2,7 @@
 
 set -e
 
-typedoc
+typedoc --treatWarningsAsErrors
 
 # We need to fix the links in the generated markdown files.
 # Typedoc generates anchors for properties in tables which can collide with anchors for types.

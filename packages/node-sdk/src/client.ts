@@ -413,12 +413,7 @@ export class BucketClient {
   /**
    * Tracks an event in Bucket.
 
-   * @param event - The event to track.
-   * @param userId - The userId of the user who performed the event
-   * @param opts - The options.
-   * @param opts.attributes - The attributes of the event (optional).
-   * @param opts.meta - The meta context associated with tracking (optional).
-   * @param opts.companyId - Optional company ID for the event (optional).
+   * @param options.companyId - Optional company ID for the event (optional).
    *
    * @throws An error if the user is not set or the event is invalid or the options are invalid.
    * @remarks
@@ -1228,7 +1223,6 @@ export class BoundBucketClient {
    * @param client - The `BucketClient` to use.
    * @param options - The options for the client.
    * @param options.enableTracking - Whether to enable tracking for the client.
-   * @param options.context - The context for the client.
    *
    * @internal
    */

@@ -31,3 +31,8 @@ export type Position =
       anchor: HTMLElement | null;
       placement?: PopoverPlacement;
     };
+
+export interface ToolbarPosition {
+  placement: DialogPlacement;
+  offset?: Offset;
+}
