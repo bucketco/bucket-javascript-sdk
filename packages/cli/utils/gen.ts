@@ -77,8 +77,9 @@ export function genRemoteConfig(remoteConfigs?: RemoteConfig[]) {
   const variants = remoteConfigs?.[0]?.variants;
   if (!variants?.length) return "boolean";
   const type = JSONToType(
-    remoteConfigs![0].variants?.map(({ variant }) => variant),
-    ["key", "payload.model"],
+    remoteConfigs![0].variants?.map(({ variant: { payload } }) => ({
+      config: { payload },
+    })),
   );
   // Indent all but first line to 4 spaces
   return type

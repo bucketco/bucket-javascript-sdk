@@ -10,7 +10,6 @@ type JSONPrimitive =
 // Type AST to represent TypeScript types
 export type TypeAST =
   | { kind: "primitive"; type: string }
-  | { kind: "literal"; value: string | number | boolean }
   | { kind: "array"; elementType: TypeAST }
   | {
       kind: "object";
@@ -18,43 +17,15 @@ export type TypeAST =
     }
   | { kind: "union"; types: TypeAST[] };
 
-function isLiteralPath(path: string[], literalPaths: string[]): boolean {
-  if (!literalPaths.length) return false;
-
-  return literalPaths.some((dotPath) => {
-    const literalPath = dotPath.split(".");
-
-    // Handle wildcard paths (e.g. '*.id')
-    if (literalPath.includes("*")) {
-      return literalPath.every(
-        (segment, index) =>
-          segment === "*" ||
-          (index < path.length &&
-            segment === path[path.length - literalPath.length + index]),
-      );
-    }
-
-    // Match exact paths
-    return (
-      literalPath.length === path.length &&
-      literalPath.every((segment, index) => segment === path[index])
-    );
-  });
-}
-
-// Convert JSON value to TypeAST with path tracking
-export function toTypeAST(
-  value: JSONPrimitive,
-  path: string[] = [],
-  literalPaths: string[] = [],
-): TypeAST {
+// Convert JSON value to TypeAST
+export function toTypeAST(value: JSONPrimitive, path: string[] = []): TypeAST {
   if (value === null) return { kind: "primitive", type: "null" };
 
   if (Array.isArray(value)) {
     return {
       kind: "array",
       elementType: value.length
-        ? toTypeAST(value[0], [...path, "0"], literalPaths)
+        ? toTypeAST(value[0], [...path, "0"])
         : { kind: "primitive", type: "any" },
     };
   }
@@ -64,15 +35,13 @@ export function toTypeAST(
       kind: "object",
       properties: Object.entries(value).map(([key, val]) => ({
         key,
-        type: toTypeAST(val, [...path, key], literalPaths),
+        type: toTypeAST(val, [...path, key]),
         optional: false,
       })),
     };
   }
 
-  return isLiteralPath(path, literalPaths)
-    ? { kind: "literal", value }
-    : { kind: "primitive", type: typeof value };
+  return { kind: "primitive", type: typeof value };
 }
 
 // Merge multiple TypeASTs into one
@@ -83,14 +52,13 @@ export function mergeTypeASTs(types: TypeAST[]): TypeAST {
   // Group ASTs by kind
   const byKind = {
     primitive: types.filter((t) => t.kind === "primitive"),
-    literal: types.filter((t) => t.kind === "literal"),
     array: types.filter((t) => t.kind === "array"),
     object: types.filter((t) => t.kind === "object"),
   };
 
   // Create a union for mixed kinds
   const hasMixedKinds =
-    (byKind.primitive.length + byKind.literal.length > 0 &&
+    (byKind.primitive.length > 0 &&
       (byKind.array.length > 0 || byKind.object.length > 0)) ||
     (byKind.array.length > 0 && byKind.object.length > 0);
 
@@ -98,31 +66,8 @@ export function mergeTypeASTs(types: TypeAST[]): TypeAST {
     return { kind: "union", types };
   }
 
-  // Handle primitives and literals
-  if (byKind.primitive.length + byKind.literal.length === types.length) {
-    // Process literals if any exist
-    if (byKind.literal.length > 0) {
-      // Create a map for deduplication
-      const uniqueMap = new Map();
-
-      // Add literals with stringified values as keys
-      byKind.literal.forEach((lit) =>
-        uniqueMap.set(JSON.stringify(lit.value), lit),
-      );
-
-      // Add primitives with prefixed type as keys
-      byKind.primitive.forEach((prim) =>
-        uniqueMap.set(`__primitive_${prim.type}`, prim),
-      );
-
-      const uniqueTypes = Array.from(uniqueMap.values());
-
-      return uniqueTypes.length === 1
-        ? uniqueTypes[0]
-        : { kind: "union", types: uniqueTypes };
-    }
-
-    // Handle only primitives
+  // Handle primitives
+  if (byKind.primitive.length === types.length) {
     const uniqueTypes = [...new Set(byKind.primitive.map((p) => p.type))];
     return uniqueTypes.length === 1
       ? { kind: "primitive", type: uniqueTypes[0] }
@@ -180,11 +125,6 @@ export function stringifyTypeAST(ast: TypeAST, nestLevel = 0): string {
     case "primitive":
       return ast.type;
 
-    case "literal":
-      return typeof ast.value === "string"
-        ? `"${ast.value.replace(/"/g, '\\"')}"`
-        : String(ast.value);
-
     case "array":
       return `(${stringifyTypeAST(ast.elementType, nestLevel)})[]`;
 
@@ -211,14 +151,9 @@ export function stringifyTypeAST(ast: TypeAST, nestLevel = 0): string {
   }
 }
 
-// Convert JSON array to TypeScript type with literal paths support
-export function JSONToType(
-  json: JSONPrimitive[],
-  literalPaths: string[] = [],
-): string | null {
+// Convert JSON array to TypeScript type
+export function JSONToType(json: JSONPrimitive[]): string | null {
   if (!json.length) return null;
 
-  return stringifyTypeAST(
-    mergeTypeASTs(json.map((item) => toTypeAST(item, [], literalPaths))),
-  );
+  return stringifyTypeAST(mergeTypeASTs(json.map((item) => toTypeAST(item))));
 }
