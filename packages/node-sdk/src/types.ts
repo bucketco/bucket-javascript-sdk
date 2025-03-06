@@ -125,7 +125,7 @@ export interface RawFeature {
   missingContextFields?: string[];
 }
 
-type EmptyFeatureRemoteConfig = { key: undefined; payload: undefined };
+export type EmptyFeatureRemoteConfig = { key: undefined; payload: undefined };
 
 /**
  * A remotely managed configuration value for a feature.
@@ -171,7 +171,7 @@ export interface Feature<
   track(): Promise<void>;
 }
 
-type FullFeatureOverride = {
+export type FullFeatureOverride = {
   isEnabled: boolean;
   config?: {
     key: string;
@@ -179,7 +179,7 @@ type FullFeatureOverride = {
   };
 };
 
-type FeatureOverride = FullFeatureOverride | boolean;
+export type FeatureOverride = FullFeatureOverride | boolean;
 
 /**
  * Describes a collection of evaluated features.
@@ -205,7 +205,7 @@ export type TypedFeatures = keyof Features extends never
         : Feature;
     };
 
-type TypedFeatureKey = keyof TypedFeatures;
+export type TypedFeatureKey = keyof TypedFeatures;
 
 /**
  * Describes the feature overrides.

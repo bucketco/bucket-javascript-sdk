@@ -1,9 +1,6 @@
 import { CheckEvent, RawFeatures } from "./feature/features";
 import { CompanyContext, UserContext } from "./context";
 
-/**
- * @internal
- */
 export interface HookArgs {
   configCheck: CheckEvent;
   enabledCheck: CheckEvent;
