@@ -33,16 +33,89 @@ export type {
   UserContext,
 };
 
+type EmptyFeatureRemoteConfig = { key: undefined; payload: undefined };
+
+/**
+ * A remotely managed configuration value for a feature.
+ */
+export type FeatureRemoteConfig =
+  | {
+      /**
+       * The key of the matched configuration value.
+       */
+      key: string;
+
+      /**
+       * The optional user-supplied payload data.
+       */
+      payload: any;
+    }
+  | EmptyFeatureRemoteConfig;
+
+/**
+ * Describes a feature
+ */
+export interface Feature<
+  TConfig extends FeatureRemoteConfig | undefined = EmptyFeatureRemoteConfig,
+> {
+  /**
+   * The key of the feature.
+   */
+  key: string;
+
+  /**
+   * If the feature is enabled.
+   */
+  isEnabled: boolean;
+
+  /**
+   * If the feature is loading.
+   */
+  isLoading: boolean;
+
+  /*
+   * Optional user-defined configuration.
+   */
+  config: TConfig extends undefined ? EmptyFeatureRemoteConfig : TConfig;
+
+  /**
+   * Track feature usage in Bucket.
+   */
+  track(): Promise<void>;
+  /**
+   * Request feedback from the user.
+   */
+  requestFeedback: (opts: RequestFeedbackOptions) => void;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface Features {}
 
+type FeatureType = {
+  config?: {
+    payload: any;
+  };
+};
+
+/**
+ * Describes a collection of evaluated feature.
+ *
+ * @remarks
+ * This types falls back to a generic Record<string, Feature> if the Features interface
+ * has not been extended.
+ *
+ */
+export type TypedFeatures = keyof Features extends never
+  ? Record<string, Feature>
+  : {
+      [TypedFeatureKey in keyof Features]: Features[TypedFeatureKey] extends FeatureType
+        ? Feature<Features[TypedFeatureKey]["config"]>
+        : Feature;
+    };
+
+export type FeatureKey = keyof TypedFeatures;
+
 const SDK_VERSION = `react-sdk/${version}`;
-
-type MaterializedFeatures = keyof Features extends never
-  ? Record<string, any>
-  : Features;
-
-export type FeatureKey = keyof MaterializedFeatures;
 
 type ProviderContextType = {
   client?: BucketClient;
@@ -172,26 +245,6 @@ type RequestFeedbackOptions = Omit<
   "featureKey" | "featureId"
 >;
 
-type EmptyConfig = {
-  key: undefined;
-  payload: undefined;
-};
-
-export type Feature<TKey extends FeatureKey> = {
-  isEnabled: boolean;
-  isLoading: boolean;
-  config: MaterializedFeatures[TKey] extends boolean
-    ? EmptyConfig
-    :
-        | {
-            key: string;
-            payload: MaterializedFeatures[TKey];
-          }
-        | EmptyConfig;
-  track: () => void;
-  requestFeedback: (opts: RequestFeedbackOptions) => void;
-};
-
 /**
  * Returns the state of a given feature for the current context, e.g.
  *
@@ -205,7 +258,7 @@ export type Feature<TKey extends FeatureKey> = {
  */
 export function useFeature<TKey extends FeatureKey>(
   key: TKey,
-): Feature<typeof key> {
+): TypedFeatures[TKey] {
   const client = useClient();
   const {
     features: { isLoading },
@@ -235,7 +288,7 @@ export function useFeature<TKey extends FeatureKey>(
       return feature.isEnabled ?? false;
     },
     get config() {
-      return feature.config as Feature<typeof key>["config"];
+      return feature.config;
     },
   };
 }
