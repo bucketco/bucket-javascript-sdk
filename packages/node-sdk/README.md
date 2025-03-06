@@ -226,7 +226,7 @@ const client = new BucketClient({
 });
 ```
 
-### Remote config (beta)
+## Remote config (beta)
 
 Remote config is a dynamic and flexible approach to configuring feature behavior outside of your app – without needing to re-deploy it.
 
@@ -696,7 +696,7 @@ client.updateCompany("acme_inc", {
 `bindClient()` updates attributes on the Bucket servers but does not automatically
 update `Last seen`.
 
-### Zero PII
+## Zero PII
 
 The Bucket SDK doesn't collect any metadata and HTTP IP addresses are _not_ being
 stored. For tracking individual users, we recommend using something like database
@@ -711,7 +711,7 @@ import { sha256 } from 'crypto-hash';
 client.updateUser({ userId: await sha256("john_doe"), ... });
 ```
 
-### Typescript
+## Typescript
 
 Types are bundled together with the library and exposed automatically when importing
 through a package manager.
