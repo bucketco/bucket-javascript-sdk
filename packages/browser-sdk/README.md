@@ -274,8 +274,7 @@ See details in [Feedback HTTP API](https://docs.bucket.co/reference/http-trackin
 
 Event listeners allow for capturing various events occurring in the `BucketClient`. This is useful to build integrations with other system or for various debugging purposes. There are 5 kinds of events:
 
-- `configCheck`: Your code used a feature config
-- `enabledCheck`: Your code checked whether a specific feature should be enabled
+- `check`: Your code used `isEnabled` or `config` for a feature
 - `featuresUpdated`: Features were updated. Either because they were loaded as part of initialization or because the user/company updated
 - `user`: User information updated (similar to the `identify` call used in tracking terminology)
 - `company`: Company information updated (sometimes to the `group` call used in tracking terminology)

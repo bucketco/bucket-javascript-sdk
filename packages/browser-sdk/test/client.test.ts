@@ -80,6 +80,7 @@ describe("BucketClient", () => {
       const trackHook = vi.fn();
       const userHook = vi.fn();
       const companyHook = vi.fn();
+      const checkHook = vi.fn();
       const checkHookIsEnabled = vi.fn();
       const checkHookConfig = vi.fn();
       const featuresUpdated = vi.fn();
@@ -87,6 +88,7 @@ describe("BucketClient", () => {
       client.on("track", trackHook);
       client.on("user", userHook);
       client.on("company", companyHook);
+      client.on("check", checkHook);
       client.on("configCheck", checkHookConfig);
       client.on("enabledCheck", checkHookIsEnabled);
       client.on("featuresUpdated", featuresUpdated);
@@ -108,10 +110,14 @@ describe("BucketClient", () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-expressions -- special getter triggering event
       client.getFeature("featureA").isEnabled;
       expect(checkHookIsEnabled).toHaveBeenCalled();
+      expect(checkHook).toHaveBeenCalled();
+
+      checkHook.mockReset();
 
       // eslint-disable-next-line @typescript-eslint/no-unused-expressions -- special getter triggering event
       client.getFeature("featureA").config;
       expect(checkHookConfig).toHaveBeenCalled();
+      expect(checkHook).toHaveBeenCalled();
 
       expect(featuresUpdated).not.toHaveBeenCalled();
       await client.updateOtherContext({ key: "value" });
@@ -121,6 +127,7 @@ describe("BucketClient", () => {
       client.off("track", trackHook);
       client.off("user", userHook);
       client.off("company", companyHook);
+      client.off("check", checkHook);
       client.off("configCheck", checkHookConfig);
       client.off("enabledCheck", checkHookIsEnabled);
       client.off("featuresUpdated", featuresUpdated);
@@ -129,6 +136,7 @@ describe("BucketClient", () => {
       trackHook.mockReset();
       userHook.mockReset();
       companyHook.mockReset();
+      checkHook.mockReset();
       checkHookIsEnabled.mockReset();
       checkHookConfig.mockReset();
       featuresUpdated.mockReset();
@@ -147,6 +155,7 @@ describe("BucketClient", () => {
       expect(trackHook).not.toHaveBeenCalled();
       expect(userHook).not.toHaveBeenCalled();
       expect(companyHook).not.toHaveBeenCalled();
+      expect(checkHook).not.toHaveBeenCalled();
       expect(checkHookIsEnabled).not.toHaveBeenCalled();
       expect(checkHookConfig).not.toHaveBeenCalled();
       expect(featuresUpdated).not.toHaveBeenCalled();

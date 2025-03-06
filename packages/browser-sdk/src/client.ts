@@ -480,20 +480,24 @@ export class BucketClient {
   }
 
   /**
-   * Add a hook to the client.
+   * Add an event listener
    *
+   * @param type Type of events to listen for
+   * @param handler The function to call when the event is triggered.
    * @returns A function to remove the hook.
    */
   on<THookType extends keyof HookArgs>(
     type: THookType,
     handler: (args0: HookArgs[THookType]) => void,
   ) {
-    this.hooks.addHook(type, handler);
-    return () => this.hooks.removeHook(type, handler);
+    return this.hooks.addHook(type, handler);
   }
 
   /**
-   * Remove a hook from the client.
+   * Remove an event listener
+   *
+   * @param type Type of event to remove.
+   * @param handler The same function that was passed to `on`.
    *
    * @returns A function to remove the hook.
    */
@@ -501,7 +505,7 @@ export class BucketClient {
     type: THookType,
     handler: (args0: HookArgs[THookType]) => void,
   ) {
-    return this.hooks.removeHook(type, handler);
+    this.hooks.removeHook(type, handler);
   }
 
   /**
@@ -797,6 +801,7 @@ export class BucketClient {
         checkEvent.action == "check-config" ? "configCheck" : "enabledCheck",
         checkEvent,
       );
+      this.hooks.trigger("check", checkEvent);
     });
   }
 
