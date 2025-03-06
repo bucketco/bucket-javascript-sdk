@@ -1,10 +1,11 @@
 export type {
+  Config,
   Feature,
   FeatureRemoteConfig,
   InitOptions,
   ToolbarOptions,
 } from "./client";
-export { BucketClient, Config } from "./client";
+export { BucketClient } from "./client";
 export type { BucketContext, CompanyContext, UserContext } from "./context";
 export type {
   Position,
