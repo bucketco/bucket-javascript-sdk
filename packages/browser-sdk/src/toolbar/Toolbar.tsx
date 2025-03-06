@@ -11,21 +11,17 @@ import { BucketClient } from "../client";
 import { toolbarContainerId } from "../ui/constants";
 import { Dialog, DialogContent, DialogHeader, useDialog } from "../ui/Dialog";
 import { Logo } from "../ui/icons/Logo";
-import { DialogPlacement, Offset } from "../ui/types";
 import { parseUnanchoredPosition } from "../ui/utils";
 
 import { FeatureSearch, FeaturesTable } from "./Features";
 import styles from "./index.css?inline";
+import { ToolbarPosition } from "../ui/types";
 
 export type FeatureItem = {
   key: string;
   localOverride: boolean | null;
   isEnabled: boolean;
 };
-export interface ToolbarPosition {
-  placement: DialogPlacement;
-  offset?: Offset;
-}
 
 type Feature = {
   key: string;

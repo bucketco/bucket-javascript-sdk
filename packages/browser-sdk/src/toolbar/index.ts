@@ -4,7 +4,8 @@ import { BucketClient } from "../client";
 import { toolbarContainerId } from "../ui/constants";
 import { attachContainer } from "../ui/utils";
 
-import Toolbar, { ToolbarPosition } from "./Toolbar";
+import Toolbar from "./Toolbar";
+import { ToolbarPosition } from "../ui/types";
 
 type showToolbarToggleOptions = {
   bucketClient: BucketClient;

@@ -13,13 +13,13 @@ import {
   RequestFeedbackOptions,
 } from "./feedback/feedback";
 import * as feedbackLib from "./feedback/ui";
-import { ToolbarPosition } from "./toolbar/Toolbar";
 import { API_BASE_URL, APP_BASE_URL, SSE_REALTIME_BASE_URL } from "./config";
 import { BucketContext, CompanyContext, UserContext } from "./context";
 import { HookArgs, HooksManager } from "./hooksManager";
 import { HttpClient } from "./httpClient";
 import { Logger, loggerWithPrefix, quietConsoleLogger } from "./logger";
 import { showToolbarToggle } from "./toolbar";
+import { ToolbarPosition } from "./ui/types";
 
 const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 const isNode = typeof document === "undefined"; // deno supports "window" but not "document" according to https://remix.run/docs/en/main/guides/gotchas
@@ -145,7 +145,7 @@ export type PayloadContext = {
 /**
  * BucketClient configuration.
  */
-interface Config {
+export interface Config {
   /**
    * Base URL of Bucket servers.
    */
@@ -499,6 +499,7 @@ export class BucketClient {
    * @param type Type of event to remove.
    * @param handler The same function that was passed to `on`.
    *
+   * @returns A function to remove the hook.
    */
   off<THookType extends keyof HookArgs>(
     type: THookType,
