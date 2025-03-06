@@ -112,7 +112,7 @@ type Configuration = {
 };
 ```
 
-### Feature toggles
+## Feature toggles
 
 Bucket determines which features are active for a given user/company. The user/company is given in the BucketClient constructor.
 
@@ -174,7 +174,7 @@ by down-stream clients, like the React SDK.
 Note that accessing `isEnabled` on the object returned by `getFeatures` does not automatically
 generate a `check` event, contrary to the `isEnabled` property on the object returned by `getFeature`.
 
-### Remote config (beta)
+## Remote config (beta)
 
 Remote config is a dynamic and flexible approach to configuring feature behavior outside of your app – without needing to re-deploy it.
 
@@ -201,7 +201,7 @@ const features = bucketClient.getFeatures();
 Just as `isEnabled`, accessing `config` on the object returned by `getFeatures` does not automatically
 generate a `check` event, contrary to the `config` property on the object returned by `getFeature`.
 
-### Tracking feature usage
+## Tracking feature usage
 
 The `track` function lets you send events to Bucket to denote feature usage.
 By default Bucket expects event names to align with the feature keys, but
@@ -211,7 +211,7 @@ you can customize it as you wish.
 bucketClient.track("huddle", { voiceHuddle: true });
 ```
 
-### Updating user/company/other context
+## Updating user/company/other context
 
 Attributes given for the user/company/other context in the BucketClient constructor can be updated for use in feature targeting evaluation with the `updateUser()`, `updateCompany()` and `updateOtherContext()` methods.
 They return a promise which resolves once the features have been re-evaluated follow the update of the attributes.
@@ -228,11 +228,11 @@ await bucketClient.updateUser({ voiceHuddleOptIn: (!isEnabled).toString() });
 
 > [!NOTE] > `user`/`company` attributes are also stored remotely on the Bucket servers and will automatically be used to evaluate feature targeting if the page is refreshed.
 
-### Qualitative feedback
+## Qualitative feedback
 
 Bucket can collect qualitative feedback from your users in the form of a [Customer Satisfaction Score](https://en.wikipedia.org/wiki/Customer_satisfaction) and a comment.
 
-#### Automated feedback collection
+### Automated feedback collection
 
 The Bucket Browser SDK comes with automated feedback collection mode enabled by default, which lets the Bucket service ask your users for feedback for relevant features just after they've used them.
 
@@ -244,7 +244,7 @@ It works because the Bucket Browser SDK maintains a live connection to Bucket's 
 
 You can find all the options to make changes to the default behavior in the [Bucket feedback documentation](./FEEDBACK.md).
 
-#### Bucket feedback UI
+### Bucket feedback UI
 
 Bucket can assist you with collecting your user's feedback by offering a pre-built UI, allowing you to get started with minimal code and effort.
 
@@ -252,7 +252,7 @@ Bucket can assist you with collecting your user's feedback by offering a pre-bui
 
 [Read the Bucket feedback UI documentation](./FEEDBACK.md)
 
-#### Bucket feedback SDK
+### Bucket feedback SDK
 
 Feedback can be submitted to Bucket using the SDK:
 
@@ -270,7 +270,7 @@ If you are not using the Bucket Browser SDK, you can still submit feedback using
 
 See details in [Feedback HTTP API](https://docs.bucket.co/reference/http-tracking-api#feedback)
 
-### Event listeners
+## Event listeners
 
 Event listeners allow for capturing various events occurring in the `BucketClient`. This is useful to build integrations with other system or for various debugging purposes. There are 5 kinds of events:
 
@@ -297,7 +297,7 @@ const unsub = client.on("enabledCheck", (check: CheckEvent) =>
 unsub();
 ```
 
-### Zero PII
+## Zero PII
 
 The Bucket Browser SDK doesn't collect any metadata and HTTP IP addresses are _not_ being stored.
 
@@ -310,7 +310,7 @@ import { sha256 } from "crypto-hash";
 bucket.user(await sha256("john_doe"));
 ```
 
-### Use of cookies
+## Use of cookies
 
 The Bucket Browser SDK uses a couple of cookies to support automated feedback surveys. These cookies are not used for tracking purposes and thus should not need to appear in cookie consent forms.
 
@@ -319,14 +319,14 @@ The two cookies are:
 - `bucket-prompt-${userId}`: store the last automated feedback prompt message ID received to avoid repeating surveys
 - `bucket-token-${userId}`: caching a token used to connect to Bucket's live messaging infrastructure that is used to deliver automated feedback surveys in real time.
 
-### Upgrading to 3.0 from 2.x
+## Upgrading to 3.0 from 2.x
 
 Breaking changes:
 
 - `client.onFeaturesUpdated()` is now replaced by [event listeners](#event-listeners)
 - Arguments to the `BucketClient` constructor which were previously under `featureOptions` are now supplied directly in the root.
 
-### TypeScript
+## TypeScript
 
 Types are bundled together with the library and exposed automatically when importing through a package manager.
 

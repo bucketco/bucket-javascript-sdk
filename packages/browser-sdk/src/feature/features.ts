@@ -146,7 +146,7 @@ export function flattenJSON(obj: Record<string, any>): Record<string, any> {
  */
 export interface CheckEvent {
   /**
-   * Action to perform.
+   * `check-is-enabled` means `isEnabled` was checked, `check-config` means `config` was checked.
    */
   action: "check-is-enabled" | "check-config";
 
@@ -157,8 +157,10 @@ export interface CheckEvent {
 
   /**
    * Result of feature flag or configuration evaluation.
+   * If `action` is `check-is-enabled`, this is the result of the feature flag evaluation and `value` is a boolean.
+   * If `action` is `check-config`, this is the result of the configuration evaluation.
    */
-  value: any;
+  value?: boolean | { key: string; payload: any };
 
   /**
    * Version of targeting rules.
