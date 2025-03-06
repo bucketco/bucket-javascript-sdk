@@ -362,8 +362,8 @@ export function useUpdateOtherContext() {
  * ```ts
  * const client = useClient();
  * useEffect(() => {
- *   return client?.on("enabledCheck", () => {
- *     console.log("enabledCheck hook called");
+ *   return client?.on("check", () => {
+ *     console.log("check hook called");
  *   });
  * }, [client]);
  * ```
