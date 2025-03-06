@@ -15,6 +15,7 @@ import {
 } from "./config";
 import fetchClient from "./fetch-http-client";
 import { subscribe as triggerOnExit } from "./flusher";
+import { HookArgs, HooksManager } from "./hooksManager";
 import { newRateLimiter } from "./rate-limiter";
 import type {
   EvaluatedFeaturesAPIResponse,
@@ -117,6 +118,8 @@ export class BucketClient {
     offline: boolean;
     configFile?: string;
   };
+
+  private hooks = new HooksManager();
 
   private _initialize = once(async () => {
     if (!this._config.offline) {
@@ -602,6 +605,34 @@ export class BucketClient {
 
     const url = new URL(path, this._config.apiBaseUrl);
     return url.toString();
+  }
+
+  /**
+   * Add an event listener
+   *
+   * @param type Type of events to listen for
+   * @param handler The function to call when the event is triggered.
+   * @returns A function to remove the hook.
+   */
+  on<THookType extends keyof HookArgs>(
+    type: THookType,
+    handler: (args0: HookArgs[THookType]) => void,
+  ) {
+    return this.hooks.addHook(type, handler);
+  }
+
+  /**
+   * Remove an event listener
+   *
+   * @param type Type of event to remove.
+   * @param handler The same function that was passed to `on`.
+   *
+   */
+  off<THookType extends keyof HookArgs>(
+    type: THookType,
+    handler: (args0: HookArgs[THookType]) => void,
+  ) {
+    this.hooks.removeHook(type, handler);
   }
 
   /**
