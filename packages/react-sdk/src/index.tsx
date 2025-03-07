@@ -35,6 +35,12 @@ export type {
 
 type EmptyFeatureRemoteConfig = { key: undefined; payload: undefined };
 
+type FeatureType = {
+  config?: {
+    payload: any;
+  };
+};
+
 /**
  * A remotely managed configuration value for a feature.
  */
@@ -56,7 +62,7 @@ export type FeatureRemoteConfig =
  * Describes a feature
  */
 export interface Feature<
-  TConfig extends FeatureRemoteConfig | undefined = EmptyFeatureRemoteConfig,
+  TConfig extends FeatureType["config"] | undefined = EmptyFeatureRemoteConfig,
 > {
   /**
    * The key of the feature.
@@ -76,12 +82,16 @@ export interface Feature<
   /*
    * Optional user-defined configuration.
    */
-  config: TConfig extends undefined ? EmptyFeatureRemoteConfig : TConfig;
+  config: TConfig extends undefined
+    ? EmptyFeatureRemoteConfig
+    : TConfig & {
+        key: string;
+      };
 
   /**
    * Track feature usage in Bucket.
    */
-  track(): Promise<void>;
+  track(): Promise<Response | undefined> | undefined;
   /**
    * Request feedback from the user.
    */
@@ -90,12 +100,6 @@ export interface Feature<
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface Features {}
-
-type FeatureType = {
-  config?: {
-    payload: any;
-  };
-};
 
 /**
  * Describes a collection of evaluated feature.
@@ -270,9 +274,13 @@ export function useFeature<TKey extends FeatureKey>(
 
   if (isLoading || !client) {
     return {
+      key,
       isLoading,
       isEnabled: false,
-      config: { key: undefined, payload: undefined },
+      config: {
+        key: undefined,
+        payload: undefined,
+      } as TypedFeatures[TKey]["config"],
       track,
       requestFeedback,
     };
@@ -281,6 +289,7 @@ export function useFeature<TKey extends FeatureKey>(
   const feature = client.getFeature(key);
 
   return {
+    key,
     isLoading,
     track,
     requestFeedback,
@@ -288,7 +297,7 @@ export function useFeature<TKey extends FeatureKey>(
       return feature.isEnabled ?? false;
     },
     get config() {
-      return feature.config;
+      return feature.config as TypedFeatures[TKey]["config"];
     },
   };
 }
