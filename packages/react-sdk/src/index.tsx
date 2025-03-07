@@ -65,11 +65,6 @@ export interface Feature<
   TConfig extends FeatureType["config"] | undefined = EmptyFeatureRemoteConfig,
 > {
   /**
-   * The key of the feature.
-   */
-  key: string;
-
-  /**
    * If the feature is enabled.
    */
   isEnabled: boolean;
@@ -274,7 +269,6 @@ export function useFeature<TKey extends FeatureKey>(
 
   if (isLoading || !client) {
     return {
-      key,
       isLoading,
       isEnabled: false,
       config: {
@@ -289,7 +283,6 @@ export function useFeature<TKey extends FeatureKey>(
   const feature = client.getFeature(key);
 
   return {
-    key,
     isLoading,
     track,
     requestFeedback,
