@@ -5,8 +5,17 @@ import { CompanyContext, UserContext } from "./context";
  * @internal
  */
 export interface HookArgs {
+  /**
+   * Deprecated: Use `check` instead.
+   * @deprecated
+   */
   configCheck: CheckEvent;
+  /**
+   * Deprecated: Use `check` instead.
+   * @deprecated
+   */
   enabledCheck: CheckEvent;
+  check: CheckEvent;
   featuresUpdated: RawFeatures;
   user: UserContext;
   company: CompanyContext;
@@ -28,6 +37,7 @@ export class HooksManager {
   private hooks: {
     enabledCheck: ((arg0: CheckEvent) => void)[];
     configCheck: ((arg0: CheckEvent) => void)[];
+    check: ((arg0: CheckEvent) => void)[];
     featuresUpdated: ((arg0: RawFeatures) => void)[];
     user: ((arg0: UserContext) => void)[];
     company: ((arg0: CompanyContext) => void)[];
@@ -35,6 +45,7 @@ export class HooksManager {
   } = {
     enabledCheck: [],
     configCheck: [],
+    check: [],
     featuresUpdated: [],
     user: [],
     company: [],
