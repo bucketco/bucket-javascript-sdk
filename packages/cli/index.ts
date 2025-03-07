@@ -11,6 +11,7 @@ import { registerNewCommand } from "./commands/new.js";
 import { authStore } from "./stores/auth.js";
 import { configStore } from "./stores/config.js";
 import { apiUrlOption, baseUrlOption, debugOption } from "./utils/options.js";
+import { stripTrailingSlash } from "./utils/path.js";
 
 async function main() {
   // Must load tokens and config before anything else
@@ -25,9 +26,12 @@ async function main() {
   // Pre-action hook
   program.hook("preAction", () => {
     const { debug, baseUrl, apiUrl } = program.opts();
+    const cleanedBaseUrl = stripTrailingSlash(baseUrl?.trim());
     configStore.setConfig({
-      baseUrl,
-      apiUrl: apiUrl || (baseUrl && `${baseUrl}/api`),
+      baseUrl: cleanedBaseUrl,
+      apiUrl:
+        stripTrailingSlash(apiUrl) ||
+        (cleanedBaseUrl && `${cleanedBaseUrl}/api`),
     });
 
     if (debug) {

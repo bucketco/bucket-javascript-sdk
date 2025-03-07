@@ -1,7 +1,7 @@
 import { BucketClient, Context } from "../src";
 import { FeatureOverrides } from "../src/types";
 
-type CreateConfig = {
+type CreateConfigPayload = {
   minimumLength: number;
 };
 
@@ -10,10 +10,8 @@ declare module "../src/types" {
   interface Features {
     "show-todos": boolean;
     "create-todos": {
-      isEnabled: boolean;
       config: {
-        key: string;
-        payload: CreateConfig;
+        payload: CreateConfigPayload;
       };
     };
     "delete-todos": boolean;

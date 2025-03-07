@@ -14,7 +14,13 @@ import {
 // Extending the Features interface to define the available features
 declare module "../../src" {
   interface Features {
-    huddles: boolean;
+    huddles: {
+      config: {
+        payload: {
+          maxParticipants: number;
+        };
+      };
+    };
   }
 }
 

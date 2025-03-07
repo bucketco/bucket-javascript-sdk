@@ -70,19 +70,24 @@ Here's a comprehensive list of configuration options available in the `bucket.co
   "baseUrl": "https://app.bucket.co",
   "apiUrl": "https://app.bucket.co/api",
   "appId": "ap123456789",
-  "typesOutput": "gen/features.ts",
+  "typesOutput": [
+    {
+      "path": "gen/features.ts",
+      "format": "react"
+    }
+  ],
   "keyFormat": "camelCase"
 }
 ```
 
-| Option        | Description                                                                                                                       | Default                                              |
-| ------------- | --------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| `$schema`     | Autocompletion for the config. `latest` can be replaced with a specific version.                                                  | "https://unpkg.com/@bucketco/cli@latest/schema.json" |
-| `baseUrl`     | Base URL for Bucket services.                                                                                                     | "https://app.bucket.co"                              |
-| `apiUrl`      | API URL for Bucket services (overrides baseUrl for API calls).                                                                    | "https://app.bucket.co/api"                          |
-| `appId`       | Your Bucket application ID.                                                                                                       | Required                                             |
-| `typesOutput` | Path where TypeScript types will be generated.                                                                                    | "gen/features.ts"                                    |
-| `keyFormat`   | Format for feature keys (options: custom, pascalCase, camelCase, snakeCaseUpper, snakeCaseLower, kebabCaseUpper, kebabCaseLower). | "custom"                                             |
+| Option        | Description                                                                                                                                                          | Default                                              |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `$schema`     | Autocompletion for the config. `latest` can be replaced with a specific version.                                                                                     | "https://unpkg.com/@bucketco/cli@latest/schema.json" |
+| `baseUrl`     | Base URL for Bucket services.                                                                                                                                        | "https://app.bucket.co"                              |
+| `apiUrl`      | API URL for Bucket services (overrides baseUrl for API calls).                                                                                                       | "https://app.bucket.co/api"                          |
+| `appId`       | Your Bucket application ID.                                                                                                                                          | Required                                             |
+| `typesOutput` | Path(s) where TypeScript types will be generated. Can be a string or an array of objects with `path` and `format` properties. Available formats: `react` and `node`. | "gen/features.ts" with format "react"                |
+| `keyFormat`   | Format for feature keys (options: custom, pascalCase, camelCase, snakeCaseUpper, snakeCaseLower, kebabCaseUpper, kebabCaseLower).                                    | "custom"                                             |
 
 You can override these settings using command-line options for individual commands.
 
@@ -93,12 +98,12 @@ You can override these settings using command-line options for individual comman
 Initialize a new Bucket configuration in your project. This creates a `bucket.config.json` file with your settings and prompts for any required information not provided via options.
 
 ```bash
-bucket init [--force]
+bucket init [--overwrite]
 ```
 
 Options:
 
-- `--force`: Overwrite existing configuration file if one exists
+- `--overwrite`: Overwrite existing configuration file if one exists
 - `--app-id <id>`: Set the application ID
 - `--key-format <format>`: Set the key format for features
 
@@ -107,7 +112,7 @@ Options:
 All-in-one command to get started quickly. This command combines `init`, feature creation, and type generation in a single step. Use this for the fastest way to get up and running with Bucket.
 
 ```bash
-bucket new "My Feature" [--key my-feature] [--app-id ap123456789] [--key-format custom] [--out gen/features.ts]
+bucket new "My Feature" [--key my-feature] [--app-id ap123456789] [--key-format custom] [--out gen/features.ts] [--format react]
 ```
 
 Options:
@@ -116,6 +121,7 @@ Options:
 - `--app-id`: App ID to use
 - `--key-format`: Format for feature keys (custom, snake, camel, etc.)
 - `--out`: Path to generate TypeScript types
+- `--format`: Format of the generated types (react or node)
 
 If you prefer more control over each step, you can use the individual commands (`init`, `features create`, `features types`) instead.
 
@@ -170,13 +176,14 @@ Options:
 Generate TypeScript types for your features. This ensures type safety when using Bucket features in your TypeScript/JavaScript applications.
 
 ```bash
-bucket features types [--app-id ap123456789] [--out gen/features.ts]
+bucket features types [--app-id ap123456789] [--out gen/features.ts] [--format react]
 ```
 
 Options:
 
 - `--app-id`: App ID to use
 - `--out`: Path to generate TypeScript types
+- `--format`: Format of the generated types (react or node)
 
 ### `bucket apps`
 

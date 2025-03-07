@@ -1,22 +1,51 @@
 import { authRequest } from "../utils/auth.js";
 
-type Feature = {
-  name: string;
-  key: string;
+export type RemoteConfigVariant = {
+  key?: string;
+  payload?: any;
 };
 
-type FeaturesResponse = {
+export type RemoteConfig = {
+  variants: [
+    {
+      variant: RemoteConfigVariant;
+    },
+  ];
+};
+
+export type Feature = {
+  name: string;
+  key: string;
+  remoteConfigs: RemoteConfig[];
+};
+
+export type FeaturesResponse = {
   data: Feature[];
 };
 
-export async function listFeatures(appId: string): Promise<Feature[]> {
+export type ListOptions = {
+  includeRemoteConfigs?: boolean;
+};
+
+export async function listFeatures(
+  appId: string,
+  options: ListOptions = {},
+): Promise<Feature[]> {
   const response = await authRequest<FeaturesResponse>(
     `/apps/${appId}/features`,
+    {
+      params: {
+        sortBy: "name",
+        sortOrder: "desc",
+        includeRemoteConfigs: options.includeRemoteConfigs ? "true" : "false",
+      },
+    },
   );
 
-  return response.data.map(({ name, key }) => ({
+  return response.data.map(({ name, key, remoteConfigs }) => ({
     name,
     key,
+    remoteConfigs,
   }));
 }
 

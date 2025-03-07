@@ -1,4 +1,5 @@
 import { Ajv, ValidateFunction } from "ajv";
+import equal from "fast-deep-equal";
 import { findUp } from "find-up";
 import JSON5 from "json5";
 import { readFile, writeFile } from "node:fs/promises";
@@ -13,6 +14,7 @@ import {
   SCHEMA_URL,
 } from "../utils/constants.js";
 import { ConfigValidationError, handleError } from "../utils/errors.js";
+import { stripTrailingSlash } from "../utils/path.js";
 
 export const keyFormats = [
   "custom",
@@ -23,15 +25,22 @@ export const keyFormats = [
   "kebabCaseUpper",
   "kebabCaseLower",
 ] as const;
-
 export type KeyFormat = (typeof keyFormats)[number];
+
+export const typeFormats = ["react", "node"] as const;
+export type TypeFormat = (typeof typeFormats)[number];
+
+export type TypesOutput = {
+  path: string;
+  format: TypeFormat;
+};
 
 type Config = {
   $schema: string;
   baseUrl: string;
   apiUrl: string;
   appId: string | undefined;
-  typesOutput: string;
+  typesOutput: TypesOutput[];
   keyFormat: KeyFormat;
 };
 
@@ -40,9 +49,20 @@ const defaultConfig: Config = {
   baseUrl: DEFAULT_BASE_URL,
   apiUrl: DEFAULT_API_URL,
   appId: undefined,
-  typesOutput: DEFAULT_TYPES_OUTPUT,
+  typesOutput: [{ path: DEFAULT_TYPES_OUTPUT, format: "react" }],
   keyFormat: "custom",
 };
+
+// Helper to normalize typesOutput to array format
+export function normalizeTypesOutput(
+  output?: string | TypesOutput[],
+): TypesOutput[] | undefined {
+  if (!output) return undefined;
+  if (typeof output === "string") {
+    return [{ path: output, format: "react" }];
+  }
+  return output;
+}
 
 class ConfigStore {
   protected config: Config = { ...defaultConfig };
@@ -88,7 +108,15 @@ class ConfigStore {
       if (!this.configPath) return;
 
       const content = await readFile(this.configPath, "utf-8");
-      const parsed = JSON5.parse<Config>(content);
+      const parsed = JSON5.parse<Partial<Config>>(content);
+
+      // Normalize values
+      if (parsed.baseUrl)
+        parsed.baseUrl = stripTrailingSlash(parsed.baseUrl.trim());
+      if (parsed.apiUrl)
+        parsed.apiUrl = stripTrailingSlash(parsed.apiUrl.trim());
+      if (parsed.typesOutput?.length)
+        parsed.typesOutput = normalizeTypesOutput(parsed.typesOutput);
 
       if (!this.validateConfig!(parsed)) {
         void handleError(
@@ -117,7 +145,7 @@ class ConfigStore {
       const key = untypedKey as keyof Config;
       if (
         !["$schema"].includes(key) &&
-        configWithoutDefaults[key] === defaultConfig[key]
+        equal(configWithoutDefaults[key], defaultConfig[key])
       ) {
         delete configWithoutDefaults[key];
       }
