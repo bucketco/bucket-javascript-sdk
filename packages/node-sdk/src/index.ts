@@ -12,7 +12,7 @@ export type {
   FeatureOverridesFn,
   FeatureRemoteConfig,
   Features,
-  FullFeatureOverride,
+  FeatureType,
   HttpClient,
   HttpClientResponse,
   IdType,

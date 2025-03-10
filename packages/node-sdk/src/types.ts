@@ -171,15 +171,20 @@ export interface Feature<
   track(): Promise<void>;
 }
 
-export type FullFeatureOverride = {
-  isEnabled: boolean;
+export type FeatureType = {
   config?: {
-    key: string;
     payload: any;
   };
 };
 
-export type FeatureOverride = FullFeatureOverride | boolean;
+export type FeatureOverride =
+  | (FeatureType & {
+      isEnabled: boolean;
+      config?: {
+        key: string;
+      };
+    })
+  | boolean;
 
 /**
  * Describes a collection of evaluated features.
@@ -200,7 +205,7 @@ export interface Features {}
 export type TypedFeatures = keyof Features extends never
   ? Record<string, Feature>
   : {
-      [FeatureKey in keyof Features]: Features[FeatureKey] extends FullFeatureOverride
+      [FeatureKey in keyof Features]: Features[FeatureKey] extends FeatureType
         ? Feature<Features[FeatureKey]["config"]>
         : Feature;
     };
@@ -214,7 +219,7 @@ export type FeatureOverrides = Partial<
   keyof Features extends never
     ? Record<string, FeatureOverride>
     : {
-        [FeatureKey in keyof Features]: Features[FeatureKey] extends FullFeatureOverride
+        [FeatureKey in keyof Features]: Features[FeatureKey] extends FeatureOverride
           ? Features[FeatureKey]
           : Exclude<FeatureOverride, "config">;
       }

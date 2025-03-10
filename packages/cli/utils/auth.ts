@@ -103,7 +103,9 @@ export async function authenticateUser(baseUrl: string) {
 
 export async function authRequest<T = Record<string, unknown>>(
   url: string,
-  options?: RequestInit,
+  options?: RequestInit & {
+    params?: Record<string, string>;
+  },
   retryCount = 0,
 ): Promise<T> {
   const { baseUrl, apiUrl } = configStore.getConfig();
@@ -114,7 +116,14 @@ export async function authRequest<T = Record<string, unknown>>(
     return authRequest(url, options);
   }
 
-  const response = await fetch(`${apiUrl}${url}`, {
+  const resolvedUrl = new URL(`${apiUrl}/${url}`);
+  if (options?.params) {
+    Object.entries(options.params).forEach(([key, value]) => {
+      resolvedUrl.searchParams.append(key, value);
+    });
+  }
+
+  const response = await fetch(resolvedUrl, {
     ...options,
     headers: {
       ...options?.headers,

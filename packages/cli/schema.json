@@ -13,7 +13,15 @@
       "type": "string"
     },
     "typesOutput": {
-      "type": "string"
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": { "type": "string" },
+          "format": { "type": "string", "enum": ["react", "node"] }
+        },
+        "required": ["path"]
+      }
     },
     "keyFormat": {
       "type": "string",

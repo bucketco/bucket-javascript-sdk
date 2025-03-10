@@ -5,13 +5,13 @@ import { relative } from "node:path";
 import ora, { Ora } from "ora";
 
 import { App, listApps } from "../services/bootstrap.js";
-import { configStore } from "../stores/config.js";
+import { configStore, typeFormats } from "../stores/config.js";
 import { chalkBrand, DEFAULT_TYPES_OUTPUT } from "../utils/constants.js";
 import { handleError } from "../utils/errors.js";
-import { initOverrideOption } from "../utils/options.js";
+import { overwriteOption } from "../utils/options.js";
 
 type InitArgs = {
-  force?: boolean;
+  overwrite?: boolean;
 };
 
 export const initAction = async (args: InitArgs = {}) => {
@@ -21,9 +21,9 @@ export const initAction = async (args: InitArgs = {}) => {
   try {
     // Check if config already exists
     const configPath = configStore.getConfigPath();
-    if (configPath && !args.force) {
+    if (configPath && !args.overwrite) {
       throw new Error(
-        "Bucket is already initialized. Use --force to overwrite.",
+        "Bucket is already initialized. Use --overwrite to overwrite.",
       );
     }
 
@@ -74,16 +74,26 @@ export const initAction = async (args: InitArgs = {}) => {
       default: DEFAULT_TYPES_OUTPUT,
     });
 
+    // Get types output format
+    const typesFormat = await select({
+      message: "What is the output format?",
+      choices: typeFormats.map((format) => ({
+        name: format,
+        value: format,
+      })),
+      default: "react",
+    });
+
     // Update config
     configStore.setConfig({
       appId,
       keyFormat,
-      typesOutput,
+      typesOutput: [{ path: typesOutput, format: typesFormat }],
     });
 
     // Create config file
     spinner = ora("Creating configuration...").start();
-    await configStore.saveConfigFile(args.force);
+    await configStore.saveConfigFile(args.overwrite);
     spinner.succeed(
       `Configuration created at ${chalk.cyan(relative(process.cwd(), configStore.getConfigPath()!))}`,
     );
@@ -97,6 +107,6 @@ export function registerInitCommand(cli: Command) {
   cli
     .command("init")
     .description("Initialize a new Bucket configuration")
-    .addOption(initOverrideOption)
+    .addOption(overwriteOption)
     .action(initAction);
 }

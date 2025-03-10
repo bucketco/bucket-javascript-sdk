@@ -21,15 +21,20 @@ export const appIdOption = new Option(
   `Bucket App ID. Falls back to appId value in ${CONFIG_FILE_NAME}.`,
 );
 
-export const initOverrideOption = new Option(
-  "-f, --force",
+export const overwriteOption = new Option(
+  "--overwrite",
   "Force initialization and overwrite existing configuration.",
 );
 
 export const typesOutOption = new Option(
   "-o, --out [path]",
-  `Output path for generated feature types. Falls back to typesOutput value in ${CONFIG_FILE_NAME}.`,
+  `Single output path for generated feature types. Falls back to typesOutput value in ${CONFIG_FILE_NAME}.`,
 );
+
+export const typesFormatOption = new Option(
+  "-f, --format [format]",
+  "Single output format for generated feature types",
+).choices(["react", "node"]);
 
 export const keyFormatOption = new Option(
   "--key-format [format]",

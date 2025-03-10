@@ -5,15 +5,16 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative } from "node:path";
 import ora, { Ora } from "ora";
 
-import { createFeature, listFeatures } from "../services/features.js";
+import { createFeature, Feature, listFeatures } from "../services/features.js";
 import { configStore } from "../stores/config.js";
 import { handleError, MissingAppIdError } from "../utils/errors.js";
-import { genDTS, genFeatureKey, KeyFormatPatterns } from "../utils/gen.js";
+import { genFeatureKey, genTypes, KeyFormatPatterns } from "../utils/gen.js";
 import {
   appIdOption,
   featureKeyOption,
   featureNameArgument,
   keyFormatOption,
+  typesFormatOption,
   typesOutOption,
 } from "../utils/options.js";
 
@@ -80,16 +81,19 @@ export const listFeaturesAction = async () => {
 };
 
 export const generateTypesAction = async () => {
-  const { baseUrl, appId, typesOutput } = configStore.getConfig();
+  const { baseUrl, appId } = configStore.getConfig();
+  const typesOutput = configStore.getConfig("typesOutput");
 
   let spinner: Ora | undefined;
-  let featureKeys: string[] = [];
+  let features: Feature[] = [];
   try {
     if (!appId) throw new MissingAppIdError();
     spinner = ora(
       `Loading features of app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}...`,
     ).start();
-    featureKeys = (await listFeatures(appId)).map(({ key }) => key);
+    features = await listFeatures(appId, {
+      includeRemoteConfigs: true,
+    });
     spinner.succeed(
       `Loaded features of app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}`,
     );
@@ -101,15 +105,22 @@ export const generateTypesAction = async () => {
 
   try {
     spinner = ora("Generating feature types...").start();
-    const types = genDTS(featureKeys);
     const projectPath = configStore.getProjectPath();
-    const outPath = isAbsolute(typesOutput)
-      ? typesOutput
-      : join(projectPath, typesOutput);
-    await mkdir(dirname(outPath), { recursive: true });
-    await writeFile(outPath, types);
+
+    // Generate types for each output configuration
+    for (const output of typesOutput) {
+      const types = await genTypes(features, output.format);
+      const outPath = isAbsolute(output.path)
+        ? output.path
+        : join(projectPath, output.path);
+
+      await mkdir(dirname(outPath), { recursive: true });
+      await writeFile(outPath, types);
+      spinner.text = `Generated ${output.format} types for ${chalk.cyan(appId)} in ${chalk.cyan(relative(projectPath, outPath))}.`;
+    }
+
     spinner.succeed(
-      `Generated types for ${chalk.cyan(appId)} in ${chalk.cyan(relative(projectPath, outPath))}.`,
+      `Generated types for ${chalk.cyan(appId)} in ${typesOutput.length} location(s).`,
     );
   } catch (error) {
     spinner?.fail("Type generation failed");
@@ -142,12 +153,17 @@ export function registerFeatureCommands(cli: Command) {
     .description("Generate feature types")
     .addOption(appIdOption)
     .addOption(typesOutOption)
+    .addOption(typesFormatOption)
     .action(generateTypesAction);
 
   // Update the config with the cli override values
   featuresCommand.hook("preAction", (_, command) => {
-    const { appId, keyFormat, out } = command.opts();
-    configStore.setConfig({ appId, keyFormat, typesOutput: out });
+    const { appId, keyFormat, out, format } = command.opts();
+    configStore.setConfig({
+      appId,
+      keyFormat,
+      typesOutput: out ? [{ path: out, format: format || "react" }] : undefined,
+    });
   });
 
   cli.addCommand(featuresCommand);
