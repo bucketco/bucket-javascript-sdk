@@ -2,10 +2,10 @@ import { h, render } from "preact";
 
 import { BucketClient } from "../client";
 import { toolbarContainerId } from "../ui/constants";
+import { ToolbarPosition } from "../ui/types";
 import { attachContainer } from "../ui/utils";
 
 import Toolbar from "./Toolbar";
-import { ToolbarPosition } from "../ui/types";
 
 type showToolbarToggleOptions = {
   bucketClient: BucketClient;

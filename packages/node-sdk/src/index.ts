@@ -23,6 +23,6 @@ export type {
   RawFeatureRemoteConfig,
   TrackingMeta,
   TrackOptions,
-  TypedFeatures,
   TypedFeatureKey,
+  TypedFeatures,
 } from "./types";
