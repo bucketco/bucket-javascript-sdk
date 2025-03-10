@@ -8,6 +8,7 @@ import {
   featureKeyOption,
   featureNameArgument,
   keyFormatOption,
+  typesFormatOption,
   typesOutOption,
 } from "../utils/options.js";
 
@@ -39,13 +40,18 @@ export function registerNewCommand(cli: Command) {
     .addOption(appIdOption)
     .addOption(keyFormatOption)
     .addOption(typesOutOption)
+    .addOption(typesFormatOption)
     .addOption(featureKeyOption)
     .addArgument(featureNameArgument)
     .action(newAction);
 
   // Update the config with the cli override values
   cli.hook("preAction", (command) => {
-    const { appId, keyFormat, out } = command.opts();
-    configStore.setConfig({ appId, keyFormat, typesOutput: out });
+    const { appId, keyFormat, out, format } = command.opts();
+    configStore.setConfig({
+      appId,
+      keyFormat,
+      typesOutput: out ? [{ path: out, format: format || "react" }] : undefined,
+    });
   });
 }

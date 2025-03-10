@@ -240,6 +240,7 @@ describe("useFeature", () => {
     });
 
     expect(result.current).toStrictEqual({
+      key: "huddle",
       isEnabled: false,
       isLoading: true,
       config: { key: undefined, payload: undefined },
@@ -257,6 +258,7 @@ describe("useFeature", () => {
 
     await waitFor(() => {
       expect(result.current).toStrictEqual({
+        key: "huddle",
         config: { key: undefined, payload: undefined },
         isEnabled: false,
         isLoading: false,
@@ -275,6 +277,7 @@ describe("useFeature", () => {
 
     await waitFor(() => {
       expect(result.current).toStrictEqual({
+        key: "abc",
         isEnabled: true,
         isLoading: false,
         config: {
