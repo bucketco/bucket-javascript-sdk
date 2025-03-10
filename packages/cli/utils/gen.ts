@@ -85,9 +85,7 @@ export function genRemoteConfig(remoteConfigs?: RemoteConfig[]) {
   const variants = remoteConfigs?.[0]?.variants;
   if (!variants?.length) return;
   return JSONToType(
-    remoteConfigs![0].variants?.map(({ variant: { payload } }) => ({
-      config: { payload },
-    })),
+    remoteConfigs![0].variants?.map(({ variant: { payload } }) => payload),
   );
 }
 
@@ -96,7 +94,7 @@ export function genTypes(features: Feature[], format: GenFormat = "react") {
   features.forEach(({ key, name, remoteConfigs }) => {
     const definition = genRemoteConfig(remoteConfigs);
     if (!definition) return;
-    const configName = `${pascalCase(name)}Config`;
+    const configName = `${pascalCase(name)}ConfigPayload`;
     configDefs.set(key, { name: configName, definition });
   });
 
@@ -112,7 +110,7 @@ ${features
   .map(({ key }) => {
     const config = configDefs.get(key);
     return indentLines(
-      `"${key}": ${config?.definition ? config.name : "boolean"};`,
+      `"${key}": ${config?.definition ? `{ config: { payload: ${config.name} } }` : "boolean"};`,
       4,
     );
   })
