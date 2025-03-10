@@ -64,7 +64,6 @@ export type RequestFeedbackData = Omit<
    * copy of the feedback in your own application or CRM.
    *
    * @param {Object} data
-   * @param data.
    */
   onAfterSubmit?: (data: FeedbackSubmission) => void;
 
