@@ -33,9 +33,9 @@ export type {
   UserContext,
 };
 
-type EmptyFeatureRemoteConfig = { key: undefined; payload: undefined };
+export type EmptyFeatureRemoteConfig = { key: undefined; payload: undefined };
 
-type FeatureType = {
+export type FeatureType = {
   config?: {
     payload: any;
   };
@@ -244,7 +244,7 @@ export function BucketProvider({
   );
 }
 
-type RequestFeedbackOptions = Omit<
+export type RequestFeedbackOptions = Omit<
   RequestFeedbackData,
   "featureKey" | "featureId"
 >;

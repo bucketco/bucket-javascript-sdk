@@ -13,7 +13,7 @@ import {
   RequestFeedbackOptions,
 } from "./feedback/feedback";
 import * as feedbackLib from "./feedback/ui";
-import { ToolbarPosition } from "./toolbar/Toolbar";
+import { ToolbarPosition } from "./ui/types";
 import { API_BASE_URL, APP_BASE_URL, SSE_REALTIME_BASE_URL } from "./config";
 import { BucketContext, CompanyContext, UserContext } from "./context";
 import { HookArgs, HooksManager } from "./hooksManager";
@@ -145,7 +145,7 @@ export type PayloadContext = {
 /**
  * BucketClient configuration.
  */
-interface Config {
+export interface Config {
   /**
    * Base URL of Bucket servers.
    */
@@ -499,6 +499,7 @@ export class BucketClient {
    * @param type Type of event to remove.
    * @param handler The same function that was passed to `on`.
    *
+   * @returns A function to remove the hook.
    */
   off<THookType extends keyof HookArgs>(
     type: THookType,
