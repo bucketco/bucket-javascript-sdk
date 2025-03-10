@@ -31,22 +31,13 @@ export async function listFeatures(
   appId: string,
   options: ListOptions = {},
 ): Promise<Feature[]> {
-  const response = await authRequest<FeaturesResponse>(
-    `/apps/${appId}/features`,
-    {
-      params: {
-        sortBy: "name",
-        sortOrder: "desc",
-        includeRemoteConfigs: options.includeRemoteConfigs ? "true" : "false",
-      },
+  return authRequest<FeaturesResponse>(`/apps/${appId}/features`, {
+    params: {
+      sortBy: "key",
+      sortOrder: "asc",
+      includeRemoteConfigs: options.includeRemoteConfigs ? "true" : "false",
     },
-  );
-
-  return response.data.map(({ name, key, remoteConfigs }) => ({
-    name,
-    key,
-    remoteConfigs,
-  }));
+  }).then(({ data }) => data);
 }
 
 type FeatureResponse = {
@@ -58,19 +49,15 @@ export async function createFeature(
   name: string,
   key: string,
 ): Promise<Feature> {
-  const response = await authRequest<FeatureResponse>(
-    `/apps/${appId}/features`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name,
-        key,
-        source: "event",
-      }),
+  return authRequest<FeatureResponse>(`/apps/${appId}/features`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
     },
-  );
-  return response.feature;
+    body: JSON.stringify({
+      name,
+      key,
+      source: "event",
+    }),
+  }).then(({ feature }) => feature);
 }
