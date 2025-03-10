@@ -7,6 +7,7 @@ import { registerAppCommands } from "./commands/apps.js";
 import { registerAuthCommands } from "./commands/auth.js";
 import { registerFeatureCommands } from "./commands/features.js";
 import { registerInitCommand } from "./commands/init.js";
+import { registerMcpCommand } from "./commands/mcp.js";
 import { registerNewCommand } from "./commands/new.js";
 import { authStore } from "./stores/auth.js";
 import { configStore } from "./stores/config.js";
@@ -50,6 +51,7 @@ async function main() {
   registerAuthCommands(program);
   registerAppCommands(program);
   registerFeatureCommands(program);
+  registerMcpCommand(program);
 
   program.parse(process.argv);
 }

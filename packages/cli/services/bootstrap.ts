@@ -28,10 +28,8 @@ export async function listApps(): Promise<App[]> {
   if (!org.apps?.length) {
     throw new Error("No apps found");
   }
-  return response.org.apps.map(({ id, name, demo }) => ({
-    id,
-    name,
-    demo,
+  return response.org.apps.map((app) => ({
+    ...app,
     featureKeyFormat: org.featureKeyFormat ?? "custom",
   }));
 }
