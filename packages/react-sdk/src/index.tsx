@@ -38,7 +38,7 @@ export interface Features {}
 
 const SDK_VERSION = `react-sdk/${version}`;
 
-type MaterializedFeatures = keyof Features extends never
+export type MaterializedFeatures = keyof Features extends never
   ? Record<string, any>
   : Features;
 
@@ -167,12 +167,12 @@ export function BucketProvider({
   );
 }
 
-type RequestFeedbackOptions = Omit<
+export type RequestFeedbackOptions = Omit<
   RequestFeedbackData,
   "featureKey" | "featureId"
 >;
 
-type EmptyConfig = {
+export type EmptyConfig = {
   key: undefined;
   payload: undefined;
 };
