@@ -35,7 +35,7 @@ export function registerNewCommand(cli: Command) {
   cli
     .command("new")
     .description(
-      "Initialize the Bucket CLI, authenticates, and creates a new feature",
+      "Initialize the Bucket CLI, authenticates, and creates a new feature.",
     )
     .addOption(appIdOption)
     .addOption(keyFormatOption)
