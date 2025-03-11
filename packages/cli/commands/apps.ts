@@ -11,20 +11,20 @@ export const listAppsAction = async () => {
   const spinner = ora(`Loading apps from ${chalk.cyan(baseUrl)}...`).start();
   try {
     const apps = await listApps();
-    spinner.succeed(`Loaded apps from ${chalk.cyan(baseUrl)}`);
+    spinner.succeed(`Loaded apps from ${chalk.cyan(baseUrl)}.`);
     console.table(apps);
   } catch (error) {
-    spinner.fail("Failed to list apps");
+    spinner.fail("Failed to list apps.");
     void handleError(error, "Apps List");
   }
 };
 
 export function registerAppCommands(cli: Command) {
-  const appsCommand = new Command("apps").description("Manage apps");
+  const appsCommand = new Command("apps").description("Manage apps.");
 
   appsCommand
     .command("list")
-    .description("List all available apps")
+    .description("List all available apps.")
     .action(listAppsAction);
 
   cli.addCommand(appsCommand);
