@@ -1,6 +1,7 @@
 import { camelCase, kebabCase, pascalCase, snakeCase } from "change-case";
 
 import { Feature, RemoteConfig } from "../services/features.js";
+import { Stage } from "../services/stages.js";
 
 import { JSONToType } from "./json.js";
 
@@ -89,7 +90,11 @@ export function genRemoteConfig(remoteConfigs?: RemoteConfig[]) {
   );
 }
 
-export function genTypes(features: Feature[], format: GenFormat = "react") {
+export function genTypes(
+  features: Feature[],
+  stages: Stage[],
+  format: GenFormat = "react",
+) {
   const configDefs = new Map<string, { name: string; definition: string }>();
   features.forEach(({ key, name, remoteConfigs }) => {
     const definition = genRemoteConfig(remoteConfigs);
@@ -105,6 +110,11 @@ export function genTypes(features: Feature[], format: GenFormat = "react") {
 import "@bucketco/${format}-sdk";
 
 declare module "@bucketco/${format}-sdk" {
+  ${
+    stages.length
+      ? /* ts */ `export type Stage = ${stages.map(({ name }) => `"${name}"`).join(" | ")};\n`
+      : ""
+  }
   export interface Features {
 ${features
   .map(({ key }) => {

@@ -19,7 +19,7 @@ export async function authenticateUser(baseUrl: string) {
     let isResolved = false;
 
     const server = http.createServer(async (req, res) => {
-      const url = new URL(req.url ?? "/", "http://localhost");
+      const url = new URL(req.url ?? "/", "http://127.0.0.1");
       const headers = corsHeaders(baseUrl);
 
       // Ensure we don't process requests after resolution
@@ -63,8 +63,8 @@ export async function authenticateUser(baseUrl: string) {
     });
 
     const timeout = setTimeout(() => {
-      cleanupAndReject(new Error("Authentication timed out after 30 seconds"));
-    }, 30000);
+      cleanupAndReject(new Error("Authentication timed out after 60 seconds"));
+    }, 60000);
 
     function cleanupAndResolve(token: string) {
       if (isResolved) return;
@@ -94,9 +94,7 @@ export async function authenticateUser(baseUrl: string) {
     const address = server.address();
     if (address && typeof address === "object") {
       const port = address.port;
-      void open(loginUrl(baseUrl, port), {
-        newInstance: true,
-      });
+      void open(loginUrl(baseUrl, port));
     }
   });
 }

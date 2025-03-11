@@ -1,5 +1,7 @@
 import { authRequest } from "../utils/auth.js";
 
+import { Stage } from "./stages.js";
+
 export type RemoteConfigVariant = {
   key?: string;
   payload?: any;
@@ -17,6 +19,7 @@ export type Feature = {
   name: string;
   key: string;
   remoteConfigs: RemoteConfig[];
+  stage: Stage | null;
 };
 
 export type FeaturesResponse = {

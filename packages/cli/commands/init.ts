@@ -33,9 +33,9 @@ export const initAction = async (args: InitArgs = {}) => {
     // Load apps
     spinner = ora(`Loading apps from ${chalk.cyan(baseUrl)}...`).start();
     apps = await listApps();
-    spinner.succeed(`Loaded apps from ${chalk.cyan(baseUrl)}`);
+    spinner.succeed(`Loaded apps from ${chalk.cyan(baseUrl)}.`);
   } catch (error) {
-    spinner?.fail("Loading apps failed");
+    spinner?.fail("Loading apps failed.");
     void handleError(error, "Initialization");
     return;
   }
@@ -50,17 +50,15 @@ export const initAction = async (args: InitArgs = {}) => {
     } else if (nonDemoApps.length === 1) {
       appId = nonDemoApps[0].id;
       console.log(
-        chalk.gray(
-          `Automatically selected app ${nonDemoApps[0].name} (${appId})`,
-        ),
+        `Automatically selected app ${chalk.cyan(nonDemoApps[0].name)} (${chalk.cyan(appId)}).`,
       );
     } else {
+      const longestName = Math.max(...apps.map((app) => app.name.length));
       appId = await select({
         message: "Select an app",
         choices: apps.map((app) => ({
-          name: app.name,
+          name: `${app.name.padEnd(longestName, " ")}${app.demo ? " [Demo]" : ""}`,
           value: app.id,
-          description: app.demo ? "Demo" : undefined,
         })),
       });
     }
@@ -95,10 +93,10 @@ export const initAction = async (args: InitArgs = {}) => {
     spinner = ora("Creating configuration...").start();
     await configStore.saveConfigFile(args.overwrite);
     spinner.succeed(
-      `Configuration created at ${chalk.cyan(relative(process.cwd(), configStore.getConfigPath()!))}`,
+      `Configuration created at ${chalk.cyan(relative(process.cwd(), configStore.getConfigPath()!))}.`,
     );
   } catch (error) {
-    spinner?.fail("Configuration creation failed");
+    spinner?.fail("Configuration creation failed.");
     void handleError(error, "Initialization");
   }
 };
@@ -106,7 +104,7 @@ export const initAction = async (args: InitArgs = {}) => {
 export function registerInitCommand(cli: Command) {
   cli
     .command("init")
-    .description("Initialize a new Bucket configuration")
+    .description("Initialize a new Bucket configuration.")
     .addOption(overwriteOption)
     .action(initAction);
 }
