@@ -53,12 +53,12 @@ export const initAction = async (args: InitArgs = {}) => {
         `Automatically selected app ${chalk.cyan(nonDemoApps[0].name)} (${chalk.cyan(appId)}).`,
       );
     } else {
+      const longestName = Math.max(...apps.map((app) => app.name.length));
       appId = await select({
         message: "Select an app",
         choices: apps.map((app) => ({
-          name: app.name,
+          name: `${app.name.padEnd(longestName, " ")}${app.demo ? " [Demo]" : ""}`,
           value: app.id,
-          description: app.demo ? "Demo" : undefined,
         })),
       });
     }
