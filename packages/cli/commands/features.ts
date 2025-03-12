@@ -53,7 +53,7 @@ export const createFeatureAction = async (
     const feature = await createFeature(appId, name, key);
     // todo: would like to link to feature here but we don't have the env id, only app id
     spinner.succeed(
-      `Created feature ${chalk.cyan(feature.name)} with key ${chalk.cyan(feature.key)} at ${chalk.cyan(baseUrl)}. 🎉`,
+      `Created feature ${chalk.cyan(feature.name)} with key ${chalk.cyan(feature.key)} at ${chalk.cyan(baseUrl)}.`,
     );
   } catch (error) {
     spinner?.fail("Feature creation failed.");
