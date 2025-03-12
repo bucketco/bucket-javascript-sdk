@@ -12,7 +12,7 @@ export const loginAction = async () => {
   const spinner = ora(`Logging in to ${chalk.cyan(baseUrl)}...`).start();
   try {
     await authenticateUser(baseUrl);
-    spinner.succeed(`Logged in to ${chalk.cyan(baseUrl)} successfully! 🎉`);
+    spinner.succeed(`Logged in to ${chalk.cyan(baseUrl)} successfully!`);
   } catch (error) {
     spinner.fail("Login failed.");
     void handleError(error, "Login");
@@ -24,7 +24,7 @@ export const logoutAction = async () => {
   const spinner = ora("Logging out...").start();
   try {
     await authStore.setToken(baseUrl, undefined);
-    spinner.succeed("Logged out successfully! 👋");
+    spinner.succeed("Logged out successfully!");
   } catch (error) {
     spinner.fail("Logout failed.");
     void handleError(error, "Logout");
