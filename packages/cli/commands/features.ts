@@ -6,7 +6,6 @@ import { dirname, isAbsolute, join, relative } from "node:path";
 import ora, { Ora } from "ora";
 
 import { createFeature, Feature, listFeatures } from "../services/features.js";
-import { listStages, Stage } from "../services/stages.js";
 import { configStore } from "../stores/config.js";
 import { handleError, MissingAppIdError } from "../utils/errors.js";
 import { genFeatureKey, genTypes, KeyFormatPatterns } from "../utils/gen.js";
@@ -76,8 +75,8 @@ export const listFeaturesAction = async () => {
     );
     console.table(
       features.map(({ key, name, stage }) => ({
-        key,
         name,
+        key,
         stage: stage?.name,
       })),
     );
@@ -93,7 +92,6 @@ export const generateTypesAction = async () => {
 
   let spinner: Ora | undefined;
   let features: Feature[] = [];
-  let stages: Stage[] = [];
   try {
     if (!appId) throw new MissingAppIdError();
     spinner = ora(
@@ -112,22 +110,12 @@ export const generateTypesAction = async () => {
   }
 
   try {
-    spinner = ora(`Loading stages...`).start();
-    stages = await listStages(appId);
-    spinner.succeed(`Loaded stages.`);
-  } catch (error) {
-    spinner?.fail("Loading stages failed.");
-    void handleError(error, "Features Types");
-    return;
-  }
-
-  try {
     spinner = ora("Generating feature types...").start();
     const projectPath = configStore.getProjectPath();
 
     // Generate types for each output configuration
     for (const output of typesOutput) {
-      const types = await genTypes(features, stages, output.format);
+      const types = await genTypes(features, output.format);
       const outPath = isAbsolute(output.path)
         ? output.path
         : join(projectPath, output.path);
