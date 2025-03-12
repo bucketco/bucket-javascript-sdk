@@ -47,3 +47,8 @@ export const featureKeyOption = new Option(
 );
 
 export const featureNameArgument = new Argument("[name]", "Feature's name.");
+
+export const mcpPortOption = new Option(
+  "-p, --port [port]",
+  "Port for the MCP server to listen on.",
+).default(8050);
