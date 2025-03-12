@@ -4,6 +4,8 @@ React client side library for [Bucket.co](https://bucket.co)
 
 Bucket supports feature toggling, tracking feature usage, [requesting feedback](#userequestfeedback) on features, and [remotely configuring features](#remote-config-beta).
 
+The Bucket React SDK comes with a [built-in toolbar](https://docs.bucket.co/supported-languages/browser-sdk#toolbar) which appears on `localhost` by default.
+
 ## Install
 
 Install via npm:
@@ -210,7 +212,7 @@ The `<BucketProvider>` initializes the Bucket SDK, fetches features and starts l
 - `appBaseUrl`: Optional base URL for the Bucket application. Use this to override the default app URL,
 - `sseBaseUrl`: Optional base URL for Server-Sent Events. Use this to override the default SSE endpoint,
 - `debug`: Set to `true` to enable debug logging to the console,
-- `toolbar`: Optional configuration for the Bucket toolbar,
+- `toolbar`: Optional [configuration](https://docs.bucket.co/supported-languages/browser-sdk/globals#toolbaroptions) for the Bucket toolbar,
 - `feedback`: Optional configuration for feedback collection
 
 ## Hooks
