@@ -10,10 +10,3 @@ export const SCHEMA_URL = `https://unpkg.com/@bucketco/cli@latest/schema.json`;
 export const DEFAULT_BASE_URL = "https://app.bucket.co";
 export const DEFAULT_API_URL = `${DEFAULT_BASE_URL}/api`;
 export const DEFAULT_TYPES_OUTPUT = join("gen", "features.d.ts");
-
-export const loginUrl = (
-  baseUrl: string,
-  localPort: number,
-  codeChallenge: string,
-) =>
-  `${baseUrl}/oauth/cli/authorize?port=${localPort}&codeChallenge=${codeChallenge}`;

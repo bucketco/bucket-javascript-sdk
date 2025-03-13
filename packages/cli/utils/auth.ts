@@ -6,11 +6,7 @@ import open from "open";
 import { authStore } from "../stores/auth.js";
 import { configStore } from "../stores/config.js";
 
-import { loginUrl } from "./constants.js";
-
-const successUrl = (baseUrl: string) => `${baseUrl}/cli-login/success`;
-const errorUrl = (baseUrl: string, error: string) =>
-  `${baseUrl}/cli-login/error?error=${error}`;
+import { errorUrl, loginUrl, successUrl } from "./path.js";
 
 interface waitForAccessToken {
   accessToken: string;
@@ -36,8 +32,8 @@ export async function waitForAccessToken(baseUrl: string, apiUrl: string) {
     .replace(/\//g, "_");
 
   const timeout = setTimeout(() => {
-    cleanupAndReject(new Error("Authentication timed out after 30 seconds"));
-  }, 30000);
+    cleanupAndReject(new Error("Authentication timed out after 60 seconds"));
+  }, 60000);
 
   function cleanupAndReject(error: Error) {
     cleanup();
@@ -59,9 +55,7 @@ export async function waitForAccessToken(baseUrl: string, apiUrl: string) {
       return;
     }
 
-    const fullUrl = new URL(`http://localhost${req.url}`);
-
-    const code = fullUrl.searchParams.get("code");
+    const code = url.searchParams.get("code");
 
     if (!code) {
       res.writeHead(400).end("Could not authenticate");
