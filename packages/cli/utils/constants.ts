@@ -14,6 +14,9 @@ export const DEFAULT_TYPES_OUTPUT = join("gen", "features.ts");
 
 export const chalkBrand = chalk.hex("#847CFB");
 
-export const loginUrl = (baseUrl: string, localPort: number) =>
-  `${baseUrl}/login?redirect_url=` +
-  encodeURIComponent("/cli-login?port=" + localPort);
+export const loginUrl = (
+  baseUrl: string,
+  localPort: number,
+  codeChallenge: string,
+) =>
+  `${baseUrl}/oauth/cli/authorize?port=${localPort}&codeChallenge=${codeChallenge}`;
