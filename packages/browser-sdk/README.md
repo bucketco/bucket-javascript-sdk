@@ -270,6 +270,42 @@ If you are not using the Bucket Browser SDK, you can still submit feedback using
 
 See details in [Feedback HTTP API](https://docs.bucket.co/reference/http-tracking-api#feedback)
 
+## Toolbar
+
+The Bucket Toolbar is great for toggling features on/off for yourself to ensure that everything works both when a feature is on and when it's off.
+
+<img width="352" alt="Toolbar screenshot" src="https://github.com/user-attachments/assets/c223df5a-4bd8-49a1-8b4a-ad7001357693" />
+
+The toolbar will automatically appear on `localhost`. However, it can also be incredibly useful in production.
+You have full control over when it appears through the `toolbar` configuration option passed to the `BucketClient`.
+
+You can pass a simple boolean to force the toolbar to appear/disappear:
+
+```typescript
+const client = new BucketClient({
+  // show the toolbar even in production if the user is an internal/admin user
+  toolbar: user?.isInternal,
+  ...
+});
+```
+
+You can also configure the position of the toolbar on the screen:
+
+```typescript
+const client = new BucketClient({
+  toolbar: {
+    show: true;
+    position: {
+      placement: "bottom-left",
+      offset: {x: "1rem", y: "1rem"}
+    }
+  }
+  ...
+})
+```
+
+See [the reference](https://docs.bucket.co/supported-languages/browser-sdk/globals#toolbaroptions) for details.
+
 ## Event listeners
 
 Event listeners allow for capturing various events occurring in the `BucketClient`. This is useful to build integrations with other system or for various debugging purposes. There are 5 kinds of events:
@@ -290,7 +326,7 @@ const client = new BucketClient({
 });
 
 // or add the hooks after construction:
-const unsub = client.on("enabledCheck", (check: CheckEvent) =>
+const unsub = client.on("check", (check: CheckEvent) =>
   console.log(`Check event ${check}`),
 );
 // use the returned function to unsubscribe, or call `off()` with the same arguments again
