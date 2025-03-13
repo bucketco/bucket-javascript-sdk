@@ -6,7 +6,7 @@ you can streamline your feature flagging workflow directly from your terminal.
 
 ## Quick Start
 
-Get started quickly by running the CLI directly from your project's root directory:
+Get started quickly by running the CLI directly without installing it from your project's root directory:
 initializing the CLI (if not already setup), creating a feature, and generate the types all at once.
 
 ```bash
@@ -14,23 +14,17 @@ initializing the CLI (if not already setup), creating a feature, and generate th
 npx @bucketco/cli new
 ```
 
-or install it locally
+or install it locally and run it using the bin alias:
 
 ```bash
 # npm
 npm install --save-dev @bucketco/cli
 
-# yarn
-yarn add --dev @bucketco/cli
-```
-
-then
-
-```bash
-# npm
 npx bucket new
 
 # yarn
+yarn add --dev @bucketco/cli
+
 yarn bucket new
 ```
 
@@ -77,7 +71,7 @@ Here's a comprehensive list of configuration options available in the `bucket.co
   "appId": "ap123456789",
   "typesOutput": [
     {
-      "path": "gen/features.ts",
+      "path": "gen/features.d.ts",
       "format": "react"
     }
   ],

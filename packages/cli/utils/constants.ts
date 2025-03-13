@@ -1,4 +1,5 @@
 import { join } from "path";
+import chalk from "chalk";
 
 export const CONFIG_FILE_NAME = "bucket.config.json";
 export const AUTH_FILE = join(
@@ -14,3 +15,7 @@ export const DEFAULT_TYPES_OUTPUT = join("gen", "features.d.ts");
 export const loginUrl = (baseUrl: string, localPort: number) =>
   `${baseUrl}/login?redirect_url=` +
   encodeURIComponent("/cli-login?port=" + localPort);
+
+export const baseUrlSuffix = (baseUrl: string) => {
+  return baseUrl !== DEFAULT_BASE_URL ? ` at ${chalk.cyan(baseUrl)}` : "";
+};

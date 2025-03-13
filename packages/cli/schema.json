@@ -4,16 +4,24 @@
   "type": "object",
   "properties": {
     "baseUrl": {
-      "type": "string"
+      "type": "string",
+      "pattern": "^https?://.*",
+      "description": "Base URL for the API. Defaults to https://app.bucket.co."
     },
     "apiUrl": {
-      "type": "string"
+      "type": "string",
+      "pattern": "^https?://.*",
+      "description": "API URL for the API. Defaults to https://app.bucket.co/api."
     },
     "appId": {
-      "type": "string"
+      "type": "string",
+      "minLength": 14,
+      "maxLength": 14,
+      "description": "Mandatory ID for the Bucket app. You can find it by calling bucket apps list."
     },
     "typesOutput": {
       "type": "array",
+      "description": "List of paths to output the types. The path is relative to the current working directory.",
       "items": {
         "type": "object",
         "properties": {
@@ -25,6 +33,7 @@
     },
     "keyFormat": {
       "type": "string",
+      "description": "Format for the suggested feature keys, must match Bucket app settings. Defaults to custom.",
       "enum": [
         "custom",
         "pascalCase",

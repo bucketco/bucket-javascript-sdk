@@ -5,8 +5,10 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative } from "node:path";
 import ora, { Ora } from "ora";
 
+import { App, getApp } from "../services/bootstrap.js";
 import { createFeature, Feature, listFeatures } from "../services/features.js";
 import { configStore } from "../stores/config.js";
+import { baseUrlSuffix } from "../utils/constants.js";
 import { handleError, MissingAppIdError } from "../utils/errors.js";
 import { genFeatureKey, genTypes, KeyFormatPatterns } from "../utils/gen.js";
 import {
@@ -30,6 +32,10 @@ export const createFeatureAction = async (
   let spinner: Ora | undefined;
   try {
     if (!appId) throw new MissingAppIdError();
+    const app = getApp(appId);
+    console.log(
+      `Creating feature for app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}.`,
+    );
     if (!name) {
       name = await input({
         message: "New feature name:",
@@ -46,13 +52,11 @@ export const createFeatureAction = async (
       });
     }
 
-    spinner = ora(
-      `Creating feature for app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}...`,
-    ).start();
+    spinner = ora(`Creating feature...`).start();
     const feature = await createFeature(appId, name, key);
     // todo: would like to link to feature here but we don't have the env id, only app id
     spinner.succeed(
-      `Created feature ${chalk.cyan(feature.name)} with key ${chalk.cyan(feature.key)} at ${chalk.cyan(baseUrl)}.`,
+      `Created feature ${chalk.cyan(feature.name)} with key ${chalk.cyan(feature.key)}${baseUrlSuffix(baseUrl)}.`,
     );
   } catch (error) {
     spinner?.fail("Feature creation failed.");
@@ -66,12 +70,13 @@ export const listFeaturesAction = async () => {
 
   try {
     if (!appId) throw new MissingAppIdError();
+    const app = getApp(appId);
     spinner = ora(
-      `Loading features of app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}...`,
+      `Loading features of app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}...`,
     ).start();
     const features = await listFeatures(appId);
     spinner.succeed(
-      `Loaded features of app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}.`,
+      `Loaded features of app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}.`,
     );
     console.table(
       features.map(({ key, name, stage }) => ({
@@ -92,16 +97,18 @@ export const generateTypesAction = async () => {
 
   let spinner: Ora | undefined;
   let features: Feature[] = [];
+  let app: App | undefined;
   try {
     if (!appId) throw new MissingAppIdError();
+    app = getApp(appId);
     spinner = ora(
-      `Loading features of app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}...`,
+      `Loading features of app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}...`,
     ).start();
     features = await listFeatures(appId, {
       includeRemoteConfigs: true,
     });
     spinner.succeed(
-      `Loaded features of app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}.`,
+      `Loaded features of app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}.`,
     );
   } catch (error) {
     spinner?.fail("Loading features failed.");
@@ -127,7 +134,7 @@ export const generateTypesAction = async () => {
       );
     }
 
-    spinner.succeed(`Generated types for ${chalk.cyan(appId)}.`);
+    spinner.succeed(`Generated types for app ${chalk.cyan(app.name)}.`);
   } catch (error) {
     spinner?.fail("Type generation failed.");
     void handleError(error, "Features Types");
