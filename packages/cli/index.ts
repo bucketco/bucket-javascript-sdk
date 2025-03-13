@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import chalk from "chalk";
 import { program } from "commander";
-import { join } from "node:path";
 
 import { registerAppCommands } from "./commands/apps.js";
 import { registerAuthCommands } from "./commands/auth.js";
@@ -54,10 +53,4 @@ async function main() {
   program.parse(process.argv);
 }
 
-// Run the main function if this file is run directly and not imported
-if (
-  process.argv[1].endsWith(join("cli", "dist", "index.js")) ||
-  process.argv[1].endsWith(join(".bin", "bucket"))
-) {
-  void main();
-}
+void main();

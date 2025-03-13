@@ -1,13 +1,16 @@
 # Bucket CLI
 
-Command-line interface for interacting with Bucket services. The CLI allows you to manage apps, features, authentication, and generate TypeScript types for your Bucket features. With this tool, you can streamline your feature flagging workflow directly from your terminal.
+Command-line interface for interacting with Bucket services. The CLI allows you to manage apps,
+features, authentication, and generate TypeScript types for your Bucket features. With this tool,
+you can streamline your feature flagging workflow directly from your terminal.
 
 ## Quick Start
 
-Get started quickly by running the CLI directly: initializing the CLI, creating a feature, and generate the types all at once.
+Get started quickly by running the CLI directly from your project's root directory:
+initializing the CLI (if not already setup), creating a feature, and generate the types all at once.
 
 ```bash
-# Initialize CLI (if not setup), create a feature, and generate types all at once
+# Initialize CLI (if not already setup), create a feature, and generate types all at once
 npx @bucketco/cli new
 ```
 
@@ -33,7 +36,8 @@ yarn bucket new
 
 ### Global installation
 
-You can also install the CLI globally adding the it to your PATH allowing you to use the shorthand `bucket`
+You can also install the CLI globally adding the it to your PATH allowing you to use the shorthand `bucket`,
+but we recommend installing it locally instead to better maintain the version.
 
 ```bash
 npm install -g @bucketco/cli
@@ -58,7 +62,8 @@ bucket features types
 
 ## Configuration
 
-The CLI creates a `bucket.config.json` file in your project directory when you run `bucket init`. This file contains all the necessary settings for your Bucket integration.
+The CLI creates a `bucket.config.json` file in your project directory when you run `bucket init`.
+This file contains all the necessary settings for your Bucket integration.
 
 ### Configuration File Structure
 
@@ -95,7 +100,8 @@ You can override these settings using command-line options for individual comman
 
 ### `bucket init`
 
-Initialize a new Bucket configuration in your project. This creates a `bucket.config.json` file with your settings and prompts for any required information not provided via options.
+Initialize a new Bucket configuration in your project.
+This creates a `bucket.config.json` file with your settings and prompts for any required information not provided via options.
 
 ```bash
 bucket init [--overwrite]
@@ -109,7 +115,8 @@ Options:
 
 ### `bucket new [featureName]`
 
-All-in-one command to get started quickly. This command combines `init`, feature creation, and type generation in a single step. Use this for the fastest way to get up and running with Bucket.
+All-in-one command to get started quickly. This command combines `init`, feature creation,
+and type generation in a single step. Use this for the fastest way to get up and running with Bucket.
 
 ```bash
 bucket new "My Feature" [--key my-feature] [--app-id ap123456789] [--key-format custom] [--out gen/features.ts] [--format react]
@@ -147,7 +154,8 @@ Manage your Bucket features with the following subcommands.
 
 #### `bucket features create [featureName]`
 
-Create a new feature in your Bucket app. The command guides you through the feature creation process with interactive prompts if options are not provided.
+Create a new feature in your Bucket app.
+The command guides you through the feature creation process with interactive prompts if options are not provided.
 
 ```bash
 bucket features create "My Feature" [--key my-feature] [--app-id ap123456789] [--key-format custom]
@@ -161,7 +169,8 @@ Options:
 
 #### `bucket features list`
 
-List all features for the current app. This helps you visualize what features are available and their current configurations.
+List all features for the current app.
+This helps you visualize what features are available and their current configurations.
 
 ```bash
 bucket features list [--app-id ap123456789]
@@ -173,7 +182,8 @@ Options:
 
 #### `bucket features types`
 
-Generate TypeScript types for your features. This ensures type safety when using Bucket features in your TypeScript/JavaScript applications.
+Generate TypeScript types for your features.
+This ensures type safety when using Bucket features in your TypeScript/JavaScript applications.
 
 ```bash
 bucket features types [--app-id ap123456789] [--out gen/features.ts] [--format react]
