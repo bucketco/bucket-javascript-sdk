@@ -47,6 +47,7 @@ export async function handleError(error: unknown, tag: string) {
     }
   } else if (error instanceof Error) {
     console.error(chalk.red(tag, error.message));
+    if (error.cause) console.error(error.cause);
   } else if (typeof error === "string") {
     console.error(chalk.red(tag, error));
   } else {
