@@ -4,39 +4,27 @@ Command-line interface for interacting with Bucket services. The CLI allows you 
 features, authentication, and generate TypeScript types for your Bucket features. With this tool,
 you can streamline your feature flagging workflow directly from your terminal.
 
-## Quick Start
+## Usage
 
-Get started quickly by running the CLI directly without installing it from your project's root directory:
-initializing the CLI (if not already setup), creating a feature, and generate the types all at once.
-
-```bash
-# Initialize CLI (if not already setup), create a feature, and generate types all at once
-npx @bucketco/cli new
-```
-
-or install it locally and run it using the bin alias:
+Get started by installing the CLI locally in your project:
 
 ```bash
 # npm
 npm install --save-dev @bucketco/cli
 
+# yarn
+yarn add --dev @bucketco/cli
+```
+
+Then running the `new` command from your project's root directory,
+initializing the CLI, creating a feature, and generating the types all at once:
+
+```bash
+# npm
 npx bucket new
 
 # yarn
-yarn add --dev @bucketco/cli
-
 yarn bucket new
-```
-
-### Global installation
-
-You can also install the CLI globally adding the it to your PATH allowing you to use the shorthand `bucket`,
-but we recommend installing it locally instead to better maintain the version.
-
-```bash
-npm install -g @bucketco/cli
-
-bucket <command>
 ```
 
 ### Individual commands
@@ -45,13 +33,13 @@ Instead of running `new` you can call each step individually.
 
 ```bash
 # Initialize Bucket in your project (if not already setup)
-bucket init
+npx bucket init
 
 # Create a new feature
-bucket features create "My Feature"
+npx bucket features create "My Feature"
 
 # Generate TypeScript types for your features
-bucket features types
+npx bucket features types
 ```
 
 ## Configuration
