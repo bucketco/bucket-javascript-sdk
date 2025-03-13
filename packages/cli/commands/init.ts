@@ -63,9 +63,6 @@ export const initAction = async (args: InitArgs = {}) => {
       });
     }
 
-    const keyFormat =
-      apps.find((app) => app.id === appId)?.featureKeyFormat ?? "custom";
-
     // Get types output path
     const typesOutput = await input({
       message: "Where should we generate the types?",
@@ -85,7 +82,6 @@ export const initAction = async (args: InitArgs = {}) => {
     // Update config
     configStore.setConfig({
       appId,
-      keyFormat,
       typesOutput: [{ path: typesOutput, format: typesFormat }],
     });
 

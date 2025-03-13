@@ -74,8 +74,7 @@ Here's a comprehensive list of configuration options available in the `bucket.co
       "path": "gen/features.d.ts",
       "format": "react"
     }
-  ],
-  "keyFormat": "camelCase"
+  ]
 }
 ```
 
@@ -86,7 +85,6 @@ Here's a comprehensive list of configuration options available in the `bucket.co
 | `apiUrl`      | API URL for Bucket services (overrides baseUrl for API calls).                                                                                                       | "https://app.bucket.co/api"                          |
 | `appId`       | Your Bucket application ID.                                                                                                                                          | Required                                             |
 | `typesOutput` | Path(s) where TypeScript types will be generated. Can be a string or an array of objects with `path` and `format` properties. Available formats: `react` and `node`. | "gen/features.ts" with format "react"                |
-| `keyFormat`   | Format for feature keys (options: custom, pascalCase, camelCase, snakeCaseUpper, snakeCaseLower, kebabCaseUpper, kebabCaseLower).                                    | "custom"                                             |
 
 You can override these settings using command-line options for individual commands.
 

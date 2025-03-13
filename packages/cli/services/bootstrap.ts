@@ -1,16 +1,16 @@
-import { KeyFormat } from "../stores/config.js";
 import { authRequest } from "../utils/auth.js";
+import { KeyFormat } from "../utils/gen.js";
 
 export type BootstrapResponse = {
-  org: OrgResponse;
-  user: UserResponse;
+  org: Org;
+  user: User;
 };
 
-export type OrgResponse = {
+export type Org = {
   id: string;
   name: string;
   logoUrl: string;
-  apps: AppResponse[];
+  apps: App[];
   inviteKey: string;
   createdAt: Date;
   updatedAt: Date;
@@ -23,13 +23,21 @@ export type OrgResponse = {
   featureKeyFormat: KeyFormat;
 };
 
-export type AppResponse = {
+export type Environment = {
+  id: string;
+  name: string;
+  isProduction: boolean;
+  order: number;
+};
+
+export type App = {
   id: string;
   name: string;
   demo: boolean;
+  environments: Environment[];
 };
 
-export type UserResponse = {
+export type User = {
   id: string;
   email: string;
   name: string;
@@ -37,13 +45,6 @@ export type UserResponse = {
   updatedAt: Date;
   avatarUrl: string;
   isAdmin: boolean;
-};
-
-export type App = {
-  id: string;
-  name: string;
-  demo: boolean;
-  featureKeyFormat: KeyFormat;
 };
 
 let bootstrapResponse: BootstrapResponse | null = null;
@@ -55,23 +56,28 @@ export async function bootstrap(): Promise<BootstrapResponse> {
   return bootstrapResponse;
 }
 
+export function getOrg(): Org {
+  if (!bootstrapResponse) {
+    throw new Error("CLI has not been bootstrapped.");
+  }
+  if (!bootstrapResponse.org) {
+    throw new Error("No organization found.");
+  }
+  return bootstrapResponse.org;
+}
+
 export function listApps(): App[] {
   if (!bootstrapResponse) {
-    throw new Error("Failed to load bootstrap response");
+    throw new Error("CLI has not been bootstrapped.");
   }
   const org = bootstrapResponse.org;
   if (!org) {
-    throw new Error("No organization found");
+    throw new Error("No organization found.");
   }
   if (!org.apps?.length) {
-    throw new Error("No apps found");
+    throw new Error("No apps found.");
   }
-  return bootstrapResponse.org.apps.map(({ id, name, demo }) => ({
-    name,
-    id,
-    featureKeyFormat: org.featureKeyFormat ?? "custom",
-    demo,
-  }));
+  return bootstrapResponse.org.apps;
 }
 
 export function getApp(id: string): App {
@@ -83,9 +89,12 @@ export function getApp(id: string): App {
   return app;
 }
 
-export function getUser(): UserResponse {
+export function getUser(): User {
   if (!bootstrapResponse) {
-    throw new Error("Failed to load bootstrap response");
+    throw new Error("CLI has not been bootstrapped.");
+  }
+  if (!bootstrapResponse.user) {
+    throw new Error("No user found.");
   }
   return bootstrapResponse.user;
 }

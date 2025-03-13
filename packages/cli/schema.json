@@ -30,19 +30,6 @@
         },
         "required": ["path"]
       }
-    },
-    "keyFormat": {
-      "type": "string",
-      "description": "Format for the suggested feature keys, must match Bucket app settings. Defaults to custom.",
-      "enum": [
-        "custom",
-        "pascalCase",
-        "camelCase",
-        "snakeCaseUpper",
-        "snakeCaseLower",
-        "kebabCaseUpper",
-        "kebabCaseLower"
-      ]
     }
   },
   "required": ["appId"]

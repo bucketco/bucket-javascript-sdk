@@ -1,7 +1,5 @@
 import { Argument, Option } from "commander";
 
-import { keyFormats } from "../stores/config.js";
-
 import { CONFIG_FILE_NAME } from "./constants.js";
 
 export const debugOption = new Option("--debug", "Enable debug mode");
@@ -35,11 +33,6 @@ export const typesFormatOption = new Option(
   "-f, --format [format]",
   "Single output format for generated feature types",
 ).choices(["react", "node"]);
-
-export const keyFormatOption = new Option(
-  "--key-format [format]",
-  `Feature key format. Falls back to keyFormat value in ${CONFIG_FILE_NAME}.`,
-).choices(keyFormats);
 
 export const featureKeyOption = new Option(
   "-k, --key [feature key]",

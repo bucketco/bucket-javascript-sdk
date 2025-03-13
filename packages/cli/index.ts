@@ -14,6 +14,12 @@ import { handleError } from "./utils/errors.js";
 import { apiUrlOption, baseUrlOption, debugOption } from "./utils/options.js";
 import { stripTrailingSlash } from "./utils/path.js";
 
+type Options = {
+  debug?: boolean;
+  baseUrl?: string;
+  apiUrl?: string;
+};
+
 async function main() {
   // Must load tokens and config before anything else
   await authStore.initialize();
@@ -26,8 +32,9 @@ async function main() {
 
   // Pre-action hook
   program.hook("preAction", async () => {
-    const { debug, baseUrl, apiUrl } = program.opts();
+    const { debug, baseUrl, apiUrl } = program.opts<Options>();
     const cleanedBaseUrl = stripTrailingSlash(baseUrl?.trim());
+    // Set baseUrl and apiUrl in config store, will skip if undefined
     configStore.setConfig({
       baseUrl: cleanedBaseUrl,
       apiUrl:

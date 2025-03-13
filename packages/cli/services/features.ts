@@ -16,6 +16,7 @@ export type RemoteConfig = {
 };
 
 export type Feature = {
+  id: string;
   name: string;
   key: string;
   remoteConfigs: RemoteConfig[];
