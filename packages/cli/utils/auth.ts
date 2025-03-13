@@ -4,7 +4,7 @@ import open from "open";
 import { authStore } from "../stores/auth.js";
 import { configStore } from "../stores/config.js";
 
-import { loginUrl } from "./constants.js";
+import { loginUrl } from "./path.js";
 
 function corsHeaders(baseUrl: string): Record<string, string> {
   return {

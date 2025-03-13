@@ -5,18 +5,24 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative } from "node:path";
 import ora, { Ora } from "ora";
 
+import { App, getApp, getOrg } from "../services/bootstrap.js";
 import { createFeature, Feature, listFeatures } from "../services/features.js";
 import { configStore } from "../stores/config.js";
 import { handleError, MissingAppIdError } from "../utils/errors.js";
-import { genFeatureKey, genTypes, KeyFormatPatterns } from "../utils/gen.js";
+import {
+  genFeatureKey,
+  genTypes,
+  indentLines,
+  KeyFormatPatterns,
+} from "../utils/gen.js";
 import {
   appIdOption,
   featureKeyOption,
   featureNameArgument,
-  keyFormatOption,
   typesFormatOption,
   typesOutOption,
 } from "../utils/options.js";
+import { baseUrlSuffix, featureUrl } from "../utils/path.js";
 
 type CreateFeatureArgs = {
   key?: string;
@@ -30,6 +36,11 @@ export const createFeatureAction = async (
   let spinner: Ora | undefined;
   try {
     if (!appId) throw new MissingAppIdError();
+    const org = getOrg();
+    const app = getApp(appId);
+    console.log(
+      `Creating feature for app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}.`,
+    );
     if (!name) {
       name = await input({
         message: "New feature name:",
@@ -38,7 +49,7 @@ export const createFeatureAction = async (
     }
 
     if (!key) {
-      const keyFormat = configStore.getConfig("keyFormat") ?? "custom";
+      const keyFormat = org.featureKeyFormat;
       key = await input({
         message: "New feature key:",
         default: genFeatureKey(name, keyFormat),
@@ -46,14 +57,17 @@ export const createFeatureAction = async (
       });
     }
 
-    spinner = ora(
-      `Creating feature for app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}...`,
-    ).start();
+    spinner = ora(`Creating feature...`).start();
     const feature = await createFeature(appId, name, key);
-    // todo: would like to link to feature here but we don't have the env id, only app id
     spinner.succeed(
-      `Created feature ${chalk.cyan(feature.name)} with key ${chalk.cyan(feature.key)} at ${chalk.cyan(baseUrl)}.`,
+      `Created feature ${chalk.cyan(feature.name)} with key ${chalk.cyan(feature.key)}:`,
     );
+    const production = app.environments.find((e) => e.isProduction);
+    if (production) {
+      console.log(
+        indentLines(chalk.magenta(featureUrl(baseUrl, production, feature))),
+      );
+    }
   } catch (error) {
     spinner?.fail("Feature creation failed.");
     void handleError(error, "Features Create");
@@ -66,12 +80,13 @@ export const listFeaturesAction = async () => {
 
   try {
     if (!appId) throw new MissingAppIdError();
+    const app = getApp(appId);
     spinner = ora(
-      `Loading features of app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}...`,
+      `Loading features of app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}...`,
     ).start();
     const features = await listFeatures(appId);
     spinner.succeed(
-      `Loaded features of app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}.`,
+      `Loaded features of app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}.`,
     );
     console.table(
       features.map(({ key, name, stage }) => ({
@@ -92,16 +107,18 @@ export const generateTypesAction = async () => {
 
   let spinner: Ora | undefined;
   let features: Feature[] = [];
+  let app: App | undefined;
   try {
     if (!appId) throw new MissingAppIdError();
+    app = getApp(appId);
     spinner = ora(
-      `Loading features of app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}...`,
+      `Loading features of app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}...`,
     ).start();
     features = await listFeatures(appId, {
       includeRemoteConfigs: true,
     });
     spinner.succeed(
-      `Loaded features of app ${chalk.cyan(appId)} at ${chalk.cyan(baseUrl)}.`,
+      `Loaded features of app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}.`,
     );
   } catch (error) {
     spinner?.fail("Loading features failed.");
@@ -127,7 +144,7 @@ export const generateTypesAction = async () => {
       );
     }
 
-    spinner.succeed(`Generated types for ${chalk.cyan(appId)}.`);
+    spinner.succeed(`Generated types for app ${chalk.cyan(app.name)}.`);
   } catch (error) {
     spinner?.fail("Type generation failed.");
     void handleError(error, "Features Types");
@@ -143,7 +160,6 @@ export function registerFeatureCommands(cli: Command) {
     .command("create")
     .description("Create a new feature.")
     .addOption(appIdOption)
-    .addOption(keyFormatOption)
     .addOption(featureKeyOption)
     .addArgument(featureNameArgument)
     .action(createFeatureAction);
@@ -164,10 +180,9 @@ export function registerFeatureCommands(cli: Command) {
 
   // Update the config with the cli override values
   featuresCommand.hook("preAction", (_, command) => {
-    const { appId, keyFormat, out, format } = command.opts();
+    const { appId, out, format } = command.opts();
     configStore.setConfig({
       appId,
-      keyFormat,
       typesOutput: out ? [{ path: out, format: format || "react" }] : undefined,
     });
   });
