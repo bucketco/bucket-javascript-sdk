@@ -106,6 +106,7 @@
     calc(100vh - 36px - 35px),
     calc(45px + (var(--visible-features) * 27px))
   );
+  height: auto;
 
   &[open] {
     display: flex;
