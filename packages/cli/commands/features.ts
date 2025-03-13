@@ -9,7 +9,12 @@ import { App, getApp, getOrg } from "../services/bootstrap.js";
 import { createFeature, Feature, listFeatures } from "../services/features.js";
 import { configStore } from "../stores/config.js";
 import { handleError, MissingAppIdError } from "../utils/errors.js";
-import { genFeatureKey, genTypes, KeyFormatPatterns } from "../utils/gen.js";
+import {
+  genFeatureKey,
+  genTypes,
+  indentLines,
+  KeyFormatPatterns,
+} from "../utils/gen.js";
 import {
   appIdOption,
   featureKeyOption,
@@ -54,14 +59,15 @@ export const createFeatureAction = async (
 
     spinner = ora(`Creating feature...`).start();
     const feature = await createFeature(appId, name, key);
-    const production = app.environments.find((e) => e.isProduction);
     spinner.succeed(
-      `Created feature ${chalk.cyan(feature.name)} with key ${chalk.cyan(feature.key)}${
-        production
-          ? ` at ${chalk.cyan(featureUrl(baseUrl, production, feature))}`
-          : ""
-      }.`,
+      `Created feature ${chalk.cyan(feature.name)} with key ${chalk.cyan(feature.key)}:`,
     );
+    const production = app.environments.find((e) => e.isProduction);
+    if (production) {
+      console.log(
+        indentLines(chalk.magenta(featureUrl(baseUrl, production, feature))),
+      );
+    }
   } catch (error) {
     spinner?.fail("Feature creation failed.");
     void handleError(error, "Features Create");
