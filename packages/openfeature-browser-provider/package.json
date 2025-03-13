@@ -1,6 +1,6 @@
 {
   "name": "@bucketco/openfeature-browser-provider",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "packageManager": "yarn@4.1.1",
   "license": "MIT",
   "repository": {
@@ -35,7 +35,7 @@
     }
   },
   "dependencies": {
-    "@bucketco/browser-sdk": "3.1.0"
+    "@bucketco/browser-sdk": "3.1.2"
   },
   "devDependencies": {
     "@bucketco/eslint-config": "0.0.2",

@@ -12,7 +12,7 @@ export const loginAction = async () => {
 
   try {
     await waitForAccessToken(baseUrl, apiUrl);
-    console.log(`Logged in to ${chalk.cyan(baseUrl)} successfully! 🎉`);
+    console.log(`Logged in to ${chalk.cyan(baseUrl)} successfully!`);
   } catch (error) {
     console.error("Login failed.");
     void handleError(error, "Login");
@@ -24,7 +24,7 @@ export const logoutAction = async () => {
   const spinner = ora("Logging out...").start();
   try {
     await authStore.setToken(baseUrl, undefined);
-    spinner.succeed("Logged out successfully! 👋");
+    spinner.succeed("Logged out successfully!");
   } catch (error) {
     spinner.fail("Logout failed.");
     void handleError(error, "Logout");
