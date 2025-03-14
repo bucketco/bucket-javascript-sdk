@@ -4,25 +4,29 @@ Bucket is B2B feature flagging with a built-in feedback loop that lets you roll 
 
 [Learn more and get started](https://bucket.co/)
 
-## SDKs
-
-### React SDK
+## React SDK
 
 Client side React SDK
 
 [Read the docs](packages/react-sdk/README.md)
 
-### Browser SDK
+## Browser SDK
 
 Browser SDK for use in non-React web applications
 
-[Read the docs](packages/browser-sdk/README.md) 
+[Read the docs](packages/browser-sdk/README.md)
 
-### Node.js SDK
+## Node.js SDK
 
 Node.js SDK for use on the server side.
 
 [Read the docs](packages/node-sdk/README.md)
+
+## Bucket CLI
+
+CLI to interact with Bucket and generate types
+
+[Read the docs](packages/cli/README.md)
 
 ## OpenFeature Browser Provider
 
@@ -35,7 +39,6 @@ Use Bucket with OpenFeature in the browser through the Bucket OpenFeature Browse
 Use the Bucket with OpenFeature on the server in Node.js through the Bucket OpenFeature Node.js Provider
 
 [Read the docs](packages/openfeature-node-provider/README.md)
-
 
 ## Development
 

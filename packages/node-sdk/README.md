@@ -306,37 +306,25 @@ order of importance:
 
 ## Type safe feature flags
 
-To get type checked feature flags, add the list of flags to your `bucket.ts` file.
-Any feature look ups will now be checked against the list you maintain.
+To get type checked feature flags, install the Bucket CLI:
+
+```
+npm i --save-dev @bucketco/cli
+```
+
+then generate the types:
+
+```
+npx bucket features types
+```
+
+This will generate a `bucket.d.ts` containing all your features.
+Any feature look ups will now be checked against the features that exist in Bucket.
+
+Here's an example of a failed type check:
 
 ```typescript
 import { BucketClient } from "@bucketco/node-sdk";
-
-// Extending the Features interface to define the available features
-declare module "@bucketco/node-sdk" {
-  interface Features {
-    "show-todos": boolean;
-    "create-todos": {
-      isEnabled: boolean;
-      config: {
-        key: string;
-        payload: {
-          minimumLength: number;
-        };
-      };
-    };
-    "delete-todos": {
-      isEnabled: boolean;
-      config: {
-        key: string;
-        payload: {
-          requireConfirmation: boolean;
-          maxDeletionsPerDay: number;
-        };
-      };
-    };
-  }
-}
 
 export const bucketClient = new BucketClient();
 
@@ -354,6 +342,8 @@ bucketClient.initialize().then(() => {
 ```
 
 ![Type check failed](docs/type-check-failed.png "Type check failed")
+
+This is an example of a failed config payload check:
 
 ```typescript
 bucketClient.initialize().then(() => {
