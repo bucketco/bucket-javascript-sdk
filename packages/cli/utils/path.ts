@@ -13,13 +13,20 @@ export function stripTrailingSlash<T extends string | undefined>(str: T): T {
   return str?.endsWith("/") ? (str.slice(0, -1) as T) : str;
 }
 
+export const successUrl = (baseUrl: string) => `${baseUrl}/cli-login/success`;
+export const errorUrl = (baseUrl: string, error: string) =>
+  `${baseUrl}/cli-login/error?error=${error}`;
+
+export const loginUrl = (
+  baseUrl: string,
+  localPort: number,
+  codeChallenge: string,
+) =>
+  `${baseUrl}/oauth/cli/authorize?port=${localPort}&codeChallenge=${codeChallenge}`;
+
 export const baseUrlSuffix = (baseUrl: string) => {
   return baseUrl !== DEFAULT_BASE_URL ? ` at ${chalk.cyan(baseUrl)}` : "";
 };
-
-export const loginUrl = (baseUrl: string, localPort: number) =>
-  `${baseUrl}/login?redirect_url=` +
-  encodeURIComponent("/cli-login?port=" + localPort);
 
 export function environmentUrl(baseUrl: string, environment: UrlArgs): string {
   return `${baseUrl}/envs/${slug(environment)}`;
