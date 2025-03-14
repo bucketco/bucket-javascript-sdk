@@ -43,11 +43,11 @@ Install the Bucket CLI:
 npm i --save-dev @bucketco/cli
 ```
 
-Run `npm run bucket new` to create your first feature!
+Run `npx bucket new` to create your first feature!
 On the first run, it will sign into Bucket and set up type generation for your project:
 
 ```shell
-❯ npm run bucket new
+❯ npx bucket new
 Opened web browser to facilitate login: https://app.bucket.co/api/oauth/cli/authorize
 
 Welcome to Bucket!

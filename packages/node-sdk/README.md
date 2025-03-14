@@ -315,7 +315,7 @@ npm i --save-dev @bucketco/cli
 then generate the types:
 
 ```
-npm run bucket features types
+npx bucket features types
 ```
 
 This will generate a `bucket.d.ts` containing all your features.
