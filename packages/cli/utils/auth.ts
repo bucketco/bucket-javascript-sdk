@@ -134,7 +134,6 @@ export async function authRequest<T = Record<string, unknown>>(
     await authStore.setToken(baseUrl, accessToken.accessToken);
     return authRequest(url, options);
   }
-
   const resolvedUrl = new URL(`${apiUrl}/${url}`);
   if (options?.params) {
     Object.entries(options.params).forEach(([key, value]) => {
