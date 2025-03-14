@@ -4,17 +4,17 @@ import ora from "ora";
 
 import { authStore } from "../stores/auth.js";
 import { configStore } from "../stores/config.js";
-import { authenticateUser } from "../utils/auth.js";
+import { waitForAccessToken } from "../utils/auth.js";
 import { handleError } from "../utils/errors.js";
 
 export const loginAction = async () => {
-  const baseUrl = configStore.getConfig("baseUrl");
-  const spinner = ora(`Logging in to ${chalk.cyan(baseUrl)}...`).start();
+  const { baseUrl, apiUrl } = configStore.getConfig();
+
   try {
-    await authenticateUser(baseUrl);
-    spinner.succeed(`Logged in to ${chalk.cyan(baseUrl)} successfully!`);
+    await waitForAccessToken(baseUrl, apiUrl);
+    console.log(`Logged in to ${chalk.cyan(baseUrl)} successfully!`);
   } catch (error) {
-    spinner.fail("Login failed.");
+    console.error("Login failed.");
     void handleError(error, "Login");
   }
 };

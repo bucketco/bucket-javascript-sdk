@@ -1,102 +1,122 @@
+import crypto from "crypto";
 import http from "http";
+import chalk from "chalk";
 import open from "open";
 
 import { authStore } from "../stores/auth.js";
 import { configStore } from "../stores/config.js";
 
-import { loginUrl } from "./path.js";
+import { errorUrl, loginUrl, successUrl } from "./path.js";
 
-function corsHeaders(baseUrl: string): Record<string, string> {
-  return {
-    "Access-Control-Allow-Origin": baseUrl,
-    "Access-Control-Allow-Methods": "GET",
-    "Access-Control-Allow-Headers": "Authorization",
-  };
+interface waitForAccessToken {
+  accessToken: string;
+  expiresAt: Date;
 }
 
-export async function authenticateUser(baseUrl: string) {
-  return new Promise<string>((resolve, reject) => {
-    let isResolved = false;
+export async function waitForAccessToken(baseUrl: string, apiUrl: string) {
+  let resolve: (args: waitForAccessToken) => void,
+    reject: (arg0: Error) => void;
+  const promise = new Promise<waitForAccessToken>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
 
-    const server = http.createServer(async (req, res) => {
-      const url = new URL(req.url ?? "/", "http://127.0.0.1");
-      const headers = corsHeaders(baseUrl);
+  // PCKE code verifier and challenge
+  const codeVerifier = crypto.randomUUID();
+  const codeChallenge = crypto
+    .createHash("sha256")
+    .update(codeVerifier)
+    .digest("base64")
+    .replace(/=/g, "")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_");
 
-      // Ensure we don't process requests after resolution
-      if (isResolved) {
-        res.writeHead(503, headers).end();
-        return;
-      }
+  const timeout = setTimeout(() => {
+    cleanupAndReject(new Error("Authentication timed out after 60 seconds"));
+  }, 60000);
 
-      if (url.pathname !== "/cli-login") {
-        res.writeHead(404).end("Invalid path");
-        cleanupAndReject(new Error("Could not authenticate: Invalid path"));
-        return;
-      }
+  function cleanupAndReject(error: Error) {
+    cleanup();
+    reject(error);
+  }
 
-      // Handle preflight request
-      if (req.method === "OPTIONS") {
-        res.writeHead(200, headers);
-        res.end();
-        return;
-      }
+  function cleanup() {
+    clearTimeout(timeout);
+    server.close();
+    server.closeAllConnections();
+  }
 
-      if (!req.headers.authorization?.startsWith("Bearer ")) {
-        res.writeHead(400, headers).end("Could not authenticate");
-        cleanupAndReject(new Error("Could not authenticate"));
-        return;
-      }
+  const server = http.createServer(async (req, res) => {
+    const url = new URL(req.url ?? "/", "http://127.0.0.1");
 
-      const token = req.headers.authorization.slice("Bearer ".length);
-      headers["Content-Type"] = "application/json";
-      res.writeHead(200, headers);
-      res.end(JSON.stringify({ result: "success" }));
+    if (url.pathname !== "/cli-login") {
+      res.writeHead(404).end("Invalid path");
+      cleanupAndReject(new Error("Could not authenticate: Invalid path"));
+      return;
+    }
 
-      try {
-        await authStore.setToken(baseUrl, token);
-        cleanupAndResolve(token);
-      } catch (error) {
-        cleanupAndReject(
-          error instanceof Error ? error : new Error("Failed to store token"),
-        );
-      }
+    const code = url.searchParams.get("code");
+
+    if (!code) {
+      res.writeHead(400).end("Could not authenticate");
+      cleanupAndReject(new Error("Could not authenticate: no code provided"));
+      return;
+    }
+
+    const response = await fetch(`${apiUrl}/oauth/cli/access-token`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        code,
+        codeVerifier,
+      }),
     });
 
-    const timeout = setTimeout(() => {
-      cleanupAndReject(new Error("Authentication timed out after 60 seconds"));
-    }, 60000);
-
-    function cleanupAndResolve(token: string) {
-      if (isResolved) return;
-      isResolved = true;
-      cleanup();
-      resolve(token);
+    if (!response.ok) {
+      res
+        .writeHead(302, {
+          location: errorUrl(
+            baseUrl,
+            "Could not authenticate: Unable to fetch access token",
+          ),
+        })
+        .end("Could not authenticate");
+      cleanupAndReject(new Error("Could not authenticate"));
+      return;
     }
+    res
+      .writeHead(302, {
+        location: successUrl(baseUrl),
+      })
+      .end("Authentication successful");
 
-    function cleanupAndReject(error: Error) {
-      if (isResolved) return;
-      isResolved = true;
-      cleanup();
-      reject(error);
-    }
+    const jsonResponse = await response.json();
 
-    function cleanup() {
-      clearTimeout(timeout);
-      server.close();
-      // Force-close any remaining connections
-      server.getConnections((err, count) => {
-        if (err || count === 0) return;
-        server.closeAllConnections();
-      });
-    }
-
-    server.listen();
-    const address = server.address();
-    if (address && typeof address === "object") {
-      const port = address.port;
-      void open(loginUrl(baseUrl, port));
-    }
+    cleanup();
+    resolve({
+      accessToken: jsonResponse.accessToken,
+      expiresAt: new Date(jsonResponse.expiresAt),
+    });
   });
+
+  server.listen();
+  const address = server.address();
+  if (address == null || typeof address !== "object") {
+    throw new Error("Could not start server");
+  }
+
+  const port = address.port;
+  const browserUrl = loginUrl(apiUrl, port, codeChallenge);
+
+  console.log(
+    `Opened web browser to facilitate login: ${chalk.cyan(browserUrl)}`,
+  );
+
+  void open(browserUrl);
+
+  return promise;
 }
 
 export async function authRequest<T = Record<string, unknown>>(
@@ -110,10 +130,10 @@ export async function authRequest<T = Record<string, unknown>>(
   const token = authStore.getToken(baseUrl);
 
   if (!token) {
-    await authenticateUser(baseUrl);
+    const accessToken = await waitForAccessToken(baseUrl, apiUrl);
+    await authStore.setToken(baseUrl, accessToken.accessToken);
     return authRequest(url, options);
   }
-
   const resolvedUrl = new URL(`${apiUrl}/${url}`);
   if (options?.params) {
     Object.entries(options.params).forEach(([key, value]) => {
@@ -133,7 +153,7 @@ export async function authRequest<T = Record<string, unknown>>(
     if (response.status === 401) {
       await authStore.setToken(baseUrl, undefined);
       if (retryCount < 1) {
-        await authenticateUser(baseUrl);
+        await waitForAccessToken(baseUrl, apiUrl);
         return authRequest(url, options, retryCount + 1);
       }
     }
