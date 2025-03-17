@@ -7,14 +7,6 @@ export enum EventType {
 }
 
 /**
- * Represents an event entry with its values
- */
-interface EventEntry {
-  hasTrue: boolean;
-  hasFalse: boolean;
-}
-
-/**
  * A simple bitset implementation for efficient boolean storage
  */
 class BitSet {
@@ -84,7 +76,6 @@ export class SummaryEvent {
   // For each company and event type, we store:
   // 1. A bitset tracking true values
   // 2. A bitset tracking false values
-  // 3. A bitset tracking which positions have been set
   private companies: Map<
     string,
     Map<
@@ -92,7 +83,6 @@ export class SummaryEvent {
       {
         trueValues: BitSet;
         falseValues: BitSet;
-        present: BitSet;
       }
     >
   >;
@@ -140,7 +130,6 @@ export class SummaryEvent {
       eventData = {
         trueValues: new BitSet(),
         falseValues: new BitSet(),
-        present: new BitSet(),
       };
       companyEvents.set(eventType, eventData);
     }
@@ -151,9 +140,6 @@ export class SummaryEvent {
     } else {
       eventData.falseValues.set(featureKeyId, true);
     }
-
-    // Mark as present
-    eventData.present.set(featureKeyId, true);
   }
 
   /**
@@ -175,9 +161,9 @@ export class SummaryEvent {
     // Collect all feature IDs that are present in any event type
     const featureIds = new Set<number>();
     for (const eventData of companyEvents.values()) {
-      // For each bit that is set in the 'present' bitset, add the feature ID
+      // Check both true and false values bitsets
       for (let i = 0; i < this.featureKeyArray.length; i++) {
-        if (eventData.present.isSet(i)) {
+        if (eventData.trueValues.isSet(i) || eventData.falseValues.isSet(i)) {
           featureIds.add(i);
         }
       }
@@ -188,12 +174,13 @@ export class SummaryEvent {
   }
 
   /**
-   * Checks if an event exists for a given company, feature and event type
+   * Checks if an event exists for a given company, feature, event type, and value
    */
   public hasEvent(
     companyId: string,
     featureKey: string,
     eventType: EventType,
+    value: boolean,
   ): boolean {
     const featureKeyId = this.featureKeyMap.get(featureKey);
     if (featureKeyId === undefined) return false;
@@ -204,30 +191,9 @@ export class SummaryEvent {
     const eventData = companyEvents.get(eventType);
     if (!eventData) return false;
 
-    return eventData.present.isSet(featureKeyId);
-  }
-
-  /**
-   * Gets the event value for a specific company, feature and event type
-   */
-  public getEventDetails(
-    companyId: string,
-    featureKey: string,
-    eventType: EventType,
-  ): EventEntry | undefined {
-    const featureKeyId = this.featureKeyMap.get(featureKey);
-    if (featureKeyId === undefined) return undefined;
-
-    const companyEvents = this.companies.get(companyId);
-    if (!companyEvents) return undefined;
-
-    const eventData = companyEvents.get(eventType);
-    if (!eventData || !eventData.present.isSet(featureKeyId)) return undefined;
-
-    const hasTrue = eventData.trueValues.isSet(featureKeyId);
-    const hasFalse = eventData.falseValues.isSet(featureKeyId);
-
-    return { hasTrue, hasFalse };
+    return value
+      ? eventData.trueValues.isSet(featureKeyId)
+      : eventData.falseValues.isSet(featureKeyId);
   }
 
   /**
@@ -242,10 +208,10 @@ export class SummaryEvent {
 
     for (const companyEvents of this.companies.values()) {
       for (const eventData of companyEvents.values()) {
-        // Count set bits in the present bitset
+        // Count features that have either true or false values
         let companyFeatureCount = 0;
         for (let i = 0; i < this.featureKeyArray.length; i++) {
-          if (eventData.present.isSet(i)) {
+          if (eventData.trueValues.isSet(i) || eventData.falseValues.isSet(i)) {
             companyFeatureCount++;
           }
         }
