@@ -69,8 +69,11 @@ export default class BatchBuffer<T> {
       return;
     }
 
+    const flushingBuffer = this.buffer;
+    this.buffer = [];
+
     try {
-      await this.flushHandler(this.buffer);
+      await this.flushHandler(flushingBuffer);
 
       this.logger?.info("flushed buffered items", {
         count: this.buffer.length,
@@ -81,7 +84,5 @@ export default class BatchBuffer<T> {
         count: this.buffer.length,
       });
     }
-
-    this.buffer = [];
   }
 }
