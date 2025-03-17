@@ -76,12 +76,12 @@ export default class BatchBuffer<T> {
       await this.flushHandler(flushingBuffer);
 
       this.logger?.info("flushed buffered items", {
-        count: this.buffer.length,
+        count: flushingBuffer.length,
       });
     } catch (error) {
       this.logger?.error("flush of buffered items failed; discarding items", {
         error,
-        count: this.buffer.length,
+        count: flushingBuffer.length,
       });
     }
   }
