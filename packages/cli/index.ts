@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import chalk from "chalk";
 import { program } from "commander";
-import { join } from "node:path";
 
 import { registerAppCommands } from "./commands/apps.js";
 import { registerAuthCommands } from "./commands/auth.js";
@@ -9,10 +8,18 @@ import { registerFeatureCommands } from "./commands/features.js";
 import { registerInitCommand } from "./commands/init.js";
 import { registerMcpCommand } from "./commands/mcp.js";
 import { registerNewCommand } from "./commands/new.js";
+import { bootstrap, getUser } from "./services/bootstrap.js";
 import { authStore } from "./stores/auth.js";
 import { configStore } from "./stores/config.js";
+import { handleError } from "./utils/errors.js";
 import { apiUrlOption, baseUrlOption, debugOption } from "./utils/options.js";
 import { stripTrailingSlash } from "./utils/path.js";
+
+type Options = {
+  debug?: boolean;
+  baseUrl?: string;
+  apiUrl?: string;
+};
 
 async function main() {
   // Must load tokens and config before anything else
@@ -25,9 +32,10 @@ async function main() {
   program.addOption(apiUrlOption);
 
   // Pre-action hook
-  program.hook("preAction", () => {
-    const { debug, baseUrl, apiUrl } = program.opts();
+  program.hook("preAction", async () => {
+    const { debug, baseUrl, apiUrl } = program.opts<Options>();
     const cleanedBaseUrl = stripTrailingSlash(baseUrl?.trim());
+    // Set baseUrl and apiUrl in config store, will skip if undefined
     configStore.setConfig({
       baseUrl: cleanedBaseUrl,
       apiUrl:
@@ -35,11 +43,23 @@ async function main() {
         (cleanedBaseUrl && `${cleanedBaseUrl}/api`),
     });
 
+    try {
+      // Load bootstrap data if not already loaded
+      await bootstrap();
+    } catch (error) {
+      void handleError(
+        debug ? error : `Unable to reach ${configStore.getConfig("baseUrl")}`,
+        "Connect",
+      );
+    }
+
     if (debug) {
       console.debug(chalk.cyan("\nDebug mode enabled"));
+      const user = getUser();
+      console.debug(`Logged in as ${chalk.cyan(user.name ?? user.email)}`);
       console.debug(
         "Reading config from",
-        chalk.green(configStore.getConfigPath()),
+        chalk.cyan(configStore.getConfigPath()),
       );
       console.table(configStore.getConfig());
     }
@@ -56,10 +76,4 @@ async function main() {
   program.parse(process.argv);
 }
 
-// Run the main function if this file is run directly and not imported
-if (
-  process.argv[1].endsWith(join("cli", "dist", "index.js")) ||
-  process.argv[1].endsWith(join(".bin", "bucket"))
-) {
-  void main();
-}
+void main();

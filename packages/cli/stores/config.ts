@@ -16,17 +16,6 @@ import {
 import { ConfigValidationError, handleError } from "../utils/errors.js";
 import { stripTrailingSlash } from "../utils/path.js";
 
-export const keyFormats = [
-  "custom",
-  "pascalCase",
-  "camelCase",
-  "snakeCaseUpper",
-  "snakeCaseLower",
-  "kebabCaseUpper",
-  "kebabCaseLower",
-] as const;
-export type KeyFormat = (typeof keyFormats)[number];
-
 export const typeFormats = ["react", "node"] as const;
 export type TypeFormat = (typeof typeFormats)[number];
 
@@ -41,7 +30,6 @@ type Config = {
   apiUrl: string;
   appId: string | undefined;
   typesOutput: TypesOutput[];
-  keyFormat: KeyFormat;
 };
 
 const defaultConfig: Config = {
@@ -50,7 +38,6 @@ const defaultConfig: Config = {
   apiUrl: DEFAULT_API_URL,
   appId: undefined,
   typesOutput: [{ path: DEFAULT_TYPES_OUTPUT, format: "react" }],
-  keyFormat: "custom",
 };
 
 // Helper to normalize typesOutput to array format

@@ -4,6 +4,8 @@ React client side library for [Bucket.co](https://bucket.co)
 
 Bucket supports feature toggling, tracking feature usage, [requesting feedback](#userequestfeedback) on features, and [remotely configuring features](#remote-config-beta).
 
+The Bucket React SDK comes with a [built-in toolbar](https://docs.bucket.co/supported-languages/browser-sdk#toolbar) which appears on `localhost` by default.
+
 ## Install
 
 Install via npm:
@@ -14,28 +16,7 @@ npm i @bucketco/react-sdk
 
 ## Get started
 
-### 1. Define Features (optional)
-
-To get type safe feature definitions, extend the definition of the `Features` interface and define which features you have.
-See the example below for the details.
-
-If no explicit feature definitions are provided, there will be no types checked feature lookups.
-
-**Example:**
-
-```typescript
-import "@bucketco/react-sdk";
-
-// Define your features by extending the `Features` interface in @bucketco/react-sdk
-declare module "@bucketco/react-sdk" {
-  interface Features {
-    huddle: boolean;
-    recordVideo: boolean;
-  }
-}
-```
-
-### 2. Add the `BucketProvider` context provider
+### 1. Add the `BucketProvider` context provider
 
 Add the `BucketProvider` context provider to your application:
 
@@ -53,6 +34,38 @@ import { BucketProvider } from "@bucketco/react-sdk";
   {/* children here are shown when loading finishes or immediately if no `loadingComponent` is given */}
 </BucketProvider>;
 ```
+
+### 2. Create a new feature and set up type safety
+
+Install the Bucket CLI:
+
+```shell
+npm i --save-dev @bucketco/cli
+```
+
+Run `npx bucket new` to create your first feature!
+On the first run, it will sign into Bucket and set up type generation for your project:
+
+```shell
+❯ npx bucket new
+Opened web browser to facilitate login: https://app.bucket.co/api/oauth/cli/authorize
+
+Welcome to Bucket!
+
+? Where should we generate the types? gen/features.d.ts
+? What is the output format? react
+✔ Configuration created at bucket.config.json.
+
+Creating feature for app Slick app.
+? New feature name: Huddle
+? New feature key: huddle
+✔ Created feature Huddle with key huddle (https://app.bucket.co/features/huddles)
+✔ Generated react types in gen/features.d.ts.
+```
+
+> [!Note]
+> By default, types will be generated in `gen/features.d.ts`.
+> The default `tsconfig.json` file `include`s this file by default, but if your `tsconfig.json` is different, make sure the file is covered in the `include` property.
 
 ### 3. Use `useFeature(<featureKey>)` to get feature status
 
@@ -210,7 +223,7 @@ The `<BucketProvider>` initializes the Bucket SDK, fetches features and starts l
 - `appBaseUrl`: Optional base URL for the Bucket application. Use this to override the default app URL,
 - `sseBaseUrl`: Optional base URL for Server-Sent Events. Use this to override the default SSE endpoint,
 - `debug`: Set to `true` to enable debug logging to the console,
-- `toolbar`: Optional configuration for the Bucket toolbar,
+- `toolbar`: Optional [configuration](https://docs.bucket.co/supported-languages/browser-sdk/globals#toolbaroptions) for the Bucket toolbar,
 - `feedback`: Optional configuration for feedback collection
 
 ## Hooks

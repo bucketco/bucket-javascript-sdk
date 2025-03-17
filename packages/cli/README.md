@@ -1,17 +1,12 @@
 # Bucket CLI
 
-Command-line interface for interacting with Bucket services. The CLI allows you to manage apps, features, authentication, and generate TypeScript types for your Bucket features. With this tool, you can streamline your feature flagging workflow directly from your terminal.
+Command-line interface for interacting with Bucket services. The CLI allows you to manage apps,
+features, authentication, and generate TypeScript types for your Bucket features. With this tool,
+you can streamline your feature flagging workflow directly from your terminal.
 
-## Quick Start
+## Usage
 
-Get started quickly by running the CLI directly: initializing the CLI, creating a feature, and generate the types all at once.
-
-```bash
-# Initialize CLI (if not setup), create a feature, and generate types all at once
-npx @bucketco/cli new
-```
-
-or install it locally
+Get started by installing the CLI locally in your project:
 
 ```bash
 # npm
@@ -21,7 +16,8 @@ npm install --save-dev @bucketco/cli
 yarn add --dev @bucketco/cli
 ```
 
-then
+Then running the `new` command from your project's root directory,
+initializing the CLI, creating a feature, and generating the types all at once:
 
 ```bash
 # npm
@@ -31,34 +27,25 @@ npx bucket new
 yarn bucket new
 ```
 
-### Global installation
-
-You can also install the CLI globally adding the it to your PATH allowing you to use the shorthand `bucket`
-
-```bash
-npm install -g @bucketco/cli
-
-bucket <command>
-```
-
 ### Individual commands
 
 Instead of running `new` you can call each step individually.
 
 ```bash
 # Initialize Bucket in your project (if not already setup)
-bucket init
+npx bucket init
 
 # Create a new feature
-bucket features create "My Feature"
+npx bucket features create "My Feature"
 
 # Generate TypeScript types for your features
-bucket features types
+npx bucket features types
 ```
 
 ## Configuration
 
-The CLI creates a `bucket.config.json` file in your project directory when you run `bucket init`. This file contains all the necessary settings for your Bucket integration.
+The CLI creates a `bucket.config.json` file in your project directory when you run `bucket init`.
+This file contains all the necessary settings for your Bucket integration.
 
 ### Configuration File Structure
 
@@ -72,11 +59,10 @@ Here's a comprehensive list of configuration options available in the `bucket.co
   "appId": "ap123456789",
   "typesOutput": [
     {
-      "path": "gen/features.ts",
+      "path": "gen/features.d.ts",
       "format": "react"
     }
-  ],
-  "keyFormat": "camelCase"
+  ]
 }
 ```
 
@@ -87,7 +73,6 @@ Here's a comprehensive list of configuration options available in the `bucket.co
 | `apiUrl`      | API URL for Bucket services (overrides baseUrl for API calls).                                                                                                       | "https://app.bucket.co/api"                          |
 | `appId`       | Your Bucket application ID.                                                                                                                                          | Required                                             |
 | `typesOutput` | Path(s) where TypeScript types will be generated. Can be a string or an array of objects with `path` and `format` properties. Available formats: `react` and `node`. | "gen/features.ts" with format "react"                |
-| `keyFormat`   | Format for feature keys (options: custom, pascalCase, camelCase, snakeCaseUpper, snakeCaseLower, kebabCaseUpper, kebabCaseLower).                                    | "custom"                                             |
 
 You can override these settings using command-line options for individual commands.
 
@@ -95,7 +80,8 @@ You can override these settings using command-line options for individual comman
 
 ### `bucket init`
 
-Initialize a new Bucket configuration in your project. This creates a `bucket.config.json` file with your settings and prompts for any required information not provided via options.
+Initialize a new Bucket configuration in your project.
+This creates a `bucket.config.json` file with your settings and prompts for any required information not provided via options.
 
 ```bash
 bucket init [--overwrite]
@@ -109,7 +95,8 @@ Options:
 
 ### `bucket new [featureName]`
 
-All-in-one command to get started quickly. This command combines `init`, feature creation, and type generation in a single step. Use this for the fastest way to get up and running with Bucket.
+All-in-one command to get started quickly. This command combines `init`, feature creation,
+and type generation in a single step. Use this for the fastest way to get up and running with Bucket.
 
 ```bash
 bucket new "My Feature" [--key my-feature] [--app-id ap123456789] [--key-format custom] [--out gen/features.ts] [--format react]
@@ -147,7 +134,8 @@ Manage your Bucket features with the following subcommands.
 
 #### `bucket features create [featureName]`
 
-Create a new feature in your Bucket app. The command guides you through the feature creation process with interactive prompts if options are not provided.
+Create a new feature in your Bucket app.
+The command guides you through the feature creation process with interactive prompts if options are not provided.
 
 ```bash
 bucket features create "My Feature" [--key my-feature] [--app-id ap123456789] [--key-format custom]
@@ -161,7 +149,8 @@ Options:
 
 #### `bucket features list`
 
-List all features for the current app. This helps you visualize what features are available and their current configurations.
+List all features for the current app.
+This helps you visualize what features are available and their current configurations.
 
 ```bash
 bucket features list [--app-id ap123456789]
@@ -173,7 +162,8 @@ Options:
 
 #### `bucket features types`
 
-Generate TypeScript types for your features. This ensures type safety when using Bucket features in your TypeScript/JavaScript applications.
+Generate TypeScript types for your features.
+This ensures type safety when using Bucket features in your TypeScript/JavaScript applications.
 
 ```bash
 bucket features types [--app-id ap123456789] [--out gen/features.ts] [--format react]

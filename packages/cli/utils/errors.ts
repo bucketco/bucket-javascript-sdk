@@ -5,7 +5,7 @@ import chalk from "chalk";
 export class MissingAppIdError extends Error {
   constructor() {
     super(
-      "App ID is required. Please provide it with --appId or in the config file.",
+      "App ID is required. Please provide it with --appId or in the config file. Use `bucket apps list` to see available apps.",
     );
     this.name = "MissingAppIdError";
   }
@@ -47,6 +47,7 @@ export async function handleError(error: unknown, tag: string) {
     }
   } else if (error instanceof Error) {
     console.error(chalk.red(tag, error.message));
+    if (error.cause) console.error(error.cause);
   } else if (typeof error === "string") {
     console.error(chalk.red(tag, error));
   } else {

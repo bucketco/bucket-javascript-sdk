@@ -6,7 +6,7 @@ import ora, { Ora } from "ora";
 
 import { App, listApps } from "../services/bootstrap.js";
 import { configStore, typeFormats } from "../stores/config.js";
-import { chalkBrand, DEFAULT_TYPES_OUTPUT } from "../utils/constants.js";
+import { DEFAULT_TYPES_OUTPUT } from "../utils/constants.js";
 import { handleError } from "../utils/errors.js";
 import { overwriteOption } from "../utils/options.js";
 
@@ -27,7 +27,7 @@ export const initAction = async (args: InitArgs = {}) => {
       );
     }
 
-    console.log(chalkBrand("\nWelcome to Bucket! 🪣\n"));
+    console.log("\nWelcome to Bucket!\n");
     const baseUrl = configStore.getConfig("baseUrl");
 
     // Load apps
@@ -63,9 +63,6 @@ export const initAction = async (args: InitArgs = {}) => {
       });
     }
 
-    const keyFormat =
-      apps.find((app) => app.id === appId)?.featureKeyFormat ?? "custom";
-
     // Get types output path
     const typesOutput = await input({
       message: "Where should we generate the types?",
@@ -85,7 +82,6 @@ export const initAction = async (args: InitArgs = {}) => {
     // Update config
     configStore.setConfig({
       appId,
-      keyFormat,
       typesOutput: [{ path: typesOutput, format: typesFormat }],
     });
 

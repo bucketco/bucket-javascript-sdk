@@ -7,7 +7,6 @@ import {
   appIdOption,
   featureKeyOption,
   featureNameArgument,
-  keyFormatOption,
   typesFormatOption,
   typesOutOption,
 } from "../utils/options.js";
@@ -38,7 +37,6 @@ export function registerNewCommand(cli: Command) {
       "Initialize the Bucket CLI, authenticates, and creates a new feature.",
     )
     .addOption(appIdOption)
-    .addOption(keyFormatOption)
     .addOption(typesOutOption)
     .addOption(typesFormatOption)
     .addOption(featureKeyOption)
@@ -47,10 +45,9 @@ export function registerNewCommand(cli: Command) {
 
   // Update the config with the cli override values
   cli.hook("preAction", (command) => {
-    const { appId, keyFormat, out, format } = command.opts();
+    const { appId, out, format } = command.opts();
     configStore.setConfig({
       appId,
-      keyFormat,
       typesOutput: out ? [{ path: out, format: format || "react" }] : undefined,
     });
   });
