@@ -73,7 +73,7 @@ export function indentLines(str: string, indent = 2, lineBreak = "\n"): string {
   const indentStr = " ".repeat(indent);
   return str
     .split(lineBreak)
-    .map((line) => `${indentStr}${line}`)
+    .map((line) => `${indentStr}${line.trim()}`)
     .join(lineBreak);
 }
 

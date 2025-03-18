@@ -11,6 +11,13 @@ export class MissingAppIdError extends Error {
   }
 }
 
+export class MissingEnvIdError extends Error {
+  constructor() {
+    super("Environment ID is required.");
+    this.name = "MissingEnvIdError";
+  }
+}
+
 export class ConfigValidationError extends Error {
   constructor(errors?: ErrorObject[] | null) {
     const messages = errors

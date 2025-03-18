@@ -7,7 +7,8 @@ import { findUp } from "find-up";
 import { readFile } from "node:fs/promises";
 import ora, { Ora } from "ora";
 
-import { registerMcpFeatures } from "../mcp/features.js";
+import { registerMcpResources } from "../mcp/resources.js";
+import { registerMcpTools } from "../mcp/tools.js";
 import { handleError } from "../utils/errors.js";
 
 type MCPArgs = {
@@ -69,7 +70,8 @@ export const mcpAction = async ({ port = 8050 }: MCPArgs) => {
     });
 
     // Register tools and resources
-    registerMcpFeatures(mcp);
+    registerMcpResources(mcp);
+    registerMcpTools(mcp);
 
     const server = app.listen(port !== "auto" ? port : 0, () => {
       // Get the port the server is listening on

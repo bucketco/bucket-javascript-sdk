@@ -5,10 +5,14 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative } from "node:path";
 import ora, { Ora } from "ora";
 
-import { App, getApp, getOrg } from "../services/bootstrap.js";
+import { getApp, getOrg } from "../services/bootstrap.js";
 import { createFeature, Feature, listFeatures } from "../services/features.js";
 import { configStore } from "../stores/config.js";
-import { handleError, MissingAppIdError } from "../utils/errors.js";
+import {
+  handleError,
+  MissingAppIdError,
+  MissingEnvIdError,
+} from "../utils/errors.js";
 import {
   genFeatureKey,
   genTypes,
@@ -34,10 +38,15 @@ export const createFeatureAction = async (
 ) => {
   const { baseUrl, appId } = configStore.getConfig();
   let spinner: Ora | undefined;
+
+  if (!appId) {
+    return handleError(new MissingAppIdError(), "Features Create");
+  }
+  const app = getApp(appId);
+  const production = app.environments.find((e) => e.isProduction);
+
   try {
-    if (!appId) throw new MissingAppIdError();
     const org = getOrg();
-    const app = getApp(appId);
     console.log(
       `Creating feature for app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}.`,
     );
@@ -62,7 +71,6 @@ export const createFeatureAction = async (
     spinner.succeed(
       `Created feature ${chalk.cyan(feature.name)} with key ${chalk.cyan(feature.key)}:`,
     );
-    const production = app.environments.find((e) => e.isProduction);
     if (production) {
       console.log(
         indentLines(chalk.magenta(featureUrl(baseUrl, production, feature))),
@@ -78,18 +86,27 @@ export const listFeaturesAction = async () => {
   const { baseUrl, appId } = configStore.getConfig();
   let spinner: Ora | undefined;
 
+  if (!appId) {
+    return handleError(new MissingAppIdError(), "Features Create");
+  }
+  const app = getApp(appId);
+  const production = app.environments.find((e) => e.isProduction);
+  if (!production) {
+    return handleError(new MissingEnvIdError(), "Features Types");
+  }
+
   try {
-    if (!appId) throw new MissingAppIdError();
-    const app = getApp(appId);
     spinner = ora(
       `Loading features of app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}...`,
     ).start();
-    const features = await listFeatures(appId);
+    const featuresResponse = await listFeatures(appId, {
+      envId: production.id,
+    });
     spinner.succeed(
       `Loaded features of app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}.`,
     );
     console.table(
-      features.map(({ key, name, stage }) => ({
+      featuresResponse.data.map(({ key, name, stage }) => ({
         name,
         key,
         stage: stage?.name,
@@ -107,16 +124,25 @@ export const generateTypesAction = async () => {
 
   let spinner: Ora | undefined;
   let features: Feature[] = [];
-  let app: App | undefined;
+
+  if (!appId) {
+    return handleError(new MissingAppIdError(), "Features Types");
+  }
+
+  const app = getApp(appId);
+  const production = app.environments.find((e) => e.isProduction);
+  if (!production) {
+    return handleError(new MissingEnvIdError(), "Features Types");
+  }
+
   try {
-    if (!appId) throw new MissingAppIdError();
-    app = getApp(appId);
     spinner = ora(
       `Loading features of app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}...`,
     ).start();
     features = await listFeatures(appId, {
+      envId: production.id,
       includeRemoteConfigs: true,
-    });
+    }).then((res) => res.data);
     spinner.succeed(
       `Loaded features of app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}.`,
     );

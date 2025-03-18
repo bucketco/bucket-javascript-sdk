@@ -1,4 +1,12 @@
+import { z } from "zod";
+
 import { authRequest } from "../utils/auth.js";
+import {
+  booleanish,
+  EnvironmentQuerySchema,
+  sortTypeSchema,
+} from "../utils/schemas.js";
+import { PaginatedResponse } from "../utils/types.js";
 
 import { Stage } from "./stages.js";
 
@@ -19,34 +27,50 @@ export type Feature = {
   id: string;
   name: string;
   key: string;
+  description: string | null;
   remoteConfigs: RemoteConfig[];
   stage: Stage | null;
 };
 
-export type FeaturesResponse = {
-  data: Feature[];
-};
+export type FeaturesResponse = PaginatedResponse<Feature>;
 
-export type ListOptions = {
-  includeRemoteConfigs?: boolean;
-};
+export const FeatureQuerySchema = EnvironmentQuerySchema()
+  .extend({
+    view: z.string().optional(),
+    sortBy: z.string().default("key"),
+    sortOrder: z.enum(["asc", "desc"]).default("asc"),
+    sortType: sortTypeSchema.default("flat"),
+    includeFeatureMetrics: booleanish.default(false),
+    includeRolloutStatus: booleanish.default(false),
+    includeGoals: booleanish.default(false),
+    includeProductionEstimatedTargetAudience: booleanish.default(false),
+    includeRemoteConfigs: booleanish.default(false),
+    useTargetingRules: booleanish.default(false),
+  })
+  .strict();
+export type FeaturesQuery = z.input<typeof FeatureQuerySchema>;
 
 export async function listFeatures(
   appId: string,
-  options: ListOptions = {},
-): Promise<Feature[]> {
+  query: FeaturesQuery,
+): Promise<FeaturesResponse> {
   return authRequest<FeaturesResponse>(`/apps/${appId}/features`, {
-    params: {
-      sortBy: "key",
-      sortOrder: "asc",
-      includeRemoteConfigs: options.includeRemoteConfigs ? "true" : "false",
-    },
-  }).then(({ data }) => data);
+    params: FeatureQuerySchema.parse(query),
+  });
 }
 
 type FeatureResponse = {
   feature: Feature;
 };
+
+export async function getFeature(
+  appId: string,
+  featureId: string,
+): Promise<Feature> {
+  return authRequest<FeatureResponse>(
+    `/apps/${appId}/features/${featureId}`,
+  ).then(({ feature }) => feature);
+}
 
 export async function createFeature(
   appId: string,
