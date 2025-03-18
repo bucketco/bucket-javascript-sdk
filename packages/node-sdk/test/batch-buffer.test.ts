@@ -147,6 +147,22 @@ describe("BatchBuffer", () => {
       );
     });
 
+    it("calling flush simultaneously should only flush data once", async () => {
+      let itemsFlushed = 0;
+      const buffer = new BatchBuffer({
+        flushHandler: async (items) => {
+          itemsFlushed += items.length;
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          mockFlushHandler();
+        },
+        logger: mockLogger,
+      });
+
+      await buffer.add("item1");
+      await Promise.all([buffer.flush(), buffer.flush()]);
+      expect(itemsFlushed).toBe(1);
+    });
+
     it("should flush buffer", async () => {
       const buffer = new BatchBuffer({
         flushHandler: mockFlushHandler,
