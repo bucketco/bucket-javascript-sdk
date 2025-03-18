@@ -1,7 +1,11 @@
 {
   "$schema": "https://typedoc-plugin-markdown.org/schema.json",
 
-  "plugin": ["typedoc-plugin-markdown", "typedoc-plugin-frontmatter", "typedoc-plugin-mdn-links"],
+  "plugin": [
+    "typedoc-plugin-markdown",
+    "typedoc-plugin-frontmatter",
+    "typedoc-plugin-mdn-links"
+  ],
 
   "entryPointStrategy": "packages",
   "entryPoints": [
@@ -12,14 +16,17 @@
   "packageOptions": {
     "entryPoints": ["src/index.ts"]
   },
-  "projectDocuments": ["packages/browser-sdk/FEEDBACK.md"],
+  "projectDocuments": [
+    "packages/browser-sdk/FEEDBACK.md",
+    "packages/cli/README.md"
+  ],
   "readme": "none",
   "useHTMLAnchors": false,
 
   "outputs": [
     {
       "name": "markdown",
-      "path": "./dist/docs",
+      "path": "./dist/docs"
     }
   ],
   "outputFileStrategy": "modules",
@@ -31,7 +38,7 @@
     "includeFolders": false,
     "excludeReferences": true
   },
-  
+
   "disableSources": true,
   "categorizeByGroup": false,
   "groupReferencesByType": true,
@@ -40,7 +47,7 @@
   "expandObjects": true,
   "expandParameters": true,
   "typeDeclarationVisibility": "verbose",
-  
+
   "indexFormat": "htmlTable",
   "parametersFormat": "htmlTable",
   "interfacePropertiesFormat": "htmlTable",
@@ -54,7 +61,7 @@
   "hideBreadcrumbs": true,
   "hidePageTitle": false,
   "hidePageHeader": true,
-  
+
   "tableColumnSettings": {
     "hideDefaults": false,
     "hideInherited": true,
@@ -67,22 +74,22 @@
 
   "frontmatterGlobals": {
     "layout": {
-      "visible": true,
+      "visible": true
     },
     "title": {
-      "visible": true,
+      "visible": true
     },
     "description": {
-      "visible": false,
+      "visible": false
     },
     "tableOfContents": {
-      "visible": true,
+      "visible": true
     },
     "outline": {
-      "visible": true,
+      "visible": true
     },
     "pagination": {
-      "visible": true,
+      "visible": true
     }
   }
 }
