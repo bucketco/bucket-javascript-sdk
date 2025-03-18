@@ -7,45 +7,72 @@ export enum EventType {
 }
 
 /**
- * A simple bitset implementation for efficient boolean storage
+ * A dynamic bitset implementation for efficient boolean storage
+ * that automatically resizes as needed
  */
 class BitSet {
   private bits: Uint32Array;
+  private _size: number;
 
-  constructor(size: number = 32) {
-    // Initialize with enough 32-bit integers to store the requested bits
-    const arraySize = Math.ceil(size / 32);
+  constructor(initialCapacity: number = 32) {
+    const arraySize = Math.ceil(initialCapacity / 32);
     this.bits = new Uint32Array(arraySize);
+    this._size = 0;
+  }
+
+  /**
+   * Ensures the bitset has capacity for the specified position
+   */
+  private ensureCapacity(position: number): void {
+    const requiredIndex = Math.floor(position / 32);
+
+    if (requiredIndex >= this.bits.length) {
+      // Calculate new size with growth factor for better amortized performance
+      const newSize = Math.max(this.bits.length * 2, requiredIndex + 1);
+      const newBits = new Uint32Array(newSize);
+      newBits.set(this.bits);
+      this.bits = newBits;
+    }
+
+    // Update size if we're setting a bit beyond our current size
+    this._size = Math.max(this._size, position + 1);
   }
 
   /**
    * Sets a bit at the specified position
    */
   set(position: number, value: boolean): void {
+    if (position < 0) {
+      throw new Error("Bit position cannot be negative");
+    }
+
     const index = Math.floor(position / 32);
     const offset = position % 32;
 
     // Ensure we have enough space
-    if (index >= this.bits.length) {
-      const newSize = index + 1;
-      const newBits = new Uint32Array(newSize);
-      newBits.set(this.bits);
-      this.bits = newBits;
+    if (value || index < this.bits.length) {
+      // Only resize if setting true or within current capacity
+      this.ensureCapacity(position);
     }
 
     if (value) {
       // Set the bit
       this.bits[index] |= 1 << offset;
-    } else {
-      // Clear the bit
+    } else if (index < this.bits.length) {
+      // Clear the bit if within range
       this.bits[index] &= ~(1 << offset);
     }
+    // If out of range and setting to false, we do nothing as bits default to 0
   }
 
   /**
    * Gets the bit at the specified position
    */
   get(position: number): boolean {
+    if (position < 0 || position >= this._size) {
+      return false;
+    }
+
     const index = Math.floor(position / 32);
     const offset = position % 32;
 
@@ -61,6 +88,28 @@ class BitSet {
    */
   isSet(position: number): boolean {
     return this.get(position);
+  }
+
+  /**
+   * Gets the current capacity of the bitset
+   */
+  get capacity(): number {
+    return this.bits.length * 32;
+  }
+
+  /**
+   * Gets the current logical size of the bitset
+   */
+  get size(): number {
+    return this._size;
+  }
+
+  /**
+   * Clear all bits in the bitset
+   */
+  clear(): void {
+    this.bits.fill(0);
+    this._size = 0;
   }
 }
 
