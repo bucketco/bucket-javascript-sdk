@@ -59,15 +59,16 @@ export const createFeatureAction = async (
 
     if (!key) {
       const keyFormat = org.featureKeyFormat;
+      const keyValidator = KeyFormatPatterns[keyFormat];
       key = await input({
         message: "New feature key:",
         default: genFeatureKey(name, keyFormat),
-        validate: KeyFormatPatterns[keyFormat].validate,
+        validate: (str) => keyValidator.regex.test(str) || keyValidator.message,
       });
     }
 
     spinner = ora(`Creating feature...`).start();
-    const feature = await createFeature(appId, name, key);
+    const feature = await createFeature(appId, { name, key });
     spinner.succeed(
       `Created feature ${chalk.cyan(feature.name)} with key ${chalk.cyan(feature.key)}:`,
     );

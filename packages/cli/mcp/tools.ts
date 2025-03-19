@@ -1,17 +1,28 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
-import { getApp } from "../services/bootstrap.js";
-import { FeatureQuerySchema, listFeatures } from "../services/features.js";
+import { getApp, getOrg } from "../services/bootstrap.js";
+import {
+  createFeature,
+  FeatureCreateSchema,
+  FeatureQuerySchema,
+  listFeatures,
+} from "../services/features.js";
 import { FeedbackQuerySchema, listFeedback } from "../services/feedback.js";
 import { configStore } from "../stores/config.js";
-import { MissingAppIdError, MissingEnvIdError } from "../utils/errors.js";
-import { EnvironmentQuerySchema } from "../utils/schemas.js";
+import {
+  handleMcpError,
+  MissingAppIdError,
+  MissingEnvIdError,
+} from "../utils/errors.js";
+import { KeyFormatPatterns } from "../utils/gen.js";
+import { withDefaults, withDescriptions } from "../utils/schemas.js";
 
 export function registerMcpTools(mcp: McpServer) {
   const appId = configStore.getConfig("appId");
   if (!appId) {
     throw new MissingAppIdError();
   }
+  const org = getOrg();
   const app = getApp(appId);
   const production = app.environments.find((e) => e.isProduction);
   if (!production) {
@@ -21,7 +32,9 @@ export function registerMcpTools(mcp: McpServer) {
   // Add features tool
   mcp.tool(
     "features",
-    FeatureQuerySchema.merge(EnvironmentQuerySchema(production.id)).shape,
+    withDefaults(FeatureQuerySchema, {
+      envId: production.id,
+    }).shape,
     async (args) => {
       try {
         const data = await listFeatures(appId, args);
@@ -37,10 +50,7 @@ List of features.
           ],
         };
       } catch (error) {
-        return {
-          isError: true,
-          content: [{ type: "text", text: `Error: ${error}` }],
-        };
+        return await handleMcpError(error);
       }
     },
   );
@@ -48,7 +58,9 @@ List of features.
   // Add feedback tool
   mcp.tool(
     "feedback",
-    FeedbackQuerySchema.merge(EnvironmentQuerySchema(production.id)).shape,
+    withDefaults(FeedbackQuerySchema, {
+      envId: production.id,
+    }).shape,
     async (args) => {
       try {
         const data = await listFeedback(appId, args);
@@ -60,15 +72,40 @@ List of features.
 Feedback is returned in a JSON format with pages.
 Feedback score is between 1 and 5, with 0 being unknown.
 >>> JSON Response >>>
- ${JSON.stringify(data, null, 2)}`,
+${JSON.stringify(data, null, 2)}`,
             },
           ],
         };
       } catch (error) {
+        return await handleMcpError(error);
+      }
+    },
+  );
+
+  // Add create feature tool
+  const keyFormatRules = KeyFormatPatterns[org.featureKeyFormat].message;
+  mcp.tool(
+    "createFeature",
+    "Creates a new feature flag using the Bucket service.",
+    withDescriptions(FeatureCreateSchema, {
+      key: `Feature key specified in ${org.featureKeyFormat} format:\n${keyFormatRules}`,
+    }).shape,
+    async (args) => {
+      try {
+        const feature = await createFeature(appId, args);
         return {
-          isError: true,
-          content: [{ type: "text", text: `Error: ${error}` }],
+          content: [
+            {
+              type: "text",
+              text: `
+Feature created successfully.
+>>> JSON Response >>>
+${JSON.stringify(feature, null, 2)}`,
+            },
+          ],
         };
+      } catch (error) {
+        return await handleMcpError(error);
       }
     },
   );

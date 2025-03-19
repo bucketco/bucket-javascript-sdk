@@ -34,21 +34,54 @@ export type Feature = {
 
 export type FeaturesResponse = PaginatedResponse<Feature>;
 
-export const FeatureQuerySchema = EnvironmentQuerySchema()
-  .extend({
-    view: z.string().optional(),
-    sortBy: z.string().default("key"),
-    sortOrder: z.enum(["asc", "desc"]).default("asc"),
-    sortType: sortTypeSchema.default("flat"),
-    includeFeatureMetrics: booleanish.default(false),
-    includeRolloutStatus: booleanish.default(false),
-    includeGoals: booleanish.default(false),
-    includeProductionEstimatedTargetAudience: booleanish.default(false),
-    includeRemoteConfigs: booleanish.default(false),
-    useTargetingRules: booleanish.default(false),
+export const FeatureQuerySchema = EnvironmentQuerySchema.extend({
+  view: z.string().optional().describe("View filter for features"),
+  sortBy: z.string().default("key").describe("Field to sort features by"),
+  sortOrder: z
+    .enum(["asc", "desc"])
+    .default("asc")
+    .describe("Sort direction (ascending or descending)"),
+  sortType: sortTypeSchema
+    .default("flat")
+    .describe("Type of sorting to apply (flat or hierarchical)"),
+  includeFeatureMetrics: booleanish
+    .default(false)
+    .describe("Include metrics data with features"),
+  includeRolloutStatus: booleanish
+    .default(false)
+    .describe("Include rollout status information"),
+  includeGoals: booleanish.default(false).describe("Include associated goals"),
+  includeProductionEstimatedTargetAudience: booleanish
+    .default(false)
+    .describe("Include estimated production target audience data"),
+  includeRemoteConfigs: booleanish
+    .default(false)
+    .describe("Include remote configuration data"),
+  useTargetingRules: booleanish
+    .default(false)
+    .describe("Apply targeting rules"),
+}).strict();
+
+export type FeaturesQuery = z.input<typeof FeatureQuerySchema>;
+
+export const FeatureCreateSchema = z
+  .object({
+    name: z
+      .string()
+      .min(1, "Feature name is required")
+      .describe("Name of the feature"),
+    key: z
+      .string()
+      .min(1, "Feature key is required")
+      .describe("Unique identifier key for the feature"),
+    description: z
+      .string()
+      .optional()
+      .describe("Optional description of the feature"),
   })
   .strict();
-export type FeaturesQuery = z.input<typeof FeatureQuerySchema>;
+
+export type FeatureCreate = z.input<typeof FeatureCreateSchema>;
 
 export async function listFeatures(
   appId: string,
@@ -74,8 +107,7 @@ export async function getFeature(
 
 export async function createFeature(
   appId: string,
-  name: string,
-  key: string,
+  featureData: FeatureCreate,
 ): Promise<Feature> {
   return authRequest<FeatureResponse>(`/apps/${appId}/features`, {
     method: "POST",
@@ -83,9 +115,8 @@ export async function createFeature(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      name,
-      key,
       source: "event",
+      ...FeatureCreateSchema.parse(featureData),
     }),
   }).then(({ feature }) => feature);
 }
