@@ -202,6 +202,8 @@ export function BucketProvider({
       void clientRef.current.stop();
     }
 
+    setFeaturesLoading(true);
+
     const client = newBucketClient({
       ...config,
       user,
