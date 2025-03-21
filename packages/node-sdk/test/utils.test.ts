@@ -167,7 +167,7 @@ describe("hashObject", () => {
     expectedHash.update("name");
     expectedHash.update("Alice");
 
-    expect(hash).toBe(expectedHash.digest("hex"));
+    expect(hash).toBe(expectedHash.digest("base64"));
   });
 
   it("should hash arrays within objects", () => {
@@ -180,7 +180,7 @@ describe("hashObject", () => {
     expectedHash.update("2");
     expectedHash.update("3");
 
-    expect(hash).toBe(expectedHash.digest("hex"));
+    expect(hash).toBe(expectedHash.digest("base64"));
   });
 });
 

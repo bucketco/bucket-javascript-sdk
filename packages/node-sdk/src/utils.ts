@@ -160,7 +160,7 @@ export function hashObject(obj: Record<string, any>): string {
   const hash = createHash("sha1");
   updateSha1Hash(hash, obj);
 
-  return hash.digest("hex");
+  return hash.digest("base64");
 }
 
 export function once<T extends () => ReturnType<T>>(
