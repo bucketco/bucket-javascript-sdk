@@ -6,21 +6,13 @@ import {
   ExternalIdSchema,
   PaginationQueryBaseSchema,
 } from "../utils/schemas.js";
-import { PaginatedResponse } from "../utils/types.js";
-
-export const FunnelStepList = [
-  "company",
-  "segment",
-  "tried",
-  "adopted",
-  "retained",
-] as const;
-
-export type FunnelStep = (typeof FunnelStepList)[number];
-
-export type FeedbackSource = "api" | "manual" | "prompt" | "sdk" | "widget";
-
-export type SatisfactionScore = 0 | 1 | 2 | 3 | 4 | 5;
+import {
+  FeedbackSource,
+  FunnelStep,
+  FunnelStepList,
+  PaginatedResponse,
+  SatisfactionScore,
+} from "../utils/types.js";
 
 export type Feedback = {
   id: string;

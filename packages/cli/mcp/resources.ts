@@ -4,7 +4,7 @@ import {
 } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 import { getApp } from "../services/bootstrap.js";
-import { getFeature, listFeatures } from "../services/features.js";
+import { getFeature, listFeatureNames } from "../services/features.js";
 import { configStore } from "../stores/config.js";
 import { MissingAppIdError, MissingEnvIdError } from "../utils/errors.js";
 
@@ -23,13 +23,12 @@ export function registerMcpResources(mcp: McpServer) {
     "feature",
     new ResourceTemplate("features://{featureId}", {
       list: async () => {
-        const response = await listFeatures(appId, { envId: production.id });
+        const response = await listFeatureNames(appId);
         return {
-          resources: response.data.map(({ id, name, description }) => ({
+          resources: response.map(({ id, name }) => ({
             name,
             uri: `features://${id}`,
-            description:
-              description ?? `Feature ${name} of the app ${app.name}.`,
+            description: `Feature ${name} of the app ${app.name}.`,
             mimeType: "application/json",
           })),
         };
@@ -40,7 +39,9 @@ export function registerMcpResources(mcp: McpServer) {
       mimeType: "application/json",
     },
     async (uri, { featureId }) => {
-      const data = await getFeature(appId, featureId.toString());
+      const data = await getFeature(appId, featureId.toString(), {
+        envId: production.id,
+      });
       return {
         contents: [
           {

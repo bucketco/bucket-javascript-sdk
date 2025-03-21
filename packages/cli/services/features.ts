@@ -3,12 +3,15 @@ import { z } from "zod";
 import { authRequest } from "../utils/auth.js";
 import {
   booleanish,
+  EnvironmentQuery,
   EnvironmentQuerySchema,
   sortTypeSchema,
 } from "../utils/schemas.js";
 import { PaginatedResponse } from "../utils/types.js";
 
 import { Stage } from "./stages.js";
+
+export type FeatureSourceType = "event" | "attribute";
 
 export type RemoteConfigVariant = {
   key?: string;
@@ -23,10 +26,15 @@ export type RemoteConfig = {
   ];
 };
 
-export type Feature = {
+export type FeatureName = {
   id: string;
   name: string;
   key: string;
+  source: FeatureSourceType;
+  parentFeatureId: string | null;
+};
+
+export type Feature = FeatureName & {
   description: string | null;
   remoteConfigs: RemoteConfig[];
   stage: Stage | null;
@@ -34,8 +42,7 @@ export type Feature = {
 
 export type FeaturesResponse = PaginatedResponse<Feature>;
 
-export const FeatureQuerySchema = EnvironmentQuerySchema.extend({
-  view: z.string().optional().describe("View filter for features"),
+export const FeaturesQuerySchema = EnvironmentQuerySchema.extend({
   sortBy: z.string().default("key").describe("Field to sort features by"),
   sortOrder: z
     .enum(["asc", "desc"])
@@ -57,12 +64,10 @@ export const FeatureQuerySchema = EnvironmentQuerySchema.extend({
   includeRemoteConfigs: booleanish
     .default(false)
     .describe("Include remote configuration data"),
-  useTargetingRules: booleanish
-    .default(false)
-    .describe("Apply targeting rules"),
+  useTargetingRules: booleanish.default(true).describe("Apply targeting rules"),
 }).strict();
 
-export type FeaturesQuery = z.input<typeof FeatureQuerySchema>;
+export type FeaturesQuery = z.input<typeof FeaturesQuerySchema>;
 
 export const FeatureCreateSchema = z
   .object({
@@ -83,13 +88,14 @@ export const FeatureCreateSchema = z
 
 export type FeatureCreate = z.input<typeof FeatureCreateSchema>;
 
-export async function listFeatures(
-  appId: string,
-  query: FeaturesQuery,
-): Promise<FeaturesResponse> {
+export async function listFeatures(appId: string, query: FeaturesQuery) {
   return authRequest<FeaturesResponse>(`/apps/${appId}/features`, {
-    params: FeatureQuerySchema.parse(query),
+    params: FeaturesQuerySchema.parse(query),
   });
+}
+
+export async function listFeatureNames(appId: string) {
+  return authRequest<FeatureName[]>(`/apps/${appId}/features/names`);
 }
 
 type FeatureResponse = {
@@ -99,16 +105,14 @@ type FeatureResponse = {
 export async function getFeature(
   appId: string,
   featureId: string,
-): Promise<Feature> {
-  return authRequest<FeatureResponse>(
-    `/apps/${appId}/features/${featureId}`,
-  ).then(({ feature }) => feature);
+  query: EnvironmentQuery,
+) {
+  return authRequest<FeatureResponse>(`/apps/${appId}/features/${featureId}`, {
+    params: EnvironmentQuerySchema.parse(query),
+  }).then(({ feature }) => feature);
 }
 
-export async function createFeature(
-  appId: string,
-  featureData: FeatureCreate,
-): Promise<Feature> {
+export async function createFeature(appId: string, featureData: FeatureCreate) {
   return authRequest<FeatureResponse>(`/apps/${appId}/features`, {
     method: "POST",
     headers: {

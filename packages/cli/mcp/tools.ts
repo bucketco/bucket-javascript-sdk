@@ -2,10 +2,15 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 import { getApp, getOrg } from "../services/bootstrap.js";
 import {
+  CompaniesQuerySchema,
+  companyFeatureAccess,
+  CompanyFeatureAccessSchema,
+  listCompanies,
+} from "../services/companies.js";
+import {
   createFeature,
   FeatureCreateSchema,
-  FeatureQuerySchema,
-  listFeatures,
+  listFeatureNames,
 } from "../services/features.js";
 import { FeedbackQuerySchema, listFeedback } from "../services/feedback.js";
 import { configStore } from "../stores/config.js";
@@ -32,12 +37,10 @@ export function registerMcpTools(mcp: McpServer) {
   // Add features tool
   mcp.tool(
     "features",
-    withDefaults(FeatureQuerySchema, {
-      envId: production.id,
-    }).shape,
-    async (args) => {
+    "List all feature flags on the Bucket feature management service.",
+    async () => {
       try {
-        const data = await listFeatures(appId, args);
+        const data = await listFeatureNames(appId);
         return {
           content: [
             {
@@ -58,6 +61,7 @@ List of features.
   // Add feedback tool
   mcp.tool(
     "feedback",
+    "Get user feedback for the features on the Bucket feature management service.",
     withDefaults(FeedbackQuerySchema, {
       envId: production.id,
     }).shape,
@@ -86,7 +90,7 @@ ${JSON.stringify(data, null, 2)}`,
   const keyFormatRules = KeyFormatPatterns[org.featureKeyFormat].message;
   mcp.tool(
     "createFeature",
-    "Creates a new feature flag using the Bucket service.",
+    "Creates a new feature flag on the Bucket feature management service.",
     withDescriptions(FeatureCreateSchema, {
       key: `Feature key specified in ${org.featureKeyFormat} format:\n${keyFormatRules}`,
     }).shape,
@@ -101,6 +105,57 @@ ${JSON.stringify(data, null, 2)}`,
 Feature created successfully.
 >>> JSON Response >>>
 ${JSON.stringify(feature, null, 2)}`,
+            },
+          ],
+        };
+      } catch (error) {
+        return await handleMcpError(error);
+      }
+    },
+  );
+
+  // Add companies tool
+  mcp.tool(
+    "listCompanies",
+    "List of companies on the Bucket feature management service.",
+    withDefaults(CompaniesQuerySchema, {
+      envId: production.id,
+    }).shape,
+    async (args) => {
+      try {
+        const data = await listCompanies(appId, args);
+        return {
+          content: [
+            {
+              type: "text",
+              text: `
+List of companies.
+>>> JSON Response >>>
+${JSON.stringify(data, null, 2)}`,
+            },
+          ],
+        };
+      } catch (error) {
+        return await handleMcpError(error);
+      }
+    },
+  );
+
+  // Add company feature access tool
+  mcp.tool(
+    "companyFeatureAccess",
+    "Grant or revoke feature access for a specific company on the Bucket feature management service.",
+    withDefaults(CompanyFeatureAccessSchema, {
+      envId: production.id,
+    }).shape,
+    async (args) => {
+      try {
+        await companyFeatureAccess(appId, args);
+        return {
+          content: [
+            {
+              type: "text",
+              text: `${args.isEnabled ? "Granted" : "Revoked"} access to feature '${args.featureKey}' for company ID '${args.companyId}'.`,
             },
           ],
         };
