@@ -1,4 +1,6 @@
 import { camelCase, kebabCase, pascalCase, snakeCase } from "change-case";
+import { mkdir, writeFile } from "node:fs/promises";
+import { dirname, isAbsolute, join } from "node:path";
 
 import { Feature, RemoteConfig } from "../services/features.js";
 
@@ -121,4 +123,17 @@ ${Array.from(configDefs.values())
   .join("\n\n")}
 }
 `.trim();
+}
+
+export async function writeTypesToFile(
+  types: string,
+  outPath: string,
+  projectPath: string,
+) {
+  const fullPath = isAbsolute(outPath) ? outPath : join(projectPath, outPath);
+
+  await mkdir(dirname(fullPath), { recursive: true });
+  await writeFile(fullPath, types);
+
+  return fullPath;
 }

@@ -34,14 +34,39 @@ export const typesFormatOption = new Option(
   "Single output format for generated feature types",
 ).choices(["react", "node"]);
 
+export const featureNameArgument = new Argument(
+  "[name]",
+  "Feature's name. If not provided, you'll be prompted to enter one.",
+);
+
 export const featureKeyOption = new Option(
   "-k, --key [feature key]",
   "Feature key. If not provided, a key is generated from the feature's name.",
 );
 
-export const featureNameArgument = new Argument("[name]", "Feature's name.");
-
 export const mcpPortOption = new Option(
   "-p, --port [port]",
   "Port for the MCP server to listen on.",
 ).default(8050);
+
+// Company related options
+export const companyFilterOption = new Option(
+  "-f, --filter [name]",
+  "Filter companies by name or ID",
+);
+
+export const companyIdArgument = new Argument("<companyId>", "Company ID");
+export const featureKeyArgument = new Argument(
+  "[featureKey]",
+  "Feature key. If not provided, you'll be prompted to select one.",
+);
+
+export const enableFeatureOption = new Option(
+  "--enable",
+  "Enable the feature for this company",
+);
+
+export const disableFeatureOption = new Option(
+  "--disable",
+  "Disable the feature for this company",
+);

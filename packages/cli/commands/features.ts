@@ -1,8 +1,7 @@
 import { input } from "@inquirer/prompts";
 import chalk from "chalk";
 import { Command } from "commander";
-import { mkdir, writeFile } from "node:fs/promises";
-import { dirname, isAbsolute, join, relative } from "node:path";
+import { relative } from "node:path";
 import ora, { Ora } from "ora";
 
 import { getApp, getOrg } from "../services/bootstrap.js";
@@ -18,6 +17,7 @@ import {
   genTypes,
   indentLines,
   KeyFormatPatterns,
+  writeTypesToFile,
 } from "../utils/gen.js";
 import {
   appIdOption,
@@ -160,12 +160,7 @@ export const generateTypesAction = async () => {
     // Generate types for each output configuration
     for (const output of typesOutput) {
       const types = await genTypes(features, output.format);
-      const outPath = isAbsolute(output.path)
-        ? output.path
-        : join(projectPath, output.path);
-
-      await mkdir(dirname(outPath), { recursive: true });
-      await writeFile(outPath, types);
+      const outPath = await writeTypesToFile(types, output.path, projectPath);
       spinner.succeed(
         `Generated ${output.format} types in ${chalk.cyan(relative(projectPath, outPath))}.`,
       );
