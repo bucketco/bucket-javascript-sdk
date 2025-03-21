@@ -7,6 +7,7 @@ import { authStore } from "../stores/auth.js";
 import { configStore } from "../stores/config.js";
 
 import { errorUrl, loginUrl, successUrl } from "./path.js";
+import { ParamType } from "./types.js";
 
 interface waitForAccessToken {
   accessToken: string;
@@ -122,7 +123,7 @@ export async function waitForAccessToken(baseUrl: string, apiUrl: string) {
 export async function authRequest<T = Record<string, unknown>>(
   url: string,
   options?: RequestInit & {
-    params?: Record<string, string>;
+    params?: Record<string, ParamType | ParamType[] | null | undefined>;
   },
   retryCount = 0,
 ): Promise<T> {
@@ -137,7 +138,13 @@ export async function authRequest<T = Record<string, unknown>>(
   const resolvedUrl = new URL(`${apiUrl}/${url}`);
   if (options?.params) {
     Object.entries(options.params).forEach(([key, value]) => {
-      resolvedUrl.searchParams.append(key, value);
+      if (value !== null && value !== undefined) {
+        if (Array.isArray(value)) {
+          value.forEach((v) => resolvedUrl.searchParams.append(key, String(v)));
+        } else {
+          resolvedUrl.searchParams.set(key, String(value));
+        }
+      }
     });
   }
 

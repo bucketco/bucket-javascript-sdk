@@ -11,6 +11,13 @@ export class MissingAppIdError extends Error {
   }
 }
 
+export class MissingEnvIdError extends Error {
+  constructor() {
+    super("Environment ID is required.");
+    this.name = "MissingEnvIdError";
+  }
+}
+
 export class ConfigValidationError extends Error {
   constructor(errors?: ErrorObject[] | null) {
     const messages = errors
@@ -54,4 +61,44 @@ export async function handleError(error: unknown, tag: string) {
     console.error(chalk.red(tag ?? "An unknown error occurred:", error));
   }
   process.exit(1);
+}
+
+export async function handleMcpError(error: unknown): Promise<{
+  isError: true;
+  content: Array<{ type: "text"; text: string }>;
+}> {
+  let errorMessage: string;
+
+  if (error instanceof Response) {
+    try {
+      const data = await error.json();
+      errorMessage = data.error?.message ?? data.error?.code ?? "API Error";
+
+      if (data.validationErrors) {
+        const validationDetails = data.validationErrors
+          .map(
+            ({ path, message }: { path: string[]; message: string }) =>
+              `- ${path.join(".")}: ${message}`,
+          )
+          .join("\n");
+        errorMessage += "\nValidation Errors:\n" + validationDetails;
+      }
+    } catch {
+      errorMessage = `API Error: ${error.statusText} (${error.status})`;
+    }
+  } else if (error instanceof Error) {
+    errorMessage = error.message;
+    if (error.cause) {
+      errorMessage += `\nCause: ${JSON.stringify(error.cause)}`;
+    }
+  } else if (typeof error === "string") {
+    errorMessage = error;
+  } else {
+    errorMessage = "An unknown error occurred: " + JSON.stringify(error);
+  }
+
+  return {
+    isError: true,
+    content: [{ type: "text", text: errorMessage }],
+  };
 }
