@@ -19,6 +19,7 @@ import { newRateLimiter } from "./rate-limiter";
 import type {
   EvaluatedFeaturesAPIResponse,
   FeatureAPIResponse,
+  FeatureDefinition,
   FeatureOverridesFn,
   IdType,
   RawFeature,
@@ -480,6 +481,22 @@ export class BucketClient {
     }
 
     await this._config.batchBuffer.flush();
+  }
+
+  /**
+   * Gets the feature definitions, including all config values.
+   * To evaluate which features are enabled for a given user/company, use `getFeatures`.
+   *
+   * @returns The features definitions.
+   */
+  public async getFeatureDefinitions(): Promise<FeatureDefinition[]> {
+    const features = this.getFeaturesCache().get()?.features || [];
+    return features.map((f) => ({
+      key: f.key,
+      description: f.description,
+      isEnabled: f.targeting,
+      config: f.config,
+    }));
   }
 
   /**
