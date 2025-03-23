@@ -387,6 +387,7 @@ async function evaluateRecursively(
       let result = isAnd;
       for (const current of filter.filters) {
         // short-circuit if we know the result already
+        // could be simplified to isAnd !== result, but this is more readable
         if ((isAnd && !result) || (!isAnd && result)) {
           return result;
         }
