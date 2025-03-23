@@ -1,4 +1,10 @@
-import { createHash } from "node:crypto";
+try {
+  // crypto not available on globalThis in Node.js v18
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  globalThis.crypto ??= require("node:crypto").webcrypto;
+} catch {
+  // ignore
+}
 
 /**
  * Represents a filter class with a specific type property.
@@ -259,16 +265,20 @@ export function unflattenJSON(data: Record<string, any>): Record<string, any> {
  * @param {string} hashInput - The input string used to generate the hash.
  * @return {number} A number between 0 and 100000 derived from the hash of the input string.
  */
-export function hashInt(hashInput: string): number {
+export async function hashInt(hashInput: string): Promise<number> {
   // 1. hash the key and the partial rollout attribute
   // 2. take 20 bits from the hash and divide by 2^20 - 1 to get a number between 0 and 1
   // 3. multiply by 100000 to get a number between 0 and 100000 and compare it to the threshold
   //
   // we only need 20 bits to get to 100000 because 2^20 is 1048576
-  const hash =
-    createHash("sha256").update(hashInput, "utf-8").digest().readUInt32LE(0) &
-    0xfffff;
-  return Math.floor((hash / 0xfffff) * 100000);
+  const msgUint8 = new TextEncoder().encode(hashInput);
+
+  // Hash the message
+  const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
+
+  const view = new DataView(hashBuffer);
+  const value = view.getUint32(0, true) & 0xfffff;
+  return Math.floor((value / 0xfffff) * 100000);
 }
 
 /**
@@ -341,11 +351,11 @@ export function evaluate(
   }
 }
 
-function evaluateRecursively(
+async function evaluateRecursively(
   filter: RuleFilter,
   context: Record<string, string>,
   missingContextFieldsSet: Set<string>,
-): boolean {
+): Promise<boolean> {
   switch (filter.type) {
     case "constant":
       return filter.value;
@@ -366,30 +376,37 @@ function evaluateRecursively(
         return false;
       }
 
-      const hashVal = hashInt(
+      const hashVal = await hashInt(
         `${filter.key}.${context[filter.partialRolloutAttribute]}`,
       );
 
       return hashVal < filter.partialRolloutThreshold;
     }
-    case "group":
-      return filter.filters.reduce((acc, current) => {
-        if (filter.operator === "and") {
-          return (
-            acc &&
-            evaluateRecursively(current, context, missingContextFieldsSet)
-          );
+    case "group": {
+      const isAnd = filter.operator === "and";
+      let result = isAnd;
+      for (const current of filter.filters) {
+        // short-circuit if we know the result already
+        if ((isAnd && !result) || (!isAnd && result)) {
+          return result;
         }
-        return (
-          acc || evaluateRecursively(current, context, missingContextFieldsSet)
+
+        const newRes = await evaluateRecursively(
+          current,
+          context,
+          missingContextFieldsSet,
         );
-      }, filter.operator === "and");
+
+        result = isAnd ? result && newRes : result || newRes;
+      }
+      return result;
+    }
     case "negation":
-      return !evaluateRecursively(
+      return !(await evaluateRecursively(
         filter.filter,
         context,
         missingContextFieldsSet,
-      );
+      ));
     default:
       return false;
   }
@@ -431,16 +448,18 @@ export interface EvaluationResult<T extends RuleValue> {
   missingContextFields?: string[];
 }
 
-export function evaluateFeatureRules<T extends RuleValue>({
+export async function evaluateFeatureRules<T extends RuleValue>({
   context,
   featureKey,
   rules,
-}: EvaluationParams<T>): EvaluationResult<T> {
+}: EvaluationParams<T>): Promise<EvaluationResult<T>> {
   const flatContext = flattenJSON(context);
   const missingContextFieldsSet = new Set<string>();
 
-  const ruleEvaluationResults = rules.map((rule) =>
-    evaluateRecursively(rule.filter, flatContext, missingContextFieldsSet),
+  const ruleEvaluationResults = await Promise.all(
+    rules.map((rule) =>
+      evaluateRecursively(rule.filter, flatContext, missingContextFieldsSet),
+    ),
   );
 
   const missingContextFields = Array.from(missingContextFieldsSet);
