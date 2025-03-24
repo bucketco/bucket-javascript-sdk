@@ -282,9 +282,7 @@ export type FeatureOverrides = Partial<
 export type FeatureOverridesFn = (context: Context) => FeatureOverrides;
 
 /**
- * (Internal) Describes a remote feature config variant.
- *
- * @internal
+ * Describes a remote feature config variant.
  */
 export type FeatureConfigVariant = {
   /**
