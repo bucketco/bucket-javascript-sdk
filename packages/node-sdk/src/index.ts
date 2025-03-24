@@ -7,6 +7,7 @@ export type {
   ContextWithTracking,
   EmptyFeatureRemoteConfig,
   Feature,
+  FeatureDefinition,
   FeatureOverride,
   FeatureOverrides,
   FeatureOverridesFn,
