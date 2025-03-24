@@ -231,6 +231,54 @@ describe("<BucketProvider />", () => {
     expect(initialize).toHaveBeenCalledOnce();
     expect(BucketClient.prototype.stop).not.toHaveBeenCalledOnce();
   });
+
+  test("resets loading state when context changes", async () => {
+    const { queryByTestId, rerender } = render(
+      getProvider({
+        loadingComponent: <span data-testid="loading">Loading...</span>,
+      }),
+    );
+
+    // Loading component should be visible initially
+    expect(queryByTestId("loading")).not.toBeNull();
+
+    // Wait for initial loading to complete
+    await waitFor(() => {
+      expect(queryByTestId("loading")).toBeNull();
+    });
+
+    // Change user context
+    rerender(
+      getProvider({
+        loadingComponent: <span data-testid="loading">Loading...</span>,
+        user: { ...user, id: "new-user-id" },
+      }),
+    );
+
+    // Loading should appear again
+    expect(queryByTestId("loading")).not.toBeNull();
+
+    // Wait for loading to complete again
+    await waitFor(() => {
+      expect(queryByTestId("loading")).toBeNull();
+    });
+
+    // Change company context
+    rerender(
+      getProvider({
+        loadingComponent: <span data-testid="loading">Loading...</span>,
+        company: { ...company, id: "new-company-id" },
+      }),
+    );
+
+    // Loading should appear again
+    expect(queryByTestId("loading")).not.toBeNull();
+
+    // Wait for loading to complete again
+    await waitFor(() => {
+      expect(queryByTestId("loading")).toBeNull();
+    });
+  });
 });
 
 describe("useFeature", () => {
