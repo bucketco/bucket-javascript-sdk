@@ -9,12 +9,14 @@ import ora, { Ora } from "ora";
 
 import { registerMcpTools } from "../mcp/tools.js";
 import { handleError } from "../utils/errors.js";
+import { appIdOption } from "../utils/options.js";
 
 type MCPArgs = {
   port?: "auto" | number;
+  appId?: string;
 };
 
-export const mcpAction = async ({ port = 8050 }: MCPArgs) => {
+export const mcpAction = async ({ appId, port = 8050 }: MCPArgs) => {
   let spinner: Ora | undefined;
   try {
     const packageJSONPath = await findUp("package.json");
@@ -70,7 +72,7 @@ export const mcpAction = async ({ port = 8050 }: MCPArgs) => {
 
     // Register tools and resources
     //registerMcpResources(mcp);
-    registerMcpTools(mcp);
+    await registerMcpTools(mcp, { appId });
 
     const server = app.listen(port !== "auto" ? port : 0, () => {
       // Get the port the server is listening on
@@ -94,5 +96,6 @@ export function registerMcpCommand(cli: Command) {
     .description(
       "Create an model context protocol (MCP) server between your AI assistant and the Bucket API.",
     )
-    .action(mcpAction);
+    .action(mcpAction)
+    .addOption(appIdOption);
 }

@@ -34,10 +34,26 @@ export type FeatureName = {
   parentFeatureId: string | null;
 };
 
+export type Flag = {
+  id: string;
+  currentVersions: {
+    id: string;
+    environment: {
+      id: string;
+    };
+    targetingMode: string;
+    segmentIds: string[];
+    companyIds: string[];
+    userIds: string[];
+    customRules: any;
+  }[];
+};
+
 export type Feature = FeatureName & {
   description: string | null;
   remoteConfigs: RemoteConfig[];
   stage: Stage | null;
+  flagId: string | null;
 };
 
 export type FeaturesResponse = PaginatedResponse<Feature>;
@@ -110,6 +126,16 @@ export async function getFeature(
   return authRequest<FeatureResponse>(`/apps/${appId}/features/${featureId}`, {
     params: EnvironmentQuerySchema.parse(query),
   }).then(({ feature }) => feature);
+}
+
+export async function getFlag(
+  appId: string,
+  flagId: string,
+  query: EnvironmentQuery,
+) {
+  return await authRequest<Flag>(`/apps/${appId}/flags/${flagId}`, {
+    params: EnvironmentQuerySchema.parse(query),
+  });
 }
 
 export async function createFeature(appId: string, featureData: FeatureCreate) {
