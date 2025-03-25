@@ -1,6 +1,4 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import chalk from "chalk";
-import { relative } from "node:path";
 import { z } from "zod";
 
 import { getApp, getOrg } from "../services/bootstrap.js";
@@ -14,7 +12,6 @@ import {
   createFeature,
   FeatureCreateSchema,
   listFeatureNames,
-  listFeatures,
 } from "../services/features.js";
 import { FeedbackQuerySchema, listFeedback } from "../services/feedback.js";
 import { listStages, UpdateFeatureStage } from "../services/stages.js";
@@ -24,7 +21,8 @@ import {
   MissingAppIdError,
   MissingEnvIdError,
 } from "../utils/errors.js";
-import { genTypes, KeyFormatPatterns, writeTypesToFile } from "../utils/gen.js";
+import { KeyFormatPatterns } from "../utils/gen.js";
+import { featureUrl } from "../utils/path.js";
 import {
   EnvironmentQuerySchema,
   withDefaults,
@@ -35,8 +33,8 @@ export async function registerMcpTools(
   mcp: McpServer,
   { appId }: { appId?: string },
 ) {
-  const projectPath = configStore.getProjectPath();
-  const { appId: configAppId, typesOutput } = configStore.getConfig();
+  // const projectPath = configStore.getProjectPath();
+  const { appId: configAppId, typesOutput: _ } = configStore.getConfig();
   appId = appId || configAppId;
   if (!appId) {
     throw new MissingAppIdError();
@@ -65,43 +63,6 @@ export async function registerMcpTools(
 List of features.
 >>> JSON Response >>>
  ${JSON.stringify(data, null, 2)}`,
-            },
-          ],
-        };
-      } catch (error) {
-        return await handleMcpError(error);
-      }
-    },
-  );
-
-  // Add generate feature types tool
-  mcp.tool(
-    "generateFeatureTypes",
-    "Generate TypeScript type definitions for features of the Bucket feature management service.",
-    async () => {
-      try {
-        const features = await listFeatures(appId, {
-          envId: production.id,
-          includeRemoteConfigs: true,
-        }).then((res) => res.data);
-
-        let response = "";
-        for (const output of typesOutput) {
-          const types = await genTypes(features, output.format);
-          const outPath = await writeTypesToFile(
-            types,
-            output.path,
-            projectPath,
-          );
-          response += `Generated ${output.format} types in ${chalk.cyan(
-            relative(projectPath, outPath),
-          )}.\n`;
-        }
-        return {
-          content: [
-            {
-              type: "text",
-              text: response,
             },
           ],
         };
@@ -150,14 +111,50 @@ ${JSON.stringify(data, null, 2)}`,
     async (args) => {
       try {
         const feature = await createFeature(appId, args);
+
+        const featureLink = featureUrl(
+          configStore.getConfig("baseUrl"),
+          production,
+          feature,
+        );
         return {
           content: [
             {
               type: "text",
-              text: `
-Feature created successfully.
->>> JSON Response >>>
-${JSON.stringify(feature, null, 2)}`,
+              text: `Feature created successfully. See it [on Bucket here](${featureLink}). Before moving on we need to generate the refreshed types to avoid linting errors. Run the Bucket CLI in a terminal:
+\`shell
+$ npx bucket features types
+\`
+
+After that we can feature flag some code. Use the following pattern for React:
+
+\`\`\`typescript
+import { useFeature } from "@bucketco/react-sdk";
+function MyComponent() {
+  const { isEnabled } = useFeatureFlag("${feature.key}");
+  if (!isEnabled) {
+    // feature is disabled
+    return null;
+  }
+  return <div>Feature is disabled.</div>;
+}
+\`\`\`
+
+To track feature usage, call the \`track\` method on usage:
+
+\`\`\`typescript
+import { useFeature } from "@bucketco/react-sdk";
+
+function MyComponent() {
+  const { isEnabled } = useFeatureFlag("${feature.key}");
+  if (!isEnabled) {
+    // feature is disabled
+    return null;
+  }
+  return <button onClick={track}>Start my feature!.</button>;
+}
+\`\`\`
+`,
             },
           ],
         };
