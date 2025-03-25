@@ -15,6 +15,7 @@ import { evaluateFeatureRules } from "@bucketco/flag-evaluation";
 import { BoundBucketClient, BucketClient } from "../src";
 import {
   API_BASE_URL,
+  API_TIMEOUT_MS,
   BATCH_INTERVAL_MS,
   BATCH_MAX_SIZE,
   FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
@@ -84,6 +85,7 @@ const validOptions: ClientOptions = {
   logger,
   httpClient,
   fallbackFeatures,
+  featuresFetchRetries: 2,
   batchOptions: {
     maxSize: 99,
     intervalMs: 100,
@@ -275,6 +277,7 @@ describe("BucketClient", () => {
           isEnabled: true,
         },
       });
+      expect(client["_config"].featuresFetchRetries).toBe(2);
     });
 
     it("should route messages to the supplied logger", () => {
@@ -970,6 +973,7 @@ describe("BucketClient", () => {
       expect(httpClient.get).toHaveBeenCalledWith(
         `https://api.example.com/features`,
         expectedHeaders,
+        API_TIMEOUT_MS,
       );
     });
   });
@@ -2291,6 +2295,7 @@ describe("BucketClient", () => {
       expect(httpClient.get).toHaveBeenCalledWith(
         "https://api.example.com/features/evaluated?context.other.custom=context&context.other.key=value&context.user.id=c1&context.company.id=u1",
         expectedHeaders,
+        API_TIMEOUT_MS,
       );
     });
 
@@ -2302,6 +2307,7 @@ describe("BucketClient", () => {
       expect(httpClient.get).toHaveBeenCalledWith(
         "https://api.example.com/features/evaluated?",
         expectedHeaders,
+        API_TIMEOUT_MS,
       );
     });
 
@@ -2373,6 +2379,7 @@ describe("BucketClient", () => {
       expect(httpClient.get).toHaveBeenCalledWith(
         "https://api.example.com/features/evaluated?context.other.custom=context&context.other.key=value&context.user.id=c1&context.company.id=u1&key=feature1",
         expectedHeaders,
+        API_TIMEOUT_MS,
       );
     });
 
@@ -2382,6 +2389,7 @@ describe("BucketClient", () => {
       expect(httpClient.get).toHaveBeenCalledWith(
         "https://api.example.com/features/evaluated?key=feature1",
         expectedHeaders,
+        API_TIMEOUT_MS,
       );
     });
 
@@ -2617,6 +2625,7 @@ describe("BoundBucketClient", () => {
       expect(httpClient.get).toHaveBeenCalledWith(
         "https://api.example.com/features/evaluated?context.user.id=user123&context.user.age=1&context.user.name=John&context.company.id=company123&context.company.employees=100&context.company.name=Acme+Inc.&context.other.custom=context&context.other.key=value",
         expectedHeaders,
+        API_TIMEOUT_MS,
       );
     });
 
@@ -2641,6 +2650,7 @@ describe("BoundBucketClient", () => {
       expect(httpClient.get).toHaveBeenCalledWith(
         "https://api.example.com/features/evaluated?context.user.id=user123&context.user.age=1&context.user.name=John&context.company.id=company123&context.company.employees=100&context.company.name=Acme+Inc.&context.other.custom=context&context.other.key=value&key=feature1",
         expectedHeaders,
+        API_TIMEOUT_MS,
       );
     });
   });
