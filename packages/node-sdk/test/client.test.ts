@@ -1598,9 +1598,7 @@ describe("BucketClient", () => {
       await client.initialize();
       client.getFeatures({ user, company, other: otherContext });
 
-      expect(isAllowedSpy).toHaveBeenCalledWith(
-        "d461e93fe41f6297ab43402d0fc6d63e2444e07d",
-      );
+      expect(isAllowedSpy).toHaveBeenCalledWith("1GHpP+QfYperQ0AtD8bWPiRE4H0=");
     });
 
     it("should return evaluated features when only user is defined", async () => {
