@@ -38,7 +38,7 @@ const feature = {
 
 describe("evaluate feature targeting integration ", () => {
   it("evaluates all kinds of filters", async () => {
-    const res = evaluateFeatureRules({
+    const res = await evaluateFeatureRules({
       featureKey: "feature",
       rules: [
         {
@@ -109,7 +109,7 @@ describe("evaluate feature targeting integration ", () => {
   });
 
   it("evaluates flag when there's no matching rule", async () => {
-    const res = evaluateFeatureRules({
+    const res = await evaluateFeatureRules({
       ...feature,
       context: {
         company: {
@@ -137,7 +137,7 @@ describe("evaluate feature targeting integration ", () => {
       },
     };
 
-    const res = evaluateFeatureRules({
+    const res = await evaluateFeatureRules({
       ...feature,
       context,
     });
@@ -155,7 +155,7 @@ describe("evaluate feature targeting integration ", () => {
   });
 
   it("evaluates flag with missing values", async () => {
-    const res = evaluateFeatureRules({
+    const res = await evaluateFeatureRules({
       featureKey: "feature",
       rules: [
         {
@@ -198,7 +198,7 @@ describe("evaluate feature targeting integration ", () => {
   });
 
   it("returns list of missing context keys ", async () => {
-    const res = evaluateFeatureRules({
+    const res = await evaluateFeatureRules({
       ...feature,
       context: {},
     });
@@ -214,7 +214,7 @@ describe("evaluate feature targeting integration ", () => {
   });
 
   it("fails evaluation and includes key in missing keys when rollout attribute is missing from context", async () => {
-    const res = evaluateFeatureRules({
+    const res = await evaluateFeatureRules({
       featureKey: "myfeature",
       rules: [
         {
@@ -352,8 +352,8 @@ describe("rollout hash", () => {
   ] as const;
 
   for (const [input, expected] of tests) {
-    it(`evaluates '${input}' = ${expected}`, () => {
-      const res = hashInt(input);
+    it(`evaluates '${input}' = ${expected}`, async () => {
+      const res = await hashInt(input);
       expect(res).toEqual(expected);
     });
   }
