@@ -102,6 +102,7 @@ const featureDefinitions: FeaturesAPIResponse = {
   features: [
     {
       key: "feature1",
+      description: "Feature 1",
       targeting: {
         version: 1,
         rules: [
@@ -133,6 +134,7 @@ const featureDefinitions: FeaturesAPIResponse = {
     },
     {
       key: "feature2",
+      description: "Feature 2",
       targeting: {
         version: 2,
         rules: [

@@ -207,7 +207,7 @@ export type FeatureDefinition = {
   /**
    * The targeting rules for the feature.
    */
-  isEnabled: {
+  flag: {
     /**
      * The version of the targeting rules.
      */

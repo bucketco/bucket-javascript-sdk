@@ -494,7 +494,7 @@ export class BucketClient {
     return features.map((f) => ({
       key: f.key,
       description: f.description,
-      isEnabled: f.targeting,
+      flag: f.targeting,
       config: f.config,
     }));
   }
