@@ -94,7 +94,7 @@ export function registerMcpCommand(cli: Command) {
   cli
     .command("mcp")
     .description(
-      "Create an model context protocol (MCP) server between your AI assistant and the Bucket API.",
+      "Create an model context protocol (MCP) server between your AI assistant and the Bucket API (alpha).",
     )
     .action(mcpAction)
     .addOption(appIdOption);
