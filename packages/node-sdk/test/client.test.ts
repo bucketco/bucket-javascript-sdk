@@ -945,31 +945,29 @@ describe("BucketClient", () => {
     it("should initialize the client", async () => {
       const client = new BucketClient(validOptions);
 
-      const cache = {
-        refresh: vi.fn(),
-        get: vi.fn(),
-      };
-
-      vi.spyOn(client as any, "getFeaturesCache").mockReturnValue(cache);
-
-      await client.initialize();
-      await client.initialize();
-      await client.initialize();
-
-      expect(cache.refresh).toHaveBeenCalledTimes(1);
-      expect(cache.get).not.toHaveBeenCalled();
-    });
-
-    it("should set up the cache object", async () => {
-      const client = new BucketClient(validOptions);
-      expect(client["featuresCache"]).toBeUndefined();
+      const get = vi
+        .spyOn(client["featuresCache"], "get")
+        .mockReturnValue(undefined);
+      const refresh = vi
+        .spyOn(client["featuresCache"], "refresh")
+        .mockResolvedValue(undefined);
 
       await client.initialize();
-      expect(client["featuresCache"]).toBeTypeOf("object");
+      await client.initialize();
+      await client.initialize();
+
+      expect(refresh).toHaveBeenCalledTimes(1);
+      expect(get).not.toHaveBeenCalled();
     });
 
     it("should call the backend to obtain features", async () => {
       const client = new BucketClient(validOptions);
+
+      httpClient.get.mockResolvedValue({
+        ok: true,
+        status: 200,
+      });
+
       await client.initialize();
 
       expect(httpClient.get).toHaveBeenCalledWith(
