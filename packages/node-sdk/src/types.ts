@@ -441,6 +441,7 @@ export interface HttpClient {
   get<TResponse>(
     url: string,
     headers: Record<string, string>,
+    timeoutMs: number,
   ): Promise<HttpClientResponse<TResponse>>;
 }
 
@@ -585,6 +586,18 @@ export type ClientOptions = {
    * The HTTP client to use for sending requests (optional). Default is the built-in fetch client.
    **/
   httpClient?: HttpClient;
+
+  /**
+   * The timeout in milliseconds for fetching feature targeting data (optional).
+   * Default is 10000 ms.
+   **/
+  fetchTimeoutMs?: number;
+
+  /**
+   * Number of times to retry fetching feature definitions (optional).
+   * Default is 3 times.
+   **/
+  featuresFetchRetries?: number;
 
   /**
    * The options for the batch buffer (optional).
