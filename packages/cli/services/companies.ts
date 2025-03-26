@@ -81,7 +81,7 @@ export async function listCompanies(
 }
 
 export const CompanyFeatureAccessSchema = EnvironmentQuerySchema.extend({
-  companyId: z.string().length(14).describe("Company ID"),
+  companyId: z.string().describe("Company ID"),
   featureKey: z.string().describe("Feature key"),
   isEnabled: booleanish.describe(
     "Set feature to enabled or disabled for the company.",

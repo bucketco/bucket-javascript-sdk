@@ -121,7 +121,7 @@ ${JSON.stringify(data, null, 2)}`,
           content: [
             {
               type: "text",
-              text: `Feature created successfully. See it [on Bucket here](${featureLink}). Before moving on we need to generate the refreshed types to avoid linting errors. Run the Bucket CLI in a terminal:
+              text: `Feature created successfully. Show this link to the feature Bucket: ${featureLink}. Now run the Bucket CLI in a terminal:
 \`shell
 $ npx bucket features types
 \`
@@ -131,7 +131,7 @@ After that we can feature flag some code. Use the following pattern for React:
 \`\`\`typescript
 import { useFeature } from "@bucketco/react-sdk";
 function MyComponent() {
-  const { isEnabled } = useFeatureFlag("${feature.key}");
+  const { isEnabled } = useFeature("${feature.key}");
   if (!isEnabled) {
     // feature is disabled
     return null;
@@ -140,18 +140,20 @@ function MyComponent() {
 }
 \`\`\`
 
-To track feature usage, call the \`track\` method on usage:
+For Node.js, the pattern is similar:
+\`\`\`
+// import the initialized bucket client
+import { bucketClient } from "./bucket";
 
-\`\`\`typescript
-import { useFeature } from "@bucketco/react-sdk";
+function myFunction() {
+  const { isEnabled } = bucketClient.getFeature("${feature.key}");
 
-function MyComponent() {
-  const { isEnabled } = useFeatureFlag("${feature.key}");
   if (!isEnabled) {
     // feature is disabled
-    return null;
+    return;
   }
-  return <button onClick={track}>Start my feature!.</button>;
+
+  console.log("Feature is enabled!")
 }
 \`\`\`
 `,
