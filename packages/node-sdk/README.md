@@ -148,15 +148,8 @@ const client = new BucketClient({
 
 ### Feature definitions
 
-Feature definitions include the rules needed to determine which features should be enabled and which config values should be applied to any given user/company. Feature definitions are automatically fetched, cached and refreshed in the background. The cache behavior is configurable:
-
-```typescript
-const client = new BucketClient({
-  refetchInterval: 30000, // How often to refresh features (ms)
-  staleWarningInterval: 150000, // When to warn about stale features (ms)
-});
-```
-
+Feature definitions include the rules needed to determine which features should be enabled and which config values should be applied to any given user/company.
+Feature definitions are automatically fetched, cached and refreshed in the background.
 It's also possible to load the feature definitions from a local file or similar:
 
 ```typescript
