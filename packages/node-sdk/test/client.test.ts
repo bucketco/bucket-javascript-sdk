@@ -104,6 +104,7 @@ const featureDefinitions: FeaturesAPIResponse = {
   features: [
     {
       key: "feature1",
+      description: "Feature 1",
       targeting: {
         version: 1,
         rules: [
@@ -135,6 +136,7 @@ const featureDefinitions: FeaturesAPIResponse = {
     },
     {
       key: "feature2",
+      description: "Feature 2",
       targeting: {
         version: 2,
         rules: [
@@ -263,10 +265,10 @@ describe("BucketClient", () => {
       expect(client["_config"].staleWarningInterval).toBe(
         FEATURES_REFETCH_MS * 5,
       );
-      expect(client["_config"].logger).toBeDefined();
-      expect(client["_config"].httpClient).toBe(validOptions.httpClient);
+      expect(client.logger).toBeDefined();
+      expect(client.httpClient).toBe(validOptions.httpClient);
       expect(client["_config"].headers).toEqual(expectedHeaders);
-      expect(client["_config"].batchBuffer).toMatchObject({
+      expect(client["batchBuffer"]).toMatchObject({
         maxSize: 99,
         intervalMs: 100,
       });
@@ -283,7 +285,7 @@ describe("BucketClient", () => {
     it("should route messages to the supplied logger", () => {
       const client = new BucketClient(validOptions);
 
-      const actualLogger = client["_config"].logger!;
+      const actualLogger = client.logger!;
       actualLogger.debug("debug message");
       actualLogger.info("info message");
       actualLogger.warn("warn message");
@@ -313,10 +315,10 @@ describe("BucketClient", () => {
       expect(client["_config"].staleWarningInterval).toBe(
         FEATURES_REFETCH_MS * 5,
       );
-      expect(client["_config"].httpClient).toBe(fetchClient);
+      expect(client.httpClient).toBe(fetchClient);
       expect(client["_config"].headers).toEqual(expectedHeaders);
       expect(client["_config"].fallbackFeatures).toBeUndefined();
-      expect(client["_config"].batchBuffer).toMatchObject({
+      expect(client["batchBuffer"]).toMatchObject({
         maxSize: BATCH_MAX_SIZE,
         intervalMs: BATCH_INTERVAL_MS,
       });
@@ -374,7 +376,7 @@ describe("BucketClient", () => {
     it("should create a new feature events rate-limiter", () => {
       const client = new BucketClient(validOptions);
 
-      expect(client["_config"].rateLimiter).toBeDefined();
+      expect(client["rateLimiter"]).toBeDefined();
       expect(newRateLimiter).toHaveBeenCalledWith(
         FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
       );
@@ -445,7 +447,7 @@ describe("BucketClient", () => {
 
     beforeEach(() => {
       vi.mocked(httpClient.post).mockResolvedValue({ body: { success: true } });
-      client["_config"].rateLimiter.clear(true);
+      client["rateLimiter"].clear(true);
     });
 
     it("should return a new client instance with the `user`, `company` and `other` set", async () => {
@@ -566,7 +568,7 @@ describe("BucketClient", () => {
     const client = new BucketClient(validOptions);
 
     beforeEach(() => {
-      client["_config"].rateLimiter.clear(true);
+      client["rateLimiter"].clear(true);
     });
 
     // try with both string and number IDs
@@ -651,7 +653,7 @@ describe("BucketClient", () => {
     const client = new BucketClient(validOptions);
 
     beforeEach(() => {
-      client["_config"].rateLimiter.clear(true);
+      client["rateLimiter"].clear(true);
     });
 
     test.each([
@@ -745,7 +747,7 @@ describe("BucketClient", () => {
     const client = new BucketClient(validOptions);
 
     beforeEach(() => {
-      client["_config"].rateLimiter.clear(true);
+      client["rateLimiter"].clear(true);
     });
 
     test.each([
@@ -943,31 +945,29 @@ describe("BucketClient", () => {
     it("should initialize the client", async () => {
       const client = new BucketClient(validOptions);
 
-      const cache = {
-        refresh: vi.fn(),
-        get: vi.fn(),
-      };
-
-      vi.spyOn(client as any, "getFeaturesCache").mockReturnValue(cache);
-
-      await client.initialize();
-      await client.initialize();
-      await client.initialize();
-
-      expect(cache.refresh).toHaveBeenCalledTimes(1);
-      expect(cache.get).not.toHaveBeenCalled();
-    });
-
-    it("should set up the cache object", async () => {
-      const client = new BucketClient(validOptions);
-      expect(client["_config"].featuresCache).toBeUndefined();
+      const get = vi
+        .spyOn(client["featuresCache"], "get")
+        .mockReturnValue(undefined);
+      const refresh = vi
+        .spyOn(client["featuresCache"], "refresh")
+        .mockResolvedValue(undefined);
 
       await client.initialize();
-      expect(client["_config"].featuresCache).toBeTypeOf("object");
+      await client.initialize();
+      await client.initialize();
+
+      expect(refresh).toHaveBeenCalledTimes(1);
+      expect(get).not.toHaveBeenCalled();
     });
 
     it("should call the backend to obtain features", async () => {
       const client = new BucketClient(validOptions);
+
+      httpClient.get.mockResolvedValue({
+        ok: true,
+        status: 200,
+      });
+
       await client.initialize();
 
       expect(httpClient.get).toHaveBeenCalledWith(
@@ -1411,7 +1411,7 @@ describe("BucketClient", () => {
         },
       );
 
-      client["_config"].rateLimiter.clear(true);
+      client["rateLimiter"].clear(true);
 
       httpClient.post.mockResolvedValue({
         ok: true,
@@ -1595,7 +1595,7 @@ describe("BucketClient", () => {
     });
 
     it("should properly define the rate limiter key", async () => {
-      const isAllowedSpy = vi.spyOn(client["_config"].rateLimiter, "isAllowed");
+      const isAllowedSpy = vi.spyOn(client["rateLimiter"], "isAllowed");
 
       await client.initialize();
       client.getFeatures({ user, company, other: otherContext });
@@ -2449,7 +2449,7 @@ describe("BoundBucketClient", () => {
     await client.flush();
 
     vi.mocked(httpClient.post).mockClear();
-    client["_config"].rateLimiter.clear(true);
+    client["rateLimiter"].clear(true);
   });
 
   it("should create a client instance", () => {

@@ -8,6 +8,7 @@ export type {
   EmptyFeatureRemoteConfig,
   Feature,
   FeatureConfigVariant,
+  FeatureDefinition,
   FeatureOverride,
   FeatureOverrides,
   FeatureOverridesFn,

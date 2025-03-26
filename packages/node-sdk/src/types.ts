@@ -191,6 +191,56 @@ export type FeatureOverride =
   | boolean;
 
 /**
+ * Describes a feature definition.
+ */
+export type FeatureDefinition = {
+  /**
+   * The key of the feature.
+   */
+  key: string;
+
+  /**
+   * Description of the feature.
+   */
+  description: string | null;
+
+  /**
+   * The targeting rules for the feature.
+   */
+  flag: {
+    /**
+     * The version of the targeting rules.
+     */
+    version: number;
+
+    /**
+     * The targeting rules.
+     */
+    rules: {
+      /**
+       * The filter for the rule.
+       */
+      filter: RuleFilter;
+    }[];
+  };
+
+  /**
+   * The remote configuration for the feature.
+   */
+  config?: {
+    /**
+     * The version of the remote configuration.
+     */
+    version: number;
+
+    /**
+     * The variants of the remote configuration.
+     */
+    variants: FeatureConfigVariant[];
+  };
+};
+
+/**
  * Describes a collection of evaluated features.
  *
  * @remarks
@@ -261,6 +311,11 @@ export type FeatureAPIResponse = {
    * The key of the feature.
    */
   key: string;
+
+  /**
+   * Description of the feature.
+   */
+  description: string | null;
 
   /**
    * The targeting rules for the feature.

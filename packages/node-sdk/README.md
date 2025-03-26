@@ -146,15 +146,25 @@ const client = new BucketClient({
 });
 ```
 
-### Caching
+### Feature definitions
 
-Feature definitions are automatically cached and refreshed in the background. The cache behavior is configurable:
+Feature definitions include the rules needed to determine which features should be enabled and which config values should be applied to any given user/company.
+Feature definitions are automatically fetched when calling `initialize()`.
+They are then cached and refreshed in the background.
+It's also possible to get the currently in use feature definitions:
 
 ```typescript
-const client = new BucketClient({
-  refetchInterval: 30000, // How often to refresh features (ms)
-  staleWarningInterval: 150000, // When to warn about stale features (ms)
-});
+import fs from "fs";
+
+const client = new BucketClient();
+
+const featureDefs = await client.getFeatureDefinitions();
+// [{
+//   key: "huddle",
+//   description: "Live voice conversations with colleagues."
+//   flag: { ... }
+//   config: { ... }
+// }]
 ```
 
 ## Error Handling
@@ -197,12 +207,12 @@ fallback behavior:
 4. **Offline Mode**:
 
    ```typescript
-   // In offline mode, the SDK uses fallback features
+   // In offline mode, the SDK uses feature overrides
    const client = new BucketClient({
      offline: true,
-     fallbackFeatures: {
+     featureOverrides: () => ({
        "my-feature": true,
-     },
+     }),
    });
    ```
 
