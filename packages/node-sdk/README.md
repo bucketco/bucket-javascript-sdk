@@ -149,22 +149,22 @@ const client = new BucketClient({
 ### Feature definitions
 
 Feature definitions include the rules needed to determine which features should be enabled and which config values should be applied to any given user/company.
-Feature definitions are automatically fetched, cached and refreshed in the background.
-It's also possible to load the feature definitions from a local file or similar:
+Feature definitions are automatically fetched when calling `initialize()`.
+They are then cached and refreshed in the background.
+It's also possible to get the currently in use feature definitions:
 
 ```typescript
 import fs from "fs";
 
-const client = new BucketClient({
-  fetchFeatures: false,
-});
+const client = new BucketClient();
 
-const featureDefs = fs.readFileSync("featureDefs.json");
-
-client.bootstrapFeatureDefinitions(featureDefs);
-client.initialize().then(() => {
-  console.log("Bootstrapped feature definitions");
-});
+const featureDefs = await client.getFeatureDefinitions();
+// [{
+//   key: "huddle",
+//   description: "Live voice conversations with colleagues."
+//   flag: { ... }
+//   config: { ... }
+// }]
 ```
 
 ## Error Handling
