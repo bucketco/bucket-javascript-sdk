@@ -1,4 +1,6 @@
 import { camelCase, kebabCase, pascalCase, snakeCase } from "change-case";
+import { mkdir, writeFile } from "node:fs/promises";
+import { dirname, isAbsolute, join } from "node:path";
 
 import { Feature, RemoteConfig } from "../services/features.js";
 
@@ -21,51 +23,48 @@ export type KeyFormat = (typeof KeyFormats)[number];
 
 type KeyFormatPattern = {
   transform: (key: string) => string;
-  validate: (key: string) => true | string;
+  regex: RegExp;
+  message: string;
 };
 
 export const KeyFormatPatterns: Record<KeyFormat, KeyFormatPattern> = {
   custom: {
     transform: (key) => key?.trim(),
-    validate: (key) =>
-      /^[\p{L}\p{N}\p{P}\p{S}\p{Z}]+$/u.test(key) ||
-      "Key must contain only letters, numbers, punctuation, symbols, or spaces",
+    regex: /^[\p{L}\p{N}\p{P}\p{S}\p{Z}]+$/u,
+    message:
+      "Key must contain only letters, numbers, punctuation, symbols, or spaces.",
   },
   pascalCase: {
     transform: (key) => pascalCase(key),
-    validate: (key) =>
-      /^[\p{Lu}][\p{L}\p{N}]*$/u.test(key) ||
-      "Key must start with uppercase letter and contain only letters and numbers",
+    regex: /^[\p{Lu}][\p{L}\p{N}]*$/u,
+    message:
+      "Key must start with uppercase letter and contain only letters and numbers.",
   },
   camelCase: {
     transform: (key) => camelCase(key),
-    validate: (key) =>
-      /^[\p{Ll}][\p{L}\p{N}]*$/u.test(key) ||
-      "Key must start with lowercase letter and contain only letters and numbers",
+    regex: /^[\p{Ll}][\p{L}\p{N}]*$/u,
+    message:
+      "Key must start with lowercase letter and contain only letters and numbers.",
   },
   snakeCaseUpper: {
     transform: (key) => snakeCase(key).toUpperCase(),
-    validate: (key) =>
-      /^[\p{Lu}][\p{Lu}\p{N}]*(?:_[\p{Lu}\p{N}]+)*$/u.test(key) ||
-      "Key must be uppercase with words separated by underscores",
+    regex: /^[\p{Lu}][\p{Lu}\p{N}]*(?:_[\p{Lu}\p{N}]+)*$/u,
+    message: "Key must be uppercase with words separated by underscores.",
   },
   snakeCaseLower: {
     transform: (key) => snakeCase(key).toLowerCase(),
-    validate: (key) =>
-      /^[\p{Ll}][\p{Ll}\p{N}]*(?:_[\p{Ll}\p{N}]+)*$/u.test(key) ||
-      "Key must be lowercase with words separated by underscores",
+    regex: /^[\p{Ll}][\p{Ll}\p{N}]*(?:_[\p{Ll}\p{N}]+)*$/u,
+    message: "Key must be lowercase with words separated by underscores.",
   },
   kebabCaseUpper: {
     transform: (key) => kebabCase(key).toUpperCase(),
-    validate: (key) =>
-      /^[\p{Lu}][\p{Lu}\p{N}]*(?:-[\p{Lu}\p{N}]+)*$/u.test(key) ||
-      "Key must be uppercase with words separated by hyphens",
+    regex: /^[\p{Lu}][\p{Lu}\p{N}]*(?:-[\p{Lu}\p{N}]+)*$/u,
+    message: "Key must be uppercase with words separated by hyphens.",
   },
   kebabCaseLower: {
     transform: (key) => kebabCase(key).toLowerCase(),
-    validate: (key) =>
-      /^[\p{Ll}][\p{Ll}\p{N}]*(?:-[\p{Ll}\p{N}]+)*$/u.test(key) ||
-      "Key must be lowercase with words separated by hyphens",
+    regex: /^[\p{Ll}][\p{Ll}\p{N}]*(?:-[\p{Ll}\p{N}]+)*$/u,
+    message: "Key must be lowercase with words separated by hyphens.",
   },
 };
 
@@ -73,7 +72,7 @@ export function indentLines(str: string, indent = 2, lineBreak = "\n"): string {
   const indentStr = " ".repeat(indent);
   return str
     .split(lineBreak)
-    .map((line) => `${indentStr}${line}`)
+    .map((line) => `${indentStr}${line.trim()}`)
     .join(lineBreak);
 }
 
@@ -124,4 +123,17 @@ ${Array.from(configDefs.values())
   .join("\n\n")}
 }
 `.trim();
+}
+
+export async function writeTypesToFile(
+  types: string,
+  outPath: string,
+  projectPath: string,
+) {
+  const fullPath = isAbsolute(outPath) ? outPath : join(projectPath, outPath);
+
+  await mkdir(dirname(fullPath), { recursive: true });
+  await writeFile(fullPath, types);
+
+  return fullPath;
 }

@@ -175,6 +175,44 @@ Options:
 - `--out`: Path to generate TypeScript types
 - `--format`: Format of the generated types (react or node)
 
+### `bucket companies`
+
+Manage company data and feature access with the following subcommands.
+
+#### `bucket companies list`
+
+List all companies for the current app.
+This helps you visualize the companies using your features and their basic metrics.
+
+```bash
+bucket companies list [--app-id ap123456789] [--filter nameOrId]
+```
+
+Options:
+
+- `--app-id`: App ID to use
+- `--filter`: Filter companies by name or ID
+
+#### `bucket companies features access`
+
+Grant or revoke access to specific features for a company.
+If no feature key is provided, you'll be prompted to select one from a list.
+
+```bash
+bucket companies features access <companyId> [featureKey] [--enable|--disable] [--app-id ap123456789]
+```
+
+Arguments:
+
+- `companyId`: ID of the company to manage
+- `featureKey`: Key of the feature to grant/revoke access to (optional, interactive selection if omitted)
+
+Options:
+
+- `--enable`: Enable the feature for this company
+- `--disable`: Disable the feature for this company
+- `--app-id`: App ID to use
+
 ### `bucket apps`
 
 Commands for managing Bucket apps.
