@@ -89,7 +89,7 @@ export async function withRetry<T>(
         baseDelay * Math.pow(2, attempt) * (0.8 + Math.random() * 0.4),
       );
 
-      await new Promise((resolve) => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay).unref());
     }
   }
 
