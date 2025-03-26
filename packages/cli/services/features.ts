@@ -1,6 +1,17 @@
+import { z } from "zod";
+
 import { authRequest } from "../utils/auth.js";
+import {
+  booleanish,
+  EnvironmentQuery,
+  EnvironmentQuerySchema,
+  sortTypeSchema,
+} from "../utils/schemas.js";
+import { PaginatedResponse } from "../utils/types.js";
 
 import { Stage } from "./stages.js";
+
+export type FeatureSourceType = "event" | "attribute";
 
 export type RemoteConfigVariant = {
   key?: string;
@@ -15,53 +26,127 @@ export type RemoteConfig = {
   ];
 };
 
-export type Feature = {
+export type FeatureName = {
   id: string;
   name: string;
   key: string;
+  source: FeatureSourceType;
+  parentFeatureId: string | null;
+};
+
+export type Flag = {
+  id: string;
+  currentVersions: {
+    id: string;
+    environment: {
+      id: string;
+    };
+    targetingMode: string;
+    segmentIds: string[];
+    companyIds: string[];
+    userIds: string[];
+    customRules: any;
+  }[];
+};
+
+export type Feature = FeatureName & {
+  description: string | null;
   remoteConfigs: RemoteConfig[];
   stage: Stage | null;
+  flagId: string | null;
 };
 
-export type FeaturesResponse = {
-  data: Feature[];
-};
+export type FeaturesResponse = PaginatedResponse<Feature>;
 
-export type ListOptions = {
-  includeRemoteConfigs?: boolean;
-};
+export const FeaturesQuerySchema = EnvironmentQuerySchema.extend({
+  sortBy: z.string().default("key").describe("Field to sort features by"),
+  sortOrder: z
+    .enum(["asc", "desc"])
+    .default("asc")
+    .describe("Sort direction (ascending or descending)"),
+  sortType: sortTypeSchema
+    .default("flat")
+    .describe("Type of sorting to apply (flat or hierarchical)"),
+  includeFeatureMetrics: booleanish
+    .default(false)
+    .describe("Include metrics data with features"),
+  includeRolloutStatus: booleanish
+    .default(false)
+    .describe("Include rollout status information"),
+  includeGoals: booleanish.default(false).describe("Include associated goals"),
+  includeProductionEstimatedTargetAudience: booleanish
+    .default(false)
+    .describe("Include estimated production target audience data"),
+  includeRemoteConfigs: booleanish
+    .default(false)
+    .describe("Include remote configuration data"),
+  useTargetingRules: booleanish.default(true).describe("Apply targeting rules"),
+}).strict();
 
-export async function listFeatures(
-  appId: string,
-  options: ListOptions = {},
-): Promise<Feature[]> {
+export type FeaturesQuery = z.input<typeof FeaturesQuerySchema>;
+
+export const FeatureCreateSchema = z
+  .object({
+    name: z
+      .string()
+      .min(1, "Feature name is required")
+      .describe("Name of the feature"),
+    key: z
+      .string()
+      .min(1, "Feature key is required")
+      .describe("Unique identifier key for the feature"),
+    description: z
+      .string()
+      .optional()
+      .describe("Optional description of the feature"),
+  })
+  .strict();
+
+export type FeatureCreate = z.input<typeof FeatureCreateSchema>;
+
+export async function listFeatures(appId: string, query: FeaturesQuery) {
   return authRequest<FeaturesResponse>(`/apps/${appId}/features`, {
-    params: {
-      sortBy: "key",
-      sortOrder: "asc",
-      includeRemoteConfigs: options.includeRemoteConfigs ? "true" : "false",
-    },
-  }).then(({ data }) => data);
+    params: FeaturesQuerySchema.parse(query),
+  });
+}
+
+export async function listFeatureNames(appId: string) {
+  return authRequest<FeatureName[]>(`/apps/${appId}/features/names`);
 }
 
 type FeatureResponse = {
   feature: Feature;
 };
 
-export async function createFeature(
+export async function getFeature(
   appId: string,
-  name: string,
-  key: string,
-): Promise<Feature> {
+  featureId: string,
+  query: EnvironmentQuery,
+) {
+  return authRequest<FeatureResponse>(`/apps/${appId}/features/${featureId}`, {
+    params: EnvironmentQuerySchema.parse(query),
+  }).then(({ feature }) => feature);
+}
+
+export async function getFlag(
+  appId: string,
+  flagId: string,
+  query: EnvironmentQuery,
+) {
+  return await authRequest<Flag>(`/apps/${appId}/flags/${flagId}`, {
+    params: EnvironmentQuerySchema.parse(query),
+  });
+}
+
+export async function createFeature(appId: string, featureData: FeatureCreate) {
   return authRequest<FeatureResponse>(`/apps/${appId}/features`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      name,
-      key,
       source: "event",
+      ...FeatureCreateSchema.parse(featureData),
     }),
   }).then(({ feature }) => feature);
 }
