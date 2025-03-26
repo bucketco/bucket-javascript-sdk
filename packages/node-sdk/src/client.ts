@@ -104,27 +104,32 @@ type BulkEvent =
  **/
 export class BucketClient {
   private _config: {
-    logger?: Logger;
     apiBaseUrl: string;
-    httpClient: HttpClient;
     refetchInterval: number;
     staleWarningInterval: number;
     headers: Record<string, string>;
     fallbackFeatures?: Record<keyof TypedFeatures, RawFeature>;
-    featuresCache: Cache<FeaturesAPIResponse>;
-    batchBuffer: BatchBuffer<BulkEvent>;
     featureOverrides: FeatureOverridesFn;
-    rateLimiter: ReturnType<typeof newRateLimiter>;
     offline: boolean;
     fetchFeatures: boolean;
     configFile?: string;
   };
+  httpClient: HttpClient;
+
+  private featuresCache: Cache<FeaturesAPIResponse>;
+  private batchBuffer: BatchBuffer<BulkEvent>;
+  private rateLimiter: ReturnType<typeof newRateLimiter>;
+
+  /**
+   * Gets the logger associated with the client.
+   */
+  public readonly logger: Logger;
 
   private _initialize = once(async () => {
     if (!this._config.offline && this._config.fetchFeatures) {
-      await this._config.featuresCache.refresh();
+      await this.featuresCache.refresh();
     }
-    this._config.logger?.info("Bucket initialized");
+    this.logger.info("Bucket initialized");
   });
 
   /**
@@ -202,7 +207,7 @@ export class BucketClient {
     }
 
     // use the supplied logger or apply the log level to the console logger
-    const logger = options.logger
+    this.logger = options.logger
       ? options.logger
       : applyLogLevel(
           decorateLogger(BUCKET_LOG_PREFIX, console),
@@ -245,8 +250,17 @@ export class BucketClient {
           )
         : undefined;
 
+    this.rateLimiter = newRateLimiter(
+      FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
+    );
+    this.httpClient = options.httpClient || fetchClient;
+    this.batchBuffer = new BatchBuffer<BulkEvent>({
+      ...options?.batchOptions,
+      flushHandler: (items) => this.sendBulkEvents(items),
+      logger: this.logger,
+    });
+
     this._config = {
-      logger,
       offline,
       apiBaseUrl: (config.apiBaseUrl ?? config.host) || API_BASE_URL,
       headers: {
@@ -254,17 +268,10 @@ export class BucketClient {
         [SDK_VERSION_HEADER_NAME]: SDK_VERSION,
         ["Authorization"]: `Bearer ${config.secretKey}`,
       },
-      rateLimiter: newRateLimiter(FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS),
-      httpClient: options.httpClient || fetchClient,
       refetchInterval: FEATURES_REFETCH_MS,
       fetchFeatures: options.fetchFeatures ?? true,
       staleWarningInterval: FEATURES_REFETCH_MS * 5,
       fallbackFeatures: fallbackFeatures,
-      batchBuffer: new BatchBuffer<BulkEvent>({
-        ...options?.batchOptions,
-        flushHandler: (items) => this.sendBulkEvents(items),
-        logger,
-      }),
       featureOverrides:
         typeof config.featureOverrides === "function"
           ? config.featureOverrides
@@ -279,10 +286,10 @@ export class BucketClient {
       this._config.apiBaseUrl += "/";
     }
 
-    this._config.featuresCache = cache<FeaturesAPIResponse>(
+    this.featuresCache = cache<FeaturesAPIResponse>(
       this._config.refetchInterval,
       this._config.staleWarningInterval,
-      this._config.logger,
+      this.logger,
       async () => {
         const res = await this.get<FeaturesAPIResponse>("features");
 
@@ -293,15 +300,6 @@ export class BucketClient {
         return res;
       },
     );
-  }
-
-  /**
-   * Gets the logger associated with the client.
-   *
-   * @returns The logger or `undefined` if it is not set.
-   **/
-  public get logger() {
-    return this._config.logger;
   }
 
   /**
@@ -369,10 +367,8 @@ export class BucketClient {
       return;
     }
 
-    if (
-      this._config.rateLimiter.isAllowed(hashObject({ ...options, userId }))
-    ) {
-      await this._config.batchBuffer.add({
+    if (this.rateLimiter.isAllowed(hashObject({ ...options, userId }))) {
+      await this.batchBuffer.add({
         type: "user",
         userId,
         attributes: options?.attributes,
@@ -415,10 +411,8 @@ export class BucketClient {
       return;
     }
 
-    if (
-      this._config.rateLimiter.isAllowed(hashObject({ ...options, companyId }))
-    ) {
-      await this._config.batchBuffer.add({
+    if (this.rateLimiter.isAllowed(hashObject({ ...options, companyId }))) {
+      await this.batchBuffer.add({
         type: "company",
         companyId,
         userId: options?.userId,
@@ -461,7 +455,7 @@ export class BucketClient {
       return;
     }
 
-    await this._config.batchBuffer.add({
+    await this.batchBuffer.add({
       type: "event",
       event,
       companyId: options?.companyId,
@@ -480,7 +474,8 @@ export class BucketClient {
    * Useful when loading feature definitions from a file or other source.
    **/
   public bootstrapFeatureDefinitions(features: FeaturesAPIResponse) {
-    this._config.featuresCache.set(features);
+    this.featuresCache.set(features);
+    this.logger.info("Bootstrapped feature definitions");
   }
 
   /**
@@ -509,7 +504,7 @@ export class BucketClient {
       return;
     }
 
-    await this._config.batchBuffer.flush();
+    await this.batchBuffer.flush();
   }
 
   /**
@@ -519,7 +514,7 @@ export class BucketClient {
    * @returns The features definitions.
    */
   public async getFeatureDefinitions(): Promise<FeatureDefinition[]> {
-    const features = this.getFeaturesCache().get()?.features || [];
+    const features = this.featuresCache.get()?.features || [];
     return features.map((f) => ({
       key: f.key,
       description: f.description,
@@ -661,15 +656,16 @@ export class BucketClient {
 
     const url = this.buildUrl(path);
     try {
-      const response = await this._config.httpClient.post<
-        TBody,
-        { success: boolean }
-      >(url, this._config.headers, body);
+      const response = await this.httpClient.post<TBody, { success: boolean }>(
+        url,
+        this._config.headers,
+        body,
+      );
 
-      this._config.logger?.debug(`post request to "${url}"`, response);
+      this.logger.debug(`post request to "${url}"`, response);
 
       if (!response.ok || !isObject(response.body) || !response.body.success) {
-        this._config.logger?.warn(
+        this.logger.warn(
           `invalid response received from server for "${url}"`,
           response,
         );
@@ -677,10 +673,7 @@ export class BucketClient {
       }
       return true;
     } catch (error) {
-      this._config.logger?.error(
-        `post request to "${url}" failed with error`,
-        error,
-      );
+      this.logger.error(`post request to "${url}" failed with error`, error);
       return false;
     }
   }
@@ -698,14 +691,14 @@ export class BucketClient {
 
     try {
       const url = this.buildUrl(path);
-      const response = await this._config.httpClient.get<
+      const response = await this.httpClient.get<
         TResponse & { success: boolean }
       >(url, this._config.headers);
 
-      this._config.logger?.debug(`get request to "${url}"`, response);
+      this.logger.debug(`get request to "${url}"`, response);
 
       if (!response.ok || !isObject(response.body) || !response.body.success) {
-        this._config.logger?.warn(
+        this.logger.warn(
           `invalid response received from server for "${url}"`,
           response,
         );
@@ -716,10 +709,7 @@ export class BucketClient {
       const { success: _, ...result } = response.body;
       return result as TResponse;
     } catch (error) {
-      this._config.logger?.error(
-        `get request to "${path}" failed with error`,
-        error,
-      );
+      this.logger.error(`get request to "${path}" failed with error`, error);
       return undefined;
     }
   }
@@ -812,7 +802,7 @@ export class BucketClient {
     }
 
     if (
-      !this._config.rateLimiter.isAllowed(
+      !this.rateLimiter.isAllowed(
         hashObject({
           action: event.action,
           key: event.key,
@@ -825,7 +815,7 @@ export class BucketClient {
       return;
     }
 
-    await this._config.batchBuffer.add({
+    await this.batchBuffer.add({
       type: "feature-flag-event",
       action: event.action,
       key: event.key,
@@ -850,9 +840,7 @@ export class BucketClient {
    */
   private async syncContext(options: ContextWithTracking) {
     if (!options.enableTracking) {
-      this._config.logger?.debug(
-        "tracking disabled, not updating user/company",
-      );
+      this.logger.debug("tracking disabled, not updating user/company");
 
       return;
     }
@@ -904,7 +892,7 @@ export class BucketClient {
       (acc, { config, ...feature }) => {
         if (
           feature.missingContextFields?.length &&
-          this._config.rateLimiter.isAllowed(
+          this.rateLimiter.isAllowed(
             hashObject({
               featureKey: feature.key,
               missingContextFields: feature.missingContextFields,
@@ -917,7 +905,7 @@ export class BucketClient {
 
         if (
           config?.missingContextFields?.length &&
-          this._config.rateLimiter.isAllowed(
+          this.rateLimiter.isAllowed(
             hashObject({
               featureKey: feature.key,
               configKey: config.key,
@@ -935,7 +923,7 @@ export class BucketClient {
     );
 
     if (Object.keys(report).length > 0) {
-      this._config.logger?.warn(
+      this.logger.warn(
         `feature/remote config targeting rules might not be correctly evaluated due to missing context fields.`,
         report,
       );
@@ -953,9 +941,9 @@ export class BucketClient {
     if (this._config.offline) {
       featureDefinitions = [];
     } else {
-      const fetchedFeatures = this.getFeaturesCache().get();
+      const fetchedFeatures = this.featuresCache.get();
       if (!fetchedFeatures) {
-        this._config.logger?.warn(
+        this.logger.warn(
           "failed to use feature definitions, there are none cached yet. Using fallback features.",
         );
         return this._config.fallbackFeatures || {};
@@ -1059,7 +1047,7 @@ export class BucketClient {
           )
           .filter(Boolean);
         if (failed.length > 0) {
-          this._config.logger?.error(`failed to queue some evaluate events.`, {
+          this.logger.error(`failed to queue some evaluate events.`, {
             errors: failed,
           });
         }
@@ -1129,7 +1117,7 @@ export class BucketClient {
               evalMissingFields: feature.missingContextFields,
             })
             .catch((err) => {
-              client._config.logger?.error(
+              client.logger?.error(
                 `failed to send check event for "${feature.key}": ${err}`,
                 err,
               );
@@ -1150,7 +1138,7 @@ export class BucketClient {
               evalMissingFields: config?.missingContextFields,
             })
             .catch((err) => {
-              client._config.logger?.error(
+              client.logger?.error(
                 `failed to send check event for "${feature.key}": ${err}`,
                 err,
               );
@@ -1161,7 +1149,7 @@ export class BucketClient {
       key: feature.key,
       track: async () => {
         if (typeof context.user?.id === "undefined") {
-          this._config.logger?.warn("no user set, cannot track event");
+          this.logger.warn("no user set, cannot track event");
           return;
         }
 
@@ -1170,7 +1158,7 @@ export class BucketClient {
             companyId: context.company?.id,
           });
         } else {
-          this._config.logger?.debug("tracking disabled, not tracking event");
+          this.logger.debug("tracking disabled, not tracking event");
         }
       },
     };
@@ -1224,7 +1212,7 @@ export class BucketClient {
         }) || [],
       );
     } else {
-      this._config.logger?.error("failed to fetch evaluated features");
+      this.logger.error("failed to fetch evaluated features");
       return {};
     }
   }
