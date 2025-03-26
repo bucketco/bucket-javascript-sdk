@@ -6,6 +6,7 @@ import BatchBuffer from "./batch-buffer";
 import cache from "./cache";
 import {
   API_BASE_URL,
+  API_TIMEOUT_MS,
   BUCKET_LOG_PREFIX,
   FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
   FEATURES_REFETCH_MS,
@@ -13,7 +14,7 @@ import {
   SDK_VERSION,
   SDK_VERSION_HEADER_NAME,
 } from "./config";
-import fetchClient from "./fetch-http-client";
+import fetchClient, { withRetry } from "./fetch-http-client";
 import { subscribe as triggerOnExit } from "./flusher";
 import { newRateLimiter } from "./rate-limiter";
 import type {
@@ -116,6 +117,8 @@ export class BucketClient {
     rateLimiter: ReturnType<typeof newRateLimiter>;
     offline: boolean;
     configFile?: string;
+    featuresFetchRetries: number;
+    fetchTimeoutMs: number;
   };
 
   private _initialize = once(async () => {
@@ -140,7 +143,8 @@ export class BucketClient {
    * @param options.batchOptions - The options for the batch buffer (optional).
    * @param options.featureOverrides - The feature overrides to use for the client (optional).
    * @param options.configFile - The path to the config file (optional).
-
+   * @param options.featuresFetchRetries - Number of retries for fetching features (optional, defaults to 3).
+   * @param options.fetchTimeoutMs - Timeout for fetching features (optional, defaults to 10000ms).
    *
    * @throws An error if the options are invalid.
    **/
@@ -180,6 +184,20 @@ export class BucketClient {
       options.configFile === undefined ||
         typeof options.configFile === "string",
       "configFile must be a string",
+    );
+
+    ok(
+      options.featuresFetchRetries === undefined ||
+        (Number.isInteger(options.featuresFetchRetries) &&
+          options.featuresFetchRetries >= 0),
+      "featuresFetchRetries must be a non-negative integer",
+    );
+
+    ok(
+      options.fetchTimeoutMs === undefined ||
+        (Number.isInteger(options.fetchTimeoutMs) &&
+          options.fetchTimeoutMs >= 0),
+      "fetchTimeoutMs must be a non-negative integer",
     );
 
     if (!options.configFile) {
@@ -266,6 +284,8 @@ export class BucketClient {
         typeof config.featureOverrides === "function"
           ? config.featureOverrides
           : () => config.featureOverrides,
+      featuresFetchRetries: options.featuresFetchRetries ?? 3,
+      fetchTimeoutMs: options.fetchTimeoutMs ?? API_TIMEOUT_MS,
     };
 
     if ((config.batchOptions?.flushOnExit ?? true) && !this._config.offline) {
@@ -643,35 +663,45 @@ export class BucketClient {
    * Sends a GET request to the specified path.
    *
    * @param path - The path to send the request to.
+   * @param retries - Optional number of retries for the request.
    *
    * @returns The response from the server.
    * @throws An error if the path is invalid.
    **/
-  private async get<TResponse>(path: string) {
+  private async get<TResponse>(path: string, retries: number = 3) {
     ok(typeof path === "string" && path.length > 0, "path must be a string");
 
     try {
       const url = this.buildUrl(path);
-      const response = await this._config.httpClient.get<
-        TResponse & { success: boolean }
-      >(url, this._config.headers);
+      return await withRetry(
+        async () => {
+          const response = await this._config.httpClient.get<
+            TResponse & { success: boolean }
+          >(url, this._config.headers, this._config.fetchTimeoutMs);
 
-      this._config.logger?.debug(`get request to "${url}"`, response);
+          this._config.logger?.debug(`get request to "${url}"`, response);
 
-      if (!response.ok || !isObject(response.body) || !response.body.success) {
-        this._config.logger?.warn(
-          `invalid response received from server for "${url}"`,
-          response,
-        );
-
-        return undefined;
-      }
-
-      const { success: _, ...result } = response.body;
-      return result as TResponse;
+          if (
+            !response.ok ||
+            !isObject(response.body) ||
+            !response.body.success
+          ) {
+            this._config.logger?.warn(
+              `invalid response received from server for "${url}"`,
+              response,
+            );
+            return undefined;
+          }
+          const { success: _, ...result } = response.body;
+          return result as TResponse;
+        },
+        retries,
+        1000,
+        10000,
+      );
     } catch (error) {
       this._config.logger?.error(
-        `get request to "${path}" failed with error`,
+        `get request to "${path}" failed with error after ${retries} retries`,
         error,
       );
       return undefined;
@@ -849,7 +879,10 @@ export class BucketClient {
         this._config.staleWarningInterval,
         this._config.logger,
         async () => {
-          const res = await this.get<FeaturesAPIResponse>("features");
+          const res = await this.get<FeaturesAPIResponse>(
+            "features",
+            this._config.featuresFetchRetries,
+          );
 
           if (!isObject(res) || !Array.isArray(res?.features)) {
             return undefined;
