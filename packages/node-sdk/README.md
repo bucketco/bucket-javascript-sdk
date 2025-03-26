@@ -207,12 +207,12 @@ fallback behavior:
 4. **Offline Mode**:
 
    ```typescript
-   // In offline mode, the SDK uses fallback features
+   // In offline mode, the SDK uses feature overrides
    const client = new BucketClient({
      offline: true,
-     fallbackFeatures: {
+     featureOverrides: () => ({
        "my-feature": true,
-     },
+     }),
    });
    ```
 

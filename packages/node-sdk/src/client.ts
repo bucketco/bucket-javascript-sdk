@@ -111,7 +111,6 @@ export class BucketClient {
     fallbackFeatures?: Record<keyof TypedFeatures, RawFeature>;
     featureOverrides: FeatureOverridesFn;
     offline: boolean;
-    fetchFeatures: boolean;
     configFile?: string;
   };
   httpClient: HttpClient;
@@ -126,7 +125,7 @@ export class BucketClient {
   public readonly logger: Logger;
 
   private _initialize = once(async () => {
-    if (!this._config.offline && this._config.fetchFeatures) {
+    if (!this._config.offline) {
       await this.featuresCache.refresh();
     }
     this.logger.info("Bucket initialized");
@@ -269,7 +268,6 @@ export class BucketClient {
         ["Authorization"]: `Bearer ${config.secretKey}`,
       },
       refetchInterval: FEATURES_REFETCH_MS,
-      fetchFeatures: options.fetchFeatures ?? true,
       staleWarningInterval: FEATURES_REFETCH_MS * 5,
       fallbackFeatures: fallbackFeatures,
       featureOverrides:
@@ -463,19 +461,6 @@ export class BucketClient {
       attributes: options?.attributes,
       context: options?.meta,
     });
-  }
-
-  /**
-   * Updates the feature definitions cache.
-   *
-   * @param features - The features to cache.
-   *
-   * @remarks
-   * Useful when loading feature definitions from a file or other source.
-   **/
-  public bootstrapFeatureDefinitions(features: FeaturesAPIResponse) {
-    this.featuresCache.set(features);
-    this.logger.info("Bootstrapped feature definitions");
   }
 
   /**

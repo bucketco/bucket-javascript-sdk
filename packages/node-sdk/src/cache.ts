@@ -67,10 +67,5 @@ export default function cache<T>(
     return get();
   };
 
-  const set = (value: T) => {
-    cachedValue = value;
-    lastUpdate = Date.now();
-  };
-
-  return { get, refresh, set };
+  return { get, refresh };
 }
