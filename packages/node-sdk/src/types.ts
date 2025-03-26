@@ -499,6 +499,11 @@ export type Cache<T> = {
    * @returns The value or `undefined` if the value is not available.
    **/
   refresh: () => Promise<T | undefined>;
+
+  /**
+   * Set the value
+   **/
+  set: (value: T) => void;
 };
 
 /**
@@ -609,6 +614,13 @@ export type ClientOptions = {
    * This is useful for testing or development.
    */
   offline?: boolean;
+
+  /**
+   * If set to false, feature definitions will not be fetched from the API when the client is initialized.
+   * Useful if you want to manage feature definitions manually through `bootstrapFeatureDefinitions`.
+   * Defaults to true.
+   */
+  fetchFeatures?: boolean;
 
   /**
    * The path to the config file. If supplied, the config file will be loaded.

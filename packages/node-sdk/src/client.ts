@@ -111,17 +111,18 @@ export class BucketClient {
     staleWarningInterval: number;
     headers: Record<string, string>;
     fallbackFeatures?: Record<keyof TypedFeatures, RawFeature>;
-    featuresCache?: Cache<FeaturesAPIResponse>;
+    featuresCache: Cache<FeaturesAPIResponse>;
     batchBuffer: BatchBuffer<BulkEvent>;
     featureOverrides: FeatureOverridesFn;
     rateLimiter: ReturnType<typeof newRateLimiter>;
     offline: boolean;
+    fetchFeatures: boolean;
     configFile?: string;
   };
 
   private _initialize = once(async () => {
-    if (!this._config.offline) {
-      await this.getFeaturesCache().refresh();
+    if (!this._config.offline && this._config.fetchFeatures) {
+      await this._config.featuresCache.refresh();
     }
     this._config.logger?.info("Bucket initialized");
   });
@@ -256,6 +257,7 @@ export class BucketClient {
       rateLimiter: newRateLimiter(FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS),
       httpClient: options.httpClient || fetchClient,
       refetchInterval: FEATURES_REFETCH_MS,
+      fetchFeatures: options.fetchFeatures ?? true,
       staleWarningInterval: FEATURES_REFETCH_MS * 5,
       fallbackFeatures: fallbackFeatures,
       batchBuffer: new BatchBuffer<BulkEvent>({
@@ -276,6 +278,21 @@ export class BucketClient {
     if (!new URL(this._config.apiBaseUrl).pathname.endsWith("/")) {
       this._config.apiBaseUrl += "/";
     }
+
+    this._config.featuresCache = cache<FeaturesAPIResponse>(
+      this._config.refetchInterval,
+      this._config.staleWarningInterval,
+      this._config.logger,
+      async () => {
+        const res = await this.get<FeaturesAPIResponse>("features");
+
+        if (!isObject(res) || !Array.isArray(res?.features)) {
+          return undefined;
+        }
+
+        return res;
+      },
+    );
   }
 
   /**
@@ -452,6 +469,18 @@ export class BucketClient {
       attributes: options?.attributes,
       context: options?.meta,
     });
+  }
+
+  /**
+   * Updates the feature definitions cache.
+   *
+   * @param features - The features to cache.
+   *
+   * @remarks
+   * Useful when loading feature definitions from a file or other source.
+   **/
+  public bootstrapFeatureDefinitions(features: FeaturesAPIResponse) {
+    this._config.featuresCache.set(features);
   }
 
   /**
@@ -852,32 +881,6 @@ export class BucketClient {
     if (promises.length > 0) {
       await Promise.all(promises);
     }
-  }
-
-  /**
-   * Gets the features cache.
-   *
-   * @returns The features cache.
-   **/
-  private getFeaturesCache() {
-    if (!this._config.featuresCache) {
-      this._config.featuresCache = cache<FeaturesAPIResponse>(
-        this._config.refetchInterval,
-        this._config.staleWarningInterval,
-        this._config.logger,
-        async () => {
-          const res = await this.get<FeaturesAPIResponse>("features");
-
-          if (!isObject(res) || !Array.isArray(res?.features)) {
-            return undefined;
-          }
-
-          return res;
-        },
-      );
-    }
-
-    return this._config.featuresCache;
   }
 
   /**
