@@ -108,7 +108,6 @@ export class BucketClient {
     refetchInterval: number;
     staleWarningInterval: number;
     headers: Record<string, string>;
-    fallbackFeatures?: Record<keyof TypedFeatures, RawFeature>;
     featureOverrides: FeatureOverridesFn;
     offline: boolean;
     fetchFeatures: boolean;
@@ -143,7 +142,6 @@ export class BucketClient {
    * @param options.httpClient - The HTTP client to use for sending requests (optional).
    * @param options.logLevel - The log level to use for logging (optional).
    * @param options.offline - Whether to run in offline mode (optional).
-   * @param options.fallbackFeatures - The fallback features to use if the feature is not found (optional).
    * @param options.batchOptions - The options for the batch buffer (optional).
    * @param options.featureOverrides - The feature overrides to use for the client (optional).
    * @param options.configFile - The path to the config file (optional).
@@ -172,12 +170,6 @@ export class BucketClient {
     ok(
       options.httpClient === undefined || isObject(options.httpClient),
       "httpClient must be an object",
-    );
-    ok(
-      options.fallbackFeatures === undefined ||
-        Array.isArray(options.fallbackFeatures) ||
-        isObject(options.fallbackFeatures),
-      "fallbackFeatures must be an array or object",
     );
     ok(
       options.batchOptions === undefined || isObject(options.batchOptions),
@@ -214,42 +206,6 @@ export class BucketClient {
           options.logLevel ?? config?.logLevel ?? "INFO",
         );
 
-    // todo: deprecate fallback features in favour of a more operationally
-    //  friendly way of setting fall backs.
-    const fallbackFeatures = Array.isArray(options.fallbackFeatures)
-      ? options.fallbackFeatures.reduce(
-          (acc, key) => {
-            acc[key as keyof TypedFeatures] = {
-              isEnabled: true,
-              key,
-            };
-            return acc;
-          },
-          {} as Record<keyof TypedFeatures, RawFeature>,
-        )
-      : isObject(options.fallbackFeatures)
-        ? Object.entries(options.fallbackFeatures).reduce(
-            (acc, [key, fallback]) => {
-              acc[key as keyof TypedFeatures] = {
-                isEnabled:
-                  typeof fallback === "object"
-                    ? fallback.isEnabled
-                    : !!fallback,
-                key,
-                config:
-                  typeof fallback === "object" && fallback.config
-                    ? {
-                        key: fallback.config.key,
-                        payload: fallback.config.payload,
-                      }
-                    : undefined,
-              };
-              return acc;
-            },
-            {} as Record<keyof TypedFeatures, RawFeature>,
-          )
-        : undefined;
-
     this.rateLimiter = newRateLimiter(
       FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
     );
@@ -271,7 +227,6 @@ export class BucketClient {
       refetchInterval: FEATURES_REFETCH_MS,
       fetchFeatures: options.fetchFeatures ?? true,
       staleWarningInterval: FEATURES_REFETCH_MS * 5,
-      fallbackFeatures: fallbackFeatures,
       featureOverrides:
         typeof config.featureOverrides === "function"
           ? config.featureOverrides
@@ -300,6 +255,13 @@ export class BucketClient {
         return res;
       },
     );
+
+    if (this._config.offline) {
+      this.logger.info("running in offline mode");
+      this.featuresCache.set({
+        features: [],
+      });
+    }
   }
 
   /**
@@ -475,7 +437,7 @@ export class BucketClient {
    **/
   public bootstrapFeatureDefinitions(features: FeaturesAPIResponse) {
     this.featuresCache.set(features);
-    this.logger.info("Bootstrapped feature definitions");
+    this.logger.debug("bootstrapped feature definitions");
   }
 
   /**
@@ -936,23 +898,16 @@ export class BucketClient {
     checkContextWithTracking(options);
 
     void this.syncContext(options);
-    let featureDefinitions: FeaturesAPIResponse["features"];
 
-    if (this._config.offline) {
-      featureDefinitions = [];
-    } else {
-      const fetchedFeatures = this.featuresCache.get();
-      if (!fetchedFeatures) {
-        this.logger.warn(
-          "failed to use feature definitions, there are none cached yet. Using fallback features.",
-        );
-        return this._config.fallbackFeatures || {};
-      }
-
-      featureDefinitions = fetchedFeatures.features;
+    const featureDefinitions = this.featuresCache.get();
+    if (!featureDefinitions) {
+      this.logger.warn(
+        "No feature definitions available. `getFeatures` will return empty and `getFeature(key)` will have `isEnabled: false`. Did you forget to call `initialize()`?",
+      );
+      return {};
     }
-
-    const featureMap = featureDefinitions.reduce(
+    const features = featureDefinitions.features;
+    const featureMap = features.reduce(
       (acc, f) => {
         acc[f.key] = f;
         return acc;
@@ -962,7 +917,7 @@ export class BucketClient {
 
     const { enableTracking = true, meta: _, ...context } = options;
 
-    const evaluated = featureDefinitions.map((feature) =>
+    const evaluated = features.map((feature) =>
       evaluateFeatureRules({
         featureKey: feature.key,
         rules: feature.targeting.rules.map((r) => ({ ...r, value: true })),
