@@ -545,6 +545,15 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@bucketco/flag-evaluation@npm:0.1.1":
+  version: 0.1.1
+  resolution: "@bucketco/flag-evaluation@npm:0.1.1"
+  dependencies:
+    js-sha256: "npm:0.11.0"
+  checksum: 10c0/cfc4abf0b6d86d33653e9a4133878d95366b0d24fdc707c777f6bb62d5a962a68c1ba3221c72c21d48a4e7b93a38c67f2c386bdda62ed5adba72fbffe7e6b9ab
+  languageName: node
+  linkType: hard
+
 "@bucketco/flag-evaluation@npm:~0.1.0":
   version: 0.1.0
   resolution: "@bucketco/flag-evaluation@npm:0.1.0"
@@ -582,7 +591,7 @@ __metadata:
   dependencies:
     "@babel/core": "npm:~7.24.7"
     "@bucketco/eslint-config": "npm:~0.0.2"
-    "@bucketco/flag-evaluation": "npm:~0.1.0"
+    "@bucketco/flag-evaluation": "npm:0.1.1"
     "@bucketco/tsconfig": "npm:~0.0.2"
     "@types/node": "npm:^22.12.0"
     "@vitest/coverage-v8": "npm:~1.6.0"
@@ -11898,6 +11907,13 @@ __metadata:
   version: 3.0.5
   resolution: "js-cookie@npm:3.0.5"
   checksum: 10c0/04a0e560407b4489daac3a63e231d35f4e86f78bff9d792011391b49c59f721b513411cd75714c418049c8dc9750b20fcddad1ca5a2ca616c3aca4874cce5b3a
+  languageName: node
+  linkType: hard
+
+"js-sha256@npm:0.11.0":
+  version: 0.11.0
+  resolution: "js-sha256@npm:0.11.0"
+  checksum: 10c0/90980fe01ca01fbd166751fb16c4caa09c1ab997e8bf77c0764cc05c772c6044946f4c1b3bad266ce78357280d2131d3dc0cf2dd7646e78272996bd4d590aa4f
   languageName: node
   linkType: hard
 
