@@ -560,7 +560,7 @@ __metadata:
     "@bucketco/tsconfig": "workspace:^"
     "@types/node": "npm:^22.12.0"
     eslint: "npm:^9.21.0"
-    js-sha256: "npm:^0.11.0"
+    js-sha256: "npm:0.11.0"
     prettier: "npm:^3.5.2"
     ts-node: "npm:^10.9.2"
     typescript: "npm:^5.7.3"
@@ -11902,7 +11902,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"js-sha256@npm:^0.11.0":
+"js-sha256@npm:0.11.0":
   version: 0.11.0
   resolution: "js-sha256@npm:0.11.0"
   checksum: 10c0/90980fe01ca01fbd166751fb16c4caa09c1ab997e8bf77c0764cc05c772c6044946f4c1b3bad266ce78357280d2131d3dc0cf2dd7646e78272996bd4d590aa4f
