@@ -1,10 +1,4 @@
-try {
-  // crypto not available on globalThis in Node.js v18
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  globalThis.crypto ??= require("node:crypto").webcrypto;
-} catch {
-  // ignore
-}
+import { sha256 } from "js-sha256";
 
 /**
  * Represents a filter class with a specific type property.
@@ -271,13 +265,12 @@ export async function hashInt(hashInput: string): Promise<number> {
   // 3. multiply by 100000 to get a number between 0 and 100000 and compare it to the threshold
   //
   // we only need 20 bits to get to 100000 because 2^20 is 1048576
-  const msgUint8 = new TextEncoder().encode(hashInput);
+  const value =
+    new DataView(sha256.create().update(hashInput).arrayBuffer()).getUint32(
+      0,
+      true,
+    ) & 0xfffff;
 
-  // Hash the message
-  const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
-
-  const view = new DataView(hashBuffer);
-  const value = view.getUint32(0, true) & 0xfffff;
   return Math.floor((value / 0xfffff) * 100000);
 }
 
