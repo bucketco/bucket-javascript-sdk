@@ -554,14 +554,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@bucketco/flag-evaluation@npm:~0.1.0":
-  version: 0.1.0
-  resolution: "@bucketco/flag-evaluation@npm:0.1.0"
-  checksum: 10c0/a5d747962d43ce12b194735e92524a576edac9e9ad53c425b4a517123ca9918d3001891cd212f178b7cf6b235c79aa5cfa3942e162187da056c2ae1d5230a984
-  languageName: node
-  linkType: hard
-
-"@bucketco/flag-evaluation@workspace:packages/flag-evaluation":
+"@bucketco/flag-evaluation@npm:~0.1.0, @bucketco/flag-evaluation@workspace:packages/flag-evaluation":
   version: 0.0.0-use.local
   resolution: "@bucketco/flag-evaluation@workspace:packages/flag-evaluation"
   dependencies:
@@ -569,6 +562,7 @@ __metadata:
     "@bucketco/tsconfig": "workspace:^"
     "@types/node": "npm:^22.12.0"
     eslint: "npm:^9.21.0"
+    js-sha256: "npm:0.11.0"
     prettier: "npm:^3.5.2"
     ts-node: "npm:^10.9.2"
     typescript: "npm:^5.7.3"
