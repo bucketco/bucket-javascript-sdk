@@ -545,12 +545,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@bucketco/flag-evaluation@npm:0.1.1":
-  version: 0.1.1
-  resolution: "@bucketco/flag-evaluation@npm:0.1.1"
+"@bucketco/flag-evaluation@npm:0.1.2":
+  version: 0.1.2
+  resolution: "@bucketco/flag-evaluation@npm:0.1.2"
   dependencies:
     js-sha256: "npm:0.11.0"
-  checksum: 10c0/cfc4abf0b6d86d33653e9a4133878d95366b0d24fdc707c777f6bb62d5a962a68c1ba3221c72c21d48a4e7b93a38c67f2c386bdda62ed5adba72fbffe7e6b9ab
+  checksum: 10c0/8c618d90b35d7ce3cadb62ef0f9b3053eeaebd5cefa87c897ec09071fa065253a029c3f9b78497dda07c17abe85ef375a28887e7a618dbb543503a4870f7df25
   languageName: node
   linkType: hard
 
@@ -591,7 +591,7 @@ __metadata:
   dependencies:
     "@babel/core": "npm:~7.24.7"
     "@bucketco/eslint-config": "npm:~0.0.2"
-    "@bucketco/flag-evaluation": "npm:0.1.1"
+    "@bucketco/flag-evaluation": "npm:0.1.2"
     "@bucketco/tsconfig": "npm:~0.0.2"
     "@types/node": "npm:^22.12.0"
     "@vitest/coverage-v8": "npm:~1.6.0"
