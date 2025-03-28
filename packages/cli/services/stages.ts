@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { authRequest } from "../utils/auth.js";
+import { EnvironmentQuerySchema } from "../utils/schemas.js";
 
 import { getFeature, getFlag } from "./features.js";
 
@@ -21,35 +22,29 @@ export async function listStages(appId: string): Promise<Stage[]> {
 
 export const FeatureTargetingModes = ["none", "some", "everyone"] as const;
 export type FeatureTargetingMode = (typeof FeatureTargetingModes)[number];
-export const UpdateFeatureStageSchema = z.object({
-  featureKey: z.string(),
-  targetingMode: z.enum(FeatureTargetingModes).optional(),
+export const UpdateFeatureStageSchema = EnvironmentQuerySchema.extend({
+  featureId: z.string().describe("The ID of the feature to update."),
+  stageId: z.string().describe("The ID of the stage to update feature to."),
+  targetingMode: z
+    .enum(["none", "some", "everyone"])
+    .describe("The overarching targeting mode for the feature."),
+  changeDescription: z.string().describe("The reason for the change."),
 });
+export type UpdateFeatureStageQuery = z.input<typeof UpdateFeatureStageSchema>;
 
-export type UpdateFeatureStageArgs = {
-  stageId: string;
-  changeDescription: string;
-  targetingMode: FeatureTargetingMode;
-  featureId: string;
-  envId: string;
-};
-
-export async function UpdateFeatureStage(
+export async function updateFeatureStage(
   appId: string,
-  {
-    stageId,
-    targetingMode,
-    featureId,
-    envId,
-    changeDescription,
-  }: UpdateFeatureStageArgs,
+  query: UpdateFeatureStageQuery,
 ) {
+  const { featureId, stageId, targetingMode, envId, changeDescription } =
+    UpdateFeatureStageSchema.parse(query);
+
   const feature = await getFeature(appId, featureId, {
     envId,
   });
 
   if (!feature) {
-    throw new Error(`Feature not found for ID ${featureId}`);
+    throw new Error(`Feature not found for ID ${featureId}.`);
   }
 
   const flag = await getFlag(appId, feature.flagId!, {
@@ -61,7 +56,7 @@ export async function UpdateFeatureStage(
     (v) => v.environment.id === envId,
   );
   if (!envFlagVersion) {
-    throw new Error(`Flag version not found for environment ${envId}`);
+    throw new Error(`Flag version not found for environment ${envId}.`);
   }
   envFlagVersion.targetingMode = targetingMode;
   const body = {
@@ -81,13 +76,12 @@ export async function UpdateFeatureStage(
 
   await authRequest<void>(`/apps/${appId}/flags/${flag.id}/versions`, {
     method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
     params: {
       envId,
       "currentVersionIds[]": flag.currentVersions.map((v) => v.id),
-    },
-
-    headers: {
-      "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
   });

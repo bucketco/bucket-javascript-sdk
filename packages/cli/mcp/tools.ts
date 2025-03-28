@@ -14,7 +14,11 @@ import {
   listFeatureNames,
 } from "../services/features.js";
 import { FeedbackQuerySchema, listFeedback } from "../services/feedback.js";
-import { listStages, UpdateFeatureStage } from "../services/stages.js";
+import {
+  listStages,
+  updateFeatureStage,
+  UpdateFeatureStageSchema,
+} from "../services/stages.js";
 import { configStore } from "../stores/config.js";
 import {
   handleMcpError,
@@ -23,11 +27,16 @@ import {
 } from "../utils/errors.js";
 import { KeyFormatPatterns } from "../utils/gen.js";
 import { featureUrl } from "../utils/path.js";
+import { withDefaults, withDescriptions } from "../utils/schemas.js";
+
 import {
-  EnvironmentQuerySchema,
-  withDefaults,
-  withDescriptions,
-} from "../utils/schemas.js";
+  companiesResponse,
+  companyFeatureAccessResponse,
+  featureCreateResponse,
+  featuresResponse,
+  feedbackResponse,
+  updateFeatureStageResponse,
+} from "./responses.js";
 
 export async function registerMcpTools(
   mcp: McpServer,
@@ -55,17 +64,7 @@ export async function registerMcpTools(
     async () => {
       try {
         const data = await listFeatureNames(appId);
-        return {
-          content: [
-            {
-              type: "text",
-              text: `
-List of features.
->>> JSON Response >>>
- ${JSON.stringify(data, null, 2)}`,
-            },
-          ],
-        };
+        return featuresResponse(data);
       } catch (error) {
         return await handleMcpError(error);
       }
@@ -82,18 +81,7 @@ List of features.
     async (args) => {
       try {
         const data = await listFeedback(appId, args);
-        return {
-          content: [
-            {
-              type: "text",
-              text: `
-Feedback is returned in a JSON format with pages.
-Feedback score is between 1 and 5, with 0 being unknown.
->>> JSON Response >>>
-${JSON.stringify(data, null, 2)}`,
-            },
-          ],
-        };
+        return feedbackResponse(data);
       } catch (error) {
         return await handleMcpError(error);
       }
@@ -111,55 +99,12 @@ ${JSON.stringify(data, null, 2)}`,
     async (args) => {
       try {
         const feature = await createFeature(appId, args);
-
         const featureLink = featureUrl(
           configStore.getConfig("baseUrl"),
           production,
           feature,
         );
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Feature created successfully. Show this link to the feature Bucket: ${featureLink}. Now run the Bucket CLI in a terminal:
-\`shell
-$ npx bucket features types
-\`
-
-After that we can feature flag some code. Use the following pattern for React:
-
-\`\`\`typescript
-import { useFeature } from "@bucketco/react-sdk";
-function MyComponent() {
-  const { isEnabled } = useFeature("${feature.key}");
-  if (!isEnabled) {
-    // feature is disabled
-    return null;
-  }
-  return <div>Feature is disabled.</div>;
-}
-\`\`\`
-
-For Node.js, the pattern is similar:
-\`\`\`
-// import the initialized bucket client
-import { bucketClient } from "./bucket";
-
-function myFunction() {
-  const { isEnabled } = bucketClient.getFeature("${feature.key}");
-
-  if (!isEnabled) {
-    // feature is disabled
-    return;
-  }
-
-  console.log("Feature is enabled!")
-}
-\`\`\`
-`,
-            },
-          ],
-        };
+        return featureCreateResponse(feature.key, featureLink);
       } catch (error) {
         return await handleMcpError(error);
       }
@@ -176,17 +121,7 @@ function myFunction() {
     async (args) => {
       try {
         const data = await listCompanies(appId, args);
-        return {
-          content: [
-            {
-              type: "text",
-              text: `
-List of companies.
->>> JSON Response >>>
-${JSON.stringify(data, null, 2)}`,
-            },
-          ],
-        };
+        return companiesResponse(data);
       } catch (error) {
         return await handleMcpError(error);
       }
@@ -203,14 +138,11 @@ ${JSON.stringify(data, null, 2)}`,
     async (args) => {
       try {
         await companyFeatureAccess(appId, args);
-        return {
-          content: [
-            {
-              type: "text",
-              text: `${args.isEnabled ? "Granted" : "Revoked"} access to feature '${args.featureKey}' for company ID '${args.companyId}'.`,
-            },
-          ],
-        };
+        return companyFeatureAccessResponse(
+          args.isEnabled,
+          args.featureKey,
+          args.companyId,
+        );
       } catch (error) {
         return await handleMcpError(error);
       }
@@ -219,20 +151,16 @@ ${JSON.stringify(data, null, 2)}`,
 
   mcp.tool(
     "updateFeatureStage",
-    "Update feature stage.",
+    "Update the stage of a feature of the Bucket feature management service.",
     withDefaults(
-      EnvironmentQuerySchema.extend({
-        featureId: z.string(),
+      UpdateFeatureStageSchema.omit({
+        stageId: true,
+      }).extend({
         stageName: z
           .enum(stages.map((s) => s.name) as [string, ...string[]])
           .describe(
-            "The name of the stage. Must be one of the following: " +
-              stages.map((s) => s.name).join(", "),
+            `The name of the stage. Must be one of the following: ${stages.map((s) => s.name).join(", ")}`,
           ),
-        targeting: z
-          .enum(["none", "some", "everyone"])
-          .describe("The overarching targeting mode for the feature."),
-        changeDescription: z.string().describe("The reason for the change"),
       }),
       {
         envId: production.id,
@@ -245,21 +173,14 @@ ${JSON.stringify(data, null, 2)}`,
       }
 
       try {
-        const { feature } = await UpdateFeatureStage(appId, {
+        const { feature } = await updateFeatureStage(appId, {
           featureId: args.featureId,
           stageId: stage.id,
-          targetingMode: args.targeting,
+          targetingMode: args.targetingMode,
           envId: args.envId,
           changeDescription: args.changeDescription,
         });
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Updated flag targeting for feature '${feature.key}'.`,
-            },
-          ],
-        };
+        return updateFeatureStageResponse(feature.key);
       } catch (error) {
         return await handleMcpError(error);
       }
