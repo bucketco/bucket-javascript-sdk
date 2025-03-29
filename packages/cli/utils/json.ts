@@ -1,4 +1,4 @@
-type JSONPrimitive =
+export type JSONPrimitive =
   | number
   | string
   | boolean

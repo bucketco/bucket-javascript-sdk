@@ -9,7 +9,7 @@ import ora, { Ora } from "ora";
 
 import { registerMcpTools } from "../mcp/tools.js";
 import { handleError } from "../utils/errors.js";
-import { appIdOption } from "../utils/options.js";
+import { appIdOption, mcpSsePortOption } from "../utils/options.js";
 
 type MCPArgs = {
   port?: "auto" | number;
@@ -21,13 +21,13 @@ export const mcpAction = async ({ appId, port = 8050 }: MCPArgs) => {
   try {
     const packageJSONPath = await findUp("package.json");
     if (!packageJSONPath) {
-      throw new Error("Unable to determine version using package.json");
+      throw new Error("Unable to determine version using package.json.");
     }
     const { version } = JSON.parse(
       (await readFile(packageJSONPath, "utf-8")) ?? "{}",
     );
     if (!version) {
-      throw new Error("Unable to determine version using package.json");
+      throw new Error("Unable to determine version using package.json.");
     }
 
     // Create an MCP server
@@ -51,13 +51,13 @@ export const mcpAction = async ({ appId, port = 8050 }: MCPArgs) => {
 
       transportMap.set(sessionId, transport);
       await mcp.connect(transport);
-      spinner?.succeed("Client connected to MCP server");
+      spinner?.succeed("Client connected to MCP server.");
     });
 
     app.post("/messages", async (req, res) => {
       const sessionId = req.query.sessionId?.toString();
       if (!sessionId) {
-        res.status(400).json({ error: "SessionId is not found" });
+        res.status(400).json({ error: "SessionId is not found." });
         return;
       }
 
@@ -80,12 +80,12 @@ export const mcpAction = async ({ appId, port = 8050 }: MCPArgs) => {
       const assignedPort =
         !!address && typeof address === "object" ? address.port : port;
       console.log(
-        `\nMCP server listening at ${chalk.cyan(`http://localhost:${assignedPort}/sse`)}`,
+        `\nMCP server listening at ${chalk.cyan(`http://localhost:${assignedPort}/sse.`)}`,
       );
       spinner = ora(`Waiting for connections...`).start();
     });
   } catch (error) {
-    spinner?.fail("MCP server failed to start");
+    spinner?.fail("MCP server failed to start.");
     void handleError(error, "MCP");
   }
 };
@@ -97,5 +97,6 @@ export function registerMcpCommand(cli: Command) {
       "Create an model context protocol (MCP) server between your AI assistant and the Bucket API (alpha).",
     )
     .action(mcpAction)
-    .addOption(appIdOption);
+    .addOption(appIdOption)
+    .addOption(mcpSsePortOption);
 }
