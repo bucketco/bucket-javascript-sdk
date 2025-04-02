@@ -177,23 +177,29 @@ Options:
 
 ### `bucket companies`
 
-Manage company data and feature access with the following subcommands.
+Commands for managing companies.
 
 #### `bucket companies list`
 
-List all companies for the current app.
-This helps you visualize the companies using your features and their basic metrics.
+List all companies in your app.
 
 ```bash
-npx bucket companies list [--app-id ap123456789] [--filter nameOrId]
+npx bucket companies list [--filter <text>] [--app-id ap123456789]
 ```
 
 Options:
 
-- `--app-id`: App ID to use
 - `--filter`: Filter companies by name or ID
+- `--app-id`: App ID to use
 
-#### `bucket companies features access`
+The command outputs a table with the following columns:
+
+- `id`: Company ID
+- `name`: Company name (shows "(unnamed)" if not set)
+- `users`: Number of users in the company
+- `lastSeen`: Date when the company was last active
+
+### `bucket companies features access`
 
 Grant or revoke access to specific features for companies, segments, and users.
 If no feature key is provided, you'll be prompted to select one from a list.
@@ -237,8 +243,13 @@ The Model Context Protocol (MCP) is an open protocol that provides a standardize
 MCP servers currently run locally on your machine. To start the MCP server run the CLI command from your Bucket initialized project directory:
 
 ```bash
-npx bucket mcp
+npx bucket mcp [--port <number|"auto">] [--app-id ap123456789]
 ```
+
+Options:
+
+- `--port`: Port to run the SSE server on (defaults to 8050, "auto" for random port)
+- `--app-id`: App ID to use
 
 This will start an SSE server at `http://localhost:8050/sse` by default which you can connect to using your [client of choice](https://modelcontextprotocol.io/clients). Below are examples that work for [Cursor](https://www.cursor.com/) and [Claude Desktop](https://claude.ai/download).
 
