@@ -259,7 +259,7 @@ export function unflattenJSON(data: Record<string, any>): Record<string, any> {
  * @param {string} hashInput - The input string used to generate the hash.
  * @return {number} A number between 0 and 100000 derived from the hash of the input string.
  */
-export async function hashInt(hashInput: string): Promise<number> {
+export function hashInt(hashInput: string): number {
   // 1. hash the key and the partial rollout attribute
   // 2. take 20 bits from the hash and divide by 2^20 - 1 to get a number between 0 and 1
   // 3. multiply by 100000 to get a number between 0 and 100000 and compare it to the threshold
@@ -344,11 +344,11 @@ export function evaluate(
   }
 }
 
-async function evaluateRecursively(
+function evaluateRecursively(
   filter: RuleFilter,
   context: Record<string, string>,
   missingContextFieldsSet: Set<string>,
-): Promise<boolean> {
+): boolean {
   switch (filter.type) {
     case "constant":
       return filter.value;
@@ -369,38 +369,30 @@ async function evaluateRecursively(
         return false;
       }
 
-      const hashVal = await hashInt(
+      const hashVal = hashInt(
         `${filter.key}.${context[filter.partialRolloutAttribute]}`,
       );
 
       return hashVal < filter.partialRolloutThreshold;
     }
-    case "group": {
-      const isAnd = filter.operator === "and";
-      let result = isAnd;
-      for (const current of filter.filters) {
-        // short-circuit if we know the result already
-        // could be simplified to isAnd !== result, but this is more readable
-        if ((isAnd && !result) || (!isAnd && result)) {
-          return result;
+    case "group":
+      return filter.filters.reduce((acc, current) => {
+        if (filter.operator === "and") {
+          return (
+            acc &&
+            evaluateRecursively(current, context, missingContextFieldsSet)
+          );
         }
-
-        const newRes = await evaluateRecursively(
-          current,
-          context,
-          missingContextFieldsSet,
+        return (
+          acc || evaluateRecursively(current, context, missingContextFieldsSet)
         );
-
-        result = isAnd ? result && newRes : result || newRes;
-      }
-      return result;
-    }
+      }, filter.operator === "and");
     case "negation":
-      return !(await evaluateRecursively(
+      return !evaluateRecursively(
         filter.filter,
         context,
         missingContextFieldsSet,
-      ));
+      );
     default:
       return false;
   }
@@ -442,18 +434,16 @@ export interface EvaluationResult<T extends RuleValue> {
   missingContextFields?: string[];
 }
 
-export async function evaluateFeatureRules<T extends RuleValue>({
+export function evaluateFeatureRules<T extends RuleValue>({
   context,
   featureKey,
   rules,
-}: EvaluationParams<T>): Promise<EvaluationResult<T>> {
+}: EvaluationParams<T>): EvaluationResult<T> {
   const flatContext = flattenJSON(context);
   const missingContextFieldsSet = new Set<string>();
 
-  const ruleEvaluationResults = await Promise.all(
-    rules.map((rule) =>
-      evaluateRecursively(rule.filter, flatContext, missingContextFieldsSet),
-    ),
+  const ruleEvaluationResults = rules.map((rule) =>
+    evaluateRecursively(rule.filter, flatContext, missingContextFieldsSet),
   );
 
   const missingContextFields = Array.from(missingContextFieldsSet);
