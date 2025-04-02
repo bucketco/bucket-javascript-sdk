@@ -4,12 +4,8 @@ import { Argument, Command } from "commander";
 import ora, { Ora } from "ora";
 
 import { getApp } from "../services/bootstrap.js";
-import {
-  CompanyFeatureAccess,
-  companyFeatureAccess,
-  listCompanies,
-} from "../services/companies.js";
-import { listFeatures } from "../services/features.js";
+import { listCompanies } from "../services/companies.js";
+import { listFeatures, updateFeatureAccess } from "../services/features.js";
 import { configStore } from "../stores/config.js";
 import {
   handleError,
@@ -19,9 +15,11 @@ import {
 import {
   appIdOption,
   companyFilterOption,
-  companyIdArgument,
+  companyIdsOption,
   disableFeatureOption,
   enableFeatureOption,
+  segmentIdsOption,
+  userIdsOption,
 } from "../utils/options.js";
 import { baseUrlSuffix } from "../utils/path.js";
 
@@ -69,36 +67,53 @@ export const listCompaniesAction = async (options: { filter?: string }) => {
   }
 };
 
-export const companyFeatureAccessAction = async (
-  companyId: string,
+export const featureAccessAction = async (
   featureKey: string | undefined,
-  options: { enable: boolean; disable: boolean },
+  options: {
+    enable: boolean;
+    disable: boolean;
+    companies?: string[];
+    segments?: string[];
+    users?: string[];
+  },
 ) => {
   const { baseUrl, appId } = configStore.getConfig();
   let spinner: Ora | undefined;
 
   if (!appId) {
-    return handleError(new MissingAppIdError(), "Company Feature Access");
+    return handleError(new MissingAppIdError(), "Feature Access");
   }
 
   const app = getApp(appId);
   const production = app.environments.find((e) => e.isProduction);
   if (!production) {
-    return handleError(new MissingEnvIdError(), "Company Feature Access");
+    return handleError(new MissingEnvIdError(), "Feature Access");
   }
 
   // Validate conflicting options
   if (options.enable && options.disable) {
     return handleError(
       "Cannot both enable and disable a feature.",
-      "Company Feature Access",
+      "Feature Access",
     );
   }
 
   if (!options.enable && !options.disable) {
     return handleError(
       "Must specify either --enable or --disable.",
-      "Company Feature Access",
+      "Feature Access",
+    );
+  }
+
+  // Validate at least one target is specified
+  if (
+    !options.companies?.length &&
+    !options.segments?.length &&
+    !options.users?.length
+  ) {
+    return handleError(
+      "Must specify at least one target using --companies, --segments, or --users.",
+      "Feature Access",
     );
   }
 
@@ -116,10 +131,7 @@ export const companyFeatureAccessAction = async (
       });
 
       if (featuresResponse.data.length === 0) {
-        return handleError(
-          "No features found for this app.",
-          "Company Feature Access",
-        );
+        return handleError("No features found for this app.", "Feature Access");
       }
 
       spinner.succeed(
@@ -135,7 +147,7 @@ export const companyFeatureAccessAction = async (
       });
     } catch (error) {
       spinner?.fail("Loading features failed.");
-      return handleError(error, "Company Feature Access");
+      return handleError(error, "Feature Access");
     }
   }
 
@@ -143,25 +155,30 @@ export const companyFeatureAccessAction = async (
   const isEnabled = options.enable;
 
   try {
+    const targetTypes = [];
+    if (options.companies?.length) targetTypes.push("companies");
+    if (options.segments?.length) targetTypes.push("segments");
+    if (options.users?.length) targetTypes.push("users");
+
     spinner = ora(
-      `${isEnabled ? "Enabling" : "Disabling"} feature ${chalk.cyan(featureKey)} for company ${chalk.cyan(companyId)}...`,
+      `${isEnabled ? "Enabling" : "Disabling"} feature ${chalk.cyan(featureKey)} for ${targetTypes.join(", ")}...`,
     ).start();
 
-    const request: CompanyFeatureAccess = {
+    await updateFeatureAccess(appId, {
       envId: production.id,
-      companyId,
       featureKey,
       isEnabled,
-    };
-
-    await companyFeatureAccess(appId, request);
+      companyIds: options.companies,
+      segmentIds: options.segments,
+      userIds: options.users,
+    });
 
     spinner.succeed(
-      `${isEnabled ? "Enabled" : "Disabled"} feature ${chalk.cyan(featureKey)} for company ${chalk.cyan(companyId)}.`,
+      `${isEnabled ? "Enabled" : "Disabled"} feature ${chalk.cyan(featureKey)} for ${targetTypes.join(", ")}.`,
     );
   } catch (error) {
     spinner?.fail(`Feature access update failed.`);
-    void handleError(error, "Company Feature Access");
+    void handleError(error, "Feature Access");
   }
 };
 
@@ -170,8 +187,8 @@ export function registerCompanyCommands(cli: Command) {
     "Manage companies.",
   );
 
-  const companyFeaturesCommand = new Command("features").description(
-    "Manage company features.",
+  const featuresCommand = new Command("features").description(
+    "Manage feature access.",
   );
 
   companiesCommand
@@ -182,11 +199,12 @@ export function registerCompanyCommands(cli: Command) {
     .action(listCompaniesAction);
 
   // Feature access command
-  companyFeaturesCommand
+  featuresCommand
     .command("access")
-    .description("Grant or revoke feature access for a specific company.")
+    .description(
+      "Grant or revoke feature access for companies, segments, and users.",
+    )
     .addOption(appIdOption)
-    .addArgument(companyIdArgument)
     .addArgument(
       new Argument(
         "[featureKey]",
@@ -195,9 +213,12 @@ export function registerCompanyCommands(cli: Command) {
     )
     .addOption(enableFeatureOption)
     .addOption(disableFeatureOption)
-    .action(companyFeatureAccessAction);
+    .addOption(companyIdsOption)
+    .addOption(segmentIdsOption)
+    .addOption(userIdsOption)
+    .action(featureAccessAction);
 
-  companiesCommand.addCommand(companyFeaturesCommand);
+  companiesCommand.addCommand(featuresCommand);
 
   // Update the config with the cli override values
   companiesCommand.hook("preAction", (_, command) => {

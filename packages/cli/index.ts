@@ -10,7 +10,7 @@ import { registerFeatureCommands } from "./commands/features.js";
 import { registerInitCommand } from "./commands/init.js";
 import { registerMcpCommand } from "./commands/mcp.js";
 import { registerNewCommand } from "./commands/new.js";
-import { bootstrap, getUser } from "./services/bootstrap.js";
+import { bootstrap, getBucketUser } from "./services/bootstrap.js";
 import { authStore } from "./stores/auth.js";
 import { configStore } from "./stores/config.js";
 import { handleError } from "./utils/errors.js";
@@ -60,7 +60,7 @@ async function main() {
 
     if (debug) {
       console.debug(chalk.cyan("\nDebug mode enabled."));
-      const user = getUser();
+      const user = getBucketUser();
       console.debug(`Logged in as ${chalk.cyan(user.name ?? user.email)}.`);
       console.debug(
         "Reading config from:",

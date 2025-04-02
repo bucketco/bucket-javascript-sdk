@@ -72,7 +72,11 @@ export async function handleMcpError(error: unknown): Promise<{
   if (error instanceof Response) {
     try {
       const data = await error.json();
-      errorMessage = data.error?.message ?? data.error?.code ?? "API Error";
+      errorMessage = `API Error: ${
+        data.error?.message ??
+        data.error?.code ??
+        `${error.statusText} (${error.status})`
+      }`;
 
       if (data.validationErrors) {
         const validationDetails = data.validationErrors

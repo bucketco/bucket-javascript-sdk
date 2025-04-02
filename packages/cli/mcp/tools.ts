@@ -1,17 +1,15 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import ora from "ora";
 import { z } from "zod";
 
-import { getApp, getOrg } from "../services/bootstrap.js";
-import {
-  CompaniesQuerySchema,
-  companyFeatureAccess,
-  CompanyFeatureAccessSchema,
-  listCompanies,
-} from "../services/companies.js";
+import { getApp, getOrg, listSegments } from "../services/bootstrap.js";
+import { CompaniesQuerySchema, listCompanies } from "../services/companies.js";
 import {
   createFeature,
+  FeatureAccessSchema,
   FeatureCreateSchema,
   listFeatureNames,
+  updateFeatureAccess,
 } from "../services/features.js";
 import { FeedbackQuerySchema, listFeedback } from "../services/feedback.js";
 import {
@@ -19,6 +17,7 @@ import {
   updateFeatureStage,
   UpdateFeatureStageSchema,
 } from "../services/stages.js";
+import { listUsers, UsersQuerySchema } from "../services/users.js";
 import { configStore } from "../stores/config.js";
 import {
   handleMcpError,
@@ -31,11 +30,12 @@ import { withDefaults, withDescriptions } from "../utils/schemas.js";
 
 import {
   companiesResponse,
-  companyFeatureAccessResponse,
   featureCreateResponse,
   featuresResponse,
   feedbackResponse,
+  updateFeatureAccessResponse,
   updateFeatureStageResponse,
+  usersResponse,
 } from "./responses.js";
 
 export async function registerMcpTools(
@@ -50,12 +50,16 @@ export async function registerMcpTools(
   }
   const org = getOrg();
   const app = getApp(appId);
+  const segments = listSegments(appId);
   const production = app.environments.find((e) => e.isProduction);
   if (!production) {
     throw new MissingEnvIdError();
   }
 
+  // Extend bootstrap spinner for loading stages
+  const spinner = ora("Bootstrapping...").start();
   const stages = await listStages(appId);
+  spinner.stop();
 
   // Add features tool
   mcp.tool(
@@ -128,27 +132,61 @@ export async function registerMcpTools(
     },
   );
 
-  // Add company feature access tool
+  // Add users tool
   mcp.tool(
-    "companyFeatureAccess",
-    "Grant or revoke feature access for a specific company of the Bucket feature management service.",
-    withDefaults(CompanyFeatureAccessSchema, {
+    "users",
+    "List of users of the Bucket feature management service.",
+    withDefaults(UsersQuerySchema, {
       envId: production.id,
     }).shape,
     async (args) => {
       try {
-        await companyFeatureAccess(appId, args);
-        return companyFeatureAccessResponse(
-          args.isEnabled,
-          args.featureKey,
-          args.companyId,
-        );
+        const data = await listUsers(appId, args);
+        return usersResponse(data);
       } catch (error) {
         return await handleMcpError(error);
       }
     },
   );
 
+  // Add company feature access tool
+  const segmentNames = segments.map((s) => s.name);
+  mcp.tool(
+    "featureAccess",
+    "Grant or revoke feature access to a specific user, company, or segment of the Bucket feature management service.",
+    withDefaults(
+      FeatureAccessSchema.omit({ segmentIds: true }).extend({
+        segmentNames: z
+          .array(z.enum(segmentNames as [string, ...string[]]))
+          .optional()
+          .describe(
+            `Segment names to target. Must be one of the following: ${segmentNames.join(", ")}`,
+          ),
+      }),
+      {
+        envId: production.id,
+      },
+    ).shape,
+    async (args) => {
+      try {
+        const { segmentNames: selectedSegmentNames, ...rest } = args;
+        const segmentIds =
+          selectedSegmentNames
+            ?.map((name) => segments.find((s) => s.name === name)?.id)
+            .filter((id) => id !== undefined) ?? [];
+        const { flagVersions } = await updateFeatureAccess(appId, {
+          ...rest,
+          segmentIds,
+        });
+        return updateFeatureAccessResponse(flagVersions);
+      } catch (error) {
+        return await handleMcpError(error);
+      }
+    },
+  );
+
+  // Add update feature stage tool
+  const stageNames = stages.map((s) => s.name);
   mcp.tool(
     "updateFeatureStage",
     "Update the stage of a feature of the Bucket feature management service.",
@@ -157,9 +195,9 @@ export async function registerMcpTools(
         stageId: true,
       }).extend({
         stageName: z
-          .enum(stages.map((s) => s.name) as [string, ...string[]])
+          .enum(stageNames as [string, ...string[]])
           .describe(
-            `The name of the stage. Must be one of the following: ${stages.map((s) => s.name).join(", ")}`,
+            `The name of the stage. Must be one of the following: ${stageNames.join(", ")}`,
           ),
       }),
       {

@@ -1,3 +1,4 @@
+import { FlagVersion } from "../services/features.js";
 import { JSONPrimitive } from "../utils/json.js";
 
 export function textResponse(message: string, data?: JSONPrimitive) {
@@ -70,6 +71,10 @@ export function companiesResponse(data: JSONPrimitive) {
   return textResponse("List of companies.", data);
 }
 
+export function usersResponse(data: JSONPrimitive) {
+  return textResponse("List of users.", data);
+}
+
 export function companyFeatureAccessResponse(
   isEnabled: boolean,
   featureKey: string,
@@ -82,4 +87,8 @@ export function companyFeatureAccessResponse(
 
 export function updateFeatureStageResponse(featureKey: string) {
   return textResponse(`Updated flag targeting for feature '${featureKey}'.`);
+}
+
+export function updateFeatureAccessResponse(flagVersions: FlagVersion[]) {
+  return textResponse(flagVersions.map((v) => v.changeDescription).join("\n"));
 }
