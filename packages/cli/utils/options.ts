@@ -70,17 +70,17 @@ export const disableFeatureOption = new Option(
   "Disable the feature for the target.",
 ).conflicts("enable");
 
-export const segmentIdsOption = new Option(
-  "--segments <ids...>",
-  "Segment IDs to target.",
-);
-
 export const userIdsOption = new Option(
   "--users <ids...>",
-  "User IDs to target.",
+  "User IDs to target. Can be specified multiple times.",
 );
 
 export const companyIdsOption = new Option(
   "--companies <ids...>",
-  "Company IDs to target.",
+  "Company IDs to target. Can be specified multiple times.",
+);
+
+export const segmentIdsOption = new Option(
+  "--segments <ids...>",
+  "Segment IDs to target. Can be specified multiple times.",
 );
