@@ -23,6 +23,7 @@
   },
   "files": [
     "dist",
+    "rules",
     "schema.json"
   ],
   "exports": {

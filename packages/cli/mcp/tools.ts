@@ -108,7 +108,7 @@ export async function registerMcpTools(
           production,
           feature,
         );
-        return featureCreateResponse(feature.key, featureLink);
+        return featureCreateResponse(feature.key, featureLink, feature);
       } catch (error) {
         return await handleMcpError(error);
       }

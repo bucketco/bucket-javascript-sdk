@@ -27,44 +27,21 @@ export function feedbackResponse(data: JSONPrimitive) {
   );
 }
 
-export function featureCreateResponse(key: string, link: string) {
-  return textResponse(`
+export function featureCreateResponse(
+  key: string,
+  link: string,
+  data: JSONPrimitive,
+) {
+  return textResponse(
+    `
 Feature created successfully. Show this link to the feature Bucket: ${link}. Now run the Bucket CLI in a terminal:
 \`shell
 $ npx bucket features types
 \`
-
-After that we can feature flag some code. Use the following pattern for React:
-
-\`\`\`typescript
-import { useFeature } from "@bucketco/react-sdk";
-function MyComponent() {
-  const { isEnabled } = useFeature("${key}");
-  if (!isEnabled) {
-    // feature is disabled
-    return null;
-  }
-  return <div>Feature is disabled.</div>;
-}
-\`\`\`
-
-For Node.js, the pattern is similar:
-\`\`\`
-// import the initialized bucket client
-import { bucketClient } from "./bucket";
-
-function myFunction() {
-  const { isEnabled } = bucketClient.getFeature("${key}");
-
-  if (!isEnabled) {
-    // feature is disabled
-    return;
-  }
-
-  console.log("Feature is enabled!")
-}
-\`\`\`
-`);
+Make sure to feature flag the code with the new feature key: ${key}.
+`,
+    data,
+  );
 }
 
 export function companiesResponse(data: JSONPrimitive) {

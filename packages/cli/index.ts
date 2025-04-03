@@ -10,6 +10,7 @@ import { registerFeatureCommands } from "./commands/features.js";
 import { registerInitCommand } from "./commands/init.js";
 import { registerMcpCommand } from "./commands/mcp.js";
 import { registerNewCommand } from "./commands/new.js";
+import { registerRulesCommand } from "./commands/rules.js";
 import { bootstrap, getBucketUser } from "./services/bootstrap.js";
 import { authStore } from "./stores/auth.js";
 import { configStore } from "./stores/config.js";
@@ -78,6 +79,7 @@ async function main() {
   registerFeatureCommands(program);
   registerCompanyCommands(program);
   registerMcpCommand(program);
+  registerRulesCommand(program);
 
   program.parse(process.argv);
 }

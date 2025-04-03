@@ -234,6 +234,33 @@ npx bucket companies features access my-feature --enable --companies comp_123 --
 
 Commands for managing Bucket apps.
 
+## Global Options
+
+These options can be used with any command:
+
+- `--debug`: Enable debug mode for verbose output
+- `--base-url <url>`: Set the base URL for Bucket API
+- `--api-url <url>`: Set the API URL directly (overrides base URL)
+- `--help`: Display help information for a command
+
+## AI-Assisted Development
+
+Bucket provides powerful AI-assisted development capabilities through rules and Model Context Protocol (MCP). These features help your AI development tools better understand your feature flags and provide more accurate assistance.
+
+### Bucket Rules (Recommended)
+
+The `rules` command helps you set up AI-specific rules for your project. These rules enable AI tools to better understand how to work with Bucket and feature flags and how they should be used in your codebase.
+
+```bash
+npx bucket rules [--format cursor]
+```
+
+Options:
+
+- `--format`: Format to add rules in (currently supports "cursor" for Cursor IDE integration)
+
+This command will add a `bucket.mdc` file to your project's `.cursor/rules/` directory, which provides AI tools with context about how to setup and use Bucket feature flags.
+
 ## Model Context Protocol (Beta)
 
 The Model Context Protocol (MCP) is an open protocol that provides a standardized way to connect AI models to different data sources and tools. In the context of Bucket, MCP enables your development environment to understand your feature flags, their states, and their relationships within your codebase. This creates a seamless bridge between your feature management workflow and AI-powered development tools. MCP is in a very early stage of development and changes are frequent, if something isn't working please check out the [Model Context Protocol Website](https://modelcontextprotocol.io/) and open an [issue ticket here](https://github.com/bucketco/bucket-javascript-sdk/issues).
@@ -297,15 +324,6 @@ To enable MCP features in Cursor Desktop:
 2. Go to `Settings > Developer`.
 3. Click `Edit config` and paste the `STDIO` config.
 4. Save and restart Claude Desktop.
-
-## Global Options
-
-These options can be used with any command:
-
-- `--debug`: Enable debug mode for verbose output
-- `--base-url <url>`: Set the base URL for Bucket API
-- `--api-url <url>`: Set the API URL directly (overrides base URL)
-- `--help`: Display help information for a command
 
 ## Development
 

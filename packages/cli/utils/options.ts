@@ -84,3 +84,10 @@ export const segmentIdsOption = new Option(
   "--segments <ids...>",
   "Segment IDs to target. Can be specified multiple times.",
 );
+
+export const rulesFormatOption = new Option(
+  "-f, --format [format]",
+  "Format to copy rules in",
+)
+  .choices(["cursor"])
+  .default("cursor");
