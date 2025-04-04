@@ -64,6 +64,7 @@ export function registerCompanyCommands(cli: Command) {
 
   companiesCommand
     .command("list")
+    .alias("ls")
     .description("List all companies.")
     .addOption(appIdOption)
     .addOption(companyFilterOption)

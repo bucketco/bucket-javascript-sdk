@@ -24,6 +24,7 @@ export function registerAppCommands(cli: Command) {
 
   appsCommand
     .command("list")
+    .alias("ls")
     .description("List all available apps.")
     .action(listAppsAction);
 

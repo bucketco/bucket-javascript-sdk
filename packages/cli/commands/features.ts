@@ -316,6 +316,7 @@ export function registerFeatureCommands(cli: Command) {
 
   featuresCommand
     .command("list")
+    .alias("ls")
     .description("List all features.")
     .addOption(appIdOption)
     .action(listFeaturesAction);
