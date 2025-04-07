@@ -89,9 +89,9 @@ npx bucket init [--overwrite]
 
 Options:
 
-- `--overwrite`: Overwrite existing configuration file if one exists
-- `--app-id <id>`: Set the application ID
-- `--key-format <format>`: Set the key format for features
+- `--overwrite`: Overwrite existing configuration file if one exists.
+- `--app-id <id>`: Set the application ID.
+- `--key-format <format>`: Set the key format for features.
 
 ### `bucket new [featureName]`
 
@@ -104,11 +104,11 @@ npx bucket new "My Feature" [--key my-feature] [--app-id ap123456789] [--key-for
 
 Options:
 
-- `--key`: Specific key for the feature
-- `--app-id`: App ID to use
-- `--key-format`: Format for feature keys (custom, snake, camel, etc.)
-- `--out`: Path to generate TypeScript types
-- `--format`: Format of the generated types (react or node)
+- `--key`: Specific key for the feature.
+- `--app-id`: App ID to use.
+- `--key-format`: Format for feature keys (custom, snake, camel, etc.).
+- `--out`: Path to generate TypeScript types.
+- `--format`: Format of the generated types (react or node).
 
 If you prefer more control over each step, you can use the individual commands (`init`, `features create`, `features types`) instead.
 
@@ -143,9 +143,9 @@ npx bucket features create "My Feature" [--key my-feature] [--app-id ap123456789
 
 Options:
 
-- `--key`: Specific key for the feature
-- `--app-id`: App ID to use
-- `--key-format`: Format for feature keys
+- `--key`: Specific key for the feature.
+- `--app-id`: App ID to use.
+- `--key-format`: Format for feature keys.
 
 #### `bucket features list`
 
@@ -158,7 +158,7 @@ npx bucket features list [--app-id ap123456789]
 
 Options:
 
-- `--app-id`: App ID to use
+- `--app-id`: App ID to use.
 
 #### `bucket features types`
 
@@ -171,9 +171,9 @@ npx bucket features types [--app-id ap123456789] [--out gen/features.ts] [--form
 
 Options:
 
-- `--app-id`: App ID to use
-- `--out`: Path to generate TypeScript types
-- `--format`: Format of the generated types (react or node)
+- `--app-id`: App ID to use.
+- `--out`: Path to generate TypeScript types.
+- `--format`: Format of the generated types (react or node).
 
 ### `bucket companies`
 
@@ -189,15 +189,15 @@ npx bucket companies list [--filter <text>] [--app-id ap123456789]
 
 Options:
 
-- `--filter`: Filter companies by name or ID
-- `--app-id`: App ID to use
+- `--filter`: Filter companies by name or ID.
+- `--app-id`: App ID to use.
 
 The command outputs a table with the following columns:
 
-- `id`: Company ID
-- `name`: Company name (shows "(unnamed)" if not set)
-- `users`: Number of users in the company
-- `lastSeen`: Date when the company was last active
+- `id`: Company ID.
+- `name`: Company name (shows "(unnamed)" if not set).
+- `users`: Number of users in the company.
+- `lastSeen`: Date when the company was last active.
 
 ### `bucket companies features access`
 
@@ -210,16 +210,16 @@ npx bucket companies features access [featureKey] [--enable|--disable] [--compan
 
 Arguments:
 
-- `featureKey`: Key of the feature to grant/revoke access to (optional, interactive selection if omitted)
+- `featureKey`: Key of the feature to grant/revoke access to (optional, interactive selection if omitted).
 
 Options:
 
-- `--enable`: Enable the feature for the specified targets
-- `--disable`: Disable the feature for the specified targets
-- `--users`: User IDs to target. Can be specified multiple times
-- `--companies`: Company IDs to target. Can be specified multiple times
-- `--segments`: Segment IDs to target. Can be specified multiple times
-- `--app-id`: App ID to use
+- `--enable`: Enable the feature for the specified targets.
+- `--disable`: Disable the feature for the specified targets.
+- `--users`: User IDs to target. Can be specified multiple times.
+- `--companies`: Company IDs to target. Can be specified multiple times.
+- `--segments`: Segment IDs to target. Can be specified multiple times.
+- `--app-id`: App ID to use.
 
 At least one target (companies, segments, or users) must be specified. You must also specify either `--enable` or `--disable`, but not both.
 
@@ -238,14 +238,14 @@ Commands for managing Bucket apps.
 
 These options can be used with any command:
 
-- `--debug`: Enable debug mode for verbose output
-- `--base-url <url>`: Set the base URL for Bucket API
-- `--api-url <url>`: Set the API URL directly (overrides base URL)
-- `--help`: Display help information for a command
+- `--debug`: Enable debug mode for verbose output.
+- `--base-url <url>`: Set the base URL for Bucket API.
+- `--api-url <url>`: Set the API URL directly (overrides base URL).
+- `--help`: Display help information for a command.
 
 ## AI-Assisted Development
 
-Bucket provides powerful AI-assisted development capabilities through rules and Model Context Protocol (MCP). These features help your AI development tools better understand your feature flags and provide more accurate assistance.
+Bucket provides powerful AI-assisted development capabilities through rules and Model Context Protocol (MCP). These features help your AI development tools better understand your features and provide more accurate assistance.
 
 ### Bucket Rules (Recommended)
 
@@ -257,7 +257,7 @@ npx bucket rules [--format cursor]
 
 Options:
 
-- `--format`: Format to add rules in (currently supports "cursor" for Cursor IDE integration)
+- `--format`: Format to add rules in (currently supports "cursor" for Cursor IDE integration).
 
 This command will add a `bucket.mdc` file to your project's `.cursor/rules/` directory, which provides AI tools with context about how to setup and use Bucket feature flags.
 
@@ -275,8 +275,8 @@ npx bucket mcp [--port <number|"auto">] [--app-id ap123456789]
 
 Options:
 
-- `--port`: Port to run the SSE server on (defaults to 8050, "auto" for random port)
-- `--app-id`: App ID to use
+- `--port`: Port to run the SSE server on (defaults to 8050, "auto" for random port).
+- `--app-id`: App ID to use.
 
 This will start an SSE server at `http://localhost:8050/sse` by default which you can connect to using your [client of choice](https://modelcontextprotocol.io/clients). Below are examples that work for [Cursor](https://www.cursor.com/) and [Claude Desktop](https://claude.ai/download).
 

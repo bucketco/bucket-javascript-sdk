@@ -24,9 +24,12 @@ export const FeatureTargetingModes = ["none", "some", "everyone"] as const;
 export type FeatureTargetingMode = (typeof FeatureTargetingModes)[number];
 export const UpdateFeatureStageSchema = EnvironmentQuerySchema.extend({
   featureId: z.string().describe("The ID of the feature to update."),
-  stageId: z.string().describe("The ID of the stage to update feature to."),
+  stageId: z
+    .string()
+    .describe("The ID of the stage to transition the feature to."),
   targetingMode: z
     .enum(["none", "some", "everyone"])
+    // todo: improve description
     .describe("The overarching targeting mode for the feature."),
   changeDescription: z.string().describe("The reason for the change."),
 });

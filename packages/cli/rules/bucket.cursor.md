@@ -5,116 +5,84 @@ globs: "**/*.ts, **/*.tsx, **/*.js, **/*.jsx"
 
 # Bucket Feature Management Service for LLMs
 
-You are an expert on feature flagging, proficient in implementing Bucket feature management across various JavaScript frameworks, particularly React and Node.js environments.
+Bucket is a comprehensive feature management service offering feature flags, user feedback collection, adoption tracking, and remote configuration for your applications across various JavaScript frameworks, particularly React, Node.js, vanilla browser, CLI, and OpenFeature environments. Follow these best practices for feature flagging.
 
-Code Style and Structure
+## Follow Official Documentation
 
-- Write clean, type-safe code when implementing Bucket feature flags
-- Use declarative patterns to check feature state and apply configurations
-- Follow functional programming patterns for feature flag implementation
-- Create reusable hooks and utilities for consistent feature management
-- Document feature flag implementation with clear comments
-- Handle loading and error states properly when checking feature flags
+- Refer to [Bucket's official documentation](mdc:https:/docs.bucket.co) for implementation details.
+- Adhere to Bucket's recommended patterns for each framework.
 
-Feature Flag Architecture
+## Bucket SDK Usage
 
-- Implement feature flags at the appropriate level of abstraction
-- Use granular permissions with targeted feature rollouts
-- Separate UI components from feature flag logic when possible
-- Create abstraction layers to isolate feature flag implementation details
-- Design feature flags with testability in mind
-- Structure feature flags hierarchically for complex applications
+- Configure `BucketProvider` or `BucketClient` properly at application entry points.
+- Leverage Bucket CLI for generating type-safe feature definitions.
+- Write clean, type-safe code when applying Bucket feature flags.
+- Follow established patterns in the project.
 
-Bucket SDK Usage
+## Feature Flag Implementation
 
-- Configure BucketProvider or BucketClient properly at application entry points
-- Use strong typing with TypeScript for feature definitions
-- Properly handle feature loading states to prevent UI flashing
-- Implement proper error fallbacks when feature flag services are unavailable
-- Use environment-specific configuration for development, staging, and production
-- Leverage Bucket CLI for generating type-safe feature definitions
+- Create reusable hooks and utilities for consistent feature management.
+- Write clear comments for usage and checks of a feature flag.
+- Properly handle feature loading states to prevent UI flashing.
+- Implement proper error fallbacks when feature flag services are unavailable.
 
-Feature Targeting and Segmentation
+## Feature Targeting
 
-- Implement proper user and company context data for targeting
-- Design effective targeting rules based on user attributes
-- Create and manage reusable segments for consistent targeting
-- Use hierarchical targeting rules for complex user populations
-- Monitor and analyze targeting effectiveness
-- Follow best practices for exclusion and inclusion patterns
+- Use release stages to manage feature rollout (for example: development, staging, production).
+- Use targeting modes effectively:
+  - `none`: Feature is disabled for all targets.
+  - `some`: Feature is enabled only for specified targets.
+  - `everyone`: Feature is enabled for all targets.
+- Target features to specific users, companies, or segments.
 
-Remote Configuration
+## Analytics and Feedback
 
-- Define type-safe configuration payloads for feature flags
-- Access and use configuration values correctly in components
-- Design fallback values for configuration when services are unavailable
-- Implement progressive enhancement patterns with remote configuration
-- Test with various configuration scenarios before deployment
-- Use configuration for both functional and visual feature variations
+- Track feature usage with Bucket analytics.
+- Collect user feedback on features.
+- Monitor feature adoption and health.
 
-Feature Lifecycle Management
+## Common Concepts
 
-- Follow proper staging processes from development to general availability
-- Document feature flag purpose and intended lifecycle
-- Plan for feature flag retirement and cleanup
-- Implement proper versioning for feature flag definitions
-- Coordinate feature releases across frontend and backend systems
-- Set up proper monitoring for feature adoption and health
+### Targeting Rules
 
-Analytics and Feedback
+Targeting rules are entities used in Bucket to describe the target audience of a given feature. The target audience refers to the users that can interact with the feature within your application. Additionally, each targeting rule contains a value that is used for the target audience.
 
-- Track feature usage properly with Bucket analytics
-- Implement feedback collection at appropriate interaction points
-- Design effective user feedback mechanisms for features
-- Analyze feature performance through metrics and KPIs
-- Use STARS framework for effective feature analysis
-- Connect feature metrics with business outcomes
+### Feature Stages
 
-Security and Compliance
+Release stages in Bucket are entities that allow setting up app-wide feature access targeting rules. Each release stage defines targeting rules for each available environment. Later, during the development of new features, you can apply all those rule automatically by selecting an available release stage.
 
-- Implement proper access controls for feature management
-- Ensure sensitive configuration data is properly secured
-- Follow data privacy guidelines when tracking feature usage
-- Implement proper user identification and authentication
-- Handle entitlements and permissions correctly
-- Follow security best practices for client-side feature flags
+Release stages are useful tools when a standard release workflow is used in your organization.
 
-Testing and QA
+Predefined stages:
 
-- Test feature flags in multiple environments
-- Implement automated tests for feature flag logic
-- Create test fixtures for different feature flag states
-- Simulate various targeting scenarios during testing
-- Ensure proper fallbacks for feature flag service failures
-- Test performance implications of feature flag implementation
+- In development
+- Internal
+- Beta
+- General Availability
 
-Integration with Development Workflow
+### Segments
 
-- Integrate feature flags with CI/CD pipelines
-- Implement proper feature flag documentation
-- Use feature flags for trunk-based development
-- Establish protocols for feature flag reviews
-- Coordinate feature flag management across teams
-- Implement proper change management for flag updates
+A segment entity in Bucket is a dynamic collection of companies. The dynamic nature of segments arise from the fact that segments use filters to evaluate which companies are included in the segment.
 
-Follow Official Documentation
+#### Segment filters can be constructed using any combination of the following rules:
 
-- Refer to Bucket's official documentation for implementation details
-- Stay updated with Bucket SDK changes and best practices
-- Adhere to Bucket's recommended patterns for each framework
-- Monitor Bucket platform updates and new features
+- company attributes
+- user feature access
+- feature metrics
+- other segments
 
-Output Expectations
+### Integrations
 
-- Provide clean, working examples customized to the specific use case
-- Include necessary error handling and loading states
-- Follow established patterns for the specific framework (React, Node.js)
-- Write maintainable and scalable feature flag implementation
-- Design for optimal performance and reliability
+Connect Bucket with your existing tools:
 
-## Overview
-
-Bucket is a comprehensive feature management service offering feature flags, user feedback collection, adoption tracking, and remote configuration for your applications. This guide provides details for both React and Node.js implementations. These rules will help you follow best practices for feature flagging.
+- Linear
+- Datadog
+- Segment
+- PostHog
+- Amplitude
+- Mixpanel
+- AWS S3
+- Slack
 
 ## React SDK Implementation
 
@@ -148,11 +116,11 @@ import { BucketProvider } from "@bucketco/react-sdk";
 </BucketProvider>;
 ```
 
-2. Generate type-safe feature definitions:
+1. Create a feature and generate type-safe definitions:
 
 ```bash
 npm i --save-dev @bucketco/cli
-npx bucket new
+npx bucket new "Feature name"
 ```
 
 ```typescript
@@ -313,49 +281,6 @@ await client.trackEvent("custom-event", {
   metadata: { value: 42 },
 });
 ```
-
-## Common Concepts
-
-### Targeting Rules
-
-Targeting rules are entities used in Bucket to describe the target audience of a given feature. The target audience refers to the users that can interact with the feature within your application. Additionally, each targeting rule contains a value that is used for the target audience.
-
-### Feature Stages
-
-Release stages in Bucket are entities that allow setting up app-wide feature access targeting rules. Each release stage defines targeting rules for each available environment. Later, during the development of new features, you can apply all those rule automatically by selecting an available release stage.
-
-Release stages are useful tools when a standard release workflow is used in your organization.
-
-Predefined stages:
-
-- In development
-- Internal
-- Beta
-- General Availability
-
-### Segments
-
-A segment entity in Bucket is a dynamic collection of companies. The dynamic nature of segments arise from the fact that segments use filters to evaluate which companies are included in the segment.
-
-#### Segment filters can be constructed using any combination of the following rules:
-
-- company attributes
-- user feature access
-- feature metrics
-- other segments
-
-### Integrations
-
-Connect Bucket with your existing tools:
-
-- Linear
-- Datadog
-- Segment
-- PostHog
-- Amplitude
-- Mixpanel
-- AWS S3
-- Slack
 
 ## Further Resources
 

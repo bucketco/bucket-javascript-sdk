@@ -22,7 +22,7 @@ export function featuresResponse(data: JSONPrimitive) {
 
 export function feedbackResponse(data: JSONPrimitive) {
   return textResponse(
-    "Feedback is returned in a JSON format with pages. Feedback score is between 1 and 5, with 0 being unknown.",
+    "Feedback is returned in a JSON format with pages. Feedback score is between 1 and 5, where higher means better. A score of 0 indicates that no score was provided with the feedback.",
     data,
   );
 }
@@ -34,7 +34,7 @@ export function featureCreateResponse(
 ) {
   return textResponse(
     `
-Feature created successfully. Show this link to the feature Bucket: ${link}. Now run the Bucket CLI in a terminal:
+Feature created successfully. Show this link of the feature on Bucket website to the user: ${link}. Now run the Bucket CLI in a terminal:
 \`shell
 $ npx bucket features types
 \`
@@ -63,7 +63,9 @@ export function companyFeatureAccessResponse(
 }
 
 export function updateFeatureStageResponse(featureKey: string) {
-  return textResponse(`Updated flag targeting for feature '${featureKey}'.`);
+  return textResponse(
+    `Updated flag targeted audience for feature '${featureKey}'.`,
+  );
 }
 
 export function updateFeatureAccessResponse(flagVersions: FlagVersion[]) {

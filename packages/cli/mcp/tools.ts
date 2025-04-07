@@ -135,7 +135,7 @@ export async function registerMcpTools(
   // Add users tool
   mcp.tool(
     "users",
-    "List of users of the Bucket feature management service.",
+    "List of users in your application that use the Bucket feature management service.",
     withDefaults(UsersQuerySchema, {
       envId: production.id,
     }).shape,
@@ -153,7 +153,7 @@ export async function registerMcpTools(
   const segmentNames = segments.map((s) => s.name);
   mcp.tool(
     "featureAccess",
-    "Grant or revoke feature access to a specific user, company, or segment of the Bucket feature management service.",
+    "Grant or revoke feature access to specific users, companies, or segments of the Bucket feature management service.",
     withDefaults(
       FeatureAccessSchema.omit({ segmentIds: true }).extend({
         segmentNames: z
@@ -189,7 +189,7 @@ export async function registerMcpTools(
   const stageNames = stages.map((s) => s.name);
   mcp.tool(
     "updateFeatureStage",
-    "Update the stage of a feature of the Bucket feature management service.",
+    "Update the release stage of a feature in the Bucket feature management service.",
     withDefaults(
       UpdateFeatureStageSchema.omit({
         stageId: true,
