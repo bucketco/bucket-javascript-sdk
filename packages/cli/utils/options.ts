@@ -89,5 +89,10 @@ export const rulesFormatOption = new Option(
   "-f, --format [format]",
   "Format to copy rules in",
 )
-  .choices(["cursor"])
+  .choices(["cursor", "copilot"])
   .default("cursor");
+
+export const yesOption = new Option(
+  "-y, --yes",
+  "Skip confirmation prompts and overwrite existing files without asking.",
+);

@@ -1,46 +1,124 @@
+import { confirm } from "@inquirer/prompts";
 import chalk from "chalk";
 import { Command } from "commander";
-import { copyFile, mkdir } from "node:fs/promises";
-import { join, relative } from "node:path";
-import { fileURLToPath } from "node:url";
+import {
+  access,
+  constants,
+  mkdir,
+  readFile,
+  writeFile,
+} from "node:fs/promises";
+import { dirname, join, relative } from "node:path";
 import ora from "ora";
 
+import { getCopilotInstructions, getCursorRules } from "../services/rules.js";
 import { configStore } from "../stores/config.js";
 import { handleError } from "../utils/errors.js";
-import { rulesFormatOption } from "../utils/options.js";
+import { rulesFormatOption, yesOption } from "../utils/options.js";
 
 type RulesArgs = {
   format?: string;
+  yes?: boolean;
 };
 
-export const rulesAction = async ({ format = "cursor" }: RulesArgs = {}) => {
-  const spinner = ora("Adding rules...").start();
+const BUCKET_SECTION_START = "<!-- BUCKET_START -->";
+const BUCKET_SECTION_END = "<!-- BUCKET_END -->";
+
+async function fileExists(path: string): Promise<boolean> {
   try {
-    if (format === "cursor") {
-      // Create .cursor/rules directory if it doesn't exist
-      const projectPath = configStore.getProjectPath();
-      const rulesDir = join(projectPath, ".cursor", "rules");
-      await mkdir(rulesDir, { recursive: true });
+    await access(path, constants.F_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
-      // Copy bucket.mdc to .cursor/rules/
-      const filePath = fileURLToPath(import.meta.url);
-      const rulesPath = join(
-        filePath.substring(0, filePath.lastIndexOf("cli") + 3),
-        "rules",
-        "bucket.cursor.md",
-      );
-      const destPath = join(rulesDir, "bucket.mdc");
-      await copyFile(rulesPath, destPath);
+async function confirmOverwrite(
+  filePath: string,
+  yes: boolean,
+  append: boolean = false,
+): Promise<boolean> {
+  if (yes) return true;
 
+  if (await fileExists(filePath)) {
+    const projectPath = configStore.getProjectPath();
+    const relativePath = relative(projectPath, filePath);
+
+    return await confirm({
+      message: `Rules ${chalk.cyan(relativePath)} already exists. ${
+        append ? "Append rules?" : "Overwrite rules?"
+      }`,
+      default: false,
+    });
+  }
+
+  return true;
+}
+
+function wrapInMarkers(content: string): string {
+  return `${BUCKET_SECTION_START}\n\n${content}\n\n${BUCKET_SECTION_END}`;
+}
+
+function replaceOrAppendSection(
+  existingContent: string,
+  newContent: string,
+): string {
+  const wrappedContent = wrapInMarkers(newContent);
+  const sectionRegex = new RegExp(
+    `${BUCKET_SECTION_START}[\\s\\S]*?${BUCKET_SECTION_END}`,
+    "g",
+  );
+
+  if (sectionRegex.test(existingContent)) {
+    return existingContent.replace(sectionRegex, wrappedContent);
+  }
+
+  return `${existingContent}\n\n${wrappedContent}`;
+}
+
+export const rulesAction = async ({
+  format = "cursor",
+  yes = false,
+}: RulesArgs = {}) => {
+  const projectPath = configStore.getProjectPath();
+  const appendFormats = ["copilot"];
+  let destPath: string;
+  let content: string;
+
+  // Determine destination and content based on format
+  if (format === "cursor") {
+    destPath = join(projectPath, ".cursor", "rules", "bucket.mdc");
+    content = getCursorRules();
+  } else if (format === "copilot") {
+    destPath = join(projectPath, ".github", "copilot-instructions.md");
+    content = getCopilotInstructions();
+  } else {
+    console.error(`No rules added. Invalid format ${chalk.cyan(format)}.`);
+    return;
+  }
+
+  // Check for overwrite and write file
+  if (await confirmOverwrite(destPath, yes, appendFormats.includes(format))) {
+    const spinner = ora("Adding rules...").start();
+    try {
+      await mkdir(dirname(destPath), { recursive: true });
+
+      if (appendFormats.includes(format) && (await fileExists(destPath))) {
+        const existingContent = await readFile(destPath, "utf-8");
+        content = replaceOrAppendSection(existingContent, content);
+      }
+
+      await writeFile(destPath, content);
       spinner.succeed(
-        `Rules added to ${chalk.cyan(relative(projectPath, destPath))}`,
+        `Rules added to ${chalk.cyan(relative(projectPath, destPath))}.
+${chalk.grey("These rules should be committed to your project's version control.")}`,
       );
-    } else {
-      spinner.info(`No rules added. Invalid format ${chalk.cyan(format)}.`);
+    } catch (error) {
+      spinner.fail("Failed to add rules.");
+      void handleError(error, "Rules");
     }
-  } catch (error) {
-    spinner.fail("Failed to copy rules.");
-    void handleError(error, "Rules");
+  } else {
+    console.log("Skipping adding rules.");
   }
 };
 
@@ -49,5 +127,6 @@ export function registerRulesCommand(cli: Command) {
     .command("rules")
     .description("Add Bucket LLM rules to your project.")
     .addOption(rulesFormatOption)
+    .addOption(yesOption)
     .action(rulesAction);
 }
