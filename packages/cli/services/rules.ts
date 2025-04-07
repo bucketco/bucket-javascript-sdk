@@ -16,7 +16,7 @@ export function getCopilotInstructions() {
 const rules = /* markdown */ `
 # Bucket Feature Management Service for LLMs
 
-Bucket is a comprehensive feature management service offering feature flags, user feedback collection, adoption tracking, and remote configuration for your applications across various JavaScript frameworks, particularly React, Node.js, vanilla browser, CLI, and OpenFeature environments. Follow these best practices for feature flagging.
+Bucket is a comprehensive feature management service offering feature flags, user feedback collection, adoption tracking, and remote configuration for your applications across various JavaScript frameworks, particularly React, Next.js, Node.js, vanilla browser, CLI, and OpenFeature environments. Follow these best practices for feature flagging.
 
 ## Follow Official Documentation
 
@@ -39,7 +39,7 @@ Bucket is a comprehensive feature management service offering feature flags, use
 
 ## Feature Targeting
 
-- Use release stages to manage feature rollout (for example: development, staging, production).
+- Use release stages to manage feature rollout (for example, development, staging, production).
 - Use targeting modes effectively:
   - \`none\`: Feature is disabled for all targets.
   - \`some\`: Feature is enabled only for specified targets.
@@ -56,11 +56,11 @@ Bucket is a comprehensive feature management service offering feature flags, use
 
 ### Targeting Rules
 
-Targeting rules are entities used in Bucket to describe the target audience of a given feature. The target audience refers to the users that can interact with the feature within your application. Additionally, each targeting rule contains a value that is used for the target audience.
+Targeting rules are entities used in Bucket to describe the target audience of a given feature. The target audience refers to the users who can interact with the feature within your application. Additionally, each targeting rule contains a value that is used for the target audience.
 
 ### Feature Stages
 
-Release stages in Bucket are entities that allow setting up app-wide feature access targeting rules. Each release stage defines targeting rules for each available environment. Later, during the development of new features, you can apply all those rule automatically by selecting an available release stage.
+Release stages in Bucket allow setting up app-wide feature access targeting rules. Each release stage defines targeting rules for each available environment. Later, during the development of new features, you can apply all those rules automatically by selecting an available release stage.
 
 Release stages are useful tools when a standard release workflow is used in your organization.
 
@@ -73,7 +73,7 @@ Predefined stages:
 
 ### Segments
 
-A segment entity in Bucket is a dynamic collection of companies. The dynamic nature of segments arise from the fact that segments use filters to evaluate which companies are included in the segment.
+A segment entity in Bucket is a dynamic collection of companies. Segments' dynamic nature results from the fact that they use filters to evaluate which companies are included in them.
 
 #### Segment filters can be constructed using any combination of the following rules:
 
