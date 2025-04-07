@@ -252,14 +252,17 @@ Bucket provides powerful AI-assisted development capabilities through rules and 
 The `rules` command helps you set up AI-specific rules for your project. These rules enable AI tools to better understand how to work with Bucket and feature flags and how they should be used in your codebase.
 
 ```bash
-npx bucket rules [--format cursor]
+npx bucket rules [--format cursor|copilot] [--yes]
 ```
 
 Options:
 
-- `--format`: Format to add rules in (currently supports "cursor" for Cursor IDE integration).
+- `--format`: Format to add rules in:
+  - `cursor`: Adds rules to `.cursor/rules/bucket.mdc` for Cursor IDE integration.
+  - `copilot`: Adds rules to `.github/copilot-instructions.md` for GitHub Copilot integration.
+- `--yes`: Skip confirmation prompts and overwrite existing files without asking.
 
-This command will add a `bucket.mdc` file to your project's `.cursor/rules/` directory, which provides AI tools with context about how to setup and use Bucket feature flags.
+This command will add rules to your project that provide AI tools with context about how to setup and use Bucket feature flags. For the copilot format, the rules will be added to a dedicated section in the file, allowing you to maintain other copilot instructions alongside Bucket's rules.
 
 ## Model Context Protocol (Beta)
 
