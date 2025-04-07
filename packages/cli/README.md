@@ -278,7 +278,7 @@ Options:
 - `--port`: Port to run the SSE server on (defaults to 8050, "auto" for random port).
 - `--app-id`: App ID to use.
 
-This will start an SSE server at `http://localhost:8050/sse` by default which you can connect to using your [client of choice](https://modelcontextprotocol.io/clients). Below are examples that work for [Cursor](https://www.cursor.com/) and [Claude Desktop](https://claude.ai/download).
+This will start an SSE server at `http://localhost:8050/sse` by default which you can connect to using your [client of choice](https://modelcontextprotocol.io/clients). Below are examples that work for [Cursor IDE](https://www.cursor.com/) and [Claude Desktop](https://claude.ai/download).
 
 #### Server-Side Events (SSE)
 
@@ -309,7 +309,7 @@ Some clients don't support SSE and can instead interface with the MCP server ove
 
 ### Cursor IDE
 
-To enable MCP features in Cursor IDE:
+To enable MCP features in [Cursor IDE](https://www.cursor.com/):
 
 1. Open Cursor IDE.
 2. Go to `Settings > MCP`.
@@ -318,7 +318,7 @@ To enable MCP features in Cursor IDE:
 
 ### Clause Desktop
 
-To enable MCP features in Cursor Desktop:
+To enable MCP features in [Claude Desktop](https://claude.ai/download):
 
 1. Open Claude Desktop.
 2. Go to `Settings > Developer`.

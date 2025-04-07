@@ -154,7 +154,7 @@ export async function createFeature(appId: string, featureData: FeatureCreate) {
 export const FeatureAccessSchema = EnvironmentQuerySchema.extend({
   featureKey: z.string().describe("Feature key"),
   isEnabled: booleanish.describe(
-    "Set feature to enabled or disabled for the target.",
+    "Set feature to enabled or disabled for the targeted users, companies and segments.",
   ),
   userIds: z.array(z.string()).optional().describe("User IDs to target"),
   companyIds: z.array(z.string()).optional().describe("Company IDs to target"),

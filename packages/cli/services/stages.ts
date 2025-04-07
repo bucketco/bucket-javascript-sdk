@@ -27,10 +27,11 @@ export const UpdateFeatureStageSchema = EnvironmentQuerySchema.extend({
   stageId: z
     .string()
     .describe("The ID of the stage to transition the feature to."),
-  targetingMode: z
-    .enum(["none", "some", "everyone"])
-    // todo: improve description
-    .describe("The overarching targeting mode for the feature."),
+  targetingMode: z.enum(["none", "some", "everyone"])
+    .describe(`The overarching targeting mode for the feature.
+      - none: Feature is disabled for all targets.
+      - some: Feature is enabled only for specified targets.
+      - everyone: Feature is enabled for all targets.`),
   changeDescription: z.string().describe("The reason for the change."),
 });
 export type UpdateFeatureStageQuery = z.input<typeof UpdateFeatureStageSchema>;
