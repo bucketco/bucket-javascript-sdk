@@ -46,7 +46,11 @@ export const mcpAction = async ({ port = 8050 }: MCPArgs) => {
       try {
         await mcp.server.ping();
       } catch (error) {
-        void handleError(error, "MCP");
+        if (error instanceof Error) {
+          console.error(`MCP server ping failed: ${error.message}`);
+        } else {
+          console.error(`MCP server ping failed: ${error}`);
+        }
       }
     }, 10000);
 
