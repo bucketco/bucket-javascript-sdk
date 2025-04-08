@@ -1,12 +1,12 @@
 export function getCursorRules() {
   return `
-  ---
-  description: Guidelines for implementing feature flagging using Bucket feature management service
-  globs: "**/*.ts, **/*.tsx, **/*.js, **/*.jsx"
-  ---
+---
+description: Guidelines for implementing feature flagging using Bucket feature management service
+globs: "**/*.ts, **/*.tsx, **/*.js, **/*.jsx"
+---
 
-  ${rules}
-  `.trim();
+${rules}
+`.trim();
 }
 
 export function getCopilotInstructions() {

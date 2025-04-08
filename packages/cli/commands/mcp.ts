@@ -8,16 +8,22 @@ import { readFile } from "node:fs/promises";
 import ora, { Ora } from "ora";
 
 import { registerMcpTools } from "../mcp/tools.js";
-import { handleError } from "../utils/errors.js";
+import { configStore } from "../stores/config.js";
+import { handleError, MissingAppIdError } from "../utils/errors.js";
 import { appIdOption, mcpSsePortOption } from "../utils/options.js";
 
 type MCPArgs = {
   port?: "auto" | number;
-  appId?: string;
 };
 
-export const mcpAction = async ({ appId, port = 8050 }: MCPArgs) => {
+export const mcpAction = async ({ port = 8050 }: MCPArgs) => {
+  const { appId } = configStore.getConfig();
   let spinner: Ora | undefined;
+
+  if (!appId) {
+    return handleError(new MissingAppIdError(), "MCP");
+  }
+
   try {
     const packageJSONPath = await findUp("package.json");
     if (!packageJSONPath) {
@@ -36,6 +42,14 @@ export const mcpAction = async ({ appId, port = 8050 }: MCPArgs) => {
       version: version,
     });
 
+    setInterval(async () => {
+      try {
+        await mcp.server.ping();
+      } catch (error) {
+        void handleError(error, "MCP");
+      }
+    }, 10000);
+
     const app = express();
     const transportMap = new Map<string, SSEServerTransport>();
 
@@ -47,6 +61,11 @@ export const mcpAction = async ({ appId, port = 8050 }: MCPArgs) => {
       transport.onclose = () => {
         transportMap.delete(sessionId);
         console.log(`Transport ${sessionId} has been closed.`);
+      };
+
+      // Set the onerror handler to log the error
+      transport.onerror = (error) => {
+        console.error(`Transport ${sessionId} error:`, error);
       };
 
       transportMap.set(sessionId, transport);
@@ -99,4 +118,12 @@ export function registerMcpCommand(cli: Command) {
     .action(mcpAction)
     .addOption(appIdOption)
     .addOption(mcpSsePortOption);
+
+  // Update the config with the cli override values
+  cli.hook("preAction", (_, command) => {
+    const { appId } = command.opts();
+    configStore.setConfig({
+      appId,
+    });
+  });
 }

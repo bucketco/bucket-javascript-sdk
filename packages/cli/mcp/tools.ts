@@ -21,7 +21,6 @@ import { listUsers, UsersQuerySchema } from "../services/users.js";
 import { configStore } from "../stores/config.js";
 import {
   handleMcpError,
-  MissingAppIdError,
   MissingEnvIdError,
 } from "../utils/errors.js";
 import { KeyFormatPatterns } from "../utils/gen.js";
@@ -40,14 +39,8 @@ import {
 
 export async function registerMcpTools(
   mcp: McpServer,
-  { appId }: { appId?: string },
+  { appId }: { appId: string },
 ) {
-  // const projectPath = configStore.getProjectPath();
-  const { appId: configAppId, typesOutput: _ } = configStore.getConfig();
-  appId = appId || configAppId;
-  if (!appId) {
-    throw new MissingAppIdError();
-  }
   const org = getOrg();
   const app = getApp(appId);
   const segments = listSegments(appId);
