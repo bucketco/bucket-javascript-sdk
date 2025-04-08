@@ -319,7 +319,7 @@ To enable MCP features in [Cursor IDE](https://www.cursor.com/):
 3. Click `Add new global MCP server` and paste the `SSE` config.
 4. Save and go back to Cursor.
 
-### Clause Desktop
+### Claude Desktop
 
 To enable MCP features in [Claude Desktop](https://claude.ai/download):
 
