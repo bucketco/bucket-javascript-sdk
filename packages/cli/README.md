@@ -84,14 +84,14 @@ Initialize a new Bucket configuration in your project.
 This creates a `bucket.config.json` file with your settings and prompts for any required information not provided via options.
 
 ```bash
-bucket init [--overwrite]
+npx bucket init [--overwrite]
 ```
 
 Options:
 
-- `--overwrite`: Overwrite existing configuration file if one exists
-- `--app-id <id>`: Set the application ID
-- `--key-format <format>`: Set the key format for features
+- `--overwrite`: Overwrite existing configuration file if one exists.
+- `--app-id <id>`: Set the application ID.
+- `--key-format <format>`: Set the key format for features.
 
 ### `bucket new [featureName]`
 
@@ -99,16 +99,16 @@ All-in-one command to get started quickly. This command combines `init`, feature
 and type generation in a single step. Use this for the fastest way to get up and running with Bucket.
 
 ```bash
-bucket new "My Feature" [--key my-feature] [--app-id ap123456789] [--key-format custom] [--out gen/features.ts] [--format react]
+npx bucket new "My Feature" [--key my-feature] [--app-id ap123456789] [--key-format custom] [--out gen/features.ts] [--format react]
 ```
 
 Options:
 
-- `--key`: Specific key for the feature
-- `--app-id`: App ID to use
-- `--key-format`: Format for feature keys (custom, snake, camel, etc.)
-- `--out`: Path to generate TypeScript types
-- `--format`: Format of the generated types (react or node)
+- `--key`: Specific key for the feature.
+- `--app-id`: App ID to use.
+- `--key-format`: Format for feature keys (custom, snake, camel, etc.).
+- `--out`: Path to generate TypeScript types.
+- `--format`: Format of the generated types (react or node).
 
 If you prefer more control over each step, you can use the individual commands (`init`, `features create`, `features types`) instead.
 
@@ -117,7 +117,7 @@ If you prefer more control over each step, you can use the individual commands (
 Log in to your Bucket account. This will authenticate your CLI for subsequent operations and store credentials securely.
 
 ```bash
-bucket login
+npx bucket login
 ```
 
 ### `bucket logout`
@@ -125,7 +125,7 @@ bucket login
 Log out from your Bucket account, removing stored credentials.
 
 ```bash
-bucket logout
+npx bucket logout
 ```
 
 ### `bucket features`
@@ -138,14 +138,14 @@ Create a new feature in your Bucket app.
 The command guides you through the feature creation process with interactive prompts if options are not provided.
 
 ```bash
-bucket features create "My Feature" [--key my-feature] [--app-id ap123456789] [--key-format custom]
+npx bucket features create "My Feature" [--key my-feature] [--app-id ap123456789] [--key-format custom]
 ```
 
 Options:
 
-- `--key`: Specific key for the feature
-- `--app-id`: App ID to use
-- `--key-format`: Format for feature keys
+- `--key`: Specific key for the feature.
+- `--app-id`: App ID to use.
+- `--key-format`: Format for feature keys.
 
 #### `bucket features list`
 
@@ -153,12 +153,12 @@ List all features for the current app.
 This helps you visualize what features are available and their current configurations.
 
 ```bash
-bucket features list [--app-id ap123456789]
+npx bucket features list [--app-id ap123456789]
 ```
 
 Options:
 
-- `--app-id`: App ID to use
+- `--app-id`: App ID to use.
 
 #### `bucket features types`
 
@@ -166,52 +166,69 @@ Generate TypeScript types for your features.
 This ensures type safety when using Bucket features in your TypeScript/JavaScript applications.
 
 ```bash
-bucket features types [--app-id ap123456789] [--out gen/features.ts] [--format react]
+npx bucket features types [--app-id ap123456789] [--out gen/features.ts] [--format react]
 ```
 
 Options:
 
-- `--app-id`: App ID to use
-- `--out`: Path to generate TypeScript types
-- `--format`: Format of the generated types (react or node)
+- `--app-id`: App ID to use.
+- `--out`: Path to generate TypeScript types.
+- `--format`: Format of the generated types (react or node).
 
 ### `bucket companies`
 
-Manage company data and feature access with the following subcommands.
+Commands for managing companies.
 
 #### `bucket companies list`
 
-List all companies for the current app.
-This helps you visualize the companies using your features and their basic metrics.
+List all companies in your app.
 
 ```bash
-bucket companies list [--app-id ap123456789] [--filter nameOrId]
+npx bucket companies list [--filter <text>] [--app-id ap123456789]
 ```
 
 Options:
 
-- `--app-id`: App ID to use
-- `--filter`: Filter companies by name or ID
+- `--filter`: Filter companies by name or ID.
+- `--app-id`: App ID to use.
 
-#### `bucket companies features access`
+The command outputs a table with the following columns:
 
-Grant or revoke access to specific features for a company.
+- `id`: Company ID.
+- `name`: Company name (shows "(unnamed)" if not set).
+- `users`: Number of users in the company.
+- `lastSeen`: Date when the company was last active.
+
+### `bucket companies features access`
+
+Grant or revoke access to specific features for companies, segments, and users.
 If no feature key is provided, you'll be prompted to select one from a list.
 
 ```bash
-bucket companies features access <companyId> [featureKey] [--enable|--disable] [--app-id ap123456789]
+npx bucket companies features access [featureKey] [--enable|--disable] [--companies <id...>] [--segments <id...>] [--users <id...>] [--app-id ap123456789]
 ```
 
 Arguments:
 
-- `companyId`: ID of the company to manage
-- `featureKey`: Key of the feature to grant/revoke access to (optional, interactive selection if omitted)
+- `featureKey`: Key of the feature to grant/revoke access to (optional, interactive selection if omitted).
 
 Options:
 
-- `--enable`: Enable the feature for this company
-- `--disable`: Disable the feature for this company
-- `--app-id`: App ID to use
+- `--enable`: Enable the feature for the specified targets.
+- `--disable`: Disable the feature for the specified targets.
+- `--users`: User IDs to target. Can be specified multiple times.
+- `--companies`: Company IDs to target. Can be specified multiple times.
+- `--segments`: Segment IDs to target. Can be specified multiple times.
+- `--app-id`: App ID to use.
+
+At least one target (companies, segments, or users) must be specified. You must also specify either `--enable` or `--disable`, but not both.
+
+Example:
+
+```bash
+# Enable feature for multiple companies and users
+npx bucket companies features access my-feature --enable --companies comp_123 --companies comp_456 --users user_789
+```
 
 ### `bucket apps`
 
@@ -221,10 +238,95 @@ Commands for managing Bucket apps.
 
 These options can be used with any command:
 
-- `--debug`: Enable debug mode for verbose output
-- `--base-url <url>`: Set the base URL for Bucket API
-- `--api-url <url>`: Set the API URL directly (overrides base URL)
-- `--help`: Display help information for a command
+- `--debug`: Enable debug mode for verbose output.
+- `--base-url <url>`: Set the base URL for Bucket API.
+- `--api-url <url>`: Set the API URL directly (overrides base URL).
+- `--help`: Display help information for a command.
+
+## AI-Assisted Development
+
+Bucket provides powerful AI-assisted development capabilities through rules and Model Context Protocol (MCP). These features help your AI development tools better understand your features and provide more accurate assistance.
+
+### Bucket Rules (Recommended)
+
+The `rules` command helps you set up AI-specific rules for your project. These rules enable AI tools to better understand how to work with Bucket and feature flags and how they should be used in your codebase.
+
+```bash
+npx bucket rules [--format cursor|copilot] [--yes]
+```
+
+Options:
+
+- `--format`: Format to add rules in:
+  - `cursor`: Adds rules to `.cursor/rules/bucket.mdc` for Cursor IDE integration.
+  - `copilot`: Adds rules to `.github/copilot-instructions.md` for GitHub Copilot integration.
+- `--yes`: Skip confirmation prompts and overwrite existing files without asking.
+
+This command will add rules to your project that provide AI tools with context about how to setup and use Bucket feature flags. For the copilot format, the rules will be added to a dedicated section in the file, allowing you to maintain other copilot instructions alongside Bucket's rules.
+
+## Model Context Protocol
+
+The Model Context Protocol (MCP) is an open protocol that provides a standardized way to connect AI models to different data sources and tools. In the context of Bucket, MCP enables your development environment to understand your feature flags, their states, and their relationships within your codebase. This creates a seamless bridge between your feature management workflow and AI-powered development tools. MCP is in a very early stage of development and changes are frequent, if something isn't working please check out the [Model Context Protocol Website](https://modelcontextprotocol.io/) and open an [issue ticket here](https://github.com/bucketco/bucket-javascript-sdk/issues).
+
+### Setting up MCP
+
+MCP servers currently run locally on your machine. To start the MCP server run the CLI command from your Bucket initialized project directory:
+
+```bash
+npx bucket mcp [--port <number|"auto">] [--app-id ap123456789]
+```
+
+Options:
+
+- `--port`: Port to run the SSE server on (defaults to 8050, "auto" for random port).
+- `--app-id`: App ID to use.
+
+This will start an SSE server at `http://localhost:8050/sse` by default which you can connect to using your [client of choice](https://modelcontextprotocol.io/clients). Below are examples that work for [Cursor IDE](https://www.cursor.com/) and [Claude Desktop](https://claude.ai/download).
+
+#### Server-Side Events (SSE)
+
+```json
+{
+  "mcpServers": {
+    "Bucket": {
+      "url": "http://localhost:8050/sse"
+    }
+  }
+}
+```
+
+#### STDIO Proxy
+
+Some clients don't support SSE and can instead interface with the MCP server over a STDIO proxy.
+
+```json
+{
+  "mcpServers": {
+    "Bucket": {
+      "command": "npx",
+      "args": ["-y", "supergateway", "--sse", "http://localhost:8050/sse"]
+    }
+  }
+}
+```
+
+### Cursor IDE
+
+To enable MCP features in [Cursor IDE](https://www.cursor.com/):
+
+1. Open Cursor IDE.
+2. Go to `Settings > MCP`.
+3. Click `Add new global MCP server` and paste the `SSE` config.
+4. Save and go back to Cursor.
+
+### Claude Desktop
+
+To enable MCP features in [Claude Desktop](https://claude.ai/download):
+
+1. Open Claude Desktop.
+2. Go to `Settings > Developer`.
+3. Click `Edit config` and paste the `STDIO` config.
+4. Save and restart Claude Desktop.
 
 ## Development
 

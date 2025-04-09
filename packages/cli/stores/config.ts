@@ -67,7 +67,7 @@ class ConfigStore {
       // Using current config store file, resolve the schema.json path
       const filePath = fileURLToPath(import.meta.url);
       const schemaPath = join(
-        filePath.substring(0, filePath.indexOf("cli") + 3),
+        filePath.substring(0, filePath.lastIndexOf("cli") + 3),
         "schema.json",
       );
       const content = await readFile(schemaPath, "utf-8");

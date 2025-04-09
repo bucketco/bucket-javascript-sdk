@@ -8,26 +8,32 @@ import { readFile } from "node:fs/promises";
 import ora, { Ora } from "ora";
 
 import { registerMcpTools } from "../mcp/tools.js";
-import { handleError } from "../utils/errors.js";
-import { appIdOption } from "../utils/options.js";
+import { configStore } from "../stores/config.js";
+import { handleError, MissingAppIdError } from "../utils/errors.js";
+import { appIdOption, mcpSsePortOption } from "../utils/options.js";
 
 type MCPArgs = {
   port?: "auto" | number;
-  appId?: string;
 };
 
-export const mcpAction = async ({ appId, port = 8050 }: MCPArgs) => {
+export const mcpAction = async ({ port = 8050 }: MCPArgs) => {
+  const { appId } = configStore.getConfig();
   let spinner: Ora | undefined;
+
+  if (!appId) {
+    return handleError(new MissingAppIdError(), "MCP");
+  }
+
   try {
     const packageJSONPath = await findUp("package.json");
     if (!packageJSONPath) {
-      throw new Error("Unable to determine version using package.json");
+      throw new Error("Unable to determine version using package.json.");
     }
     const { version } = JSON.parse(
       (await readFile(packageJSONPath, "utf-8")) ?? "{}",
     );
     if (!version) {
-      throw new Error("Unable to determine version using package.json");
+      throw new Error("Unable to determine version using package.json.");
     }
 
     // Create an MCP server
@@ -35,6 +41,18 @@ export const mcpAction = async ({ appId, port = 8050 }: MCPArgs) => {
       name: "Bucket",
       version: version,
     });
+
+    setInterval(async () => {
+      try {
+        await mcp.server.ping();
+      } catch (error) {
+        if (error instanceof Error) {
+          console.error(`MCP server ping failed: ${error.message}`);
+        } else {
+          console.error(`MCP server ping failed: ${error}`);
+        }
+      }
+    }, 10000);
 
     const app = express();
     const transportMap = new Map<string, SSEServerTransport>();
@@ -49,15 +67,20 @@ export const mcpAction = async ({ appId, port = 8050 }: MCPArgs) => {
         console.log(`Transport ${sessionId} has been closed.`);
       };
 
+      // Set the onerror handler to log the error
+      transport.onerror = (error) => {
+        console.error(`Transport ${sessionId} error:`, error);
+      };
+
       transportMap.set(sessionId, transport);
       await mcp.connect(transport);
-      spinner?.succeed("Client connected to MCP server");
+      spinner?.succeed("Client connected to MCP server.");
     });
 
     app.post("/messages", async (req, res) => {
       const sessionId = req.query.sessionId?.toString();
       if (!sessionId) {
-        res.status(400).json({ error: "SessionId is not found" });
+        res.status(400).json({ error: "SessionId is not found." });
         return;
       }
 
@@ -80,12 +103,12 @@ export const mcpAction = async ({ appId, port = 8050 }: MCPArgs) => {
       const assignedPort =
         !!address && typeof address === "object" ? address.port : port;
       console.log(
-        `\nMCP server listening at ${chalk.cyan(`http://localhost:${assignedPort}/sse`)}`,
+        `\nMCP server listening at ${chalk.cyan(`http://localhost:${assignedPort}/sse.`)}`,
       );
       spinner = ora(`Waiting for connections...`).start();
     });
   } catch (error) {
-    spinner?.fail("MCP server failed to start");
+    spinner?.fail("MCP server failed to start.");
     void handleError(error, "MCP");
   }
 };
@@ -97,5 +120,14 @@ export function registerMcpCommand(cli: Command) {
       "Create an model context protocol (MCP) server between your AI assistant and the Bucket API (alpha).",
     )
     .action(mcpAction)
-    .addOption(appIdOption);
+    .addOption(appIdOption)
+    .addOption(mcpSsePortOption);
+
+  // Update the config with the cli override values
+  cli.hook("preAction", (_, command) => {
+    const { appId } = command.opts();
+    configStore.setConfig({
+      appId,
+    });
+  });
 }

@@ -1,52 +1,55 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import ora from "ora";
 import { z } from "zod";
 
-import { getApp, getOrg } from "../services/bootstrap.js";
-import {
-  CompaniesQuerySchema,
-  companyFeatureAccess,
-  CompanyFeatureAccessSchema,
-  listCompanies,
-} from "../services/companies.js";
+import { getApp, getOrg, listSegments } from "../services/bootstrap.js";
+import { CompaniesQuerySchema, listCompanies } from "../services/companies.js";
 import {
   createFeature,
+  FeatureAccessSchema,
   FeatureCreateSchema,
   listFeatureNames,
+  updateFeatureAccess,
 } from "../services/features.js";
 import { FeedbackQuerySchema, listFeedback } from "../services/feedback.js";
-import { listStages, UpdateFeatureStage } from "../services/stages.js";
-import { configStore } from "../stores/config.js";
 import {
-  handleMcpError,
-  MissingAppIdError,
-  MissingEnvIdError,
-} from "../utils/errors.js";
+  listStages,
+  updateFeatureStage,
+  UpdateFeatureStageSchema,
+} from "../services/stages.js";
+import { listUsers, UsersQuerySchema } from "../services/users.js";
+import { configStore } from "../stores/config.js";
+import { handleMcpError, MissingEnvIdError } from "../utils/errors.js";
 import { KeyFormatPatterns } from "../utils/gen.js";
 import { featureUrl } from "../utils/path.js";
+import { withDefaults, withDescriptions } from "../utils/schemas.js";
+
 import {
-  EnvironmentQuerySchema,
-  withDefaults,
-  withDescriptions,
-} from "../utils/schemas.js";
+  companiesResponse,
+  featureCreateResponse,
+  featuresResponse,
+  feedbackResponse,
+  updateFeatureAccessResponse,
+  updateFeatureStageResponse,
+  usersResponse,
+} from "./responses.js";
 
 export async function registerMcpTools(
   mcp: McpServer,
-  { appId }: { appId?: string },
+  { appId }: { appId: string },
 ) {
-  // const projectPath = configStore.getProjectPath();
-  const { appId: configAppId, typesOutput: _ } = configStore.getConfig();
-  appId = appId || configAppId;
-  if (!appId) {
-    throw new MissingAppIdError();
-  }
   const org = getOrg();
   const app = getApp(appId);
+  const segments = listSegments(appId);
   const production = app.environments.find((e) => e.isProduction);
   if (!production) {
     throw new MissingEnvIdError();
   }
 
+  // Extend bootstrap spinner for loading stages
+  const spinner = ora("Bootstrapping...").start();
   const stages = await listStages(appId);
+  spinner.stop();
 
   // Add features tool
   mcp.tool(
@@ -55,17 +58,7 @@ export async function registerMcpTools(
     async () => {
       try {
         const data = await listFeatureNames(appId);
-        return {
-          content: [
-            {
-              type: "text",
-              text: `
-List of features.
->>> JSON Response >>>
- ${JSON.stringify(data, null, 2)}`,
-            },
-          ],
-        };
+        return featuresResponse(data);
       } catch (error) {
         return await handleMcpError(error);
       }
@@ -82,18 +75,7 @@ List of features.
     async (args) => {
       try {
         const data = await listFeedback(appId, args);
-        return {
-          content: [
-            {
-              type: "text",
-              text: `
-Feedback is returned in a JSON format with pages.
-Feedback score is between 1 and 5, with 0 being unknown.
->>> JSON Response >>>
-${JSON.stringify(data, null, 2)}`,
-            },
-          ],
-        };
+        return feedbackResponse(data);
       } catch (error) {
         return await handleMcpError(error);
       }
@@ -111,55 +93,12 @@ ${JSON.stringify(data, null, 2)}`,
     async (args) => {
       try {
         const feature = await createFeature(appId, args);
-
         const featureLink = featureUrl(
           configStore.getConfig("baseUrl"),
           production,
           feature,
         );
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Feature created successfully. Show this link to the feature Bucket: ${featureLink}. Now run the Bucket CLI in a terminal:
-\`shell
-$ npx bucket features types
-\`
-
-After that we can feature flag some code. Use the following pattern for React:
-
-\`\`\`typescript
-import { useFeature } from "@bucketco/react-sdk";
-function MyComponent() {
-  const { isEnabled } = useFeature("${feature.key}");
-  if (!isEnabled) {
-    // feature is disabled
-    return null;
-  }
-  return <div>Feature is disabled.</div>;
-}
-\`\`\`
-
-For Node.js, the pattern is similar:
-\`\`\`
-// import the initialized bucket client
-import { bucketClient } from "./bucket";
-
-function myFunction() {
-  const { isEnabled } = bucketClient.getFeature("${feature.key}");
-
-  if (!isEnabled) {
-    // feature is disabled
-    return;
-  }
-
-  console.log("Feature is enabled!")
-}
-\`\`\`
-`,
-            },
-          ],
-        };
+        return featureCreateResponse(feature.key, featureLink, feature);
       } catch (error) {
         return await handleMcpError(error);
       }
@@ -176,17 +115,24 @@ function myFunction() {
     async (args) => {
       try {
         const data = await listCompanies(appId, args);
-        return {
-          content: [
-            {
-              type: "text",
-              text: `
-List of companies.
->>> JSON Response >>>
-${JSON.stringify(data, null, 2)}`,
-            },
-          ],
-        };
+        return companiesResponse(data);
+      } catch (error) {
+        return await handleMcpError(error);
+      }
+    },
+  );
+
+  // Add users tool
+  mcp.tool(
+    "users",
+    "List of users in your application that use the Bucket feature management service.",
+    withDefaults(UsersQuerySchema, {
+      envId: production.id,
+    }).shape,
+    async (args) => {
+      try {
+        const data = await listUsers(appId, args);
+        return usersResponse(data);
       } catch (error) {
         return await handleMcpError(error);
       }
@@ -194,45 +140,55 @@ ${JSON.stringify(data, null, 2)}`,
   );
 
   // Add company feature access tool
+  const segmentNames = segments.map((s) => s.name);
   mcp.tool(
-    "companyFeatureAccess",
-    "Grant or revoke feature access for a specific company of the Bucket feature management service.",
-    withDefaults(CompanyFeatureAccessSchema, {
-      envId: production.id,
-    }).shape,
+    "featureAccess",
+    "Grant or revoke feature access to specific users, companies, or segments of the Bucket feature management service.",
+    withDefaults(
+      FeatureAccessSchema.omit({ segmentIds: true }).extend({
+        segmentNames: z
+          .array(z.enum(segmentNames as [string, ...string[]]))
+          .optional()
+          .describe(
+            `Segment names to target. Must be one of the following: ${segmentNames.join(", ")}`,
+          ),
+      }),
+      {
+        envId: production.id,
+      },
+    ).shape,
     async (args) => {
       try {
-        await companyFeatureAccess(appId, args);
-        return {
-          content: [
-            {
-              type: "text",
-              text: `${args.isEnabled ? "Granted" : "Revoked"} access to feature '${args.featureKey}' for company ID '${args.companyId}'.`,
-            },
-          ],
-        };
+        const { segmentNames: selectedSegmentNames, ...rest } = args;
+        const segmentIds =
+          selectedSegmentNames
+            ?.map((name) => segments.find((s) => s.name === name)?.id)
+            .filter((id) => id !== undefined) ?? [];
+        const { flagVersions } = await updateFeatureAccess(appId, {
+          ...rest,
+          segmentIds,
+        });
+        return updateFeatureAccessResponse(flagVersions);
       } catch (error) {
         return await handleMcpError(error);
       }
     },
   );
 
+  // Add update feature stage tool
+  const stageNames = stages.map((s) => s.name);
   mcp.tool(
     "updateFeatureStage",
-    "Update feature stage.",
+    "Update the release stage of a feature in the Bucket feature management service.",
     withDefaults(
-      EnvironmentQuerySchema.extend({
-        featureId: z.string(),
+      UpdateFeatureStageSchema.omit({
+        stageId: true,
+      }).extend({
         stageName: z
-          .enum(stages.map((s) => s.name) as [string, ...string[]])
+          .enum(stageNames as [string, ...string[]])
           .describe(
-            "The name of the stage. Must be one of the following: " +
-              stages.map((s) => s.name).join(", "),
+            `The name of the stage. Must be one of the following: ${stageNames.join(", ")}`,
           ),
-        targeting: z
-          .enum(["none", "some", "everyone"])
-          .describe("The overarching targeting mode for the feature."),
-        changeDescription: z.string().describe("The reason for the change"),
       }),
       {
         envId: production.id,
@@ -245,21 +201,14 @@ ${JSON.stringify(data, null, 2)}`,
       }
 
       try {
-        const { feature } = await UpdateFeatureStage(appId, {
+        const { feature } = await updateFeatureStage(appId, {
           featureId: args.featureId,
           stageId: stage.id,
-          targetingMode: args.targeting,
+          targetingMode: args.targetingMode,
           envId: args.envId,
           changeDescription: args.changeDescription,
         });
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Updated flag targeting for feature '${feature.key}'.`,
-            },
-          ],
-        };
+        return updateFeatureStageResponse(feature.key);
       } catch (error) {
         return await handleMcpError(error);
       }

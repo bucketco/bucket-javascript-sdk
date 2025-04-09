@@ -2,7 +2,6 @@ import { z } from "zod";
 
 import { authRequest } from "../utils/auth.js";
 import {
-  booleanish,
   EnvironmentQuerySchema,
   PaginationQueryBaseSchema,
 } from "../utils/schemas.js";
@@ -77,32 +76,5 @@ export async function listCompanies(
       envId,
     },
     body: JSON.stringify(body),
-  });
-}
-
-export const CompanyFeatureAccessSchema = EnvironmentQuerySchema.extend({
-  companyId: z.string().describe("Company ID"),
-  featureKey: z.string().describe("Feature key"),
-  isEnabled: booleanish.describe(
-    "Set feature to enabled or disabled for the company.",
-  ),
-}).strict();
-
-export type CompanyFeatureAccess = z.input<typeof CompanyFeatureAccessSchema>;
-
-export async function companyFeatureAccess(
-  appId: string,
-  query: CompanyFeatureAccess,
-): Promise<void> {
-  const { envId, companyId, ...body } = CompanyFeatureAccessSchema.parse(query);
-  return authRequest<void>(`/apps/${appId}/companies/${companyId}/features`, {
-    method: "PATCH",
-    params: {
-      envId,
-    },
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ features: [body] }),
   });
 }
