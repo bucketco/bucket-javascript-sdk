@@ -1,12 +1,11 @@
 import { Command } from "commander";
 
 export function commandName(command: Command) {
-  if (
-    command.parent &&
-    command.parent.name() &&
-    command.parent.name() !== "index"
-  ) {
-    return `${command.parent.name()} ${command.name()}`;
+  if (command.parent) {
+    const parentName = command.parent.name();
+    if (parentName && parentName !== "index") {
+      return `${parentName} ${command.name()}`;
+    }
   }
   return command.name();
 }
