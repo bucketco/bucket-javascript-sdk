@@ -14,9 +14,12 @@ import { registerRulesCommand } from "./commands/rules.js";
 import { bootstrap, getBucketUser } from "./services/bootstrap.js";
 import { authStore } from "./stores/auth.js";
 import { configStore } from "./stores/config.js";
+import { commandName } from "./utils/commander.js";
 import { handleError } from "./utils/errors.js";
 import { apiUrlOption, baseUrlOption, debugOption } from "./utils/options.js";
 import { stripTrailingSlash } from "./utils/path.js";
+
+const skipBootstrapCommands = [/^login/, /^logout/, /^rules/];
 
 type Options = {
   debug?: boolean;
@@ -35,7 +38,7 @@ async function main() {
   program.addOption(apiUrlOption);
 
   // Pre-action hook
-  program.hook("preAction", async () => {
+  program.hook("preAction", async (_, actionCommand) => {
     const { debug, baseUrl, apiUrl } = program.opts<Options>();
     const cleanedBaseUrl = stripTrailingSlash(baseUrl?.trim());
     // Set baseUrl and apiUrl in config store, will skip if undefined
@@ -46,17 +49,24 @@ async function main() {
         (cleanedBaseUrl && `${cleanedBaseUrl}/api`),
     });
 
-    const spinner = ora("Bootstrapping...").start();
-    try {
-      // Load bootstrap data if not already loaded
-      await bootstrap();
-      spinner.stop();
-    } catch (error) {
-      spinner.fail("Bootstrap failed.");
-      void handleError(
-        debug ? error : `Unable to reach ${configStore.getConfig("baseUrl")}.`,
-        "Connect",
-      );
+    // Skip bootstrapping for commands that don't require it
+    if (
+      !skipBootstrapCommands.some((cmd) => cmd.test(commandName(actionCommand)))
+    ) {
+      const spinner = ora("Bootstrapping...").start();
+      try {
+        // Load bootstrap data if not already loaded
+        await bootstrap();
+        spinner.stop();
+      } catch (error) {
+        spinner.fail("Bootstrap failed.");
+        void handleError(
+          debug
+            ? error
+            : `Unable to reach ${configStore.getConfig("baseUrl")}.`,
+          "Connect",
+        );
+      }
     }
 
     if (debug) {
