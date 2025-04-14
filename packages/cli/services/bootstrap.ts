@@ -3,7 +3,8 @@ import { KeyFormat } from "../utils/gen.js";
 
 export type BootstrapResponse = {
   org: Org;
-  user: User;
+  user: BucketUser;
+  segments: { [appId: string]: Segment[] };
 };
 
 export type Org = {
@@ -37,7 +38,7 @@ export type App = {
   environments: Environment[];
 };
 
-export type User = {
+export type BucketUser = {
   id: string;
   email: string;
   name: string;
@@ -45,6 +46,13 @@ export type User = {
   updatedAt: Date;
   avatarUrl: string;
   isAdmin: boolean;
+};
+
+export type Segment = {
+  id: string;
+  name: string;
+  system: boolean;
+  isAllSegment: boolean;
 };
 
 let bootstrapResponse: BootstrapResponse | null = null;
@@ -89,7 +97,7 @@ export function getApp(id: string): App {
   return app;
 }
 
-export function getUser(): User {
+export function getBucketUser(): BucketUser {
   if (!bootstrapResponse) {
     throw new Error("CLI has not been bootstrapped.");
   }
@@ -97,4 +105,11 @@ export function getUser(): User {
     throw new Error("No user found.");
   }
   return bootstrapResponse.user;
+}
+
+export function listSegments(appId: string): Segment[] {
+  if (!bootstrapResponse) {
+    throw new Error("CLI has not been bootstrapped.");
+  }
+  return bootstrapResponse.segments[appId];
 }

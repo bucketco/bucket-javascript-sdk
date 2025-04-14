@@ -150,3 +150,74 @@ export async function createFeature(appId: string, featureData: FeatureCreate) {
     }),
   }).then(({ feature }) => feature);
 }
+
+export const FeatureAccessSchema = EnvironmentQuerySchema.extend({
+  featureKey: z.string().describe("Feature key"),
+  isEnabled: booleanish.describe(
+    "Set feature to enabled or disabled for the targeted users, companies and segments.",
+  ),
+  userIds: z.array(z.string()).optional().describe("User IDs to target"),
+  companyIds: z.array(z.string()).optional().describe("Company IDs to target"),
+  segmentIds: z.array(z.string()).optional().describe("Segment IDs to target"),
+}).strict();
+
+export type FeatureAccess = z.input<typeof FeatureAccessSchema>;
+
+export type FlagVersion = {
+  id: string;
+  version: number;
+  changeDescription: string;
+  targetingMode: string;
+  userIds: string[];
+  companyIds: string[];
+  segmentIds: string[];
+};
+
+export type UpdateFeatureAccessResponse = {
+  flagVersions: FlagVersion[];
+};
+
+export async function updateFeatureAccess(appId: string, query: FeatureAccess) {
+  const {
+    envId,
+    featureKey,
+    isEnabled,
+    companyIds = [],
+    segmentIds = [],
+    userIds = [],
+  } = FeatureAccessSchema.parse(query);
+
+  const targets = [
+    ...companyIds.map((id) => ({
+      key: featureKey,
+      companyId: id,
+      enabled: isEnabled,
+    })),
+    ...segmentIds.map((id) => ({
+      key: featureKey,
+      segmentId: id,
+      enabled: isEnabled,
+    })),
+    ...userIds.map((id) => ({
+      key: featureKey,
+      userId: id,
+      enabled: isEnabled,
+    })),
+  ];
+
+  return authRequest<UpdateFeatureAccessResponse>(
+    `/apps/${appId}/features/targeting`,
+    {
+      method: "PATCH",
+      params: {
+        envId,
+      },
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        targets,
+      }),
+    },
+  );
+}
