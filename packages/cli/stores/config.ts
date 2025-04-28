@@ -14,7 +14,7 @@ import {
   SCHEMA_URL,
 } from "../utils/constants.js";
 import { ConfigValidationError, handleError } from "../utils/errors.js";
-import { stripTrailingSlash } from "../utils/path.js";
+import { stripTrailingSlash } from "../utils/urls.js";
 
 export const typeFormats = ["react", "node"] as const;
 export type TypeFormat = (typeof typeFormats)[number];

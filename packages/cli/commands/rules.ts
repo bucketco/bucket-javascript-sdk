@@ -2,8 +2,6 @@ import { confirm } from "@inquirer/prompts";
 import chalk from "chalk";
 import { Command } from "commander";
 import {
-  access,
-  constants,
   mkdir,
   readFile,
   writeFile,
@@ -14,6 +12,7 @@ import ora from "ora";
 import { getCopilotInstructions, getCursorRules } from "../services/rules.js";
 import { configStore } from "../stores/config.js";
 import { handleError } from "../utils/errors.js";
+import { fileExists } from "../utils/file.js";
 import { rulesFormatOption, yesOption } from "../utils/options.js";
 
 type RulesArgs = {
@@ -23,15 +22,6 @@ type RulesArgs = {
 
 const BUCKET_SECTION_START = "<!-- BUCKET_START -->";
 const BUCKET_SECTION_END = "<!-- BUCKET_END -->";
-
-async function fileExists(path: string): Promise<boolean> {
-  try {
-    await access(path, constants.F_OK);
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 async function confirmOverwrite(
   filePath: string,

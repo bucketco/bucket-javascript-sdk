@@ -11,7 +11,7 @@ import {
   MissingEnvIdError,
 } from "../utils/errors.js";
 import { appIdOption, companyFilterOption } from "../utils/options.js";
-import { baseUrlSuffix } from "../utils/path.js";
+import { baseUrlSuffix } from "../utils/urls.js";
 
 export const listCompaniesAction = async (options: { filter?: string }) => {
   const { baseUrl, appId } = configStore.getConfig();

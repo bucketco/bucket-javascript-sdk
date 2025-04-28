@@ -36,7 +36,7 @@ import {
   typesOutOption,
   userIdsOption,
 } from "../utils/options.js";
-import { baseUrlSuffix, featureUrl } from "../utils/path.js";
+import { baseUrlSuffix, featureUrl } from "../utils/urls.js";
 
 const lf = new Intl.ListFormat("en");
 

@@ -2,6 +2,9 @@ import { Argument, Option } from "commander";
 
 import { CONFIG_FILE_NAME } from "./constants.js";
 
+// Define supported editors directly here or import from a central place if needed elsewhere
+const SUPPORTED_EDITORS = ["cursor", "vscode"] as const; // Add more later: "claude", "cline", "windsurf"
+
 export const debugOption = new Option("--debug", "Enable debug mode.");
 
 export const baseUrlOption = new Option(
@@ -44,11 +47,6 @@ export const featureKeyOption = new Option(
   "Feature key. If not provided, a key is generated from the feature's name.",
 );
 
-export const mcpSsePortOption = new Option(
-  "-p, --port [port]",
-  "Port for the MCP server to listen on when using SSE transport with the --sse flag.",
-).default(8050);
-
 export const companyFilterOption = new Option(
   "-f, --filter [name]",
   "Filter companies by name or ID.",
@@ -84,6 +82,11 @@ export const segmentIdsOption = new Option(
   "--segments <ids...>",
   "Segment IDs to target. Can be specified multiple times.",
 );
+
+export const editorOption = new Option(
+  "-e, --editor [editor]",
+  "Specify the editor to configure for MCP.",
+).choices(SUPPORTED_EDITORS);
 
 export const rulesFormatOption = new Option(
   "-f, --format [format]",
