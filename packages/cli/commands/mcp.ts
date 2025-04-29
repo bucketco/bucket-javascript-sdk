@@ -1,7 +1,7 @@
-import { confirm, select } from "@inquirer/prompts";
+import { select } from "@inquirer/prompts";
 import chalk from "chalk";
 import { Command } from "commander";
-import JSON5 from "json5";
+import { parse as parseJSON, stringify as stringifyJSON } from "comment-json";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, relative } from "node:path";
 import ora, { type Ora } from "ora";
@@ -117,50 +117,31 @@ export const mcpAction = async (options: {
     `Reading configuration file: ${chalk.cyan(displayConfigPath)}...`,
   ).start();
   let editorConfig: any = {};
-  try {
-    if (await fileExists(configPath)) {
-      const content = await readFile(configPath, "utf-8");
-      // Attempt to parse JSON, handle potential comments if needed
-      try {
-        editorConfig = JSON5.parse(content);
-      } catch (parseError) {
-        spinner.fail(
-          `Failed to parse configuration file ${chalk.cyan(displayConfigPath)}.`,
-        );
-        throw parseError; // Re-throw original error if cleaning fails
-      }
-      spinner.succeed("Configuration file read.");
-    } else {
-      spinner.info("Configuration file not found, will create a new one.");
-      editorConfig = {}; // Initialize empty config if file doesn't exist
-    }
-  } catch (error: any) {
-    // Handle file access errors separately from parsing errors
-    if (error.code !== "ENOENT") {
-      // ENOENT means file not found, which is handled above
-      spinner.fail("Failed to read configuration file.");
-      console.error(
-        chalk.red(`Error reading ${displayConfigPath}: ${error.message}`),
+  if (await fileExists(configPath)) {
+    const content = await readFile(configPath, "utf-8");
+    // Attempt to parse JSON, handle potential comments if needed
+    try {
+      editorConfig = parseJSON(content);
+    } catch {
+      spinner.fail(
+        `Failed to parse configuration file ${chalk.cyan(displayConfigPath)}.`,
       );
-      const proceed = await confirm({
-        message: "Reading failed. Attempt to overwrite the file?",
-        default: false,
-      });
-      if (!proceed) return;
-      editorConfig = {}; // Start fresh if reading failed and user agreed
-    } else {
-      // This case should ideally be caught by the fileExists check, but handle defensively
-      spinner.info("Configuration file not found, creating a new one.");
-      editorConfig = {};
     }
+    spinner.succeed(
+      `Read configuration file ${chalk.cyan(displayConfigPath)}.`,
+    );
+  } else {
+    spinner.info("Configuration file not found, will create a new one.");
+    editorConfig = {}; // Initialize empty config if file doesn't exist
   }
 
-  // Ensure mcpServers object exists and get existing Bucket entries
+  // Ensure MCP servers object exists
   const serversConfig = getServersConfig(
     editorConfig,
     selectedEditor,
     configPathType,
   );
+  // Check for existing Bucket servers
   const existingBucketEntries = Object.keys(serversConfig).filter((key) =>
     /bucket/i.test(key),
   );
@@ -203,10 +184,10 @@ export const mcpAction = async (options: {
 
   const newEntryValue = {
     type: "stdio",
-    command: "npx", // Assuming npx is standard
+    command: "npx",
     args: [
-      "mcp-remote@next", // Use the specified package
-      mcpUrlWithAppId, // Always include appId explicitly
+      "mcp-remote@next", // todo: remove next once stable
+      mcpUrlWithAppId, // Always include appId explicitly as that is more stable
     ],
   };
 
@@ -220,7 +201,7 @@ export const mcpAction = async (options: {
   try {
     // Ensure the directory exists before writing
     await mkdir(dirname(configPath), { recursive: true });
-    const configString = JSON.stringify(editorConfig, null, 2); // Pretty print JSON
+    const configString = stringifyJSON(editorConfig, null, 2);
     await writeFile(configPath, configString);
     spinner.succeed(
       `Configuration updated successfully in ${chalk.cyan(displayConfigPath)}.`,
@@ -231,7 +212,9 @@ export const mcpAction = async (options: {
       ),
     );
   } catch (error) {
-    spinner.fail("Failed to write configuration file.");
+    spinner.fail(
+      `Failed to write configuration file ${chalk.cyan(displayConfigPath)}.`,
+    );
     void handleError(error, "MCP Configuration");
   }
 };
