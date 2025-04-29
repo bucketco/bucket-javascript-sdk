@@ -99,7 +99,7 @@ All-in-one command to get started quickly. This command combines `init`, feature
 and type generation in a single step. Use this for the fastest way to get up and running with Bucket.
 
 ```bash
-npx bucket new "My Feature" [--key my-feature] [--app-id ap123456789] [--key-format custom] [--out gen/features.ts] [--format react]
+npx bucket new "My Feature" [--app-id ap123456789] [--key my-feature]  [--key-format custom] [--out gen/features.ts] [--format react]
 ```
 
 Options:
@@ -138,7 +138,7 @@ Create a new feature in your Bucket app.
 The command guides you through the feature creation process with interactive prompts if options are not provided.
 
 ```bash
-npx bucket features create "My Feature" [--key my-feature] [--app-id ap123456789] [--key-format custom]
+npx bucket features create "My Feature" [--app-id ap123456789] [--key my-feature] [--key-format custom]
 ```
 
 Options:
@@ -205,7 +205,7 @@ Grant or revoke access to specific features for companies, segments, and users.
 If no feature key is provided, you'll be prompted to select one from a list.
 
 ```bash
-npx bucket companies features access [featureKey] [--enable|--disable] [--companies <id...>] [--segments <id...>] [--users <id...>] [--app-id ap123456789]
+npx bucket companies features access [--app-id ap123456789] [featureKey] [--enable|--disable] [--companies <id...>] [--segments <id...>] [--users <id...>]
 ```
 
 Arguments:
@@ -252,7 +252,7 @@ Bucket provides powerful AI-assisted development capabilities through rules and 
 The `rules` command helps you set up AI-specific rules for your project. These rules enable AI tools to better understand how to work with Bucket and feature flags and how they should be used in your codebase.
 
 ```bash
-npx bucket rules [--format cursor|copilot] [--yes]
+npx bucket rules [--format <cursor|copilot>] [--yes]
 ```
 
 Options:
@@ -266,67 +266,36 @@ This command will add rules to your project that provide AI tools with context a
 
 ## Model Context Protocol
 
-The Model Context Protocol (MCP) is an open protocol that provides a standardized way to connect AI models to different data sources and tools. In the context of Bucket, MCP enables your development environment to understand your feature flags, their states, and their relationships within your codebase. This creates a seamless bridge between your feature management workflow and AI-powered development tools. MCP is in a very early stage of development and changes are frequent, if something isn't working please check out the [Model Context Protocol Website](https://modelcontextprotocol.io/) and open an [issue ticket here](https://github.com/bucketco/bucket-javascript-sdk/issues).
+The Model Context Protocol (MCP) is an open protocol that provides a standardized way to connect AI models to different data sources and tools. In the context of Bucket, MCP enables your development environment to understand your feature flags, their states, and their relationships within your codebase. This creates a seamless bridge between your feature management workflow and AI-powered development tools.
+
+_**Note: The Bucket MCP server is now remote hosted and the `mcp` command has been repurposed to help you connect to the new server.**_
 
 ### Setting up MCP
 
-MCP servers currently run locally on your machine. To start the MCP server run the CLI command from your Bucket initialized project directory:
+The `mcp` command helps you configure your editor or AI client to connect with Bucket's remote MCP server. This allows your AI tools to understand your feature flags and provide more contextual assistance.
 
 ```bash
-npx bucket mcp [--port <number|"auto">] [--app-id ap123456789]
+npx bucket mcp [--app-id <id>] [--editor <editor>] [--scope <local|global>]
 ```
 
 Options:
 
-- `--port`: Port to run the SSE server on (defaults to 8050, "auto" for random port).
-- `--app-id`: App ID to use.
+- `--app-id`: App ID to use for the MCP connection.
+- `--editor`: The editor/client to configure:
+  - `cursor`: [Cursor IDE](https://www.cursor.com/)
+  - `vscode`: [Visual Studio Code](https://code.visualstudio.com/)
+  - `claude`: [Claude Desktop](https://claude.ai/download)
+  - `windsurf`: [Windsurf](https://windsurf.com/editor)
+- `--scope`: Whether to configure settings globally or locally for the project.
 
-This will start an SSE server at `http://localhost:8050/sse` by default which you can connect to using your [client of choice](https://modelcontextprotocol.io/clients). Below are examples that work for [Cursor IDE](https://www.cursor.com/) and [Claude Desktop](https://claude.ai/download).
+The command will guide you through:
 
-#### Server-Side Events (SSE)
+1. Selecting which editor/client to configure.
+2. Choosing which Bucket app to connect to.
+3. Deciding between global or project-local configuration.
+4. Setting up the appropriate configuration file for your chosen editor .
 
-```json
-{
-  "mcpServers": {
-    "Bucket": {
-      "url": "http://localhost:8050/sse"
-    }
-  }
-}
-```
-
-#### STDIO Proxy
-
-Some clients don't support SSE and can instead interface with the MCP server over a STDIO proxy.
-
-```json
-{
-  "mcpServers": {
-    "Bucket": {
-      "command": "npx",
-      "args": ["-y", "supergateway", "--sse", "http://localhost:8050/sse"]
-    }
-  }
-}
-```
-
-### Cursor IDE
-
-To enable MCP features in [Cursor IDE](https://www.cursor.com/):
-
-1. Open Cursor IDE.
-2. Go to `Settings > MCP`.
-3. Click `Add new global MCP server` and paste the `SSE` config.
-4. Save and go back to Cursor.
-
-### Claude Desktop
-
-To enable MCP features in [Claude Desktop](https://claude.ai/download):
-
-1. Open Claude Desktop.
-2. Go to `Settings > Developer`.
-3. Click `Edit config` and paste the `STDIO` config.
-4. Save and restart Claude Desktop.
+_**Note: The setup uses [mcp-remote](https://github.com/geelen/mcp-remote) as a compatibility layer allowing the remote hosted Bucket MCP server to work with all editors/clients that support MCP STDIO servers. If your editor/client supports HTTP Streaming with OAuth you can connect to the Bucket MCP server directly.**_
 
 ## Development
 
