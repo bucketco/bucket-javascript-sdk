@@ -9,6 +9,7 @@ export const SupportedEditors = [
 export type SupportedEditor = (typeof SupportedEditors)[number];
 
 type ConfigPaths = {
+  name: string;
   global:
     | {
         mac: string;
@@ -21,10 +22,12 @@ type ConfigPaths = {
 
 export const ConfigPaths: Record<SupportedEditor, ConfigPaths> = {
   cursor: {
+    name: "Cursor",
     global: "~/.cursor/mcp.json",
     local: ".cursor/mcp.json",
   },
   vscode: {
+    name: "Visual Studio Code",
     global: {
       mac: "~/Library/Application Support/Code/User/settings.json",
       linux: "~/.config/Code/User/settings.json",
@@ -33,12 +36,14 @@ export const ConfigPaths: Record<SupportedEditor, ConfigPaths> = {
     local: ".vscode/mcp.json",
   },
   claude: {
+    name: "Claude Desktop",
     global: {
       mac: "~/Library/Application Support/Claude/claude_desktop_config.json",
       windows: "@/Claude/claude_desktop_config.json",
     },
   },
   windsurf: {
+    name: "Windsurf",
     global: "~/.codeium/windsurf/mcp_config.json",
   },
 };
@@ -64,4 +69,23 @@ export function resolveConfigPath(editor: SupportedEditor, local = false) {
     default:
       return undefined;
   }
+}
+
+export function getServersConfig(
+  editorConfig: any,
+  selectedEditor: SupportedEditor,
+  configPathType: "global" | "local",
+) {
+  if (selectedEditor === "vscode") {
+    if (configPathType === "global") {
+      editorConfig.mcp = editorConfig.mcp || {};
+      editorConfig.mcp.servers = editorConfig.mcp.servers || {};
+      return editorConfig.mcp.servers;
+    } else {
+      editorConfig.servers = editorConfig.servers || {};
+      return editorConfig.servers;
+    }
+  }
+  editorConfig.mcpServers = editorConfig.mcpServers || {};
+  return editorConfig.mcpServers;
 }

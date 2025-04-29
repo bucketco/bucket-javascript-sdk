@@ -16,10 +16,16 @@ export async function fileExists(path: string): Promise<boolean> {
 }
 
 // Helper to resolve home directory
-export const resolvePath = (p: string) =>
-  join(
-    ...p
-      .replace("~", os.homedir())
-      .replace("@", process.env.APPDATA ?? "")
-      .split("/"),
+export const resolvePath = (p: string) => {
+  return join(
+    ...p.split("/").map((part) => {
+      if (part === "~") {
+        return os.homedir();
+      } else if (part === "@") {
+        return process.env.APPDATA ?? "";
+      } else {
+        return part;
+      }
+    }),
   );
+};

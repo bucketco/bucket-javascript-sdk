@@ -32,7 +32,7 @@ export const initAction = async (args: InitArgs = {}) => {
 
     // Load apps
     spinner = ora(`Loading apps from ${chalk.cyan(baseUrl)}...`).start();
-    apps = await listApps();
+    apps = listApps();
     spinner.succeed(`Loaded apps from ${chalk.cyan(baseUrl)}.`);
   } catch (error) {
     spinner?.fail("Loading apps failed.");
@@ -42,20 +42,15 @@ export const initAction = async (args: InitArgs = {}) => {
 
   try {
     let appId: string | undefined;
-    const nonDemoApps = apps.filter((app) => !app.demo);
+    const nonDemoApp = apps.find((app) => !app.demo);
 
-    // If there is only one non-demo app, select it automatically
     if (apps.length === 0) {
       throw new Error("You don't have any apps yet. Please create one.");
-    } else if (nonDemoApps.length === 1) {
-      appId = nonDemoApps[0].id;
-      console.log(
-        `Automatically selected app ${chalk.cyan(nonDemoApps[0].name)} (${chalk.cyan(appId)}).`,
-      );
     } else {
       const longestName = Math.max(...apps.map((app) => app.name.length));
       appId = await select({
         message: "Select an app",
+        default: nonDemoApp?.id,
         choices: apps.map((app) => ({
           name: `${app.name.padEnd(longestName, " ")}${app.demo ? " [Demo]" : ""}`,
           value: app.id,

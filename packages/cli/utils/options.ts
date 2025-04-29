@@ -88,6 +88,11 @@ export const editorOption = new Option(
   "Specify the editor to configure for MCP.",
 ).choices(SUPPORTED_EDITORS);
 
+export const configScopeOption = new Option(
+  "-s, --scope [scope]",
+  "Specify whether to use local or global configuration.",
+).choices(["local", "global"]);
+
 export const rulesFormatOption = new Option(
   "-f, --format [format]",
   "Format to copy rules in",
