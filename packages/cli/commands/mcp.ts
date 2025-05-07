@@ -185,10 +185,7 @@ export const mcpAction = async (options: {
   const newEntryValue = {
     type: "stdio",
     command: "npx",
-    args: [
-      "mcp-remote@next", // todo: remove next once stable
-      mcpUrlWithAppId, // Always include appId explicitly as that is more stable
-    ],
+    args: ["mcp-remote@latest", mcpUrlWithAppId],
   };
 
   // Update Config Object
