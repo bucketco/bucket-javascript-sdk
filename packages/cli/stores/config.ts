@@ -1,7 +1,11 @@
 import { Ajv, ValidateFunction } from "ajv";
+import {
+  assign as assignJSON,
+  parse as parseJSON,
+  stringify as stringifyJSON,
+} from "comment-json";
 import equal from "fast-deep-equal";
 import { findUp } from "find-up";
-import JSON5 from "json5";
 import { readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -14,7 +18,7 @@ import {
   SCHEMA_URL,
 } from "../utils/constants.js";
 import { ConfigValidationError, handleError } from "../utils/errors.js";
-import { stripTrailingSlash } from "../utils/path.js";
+import { stripTrailingSlash } from "../utils/urls.js";
 
 export const typeFormats = ["react", "node"] as const;
 export type TypeFormat = (typeof typeFormats)[number];
@@ -71,7 +75,7 @@ class ConfigStore {
         "schema.json",
       );
       const content = await readFile(schemaPath, "utf-8");
-      const parsed = JSON5.parse<Config>(content);
+      const parsed = parseJSON(content) as unknown as Config;
       const ajv = new Ajv();
       this.validateConfig = ajv.compile(parsed);
     } catch {
@@ -95,7 +99,7 @@ class ConfigStore {
       if (!this.configPath) return;
 
       const content = await readFile(this.configPath, "utf-8");
-      const parsed = JSON5.parse<Partial<Config>>(content);
+      const parsed = parseJSON(content) as unknown as Partial<Config>;
 
       // Normalize values
       if (parsed.baseUrl)
@@ -112,7 +116,7 @@ class ConfigStore {
         );
       }
 
-      this.config = { ...this.config, ...parsed };
+      this.config = assignJSON(this.config, parsed);
     } catch {
       // No config file found
     }
@@ -123,9 +127,7 @@ class ConfigStore {
    * @param overwrite If true, overwrites existing config file. Defaults to false
    */
   async saveConfigFile(overwrite = false) {
-    const configWithoutDefaults: Partial<Config> = {
-      ...this.config,
-    };
+    const configWithoutDefaults: Partial<Config> = assignJSON({}, this.config);
 
     // Only include non-default values and $schema
     for (const untypedKey in configWithoutDefaults) {
@@ -138,7 +140,7 @@ class ConfigStore {
       }
     }
 
-    const configJSON = JSON.stringify(configWithoutDefaults, null, 2);
+    const configJSON = stringifyJSON(configWithoutDefaults, null, 2);
 
     if (this.configPath && !overwrite) {
       throw new Error("Config file already exists");

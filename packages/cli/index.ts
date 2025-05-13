@@ -17,7 +17,7 @@ import { configStore } from "./stores/config.js";
 import { commandName } from "./utils/commander.js";
 import { handleError } from "./utils/errors.js";
 import { apiUrlOption, baseUrlOption, debugOption } from "./utils/options.js";
-import { stripTrailingSlash } from "./utils/path.js";
+import { stripTrailingSlash } from "./utils/urls.js";
 
 const skipBootstrapCommands = [/^login/, /^logout/, /^rules/];
 

@@ -6,8 +6,8 @@ import open from "open";
 import { authStore } from "../stores/auth.js";
 import { configStore } from "../stores/config.js";
 
-import { errorUrl, loginUrl, successUrl } from "./path.js";
 import { ParamType } from "./types.js";
+import { errorUrl, loginUrl, successUrl } from "./urls.js";
 
 interface waitForAccessToken {
   accessToken: string;
