@@ -2055,7 +2055,7 @@ describe("BucketClient", () => {
 
       expect(logger.warn).toHaveBeenCalledWith(
         expect.stringMatching(
-          "failed to use feature definitions, there are none cached yet. Using fallback features.",
+          "no feature definitions available, using fallback features",
         ),
       );
 
