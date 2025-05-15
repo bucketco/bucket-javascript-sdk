@@ -965,7 +965,7 @@ export class BucketClient {
     checkContextWithTracking(options);
 
     if (!this.initializationFinished) {
-      this.logger.error("BucketClient is not initialized yet.");
+      this.logger.error("getFeature(s): BucketClient is not initialized yet.");
     }
 
     void this.syncContext(options);
