@@ -675,7 +675,7 @@ export class BucketClient {
       if (!response.ok || !isObject(response.body) || !response.body.success) {
         this.logger.warn(
           `invalid response received from server for "${url}"`,
-          response,
+          JSON.stringify(response),
         );
         return false;
       }
@@ -713,14 +713,15 @@ export class BucketClient {
             !isObject(response.body) ||
             !response.body.success
           ) {
-            this.logger.warn(
-              `invalid response received from server for "${url}"`,
-              response,
+            throw new Error(
+              `invalid response received from server for "${url}": ${JSON.stringify(response.body)}`,
             );
-            return undefined;
           }
           const { success: _, ...result } = response.body;
           return result as TResponse;
+        },
+        () => {
+          this.logger.warn("failed to fetch features, will retry");
         },
         retries,
         1000,
