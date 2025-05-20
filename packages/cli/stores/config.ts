@@ -59,6 +59,7 @@ class ConfigStore {
   protected config: Config = { ...defaultConfig };
   protected configPath: string | undefined;
   protected projectPath: string | undefined;
+  protected clientVersion: string | undefined;
   protected validateConfig: ValidateFunction | undefined;
 
   async initialize() {
@@ -100,6 +101,20 @@ class ConfigStore {
 
       const content = await readFile(this.configPath, "utf-8");
       const parsed = parseJSON(content) as unknown as Partial<Config>;
+
+      if (packageJSONPath) {
+        try {
+          const packageJSONContent = await readFile(packageJSONPath, "utf-8");
+          const packageJSONParsed = parseJSON(
+            packageJSONContent,
+          ) as unknown as {
+            version: string;
+          };
+          this.clientVersion = packageJSONParsed.version;
+        } catch {
+          // Should not be the case, but no package.json found
+        }
+      }
 
       // Normalize values
       if (parsed.baseUrl)
@@ -165,6 +180,10 @@ class ConfigStore {
 
   getConfigPath() {
     return this.configPath;
+  }
+
+  getClientVersion() {
+    return this.clientVersion;
   }
 
   getProjectPath() {

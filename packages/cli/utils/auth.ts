@@ -153,6 +153,8 @@ export async function authRequest<T = Record<string, unknown>>(
     headers: {
       ...options?.headers,
       Authorization: `Bearer ${token}`,
+      "X-Client": "cli",
+      "X-Client-Version": configStore.getClientVersion() ?? "unknown",
     },
   });
 
