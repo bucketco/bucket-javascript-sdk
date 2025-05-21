@@ -44,6 +44,11 @@ const defaultConfig: Config = {
   typesOutput: [{ path: DEFAULT_TYPES_OUTPUT, format: "react" }],
 };
 
+const moduleRoot = fileURLToPath(import.meta.url).substring(
+  0,
+  fileURLToPath(import.meta.url).lastIndexOf("cli") + 3,
+);
+
 // Helper to normalize typesOutput to array format
 export function normalizeTypesOutput(
   output?: string | TypesOutput[],
@@ -70,11 +75,7 @@ class ConfigStore {
   protected async createValidator() {
     try {
       // Using current config store file, resolve the schema.json path
-      const filePath = fileURLToPath(import.meta.url);
-      const schemaPath = join(
-        filePath.substring(0, filePath.lastIndexOf("cli") + 3),
-        "schema.json",
-      );
+      const schemaPath = join(moduleRoot, "schema.json");
       const content = await readFile(schemaPath, "utf-8");
       const parsed = parseJSON(content) as unknown as Config;
       const ajv = new Ajv();
@@ -90,31 +91,31 @@ class ConfigStore {
       return;
     }
 
+    // Load the client version from the module's package.json metadata
     try {
-      const packageJSONPath = await findUp("package.json");
+      const moduleMetadata = await readFile(
+        join(moduleRoot, "package.json"),
+        "utf-8",
+      );
+      const moduleMetadataParsed = parseJSON(moduleMetadata) as unknown as {
+        version: string;
+      };
+      this.clientVersion = moduleMetadataParsed.version;
+    } catch {
+      // Should not be the case, but ignore if no package.json is found
+    }
+
+    try {
+      const projectMetadataPath = await findUp("package.json");
       this.configPath = await findUp(CONFIG_FILE_NAME);
       this.projectPath = dirname(
-        this.configPath ?? packageJSONPath ?? process.cwd(),
+        this.configPath ?? projectMetadataPath ?? process.cwd(),
       );
 
       if (!this.configPath) return;
 
       const content = await readFile(this.configPath, "utf-8");
       const parsed = parseJSON(content) as unknown as Partial<Config>;
-
-      if (packageJSONPath) {
-        try {
-          const packageJSONContent = await readFile(packageJSONPath, "utf-8");
-          const packageJSONParsed = parseJSON(
-            packageJSONContent,
-          ) as unknown as {
-            version: string;
-          };
-          this.clientVersion = packageJSONParsed.version;
-        } catch {
-          // Should not be the case, but no package.json found
-        }
-      }
 
       // Normalize values
       if (parsed.baseUrl)
