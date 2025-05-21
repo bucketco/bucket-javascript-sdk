@@ -6,6 +6,10 @@ import open from "open";
 import { authStore } from "../stores/auth.js";
 import { configStore } from "../stores/config.js";
 
+import {
+  CLIENT_VERSION_HEADER_NAME,
+  CLIENT_VERSION_HEADER_VALUE,
+} from "./constants.js";
 import { ParamType } from "./types.js";
 import { errorUrl, loginUrl, successUrl } from "./urls.js";
 
@@ -153,8 +157,9 @@ export async function authRequest<T = Record<string, unknown>>(
     headers: {
       ...options?.headers,
       Authorization: `Bearer ${token}`,
-      "X-Client": "cli",
-      "X-Client-Version": configStore.getClientVersion() ?? "unknown",
+      [CLIENT_VERSION_HEADER_NAME]: CLIENT_VERSION_HEADER_VALUE(
+        configStore.getClientVersion() ?? "unknown",
+      ),
     },
   });
 
