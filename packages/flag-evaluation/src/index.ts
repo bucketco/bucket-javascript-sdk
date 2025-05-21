@@ -488,7 +488,7 @@ export function newEvaluator<T extends RuleValue>(rules: Rule<T>[]) {
       };
     }
 
-    return rule;
+    return { ...rule };
   }
 
   const translatedRules = rules.map((rule) => {
