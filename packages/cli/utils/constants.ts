@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 export const CLIENT_VERSION_HEADER_NAME = "bucket-sdk-version";
 export const CLIENT_VERSION_HEADER_VALUE = (version: string) =>
-  `node-sdk/${version}`;
+  `cli/${version}`;
 
 export const CONFIG_FILE_NAME = "bucket.config.json";
 export const AUTH_FILE = join(os.homedir(), ".bucket-auth");
