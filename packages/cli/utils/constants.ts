@@ -1,6 +1,10 @@
 import os from "node:os";
 import { join } from "node:path";
 
+export const CLIENT_VERSION_HEADER_NAME = "bucket-sdk-version";
+export const CLIENT_VERSION_HEADER_VALUE = (version: string) =>
+  `cli/${version}`;
+
 export const CONFIG_FILE_NAME = "bucket.config.json";
 export const AUTH_FILE = join(os.homedir(), ".bucket-auth");
 export const SCHEMA_URL = `https://unpkg.com/@bucketco/cli@latest/schema.json`;
