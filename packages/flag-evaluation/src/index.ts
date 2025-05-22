@@ -484,7 +484,7 @@ export function newEvaluator<T extends RuleValue>(rules: Rule<T>[]) {
     ) {
       return {
         ...rule,
-        valueSet: new Set(rule.values),
+        valueSet: new Set(rule.values ?? []),
       };
     }
 
