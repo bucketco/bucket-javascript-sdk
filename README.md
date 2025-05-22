@@ -1,6 +1,6 @@
 # Bucket
 
-Bucket is B2B feature flagging with a built-in feedback loop that lets you roll out features based on customer satisfaction.
+Ship quality faster: Feature flags, feature feedback and feature adoption in a single SDK. 
 
 [Learn more and get started](https://bucket.co/)
 
