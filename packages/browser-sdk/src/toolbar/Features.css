@@ -97,8 +97,7 @@
 }
 
 .reset {
-  color: var(--brand300);
-
+  color: var(--gray500);
   text-decoration: none;
 
   &:hover,
