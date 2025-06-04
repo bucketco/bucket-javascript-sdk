@@ -116,6 +116,7 @@ export interface ContextFilter {
   field: string;
   operator: ContextFilterOperator;
   values?: string[];
+  valueSet?: Set<string>;
 }
 
 /**
@@ -286,6 +287,7 @@ export function evaluate(
   fieldValue: string,
   operator: ContextFilterOperator,
   values: string[],
+  valueSet?: Set<string>,
 ): boolean {
   const value = values[0];
 
@@ -331,9 +333,11 @@ export function evaluate(
     case "IS_NOT":
       return fieldValue !== value;
     case "ANY_OF":
-      return values.includes(fieldValue);
+      return valueSet ? valueSet.has(fieldValue) : values.includes(fieldValue);
     case "NOT_ANY_OF":
-      return !values.includes(fieldValue);
+      return valueSet
+        ? !valueSet.has(fieldValue)
+        : !values.includes(fieldValue);
     case "IS_TRUE":
       return fieldValue == "true";
     case "IS_FALSE":
@@ -362,6 +366,7 @@ function evaluateRecursively(
         context[filter.field],
         filter.operator,
         filter.values || [],
+        filter.valueSet,
       );
     case "rolloutPercentage": {
       if (!(filter.partialRolloutAttribute in context)) {
@@ -461,5 +466,49 @@ export function evaluateFeatureRules<T extends RuleValue>({
         ? `rule #${firstMatchedRuleIndex} matched`
         : "no matched rules",
     missingContextFields,
+  };
+}
+
+export function newEvaluator<T extends RuleValue>(rules: Rule<T>[]) {
+  function translateRule(rule: RuleFilter): RuleFilter {
+    if (rule.type === "group") {
+      return {
+        ...rule,
+        filters: rule.filters.map(translateRule),
+      };
+    }
+
+    if (
+      rule.type === "context" &&
+      (rule.operator === "ANY_OF" || rule.operator === "NOT_ANY_OF")
+    ) {
+      return {
+        ...rule,
+        valueSet: new Set(rule.values ?? []),
+      };
+    }
+
+    return { ...rule };
+  }
+
+  const translatedRules = rules.map((rule) => {
+    const { filter } = rule;
+    const translatedFilter = translateRule(filter);
+
+    return {
+      ...rule,
+      filter: translatedFilter,
+    };
+  });
+
+  return function evaluateOptimized(
+    context: Record<string, unknown>,
+    featureKey: string,
+  ) {
+    return evaluateFeatureRules({
+      context,
+      featureKey,
+      rules: translatedRules,
+    });
   };
 }
