@@ -252,10 +252,10 @@ function CustomToolbar() {
               </button>
             )}
             <input
-              checked={feature.isEnabledOverride ?? false}
+              checked={feature.isEnabledOverride ?? feature.isEnabled}
               type="checkbox"
               onChange={(e) => {
-                console.log("onChange", e.target.checked);
+                // this uses slightly simplified logic compared to the Bucket Toolbar
                 client
                   .getFeature(featureKey)
                   .setIsEnabledOverride(e.target.checked ?? false);
@@ -277,6 +277,12 @@ export function App() {
       otherContext={initialOtherContext}
       apiBaseUrl={apiBaseUrl}
     >
+      {!publishableKey && (
+        <div>
+          No publishable key set. Please set the VITE_PUBLISHABLE_KEY
+          environment variable.
+        </div>
+      )}
       <Demos />
     </BucketProvider>
   );

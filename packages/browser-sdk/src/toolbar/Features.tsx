@@ -101,10 +101,7 @@ function FeatureRow({
       </td>
       <td class="feature-switch-cell">
         <Switch
-          checked={
-            (feature.localOverride === null && feature.isEnabled) ||
-            feature.localOverride === true
-          }
+          checked={feature.localOverride ?? feature.isEnabled}
           tabIndex={index + 1}
           onChange={(e) => {
             const isChecked = e.currentTarget.checked;
