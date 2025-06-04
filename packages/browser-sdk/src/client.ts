@@ -319,6 +319,7 @@ export type FeatureRemoteConfig =
 export interface Feature {
   /**
    * Result of feature flag evaluation.
+   * Note: Does not take local overrides into account.
    */
   isEnabled: boolean;
 
@@ -338,6 +339,17 @@ export interface Feature {
   requestFeedback: (
     options: Omit<RequestFeedbackData, "featureKey" | "featureId">,
   ) => void;
+
+  /**
+   * The current override status of isEnabled for the feature.
+   */
+  isEnabledOverride: boolean | null;
+
+  /**
+   * Set the override status for isEnabled for the feature.
+   * Set to `null` to remove the override.
+   */
+  setIsEnabledOverride(isEnabled: boolean | null): void;
 }
 
 function shouldShowToolbar(opts: InitOptions) {
@@ -778,21 +790,11 @@ export class BucketClient {
           ...options,
         });
       },
+      isEnabledOverride: this.featuresClient.getFeatureOverride(key),
+      setIsEnabledOverride(isEnabled: boolean | null) {
+        self.featuresClient.setFeatureOverride(key, isEnabled);
+      },
     };
-  }
-
-  /**
-   * @internal
-   */
-  setFeatureOverride(key: string, isEnabled: boolean | null) {
-    this.featuresClient.setFeatureOverride(key, isEnabled);
-  }
-
-  /**
-   * @internal
-   */
-  getFeatureOverride(key: string): boolean | null {
-    return this.featuresClient.getFeatureOverride(key);
   }
 
   private sendCheckEvent(checkEvent: CheckEvent) {

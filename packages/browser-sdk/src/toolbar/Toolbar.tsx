@@ -48,7 +48,7 @@ export default function Toolbar({
           (feature) =>
             ({
               key: feature.key,
-              localOverride: bucketClient.getFeatureOverride(feature?.key),
+              localOverride: feature.isEnabledOverride,
               isEnabled: feature.isEnabled,
             }) satisfies FeatureItem,
         ),
@@ -108,9 +108,9 @@ export default function Toolbar({
             features={sortedFeatures}
             isOpen={isOpen}
             searchQuery={search}
-            setEnabledOverride={bucketClient.setFeatureOverride.bind(
-              bucketClient,
-            )}
+            setIsEnabledOverride={(key, isEnabled) =>
+              bucketClient.getFeature(key).setIsEnabledOverride(isEnabled)
+            }
           />
         </DialogContent>
       </Dialog>
