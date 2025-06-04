@@ -43,7 +43,9 @@ export function FeaturesTable({
                 .includes(searchQuery.toLocaleLowerCase())
             }
             isOpen={isOpen}
-            setEnabledOverride={() => setIsEnabledOverride(feature.key, null)}
+            setEnabledOverride={(override) =>
+              setIsEnabledOverride(feature.key, override)
+            }
           />
         ))}
       </tbody>
