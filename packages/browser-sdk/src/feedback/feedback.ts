@@ -448,6 +448,11 @@ export class AutoFeedback {
           position: this.position,
           translations: this.feedbackTranslations,
           ...options,
+          openWithCommentVisible:
+            options.requireSatisfactionScore === false
+              ? true
+              : options.openWithCommentVisible,
+          requireSatisfactionScore: options.requireSatisfactionScore,
         });
       },
     };

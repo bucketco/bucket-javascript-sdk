@@ -31,11 +31,16 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
   position,
   translations = DEFAULT_TRANSLATIONS,
   openWithCommentVisible = false,
+  requireSatisfactionScore = true,
   onClose,
   onDismiss,
   onSubmit,
   onScoreSubmit,
 }) => {
+  // If requireSatisfactionScore is false, always show comment field
+  const effectiveOpenWithCommentVisible =
+    requireSatisfactionScore === false ? true : openWithCommentVisible;
+
   const [feedbackId, setFeedbackId] = useState<string | undefined>(undefined);
   const [scoreState, setScoreState] = useState<
     "idle" | "submitting" | "submitted"
@@ -89,8 +94,9 @@ export const FeedbackDialog: FunctionComponent<FeedbackDialogProps> = ({
         <>
           <FeedbackForm
             key={key}
-            openWithCommentVisible={openWithCommentVisible}
+            openWithCommentVisible={effectiveOpenWithCommentVisible}
             question={title}
+            requireSatisfactionScore={requireSatisfactionScore}
             scoreState={scoreState}
             t={{ ...DEFAULT_TRANSLATIONS, ...translations }}
             onInteraction={autoClose.stop}

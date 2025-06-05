@@ -39,8 +39,16 @@ function attachDialogContainer() {
 let openInstances = 0;
 
 export function openFeedbackForm(options: OpenFeedbackFormOptions): void {
+  // If requireSatisfactionScore is false, force openWithCommentVisible true
+  const effectiveOptions = {
+    ...options,
+    openWithCommentVisible:
+      options.requireSatisfactionScore === false
+        ? true
+        : options.openWithCommentVisible,
+  };
   const shadowRoot = attachDialogContainer();
-  const position = options.position || DEFAULT_POSITION;
+  const position = effectiveOptions.position || DEFAULT_POSITION;
 
   if (position.type === "POPOVER") {
     if (!position.anchor) {
@@ -63,7 +71,11 @@ export function openFeedbackForm(options: OpenFeedbackFormOptions): void {
   openInstances++;
 
   render(
-    h(FeedbackDialog, { ...options, position, key: openInstances.toString() }),
+    h(FeedbackDialog, {
+      ...effectiveOptions,
+      position,
+      key: openInstances.toString(),
+    }),
     shadowRoot,
   );
 }

@@ -35,6 +35,13 @@ export interface OpenFeedbackFormOptions {
   translations?: Partial<FeedbackTranslations>;
 
   /**
+   * If true, the comment field is shown immediately and a score is not required.
+   * If false, the comment field is shown immediately and the comment is required instead of the score.
+   * Defaults to true (score required).
+   */
+  requireSatisfactionScore?: boolean;
+
+  /**
    * Open the form with both the score and comment fields visible.
    * Defaults to `false`
    */

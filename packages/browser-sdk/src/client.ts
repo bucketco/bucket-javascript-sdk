@@ -678,6 +678,7 @@ export class BucketClient {
         translations:
           options.translations || this.requestFeedbackOptions.translations,
         openWithCommentVisible: options.openWithCommentVisible,
+        requireSatisfactionScore: options.requireSatisfactionScore,
         onClose: options.onClose,
         onDismiss: options.onDismiss,
         onScoreSubmit: async (data) => {

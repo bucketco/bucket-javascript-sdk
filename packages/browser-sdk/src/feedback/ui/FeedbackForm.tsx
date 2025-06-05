@@ -17,6 +17,7 @@ const ANIMATION_SPEED = 400;
 
 function getFeedbackDataFromForm(el: HTMLFormElement) {
   const formData = new FormData(el);
+  console.log("comment", (formData.get("comment")?.toString() || "").trim());
   return {
     score: Number(formData.get("score")?.toString()),
     comment: (formData.get("comment")?.toString() || "").trim(),
@@ -28,6 +29,7 @@ type FeedbackFormProps = {
   question: string;
   scoreState: "idle" | "submitting" | "submitted";
   openWithCommentVisible: boolean;
+  requireSatisfactionScore?: boolean;
   onInteraction: () => void;
   onSubmit: (
     data: Omit<FeedbackSubmission, "feebackId">,
@@ -41,6 +43,7 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
   question,
   scoreState,
   openWithCommentVisible,
+  requireSatisfactionScore = true,
   onInteraction,
   onSubmit,
   onScoreSubmit,
@@ -61,7 +64,15 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
       ...getFeedbackDataFromForm(e.target as HTMLFormElement),
       question,
     };
-    if (!data.score) return;
+    // Validation logic
+    if (requireSatisfactionScore) {
+      if (!data.score) return;
+    } else {
+      if (!data.comment) {
+        setError("Comment is required");
+        return;
+      }
+    }
     setError("");
     try {
       setStatus("submitting");
@@ -84,6 +95,8 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
   const headerRef = useRef<HTMLDivElement>(null);
   const expandedContentRef = useRef<HTMLDivElement>(null);
   const submittedRef = useRef<HTMLDivElement>(null);
+
+  console.log("formRef", formRef.current);
 
   const transitionToDefault = useCallback(() => {
     if (containerRef.current === null) return;
@@ -170,30 +183,9 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
           onFocusCapture={onInteraction}
           onSubmit={handleSubmit}
         >
-          <div
-            ref={headerRef}
-            aria-labelledby="bucket-feedback-score-label"
-            class="form-control"
-            role="group"
-          >
-            <div class="title" id="bucket-feedback-score-label">
-              {question}
-            </div>
-            <StarRating
-              name="score"
-              t={t}
-              onChange={async (e) => {
-                setHasRating(true);
-                await onScoreSubmit({
-                  question,
-                  score: Number(e.currentTarget.value),
-                });
-              }}
-            />
-
-            <ScoreStatus scoreState={scoreState} t={t} />
+          <div class="title" id="bucket-feedback-score-label">
+            {question}
           </div>
-
           <div ref={expandedContentRef} class="form-expanded-content">
             <div class="form-control">
               <textarea
@@ -204,14 +196,41 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
                 rows={4}
               />
             </div>
+            <div
+              ref={headerRef}
+              aria-labelledby="bucket-feedback-score-label"
+              class="form-control"
+              role="group"
+            >
+              <StarRating
+                name="score"
+                t={t}
+                onChange={async (e) => {
+                  setHasRating(true);
+                  await onScoreSubmit({
+                    question,
+                    score: Number(e.currentTarget.value),
+                  });
+                }}
+              />
+
+              {/* <ScoreStatus scoreState={scoreState} t={t} /> */}
+            </div>
 
             {error && <p class="error">{error}</p>}
 
             <Button
               disabled={
-                !hasRating ||
-                status === "submitting" ||
-                scoreState === "submitting"
+                (requireSatisfactionScore
+                  ? !hasRating
+                  : status === "submitting" ||
+                    scoreState === "submitting" ||
+                    false) ||
+                (requireSatisfactionScore === false &&
+                  status === "submitting") ||
+                (requireSatisfactionScore === false &&
+                  formRef.current !== null &&
+                  !getFeedbackDataFromForm(formRef.current).comment)
               }
               type="submit"
             >
