@@ -460,7 +460,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@bucketco/browser-sdk@npm:3.1.3, @bucketco/browser-sdk@workspace:packages/browser-sdk":
+"@bucketco/browser-sdk@npm:3.1.3":
+  version: 3.1.3
+  resolution: "@bucketco/browser-sdk@npm:3.1.3"
+  dependencies:
+    "@floating-ui/dom": "npm:^1.6.8"
+    canonical-json: "npm:^0.0.4"
+    js-cookie: "npm:^3.0.5"
+    preact: "npm:^10.22.1"
+  checksum: 10c0/85a081338a5514a5e641da2b20d4d3d5f337540e198e934d5040df967b24810faa5cb14bebe894d9fed29927e3b41d40ecc8862795e078425840a300d43150b1
+  languageName: node
+  linkType: hard
+
+"@bucketco/browser-sdk@npm:3.2.0, @bucketco/browser-sdk@workspace:packages/browser-sdk":
   version: 0.0.0-use.local
   resolution: "@bucketco/browser-sdk@workspace:packages/browser-sdk"
   dependencies:
@@ -649,7 +661,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@bucketco/react-sdk@workspace:packages/react-sdk"
   dependencies:
-    "@bucketco/browser-sdk": "npm:3.1.3"
+    "@bucketco/browser-sdk": "npm:3.2.0"
     "@bucketco/eslint-config": "workspace:^"
     "@bucketco/tsconfig": "workspace:^"
     "@testing-library/react": "npm:^15.0.7"
