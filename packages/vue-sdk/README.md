@@ -80,14 +80,12 @@ A number of special attributes exist:
 - `email` -- the email of the user,
 - `avatar` -- the URL for `user`/`company` avatar image.
 
-```tsx
- <BucketProvider
-    :publishableKey="publishableKey"
-    :user="{ id: 'user_123', name: 'John Doe', email: 'john@acme.com' }"
-    :company="{ id: 'acme_inc', plan: 'pro' }"
-  >
-    <!-- your app -->
-  <BucketProvider>
+```vue
+<BucketProvider
+  :publishableKey="publishableKey"
+  :user="{ id: 'user_123', name: 'John Doe', email: 'john@acme.com' }"
+  :company="{ id: 'acme_inc', plan: 'pro' }"
+></BucketProvider>
 ```
 
 To retrieve features along with their targeting information, use `useFeature(key: string)` hook (described in a section below).
@@ -164,7 +162,7 @@ The `<BucketProvider>` initializes the Bucket SDK, fetches features and starts l
 
 BucketProvider lets you define a template to be shown while BucketProvider is inititalizing:
 
-```tsx
+```vue
 <template>
   <BucketProvider
     :publishableKey="publishableKey"
