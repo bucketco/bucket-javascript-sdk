@@ -3,10 +3,14 @@
 Feature flags for SaaS that run on TypeScript. [Learn more and get started](https://bucket.co/)
 
 ## React SDK
-
 Client side React SDK
 
 [Read the docs](packages/react-sdk/README.md)
+
+## Vue SDK
+Client side Vue SDK
+
+[Read the docs](packages/vue-sdk/README.md)
 
 ## Browser SDK
 
