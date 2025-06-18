@@ -3,14 +3,14 @@
     <MissingKeyMessage />
   </div>
   <BucketProvider v-else :publishableKey="publishableKey" :user="user">
-    <template #loading>Loadinaaaaaaaaaaaaag....</template>
+    <template #loading>......loading......</template>
     <StartHuddleButton />
   </BucketProvider>
 </template>
 
 <script setup lang="ts">
-import { h } from "vue";
 import { BucketProvider } from "../../src";
+
 import MissingKeyMessage from "./components/MissingKeyMessage.vue";
 import StartHuddleButton from "./components/StartHuddleButton.vue";
 
