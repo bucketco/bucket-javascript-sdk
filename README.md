@@ -8,7 +8,7 @@ Client side React SDK
 
 [Read the docs](packages/react-sdk/README.md)
 
-## Vue SDK
+## Vue SDK (beta)
 
 Client side Vue SDK
 

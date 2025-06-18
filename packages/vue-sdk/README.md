@@ -1,4 +1,4 @@
-# Bucket Vue SDK
+# Bucket Vue SDK (beta)
 
 Vue client side library for [Bucket.co](https://bucket.co)
 
