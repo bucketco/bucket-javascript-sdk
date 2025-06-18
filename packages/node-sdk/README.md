@@ -10,33 +10,43 @@ Install using your favourite package manager:
 
 {% tabs %}
 {% tab title="npm" %}
+
 ```sh
 npm i @bucketco/node-sdk
 ```
+
 {% endtab %}
 
 {% tab title="yarn" %}
+
 ```sh
 yarn add @bucketco/node-sdk
 ```
+
 {% endtab %}
 
 {% tab title="bun" %}
+
 ```sh
 bun add @bucketco/node-sdk
 ```
+
 {% endtab %}
 
 {% tab title="pnpm" %}
+
 ```sh
 pnpm add @bucketco/node-sdk
 ```
+
 {% endtab %}
 
 {% tab title="deno" %}
+
 ```sh
 deno add npm:@bucketco/node-sdk
 ```
+
 {% endtab %}
 {% endtabs %}
 
