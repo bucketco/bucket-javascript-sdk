@@ -174,7 +174,7 @@ by down-stream clients, like the React SDK.
 Note that accessing `isEnabled` on the object returned by `getFeatures` does not automatically
 generate a `check` event, contrary to the `isEnabled` property on the object returned by `getFeature`.
 
-## Remote config (beta)
+## Remote config
 
 Remote config is a dynamic and flexible approach to configuring feature behavior outside of your app – without needing to re-deploy it.
 
@@ -201,16 +201,6 @@ const features = bucketClient.getFeatures();
 Just as `isEnabled`, accessing `config` on the object returned by `getFeatures` does not automatically
 generate a `check` event, contrary to the `config` property on the object returned by `getFeature`.
 
-## Tracking feature usage
-
-The `track` function lets you send events to Bucket to denote feature usage.
-By default Bucket expects event names to align with the feature keys, but
-you can customize it as you wish.
-
-```ts
-bucketClient.track("huddle", { voiceHuddle: true });
-```
-
 ## Updating user/company/other context
 
 Attributes given for the user/company/other context in the BucketClient constructor can be updated for use in feature targeting evaluation with the `updateUser()`, `updateCompany()` and `updateOtherContext()` methods.
@@ -227,48 +217,6 @@ await bucketClient.updateUser({ voiceHuddleOptIn: (!isEnabled).toString() });
 ```
 
 > [!NOTE] > `user`/`company` attributes are also stored remotely on the Bucket servers and will automatically be used to evaluate feature targeting if the page is refreshed.
-
-## Qualitative feedback
-
-Bucket can collect qualitative feedback from your users in the form of a [Customer Satisfaction Score](https://en.wikipedia.org/wiki/Customer_satisfaction) and a comment.
-
-### Automated feedback collection
-
-The Bucket Browser SDK comes with automated feedback collection mode enabled by default, which lets the Bucket service ask your users for feedback for relevant features just after they've used them.
-
-> [!NOTE]
-> To get started with automatic feedback collection, make sure you've set `user` in the `BucketClient` constructor.
-
-Automated feedback surveys work even if you're not using the SDK to send events to Bucket.
-It works because the Bucket Browser SDK maintains a live connection to Bucket's servers and can automatically show a feedback prompt whenever the Bucket servers determines that an event should trigger a prompt - regardless of how this event is sent to Bucket.
-
-You can find all the options to make changes to the default behavior in the [Bucket feedback documentation](./FEEDBACK.md).
-
-### Bucket feedback UI
-
-Bucket can assist you with collecting your user's feedback by offering a pre-built UI, allowing you to get started with minimal code and effort.
-
-![image](https://github.com/bucketco/bucket-javascript-sdk/assets/34348/c387bac1-f2e2-4efd-9dda-5030d76f9532)
-
-[Read the Bucket feedback UI documentation](./FEEDBACK.md)
-
-### Bucket feedback SDK
-
-Feedback can be submitted to Bucket using the SDK:
-
-```ts
-bucketClient.feedback({
-  featureId: "my_feature_id", // String (required), copy from Feature feedback tab
-  score: 5, // Number: 1-5 (optional)
-  comment: "Absolutely stellar work!", // String (optional)
-});
-```
-
-### Bucket feedback API
-
-If you are not using the Bucket Browser SDK, you can still submit feedback using the HTTP API.
-
-See details in [Feedback HTTP API](https://docs.bucket.co/reference/http-tracking-api#feedback)
 
 ## Toolbar
 
@@ -305,6 +253,56 @@ const client = new BucketClient({
 ```
 
 See [the reference](https://docs.bucket.co/supported-languages/browser-sdk/globals#toolbaroptions) for details.
+
+## Qualitative feedback on beta features
+
+Bucket can collect qualitative feedback from your users in the form of a [Customer Satisfaction Score](https://en.wikipedia.org/wiki/Customer_satisfaction) and a comment.
+
+### Automated feedback collection
+
+The Bucket Browser SDK comes with automated feedback collection mode enabled by default, which lets the Bucket service ask your users for feedback for relevant features just after they've used them.
+
+> [!NOTE]
+> To get started with automatic feedback collection, make sure you've set `user` in the `BucketClient` constructor.
+
+Automated feedback surveys work even if you're not using the SDK to send events to Bucket.
+It works because the Bucket Browser SDK maintains a live connection to Bucket's servers and can automatically show a feedback prompt whenever the Bucket servers determines that an event should trigger a prompt - regardless of how this event is sent to Bucket.
+
+You can find all the options to make changes to the default behavior in the [Bucket feedback documentation](./FEEDBACK.md).
+
+### Bucket feedback UI
+
+Bucket can assist you with collecting your user's feedback by offering a pre-built UI, allowing you to get started with minimal code and effort.
+
+[Read the Bucket feedback UI documentation](./FEEDBACK.md)
+
+### Bucket feedback SDK
+
+Feedback can be submitted to Bucket using the SDK:
+
+```ts
+bucketClient.feedback({
+  featureId: "my_feature_id", // String (required), copy from Feature feedback tab
+  score: 5, // Number: 1-5 (optional)
+  comment: "Absolutely stellar work!", // String (optional)
+});
+```
+
+### Bucket feedback API
+
+If you are not using the Bucket Browser SDK, you can still submit feedback using the HTTP API.
+
+See details in [Feedback HTTP API](https://docs.bucket.co/reference/http-tracking-api#feedback)
+
+## Tracking feature usage
+
+The `track` function lets you send events to Bucket to denote feature usage.
+By default Bucket expects event names to align with the feature keys, but
+you can customize it as you wish.
+
+```ts
+bucketClient.track("huddle", { voiceHuddle: true });
+```
 
 ## Event listeners
 
