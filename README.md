@@ -1,8 +1,6 @@
 # Bucket
 
-Ship quality faster: Feature flags, feature feedback and feature adoption in a single SDK. 
-
-[Learn more and get started](https://bucket.co/)
+Feature flags for SaaS that run on TypeScript. [Learn more and get started](https://bucket.co/)
 
 ## React SDK
 
