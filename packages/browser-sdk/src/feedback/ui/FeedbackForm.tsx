@@ -90,8 +90,7 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
     if (headerRef.current === null) return;
     if (expandedContentRef.current === null) return;
 
-    containerRef.current.style.maxHeight =
-      headerRef.current.clientHeight + "px";
+    containerRef.current.style.maxHeight = `${headerRef.current.clientHeight}px`;
 
     expandedContentRef.current.style.position = "absolute";
     expandedContentRef.current.style.opacity = "0";
@@ -103,11 +102,11 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
     if (headerRef.current === null) return;
     if (expandedContentRef.current === null) return;
 
-    containerRef.current.style.maxHeight =
+    containerRef.current.style.maxHeight = `${
       headerRef.current.clientHeight + // Header height
       expandedContentRef.current.clientHeight + // Comment + Button Height
-      10 + // Gap height
-      "px";
+      10 // Gap height
+    }px`;
 
     expandedContentRef.current.style.position = "relative";
     expandedContentRef.current.style.opacity = "1";
@@ -121,8 +120,7 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
 
     formRef.current.style.opacity = "0";
     formRef.current.style.pointerEvents = "none";
-    containerRef.current.style.maxHeight =
-      submittedRef.current.clientHeight + "px";
+    containerRef.current.style.maxHeight = `${submittedRef.current.clientHeight}px`;
 
     // Fade in "submitted" step once container has resized
     setTimeout(() => {
