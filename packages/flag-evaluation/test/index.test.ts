@@ -381,10 +381,14 @@ describe("operator evaluation", () => {
     ["value", "GT", "value", false],
     ["value", "GT", "0", false],
     ["1", "GT", "0", true],
+    ["2", "GT", "10", false],
+    ["10", "GT", "2", true],
 
     ["value", "LT", "value", false],
     ["value", "LT", "0", false],
     ["0", "LT", "1", true],
+    ["2", "LT", "10", true],
+    ["10", "LT", "2", false],
 
     ["start VALUE end", "CONTAINS", "value", true],
     ["alue", "CONTAINS", "value", false],

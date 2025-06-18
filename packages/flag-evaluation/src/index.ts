@@ -304,7 +304,7 @@ export function evaluate(
         );
         return false;
       }
-      return fieldValue > value;
+      return Number(fieldValue) > Number(value);
     case "LT":
       if (isNaN(Number(fieldValue)) || isNaN(Number(value))) {
         console.error(
@@ -312,7 +312,7 @@ export function evaluate(
         );
         return false;
       }
-      return fieldValue < value;
+      return Number(fieldValue) < Number(value);
     case "AFTER":
     case "BEFORE": {
       // more/less than `value` days ago
