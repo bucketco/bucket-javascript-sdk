@@ -10,7 +10,7 @@ const huddle = useFeature("huddle");
     <span v-else-if="!huddle.isEnabled">Not enabled</span>
     <span v-else>
       <button @click="huddle.track()">
-        {{ huddle.config.value?.payload?.buttonTitle ?? "Start Huddle" }}
+        {{ huddle.config.payload?.buttonTitle ?? "Start Huddle" }}
       </button>
       <button
         @click="huddle.requestFeedback({ title: 'Do you like huddles?' })"

@@ -2,7 +2,12 @@
   <div v-if="!publishableKey">
     <MissingKeyMessage />
   </div>
-  <BucketProvider v-else :publishableKey="publishableKey" :user="user">
+  <BucketProvider
+    v-else
+    :publishableKey="publishableKey"
+    :user="user"
+    :company="{ id: 'acme_inc', plan: 'pro' }"
+  >
     <template #loading>......loading......</template>
     <StartHuddleButton />
   </BucketProvider>
