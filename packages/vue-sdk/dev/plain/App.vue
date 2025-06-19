@@ -11,7 +11,6 @@ import StartHuddleButton from "./components/StartHuddleButton.vue";
 import Track from "./components/Track.vue";
 
 const user = ref({ id: "123", name: "John Doe" });
-const toolbar = ref(true);
 const publishableKey = import.meta.env.VITE_PUBLISHABLE_KEY || "";
 </script>
 
@@ -24,7 +23,7 @@ const publishableKey = import.meta.env.VITE_PUBLISHABLE_KEY || "";
     :publishableKey="publishableKey"
     :user="user"
     :company="{ id: 'acme_inc', plan: 'pro' }"
-    :toolbar="true"
+    :timeoutMs="1000"
   >
     <template #loading>......loading......</template>
     <StartHuddleButton />
