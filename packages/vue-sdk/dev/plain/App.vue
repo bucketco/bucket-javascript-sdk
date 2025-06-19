@@ -4,11 +4,13 @@ import { ref } from "vue";
 import { BucketProvider } from "../../src";
 
 import MissingKeyMessage from "./components/MissingKeyMessage.vue";
+import RequestFeedback from "./components/RequestFeedback.vue";
+import Section from "./components/Section.vue";
 import StartHuddleButton from "./components/StartHuddleButton.vue";
-
-const publishableKey = import.meta.env.VITE_PUBLISHABLE_KEY || "";
+import Track from "./components/Track.vue";
 
 const user = ref({ id: "123", name: "John Doe" });
+const publishableKey = import.meta.env.VITE_PUBLISHABLE_KEY || "";
 </script>
 
 <template>
@@ -23,7 +25,11 @@ const user = ref({ id: "123", name: "John Doe" });
   >
     <template #loading>......loading......</template>
     <StartHuddleButton />
+    <Track />
+    <RequestFeedback />
+
+    <Section title="Set User ID">
+      <input v-model="user.id" />
+    </Section>
   </BucketProvider>
-  <input v-model="user.id" />
-  <span>{{ user.id }}</span>
 </template>

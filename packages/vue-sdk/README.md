@@ -217,7 +217,7 @@ const huddle = useFeature("huddle");
 
 ### `useTrack()`
 
-`useTrack()` lets you send custom events to Bucket. Use this whenever a user _uses_ a feature. Create [features](https://docs.bucket.co/introduction/concepts/feature) in Bucket based off of these events to analyze feature usage.
+`useTrack()` lets you send custom events to Bucket. Use this whenever a user _uses_ a feature.
 
 ```vue
 <script setup lang="ts">

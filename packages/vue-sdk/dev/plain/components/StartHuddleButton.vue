@@ -1,22 +1,36 @@
 <script setup lang="ts">
 import { useFeature } from "../../../src";
 
+import Section from "./Section.vue";
+
 const huddle = useFeature("huddle");
 </script>
 <template>
-  <div>
-    Huddle: {{ huddle.isEnabled }}
-    <span v-if="huddle.isLoading">Loading...</span>
-    <span v-else-if="!huddle.isEnabled">Not enabled</span>
-    <span v-else>
-      <button @click="huddle.track()">
-        {{ huddle.config.payload?.buttonTitle ?? "Start Huddle" }}
-      </button>
-      <button
-        @click="huddle.requestFeedback({ title: 'Do you like huddles?' })"
-      >
-        Request Feedback
-      </button>
-    </span>
-  </div>
+  <Section title="Huddle">
+    <div style="display: flex; gap: 10px; flex-wrap: wrap">
+      <div>Huddle enabled: {{ huddle.isEnabled }}</div>
+      <div v-if="huddle.isLoading">Loading...</div>
+      <div v-else style="display: flex; gap: 10px; flex-wrap: wrap">
+        <div>
+          <button @click="huddle.track()">
+            {{
+              huddle.config.payload?.buttonTitle ?? "Start Huddle (track event)"
+            }}
+          </button>
+        </div>
+        <div>
+          <button
+            @click="
+              (e) =>
+                huddle.requestFeedback({
+                  title: 'Do you like huddles?',
+                })
+            "
+          >
+            Trigger survey
+          </button>
+        </div>
+      </div>
+    </div>
+  </Section>
 </template>
