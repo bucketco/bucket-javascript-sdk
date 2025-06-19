@@ -141,6 +141,7 @@ export const BucketProvider = defineComponent({
     watch(
       () =>
         canonicalJson(
+          // canonicalJson doesn't handle `undefined` values, so we stringify/parse to remove them
           JSON.parse(
             JSON.stringify({
               user: props.user,
