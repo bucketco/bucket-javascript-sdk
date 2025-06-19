@@ -1,1 +1,1 @@
-declare module 'canonical-json';
+declare module "canonical-json";
