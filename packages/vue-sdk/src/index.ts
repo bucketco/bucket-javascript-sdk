@@ -1,3 +1,4 @@
+import canonicalJson from "canonical-json";
 import {
   App,
   defineComponent,
@@ -9,6 +10,7 @@ import {
   ref,
   type SetupContext,
   shallowRef,
+  watch,
 } from "vue";
 
 import {
@@ -117,22 +119,42 @@ export const BucketProvider = defineComponent({
     const featuresLoading = ref(true);
     const updatedCount = ref<number>(0);
 
-    const newClient = (
-      props.newBucketClient ?? ((...args) => new BucketClient(...args))
-    )({
-      ...props,
-      logger: props.debug ? console : undefined,
-      sdkVersion: SDK_VERSION,
-    });
-
-    const clientRef = shallowRef<BucketClient>(newClient);
-
-    newClient
-      .initialize()
-      .catch((e) => newClient.logger.error("failed to initialize client", e))
-      .finally(() => {
-        featuresLoading.value = false;
+    function updateClient() {
+      const cnext = (
+        props.newBucketClient ?? ((...args) => new BucketClient(...args))
+      )({
+        ...props,
+        logger: props.debug ? console : undefined,
+        sdkVersion: SDK_VERSION,
       });
+      featuresLoading.value = true;
+      cnext
+        .initialize()
+        .catch((e) => cnext.logger.error("failed to initialize client", e))
+        .finally(() => {
+          featuresLoading.value = false;
+        });
+
+      return cnext;
+    }
+
+    watch(
+      () =>
+        canonicalJson(
+          JSON.parse(
+            JSON.stringify({
+              user: props.user,
+              company: props.company,
+              otherContext: props.otherContext,
+            }),
+          ),
+        ),
+      () => {
+        clientRef.value = updateClient();
+      },
+    );
+
+    const clientRef = shallowRef<BucketClient>(updateClient());
 
     const context = {
       isLoading: featuresLoading,

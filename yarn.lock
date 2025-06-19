@@ -904,7 +904,7 @@ __metadata:
     "@types/node": "npm:^22.12.0"
     "@vitejs/plugin-vue": "npm:^5.2.4"
     "@vue/test-utils": "npm:^2.3.2"
-    canonical-json: "npm:^0.0.4"
+    canonical-json: "npm:^0.2.0"
     eslint: "npm:^9.21.0"
     eslint-plugin-vue: "npm:^9.28.0"
     jsdom: "npm:^24.1.0"
@@ -6534,6 +6534,15 @@ __metadata:
   version: 0.0.4
   resolution: "canonical-json@npm:0.0.4"
   checksum: 10c0/bf130f4f6284a84860e16ef43a005544c98b8d334c128d3b3af006a586b4666b228bc2c5ef20ff9bedeaeffa45b2e862ad5e26eb6635dae7237c7c8b50f73096
+  languageName: node
+  linkType: hard
+
+"canonical-json@npm:^0.2.0":
+  version: 0.2.0
+  resolution: "canonical-json@npm:0.2.0"
+  bin:
+    canonical-json: canonical-json.js
+  checksum: 10c0/6764e0671bf0227523eeebc872f8cf14d544f0cf02b4c4512e87ebd0504fc74762193db0cc6ee2ba97f1217fc77834c03afdb108417b3c5782636858f7948040
   languageName: node
   linkType: hard
 
