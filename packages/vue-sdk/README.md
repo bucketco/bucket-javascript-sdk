@@ -32,6 +32,8 @@ import { BucketProvider } from "@bucketco/vue-sdk";
 </BucketProvider>
 ```
 
+If using Nuxt, wrap `<BucketProvider>` in `<ClientOnly>`. `<BucketProvider>` only renders client-side currently.
+
 ### 2. Use `useFeature(key)` to get feature status
 
 ```vue
@@ -383,10 +385,6 @@ onMounted(() => {
 ### `useIsLoading()`
 
 Returns a `Ref<boolean>` to indicate if Bucket has finished loading.
-
-## Nuxt
-
-`<BucketProver>` only renders client-side. Make sure you wrap it in `<ClientOnly>` for use in Nuxt.
 
 ## Content Security Policy (CSP)
 
