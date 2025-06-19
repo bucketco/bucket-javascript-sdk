@@ -35,8 +35,7 @@
   },
   "dependencies": {
     "@bucketco/browser-sdk": "3.2.0",
-    "canonical-json": "^0.2.0",
-    "rollup": "^4.2.0"
+    "canonical-json": "^0.2.0"
   },
   "peerDependencies": {
     "vue": "^3.0.0"
@@ -53,6 +52,7 @@
     "jsdom": "^24.1.0",
     "msw": "^2.3.5",
     "prettier": "^3.5.2",
+    "rollup": "^4.2.0",
     "rollup-preserve-directives": "^1.1.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3",
