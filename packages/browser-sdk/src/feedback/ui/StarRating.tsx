@@ -52,7 +52,7 @@ const scores = [
   },
 ] as const;
 
-type Score = (typeof scores)[number];
+type ScoreNumber = (typeof scores)[number];
 
 export type StarRatingProps = {
   name: string;
@@ -118,7 +118,7 @@ const Score = ({
   isSelected: boolean;
   name: string;
   onChange?: h.JSX.GenericEventHandler<HTMLInputElement>;
-  score: Score;
+  score: ScoreNumber;
   t: FeedbackTranslations;
 }) => {
   const arrowRef = useRef<HTMLDivElement>(null);
