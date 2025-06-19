@@ -384,6 +384,10 @@ onMounted(() => {
 
 Returns a `Ref<boolean>` to indicate if Bucket has finished loading.
 
+## Nuxt
+
+<BucketProver> only renders client-side. Make sure you wrap it in <ClientOnly> for use in Nuxt.js.
+
 ## Content Security Policy (CSP)
 
 See [CSP](https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/browser-sdk/README.md#content-security-policy-csp) for info on using Bucket React SDK with CSP
