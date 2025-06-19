@@ -23,7 +23,6 @@ const publishableKey = import.meta.env.VITE_PUBLISHABLE_KEY || "";
     :publishableKey="publishableKey"
     :user="user"
     :company="{ id: 'acme_inc', plan: 'pro' }"
-    :timeoutMs="1000"
   >
     <template #loading>......loading......</template>
     <StartHuddleButton />

@@ -11,7 +11,7 @@ import { SDK_VERSION } from "./version";
 const featuresLoading = ref(true);
 const updatedCount = ref<number>(0);
 
-// any propr which has boolean as part of the type, will default to false
+// any optional prop which has boolean as part of the type, will default to false
 // instead of `undefined`, so we use `withDefaults` here to pass the undefined
 // down into the client.
 const props = withDefaults(defineProps<BucketProps>(), {
