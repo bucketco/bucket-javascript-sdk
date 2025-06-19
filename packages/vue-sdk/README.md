@@ -32,6 +32,8 @@ import { BucketProvider } from "@bucketco/vue-sdk";
 </BucketProvider>
 ```
 
+If using Nuxt, wrap `<BucketProvider>` in `<ClientOnly>`. `<BucketProvider>` only renders client-side currently.
+
 ### 2. Use `useFeature(key)` to get feature status
 
 ```vue
