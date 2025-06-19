@@ -8,6 +8,12 @@ Client side React SDK
 
 [Read the docs](packages/react-sdk/README.md)
 
+## Vue SDK (beta)
+
+Client side Vue SDK
+
+[Read the docs](packages/vue-sdk/README.md)
+
 ## Browser SDK
 
 Browser SDK for use in non-React web applications

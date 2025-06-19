@@ -7,6 +7,7 @@ const globals = require("globals");
 const tsPlugin = require("@typescript-eslint/eslint-plugin");
 const tsParser = require("@typescript-eslint/parser");
 const prettierConfig = require("eslint-config-prettier");
+const vuePlugin = require("eslint-plugin-vue");
 
 module.exports = [
   {
@@ -22,6 +23,7 @@ module.exports = [
       "**/*.jsx",
       "**/*.ts",
       "**/*.tsx",
+      "**/*.vue",
     ],
     plugins: {
       import: importsPlugin,
@@ -104,6 +106,7 @@ module.exports = [
     files: ["**/*.ts", "**/*.tsx"],
     plugins: {
       "@typescript-eslint": tsPlugin,
+      vue: vuePlugin,
     },
     languageOptions: {
       parser: tsParser,
@@ -154,6 +157,7 @@ module.exports = [
       "**/*.jsx",
       "**/*.ts",
       "**/*.tsx",
+      "**/*.vue",
     ],
     rules: {
       ...prettierConfig.rules,
