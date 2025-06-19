@@ -386,7 +386,7 @@ Returns a `Ref<boolean>` to indicate if Bucket has finished loading.
 
 ## Nuxt
 
-<BucketProver> only renders client-side. Make sure you wrap it in <ClientOnly> for use in Nuxt.
+`<BucketProver>` only renders client-side. Make sure you wrap it in `<ClientOnly>` for use in Nuxt.
 
 ## Content Security Policy (CSP)
 
