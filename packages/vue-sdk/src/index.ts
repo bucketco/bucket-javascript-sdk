@@ -11,7 +11,18 @@ import {
 import BucketProvider from "./BucketProvider.vue";
 import { BucketProps } from "./types";
 
-export * from "./hooks";
+export {
+  useClient,
+  useFeature,
+  useIsLoading,
+  useRequestFeedback,
+  useSendFeedback,
+  useTrack,
+  useUpdateCompany,
+  useUpdateOtherContext,
+  useUpdateUser,
+} from "./hooks";
+export type { BucketProps, RequestFeatureFeedbackOptions } from "./types";
 
 export { BucketProvider };
 
