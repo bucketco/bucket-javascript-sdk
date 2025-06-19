@@ -8,6 +8,7 @@ import RequestFeedback from "./components/RequestFeedback.vue";
 import Section from "./components/Section.vue";
 import StartHuddleButton from "./components/StartHuddleButton.vue";
 import Track from "./components/Track.vue";
+import Events from "./components/Events.vue";
 
 const user = ref({ id: "123", name: "John Doe" });
 const publishableKey = import.meta.env.VITE_PUBLISHABLE_KEY || "";
@@ -31,5 +32,6 @@ const publishableKey = import.meta.env.VITE_PUBLISHABLE_KEY || "";
     <Section title="Set User ID">
       <input v-model="user.id" />
     </Section>
+    <Events />
   </BucketProvider>
 </template>
