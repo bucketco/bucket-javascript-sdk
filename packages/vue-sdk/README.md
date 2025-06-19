@@ -175,7 +175,7 @@ BucketProvider lets you define a template to be shown while BucketProvider is in
 </template>
 ```
 
-If you want more control over loading screens, `useFeature()` returns `isLoading` which you can use to customize the loading experience.
+If you want more control over loading screens, `useIsLoading()` returns a Ref<boolean> which you can use to customize the loading experience.
 
 ## Hooks
 
@@ -379,6 +379,10 @@ onMounted(() => {
   <!-- your component content -->
 </template>
 ```
+
+### `useIsLoading()`
+
+Returns a `Ref<boolean>` to indicate if Bucket has finished loading.
 
 ## Content Security Policy (CSP)
 

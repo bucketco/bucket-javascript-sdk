@@ -385,6 +385,17 @@ export function useClient() {
   return ctx.client;
 }
 
+/**
+ * Vue composable for checking if the Bucket client is loading.
+ *
+ * This composable returns a boolean value that indicates whether the Bucket client is loading.
+ * You can use this to check if the Bucket client is loading at any point in your application.
+ */
+export function useIsLoading() {
+  const ctx = injectSafe();
+  return ctx.isLoading;
+}
+
 function injectSafe() {
   const ctx = inject(ProviderSymbol);
   if (!ctx?.provider) {
