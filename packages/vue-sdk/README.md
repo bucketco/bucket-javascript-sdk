@@ -40,28 +40,12 @@ If using Nuxt, wrap `<BucketProvider>` in `<ClientOnly>`. `<BucketProvider>` onl
 <script setup lang="ts">
 import { useFeature } from "@bucketco/vue-sdk";
 
-const huddle = useFeature("huddle");
+const { isEnabled } = useFeature("huddle");
 </script>
 
 <template>
-  <div v-if="huddle.isEnabled">
-    <button @click="huddle.track()">Start huddle!</button>
-    <button
-      @click="
-        (e) =>
-          huddle.requestFeedback({
-            title:
-              huddle.config.payload?.question ??
-              'How do you like the Huddles feature?',
-            position: {
-              type: 'POPOVER',
-              anchor: e.currentTarget as HTMLElement,
-            },
-          })
-      "
-    >
-      Give feedback!
-    </button>
+  <div v-if="isEnabled">
+    <button>Start huddle!</button>
   </div>
 </template>
 ```
@@ -89,7 +73,9 @@ A number of special attributes exist:
   :publishableKey="publishableKey"
   :user="{ id: 'user_123', name: 'John Doe', email: 'john@acme.com' }"
   :company="{ id: 'acme_inc', plan: 'pro' }"
-></BucketProvider>
+>
+  <!-- your app -->
+</BucketProvider>
 ```
 
 To retrieve features along with their targeting information, use `useFeature(key: string)` hook (described in a section below).
@@ -131,24 +117,6 @@ The `<BucketProvider>` initializes the Bucket SDK, fetches features and starts l
 
   > [!Note]
   > If you specify `company` and/or `user` they must have at least the `id` property, otherwise they will be ignored in their entirety. You should also supply anything additional you want to be able to evaluate feature targeting against,
-- `fallbackFeatures`: A list of strings which specify which features to consider enabled if the SDK is unable to fetch features. Can be provided in two formats:
-
-  ```ts
-  // Simple array of feature keys
-  fallbackFeatures={["feature1", "feature2"]}
-
-  // Or with configuration overrides
-  fallbackFeatures: {
-      "feature1": true,  // just enable the feature
-      "feature2": {      // enable with configuration
-        key: "variant-a",
-        payload: {
-          limit: 100,
-          mode: "test"
-        }
-      }
-  }
-  ```
 
 - `timeoutMs`: Timeout in milliseconds when fetching features from the server,
 - `staleWhileRevalidate`: If set to `true`, stale features will be returned while refetching features in the background,
@@ -188,13 +156,15 @@ If you want more control over loading screens, `useIsLoading()` returns a Ref<bo
 
 Returns the state of a given feature for the current context. The composable provides access to feature flags and their configurations.
 
-Use feature returns an object with this approximate shape
+`useFeature()` returns an object with this shape:
 
 ```ts
 {
   isEnabled: boolean, // is the feature enabled
   track: () => void, // send a track event when the feature is used
   requestFeedback: (...) => void // open up a feedback dialog
+  config: {key: string, payload: any},  // remote configuration for this feature
+  isLoading: boolean // if you want to manage loading state at the feature level
 }
 ```
 
@@ -234,7 +204,9 @@ const { isEnabled, track, requestFeedback, config } = useFeature("huddle");
 
 ### `useTrack()`
 
-`useTrack()` lets you send custom events to Bucket. Use this whenever a user _uses_ a feature.
+`useTrack()` returns a function which lets you send custom events to Bucket. It takes a string argument with the event name and optionally an object with properties to attach the event.
+
+Using `track` returned from `useFeature()` calles this track function with the feature key as the event name.
 
 ```vue
 <script setup lang="ts">
