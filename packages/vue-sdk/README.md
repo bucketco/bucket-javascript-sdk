@@ -66,6 +66,8 @@ const huddle = useFeature("huddle");
 </template>
 ```
 
+See [useFeature()](#usefeature) for a full example
+
 ## Setting `user` and `company`
 
 Bucket determines which features are active for a given `user`, `company`, or `otherContext`.
@@ -126,6 +128,7 @@ The `<BucketProvider>` initializes the Bucket SDK, fetches features and starts l
 
 - `publishableKey` is used to connect the provider to an _environment_ on Bucket. Find your `publishableKey` under [environment settings](https://app.bucket.co/envs/current/settings/app-environments) in Bucket,
 - `company`, `user` and `otherContext` make up the _context_ that is used to determine if a feature is enabled or not. `company` and `user` contexts are automatically transmitted to Bucket servers so the Bucket app can show you which companies have access to which features etc.
+
   > [!Note]
   > If you specify `company` and/or `user` they must have at least the `id` property, otherwise they will be ignored in their entirety. You should also supply anything additional you want to be able to evaluate feature targeting against,
 - `fallbackFeatures`: A list of strings which specify which features to consider enabled if the SDK is unable to fetch features. Can be provided in two formats:
@@ -183,26 +186,38 @@ If you want more control over loading screens, `useIsLoading()` returns a Ref<bo
 
 ### `useFeature()`
 
-Returns the state of a given feature for the current context. The composable provides type-safe access to feature flags and their configurations.
+Returns the state of a given feature for the current context. The composable provides access to feature flags and their configurations.
+
+Use feature returns an object with this approximate shape
+
+```ts
+{
+  isEnabled: boolean, // is the feature enabled
+  track: () => void, // send a track event when the feature is used
+  requestFeedback: (...) => void // open up a feedback dialog
+}
+```
+
+Example:
 
 ```vue
 <script setup lang="ts">
 import { useFeature } from "@bucketco/vue-sdk";
 
-const huddle = useFeature("huddle");
+const { isEnabled, track, requestFeedback, config } = useFeature("huddle");
 </script>
 
 <template>
-  <div v-if="huddle.isLoading">Loading...</div>
-  <div v-else-if="!huddle.isEnabled">Feature not available</div>
+  <div v-if="isLoading">Loading...</div>
+  <div v-else-if="!isEnabled">Feature not available</div>
   <div v-else>
-    <button @click="huddle.track()">Start huddle!</button>
+    <button @click="track()">Start huddle!</button>
     <button
       @click="
         (e) =>
-          huddle.requestFeedback({
+          requestFeedback({
             title:
-              huddle.config.payload?.question ??
+              config.payload?.question ??
               'How do you like the Huddles feature?',
             position: {
               type: 'POPOVER',
