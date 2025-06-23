@@ -24,7 +24,7 @@ import { BucketProvider } from "@bucketco/vue-sdk";
 </script>
 
 <BucketProvider
-  :publishableKey="publishableKey"
+  :publishable-key="publishableKey"
   :user="{ id: 'user_123', name: 'John Doe', email: 'john@acme.com' }"
   :company="{ id: 'acme_inc', plan: 'pro' }"
 >
