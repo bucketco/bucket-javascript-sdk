@@ -24,7 +24,7 @@ import { BucketProvider } from "@bucketco/vue-sdk";
 </script>
 
 <BucketProvider
-  :publishableKey="publishableKey"
+  :publishable-key="publishableKey"
   :user="{ id: 'user_123', name: 'John Doe', email: 'john@acme.com' }"
   :company="{ id: 'acme_inc', plan: 'pro' }"
 >
@@ -46,23 +46,6 @@ const huddle = useFeature("huddle");
 <template>
   <div v-if="huddle.isEnabled">
     <button @click="huddle.track()">Start huddle!</button>
-    <button
-      @click="
-        (e) =>
-          huddle.requestFeedback({
-            title:
-              huddle.config.payload?.question ??
-              'How do you like the Huddles feature?',
-            position: {
-              type: 'POPOVER',
-              anchor: e.currentTarget as HTMLElement,
-            },
-          })
-      "
-    >
-      Give feedback!
-    </button>
-  </div>
 </template>
 ```
 
@@ -84,7 +67,7 @@ A number of special attributes exist:
 
 ```vue
 <BucketProvider
-  :publishableKey="publishableKey"
+  :publishable-key="publishableKey"
   :user="{ id: 'user_123', name: 'John Doe', email: 'john@acme.com' }"
   :company="{ id: 'acme_inc', plan: 'pro' }"
 ></BucketProvider>
@@ -126,26 +109,9 @@ The `<BucketProvider>` initializes the Bucket SDK, fetches features and starts l
 
 - `publishableKey` is used to connect the provider to an _environment_ on Bucket. Find your `publishableKey` under [environment settings](https://app.bucket.co/envs/current/settings/app-environments) in Bucket,
 - `company`, `user` and `otherContext` make up the _context_ that is used to determine if a feature is enabled or not. `company` and `user` contexts are automatically transmitted to Bucket servers so the Bucket app can show you which companies have access to which features etc.
+
   > [!Note]
   > If you specify `company` and/or `user` they must have at least the `id` property, otherwise they will be ignored in their entirety. You should also supply anything additional you want to be able to evaluate feature targeting against,
-- `fallbackFeatures`: A list of strings which specify which features to consider enabled if the SDK is unable to fetch features. Can be provided in two formats:
-
-  ```ts
-  // Simple array of feature keys
-  fallbackFeatures={["feature1", "feature2"]}
-
-  // Or with configuration overrides
-  fallbackFeatures: {
-      "feature1": true,  // just enable the feature
-      "feature2": {      // enable with configuration
-        key: "variant-a",
-        payload: {
-          limit: 100,
-          mode: "test"
-        }
-      }
-  }
-  ```
 
 - `timeoutMs`: Timeout in milliseconds when fetching features from the server,
 - `staleWhileRevalidate`: If set to `true`, stale features will be returned while refetching features in the background,
@@ -167,7 +133,7 @@ BucketProvider lets you define a template to be shown while BucketProvider is in
 ```vue
 <template>
   <BucketProvider
-    :publishableKey="publishableKey"
+    :publishable-key="publishableKey"
     :user="user"
     :company="{ id: 'acme_inc', plan: 'pro' }"
   >
@@ -216,6 +182,8 @@ const huddle = useFeature("huddle");
   </div>
 </template>
 ```
+
+See the reference docs for details.
 
 ### `useTrack()`
 
