@@ -20,7 +20,7 @@ const publishableKey = import.meta.env.VITE_PUBLISHABLE_KEY || "";
   </div>
   <BucketProvider
     v-else
-    :publishableKey="publishableKey"
+    :publishable-key="publishableKey"
     :user="user"
     :company="{ id: 'acme_inc', plan: 'pro' }"
   >
