@@ -1,24 +1,17 @@
-import { inject, InjectionKey, onBeforeUnmount, ref, watch } from "vue";
+import { computed, inject, InjectionKey, onBeforeUnmount, ref } from "vue";
+
+import { RequestFeedbackData, UnassignedFeedback } from "@bucketco/browser-sdk";
 
 import {
-  FeatureRemoteConfig,
-  RequestFeedbackData,
-  UnassignedFeedback,
-} from "@bucketco/browser-sdk";
-
-import {
-  FeatureKey,
+  Feature,
   ProviderContextType,
   RequestFeatureFeedbackOptions,
-  TypedFeatures,
 } from "./types";
 
 export const ProviderSymbol: InjectionKey<ProviderContextType> =
   Symbol("BucketProvider");
 
-export function useFeature<TKey extends FeatureKey>(
-  key: TKey,
-): TypedFeatures[TKey] {
+export function useFeature(key: string): Feature<any> {
   const client = useClient();
   const ctx = injectSafe();
 
@@ -26,21 +19,13 @@ export function useFeature<TKey extends FeatureKey>(
   const requestFeedback = (opts: RequestFeatureFeedbackOptions) =>
     client.value.requestFeedback({ ...opts, featureKey: key });
 
-  const isEnabled = ref(false);
-  const config = ref<FeatureRemoteConfig | undefined>(undefined);
-  const isLoading = ref(false);
+  const feature = ref(client.value.getFeature(key));
 
   updateFeature();
 
   function updateFeature() {
-    const f = client.value.getFeature(key);
-
-    isEnabled.value = f.isEnabled;
-    config.value = f.config;
-    isLoading.value = ctx.isLoading.value;
+    feature.value = client.value.getFeature(key);
   }
-
-  watch(ctx.isLoading, updateFeature);
 
   client.value.on("featuresUpdated", updateFeature);
   onBeforeUnmount(() => {
@@ -48,12 +33,12 @@ export function useFeature<TKey extends FeatureKey>(
   });
 
   return {
-    isEnabled,
-    config: config as FeatureRemoteConfig,
+    key,
+    isEnabled: computed(() => feature.value.isEnabled),
+    config: computed(() => feature.value.config),
     track,
     requestFeedback,
-    key,
-    isLoading,
+    isLoading: computed(() => ctx.isLoading.value),
   };
 }
 
