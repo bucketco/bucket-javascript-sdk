@@ -9,7 +9,12 @@ import {
 } from "@bucketco/browser-sdk";
 
 import BucketProvider from "./BucketProvider.vue";
-import { BucketProps } from "./types";
+import {
+  BucketProps,
+  EmptyFeatureRemoteConfig,
+  Feature,
+  FeatureType,
+} from "./types";
 
 export {
   useClient,
@@ -29,6 +34,9 @@ export { BucketProvider };
 export type {
   CheckEvent,
   CompanyContext,
+  EmptyFeatureRemoteConfig,
+  Feature,
+  FeatureType,
   RawFeatures,
   TrackEvent,
   UserContext,
