@@ -127,11 +127,15 @@ export class BucketClient {
    */
   public readonly logger: Logger;
 
+  private initializationFinished = false;
   private _initialize = once(async () => {
     if (!this._config.offline) {
       await this.featuresCache.refresh();
     }
-    this.logger.info("Bucket initialized");
+    this.logger.info(
+      "Bucket initialized" + (this._config.offline ? " (offline mode)" : ""),
+    );
+    this.initializationFinished = true;
   });
 
   /**
@@ -219,7 +223,10 @@ export class BucketClient {
 
     const offline = config.offline ?? process.env.NODE_ENV === "test";
     if (!offline) {
-      ok(typeof config.secretKey === "string", "secretKey must be a string");
+      ok(
+        typeof config.secretKey === "string",
+        "secretKey must be a string, or set offline=true",
+      );
       ok(config.secretKey.length > 22, "invalid secretKey specified");
     }
 
@@ -675,7 +682,7 @@ export class BucketClient {
       if (!response.ok || !isObject(response.body) || !response.body.success) {
         this.logger.warn(
           `invalid response received from server for "${url}"`,
-          response,
+          JSON.stringify(response),
         );
         return false;
       }
@@ -713,14 +720,15 @@ export class BucketClient {
             !isObject(response.body) ||
             !response.body.success
           ) {
-            this.logger.warn(
-              `invalid response received from server for "${url}"`,
-              response,
+            throw new Error(
+              `invalid response received from server for "${url}": ${JSON.stringify(response.body)}`,
             );
-            return undefined;
           }
           const { success: _, ...result } = response.body;
           return result as TResponse;
+        },
+        () => {
+          this.logger.warn("failed to fetch features, will retry");
         },
         retries,
         1000,
@@ -956,6 +964,10 @@ export class BucketClient {
   ): Record<string, RawFeature> {
     checkContextWithTracking(options);
 
+    if (!this.initializationFinished) {
+      this.logger.error("getFeature(s): BucketClient is not initialized yet.");
+    }
+
     void this.syncContext(options);
     let featureDefinitions: FeaturesAPIResponse["features"];
 
@@ -965,7 +977,7 @@ export class BucketClient {
       const fetchedFeatures = this.featuresCache.get();
       if (!fetchedFeatures) {
         this.logger.warn(
-          "failed to use feature definitions, there are none cached yet. Using fallback features.",
+          "no feature definitions available, using fallback features.",
         );
         return this._config.fallbackFeatures || {};
       }

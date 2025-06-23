@@ -6,6 +6,7 @@ import {
   EvaluationParams,
   flattenJSON,
   hashInt,
+  newEvaluator,
   unflattenJSON,
 } from "../src";
 
@@ -239,6 +240,115 @@ describe("evaluate feature targeting integration ", () => {
       ruleEvaluationResults: [false],
     });
   });
+
+  it("evaluates optimized rule evaluations correctly", async () => {
+    const res = newEvaluator([
+      {
+        value: true,
+        filter: {
+          type: "group",
+          operator: "and",
+          filters: [
+            {
+              type: "context",
+              field: "company.id",
+              operator: "IS",
+              values: ["company1"],
+            },
+            {
+              type: "rolloutPercentage",
+              key: "flag",
+              partialRolloutAttribute: "company.id",
+              partialRolloutThreshold: 99999,
+            },
+            {
+              type: "group",
+              operator: "or",
+              filters: [
+                {
+                  type: "context",
+                  field: "company.id",
+                  operator: "ANY_OF",
+                  values: ["company2"],
+                },
+                {
+                  type: "negation",
+                  filter: {
+                    type: "context",
+                    field: "company.id",
+                    operator: "IS",
+                    values: ["company3"],
+                  },
+                },
+              ],
+            },
+            {
+              type: "negation",
+              filter: {
+                type: "constant",
+                value: false,
+              },
+            },
+          ],
+        },
+      },
+    ])(
+      {
+        "company.id": "company1",
+      },
+      "feature",
+    );
+
+    expect(res).toEqual({
+      value: true,
+      context: {
+        "company.id": "company1",
+      },
+      featureKey: "feature",
+      missingContextFields: [],
+      reason: "rule #0 matched",
+      ruleEvaluationResults: [true],
+    });
+  });
+
+  it.each([
+    {
+      context: { "company.id": "company1" },
+      expected: true,
+    },
+    {
+      context: { "company.id": "company2" },
+      expected: true,
+    },
+    {
+      context: { "company.id": "company3" },
+      expected: false,
+    },
+  ])(
+    "%#: evaluates optimized rule evaluations correctly",
+    async ({ context, expected }) => {
+      const evaluator = newEvaluator([
+        {
+          value: true,
+          filter: {
+            type: "group",
+            operator: "and",
+            filters: [
+              {
+                type: "context",
+                field: "company.id",
+                operator: "ANY_OF",
+                values: ["company1", "company2"],
+              },
+            ],
+          },
+        },
+      ]);
+
+      const res = evaluator(context, "feature");
+      expect(res.value ?? false).toEqual(expected);
+    },
+  );
 });
 
 describe("operator evaluation", () => {
@@ -271,10 +381,14 @@ describe("operator evaluation", () => {
     ["value", "GT", "value", false],
     ["value", "GT", "0", false],
     ["1", "GT", "0", true],
+    ["2", "GT", "10", false],
+    ["10", "GT", "2", true],
 
     ["value", "LT", "value", false],
     ["value", "LT", "0", false],
     ["0", "LT", "1", true],
+    ["2", "LT", "10", true],
+    ["10", "LT", "2", false],
 
     ["start VALUE end", "CONTAINS", "value", true],
     ["alue", "CONTAINS", "value", false],

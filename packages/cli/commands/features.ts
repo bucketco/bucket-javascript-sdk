@@ -4,7 +4,7 @@ import { Argument, Command } from "commander";
 import { relative } from "node:path";
 import ora, { Ora } from "ora";
 
-import { getApp, getOrg } from "../services/bootstrap.js";
+import { App, getApp, getOrg } from "../services/bootstrap.js";
 import {
   createFeature,
   Feature,
@@ -36,7 +36,7 @@ import {
   typesOutOption,
   userIdsOption,
 } from "../utils/options.js";
-import { baseUrlSuffix, featureUrl } from "../utils/path.js";
+import { baseUrlSuffix, featureUrl } from "../utils/urls.js";
 
 const lf = new Intl.ListFormat("en");
 
@@ -54,7 +54,14 @@ export const createFeatureAction = async (
   if (!appId) {
     return handleError(new MissingAppIdError(), "Features Create");
   }
-  const app = getApp(appId);
+
+  let app: App;
+  try {
+    app = getApp(appId);
+  } catch (error) {
+    return handleError(error, "Features Create");
+  }
+
   const production = app.environments.find((e) => e.isProduction);
 
   try {
@@ -102,13 +109,13 @@ export const listFeaturesAction = async () => {
   if (!appId) {
     return handleError(new MissingAppIdError(), "Features Create");
   }
-  const app = getApp(appId);
-  const production = app.environments.find((e) => e.isProduction);
-  if (!production) {
-    return handleError(new MissingEnvIdError(), "Features Types");
-  }
 
   try {
+    const app = getApp(appId);
+    const production = app.environments.find((e) => e.isProduction);
+    if (!production) {
+      return handleError(new MissingEnvIdError(), "Features Types");
+    }
     spinner = ora(
       `Loading features of app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}...`,
     ).start();
@@ -142,7 +149,13 @@ export const generateTypesAction = async () => {
     return handleError(new MissingAppIdError(), "Features Types");
   }
 
-  const app = getApp(appId);
+  let app: App;
+  try {
+    app = getApp(appId);
+  } catch (error) {
+    return handleError(error, "Features Types");
+  }
+
   const production = app.environments.find((e) => e.isProduction);
   if (!production) {
     return handleError(new MissingEnvIdError(), "Features Types");
@@ -161,8 +174,7 @@ export const generateTypesAction = async () => {
     );
   } catch (error) {
     spinner?.fail("Loading features failed.");
-    void handleError(error, "Features Types");
-    return;
+    return handleError(error, "Features Types");
   }
 
   try {
@@ -202,7 +214,13 @@ export const featureAccessAction = async (
     return handleError(new MissingAppIdError(), "Feature Access");
   }
 
-  const app = getApp(appId);
+  let app: App;
+  try {
+    app = getApp(appId);
+  } catch (error) {
+    return handleError(error, "Features Types");
+  }
+
   const production = app.environments.find((e) => e.isProduction);
   if (!production) {
     return handleError(new MissingEnvIdError(), "Feature Access");

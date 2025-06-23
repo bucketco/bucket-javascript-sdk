@@ -6,8 +6,12 @@ import open from "open";
 import { authStore } from "../stores/auth.js";
 import { configStore } from "../stores/config.js";
 
-import { errorUrl, loginUrl, successUrl } from "./path.js";
+import {
+  CLIENT_VERSION_HEADER_NAME,
+  CLIENT_VERSION_HEADER_VALUE,
+} from "./constants.js";
 import { ParamType } from "./types.js";
+import { errorUrl, loginUrl, successUrl } from "./urls.js";
 
 interface waitForAccessToken {
   accessToken: string;
@@ -153,6 +157,9 @@ export async function authRequest<T = Record<string, unknown>>(
     headers: {
       ...options?.headers,
       Authorization: `Bearer ${token}`,
+      [CLIENT_VERSION_HEADER_NAME]: CLIENT_VERSION_HEADER_VALUE(
+        configStore.getClientVersion() ?? "unknown",
+      ),
     },
   });
 

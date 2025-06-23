@@ -67,6 +67,7 @@ const fetchClient: HttpClient = {
  */
 export async function withRetry<T>(
   fn: () => Promise<T>,
+  onFailedTry: () => void,
   maxRetries: number,
   baseDelay: number,
   maxDelay: number,
@@ -83,13 +84,15 @@ export async function withRetry<T>(
         break;
       }
 
+      onFailedTry();
+
       // Calculate exponential backoff with jitter
       const delay = Math.min(
         maxDelay,
         baseDelay * Math.pow(2, attempt) * (0.8 + Math.random() * 0.4),
       );
 
-      await new Promise((resolve) => setTimeout(resolve, delay).unref());
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
 

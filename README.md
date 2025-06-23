@@ -1,14 +1,18 @@
 # Bucket
 
-Bucket is B2B feature flagging with a built-in feedback loop that lets you roll out features based on customer satisfaction.
-
-[Learn more and get started](https://bucket.co/)
+Feature flags for SaaS that run on TypeScript. [Learn more and get started](https://bucket.co/)
 
 ## React SDK
 
 Client side React SDK
 
 [Read the docs](packages/react-sdk/README.md)
+
+## Vue SDK (beta)
+
+Client side Vue SDK
+
+[Read the docs](packages/vue-sdk/README.md)
 
 ## Browser SDK
 

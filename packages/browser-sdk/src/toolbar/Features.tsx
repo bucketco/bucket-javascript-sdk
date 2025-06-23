@@ -9,15 +9,15 @@ import { FeatureItem } from "./Toolbar";
 export function FeaturesTable({
   features,
   searchQuery,
-  setEnabledOverride,
   appBaseUrl,
   isOpen,
+  setIsEnabledOverride,
 }: {
   features: FeatureItem[];
   searchQuery: string | null;
-  setEnabledOverride: (key: string, value: boolean | null) => void;
   appBaseUrl: string;
   isOpen: boolean;
+  setIsEnabledOverride: (key: string, isEnabled: boolean | null) => void;
 }) {
   const searchedFeatures =
     searchQuery === null
@@ -43,7 +43,9 @@ export function FeaturesTable({
                 .includes(searchQuery.toLocaleLowerCase())
             }
             isOpen={isOpen}
-            setEnabledOverride={setEnabledOverride}
+            setEnabledOverride={(override) =>
+              setIsEnabledOverride(feature.key, override)
+            }
           />
         ))}
       </tbody>
@@ -61,7 +63,7 @@ function FeatureRow({
 }: {
   feature: FeatureItem;
   appBaseUrl: string;
-  setEnabledOverride: (key: string, value: boolean | null) => void;
+  setEnabledOverride: (isEnabled: boolean | null) => void;
   isOpen: boolean;
   index: number;
   isNotVisible: boolean;
@@ -94,24 +96,17 @@ function FeatureRow({
       </td>
       <td class="feature-reset-cell">
         {feature.localOverride !== null ? (
-          <Reset
-            featureKey={feature.key}
-            setEnabledOverride={setEnabledOverride}
-            tabIndex={index + 1}
-          />
+          <Reset setEnabledOverride={setEnabledOverride} tabIndex={index + 1} />
         ) : null}
       </td>
       <td class="feature-switch-cell">
         <Switch
-          checked={
-            (feature.localOverride === null && feature.isEnabled) ||
-            feature.localOverride === true
-          }
+          checked={feature.localOverride ?? feature.isEnabled}
           tabIndex={index + 1}
           onChange={(e) => {
             const isChecked = e.currentTarget.checked;
             const isOverridden = isChecked !== feature.isEnabled;
-            setEnabledOverride(feature.key, isOverridden ? isChecked : null);
+            setEnabledOverride(isOverridden ? isChecked : null);
           }}
         />
       </td>
@@ -138,11 +133,9 @@ export function FeatureSearch({
 
 function Reset({
   setEnabledOverride,
-  featureKey,
   ...props
 }: {
-  setEnabledOverride: (key: string, value: boolean | null) => void;
-  featureKey: string;
+  setEnabledOverride: (isEnabled: boolean | null) => void;
 } & h.JSX.HTMLAttributes<HTMLAnchorElement>) {
   return (
     <a
@@ -150,7 +143,7 @@ function Reset({
       href=""
       onClick={(e) => {
         e.preventDefault();
-        setEnabledOverride(featureKey, null);
+        setEnabledOverride(null);
       }}
       {...props}
     >

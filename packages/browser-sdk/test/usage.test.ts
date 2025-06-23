@@ -80,6 +80,8 @@ describe("usage", () => {
       track: expect.any(Function),
       requestFeedback: expect.any(Function),
       config: { key: undefined, payload: undefined },
+      isEnabledOverride: null,
+      setIsEnabledOverride: expect.any(Function),
     });
   });
 
@@ -413,6 +415,8 @@ describe(`sends "check" events `, () => {
         config: { key: undefined, payload: undefined },
         track: expect.any(Function),
         requestFeedback: expect.any(Function),
+        isEnabledOverride: null,
+        setIsEnabledOverride: expect.any(Function),
       });
 
       expect(client.getFeature("featureB")).toStrictEqual({
@@ -426,6 +430,8 @@ describe(`sends "check" events `, () => {
         },
         track: expect.any(Function),
         requestFeedback: expect.any(Function),
+        isEnabledOverride: null,
+        setIsEnabledOverride: expect.any(Function),
       });
 
       expect(client.getFeature("featureC")).toStrictEqual({
@@ -433,6 +439,8 @@ describe(`sends "check" events `, () => {
         config: { key: undefined, payload: undefined },
         track: expect.any(Function),
         requestFeedback: expect.any(Function),
+        isEnabledOverride: null,
+        setIsEnabledOverride: expect.any(Function),
       });
     });
 
@@ -567,6 +575,8 @@ describe(`sends "check" events `, () => {
         track: expect.any(Function),
         requestFeedback: expect.any(Function),
         config: { key: undefined, payload: undefined },
+        isEnabledOverride: null,
+        setIsEnabledOverride: expect.any(Function),
       });
 
       vi.spyOn(client, "track");
@@ -586,6 +596,8 @@ describe(`sends "check" events `, () => {
         track: expect.any(Function),
         requestFeedback: expect.any(Function),
         config: { key: undefined, payload: undefined },
+        isEnabledOverride: null,
+        setIsEnabledOverride: expect.any(Function),
       });
 
       vi.spyOn(client, "requestFeedback");

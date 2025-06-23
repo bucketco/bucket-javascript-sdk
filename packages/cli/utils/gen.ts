@@ -68,11 +68,16 @@ export const KeyFormatPatterns: Record<KeyFormat, KeyFormatPattern> = {
   },
 };
 
-export function indentLines(str: string, indent = 2, lineBreak = "\n"): string {
+export function indentLines(
+  str: string,
+  indent = 2,
+  lineBreak = "\n",
+  trim = false,
+): string {
   const indentStr = " ".repeat(indent);
   return str
     .split(lineBreak)
-    .map((line) => `${indentStr}${line.trim()}`)
+    .map((line) => `${indentStr}${trim ? line.trim() : line}`)
     .join(lineBreak);
 }
 

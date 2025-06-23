@@ -34,6 +34,8 @@ export default function cache<T>(
       if (newValue === undefined) {
         return;
       }
+      logger?.info("refreshed features");
+
       cachedValue = newValue;
 
       lastUpdate = Date.now();
@@ -63,7 +65,6 @@ export default function cache<T>(
       refreshPromise = update();
     }
     await refreshPromise;
-    logger?.info("refreshed cached features");
     return get();
   };
 

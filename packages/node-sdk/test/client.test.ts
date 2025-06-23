@@ -88,7 +88,7 @@ const validOptions: ClientOptions = {
   featuresFetchRetries: 2,
   batchOptions: {
     maxSize: 99,
-    intervalMs: 100,
+    intervalMs: 10001,
     flushOnExit: false,
   },
   offline: false,
@@ -270,7 +270,7 @@ describe("BucketClient", () => {
       expect(client["_config"].headers).toEqual(expectedHeaders);
       expect(client["batchBuffer"]).toMatchObject({
         maxSize: 99,
-        intervalMs: 100,
+        intervalMs: 10001,
       });
 
       expect(client["_config"].fallbackFeatures).toEqual({
@@ -630,7 +630,7 @@ describe("BucketClient", () => {
 
       expect(logger.warn).toHaveBeenCalledWith(
         expect.stringMatching("invalid response received from server for"),
-        response,
+        JSON.stringify(response),
       );
     });
 
@@ -722,7 +722,7 @@ describe("BucketClient", () => {
 
       expect(logger.warn).toHaveBeenCalledWith(
         expect.stringMatching("invalid response received from server for"),
-        response,
+        JSON.stringify(response),
       );
     });
 
@@ -859,7 +859,7 @@ describe("BucketClient", () => {
 
       expect(logger.warn).toHaveBeenCalledWith(
         expect.stringMatching("invalid response received from server for "),
-        response,
+        JSON.stringify(response),
       );
     });
 
@@ -2055,7 +2055,7 @@ describe("BucketClient", () => {
 
       expect(logger.warn).toHaveBeenCalledWith(
         expect.stringMatching(
-          "failed to use feature definitions, there are none cached yet. Using fallback features.",
+          "no feature definitions available, using fallback features",
         ),
       );
 

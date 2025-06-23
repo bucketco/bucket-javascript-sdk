@@ -1,7 +1,11 @@
 import { Ajv, ValidateFunction } from "ajv";
+import {
+  assign as assignJSON,
+  parse as parseJSON,
+  stringify as stringifyJSON,
+} from "comment-json";
 import equal from "fast-deep-equal";
 import { findUp } from "find-up";
-import JSON5 from "json5";
 import { readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -14,7 +18,7 @@ import {
   SCHEMA_URL,
 } from "../utils/constants.js";
 import { ConfigValidationError, handleError } from "../utils/errors.js";
-import { stripTrailingSlash } from "../utils/path.js";
+import { stripTrailingSlash } from "../utils/urls.js";
 
 export const typeFormats = ["react", "node"] as const;
 export type TypeFormat = (typeof typeFormats)[number];
@@ -40,6 +44,11 @@ const defaultConfig: Config = {
   typesOutput: [{ path: DEFAULT_TYPES_OUTPUT, format: "react" }],
 };
 
+const moduleRoot = fileURLToPath(import.meta.url).substring(
+  0,
+  fileURLToPath(import.meta.url).lastIndexOf("cli") + 3,
+);
+
 // Helper to normalize typesOutput to array format
 export function normalizeTypesOutput(
   output?: string | TypesOutput[],
@@ -55,6 +64,7 @@ class ConfigStore {
   protected config: Config = { ...defaultConfig };
   protected configPath: string | undefined;
   protected projectPath: string | undefined;
+  protected clientVersion: string | undefined;
   protected validateConfig: ValidateFunction | undefined;
 
   async initialize() {
@@ -65,13 +75,9 @@ class ConfigStore {
   protected async createValidator() {
     try {
       // Using current config store file, resolve the schema.json path
-      const filePath = fileURLToPath(import.meta.url);
-      const schemaPath = join(
-        filePath.substring(0, filePath.lastIndexOf("cli") + 3),
-        "schema.json",
-      );
+      const schemaPath = join(moduleRoot, "schema.json");
       const content = await readFile(schemaPath, "utf-8");
-      const parsed = JSON5.parse<Config>(content);
+      const parsed = parseJSON(content) as unknown as Config;
       const ajv = new Ajv();
       this.validateConfig = ajv.compile(parsed);
     } catch {
@@ -85,17 +91,31 @@ class ConfigStore {
       return;
     }
 
+    // Load the client version from the module's package.json metadata
     try {
-      const packageJSONPath = await findUp("package.json");
+      const moduleMetadata = await readFile(
+        join(moduleRoot, "package.json"),
+        "utf-8",
+      );
+      const moduleMetadataParsed = parseJSON(moduleMetadata) as unknown as {
+        version: string;
+      };
+      this.clientVersion = moduleMetadataParsed.version;
+    } catch {
+      // Should not be the case, but ignore if no package.json is found
+    }
+
+    try {
+      const projectMetadataPath = await findUp("package.json");
       this.configPath = await findUp(CONFIG_FILE_NAME);
       this.projectPath = dirname(
-        this.configPath ?? packageJSONPath ?? process.cwd(),
+        this.configPath ?? projectMetadataPath ?? process.cwd(),
       );
 
       if (!this.configPath) return;
 
       const content = await readFile(this.configPath, "utf-8");
-      const parsed = JSON5.parse<Partial<Config>>(content);
+      const parsed = parseJSON(content) as unknown as Partial<Config>;
 
       // Normalize values
       if (parsed.baseUrl)
@@ -112,7 +132,7 @@ class ConfigStore {
         );
       }
 
-      this.config = { ...this.config, ...parsed };
+      this.config = assignJSON(this.config, parsed);
     } catch {
       // No config file found
     }
@@ -123,9 +143,7 @@ class ConfigStore {
    * @param overwrite If true, overwrites existing config file. Defaults to false
    */
   async saveConfigFile(overwrite = false) {
-    const configWithoutDefaults: Partial<Config> = {
-      ...this.config,
-    };
+    const configWithoutDefaults: Partial<Config> = assignJSON({}, this.config);
 
     // Only include non-default values and $schema
     for (const untypedKey in configWithoutDefaults) {
@@ -138,7 +156,7 @@ class ConfigStore {
       }
     }
 
-    const configJSON = JSON.stringify(configWithoutDefaults, null, 2);
+    const configJSON = stringifyJSON(configWithoutDefaults, null, 2);
 
     if (this.configPath && !overwrite) {
       throw new Error("Config file already exists");
@@ -163,6 +181,10 @@ class ConfigStore {
 
   getConfigPath() {
     return this.configPath;
+  }
+
+  getClientVersion() {
+    return this.clientVersion;
   }
 
   getProjectPath() {

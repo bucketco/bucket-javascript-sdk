@@ -9,6 +9,7 @@ import {
   useUpdateCompany,
   useUpdateOtherContext,
   useUpdateUser,
+  useClient,
 } from "../../src";
 
 // Extending the Features interface to define the available features
@@ -187,6 +188,7 @@ function Demos() {
       <UpdateContext />
       <Feedback />
       <SendEvent />
+      <CustomToolbar />
     </main>
   );
 }
@@ -223,6 +225,49 @@ function FeatureOptIn({
   );
 }
 
+function CustomToolbar() {
+  const client = useClient();
+
+  if (!client) {
+    return null;
+  }
+
+  return (
+    <div>
+      <h2>Custom toolbar</h2>
+      <ul>
+        {Object.entries(client.getFeatures()).map(([featureKey, feature]) => (
+          <li key={featureKey}>
+            {featureKey} -
+            {(feature.isEnabledOverride ?? feature.isEnabled)
+              ? "Enabled"
+              : "Disabled"}{" "}
+            {feature.isEnabledOverride !== null && (
+              <button
+                onClick={() => {
+                  client.getFeature(featureKey).setIsEnabledOverride(null);
+                }}
+              >
+                Reset
+              </button>
+            )}
+            <input
+              checked={feature.isEnabledOverride ?? feature.isEnabled}
+              type="checkbox"
+              onChange={(e) => {
+                // this uses slightly simplified logic compared to the Bucket Toolbar
+                client
+                  .getFeature(featureKey)
+                  .setIsEnabledOverride(e.target.checked ?? false);
+              }}
+            />
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function App() {
   return (
     <BucketProvider
@@ -232,8 +277,13 @@ export function App() {
       otherContext={initialOtherContext}
       apiBaseUrl={apiBaseUrl}
     >
+      {!publishableKey && (
+        <div>
+          No publishable key set. Please set the VITE_PUBLISHABLE_KEY
+          environment variable.
+        </div>
+      )}
       <Demos />
-      {}
     </BucketProvider>
   );
 }
