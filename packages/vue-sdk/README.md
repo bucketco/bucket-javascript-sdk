@@ -67,7 +67,7 @@ A number of special attributes exist:
 
 ```vue
 <BucketProvider
-  :publishableKey="publishableKey"
+  :publishable-key="publishableKey"
   :user="{ id: 'user_123', name: 'John Doe', email: 'john@acme.com' }"
   :company="{ id: 'acme_inc', plan: 'pro' }"
 ></BucketProvider>
@@ -133,7 +133,7 @@ BucketProvider lets you define a template to be shown while BucketProvider is in
 ```vue
 <template>
   <BucketProvider
-    :publishableKey="publishableKey"
+    :publishable-key="publishableKey"
     :user="user"
     :company="{ id: 'acme_inc', plan: 'pro' }"
   >
