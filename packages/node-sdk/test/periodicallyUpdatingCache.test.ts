@@ -9,7 +9,7 @@ import {
   vi,
 } from "vitest";
 
-import cache from "../src/cache";
+import cache from "../src/periodicallyUpdatingCache";
 import { Logger } from "../src/types";
 
 describe("cache", () => {

@@ -1,5 +1,3 @@
-import { clearInterval } from "timers";
-
 import { ok } from "./utils";
 
 /**
@@ -16,36 +14,31 @@ export function newRateLimiter(windowSizeMs: number) {
     "windowSizeMs must be greater than 0",
   );
 
-  let lastAllowedTimestampsByKey: { [key: string]: number } = {};
-  let clearIntervalId: NodeJS.Timeout | undefined;
+  const lastAllowedTimestampsByKey: { [key: string]: number } = {};
 
-  function clear(all: boolean): void {
-    if (all) {
-      lastAllowedTimestampsByKey = {};
-    } else {
-      const expireBeforeTimestamp = Date.now() - windowSizeMs;
-      const keys = Object.keys(lastAllowedTimestampsByKey);
+  function clearStale(): void {
+    const expireBeforeTimestamp = Date.now() - windowSizeMs;
+    const keys = Object.keys(lastAllowedTimestampsByKey);
 
-      for (const key in keys) {
-        const lastAllowedTimestamp = lastAllowedTimestampsByKey[key];
+    for (const key of keys) {
+      const lastAllowedTimestamp = lastAllowedTimestampsByKey[key];
 
-        if (lastAllowedTimestamp < expireBeforeTimestamp) {
-          delete lastAllowedTimestampsByKey[key];
-        }
+      if (lastAllowedTimestamp < expireBeforeTimestamp) {
+        delete lastAllowedTimestampsByKey[key];
       }
-    }
-
-    if (!Object.keys(lastAllowedTimestampsByKey).length && clearIntervalId) {
-      clearInterval(clearIntervalId);
-      clearIntervalId = undefined;
     }
   }
 
   function isAllowed(key: string): boolean {
-    clearIntervalId =
-      clearIntervalId || setInterval(() => clear(false), windowSizeMs).unref();
-
     const now = Date.now();
+
+    // every ~100 calls, remove all stale items from the cache.
+    //
+    // we previously used a fixed time interval here, but setTimeout
+    // is not available in serverless runtimes.
+    if (Math.random() < 0.01) {
+      clearStale();
+    }
 
     const lastAllowedTimestamp = lastAllowedTimestampsByKey[key];
     if (lastAllowedTimestamp && lastAllowedTimestamp >= now - windowSizeMs) {
@@ -57,7 +50,8 @@ export function newRateLimiter(windowSizeMs: number) {
   }
 
   return {
-    clear,
+    clearStale,
     isAllowed,
+    cacheSize: () => Object.keys(lastAllowedTimestampsByKey).length,
   };
 }

@@ -500,6 +500,13 @@ export type Cache<T> = {
    * @returns The value or `undefined` if the value is not available.
    **/
   refresh: () => Promise<T | undefined>;
+
+  /**
+   * If a refresh is in progress, wait for it to complete.
+   *
+   * @returns A promise that resolves when the refresh is complete.
+   **/
+  waitRefresh: () => Promise<void> | undefined;
 };
 
 /**
@@ -527,7 +534,8 @@ export type BatchBufferOptions<T> = {
 
   /**
    * The interval in milliseconds at which the buffer is flushed.
-   *
+   * @remark
+   * If `0`, the buffer is flushed only when `maxSize` is reached.
    * @defaultValue `1000`
    **/
   intervalMs?: number;
@@ -539,6 +547,8 @@ export type BatchBufferOptions<T> = {
    */
   flushOnExit?: boolean;
 };
+
+export type CacheStrategy = "periodically-update" | "in-request";
 
 /**
  * Defines the options for the SDK client.
@@ -629,6 +639,11 @@ export type ClientOptions = {
    * set through the environment variable BUCKET_CONFIG_FILE.
    */
   configFile?: string;
+
+  /**
+   * The cache strategy to use for the client (optional, defaults to "periodically-update").
+   **/
+  cacheStrategy?: CacheStrategy;
 };
 
 /**
