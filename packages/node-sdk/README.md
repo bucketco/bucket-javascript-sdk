@@ -312,7 +312,7 @@ const client = new BucketClient({
 });
 ```
 
-## Remote config (beta)
+## Remote config
 
 Remote config is a dynamic and flexible approach to configuring feature behavior outside of your app – without needing to re-deploy it.
 
