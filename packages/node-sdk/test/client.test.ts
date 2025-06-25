@@ -167,29 +167,6 @@ const featureDefinitions: FeaturesAPIResponse = {
   ],
 };
 
-const evaluatedFeatures = [
-  {
-    feature: { key: "feature1", version: 1 },
-    value: true,
-    context: {},
-    config: {
-      key: "config-1",
-      payload: { something: "else" },
-      ruleEvaluationResults: [true],
-      missingContextFields: [],
-    },
-    ruleEvaluationResults: [true],
-    missingContextFields: [],
-  },
-  {
-    feature: { key: "feature2", version: 2 },
-    value: false,
-    context: {},
-    ruleEvaluationResults: [false],
-    missingContextFields: ["something"],
-  },
-];
-
 describe("BucketClient", () => {
   afterEach(() => {
     vi.clearAllMocks();
