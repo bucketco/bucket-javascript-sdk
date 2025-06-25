@@ -23,8 +23,10 @@ export class EdgeClient extends BucketClient {
   constructor(
     options: Omit<
       ClientOptions,
-      "cacheStrategy" | "flushIntervalMs" | "batchOptions"
-    > = {},
+      "cacheStrategy" | "flushIntervalMs" | "batchOptions" | "refetchInterval"
+    > & {
+      cacheTTLMs?: number;
+    } = {},
   ) {
     const opts = {
       ...options,
@@ -32,7 +34,7 @@ export class EdgeClient extends BucketClient {
       batchOptions: {
         intervalMs: 0,
       },
-      refetchInterval: 0,
+      refetchInterval: options.cacheTTLMs,
     };
     super(opts);
   }
