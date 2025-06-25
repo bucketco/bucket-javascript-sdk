@@ -1,7 +1,7 @@
 import { BucketClient } from "./client";
 import { ClientOptions } from "./types";
 
-type EdgeClientOptions = Omit<
+export type EdgeClientOptions = Omit<
   ClientOptions,
   "cacheStrategy" | "flushIntervalMs" | "batchOptions"
 >;
