@@ -203,26 +203,44 @@ export interface Rule<T extends RuleValue> {
  * @return {Record<string, string>} A flattened JSON object with "stringified" keys and values.
  */
 export function flattenJSON(data: object): Record<string, string> {
-  if (Object.keys(data).length === 0) return {};
-  const result: Record<string, any> = {};
-  function recurse(cur: any, prop: string) {
-    if (Object(cur) !== cur) {
-      result[prop] = cur;
-    } else if (Array.isArray(cur)) {
-      const l = cur.length;
-      for (let i = 0; i < l; i++)
-        recurse(cur[i], prop ? prop + "." + i : "" + i);
-      if (l == 0) result[prop] = [];
+  const result: Record<string, string> = {};
+
+  if (Object.keys(data).length === 0) {
+    return result;
+  }
+
+  function recurse(value: any, prop: string = "") {
+    if (value === undefined) {
+      return;
+    }
+
+    if (value === null) {
+      result[prop] = "";
+    } else if (typeof value !== "object") {
+      result[prop] = String(value);
+    } else if (Array.isArray(value)) {
+      if (value.length === 0) {
+        result[prop] = "";
+      }
+
+      for (let i = 0; i < value.length; i++) {
+        recurse(value[i], prop ? prop + "." + i : "" + i);
+      }
     } else {
       let isEmpty = true;
-      for (const p in cur) {
+
+      for (const p in value) {
         isEmpty = false;
-        recurse(cur[p], prop ? prop + "." + p : p);
+        recurse(value[p], prop ? prop + "." + p : p);
       }
-      if (isEmpty) result[prop] = {};
+
+      if (isEmpty) {
+        result[prop] = "";
+      }
     }
   }
-  recurse(data, "");
+
+  recurse(data);
   return result;
 }
 

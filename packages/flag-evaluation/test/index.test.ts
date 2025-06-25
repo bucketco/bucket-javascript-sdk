@@ -650,8 +650,8 @@ describe("flattenJSON", () => {
 
     expect(output).toEqual({
       "a.b": "string",
-      "a.c": 123,
-      "a.d": true,
+      "a.c": "123",
+      "a.d": "true",
     });
   });
 
@@ -677,7 +677,7 @@ describe("flattenJSON", () => {
     const output = flattenJSON(input);
 
     expect(output).toEqual({
-      a: [],
+      a: "",
     });
   });
 
@@ -730,6 +730,148 @@ describe("flattenJSON", () => {
 
     expect(output).toEqual({
       "a.b": "",
+    });
+  });
+
+  it("should handle null values", () => {
+    const input = {
+      a: null,
+      b: {
+        c: null,
+      },
+    };
+
+    const output = flattenJSON(input);
+
+    expect(output).toEqual({
+      a: "",
+      "b.c": "",
+    });
+  });
+
+  it("should skip undefined values", () => {
+    const input = {
+      a: "value",
+      b: undefined,
+      c: {
+        d: undefined,
+        e: "another value",
+      },
+    };
+
+    const output = flattenJSON(input);
+
+    expect(output).toEqual({
+      a: "value",
+      "c.e": "another value",
+    });
+  });
+
+  it("should handle empty nested objects", () => {
+    const input = {
+      a: {},
+      b: {
+        c: {},
+        d: "value",
+      },
+    };
+
+    const output = flattenJSON(input);
+
+    expect(output).toEqual({
+      a: "",
+      "b.c": "",
+      "b.d": "value",
+    });
+  });
+
+  it("should handle top-level primitive values", () => {
+    const input = {
+      a: "simple",
+      b: 42,
+      c: true,
+      d: false,
+    };
+
+    const output = flattenJSON(input);
+
+    expect(output).toEqual({
+      a: "simple",
+      b: "42",
+      c: "true",
+      d: "false",
+    });
+  });
+
+  it("should handle arrays with null and undefined values", () => {
+    const input = {
+      a: ["value1", null, undefined, "value4"],
+    };
+
+    const output = flattenJSON(input);
+
+    expect(output).toEqual({
+      "a.0": "value1",
+      "a.1": "",
+      "a.3": "value4",
+    });
+  });
+
+  it("should handle deeply nested empty structures", () => {
+    const input = {
+      a: {
+        b: {
+          c: {},
+          d: [],
+        },
+      },
+    };
+
+    const output = flattenJSON(input);
+
+    expect(output).toEqual({
+      "a.b.c": "",
+      "a.b.d": "",
+    });
+  });
+
+  it("should handle keys with special characters", () => {
+    const input = {
+      "key.with.dots": "value1",
+      "key-with-dashes": "value2",
+      "key with spaces": "value3",
+    };
+
+    const output = flattenJSON(input);
+
+    expect(output).toEqual({
+      "key.with.dots": "value1",
+      "key-with-dashes": "value2",
+      "key with spaces": "value3",
+    });
+  });
+
+  it("should handle edge case numbers and booleans", () => {
+    const input = {
+      zero: 0,
+      negativeNumber: -42,
+      float: 3.14,
+      infinity: Infinity,
+      negativeInfinity: -Infinity,
+      nan: NaN,
+      falseValue: false,
+    };
+
+    const output = flattenJSON(input);
+
+    expect(output).toEqual({
+      zero: "0",
+      negativeNumber: "-42",
+      float: "3.14",
+      infinity: "Infinity",
+      negativeInfinity: "-Infinity",
+      nan: "NaN",
+      falseValue: "false",
     });
   });
 });
