@@ -40,14 +40,17 @@ If using Nuxt, wrap `<BucketProvider>` in `<ClientOnly>`. `<BucketProvider>` onl
 <script setup lang="ts">
 import { useFeature } from "@bucketco/vue-sdk";
 
-const huddle = useFeature("huddle");
+const { isEnabled } = useFeature("huddle");
 </script>
 
 <template>
-  <div v-if="huddle.isEnabled">
-    <button @click="huddle.track()">Start huddle!</button>
+  <div v-if="isEnabled">
+    <button>Start huddle!</button>
+  </div>
 </template>
 ```
+
+See [useFeature()](#usefeature) for a full example
 
 ## Setting `user` and `company`
 
@@ -70,7 +73,9 @@ A number of special attributes exist:
   :publishable-key="publishableKey"
   :user="{ id: 'user_123', name: 'John Doe', email: 'john@acme.com' }"
   :company="{ id: 'acme_inc', plan: 'pro' }"
-></BucketProvider>
+>
+  <!-- your app -->
+</BucketProvider>
 ```
 
 To retrieve features along with their targeting information, use `useFeature(key: string)` hook (described in a section below).
@@ -149,26 +154,40 @@ If you want more control over loading screens, `useIsLoading()` returns a Ref<bo
 
 ### `useFeature()`
 
-Returns the state of a given feature for the current context. The composable provides type-safe access to feature flags and their configurations.
+Returns the state of a given feature for the current context. The composable provides access to feature flags and their configurations.
+
+`useFeature()` returns an object with this shape:
+
+```ts
+{
+  isEnabled: boolean, // is the feature enabled
+  track: () => void, // send a track event when the feature is used
+  requestFeedback: (...) => void // open up a feedback dialog
+  config: {key: string, payload: any},  // remote configuration for this feature
+  isLoading: boolean // if you want to manage loading state at the feature level
+}
+```
+
+Example:
 
 ```vue
 <script setup lang="ts">
 import { useFeature } from "@bucketco/vue-sdk";
 
-const huddle = useFeature("huddle");
+const { isEnabled, track, requestFeedback, config } = useFeature("huddle");
 </script>
 
 <template>
-  <div v-if="huddle.isLoading">Loading...</div>
-  <div v-else-if="!huddle.isEnabled">Feature not available</div>
+  <div v-if="isLoading">Loading...</div>
+  <div v-else-if="!isEnabled">Feature not available</div>
   <div v-else>
-    <button @click="huddle.track()">Start huddle!</button>
+    <button @click="track()">Start huddle!</button>
     <button
       @click="
         (e) =>
-          huddle.requestFeedback({
+          requestFeedback({
             title:
-              huddle.config.payload?.question ??
+              config.payload?.question ??
               'How do you like the Huddles feature?',
             position: {
               type: 'POPOVER',
@@ -187,7 +206,9 @@ See the reference docs for details.
 
 ### `useTrack()`
 
-`useTrack()` lets you send custom events to Bucket. Use this whenever a user _uses_ a feature.
+`useTrack()` returns a function which lets you send custom events to Bucket. It takes a string argument with the event name and optionally an object with properties to attach the event.
+
+Using `track` returned from `useFeature()` calles this track function with the feature key as the event name.
 
 ```vue
 <script setup lang="ts">
