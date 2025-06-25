@@ -1146,6 +1146,7 @@ export class BucketClient {
         : {
             key,
             isEnabled: !!override,
+            config: undefined,
           },
     ]);
 

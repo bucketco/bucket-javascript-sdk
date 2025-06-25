@@ -1,9 +1,9 @@
-import { inject, InjectionKey, onBeforeUnmount, ref } from "vue";
+import { computed, inject, InjectionKey, onBeforeUnmount, ref } from "vue";
 
 import { RequestFeedbackData, UnassignedFeedback } from "@bucketco/browser-sdk";
 
 import {
-  FeatureKey,
+  Feature,
   ProviderContextType,
   RequestFeatureFeedbackOptions,
 } from "./types";
@@ -11,7 +11,7 @@ import {
 export const ProviderSymbol: InjectionKey<ProviderContextType> =
   Symbol("BucketProvider");
 
-export function useFeature<TKey extends FeatureKey>(key: TKey) {
+export function useFeature(key: string): Feature<any> {
   const client = useClient();
   const ctx = injectSafe();
 
@@ -19,22 +19,12 @@ export function useFeature<TKey extends FeatureKey>(key: TKey) {
   const requestFeedback = (opts: RequestFeatureFeedbackOptions) =>
     client.value.requestFeedback({ ...opts, featureKey: key });
 
-  function getFeature() {
-    const f = client.value.getFeature(key);
-    return {
-      isEnabled: f.isEnabled,
-      config: f.config,
-      track,
-      requestFeedback,
-      key,
-      isLoading: ctx.isLoading,
-    };
-  }
+  const feature = ref(client.value.getFeature(key));
 
-  const feature = ref(getFeature());
+  updateFeature();
 
   function updateFeature() {
-    feature.value = getFeature();
+    feature.value = client.value.getFeature(key);
   }
 
   client.value.on("featuresUpdated", updateFeature);
@@ -42,7 +32,14 @@ export function useFeature<TKey extends FeatureKey>(key: TKey) {
     client.value.off("featuresUpdated", updateFeature);
   });
 
-  return feature;
+  return {
+    key,
+    isEnabled: computed(() => feature.value.isEnabled),
+    config: computed(() => feature.value.config),
+    track,
+    requestFeedback,
+    isLoading: computed(() => ctx.isLoading.value),
+  };
 }
 
 /**
