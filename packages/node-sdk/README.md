@@ -427,7 +427,7 @@ afterEach(() => {
 
 describe("API Tests", () => {
   it("should return 200 for the root endpoint", async () => {
-    bucket.setFeatureOverride = {
+    bucket.featureOverrides = {
       "show-todo": true,
     };
 
