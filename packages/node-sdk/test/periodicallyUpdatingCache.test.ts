@@ -9,7 +9,7 @@ import {
   vi,
 } from "vitest";
 
-import cache from "../src/cache";
+import cache from "../src/periodicallyUpdatingCache";
 import { Logger } from "../src/types";
 
 describe("cache", () => {
@@ -67,18 +67,6 @@ describe("cache", () => {
     expect(fn).toHaveBeenCalledTimes(2);
     expect(logger.debug).toHaveBeenNthCalledWith(
       2,
-      expect.stringMatching("updated cached value"),
-      42,
-    );
-  });
-
-  it("should update the cached value when refreshing", async () => {
-    const cached = cache(1000, 2000, logger, fn);
-
-    const result = await cached.refresh();
-
-    expect(result).toBe(42);
-    expect(logger.debug).toHaveBeenCalledWith(
       expect.stringMatching("updated cached value"),
       42,
     );

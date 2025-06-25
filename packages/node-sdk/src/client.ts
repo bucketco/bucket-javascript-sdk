@@ -3,7 +3,6 @@ import fs from "fs";
 import { evaluateFeatureRules, flattenJSON } from "@bucketco/flag-evaluation";
 
 import BatchBuffer from "./batch-buffer";
-import cache from "./cache";
 import {
   API_BASE_URL,
   API_TIMEOUT_MS,
@@ -16,8 +15,11 @@ import {
 } from "./config";
 import fetchClient, { withRetry } from "./fetch-http-client";
 import { subscribe as triggerOnExit } from "./flusher";
+import inRequestCache from "./inRequestCache";
+import periodicallyUpdatingCache from "./periodicallyUpdatingCache";
 import { newRateLimiter } from "./rate-limiter";
 import type {
+  CacheStrategy,
   EvaluatedFeaturesAPIResponse,
   FeatureAPIResponse,
   FeatureDefinition,
@@ -95,12 +97,17 @@ type BulkEvent =
  *
  * @remarks
  * This is the main class for interacting with Bucket.
- * It is used to update user and company contexts, track events, and evaluate feature flags.
+ * It is used to evaluate feature flags, update user and company contexts, and track events.
  *
  * @example
  * ```ts
- * const client = new BucketClient({
- *   secretKey: "your-secret-key",
+ * // set the BUCKET_SECRET_KEY environment variable or pass the secret key to the constructor
+ * const client = new BucketClient();
+ *
+ * // evaluate a feature flag
+ * const isFeatureEnabled = client.getFeature("feature-flag-key", {
+ *   user: { id: "user-id" },
+ *   company: { id: "company-id" },
  * });
  * ```
  **/
@@ -116,6 +123,7 @@ export class BucketClient {
     configFile?: string;
     featuresFetchRetries: number;
     fetchTimeoutMs: number;
+    cacheStrategy: CacheStrategy;
   };
   httpClient: HttpClient;
 
@@ -130,11 +138,15 @@ export class BucketClient {
 
   private initializationFinished = false;
   private _initialize = once(async () => {
+    const start = Date.now();
     if (!this._config.offline) {
       await this.featuresCache.refresh();
     }
     this.logger.info(
-      "Bucket initialized" + (this._config.offline ? " (offline mode)" : ""),
+      "Bucket initialized in " +
+        Math.round(Date.now() - start) +
+        "ms" +
+        (this._config.offline ? " (offline mode)" : ""),
     );
     this.initializationFinished = true;
   });
@@ -156,6 +168,7 @@ export class BucketClient {
    * @param options.configFile - The path to the config file (optional).
    * @param options.featuresFetchRetries - Number of retries for fetching features (optional, defaults to 3).
    * @param options.fetchTimeoutMs - Timeout for fetching features (optional, defaults to 10000ms).
+   * @param options.cacheStrategy - The cache strategy to use for the client (optional, defaults to "periodically-update").
    *
    * @throws An error if the options are invalid.
    **/
@@ -232,12 +245,11 @@ export class BucketClient {
     }
 
     // use the supplied logger or apply the log level to the console logger
+    const logLevel = options.logLevel ?? config?.logLevel ?? "INFO";
+
     this.logger = options.logger
       ? options.logger
-      : applyLogLevel(
-          decorateLogger(BUCKET_LOG_PREFIX, console),
-          options.logLevel ?? config?.logLevel ?? "INFO",
-        );
+      : applyLogLevel(decorateLogger(BUCKET_LOG_PREFIX, console), logLevel);
 
     // todo: deprecate fallback features in favour of a more operationally
     //  friendly way of setting fall backs.
@@ -302,6 +314,7 @@ export class BucketClient {
           : () => config.featureOverrides,
       featuresFetchRetries: options.featuresFetchRetries ?? 3,
       fetchTimeoutMs: options.fetchTimeoutMs ?? API_TIMEOUT_MS,
+      cacheStrategy: options.cacheStrategy ?? "periodically-update",
     };
 
     if ((config.batchOptions?.flushOnExit ?? true) && !this._config.offline) {
@@ -312,23 +325,32 @@ export class BucketClient {
       this._config.apiBaseUrl += "/";
     }
 
-    this.featuresCache = cache<FeaturesAPIResponse>(
-      this._config.refetchInterval,
-      this._config.staleWarningInterval,
-      this.logger,
-      async () => {
-        const res = await this.get<FeaturesAPIResponse>(
-          "features",
-          this._config.featuresFetchRetries,
-        );
+    const fetchFeatures = async () => {
+      const res = await this.get<FeaturesAPIResponse>(
+        "features",
+        this._config.featuresFetchRetries,
+      );
+      if (!isObject(res) || !Array.isArray(res?.features)) {
+        this.logger.warn("features cache: invalid response", res);
+        return undefined;
+      }
+      return res;
+    };
 
-        if (!isObject(res) || !Array.isArray(res?.features)) {
-          return undefined;
-        }
-
-        return res;
-      },
-    );
+    if (this._config.cacheStrategy === "periodically-update") {
+      this.featuresCache = periodicallyUpdatingCache<FeaturesAPIResponse>(
+        this._config.refetchInterval,
+        this._config.staleWarningInterval,
+        this.logger,
+        fetchFeatures,
+      );
+    } else {
+      this.featuresCache = inRequestCache<FeaturesAPIResponse>(
+        this._config.refetchInterval,
+        this.logger,
+        fetchFeatures,
+      );
+    }
   }
 
   /**
@@ -536,7 +558,7 @@ export class BucketClient {
   }
 
   /**
-   * Flushes the batch buffer.
+   * Flushes and completes any in-flight fetches in the feature cache.
    *
    * @remarks
    * It is recommended to call this method when the application is shutting down to ensure all events are sent
@@ -550,6 +572,7 @@ export class BucketClient {
     }
 
     await this.batchBuffer.flush();
+    await this.featuresCache.waitRefresh();
   }
 
   /**

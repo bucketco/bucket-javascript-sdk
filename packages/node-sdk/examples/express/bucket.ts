@@ -1,12 +1,11 @@
-import { BucketClient, Context } from "../src";
-import { FeatureOverrides } from "../src/types";
+import { BucketClient, Context, FeatureOverrides } from "../../";
 
 type CreateConfigPayload = {
   minimumLength: number;
 };
 
 // Extending the Features interface to define the available features
-declare module "../src/types" {
+declare module "../../types" {
   interface Features {
     "show-todos": boolean;
     "create-todos": {

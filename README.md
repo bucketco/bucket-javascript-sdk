@@ -23,6 +23,7 @@ Browser SDK for use in non-React web applications
 ## Node.js SDK
 
 Node.js SDK for use on the server side.
+Use this for Cloudflare Workers as well.
 
 [Read the docs](packages/node-sdk/README.md)
 

@@ -425,7 +425,7 @@ describe("BucketClient", () => {
 
     beforeEach(() => {
       vi.mocked(httpClient.post).mockResolvedValue({ body: { success: true } });
-      client["rateLimiter"].clear(true);
+      client["rateLimiter"].clearStale(true);
     });
 
     it("should return a new client instance with the `user`, `company` and `other` set", async () => {
@@ -546,7 +546,7 @@ describe("BucketClient", () => {
     const client = new BucketClient(validOptions);
 
     beforeEach(() => {
-      client["rateLimiter"].clear(true);
+      client["rateLimiter"].clearStale(true);
     });
 
     // try with both string and number IDs
@@ -631,7 +631,7 @@ describe("BucketClient", () => {
     const client = new BucketClient(validOptions);
 
     beforeEach(() => {
-      client["rateLimiter"].clear(true);
+      client["rateLimiter"].clearStale(true);
     });
 
     test.each([
@@ -725,7 +725,7 @@ describe("BucketClient", () => {
     const client = new BucketClient(validOptions);
 
     beforeEach(() => {
-      client["rateLimiter"].clear(true);
+      client["rateLimiter"].clearStale(true);
     });
 
     test.each([
@@ -1329,7 +1329,7 @@ describe("BucketClient", () => {
 
       client = new BucketClient(validOptions);
 
-      client["rateLimiter"].clear(true);
+      client["rateLimiter"].clearStale(true);
 
       httpClient.post.mockResolvedValue({
         ok: true,
@@ -2189,7 +2189,7 @@ describe("BoundBucketClient", () => {
     await client.flush();
 
     vi.mocked(httpClient.post).mockClear();
-    client["rateLimiter"].clear(true);
+    client["rateLimiter"].clearStale(true);
   });
 
   it("should create a client instance", () => {
