@@ -28,7 +28,7 @@ export interface Feature<
   key: string;
   isEnabled: Ref<boolean>;
   isLoading: Ref<boolean>;
-  config: ({ key: string } & TConfig) | EmptyFeatureRemoteConfig;
+  config: Ref<({ key: string } & TConfig) | EmptyFeatureRemoteConfig>;
   track(): Promise<Response | undefined> | undefined;
   requestFeedback: (opts: RequestFeatureFeedbackOptions) => void;
 }
