@@ -442,6 +442,43 @@ bucketClient.initialize().then(() => {
 
 ![Config type check failed](docs/type-check-payload-failed.png "Remote config type check failed")
 
+## Testing
+
+When writing tests that cover code with feature flags, you can toggle features on/off programmatically to test the different behavior.
+
+`bucket.ts`:
+
+```typescript
+import { BucketClient } from "@bucketco/node-sdk";
+
+export const bucket = new BucketClient();
+```
+
+`app.test.ts`:
+
+```typescript
+import { bucket } from "./bucket.ts";
+
+beforeAll(async () => await bucket.initialize());
+afterEach(() => {
+  bucket.clearFeatureOverrides();
+});
+
+describe("API Tests", () => {
+  it("should return 200 for the root endpoint", async () => {
+    bucket.featureOverrides = {
+      "show-todo": true,
+    };
+
+    const response = await request(app).get("/");
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ message: "Ready to manage some TODOs!" });
+  });
+});
+```
+
+See more on feature overrides in the section below.
+
 ## Feature Overrides
 
 Feature overrides allow you to override feature flags and their configurations locally. This is particularly useful for development and testing. You can specify overrides in three ways:
@@ -453,7 +490,7 @@ BUCKET_FEATURES_ENABLED=feature1,feature2
 BUCKET_FEATURES_DISABLED=feature3,feature4
 ```
 
-1. Through `bucketConfig.json`:
+2. Through `bucketConfig.json`:
 
 ```json
 {
@@ -472,7 +509,21 @@ BUCKET_FEATURES_DISABLED=feature3,feature4
 }
 ```
 
-1. Programmatically through the client options:
+3. Programmatically through the client options:
+
+You can use a simple `Record<string, boolean>` and pass it either in the constructor or by setting `client.featureOverrides`:
+
+```typescript
+// pass directly in the constructor
+const client = new BucketClient({ featureOverrides: { myFeature: true } });
+// or set on the client at a later time
+client.featureOverrides = { myFeature: false };
+
+// clear feature overrides. Same as setting to {}.
+client.clearFeatureOverrides();
+```
+
+To get dynamic overrides, use a function which takes a context and returns a boolean or an object with the shape of `{isEnabled, config}`:
 
 ```typescript
 import { BucketClient, Context } from "@bucketco/node-sdk";

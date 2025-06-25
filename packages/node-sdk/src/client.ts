@@ -23,6 +23,7 @@ import type {
   EvaluatedFeaturesAPIResponse,
   FeatureAPIResponse,
   FeatureDefinition,
+  FeatureOverrides,
   FeatureOverridesFn,
   IdType,
   RawFeature,
@@ -360,9 +361,38 @@ export class BucketClient {
    * @remarks
    * The feature overrides are used to override the feature definitions.
    * This is useful for testing or development.
+   *
+   * @example
+   * ```ts
+   * client.featureOverrides = {
+   *   "feature-1": true,
+   *   "feature-2": false,
+   * };
+   * ```
    **/
-  set featureOverrides(overrides: FeatureOverridesFn) {
-    this._config.featureOverrides = overrides;
+  set featureOverrides(overrides: FeatureOverridesFn | FeatureOverrides) {
+    if (typeof overrides === "object") {
+      this._config.featureOverrides = () => overrides;
+    } else {
+      this._config.featureOverrides = overrides;
+    }
+  }
+
+  /**
+   * Clears the feature overrides.
+   *
+   * @remarks
+   * This is useful for testing or development.
+   *
+   * @example
+   * ```ts
+   * afterAll(() => {
+   *   client.clearFeatureOverrides();
+   * });
+   * ```
+   **/
+  clearFeatureOverrides() {
+    this._config.featureOverrides = () => ({});
   }
 
   /**
@@ -1130,11 +1160,17 @@ export class BucketClient {
       this._config.featureOverrides(context),
     ).map(([key, override]) => [
       key,
-      {
-        key,
-        isEnabled: isObject(override) ? override.isEnabled : !!override,
-        config: isObject(override) ? override.config : undefined,
-      },
+      isObject(override)
+        ? {
+            key,
+            isEnabled: override.isEnabled,
+            config: override.config,
+          }
+        : {
+            key,
+            isEnabled: !!override,
+            config: undefined,
+          },
     ]);
 
     if (overrides.length > 0) {
