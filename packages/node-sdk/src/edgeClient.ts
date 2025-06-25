@@ -1,6 +1,11 @@
 import { BucketClient } from "./client";
 import { ClientOptions } from "./types";
 
+type EdgeClientOptions = Omit<
+  ClientOptions,
+  "cacheStrategy" | "flushIntervalMs" | "batchOptions"
+>;
+
 /**
  * The EdgeClient is BucketClient pre-configured to be used in edge runtimes, like
  * Cloudflare Workers.
@@ -20,21 +25,13 @@ import { ClientOptions } from "./types";
  * ```
  */
 export class EdgeClient extends BucketClient {
-  constructor(
-    options: Omit<
-      ClientOptions,
-      "cacheStrategy" | "flushIntervalMs" | "batchOptions" | "refetchInterval"
-    > & {
-      cacheTTLMs?: number;
-    } = {},
-  ) {
+  constructor(options: EdgeClientOptions = {}) {
     const opts = {
       ...options,
       cacheStrategy: "in-request" as const,
       batchOptions: {
         intervalMs: 0,
       },
-      refetchInterval: options.cacheTTLMs,
     };
     super(opts);
   }

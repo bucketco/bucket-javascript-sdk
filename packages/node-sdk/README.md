@@ -6,7 +6,7 @@ Bucket supports feature toggling, tracking feature usage, collecting feedback on
 
 ## Installation
 
-Install using your favourite package manager:
+Install using your favorite package manager:
 
 {% tabs %}
 {% tab title="npm" %}
@@ -206,6 +206,45 @@ const featureDefs = await client.getFeatureDefinitions();
 //   config: { ... }
 // }]
 ```
+
+## Edge-runtimes like Cloudflare Workers
+
+To use the Bucket NodeSDK with Cloudflare workers, set the `node_compat` flag [in your wrangler file](https://developers.cloudflare.com/workers/runtime-apis/nodejs/#get-started).
+
+Instead of using `BucketClient`, use `EdgeClient` and make sure you call `ctx.waitUntil(bucket.flush());` before returning from your worker function.
+
+```typescript
+import { EdgeClient } from "@bucketco/node-sdk";
+
+// set the BUCKET_SECRET_KEY environment variable or pass the secret key in the constructor
+const bucket = new EdgeClient();
+
+export default {
+  async fetch(request, _env, ctx): Promise<Response> {
+    // initialize the client and wait for it to complete
+    // if the client was initialized on a previous invocation, this is a no-op.
+    await bucket.initialize();
+    const features = bucket.getFeatures({
+      user: { id: "userId" },
+      company: { id: "companyId" },
+    });
+
+    // ensure all events are flushed and any requests to refresh the feature cache
+    // have completed after the response is sent
+    ctx.waitUntil(bucket.flush());
+
+    return new Response(
+      `Features for user ${userId} and company ${companyId}: ${JSON.stringify(features, null, 2)}`,
+    );
+  },
+};
+```
+
+See [examples/cloudflare-worker](examples/cloudflare-worker/src/index.ts) for a deployable example.
+
+Bucket maintains a cached set of feature definitions in the memory of your worker which it uses to decide which features to turn on for which users/companies.
+
+The SDK caches feature definitions in memory for fast performance. The first request to a new worker instance fetches definitions from Bucket's servers, while subsequent requests use the cache. When the cache expires, it's updated in the background. `ctx.waitUntil(bucket.flush())` ensures completion of the background work, so response times are not affected. This background work may increase wall-clock time for your worker, but it will not measurably increase billable CPU time on platforms like Cloudflare.
 
 ## Error Handling
 
@@ -636,11 +675,8 @@ these functions.
 
 ## Flushing
 
-It is highly recommended that users of this SDK manually call `flush()`
-method on process shutdown. The SDK employs a batching technique to minimize
-the number of calls that are sent to Bucket's servers. During process shutdown,
-some messages could be waiting to be sent, and thus, would be discarded if the
-buffer is not flushed.
+BucketClient employs a batching technique to minimize the number of calls that are sent to
+Bucket's servers.
 
 By default, the SDK automatically subscribes to process exit signals and attempts to flush
 any pending events. This behavior is controlled by the `flushOnExit` option in the client configuration:
@@ -652,17 +688,6 @@ const client = new BucketClient({
   },
 });
 ```
-
-> [!NOTE]
-> If you are creating multiple client instances in your application, it's recommended to disable `flushOnExit`
-> to avoid potential conflicts during process shutdown. In such cases, you should implement your own flush handling.
-
-When you bind a client to a user/company, this data is matched against the
-targeting rules. To get accurate targeting, you must ensure that the user/company
-information provided is sufficient to match against the targeting rules you've
-created. The user/company data is automatically transferred to Bucket. This ensures
-that you'll have up-to-date information about companies and users and accurate
-targeting information available in Bucket at all time.
 
 ## Tracking custom events and setting custom attributes
 
