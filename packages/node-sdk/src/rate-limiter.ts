@@ -14,9 +14,13 @@ export function newRateLimiter(windowSizeMs: number) {
     "windowSizeMs must be greater than 0",
   );
 
-  const lastAllowedTimestampsByKey: { [key: string]: number } = {};
+  let lastAllowedTimestampsByKey: { [key: string]: number } = {};
 
-  function clearStale(): void {
+  function clearStale(all: boolean = false): void {
+    if (all) {
+      lastAllowedTimestampsByKey = {};
+    }
+
     const expireBeforeTimestamp = Date.now() - windowSizeMs;
     const keys = Object.keys(lastAllowedTimestampsByKey);
 
