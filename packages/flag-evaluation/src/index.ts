@@ -325,9 +325,9 @@ export function evaluate(
         : fieldValueDate < daysAgo.getTime();
     }
     case "SET":
-      return fieldValue != "";
+      return fieldValue !== "";
     case "NOT_SET":
-      return fieldValue == "";
+      return fieldValue === "";
     case "IS":
       return fieldValue === value;
     case "IS_NOT":
@@ -357,13 +357,17 @@ function evaluateRecursively(
     case "constant":
       return filter.value;
     case "context":
-      if (!(filter.field in context)) {
+      if (
+        !(filter.field in context) &&
+        filter.operator !== "SET" &&
+        filter.operator !== "NOT_SET"
+      ) {
         missingContextFieldsSet.add(filter.field);
         return false;
       }
 
       return evaluate(
-        context[filter.field],
+        context[filter.field] ?? "",
         filter.operator,
         filter.values || [],
         filter.valueSet,

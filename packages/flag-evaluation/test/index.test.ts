@@ -311,6 +311,126 @@ describe("evaluate feature targeting integration ", () => {
     });
   });
 
+  it("should not report missing context fields for `SET` operator when field doesn't exist", () => {
+    const res = evaluateFeatureRules({
+      featureKey: "test_feature",
+      rules: [
+        {
+          value: true,
+          filter: {
+            type: "context",
+            field: "user.name",
+            operator: "SET",
+            values: [],
+          },
+        },
+      ],
+      context: {},
+    });
+
+    expect(res).toEqual({
+      featureKey: "test_feature",
+      value: undefined,
+      context: {},
+      ruleEvaluationResults: [false],
+      reason: "no matched rules",
+      missingContextFields: [],
+    });
+  });
+
+  it("should not report missing context fields for `NOT_SET` operator when field doesn't exist", () => {
+    const res = evaluateFeatureRules({
+      featureKey: "test_feature",
+      rules: [
+        {
+          value: true,
+          filter: {
+            type: "context",
+            field: "user.name",
+            operator: "NOT_SET",
+            values: [],
+          },
+        },
+      ],
+      context: {},
+    });
+
+    expect(res).toEqual({
+      featureKey: "test_feature",
+      value: true,
+      context: {},
+      ruleEvaluationResults: [true],
+      reason: "rule #0 matched",
+      missingContextFields: [],
+    });
+  });
+
+  it("should handle `SET` operator with empty string field value", () => {
+    const res = evaluateFeatureRules({
+      featureKey: "test_feature",
+      rules: [
+        {
+          value: true,
+          filter: {
+            type: "context",
+            field: "user.name",
+            operator: "SET",
+            values: [],
+          },
+        },
+      ],
+      context: {
+        user: {
+          name: "",
+        },
+      },
+    });
+
+    expect(res).toEqual({
+      featureKey: "test_feature",
+      value: undefined,
+      context: {
+        "user.name": "",
+      },
+      ruleEvaluationResults: [false],
+      reason: "no matched rules",
+      missingContextFields: [],
+    });
+  });
+
+  it("should handle `NOT_SET` operator with empty string field value", () => {
+    const res = evaluateFeatureRules({
+      featureKey: "test_feature",
+      rules: [
+        {
+          value: true,
+          filter: {
+            type: "context",
+            field: "user.name",
+            operator: "NOT_SET",
+            values: [],
+          },
+        },
+      ],
+      context: {
+        user: {
+          name: "",
+        },
+      },
+    });
+
+    expect(res).toEqual({
+      featureKey: "test_feature",
+      value: true,
+      context: {
+        "user.name": "",
+      },
+      ruleEvaluationResults: [true],
+      reason: "rule #0 matched",
+      missingContextFields: [],
+    });
+  });
+
   it.each([
     {
       context: { "company.id": "company1" },
@@ -376,6 +496,8 @@ describe("operator evaluation", () => {
 
     ["value", "SET", "", true],
     ["", "SET", "", false],
+    ["value", "NOT_SET", "", false],
+    ["", "NOT_SET", "", true],
 
     // non numeric values should return false
     ["value", "GT", "value", false],
