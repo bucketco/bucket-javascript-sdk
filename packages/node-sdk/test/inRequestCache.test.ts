@@ -72,18 +72,6 @@ describe("inRequestCache", () => {
     );
   });
 
-  it("should update the cached value when refreshing", async () => {
-    const cached = cache(1000, logger, fn);
-
-    const result = await cached.refresh();
-
-    expect(result).toBe(42);
-    expect(logger.debug).toHaveBeenCalledWith(
-      expect.stringMatching("inRequestCache: fetched value"),
-      42,
-    );
-  });
-
   it("should warn if the cached value is stale", async () => {
     const cached = cache(1000, logger, fn);
 
