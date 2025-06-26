@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 
-import { RuleFilter } from "@bucketco/flag-evaluation";
+import { newEvaluator, RuleFilter } from "@bucketco/flag-evaluation";
 
 /**
  * Describes the meta context associated with tracking.
@@ -365,6 +365,10 @@ export type FeaturesAPIResponse = {
   features: FeatureAPIResponse[];
 };
 
+export type CachedFeatureDefinition = FeatureAPIResponse & {
+  enabledEvaluator: ReturnType<typeof newEvaluator<boolean>>;
+  configEvaluator: ReturnType<typeof newEvaluator<any>> | undefined;
+};
 /**
  * (Internal) Describes the response of the evaluated features endpoint.
  *

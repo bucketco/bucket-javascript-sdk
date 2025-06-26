@@ -10,7 +10,7 @@ import {
   vi,
 } from "vitest";
 
-import { evaluateFeatureRules, flattenJSON } from "@bucketco/flag-evaluation";
+import { flattenJSON } from "@bucketco/flag-evaluation";
 
 import { BoundBucketClient, BucketClient } from "../src";
 import {
@@ -29,15 +29,6 @@ import { newRateLimiter } from "../src/rate-limiter";
 import { ClientOptions, Context, FeaturesAPIResponse } from "../src/types";
 
 const BULK_ENDPOINT = "https://api.example.com/bulk";
-
-vi.mock("@bucketco/flag-evaluation", async (importOriginal) => {
-  const original = (await importOriginal()) as any;
-
-  return {
-    ...original,
-    evaluateFeatureRules: vi.fn(original.evaluateFeatureRules),
-  };
-});
 
 vi.mock("../src/rate-limiter", async (importOriginal) => {
   const original = (await importOriginal()) as any;
@@ -1370,7 +1361,6 @@ describe("BucketClient", () => {
 
       await client.flush();
 
-      expect(evaluateFeatureRules).toHaveBeenCalledTimes(3);
       expect(httpClient.post).toHaveBeenCalledTimes(1);
     });
 
@@ -1427,7 +1417,6 @@ describe("BucketClient", () => {
 
       await client.flush();
 
-      expect(evaluateFeatureRules).toHaveBeenCalledTimes(3);
       expect(httpClient.post).toHaveBeenCalledTimes(1);
     });
 
@@ -1458,7 +1447,6 @@ describe("BucketClient", () => {
 
       await client.flush();
 
-      expect(evaluateFeatureRules).toHaveBeenCalledTimes(3);
       expect(httpClient.post).toHaveBeenCalledTimes(1);
     });
 
@@ -1489,7 +1477,6 @@ describe("BucketClient", () => {
 
       await client.flush();
 
-      expect(evaluateFeatureRules).toHaveBeenCalledTimes(3);
       expect(httpClient.post).not.toHaveBeenCalled();
     });
 
@@ -1517,7 +1504,6 @@ describe("BucketClient", () => {
 
       await client.flush();
 
-      expect(evaluateFeatureRules).toHaveBeenCalledTimes(3);
       expect(httpClient.post).toHaveBeenCalledTimes(1);
     });
 
