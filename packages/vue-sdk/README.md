@@ -280,13 +280,9 @@ const sendFeedback = useSendFeedback();
 
 const handleSubmit = async (data: FormData) => {
   await sendFeedback({
-    featureId: "bucket-feature-id",
+    featureKey: "bucket-feature-key",
     score: parseInt(data.get("score") as string),
     comment: data.get("comment") as string,
-    metadata: {
-      source: "custom-form",
-      userRole: "admin",
-    },
   });
 };
 </script>
