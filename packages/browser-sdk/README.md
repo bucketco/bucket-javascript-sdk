@@ -282,7 +282,7 @@ Feedback can be submitted to Bucket using the SDK:
 
 ```ts
 bucketClient.feedback({
-  featureId: "my_feature_id", // String (required), copy from Feature feedback tab
+  featureKey: "my-feature-key", // String (required), copy from Feature feedback tab
   score: 5, // Number: 1-5 (optional)
   comment: "Absolutely stellar work!", // String (optional)
 });
@@ -292,7 +292,7 @@ bucketClient.feedback({
 
 If you are not using the Bucket Browser SDK, you can still submit feedback using the HTTP API.
 
-See details in [Feedback HTTP API](https://docs.bucket.co/reference/http-tracking-api#feedback)
+See details in [Feedback HTTP API](https://docs.bucket.co/api/http-api#post-feedback)
 
 ## Tracking feature usage
 
