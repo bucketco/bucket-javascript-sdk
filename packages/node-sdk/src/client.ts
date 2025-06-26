@@ -1144,6 +1144,9 @@ export class BucketClient {
         acc[res.featureKey as keyof TypedFeatures] = {
           key: res.featureKey,
           isEnabled: res.enabledResult.value ?? false,
+          ruleEvaluationResults: res.enabledResult.ruleEvaluationResults,
+          missingContextFields: res.enabledResult.missingContextFields,
+          targetingVersion: res.targetingVersion,
           config: {
             key: res.configResult?.value?.key,
             payload: res.configResult?.value?.payload,
@@ -1151,9 +1154,6 @@ export class BucketClient {
             ruleEvaluationResults: res.configResult?.ruleEvaluationResults,
             missingContextFields: res.configResult?.missingContextFields,
           },
-          ruleEvaluationResults: res.enabledResult.ruleEvaluationResults,
-          missingContextFields: res.enabledResult.missingContextFields,
-          targetingVersion: res.targetingVersion,
         };
         return acc;
       },
