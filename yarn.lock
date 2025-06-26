@@ -768,7 +768,16 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@bucketco/flag-evaluation@npm:0.1.4, @bucketco/flag-evaluation@workspace:packages/flag-evaluation":
+"@bucketco/flag-evaluation@npm:0.1.4":
+  version: 0.1.4
+  resolution: "@bucketco/flag-evaluation@npm:0.1.4"
+  dependencies:
+    js-sha256: "npm:0.11.0"
+  checksum: 10c0/d1f0513a3167d1c4d2a3caf782072f949f508760d77be2c6d5957f5a92d76aaf70467c1d923591c6663a6dcbe01f4d476e46eb501834231ae3d4f28ecff6640c
+  languageName: node
+  linkType: hard
+
+"@bucketco/flag-evaluation@workspace:packages/flag-evaluation":
   version: 0.0.0-use.local
   resolution: "@bucketco/flag-evaluation@workspace:packages/flag-evaluation"
   dependencies:
