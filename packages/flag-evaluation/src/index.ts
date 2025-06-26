@@ -209,7 +209,7 @@ export function flattenJSON(data: object): Record<string, string> {
     return result;
   }
 
-  function recurse(value: any, prop: string = "") {
+  function recurse(value: any, prop: string) {
     if (value === undefined) {
       return;
     }
@@ -240,7 +240,7 @@ export function flattenJSON(data: object): Record<string, string> {
     }
   }
 
-  recurse(data);
+  recurse(data, "");
   return result;
 }
 
