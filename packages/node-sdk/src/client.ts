@@ -1060,18 +1060,12 @@ export class BucketClient {
       featureDefinitions = featureDefs;
     }
 
-    const featureMap = featureDefinitions.reduce(
-      (acc, f) => {
-        acc[f.key] = f;
-        return acc;
-      },
-      {} as Record<string, CachedFeatureDefinition>,
-    );
-
     const { enableTracking = true, meta: _, ...context } = options;
 
     const evaluated = featureDefinitions.map((feature) => ({
       featureKey: feature.key,
+      targetingVersion: feature.targeting.version,
+      configVersion: feature.config?.version,
       enabledResult: feature.enabledEvaluator(context, feature.key),
       configResult:
         feature.configEvaluator?.(context, feature.key) ??
@@ -1104,7 +1098,7 @@ export class BucketClient {
             this.sendFeatureEvent({
               action: "evaluate",
               key: res.featureKey,
-              targetingVersion: featureMap[res.featureKey].targeting.version,
+              targetingVersion: res.targetingVersion,
               evalResult: res.enabledResult.value ?? false,
               evalContext: res.enabledResult.context,
               evalRuleResults: res.enabledResult.ruleEvaluationResults,
@@ -1118,7 +1112,7 @@ export class BucketClient {
               this.sendFeatureEvent({
                 action: "evaluate-config",
                 key: res.featureKey,
-                targetingVersion: featureMap[res.featureKey]?.config?.version,
+                targetingVersion: res.configVersion,
                 evalResult: config.value,
                 evalContext: config.context,
                 evalRuleResults: config.ruleEvaluationResults,
@@ -1153,13 +1147,13 @@ export class BucketClient {
           config: {
             key: res.configResult?.value?.key,
             payload: res.configResult?.value?.payload,
-            targetingVersion: featureMap[res.featureKey].config?.version,
+            targetingVersion: res.configVersion,
             ruleEvaluationResults: res.configResult?.ruleEvaluationResults,
             missingContextFields: res.configResult?.missingContextFields,
           },
           ruleEvaluationResults: res.enabledResult.ruleEvaluationResults,
           missingContextFields: res.enabledResult.missingContextFields,
-          targetingVersion: featureMap[res.featureKey].targeting.version,
+          targetingVersion: res.targetingVersion,
         };
         return acc;
       },
