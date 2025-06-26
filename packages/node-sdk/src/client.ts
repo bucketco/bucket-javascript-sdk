@@ -1084,33 +1084,6 @@ export class BucketClient {
         } satisfies EvaluationResult<any>),
     }));
 
-    // const evaluatedConfigs = evaluated.reduce(
-    //   (acc, { featureKey }) => {
-    //     const feature = featureMap[featureKey];
-    //     if (feature.config) {
-    //       const variant = evaluateFeatureRules({
-    //         featureKey,
-    //         rules: feature.config.variants.map(({ filter, ...rest }) => ({
-    //           filter,
-    //           value: rest,
-    //         })),
-    //         context,
-    //       });
-
-    //       if (variant.value) {
-    //         acc[featureKey] = {
-    //           ...variant.value,
-    //           targetingVersion: feature.config.version,
-    //           ruleEvaluationResults: variant.ruleEvaluationResults,
-    //           missingContextFields: variant.missingContextFields,
-    //         };
-    //       }
-    //     }
-    //     return acc;
-    //   },
-    //   {} as Record<string, RawFeatureRemoteConfig>,
-    // );
-
     this.warnMissingFeatureContextFields(
       context,
       evaluated.map(({ featureKey, enabledResult, configResult }) => ({
