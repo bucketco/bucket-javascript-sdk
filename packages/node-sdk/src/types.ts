@@ -365,10 +365,17 @@ export type FeaturesAPIResponse = {
   features: FeatureAPIResponse[];
 };
 
+/**
+ * (Internal) Feature definitions with the addition of a pre-prepared
+ * evaluators functions for the rules.
+ *
+ * @internal
+ */
 export type CachedFeatureDefinition = FeatureAPIResponse & {
   enabledEvaluator: ReturnType<typeof newEvaluator<boolean>>;
   configEvaluator: ReturnType<typeof newEvaluator<any>> | undefined;
 };
+
 /**
  * (Internal) Describes the response of the evaluated features endpoint.
  *
