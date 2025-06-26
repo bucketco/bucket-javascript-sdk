@@ -363,14 +363,14 @@ export class BucketClient {
     };
 
     if (this._config.cacheStrategy === "periodically-update") {
-      this.featuresCache = periodicallyUpdatingCache<CachedFeatureDefinitions>(
+      this.featuresCache = periodicallyUpdatingCache<CachedFeatureDefinition[]>(
         this._config.refetchInterval,
         this._config.staleWarningInterval,
         this.logger,
         fetchFeatures,
       );
     } else {
-      this.featuresCache = inRequestCache<CachedFeatureDefinitions>(
+      this.featuresCache = inRequestCache<CachedFeatureDefinition[]>(
         this._config.refetchInterval,
         this.logger,
         fetchFeatures,
