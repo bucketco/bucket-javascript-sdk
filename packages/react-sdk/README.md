@@ -124,7 +124,7 @@ To retrieve features along with their targeting information, use `useFeature(key
 Note that accessing `isEnabled` on the object returned by `useFeature()` automatically
 generates a `check` event.
 
-## Remote config (beta)
+## Remote config
 
 Remote config is a dynamic and flexible approach to configuring feature behavior outside of your app – without needing to re-deploy it.
 
