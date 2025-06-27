@@ -1,6 +1,10 @@
 import fs from "fs";
 
-import { evaluateFeatureRules, flattenJSON } from "@bucketco/flag-evaluation";
+import {
+  EvaluationResult,
+  flattenJSON,
+  newEvaluator,
+} from "@bucketco/flag-evaluation";
 
 import BatchBuffer from "./batch-buffer";
 import {
@@ -19,15 +23,14 @@ import inRequestCache from "./inRequestCache";
 import periodicallyUpdatingCache from "./periodicallyUpdatingCache";
 import { newRateLimiter } from "./rate-limiter";
 import type {
+  CachedFeatureDefinition,
   CacheStrategy,
   EvaluatedFeaturesAPIResponse,
-  FeatureAPIResponse,
   FeatureDefinition,
   FeatureOverrides,
   FeatureOverridesFn,
   IdType,
   RawFeature,
-  RawFeatureRemoteConfig,
 } from "./types";
 import {
   Attributes,
@@ -127,7 +130,7 @@ export class BucketClient {
   };
   httpClient: HttpClient;
 
-  private featuresCache: Cache<FeaturesAPIResponse>;
+  private featuresCache: Cache<CachedFeatureDefinition[]>;
   private batchBuffer: BatchBuffer<BulkEvent>;
   private rateLimiter: ReturnType<typeof newRateLimiter>;
 
@@ -334,18 +337,40 @@ export class BucketClient {
         this.logger.warn("features cache: invalid response", res);
         return undefined;
       }
-      return res;
+
+      return res.features.map((featureDef) => {
+        return {
+          ...featureDef,
+          enabledEvaluator: newEvaluator(
+            featureDef.targeting.rules.map((rule) => ({
+              filter: rule.filter,
+              value: true,
+            })),
+          ),
+          configEvaluator: featureDef.config
+            ? newEvaluator(
+                featureDef.config?.variants.map((variant) => ({
+                  filter: variant.filter,
+                  value: {
+                    key: variant.key,
+                    payload: variant.payload,
+                  },
+                })),
+              )
+            : undefined,
+        } satisfies CachedFeatureDefinition;
+      });
     };
 
     if (this._config.cacheStrategy === "periodically-update") {
-      this.featuresCache = periodicallyUpdatingCache<FeaturesAPIResponse>(
+      this.featuresCache = periodicallyUpdatingCache<CachedFeatureDefinition[]>(
         this._config.refetchInterval,
         this._config.staleWarningInterval,
         this.logger,
         fetchFeatures,
       );
     } else {
-      this.featuresCache = inRequestCache<FeaturesAPIResponse>(
+      this.featuresCache = inRequestCache<CachedFeatureDefinition[]>(
         this._config.refetchInterval,
         this.logger,
         fetchFeatures,
@@ -582,7 +607,7 @@ export class BucketClient {
    * @returns The features definitions.
    */
   public async getFeatureDefinitions(): Promise<FeatureDefinition[]> {
-    const features = this.featuresCache.get()?.features || [];
+    const features = this.featuresCache.get() || [];
     return features.map((f) => ({
       key: f.key,
       description: f.description,
@@ -1022,72 +1047,46 @@ export class BucketClient {
     }
 
     void this.syncContext(options);
-    let featureDefinitions: FeaturesAPIResponse["features"];
+    let featureDefinitions: CachedFeatureDefinition[] = [];
 
-    if (this._config.offline) {
-      featureDefinitions = [];
-    } else {
-      const fetchedFeatures = this.featuresCache.get();
-      if (!fetchedFeatures) {
+    if (!this._config.offline) {
+      const featureDefs = this.featuresCache.get();
+      if (!featureDefs) {
         this.logger.warn(
           "no feature definitions available, using fallback features.",
         );
         return this._config.fallbackFeatures || {};
       }
-
-      featureDefinitions = fetchedFeatures.features;
+      featureDefinitions = featureDefs;
     }
-
-    const featureMap = featureDefinitions.reduce(
-      (acc, f) => {
-        acc[f.key] = f;
-        return acc;
-      },
-      {} as Record<string, FeatureAPIResponse>,
-    );
 
     const { enableTracking = true, meta: _, ...context } = options;
 
-    const evaluated = featureDefinitions.map((feature) =>
-      evaluateFeatureRules({
-        featureKey: feature.key,
-        rules: feature.targeting.rules.map((r) => ({ ...r, value: true })),
-        context,
-      }),
-    );
-
-    const evaluatedConfigs = evaluated.reduce(
-      (acc, { featureKey }) => {
-        const feature = featureMap[featureKey];
-        if (feature.config) {
-          const variant = evaluateFeatureRules({
-            featureKey,
-            rules: feature.config.variants.map(({ filter, ...rest }) => ({
-              filter,
-              value: rest,
-            })),
-            context,
-          });
-
-          if (variant.value) {
-            acc[featureKey] = {
-              ...variant.value,
-              targetingVersion: feature.config.version,
-              ruleEvaluationResults: variant.ruleEvaluationResults,
-              missingContextFields: variant.missingContextFields,
-            };
-          }
-        }
-        return acc;
-      },
-      {} as Record<string, RawFeatureRemoteConfig>,
-    );
+    const evaluated = featureDefinitions.map((feature) => ({
+      featureKey: feature.key,
+      targetingVersion: feature.targeting.version,
+      configVersion: feature.config?.version,
+      enabledResult: feature.enabledEvaluator(context, feature.key),
+      configResult:
+        feature.configEvaluator?.(context, feature.key) ??
+        ({
+          featureKey: feature.key,
+          context,
+          value: undefined,
+          ruleEvaluationResults: [],
+          missingContextFields: [],
+        } satisfies EvaluationResult<any>),
+    }));
 
     this.warnMissingFeatureContextFields(
       context,
-      evaluated.map(({ featureKey, missingContextFields }) => ({
+      evaluated.map(({ featureKey, enabledResult, configResult }) => ({
         key: featureKey,
-        missingContextFields,
+        missingContextFields: enabledResult.missingContextFields ?? [],
+        config: {
+          key: configResult.value,
+          missingContextFields: configResult.missingContextFields ?? [],
+        },
       })),
     );
 
@@ -1099,23 +1098,23 @@ export class BucketClient {
             this.sendFeatureEvent({
               action: "evaluate",
               key: res.featureKey,
-              targetingVersion: featureMap[res.featureKey].targeting.version,
-              evalResult: res.value ?? false,
-              evalContext: res.context,
-              evalRuleResults: res.ruleEvaluationResults,
-              evalMissingFields: res.missingContextFields,
+              targetingVersion: res.targetingVersion,
+              evalResult: res.enabledResult.value ?? false,
+              evalContext: res.enabledResult.context,
+              evalRuleResults: res.enabledResult.ruleEvaluationResults,
+              evalMissingFields: res.enabledResult.missingContextFields,
             }),
           );
 
-          const config = evaluatedConfigs[res.featureKey];
-          if (config) {
+          const config = res.configResult;
+          if (config.value) {
             outPromises.push(
               this.sendFeatureEvent({
                 action: "evaluate-config",
                 key: res.featureKey,
-                targetingVersion: config.targetingVersion,
-                evalResult: { key: config.key, payload: config.payload },
-                evalContext: res.context,
+                targetingVersion: res.configVersion,
+                evalResult: config.value,
+                evalContext: config.context,
                 evalRuleResults: config.ruleEvaluationResults,
                 evalMissingFields: config.missingContextFields,
               }),
@@ -1144,11 +1143,17 @@ export class BucketClient {
       (acc, res) => {
         acc[res.featureKey as keyof TypedFeatures] = {
           key: res.featureKey,
-          isEnabled: res.value ?? false,
-          config: evaluatedConfigs[res.featureKey],
-          ruleEvaluationResults: res.ruleEvaluationResults,
-          missingContextFields: res.missingContextFields,
-          targetingVersion: featureMap[res.featureKey].targeting.version,
+          isEnabled: res.enabledResult.value ?? false,
+          ruleEvaluationResults: res.enabledResult.ruleEvaluationResults,
+          missingContextFields: res.enabledResult.missingContextFields,
+          targetingVersion: res.targetingVersion,
+          config: {
+            key: res.configResult?.value?.key,
+            payload: res.configResult?.value?.payload,
+            targetingVersion: res.configVersion,
+            ruleEvaluationResults: res.configResult?.ruleEvaluationResults,
+            missingContextFields: res.configResult?.missingContextFields,
+          },
         };
         return acc;
       },
