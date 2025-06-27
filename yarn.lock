@@ -793,7 +793,16 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@bucketco/node-sdk@npm:1.8.4, @bucketco/node-sdk@workspace:packages/node-sdk":
+"@bucketco/node-sdk@npm:1.8.4":
+  version: 1.8.4
+  resolution: "@bucketco/node-sdk@npm:1.8.4"
+  dependencies:
+    "@bucketco/flag-evaluation": "npm:0.1.4"
+  checksum: 10c0/f5270915b61526f69f7dbd37b41edf0f130a4a008730f20baf00bbbf49c0a2e3e190a56d35a9451d5645e6da4d874f5d0d555f378596440cccb10306c4362003
+  languageName: node
+  linkType: hard
+
+"@bucketco/node-sdk@workspace:packages/node-sdk":
   version: 0.0.0-use.local
   resolution: "@bucketco/node-sdk@workspace:packages/node-sdk"
   dependencies:
