@@ -165,6 +165,11 @@ export interface Config {
    * Whether to enable tracking.
    */
   enableTracking: boolean;
+
+  /**
+   * Whether to enable offline mode.
+   */
+  offline: boolean;
 }
 
 /**
@@ -227,6 +232,11 @@ export type InitOptions = {
    * Base URL of the Bucket web app. Links open ín this app by default.
    */
   appBaseUrl?: string;
+
+  /**
+   * Whether to enable offline mode. Defaults to `false`.
+   */
+  offline?: boolean;
 
   /**
    * Feature keys for which `isEnabled` should fallback to true
@@ -294,6 +304,7 @@ const defaultConfig: Config = {
   appBaseUrl: APP_BASE_URL,
   sseBaseUrl: SSE_REALTIME_BASE_URL,
   enableTracking: true,
+  offline: false,
 };
 
 /**
@@ -396,6 +407,7 @@ export class BucketClient {
       appBaseUrl: opts?.appBaseUrl ?? defaultConfig.appBaseUrl,
       sseBaseUrl: opts?.sseBaseUrl ?? defaultConfig.sseBaseUrl,
       enableTracking: opts?.enableTracking ?? defaultConfig.enableTracking,
+      offline: opts?.offline ?? defaultConfig.offline,
     };
 
     this.requestFeedbackOptions = {
@@ -423,10 +435,12 @@ export class BucketClient {
         staleTimeMs: opts.staleTimeMs,
         fallbackFeatures: opts.fallbackFeatures,
         timeoutMs: opts.timeoutMs,
+        offline: this.config.offline,
       },
     );
 
     if (
+      !this.config.offline &&
       this.context?.user &&
       !isNode && // do not prompt on server-side
       opts?.feedback?.enableAutoFeedback !== false // default to on
@@ -470,6 +484,7 @@ export class BucketClient {
    * Must be called before calling other SDK methods.
    */
   async initialize() {
+    const start = Date.now();
     if (this.autoFeedback) {
       // do not block on automated feedback surveys initialization
       this.autoFeedbackInit = this.autoFeedback.initialize().catch((e) => {
@@ -489,6 +504,13 @@ export class BucketClient {
         this.logger.error("error sending company", e);
       });
     }
+
+    this.logger.info(
+      "Bucket initialized in " +
+        Math.round(Date.now() - start) +
+        "ms" +
+        (this.config.offline ? " (offline mode)" : ""),
+    );
   }
 
   /**
@@ -607,6 +629,10 @@ export class BucketClient {
       return;
     }
 
+    if (this.config.offline) {
+      return;
+    }
+
     const payload: TrackedEvent = {
       userId: String(this.context.user.id),
       event: eventName,
@@ -634,9 +660,14 @@ export class BucketClient {
    * @returns The server response.
    */
   async feedback(payload: Feedback) {
+    if (this.config.offline) {
+      return;
+    }
+
     const userId =
       payload.userId ||
       (this.context.user?.id ? String(this.context.user?.id) : undefined);
+
     const companyId =
       payload.companyId ||
       (this.context.company?.id ? String(this.context.company?.id) : undefined);
@@ -833,6 +864,10 @@ export class BucketClient {
       return;
     }
 
+    if (this.config.offline) {
+      return;
+    }
+
     const { id, ...attributes } = this.context.user;
     const payload: User = {
       userId: String(id),
@@ -860,6 +895,10 @@ export class BucketClient {
       this.logger.warn(
         "`company` call ignored. No company context provided at initialization",
       );
+      return;
+    }
+
+    if (this.config.offline) {
       return;
     }
 
