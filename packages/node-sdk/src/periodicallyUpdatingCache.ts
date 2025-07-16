@@ -13,7 +13,7 @@ import { Cache, Logger } from "./types";
  * @param fn - The function to call to get the value.
  * @returns The cache object.
  **/
-export default function cache<T>(
+export default function periodicallyUpdatingCache<T>(
   ttl: number,
   staleTtl: number,
   logger: Logger | undefined,
@@ -68,5 +68,13 @@ export default function cache<T>(
     return get();
   };
 
-  return { get, refresh };
+  const waitRefresh = async () => {
+    // no-op
+  };
+
+  return {
+    get,
+    refresh,
+    waitRefresh,
+  };
 }

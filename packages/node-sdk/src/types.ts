@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 
-import { RuleFilter } from "@bucketco/flag-evaluation";
+import { newEvaluator, RuleFilter } from "@bucketco/flag-evaluation";
 
 /**
  * Describes the meta context associated with tracking.
@@ -366,6 +366,17 @@ export type FeaturesAPIResponse = {
 };
 
 /**
+ * (Internal) Feature definitions with the addition of a pre-prepared
+ * evaluators functions for the rules.
+ *
+ * @internal
+ */
+export type CachedFeatureDefinition = FeatureAPIResponse & {
+  enabledEvaluator: ReturnType<typeof newEvaluator<boolean>>;
+  configEvaluator: ReturnType<typeof newEvaluator<any>> | undefined;
+};
+
+/**
  * (Internal) Describes the response of the evaluated features endpoint.
  *
  * @internal
@@ -500,6 +511,13 @@ export type Cache<T> = {
    * @returns The value or `undefined` if the value is not available.
    **/
   refresh: () => Promise<T | undefined>;
+
+  /**
+   * If a refresh is in progress, wait for it to complete.
+   *
+   * @returns A promise that resolves when the refresh is complete.
+   **/
+  waitRefresh: () => Promise<void> | undefined;
 };
 
 /**
@@ -527,7 +545,8 @@ export type BatchBufferOptions<T> = {
 
   /**
    * The interval in milliseconds at which the buffer is flushed.
-   *
+   * @remarks
+   * If `0`, the buffer is flushed only when `maxSize` is reached.
    * @defaultValue `1000`
    **/
   intervalMs?: number;
@@ -539,6 +558,8 @@ export type BatchBufferOptions<T> = {
    */
   flushOnExit?: boolean;
 };
+
+export type CacheStrategy = "periodically-update" | "in-request";
 
 /**
  * Defines the options for the SDK client.
@@ -629,6 +650,11 @@ export type ClientOptions = {
    * set through the environment variable BUCKET_CONFIG_FILE.
    */
   configFile?: string;
+
+  /**
+   * The cache strategy to use for the client (optional, defaults to "periodically-update").
+   **/
+  cacheStrategy?: CacheStrategy;
 };
 
 /**

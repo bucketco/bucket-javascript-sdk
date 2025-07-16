@@ -1,7 +1,9 @@
 export { BoundBucketClient, BucketClient } from "./client";
+export { EdgeClient, EdgeClientOptions } from "./edgeClient";
 export type {
   Attributes,
   BatchBufferOptions,
+  CacheStrategy,
   ClientOptions,
   Context,
   ContextWithTracking,

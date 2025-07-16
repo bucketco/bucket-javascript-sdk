@@ -9,6 +9,7 @@ import { featuresResult } from "./mocks/handlers";
 describe("BucketClient", () => {
   let client: BucketClient;
   const httpClientPost = vi.spyOn(HttpClient.prototype as any, "post");
+  const httpClientGet = vi.spyOn(HttpClient.prototype as any, "get");
 
   const featureClientSetContext = vi.spyOn(
     FeaturesClient.prototype,
@@ -21,6 +22,8 @@ describe("BucketClient", () => {
       user: { id: "user1" },
       company: { id: "company1" },
     });
+
+    vi.clearAllMocks();
   });
 
   describe("updateUser", () => {
@@ -159,6 +162,28 @@ describe("BucketClient", () => {
       expect(checkHookIsEnabled).not.toHaveBeenCalled();
       expect(checkHookConfig).not.toHaveBeenCalled();
       expect(featuresUpdated).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("offline mode", () => {
+    it("should not make HTTP calls when offline", async () => {
+      client = new BucketClient({
+        publishableKey: "test-key",
+        user: { id: "user1" },
+        company: { id: "company1" },
+        offline: true,
+        feedback: { enableAutoFeedback: true },
+      });
+
+      await client.initialize();
+      await client.track("offline-event");
+      await client.feedback({ featureKey: "featureA", score: 5 });
+      await client.updateUser({ name: "New User" });
+      await client.updateCompany({ name: "New Company" });
+      await client.stop();
+
+      expect(httpClientPost).not.toHaveBeenCalled();
+      expect(httpClientGet).not.toHaveBeenCalled();
     });
   });
 });

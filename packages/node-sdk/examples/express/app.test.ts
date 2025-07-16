@@ -6,9 +6,9 @@ import bucket from "./bucket";
 
 beforeAll(async () => await bucket.initialize());
 beforeEach(() => {
-  bucket.featureOverrides = () => ({
+  bucket.featureOverrides = {
     "show-todos": true,
-  });
+  };
 });
 
 describe("API Tests", () => {

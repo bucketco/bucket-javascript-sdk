@@ -1,9 +1,12 @@
 import fs from "fs";
 
-import { evaluateFeatureRules, flattenJSON } from "@bucketco/flag-evaluation";
+import {
+  EvaluationResult,
+  flattenJSON,
+  newEvaluator,
+} from "@bucketco/flag-evaluation";
 
 import BatchBuffer from "./batch-buffer";
-import cache from "./cache";
 import {
   API_BASE_URL,
   API_TIMEOUT_MS,
@@ -16,15 +19,18 @@ import {
 } from "./config";
 import fetchClient, { withRetry } from "./fetch-http-client";
 import { subscribe as triggerOnExit } from "./flusher";
+import inRequestCache from "./inRequestCache";
+import periodicallyUpdatingCache from "./periodicallyUpdatingCache";
 import { newRateLimiter } from "./rate-limiter";
 import type {
+  CachedFeatureDefinition,
+  CacheStrategy,
   EvaluatedFeaturesAPIResponse,
-  FeatureAPIResponse,
   FeatureDefinition,
+  FeatureOverrides,
   FeatureOverridesFn,
   IdType,
   RawFeature,
-  RawFeatureRemoteConfig,
 } from "./types";
 import {
   Attributes,
@@ -94,12 +100,17 @@ type BulkEvent =
  *
  * @remarks
  * This is the main class for interacting with Bucket.
- * It is used to update user and company contexts, track events, and evaluate feature flags.
+ * It is used to evaluate feature flags, update user and company contexts, and track events.
  *
  * @example
  * ```ts
- * const client = new BucketClient({
- *   secretKey: "your-secret-key",
+ * // set the BUCKET_SECRET_KEY environment variable or pass the secret key to the constructor
+ * const client = new BucketClient();
+ *
+ * // evaluate a feature flag
+ * const isFeatureEnabled = client.getFeature("feature-flag-key", {
+ *   user: { id: "user-id" },
+ *   company: { id: "company-id" },
  * });
  * ```
  **/
@@ -115,10 +126,11 @@ export class BucketClient {
     configFile?: string;
     featuresFetchRetries: number;
     fetchTimeoutMs: number;
+    cacheStrategy: CacheStrategy;
   };
   httpClient: HttpClient;
 
-  private featuresCache: Cache<FeaturesAPIResponse>;
+  private featuresCache: Cache<CachedFeatureDefinition[]>;
   private batchBuffer: BatchBuffer<BulkEvent>;
   private rateLimiter: ReturnType<typeof newRateLimiter>;
 
@@ -129,11 +141,15 @@ export class BucketClient {
 
   private initializationFinished = false;
   private _initialize = once(async () => {
+    const start = Date.now();
     if (!this._config.offline) {
       await this.featuresCache.refresh();
     }
     this.logger.info(
-      "Bucket initialized" + (this._config.offline ? " (offline mode)" : ""),
+      "Bucket initialized in " +
+        Math.round(Date.now() - start) +
+        "ms" +
+        (this._config.offline ? " (offline mode)" : ""),
     );
     this.initializationFinished = true;
   });
@@ -155,6 +171,7 @@ export class BucketClient {
    * @param options.configFile - The path to the config file (optional).
    * @param options.featuresFetchRetries - Number of retries for fetching features (optional, defaults to 3).
    * @param options.fetchTimeoutMs - Timeout for fetching features (optional, defaults to 10000ms).
+   * @param options.cacheStrategy - The cache strategy to use for the client (optional, defaults to "periodically-update").
    *
    * @throws An error if the options are invalid.
    **/
@@ -231,12 +248,11 @@ export class BucketClient {
     }
 
     // use the supplied logger or apply the log level to the console logger
+    const logLevel = options.logLevel ?? config?.logLevel ?? "INFO";
+
     this.logger = options.logger
       ? options.logger
-      : applyLogLevel(
-          decorateLogger(BUCKET_LOG_PREFIX, console),
-          options.logLevel ?? config?.logLevel ?? "INFO",
-        );
+      : applyLogLevel(decorateLogger(BUCKET_LOG_PREFIX, console), logLevel);
 
     // todo: deprecate fallback features in favour of a more operationally
     //  friendly way of setting fall backs.
@@ -301,6 +317,7 @@ export class BucketClient {
           : () => config.featureOverrides,
       featuresFetchRetries: options.featuresFetchRetries ?? 3,
       fetchTimeoutMs: options.fetchTimeoutMs ?? API_TIMEOUT_MS,
+      cacheStrategy: options.cacheStrategy ?? "periodically-update",
     };
 
     if ((config.batchOptions?.flushOnExit ?? true) && !this._config.offline) {
@@ -311,23 +328,54 @@ export class BucketClient {
       this._config.apiBaseUrl += "/";
     }
 
-    this.featuresCache = cache<FeaturesAPIResponse>(
-      this._config.refetchInterval,
-      this._config.staleWarningInterval,
-      this.logger,
-      async () => {
-        const res = await this.get<FeaturesAPIResponse>(
-          "features",
-          this._config.featuresFetchRetries,
-        );
+    const fetchFeatures = async () => {
+      const res = await this.get<FeaturesAPIResponse>(
+        "features",
+        this._config.featuresFetchRetries,
+      );
+      if (!isObject(res) || !Array.isArray(res?.features)) {
+        this.logger.warn("features cache: invalid response", res);
+        return undefined;
+      }
 
-        if (!isObject(res) || !Array.isArray(res?.features)) {
-          return undefined;
-        }
+      return res.features.map((featureDef) => {
+        return {
+          ...featureDef,
+          enabledEvaluator: newEvaluator(
+            featureDef.targeting.rules.map((rule) => ({
+              filter: rule.filter,
+              value: true,
+            })),
+          ),
+          configEvaluator: featureDef.config
+            ? newEvaluator(
+                featureDef.config?.variants.map((variant) => ({
+                  filter: variant.filter,
+                  value: {
+                    key: variant.key,
+                    payload: variant.payload,
+                  },
+                })),
+              )
+            : undefined,
+        } satisfies CachedFeatureDefinition;
+      });
+    };
 
-        return res;
-      },
-    );
+    if (this._config.cacheStrategy === "periodically-update") {
+      this.featuresCache = periodicallyUpdatingCache<CachedFeatureDefinition[]>(
+        this._config.refetchInterval,
+        this._config.staleWarningInterval,
+        this.logger,
+        fetchFeatures,
+      );
+    } else {
+      this.featuresCache = inRequestCache<CachedFeatureDefinition[]>(
+        this._config.refetchInterval,
+        this.logger,
+        fetchFeatures,
+      );
+    }
   }
 
   /**
@@ -338,9 +386,38 @@ export class BucketClient {
    * @remarks
    * The feature overrides are used to override the feature definitions.
    * This is useful for testing or development.
+   *
+   * @example
+   * ```ts
+   * client.featureOverrides = {
+   *   "feature-1": true,
+   *   "feature-2": false,
+   * };
+   * ```
    **/
-  set featureOverrides(overrides: FeatureOverridesFn) {
-    this._config.featureOverrides = overrides;
+  set featureOverrides(overrides: FeatureOverridesFn | FeatureOverrides) {
+    if (typeof overrides === "object") {
+      this._config.featureOverrides = () => overrides;
+    } else {
+      this._config.featureOverrides = overrides;
+    }
+  }
+
+  /**
+   * Clears the feature overrides.
+   *
+   * @remarks
+   * This is useful for testing or development.
+   *
+   * @example
+   * ```ts
+   * afterAll(() => {
+   *   client.clearFeatureOverrides();
+   * });
+   * ```
+   **/
+  clearFeatureOverrides() {
+    this._config.featureOverrides = () => ({});
   }
 
   /**
@@ -506,7 +583,7 @@ export class BucketClient {
   }
 
   /**
-   * Flushes the batch buffer.
+   * Flushes and completes any in-flight fetches in the feature cache.
    *
    * @remarks
    * It is recommended to call this method when the application is shutting down to ensure all events are sent
@@ -520,6 +597,7 @@ export class BucketClient {
     }
 
     await this.batchBuffer.flush();
+    await this.featuresCache.waitRefresh();
   }
 
   /**
@@ -529,7 +607,7 @@ export class BucketClient {
    * @returns The features definitions.
    */
   public async getFeatureDefinitions(): Promise<FeatureDefinition[]> {
-    const features = this.featuresCache.get()?.features || [];
+    const features = this.featuresCache.get() || [];
     return features.map((f) => ({
       key: f.key,
       description: f.description,
@@ -969,72 +1047,46 @@ export class BucketClient {
     }
 
     void this.syncContext(options);
-    let featureDefinitions: FeaturesAPIResponse["features"];
+    let featureDefinitions: CachedFeatureDefinition[] = [];
 
-    if (this._config.offline) {
-      featureDefinitions = [];
-    } else {
-      const fetchedFeatures = this.featuresCache.get();
-      if (!fetchedFeatures) {
+    if (!this._config.offline) {
+      const featureDefs = this.featuresCache.get();
+      if (!featureDefs) {
         this.logger.warn(
           "no feature definitions available, using fallback features.",
         );
         return this._config.fallbackFeatures || {};
       }
-
-      featureDefinitions = fetchedFeatures.features;
+      featureDefinitions = featureDefs;
     }
-
-    const featureMap = featureDefinitions.reduce(
-      (acc, f) => {
-        acc[f.key] = f;
-        return acc;
-      },
-      {} as Record<string, FeatureAPIResponse>,
-    );
 
     const { enableTracking = true, meta: _, ...context } = options;
 
-    const evaluated = featureDefinitions.map((feature) =>
-      evaluateFeatureRules({
-        featureKey: feature.key,
-        rules: feature.targeting.rules.map((r) => ({ ...r, value: true })),
-        context,
-      }),
-    );
-
-    const evaluatedConfigs = evaluated.reduce(
-      (acc, { featureKey }) => {
-        const feature = featureMap[featureKey];
-        if (feature.config) {
-          const variant = evaluateFeatureRules({
-            featureKey,
-            rules: feature.config.variants.map(({ filter, ...rest }) => ({
-              filter,
-              value: rest,
-            })),
-            context,
-          });
-
-          if (variant.value) {
-            acc[featureKey] = {
-              ...variant.value,
-              targetingVersion: feature.config.version,
-              ruleEvaluationResults: variant.ruleEvaluationResults,
-              missingContextFields: variant.missingContextFields,
-            };
-          }
-        }
-        return acc;
-      },
-      {} as Record<string, RawFeatureRemoteConfig>,
-    );
+    const evaluated = featureDefinitions.map((feature) => ({
+      featureKey: feature.key,
+      targetingVersion: feature.targeting.version,
+      configVersion: feature.config?.version,
+      enabledResult: feature.enabledEvaluator(context, feature.key),
+      configResult:
+        feature.configEvaluator?.(context, feature.key) ??
+        ({
+          featureKey: feature.key,
+          context,
+          value: undefined,
+          ruleEvaluationResults: [],
+          missingContextFields: [],
+        } satisfies EvaluationResult<any>),
+    }));
 
     this.warnMissingFeatureContextFields(
       context,
-      evaluated.map(({ featureKey, missingContextFields }) => ({
+      evaluated.map(({ featureKey, enabledResult, configResult }) => ({
         key: featureKey,
-        missingContextFields,
+        missingContextFields: enabledResult.missingContextFields ?? [],
+        config: {
+          key: configResult.value,
+          missingContextFields: configResult.missingContextFields ?? [],
+        },
       })),
     );
 
@@ -1046,23 +1098,23 @@ export class BucketClient {
             this.sendFeatureEvent({
               action: "evaluate",
               key: res.featureKey,
-              targetingVersion: featureMap[res.featureKey].targeting.version,
-              evalResult: res.value ?? false,
-              evalContext: res.context,
-              evalRuleResults: res.ruleEvaluationResults,
-              evalMissingFields: res.missingContextFields,
+              targetingVersion: res.targetingVersion,
+              evalResult: res.enabledResult.value ?? false,
+              evalContext: res.enabledResult.context,
+              evalRuleResults: res.enabledResult.ruleEvaluationResults,
+              evalMissingFields: res.enabledResult.missingContextFields,
             }),
           );
 
-          const config = evaluatedConfigs[res.featureKey];
-          if (config) {
+          const config = res.configResult;
+          if (config.value) {
             outPromises.push(
               this.sendFeatureEvent({
                 action: "evaluate-config",
                 key: res.featureKey,
-                targetingVersion: config.targetingVersion,
-                evalResult: { key: config.key, payload: config.payload },
-                evalContext: res.context,
+                targetingVersion: res.configVersion,
+                evalResult: config.value,
+                evalContext: config.context,
                 evalRuleResults: config.ruleEvaluationResults,
                 evalMissingFields: config.missingContextFields,
               }),
@@ -1091,11 +1143,17 @@ export class BucketClient {
       (acc, res) => {
         acc[res.featureKey as keyof TypedFeatures] = {
           key: res.featureKey,
-          isEnabled: res.value ?? false,
-          config: evaluatedConfigs[res.featureKey],
-          ruleEvaluationResults: res.ruleEvaluationResults,
-          missingContextFields: res.missingContextFields,
-          targetingVersion: featureMap[res.featureKey].targeting.version,
+          isEnabled: res.enabledResult.value ?? false,
+          ruleEvaluationResults: res.enabledResult.ruleEvaluationResults,
+          missingContextFields: res.enabledResult.missingContextFields,
+          targetingVersion: res.targetingVersion,
+          config: {
+            key: res.configResult?.value?.key,
+            payload: res.configResult?.value?.payload,
+            targetingVersion: res.configVersion,
+            ruleEvaluationResults: res.configResult?.ruleEvaluationResults,
+            missingContextFields: res.configResult?.missingContextFields,
+          },
         };
         return acc;
       },
@@ -1107,11 +1165,17 @@ export class BucketClient {
       this._config.featureOverrides(context),
     ).map(([key, override]) => [
       key,
-      {
-        key,
-        isEnabled: isObject(override) ? override.isEnabled : !!override,
-        config: isObject(override) ? override.config : undefined,
-      },
+      isObject(override)
+        ? {
+            key,
+            isEnabled: override.isEnabled,
+            config: override.config,
+          }
+        : {
+            key,
+            isEnabled: !!override,
+            config: undefined,
+          },
     ]);
 
     if (overrides.length > 0) {
