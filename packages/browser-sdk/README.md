@@ -109,6 +109,7 @@ type Configuration = {
   staleWhileRevalidate?: boolean; // Revalidate in the background when cached features turn stale to avoid latency in the UI (default: false)
   staleTimeMs?: number; // at initialization time features are loaded from the cache unless they have gone stale. Defaults to 0 which means the cache is disabled. Increase this in the case of a non-SPA
   expireTimeMs?: number; // In case we're unable to fetch features from Bucket, cached/stale features will be used instead until they expire after `expireTimeMs`. Default is 30 days
+  offline?: boolean; // Use the SDK in offline mode. Offline mode is useful during testing and local development
 };
 ```
 
