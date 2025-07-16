@@ -97,12 +97,14 @@ type Config = {
   fallbackFeatures: Record<string, FallbackFeatureOverride>;
   timeoutMs: number;
   staleWhileRevalidate: boolean;
+  offline: boolean;
 };
 
 export const DEFAULT_FEATURES_CONFIG: Config = {
   fallbackFeatures: {},
   timeoutMs: 5000,
   staleWhileRevalidate: false,
+  offline: false,
 };
 
 export function validateFeaturesResponse(response: any) {
@@ -235,6 +237,7 @@ export class FeaturesClient {
       expireTimeMs?: number;
       cache?: FeatureCache;
       rateLimiter?: RateLimiter;
+      offline?: boolean;
     },
   ) {
     this.fetchedFeatures = {};
@@ -265,7 +268,11 @@ export class FeaturesClient {
       fallbackFeatures = options?.fallbackFeatures ?? {};
     }
 
-    this.config = { ...DEFAULT_FEATURES_CONFIG, ...options, fallbackFeatures };
+    this.config = {
+      ...DEFAULT_FEATURES_CONFIG,
+      ...options,
+      fallbackFeatures,
+    };
 
     this.rateLimiter =
       options?.rateLimiter ??
@@ -456,6 +463,10 @@ export class FeaturesClient {
   }
 
   private async maybeFetchFeatures(): Promise<FetchedFeatures | undefined> {
+    if (this.config.offline) {
+      return;
+    }
+
     const cacheKey = this.fetchParams().toString();
     const cachedItem = this.cache.get(cacheKey);
 
