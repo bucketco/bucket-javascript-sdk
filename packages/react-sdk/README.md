@@ -194,10 +194,11 @@ The `<BucketProvider>` initializes the Bucket SDK, fetches features and starts l
   }
   ```
 
-- `timeoutMs`: Timeout in milliseconds when fetching features from the server,
-- `staleWhileRevalidate`: If set to `true`, stale features will be returned while refetching features in the background,
-- `expireTimeMs`: If set, features will be cached between page loads for this duration (in milliseconds),
+- `timeoutMs`: Timeout in milliseconds when fetching features from the server.
+- `staleWhileRevalidate`: If set to `true`, stale features will be returned while refetching features in the background.
+- `expireTimeMs`: If set, features will be cached between page loads for this duration (in milliseconds).
 - `staleTimeMs`: Maximum time (in milliseconds) that stale features will be returned if `staleWhileRevalidate` is true and new features cannot be fetched.
+- `offline`: Provide this option when testing or in local development environments to avoid contacting Bucket servers.
 - `loadingComponent` lets you specify an React component to be rendered instead of the children while the Bucket provider is initializing. If you want more control over loading screens, `useFeature()` returns `isLoading` which you can use to customize the loading experience:
 
   ```tsx
