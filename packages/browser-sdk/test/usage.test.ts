@@ -444,6 +444,23 @@ describe(`sends "check" events `, () => {
       });
     });
 
+    it(`does not send check events when offline`, async () => {
+      const postSpy = vi.spyOn(HttpClient.prototype, "post");
+
+      const client = new BucketClient({
+        publishableKey: KEY,
+        user: { id: "uid" },
+        company: { id: "cid" },
+        offline: true,
+      });
+      await client.initialize();
+
+      const featureA = client.getFeature("featureA");
+      expect(featureA.isEnabled).toBe(false);
+
+      expect(postSpy).not.toHaveBeenCalled();
+    });
+
     it(`sends check event when accessing "isEnabled"`, async () => {
       const sendCheckEventSpy = vi.spyOn(
         FeaturesClient.prototype,

@@ -372,6 +372,10 @@ export class FeaturesClient {
    * @param cb - Callback to call after the event is sent. Might be skipped if the event was rate limited.
    */
   async sendCheckEvent(checkEvent: CheckEvent, cb: () => void) {
+    if (this.config.offline) {
+      return;
+    }
+
     const rateLimitKey = `check-event:${this.fetchParams().toString()}:${checkEvent.key}:${checkEvent.version}:${checkEvent.value}`;
     await this.rateLimiter.rateLimited(rateLimitKey, async () => {
       const payload = {
