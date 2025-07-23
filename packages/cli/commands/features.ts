@@ -203,7 +203,7 @@ export const generateTypesAction = async ({
           handleError(`Type check failed.`, "Features Types");
         } else {
           spinner.succeed(
-            `Validated ${output.format} types in ${chalk.cyan(relative(projectPath, fullPath))}.`,
+            `All ${output.format} types are up to date in ${chalk.cyan(relative(projectPath, fullPath))}.`,
           );
         }
       } else {
@@ -213,10 +213,6 @@ export const generateTypesAction = async ({
         );
       }
     }
-
-    spinner.succeed(
-      `${checkOnly ? "Checked" : "Generated"} types for app ${chalk.cyan(app.name)}.`,
-    );
   } catch (error) {
     spinner?.fail("Type generation failed.");
     handleError(error, "Features Types");
