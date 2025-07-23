@@ -209,7 +209,7 @@ export const generateTypesAction = async ({
       } else {
         const outPath = await writeTypesToFile(types, output.path, projectPath);
         spinner.succeed(
-          `"Generated ${output.format} types in ${chalk.cyan(relative(projectPath, outPath))}.`,
+          `Generated ${output.format} types in ${chalk.cyan(relative(projectPath, outPath))}.`,
         );
       }
     }
