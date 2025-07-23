@@ -11,7 +11,7 @@ export const loginAction = async () => {
   const { baseUrl, apiUrl } = configStore.getConfig();
 
   if (authStore.getToken(baseUrl).isApiKey) {
-    await handleError(
+    handleError(
       "Login is not allowed when an API token was supplied.",
       "Login",
     );
