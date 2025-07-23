@@ -22,6 +22,7 @@ import {
   debugOption,
 } from "./utils/options.js";
 import { stripTrailingSlash } from "./utils/urls.js";
+import { checkLatest as checkLatestVersion } from "./utils/version.js";
 
 const skipBootstrapCommands = [/^login/, /^logout/, /^rules/];
 
@@ -33,6 +34,9 @@ type Options = {
 };
 
 async function main() {
+  // Start a version check in the background
+  const cliVersionCheckPromise = checkLatestVersion();
+
   // Must load tokens and config before anything else
   await authStore.initialize();
   await configStore.initialize();
@@ -78,6 +82,21 @@ async function main() {
         spinner.fail("Bootstrap failed.");
         handleError(error, "Connect");
       }
+    }
+
+    try {
+      const { latestVersion, currentVersion, isNewerAvailable } =
+        await cliVersionCheckPromise;
+
+      if (isNewerAvailable) {
+        console.info(
+          `A new version of the CLI is available: ${chalk.yellow(
+            currentVersion,
+          )} -> ${chalk.green(latestVersion)}. Update to ensure you have the latest features and bug fixes.`,
+        );
+      }
+    } catch {
+      // Ignore errors
     }
 
     if (debug) {

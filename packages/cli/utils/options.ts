@@ -42,6 +42,11 @@ export const typesFormatOption = new Option(
   "Single output format for generated feature types",
 ).choices(["react", "node"]);
 
+export const typesCheckOnlyOption = new Option(
+  "--check-only",
+  "Only checks if types are up to date and exits with a non-zero code if they are not.",
+);
+
 export const featureNameArgument = new Argument(
   "[name]",
   "Feature's name. If not provided, you'll be prompted to enter one.",

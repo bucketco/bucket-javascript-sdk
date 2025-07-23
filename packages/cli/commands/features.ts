@@ -13,6 +13,7 @@ import {
   MissingEnvIdError,
 } from "../utils/errors.js";
 import {
+  checkTypesInFile,
   genFeatureKey,
   genTypes,
   indentLines,
@@ -23,18 +24,19 @@ import {
   appIdOption,
   featureKeyOption,
   featureNameArgument,
+  typesCheckOnlyOption,
   typesFormatOption,
   typesOutOption,
 } from "../utils/options.js";
 import { baseUrlSuffix, featureUrl } from "../utils/urls.js";
 
-type CreateFeatureArgs = {
+type CreateFeatureOptions = {
   key?: string;
 };
 
 export const createFeatureAction = async (
   name: string | undefined,
-  { key }: CreateFeatureArgs,
+  { key }: CreateFeatureOptions,
 ) => {
   const { baseUrl, appId } = configStore.getConfig();
   let spinner: Ora | undefined;
@@ -132,7 +134,13 @@ export const listFeaturesAction = async () => {
   }
 };
 
-export const generateTypesAction = async () => {
+type GenerateTypesOptions = {
+  checkOnly?: boolean;
+};
+
+export const generateTypesAction = async ({
+  checkOnly,
+}: GenerateTypesOptions = {}) => {
   const { baseUrl, appId } = configStore.getConfig();
   const typesOutput = configStore.getConfig("typesOutput");
 
@@ -174,19 +182,41 @@ export const generateTypesAction = async () => {
   }
 
   try {
-    spinner = ora("Generating feature types...").start();
+    spinner = ora(
+      `${checkOnly ? "Checking" : "Generating"} feature types...`,
+    ).start();
     const projectPath = configStore.getProjectPath();
 
     // Generate types for each output configuration
     for (const output of typesOutput) {
       const types = genTypes(features, output.format);
-      const outPath = await writeTypesToFile(types, output.path, projectPath);
-      spinner.succeed(
-        `Generated ${output.format} types in ${chalk.cyan(relative(projectPath, outPath))}.`,
-      );
+
+      if (checkOnly) {
+        const { fullPath, isUpToDate } = await checkTypesInFile(
+          types,
+          output.path,
+          projectPath,
+        );
+
+        if (!isUpToDate) {
+          spinner.fail(`Types are not up to date in ${chalk.cyan(fullPath)}.`);
+          handleError(`Type check failed.`, "Features Types");
+        } else {
+          spinner.succeed(
+            `Validated ${output.format} types in ${chalk.cyan(relative(projectPath, fullPath))}.`,
+          );
+        }
+      } else {
+        const outPath = await writeTypesToFile(types, output.path, projectPath);
+        spinner.succeed(
+          `"Generated ${output.format} types in ${chalk.cyan(relative(projectPath, outPath))}.`,
+        );
+      }
     }
 
-    spinner.succeed(`Generated types for app ${chalk.cyan(app.name)}.`);
+    spinner.succeed(
+      `${checkOnly ? "Checked" : "Generated"} types for app ${chalk.cyan(app.name)}.`,
+    );
   } catch (error) {
     spinner?.fail("Type generation failed.");
     handleError(error, "Features Types");
@@ -219,6 +249,7 @@ export function registerFeatureCommands(cli: Command) {
     .addOption(appIdOption)
     .addOption(typesOutOption)
     .addOption(typesFormatOption)
+    .addOption(typesCheckOnlyOption)
     .action(generateTypesAction);
 
   // Update the config with the cli override values

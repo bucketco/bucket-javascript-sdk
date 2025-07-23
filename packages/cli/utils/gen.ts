@@ -1,5 +1,5 @@
 import { camelCase, kebabCase, pascalCase, snakeCase } from "change-case";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, join } from "node:path";
 
 import { Feature, RemoteConfig } from "../services/features.js";
@@ -145,4 +145,22 @@ export async function writeTypesToFile(
   await writeFile(fullPath, types);
 
   return fullPath;
+}
+
+export async function checkTypesInFile(
+  types: string,
+  outPath: string,
+  projectPath: string,
+) {
+  const fullPath = isAbsolute(outPath) ? outPath : join(projectPath, outPath);
+
+  try {
+    const existingTypes = await readFile(fullPath, "utf-8");
+
+    return { fullPath, isUpToDate: existingTypes === types };
+  } catch {
+    // File doesn't exist, so it's not up to date
+  }
+
+  return { fullPath, isUpToDate: false };
 }
