@@ -30,7 +30,7 @@ export const logoutAction = async () => {
   const baseUrl = configStore.getConfig("baseUrl");
 
   if (authStore.getToken(baseUrl).isApiKey) {
-    await handleError(
+    handleError(
       "Logout is not allowed when an API token was supplied.",
       "Logout",
     );
