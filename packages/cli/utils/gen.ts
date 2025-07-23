@@ -97,7 +97,11 @@ export function genTypes(features: Feature[], format: GenFormat = "react") {
   const configDefs = new Map<string, { name: string; definition: string }>();
   features.forEach(({ key, name, remoteConfigs }) => {
     const definition = genRemoteConfig(remoteConfigs);
-    if (!definition) return;
+
+    if (!definition) {
+      return;
+    }
+
     const configName = `${pascalCase(name)}ConfigPayload`;
     configDefs.set(key, { name: configName, definition });
   });

@@ -10,8 +10,11 @@ import {
   CLIENT_VERSION_HEADER_NAME,
   CLIENT_VERSION_HEADER_VALUE,
 } from "./constants.js";
+import { ResponseError } from "./errors.js";
 import { ParamType } from "./types.js";
 import { errorUrl, loginUrl, successUrl } from "./urls.js";
+
+const maxRetryCount = 1;
 
 interface waitForAccessToken {
   accessToken: string;
@@ -132,14 +135,21 @@ export async function authRequest<T = Record<string, unknown>>(
   retryCount = 0,
 ): Promise<T> {
   const { baseUrl, apiUrl } = configStore.getConfig();
-  const token = authStore.getToken(baseUrl);
+  const { token, isApiKey } = authStore.getToken(baseUrl);
 
   if (!token) {
     const accessToken = await waitForAccessToken(baseUrl, apiUrl);
+
     await authStore.setToken(baseUrl, accessToken.accessToken);
     return authRequest(url, options);
   }
+
+  if (url.startsWith("/")) {
+    url = url.slice(1);
+  }
+
   const resolvedUrl = new URL(`${apiUrl}/${url}`);
+
   if (options?.params) {
     Object.entries(options.params).forEach(([key, value]) => {
       if (value !== null && value !== undefined) {
@@ -152,26 +162,46 @@ export async function authRequest<T = Record<string, unknown>>(
     });
   }
 
-  const response = await fetch(resolvedUrl, {
-    ...options,
-    headers: {
-      ...options?.headers,
-      Authorization: `Bearer ${token}`,
-      [CLIENT_VERSION_HEADER_NAME]: CLIENT_VERSION_HEADER_VALUE(
-        configStore.getClientVersion() ?? "unknown",
-      ),
-    },
-  });
+  let response: Response | undefined;
+
+  try {
+    response = await fetch(resolvedUrl, {
+      ...options,
+      headers: {
+        ...options?.headers,
+        Authorization: `Bearer ${token}`,
+        [CLIENT_VERSION_HEADER_NAME]: CLIENT_VERSION_HEADER_VALUE(
+          configStore.getClientVersion() ?? "unknown",
+        ),
+      },
+    });
+  } catch (error: unknown) {
+    const message =
+      error && typeof error == "object" && "message" in error
+        ? error.message
+        : "unknown";
+
+    throw new Error(`Failed to connect to "${resolvedUrl}". Error: ${message}`);
+  }
 
   if (!response.ok) {
     if (response.status === 401) {
-      await authStore.setToken(baseUrl, undefined);
-      if (retryCount < 1) {
+      if (isApiKey) {
+        throw new Error(
+          `The provided API key is not valid for "${resolvedUrl}".`,
+        );
+      }
+
+      await authStore.setToken(baseUrl, null);
+
+      if (retryCount < maxRetryCount) {
         await waitForAccessToken(baseUrl, apiUrl);
         return authRequest(url, options, retryCount + 1);
       }
     }
-    throw response;
+
+    const data = await response.json();
+    throw new ResponseError(data);
   }
 
   return response.json();

@@ -78,17 +78,17 @@ class ConfigStore {
       const schemaPath = join(moduleRoot, "schema.json");
       const content = await readFile(schemaPath, "utf-8");
       const parsed = parseJSON(content) as unknown as Config;
+
       const ajv = new Ajv();
       this.validateConfig = ajv.compile(parsed);
     } catch {
-      void handleError(new Error("Failed to load the config schema"), "Config");
+      handleError(new Error("Failed to load the config schema"), "Config");
     }
   }
 
   protected async loadConfigFile() {
     if (!this.validateConfig) {
-      void handleError(new Error("Failed to load the config schema"), "Config");
-      return;
+      handleError(new Error("Failed to load the config schema"), "Config");
     }
 
     // Load the client version from the module's package.json metadata
@@ -126,7 +126,7 @@ class ConfigStore {
         parsed.typesOutput = normalizeTypesOutput(parsed.typesOutput);
 
       if (!this.validateConfig!(parsed)) {
-        void handleError(
+        handleError(
           new ConfigValidationError(this.validateConfig!.errors),
           "Config",
         );

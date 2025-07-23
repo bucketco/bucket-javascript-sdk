@@ -1,16 +1,11 @@
-import { input, select } from "@inquirer/prompts";
+import { input } from "@inquirer/prompts";
 import chalk from "chalk";
-import { Argument, Command } from "commander";
+import { Command } from "commander";
 import { relative } from "node:path";
 import ora, { Ora } from "ora";
 
 import { App, getApp, getOrg } from "../services/bootstrap.js";
-import {
-  createFeature,
-  Feature,
-  listFeatures,
-  updateFeatureAccess,
-} from "../services/features.js";
+import { createFeature, Feature, listFeatures } from "../services/features.js";
 import { configStore } from "../stores/config.js";
 import {
   handleError,
@@ -26,19 +21,12 @@ import {
 } from "../utils/gen.js";
 import {
   appIdOption,
-  companyIdsOption,
-  disableFeatureOption,
-  enableFeatureOption,
   featureKeyOption,
   featureNameArgument,
-  segmentIdsOption,
   typesFormatOption,
   typesOutOption,
-  userIdsOption,
 } from "../utils/options.js";
 import { baseUrlSuffix, featureUrl } from "../utils/urls.js";
-
-const lf = new Intl.ListFormat("en");
 
 type CreateFeatureArgs = {
   key?: string;
@@ -52,14 +40,14 @@ export const createFeatureAction = async (
   let spinner: Ora | undefined;
 
   if (!appId) {
-    return handleError(new MissingAppIdError(), "Features Create");
+    handleError(new MissingAppIdError(), "Features Create");
   }
 
   let app: App;
   try {
     app = getApp(appId);
   } catch (error) {
-    return handleError(error, "Features Create");
+    handleError(error, "Features Create");
   }
 
   const production = app.environments.find((e) => e.isProduction);
@@ -69,6 +57,7 @@ export const createFeatureAction = async (
     console.log(
       `Creating feature for app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}.`,
     );
+
     if (!name) {
       name = await input({
         message: "New feature name:",
@@ -88,6 +77,7 @@ export const createFeatureAction = async (
 
     spinner = ora(`Creating feature...`).start();
     const feature = await createFeature(appId, { name, key });
+
     spinner.succeed(
       `Created feature ${chalk.cyan(feature.name)} with key ${chalk.cyan(feature.key)}:`,
     );
@@ -98,7 +88,7 @@ export const createFeatureAction = async (
     }
   } catch (error) {
     spinner?.fail("Feature creation failed.");
-    void handleError(error, "Features Create");
+    handleError(error, "Features Create");
   }
 };
 
@@ -107,24 +97,28 @@ export const listFeaturesAction = async () => {
   let spinner: Ora | undefined;
 
   if (!appId) {
-    return handleError(new MissingAppIdError(), "Features Create");
+    handleError(new MissingAppIdError(), "Features Create");
   }
 
   try {
     const app = getApp(appId);
     const production = app.environments.find((e) => e.isProduction);
     if (!production) {
-      return handleError(new MissingEnvIdError(), "Features Types");
+      handleError(new MissingEnvIdError(), "Features Types");
     }
+
     spinner = ora(
       `Loading features of app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}...`,
     ).start();
+
     const featuresResponse = await listFeatures(appId, {
       envId: production.id,
     });
+
     spinner.succeed(
       `Loaded features of app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}.`,
     );
+
     console.table(
       featuresResponse.data.map(({ key, name, stage }) => ({
         name,
@@ -134,7 +128,7 @@ export const listFeaturesAction = async () => {
     );
   } catch (error) {
     spinner?.fail("Loading features failed.");
-    void handleError(error, "Features List");
+    handleError(error, "Features List");
   }
 };
 
@@ -146,35 +140,37 @@ export const generateTypesAction = async () => {
   let features: Feature[] = [];
 
   if (!appId) {
-    return handleError(new MissingAppIdError(), "Features Types");
+    handleError(new MissingAppIdError(), "Features Types");
   }
 
   let app: App;
   try {
     app = getApp(appId);
   } catch (error) {
-    return handleError(error, "Features Types");
+    handleError(error, "Features Types");
   }
 
   const production = app.environments.find((e) => e.isProduction);
   if (!production) {
-    return handleError(new MissingEnvIdError(), "Features Types");
+    handleError(new MissingEnvIdError(), "Features Types");
   }
 
   try {
     spinner = ora(
       `Loading features of app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}...`,
     ).start();
+
     features = await listFeatures(appId, {
       envId: production.id,
       includeRemoteConfigs: true,
     }).then((res) => res.data);
+
     spinner.succeed(
       `Loaded features of app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}.`,
     );
   } catch (error) {
     spinner?.fail("Loading features failed.");
-    return handleError(error, "Features Types");
+    handleError(error, "Features Types");
   }
 
   try {
@@ -183,7 +179,7 @@ export const generateTypesAction = async () => {
 
     // Generate types for each output configuration
     for (const output of typesOutput) {
-      const types = await genTypes(features, output.format);
+      const types = genTypes(features, output.format);
       const outPath = await writeTypesToFile(types, output.path, projectPath);
       spinner.succeed(
         `Generated ${output.format} types in ${chalk.cyan(relative(projectPath, outPath))}.`,
@@ -193,129 +189,7 @@ export const generateTypesAction = async () => {
     spinner.succeed(`Generated types for app ${chalk.cyan(app.name)}.`);
   } catch (error) {
     spinner?.fail("Type generation failed.");
-    void handleError(error, "Features Types");
-  }
-};
-
-export const featureAccessAction = async (
-  featureKey: string | undefined,
-  options: {
-    enable: boolean;
-    disable: boolean;
-    companies?: string[];
-    segments?: string[];
-    users?: string[];
-  },
-) => {
-  const { baseUrl, appId } = configStore.getConfig();
-  let spinner: Ora | undefined;
-
-  if (!appId) {
-    return handleError(new MissingAppIdError(), "Feature Access");
-  }
-
-  let app: App;
-  try {
-    app = getApp(appId);
-  } catch (error) {
-    return handleError(error, "Features Types");
-  }
-
-  const production = app.environments.find((e) => e.isProduction);
-  if (!production) {
-    return handleError(new MissingEnvIdError(), "Feature Access");
-  }
-
-  // Validate conflicting options
-  if (options.enable && options.disable) {
-    return handleError(
-      "Cannot both enable and disable a feature.",
-      "Feature Access",
-    );
-  }
-
-  if (!options.enable && !options.disable) {
-    return handleError(
-      "Must specify either --enable or --disable.",
-      "Feature Access",
-    );
-  }
-
-  // Validate at least one target is specified
-  if (
-    !options.companies?.length &&
-    !options.segments?.length &&
-    !options.users?.length
-  ) {
-    return handleError(
-      "Must specify at least one target using --companies, --segments, or --users.",
-      "Feature Access",
-    );
-  }
-
-  // If feature key is not provided, let user select one
-  if (!featureKey) {
-    try {
-      spinner = ora(
-        `Loading features for app ${chalk.cyan(app.name)}${baseUrlSuffix(
-          baseUrl,
-        )}...`,
-      ).start();
-
-      const featuresResponse = await listFeatures(appId, {
-        envId: production.id,
-      });
-
-      if (featuresResponse.data.length === 0) {
-        return handleError("No features found for this app.", "Feature Access");
-      }
-
-      spinner.succeed(
-        `Loaded features for app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}.`,
-      );
-
-      featureKey = await select({
-        message: "Select a feature to manage access:",
-        choices: featuresResponse.data.map((feature) => ({
-          name: `${feature.name} (${feature.key})`,
-          value: feature.key,
-        })),
-      });
-    } catch (error) {
-      spinner?.fail("Loading features failed.");
-      return handleError(error, "Feature Access");
-    }
-  }
-
-  // Determine if enabling or disabling
-  const isEnabled = options.enable;
-
-  const targets = [
-    ...(options.users?.map((id) => chalk.cyan(`user ID ${id}`)) ?? []),
-    ...(options.companies?.map((id) => chalk.cyan(`company ID ${id}`)) ?? []),
-    ...(options.segments?.map((id) => chalk.cyan(`segment ID ${id}`)) ?? []),
-  ];
-
-  try {
-    spinner = ora(
-      `${isEnabled ? "Enabling" : "Disabling"} feature ${chalk.cyan(featureKey)} for ${lf.format(targets)}...`,
-    ).start();
-
-    await updateFeatureAccess(appId, {
-      envId: production.id,
-      featureKey,
-      isEnabled,
-      companyIds: options.companies,
-      segmentIds: options.segments,
-      userIds: options.users,
-    });
-
-    spinner.succeed(
-      `${isEnabled ? "Enabled" : "Disabled"} feature ${chalk.cyan(featureKey)} for specified ${lf.format(targets)}.`,
-    );
-  } catch (error) {
-    spinner?.fail(`Feature access update failed.`);
-    void handleError(error, "Feature Access");
+    handleError(error, "Features Types");
   }
 };
 
@@ -346,26 +220,6 @@ export function registerFeatureCommands(cli: Command) {
     .addOption(typesOutOption)
     .addOption(typesFormatOption)
     .action(generateTypesAction);
-
-  // Add feature access command
-  featuresCommand
-    .command("access")
-    .description(
-      "Grant or revoke feature access for companies, segments, and users.",
-    )
-    .addOption(appIdOption)
-    .addArgument(
-      new Argument(
-        "[featureKey]",
-        "Feature key. If not provided, you'll be prompted to select one",
-      ),
-    )
-    .addOption(enableFeatureOption)
-    .addOption(disableFeatureOption)
-    .addOption(companyIdsOption)
-    .addOption(segmentIdsOption)
-    .addOption(userIdsOption)
-    .action(featureAccessAction);
 
   // Update the config with the cli override values
   featuresCommand.hook("preAction", (_, command) => {

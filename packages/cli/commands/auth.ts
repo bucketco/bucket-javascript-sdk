@@ -10,24 +10,41 @@ import { handleError } from "../utils/errors.js";
 export const loginAction = async () => {
   const { baseUrl, apiUrl } = configStore.getConfig();
 
+  if (authStore.getToken(baseUrl).isApiKey) {
+    await handleError(
+      "Login is not allowed when an API token was supplied.",
+      "Login",
+    );
+  }
+
   try {
     await waitForAccessToken(baseUrl, apiUrl);
     console.log(`Logged in to ${chalk.cyan(baseUrl)} successfully!`);
   } catch (error) {
     console.error("Login failed.");
-    void handleError(error, "Login");
+    await handleError(error, "Login");
   }
 };
 
 export const logoutAction = async () => {
   const baseUrl = configStore.getConfig("baseUrl");
+
+  if (authStore.getToken(baseUrl).isApiKey) {
+    await handleError(
+      "Logout is not allowed when an API token was supplied.",
+      "Logout",
+    );
+  }
+
   const spinner = ora("Logging out...").start();
+
   try {
-    await authStore.setToken(baseUrl, undefined);
+    await authStore.setToken(baseUrl, null);
+
     spinner.succeed("Logged out successfully!");
   } catch (error) {
     spinner.fail("Logout failed.");
-    void handleError(error, "Logout");
+    await handleError(error, "Logout");
   }
 };
 

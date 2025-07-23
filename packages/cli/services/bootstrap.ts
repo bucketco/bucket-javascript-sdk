@@ -1,29 +1,6 @@
 import { authRequest } from "../utils/auth.js";
 import { KeyFormat } from "../utils/gen.js";
 
-export type BootstrapResponse = {
-  org: Org;
-  user: BucketUser;
-  segments: { [appId: string]: Segment[] };
-};
-
-export type Org = {
-  id: string;
-  name: string;
-  logoUrl: string;
-  apps: App[];
-  inviteKey: string;
-  createdAt: Date;
-  updatedAt: Date;
-  trialEndsAt: null;
-  suspendedAt: null;
-  accessLevel: string;
-  domain: null;
-  domainAutoJoin: boolean;
-  isGlobal: boolean;
-  featureKeyFormat: KeyFormat;
-};
-
 export type Environment = {
   id: string;
   name: string;
@@ -42,17 +19,18 @@ export type BucketUser = {
   id: string;
   email: string;
   name: string;
-  createdAt: Date;
-  updatedAt: Date;
-  avatarUrl: string;
-  isAdmin: boolean;
 };
 
-export type Segment = {
+export type Org = {
   id: string;
   name: string;
-  system: boolean;
-  isAllSegment: boolean;
+  apps: App[];
+  featureKeyFormat: KeyFormat;
+};
+
+export type BootstrapResponse = {
+  org: Org;
+  user: BucketUser;
 };
 
 let bootstrapResponse: BootstrapResponse | null = null;
@@ -105,11 +83,4 @@ export function getBucketUser(): BucketUser {
     throw new Error("No user found.");
   }
   return bootstrapResponse.user;
-}
-
-export function listSegments(appId: string): Segment[] {
-  if (!bootstrapResponse) {
-    throw new Error("CLI has not been bootstrapped.");
-  }
-  return bootstrapResponse.segments[appId];
 }
