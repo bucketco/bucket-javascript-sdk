@@ -44,7 +44,7 @@ export const logoutAction = async () => {
     spinner.succeed("Logged out successfully!");
   } catch (error) {
     spinner.fail("Logout failed.");
-    await handleError(error, "Logout");
+    handleError(error, "Logout");
   }
 };
 
