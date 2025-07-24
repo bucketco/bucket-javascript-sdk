@@ -12,7 +12,7 @@ import {
 } from "./constants.js";
 import { ResponseError } from "./errors.js";
 import { ParamType } from "./types.js";
-import { errorUrl, loginUrl, successUrl } from "./urls.js";
+import { errorUrl, successUrl } from "./urls.js";
 
 const maxRetryCount = 1;
 
@@ -21,16 +21,48 @@ interface waitForAccessToken {
   expiresAt: Date;
 }
 
+async function getOAuthServerUrls(apiUrl: string) {
+  const { protocol, host } = new URL(apiUrl);
+  const wellKnownUrl = `${protocol}//${host}/.well-known/oauth-authorization-server`;
+
+  const response = await fetch(wellKnownUrl, {
+    signal: AbortSignal.timeout(5000),
+  });
+
+  if (response.ok) {
+    const data = (await response.json()) as {
+      authorization_endpoint: string;
+      token_endpoint: string;
+      registration_endpoint: string;
+      issuer: string;
+    };
+
+    return {
+      registrationEndpoint:
+        data.registration_endpoint ?? `${data.issuer}/oauth/register`,
+      authorizationEndpoint: data.authorization_endpoint,
+      tokenEndpoint: data.token_endpoint,
+      issuer: data.issuer,
+    };
+  }
+
+  throw new Error("Failed to fetch OAuth server metadata");
+}
+
 export async function waitForAccessToken(baseUrl: string, apiUrl: string) {
-  let resolve: (args: waitForAccessToken) => void,
-    reject: (arg0: Error) => void;
+  const { authorizationEndpoint, tokenEndpoint, registrationEndpoint } =
+    await getOAuthServerUrls(apiUrl);
+
+  let resolve: (args: waitForAccessToken) => void;
+  let reject: (arg0: Error) => void;
+
   const promise = new Promise<waitForAccessToken>((res, rej) => {
     resolve = res;
     reject = rej;
   });
 
-  // PCKE code verifier and challenge
-  const codeVerifier = crypto.randomUUID();
+  // PKCE code verifier and challenge
+  const codeVerifier = crypto.randomBytes(32).toString("base64url");
   const codeChallenge = crypto
     .createHash("sha256")
     .update(codeVerifier)
@@ -54,32 +86,103 @@ export async function waitForAccessToken(baseUrl: string, apiUrl: string) {
     server.closeAllConnections();
   }
 
-  const server = http.createServer(async (req, res) => {
+  const server = http.createServer();
+
+  server.listen();
+
+  const address = server.address();
+  if (address == null || typeof address !== "object") {
+    throw new Error("Could not start server");
+  }
+
+  const redirectUri = `http://localhost:${address.port}/callback`;
+
+  const registrationResponse = await fetch(registrationEndpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      client_name: "Bucket CLI",
+      token_endpoint_auth_method: "none",
+      grant_types: ["authorization_code"],
+      redirect_uris: [redirectUri],
+    }),
+    signal: AbortSignal.timeout(5000),
+  });
+
+  if (!registrationResponse.ok) {
+    throw new Error(`Could not register client with OAuth server`);
+  }
+
+  const registrationData = (await registrationResponse.json()) as {
+    client_id: string;
+  };
+
+  const clientId = registrationData.client_id;
+
+  const params = {
+    response_type: "code",
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    state: crypto.randomUUID(),
+    code_challenge: codeChallenge,
+    code_challenge_method: "S256",
+  };
+
+  const browserUrl = `${authorizationEndpoint}?${new URLSearchParams(params).toString()}`;
+
+  server.on("request", async (req, res) => {
+    if (!clientId || !redirectUri) {
+      res.writeHead(500).end("Could not authenticate: something went wrong");
+
+      cleanupAndReject(
+        new Error("Could not authenticate: something went wrong"),
+      );
+      return;
+    }
+
     const url = new URL(req.url ?? "/", "http://127.0.0.1");
 
-    if (url.pathname !== "/cli-login") {
+    if (url.pathname !== "/callback") {
       res.writeHead(404).end("Invalid path");
-      cleanupAndReject(new Error("Could not authenticate: Invalid path"));
+
+      cleanupAndReject(new Error("Could not authenticate: invalid path"));
+      return;
+    }
+
+    const error = url.searchParams.get("error");
+    if (error) {
+      res.writeHead(400).end("Could not authenticate");
+
+      const errorDescription = url.searchParams.get("error_description");
+      cleanupAndReject(
+        new Error(`Could not authenticate: ${errorDescription || error} `),
+      );
       return;
     }
 
     const code = url.searchParams.get("code");
-
     if (!code) {
       res.writeHead(400).end("Could not authenticate");
+
       cleanupAndReject(new Error("Could not authenticate: no code provided"));
       return;
     }
 
-    const response = await fetch(`${apiUrl}/oauth/cli/access-token`, {
+    const response = await fetch(tokenEndpoint, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: JSON.stringify({
+      body: new URLSearchParams({
+        grant_type: "authorization_code",
+        client_id: clientId,
         code,
-        codeVerifier,
+        code_verifier: codeVerifier,
+        redirect_uri: redirectUri,
       }),
+      signal: AbortSignal.timeout(5000),
     });
 
     if (!response.ok) {
@@ -91,7 +194,11 @@ export async function waitForAccessToken(baseUrl: string, apiUrl: string) {
           ),
         })
         .end("Could not authenticate");
-      cleanupAndReject(new Error("Could not authenticate"));
+
+      const json = await response.json();
+      cleanupAndReject(
+        new Error(`Could not authenticate: ${JSON.stringify(json)}`),
+      );
       return;
     }
     res
@@ -104,19 +211,10 @@ export async function waitForAccessToken(baseUrl: string, apiUrl: string) {
 
     cleanup();
     resolve({
-      accessToken: jsonResponse.accessToken,
-      expiresAt: new Date(jsonResponse.expiresAt),
+      accessToken: jsonResponse.access_token,
+      expiresAt: new Date(Date.now() + jsonResponse.expires_in * 1000),
     });
   });
-
-  server.listen();
-  const address = server.address();
-  if (address == null || typeof address !== "object") {
-    throw new Error("Could not start server");
-  }
-
-  const port = address.port;
-  const browserUrl = loginUrl(apiUrl, port, codeChallenge);
 
   console.log(
     `Opened web browser to facilitate login: ${chalk.cyan(browserUrl)}`,
@@ -195,7 +293,6 @@ export async function authRequest<T = Record<string, unknown>>(
       await authStore.setToken(baseUrl, null);
 
       if (retryCount < maxRetryCount) {
-        await waitForAccessToken(baseUrl, apiUrl);
         return authRequest(url, options, retryCount + 1);
       }
     }
