@@ -9,6 +9,7 @@ import { configStore } from "../stores/config.js";
 import {
   CLIENT_VERSION_HEADER_NAME,
   CLIENT_VERSION_HEADER_VALUE,
+  DEFAULT_AUTH_TIMEOUT,
 } from "./constants.js";
 import { ResponseError } from "./errors.js";
 import { ParamType } from "./types.js";
@@ -49,54 +50,10 @@ async function getOAuthServerUrls(apiUrl: string) {
   throw new Error("Failed to fetch OAuth server metadata");
 }
 
-export async function waitForAccessToken(baseUrl: string, apiUrl: string) {
-  const { authorizationEndpoint, tokenEndpoint, registrationEndpoint } =
-    await getOAuthServerUrls(apiUrl);
-
-  let resolve: (args: waitForAccessToken) => void;
-  let reject: (arg0: Error) => void;
-
-  const promise = new Promise<waitForAccessToken>((res, rej) => {
-    resolve = res;
-    reject = rej;
-  });
-
-  // PKCE code verifier and challenge
-  const codeVerifier = crypto.randomBytes(32).toString("base64url");
-  const codeChallenge = crypto
-    .createHash("sha256")
-    .update(codeVerifier)
-    .digest("base64")
-    .replace(/=/g, "")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_");
-
-  const timeout = setTimeout(() => {
-    cleanupAndReject(new Error("Authentication timed out after 60 seconds"));
-  }, 60000);
-
-  function cleanupAndReject(error: Error) {
-    cleanup();
-    reject(error);
-  }
-
-  function cleanup() {
-    clearTimeout(timeout);
-    server.close();
-    server.closeAllConnections();
-  }
-
-  const server = http.createServer();
-
-  server.listen();
-
-  const address = server.address();
-  if (address == null || typeof address !== "object") {
-    throw new Error("Could not start server");
-  }
-
-  const redirectUri = `http://localhost:${address.port}/callback`;
-
+async function registerClient(
+  registrationEndpoint: string,
+  redirectUri: string,
+) {
   const registrationResponse = await fetch(registrationEndpoint, {
     method: "POST",
     headers: {
@@ -119,13 +76,116 @@ export async function waitForAccessToken(baseUrl: string, apiUrl: string) {
     client_id: string;
   };
 
-  const clientId = registrationData.client_id;
+  return registrationData.client_id;
+}
+
+async function exchangeCodeForToken(
+  tokenEndpoint: string,
+  clientId: string,
+  code: string,
+  codeVerifier: string,
+  redirectUri: string,
+) {
+  const response = await fetch(tokenEndpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      grant_type: "authorization_code",
+      client_id: clientId,
+      code,
+      code_verifier: codeVerifier,
+      redirect_uri: redirectUri,
+    }),
+    signal: AbortSignal.timeout(5000),
+  });
+
+  if (!response.ok) {
+    let errorDescription: string | undefined;
+
+    try {
+      const jsonResponse = await response.json();
+      errorDescription = jsonResponse.error_description || jsonResponse.error;
+    } catch {
+      // ignore
+    }
+
+    return { error: errorDescription ?? "unknown error" };
+  }
+
+  return {
+    accessToken: (await response.json()).access_token,
+    expiresAt: new Date(Date.now() + (await response.json()).expires_in * 1000),
+  };
+}
+
+function createChallenge() {
+  // PKCE code verifier and challenge
+  const codeVerifier = crypto.randomBytes(32).toString("base64url");
+  const codeChallenge = crypto
+    .createHash("sha256")
+    .update(codeVerifier)
+    .digest("base64")
+    .replace(/=/g, "")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_");
+
+  const state = crypto.randomUUID();
+
+  return { codeVerifier, codeChallenge, state };
+}
+
+export async function waitForAccessToken(baseUrl: string, apiUrl: string) {
+  const { authorizationEndpoint, tokenEndpoint, registrationEndpoint } =
+    await getOAuthServerUrls(apiUrl);
+
+  let resolve: (args: waitForAccessToken) => void;
+  let reject: (arg0: Error) => void;
+
+  const promise = new Promise<waitForAccessToken>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+
+  const { codeVerifier, codeChallenge, state } = createChallenge();
+
+  const timeout = setTimeout(() => {
+    cleanupAndReject(
+      `authentication timed out after ${DEFAULT_AUTH_TIMEOUT / 1000} seconds`,
+    );
+  }, DEFAULT_AUTH_TIMEOUT);
+
+  function cleanupAndReject(message: string) {
+    cleanup();
+    reject(new Error(`Could not authenticate: ${message}`));
+  }
+
+  function cleanup() {
+    clearTimeout(timeout);
+    server.close();
+    server.closeAllConnections();
+  }
+
+  const server = http.createServer();
+
+  server.listen();
+
+  const address = server.address();
+  if (address == null || typeof address !== "object") {
+    throw new Error("Could not start server");
+  }
+
+  const callbackPath = "/oauth_callback";
+  const redirectUri = `http://localhost:${address.port}${callbackPath}`;
+
+  const clientId = await registerClient(registrationEndpoint, redirectUri);
 
   const params = {
     response_type: "code",
     client_id: clientId,
     redirect_uri: redirectUri,
-    state: crypto.randomUUID(),
+    state,
     code_challenge: codeChallenge,
     code_challenge_method: "S256",
   };
@@ -134,20 +194,18 @@ export async function waitForAccessToken(baseUrl: string, apiUrl: string) {
 
   server.on("request", async (req, res) => {
     if (!clientId || !redirectUri) {
-      res.writeHead(500).end("Could not authenticate: something went wrong");
+      res.writeHead(500).end("Something went wrong");
 
-      cleanupAndReject(
-        new Error("Could not authenticate: something went wrong"),
-      );
+      cleanupAndReject("something went wrong");
       return;
     }
 
     const url = new URL(req.url ?? "/", "http://127.0.0.1");
 
-    if (url.pathname !== "/callback") {
+    if (url.pathname !== callbackPath) {
       res.writeHead(404).end("Invalid path");
 
-      cleanupAndReject(new Error("Could not authenticate: invalid path"));
+      cleanupAndReject("invalid path");
       return;
     }
 
@@ -156,9 +214,7 @@ export async function waitForAccessToken(baseUrl: string, apiUrl: string) {
       res.writeHead(400).end("Could not authenticate");
 
       const errorDescription = url.searchParams.get("error_description");
-      cleanupAndReject(
-        new Error(`Could not authenticate: ${errorDescription || error} `),
-      );
+      cleanupAndReject(`${errorDescription || error} `);
       return;
     }
 
@@ -166,54 +222,40 @@ export async function waitForAccessToken(baseUrl: string, apiUrl: string) {
     if (!code) {
       res.writeHead(400).end("Could not authenticate");
 
-      cleanupAndReject(new Error("Could not authenticate: no code provided"));
+      cleanupAndReject("no code provided");
       return;
     }
 
-    const response = await fetch(tokenEndpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({
-        grant_type: "authorization_code",
-        client_id: clientId,
-        code,
-        code_verifier: codeVerifier,
-        redirect_uri: redirectUri,
-      }),
-      signal: AbortSignal.timeout(5000),
-    });
+    const response = await exchangeCodeForToken(
+      tokenEndpoint,
+      clientId,
+      code,
+      codeVerifier,
+      redirectUri,
+    );
 
-    if (!response.ok) {
+    if ("error" in response) {
       res
         .writeHead(302, {
           location: errorUrl(
             baseUrl,
-            "Could not authenticate: Unable to fetch access token",
+            "Could not authenticate: unable to fetch access token",
           ),
         })
         .end("Could not authenticate");
 
-      const json = await response.json();
-      cleanupAndReject(
-        new Error(`Could not authenticate: ${JSON.stringify(json)}`),
-      );
+      cleanupAndReject(JSON.stringify(response.error));
       return;
     }
+
     res
       .writeHead(302, {
         location: successUrl(baseUrl),
       })
       .end("Authentication successful");
 
-    const jsonResponse = await response.json();
-
     cleanup();
-    resolve({
-      accessToken: jsonResponse.access_token,
-      expiresAt: new Date(Date.now() + jsonResponse.expires_in * 1000),
-    });
+    resolve(response);
   });
 
   console.log(

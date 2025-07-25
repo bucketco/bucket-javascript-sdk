@@ -14,6 +14,8 @@ export const DEFAULT_BASE_URL = "https://app.bucket.co";
 export const DEFAULT_API_URL = `${DEFAULT_BASE_URL}/api`;
 export const DEFAULT_TYPES_OUTPUT = join("gen", "features.d.ts");
 
+export const DEFAULT_AUTH_TIMEOUT = 60000; // 60 seconds
+
 export const MODULE_ROOT = fileURLToPath(import.meta.url).substring(
   0,
   fileURLToPath(import.meta.url).lastIndexOf("cli") + 3,

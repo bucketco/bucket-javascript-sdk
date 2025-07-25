@@ -13,7 +13,6 @@ import {
   MissingEnvIdError,
 } from "../utils/errors.js";
 import {
-  checkTypesInFile,
   genFeatureKey,
   genTypes,
   indentLines,
@@ -24,7 +23,6 @@ import {
   appIdOption,
   featureKeyOption,
   featureNameArgument,
-  typesCheckOnlyOption,
   typesFormatOption,
   typesOutOption,
 } from "../utils/options.js";
@@ -134,13 +132,7 @@ export const listFeaturesAction = async () => {
   }
 };
 
-type GenerateTypesOptions = {
-  checkOnly?: boolean;
-};
-
-export const generateTypesAction = async ({
-  checkOnly,
-}: GenerateTypesOptions = {}) => {
+export const generateTypesAction = async () => {
   const { baseUrl, appId } = configStore.getConfig();
   const typesOutput = configStore.getConfig("typesOutput");
 
@@ -182,36 +174,17 @@ export const generateTypesAction = async ({
   }
 
   try {
-    spinner = ora(
-      `${checkOnly ? "Checking" : "Generating"} feature types...`,
-    ).start();
+    spinner = ora(`Generating feature types...`).start();
     const projectPath = configStore.getProjectPath();
 
     // Generate types for each output configuration
     for (const output of typesOutput) {
       const types = genTypes(features, output.format);
 
-      if (checkOnly) {
-        const { fullPath, isUpToDate } = await checkTypesInFile(
-          types,
-          output.path,
-          projectPath,
-        );
-
-        if (!isUpToDate) {
-          spinner.fail(`Types are not up to date in ${chalk.cyan(fullPath)}.`);
-          handleError(`Type check failed.`, "Features Types");
-        } else {
-          spinner.succeed(
-            `All ${output.format} types are up to date in ${chalk.cyan(relative(projectPath, fullPath))}.`,
-          );
-        }
-      } else {
-        const outPath = await writeTypesToFile(types, output.path, projectPath);
-        spinner.succeed(
-          `Generated ${output.format} types in ${chalk.cyan(relative(projectPath, outPath))}.`,
-        );
-      }
+      const outPath = await writeTypesToFile(types, output.path, projectPath);
+      spinner.succeed(
+        `Generated ${output.format} types in ${chalk.cyan(relative(projectPath, outPath))}.`,
+      );
     }
   } catch (error) {
     spinner?.fail("Type generation failed.");
@@ -245,7 +218,6 @@ export function registerFeatureCommands(cli: Command) {
     .addOption(appIdOption)
     .addOption(typesOutOption)
     .addOption(typesFormatOption)
-    .addOption(typesCheckOnlyOption)
     .action(generateTypesAction);
 
   // Update the config with the cli override values
