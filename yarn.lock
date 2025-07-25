@@ -724,6 +724,7 @@ __metadata:
     "@inquirer/prompts": "npm:^5.3.8"
     "@types/express": "npm:^5.0.0"
     "@types/node": "npm:^22.5.1"
+    "@types/semver": "npm:^7.7.0"
     "@types/slug": "npm:^5.0.9"
     ajv: "npm:^8.17.1"
     chalk: "npm:^5.3.0"
@@ -737,6 +738,7 @@ __metadata:
     open: "npm:^10.1.0"
     ora: "npm:^8.1.0"
     prettier: "npm:^3.5.2"
+    semver: "npm:^7.7.2"
     shx: "npm:^0.3.4"
     slug: "npm:^10.0.0"
     typescript: "npm:^5.5.4"
@@ -4327,6 +4329,13 @@ __metadata:
     "@types/prop-types": "npm:*"
     csstype: "npm:^3.0.2"
   checksum: 10c0/fe455f805c5da13b89964c3d68060cebd43e73ec15001a68b34634604a78140e6fc202f3f61679b9d809dde6d7a7c2cb3ed51e0fd1462557911db09879b55114
+  languageName: node
+  linkType: hard
+
+"@types/semver@npm:^7.7.0":
+  version: 7.7.0
+  resolution: "@types/semver@npm:7.7.0"
+  checksum: 10c0/6b5f65f647474338abbd6ee91a6bbab434662ddb8fe39464edcbcfc96484d388baad9eb506dff217b6fc1727a88894930eb1f308617161ac0f376fe06be4e1ee
   languageName: node
   linkType: hard
 
@@ -16427,7 +16436,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"semver@npm:^7.3.6":
+"semver@npm:^7.3.6, semver@npm:^7.7.2":
   version: 7.7.2
   resolution: "semver@npm:7.7.2"
   bin:

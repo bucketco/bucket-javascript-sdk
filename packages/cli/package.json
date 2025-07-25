@@ -1,6 +1,6 @@
 {
   "name": "@bucketco/cli",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "packageManager": "yarn@4.1.1",
   "description": "CLI for Bucket service",
   "main": "./dist/index.js",
@@ -52,6 +52,7 @@
     "find-up": "^7.0.0",
     "open": "^10.1.0",
     "ora": "^8.1.0",
+    "semver": "^7.7.2",
     "slug": "^10.0.0",
     "zod": "^3.24.2"
   },
@@ -60,6 +61,7 @@
     "@bucketco/tsconfig": "workspace:^",
     "@types/express": "^5.0.0",
     "@types/node": "^22.5.1",
+    "@types/semver": "^7.7.0",
     "@types/slug": "^5.0.9",
     "eslint": "^9.21.0",
     "prettier": "^3.5.2",

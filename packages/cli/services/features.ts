@@ -3,13 +3,16 @@ import { z } from "zod";
 import { authRequest } from "../utils/auth.js";
 import {
   booleanish,
-  EnvironmentQuery,
   EnvironmentQuerySchema,
   sortTypeSchema,
 } from "../utils/schemas.js";
 import { PaginatedResponse } from "../utils/types.js";
 
-import { Stage } from "./stages.js";
+export type Stage = {
+  id: string;
+  name: string;
+  order: number;
+};
 
 export type FeatureSourceType = "event" | "attribute";
 
@@ -34,26 +37,10 @@ export type FeatureName = {
   parentFeatureId: string | null;
 };
 
-export type Flag = {
-  id: string;
-  currentVersions: {
-    id: string;
-    environment: {
-      id: string;
-    };
-    targetingMode: string;
-    segmentIds: string[];
-    companyIds: string[];
-    userIds: string[];
-    customRules: any;
-  }[];
-};
-
 export type Feature = FeatureName & {
   description: string | null;
   remoteConfigs: RemoteConfig[];
   stage: Stage | null;
-  flagId: string | null;
 };
 
 export type FeaturesResponse = PaginatedResponse<Feature>;
@@ -110,36 +97,14 @@ export async function listFeatures(appId: string, query: FeaturesQuery) {
   });
 }
 
-export async function listFeatureNames(appId: string) {
-  return authRequest<FeatureName[]>(`/apps/${appId}/features/names`);
-}
-
-type FeatureResponse = {
-  feature: Feature;
+type CreateFeatureResponse = {
+  feature: FeatureName & {
+    description: string | null;
+  };
 };
 
-export async function getFeature(
-  appId: string,
-  featureId: string,
-  query: EnvironmentQuery,
-) {
-  return authRequest<FeatureResponse>(`/apps/${appId}/features/${featureId}`, {
-    params: EnvironmentQuerySchema.parse(query),
-  }).then(({ feature }) => feature);
-}
-
-export async function getFlag(
-  appId: string,
-  flagId: string,
-  query: EnvironmentQuery,
-) {
-  return await authRequest<Flag>(`/apps/${appId}/flags/${flagId}`, {
-    params: EnvironmentQuerySchema.parse(query),
-  });
-}
-
 export async function createFeature(appId: string, featureData: FeatureCreate) {
-  return authRequest<FeatureResponse>(`/apps/${appId}/features`, {
+  return authRequest<CreateFeatureResponse>(`/apps/${appId}/features`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -149,75 +114,4 @@ export async function createFeature(appId: string, featureData: FeatureCreate) {
       ...FeatureCreateSchema.parse(featureData),
     }),
   }).then(({ feature }) => feature);
-}
-
-export const FeatureAccessSchema = EnvironmentQuerySchema.extend({
-  featureKey: z.string().describe("Feature key"),
-  isEnabled: booleanish.describe(
-    "Set feature to enabled or disabled for the targeted users, companies and segments.",
-  ),
-  userIds: z.array(z.string()).optional().describe("User IDs to target"),
-  companyIds: z.array(z.string()).optional().describe("Company IDs to target"),
-  segmentIds: z.array(z.string()).optional().describe("Segment IDs to target"),
-}).strict();
-
-export type FeatureAccess = z.input<typeof FeatureAccessSchema>;
-
-export type FlagVersion = {
-  id: string;
-  version: number;
-  changeDescription: string;
-  targetingMode: string;
-  userIds: string[];
-  companyIds: string[];
-  segmentIds: string[];
-};
-
-export type UpdateFeatureAccessResponse = {
-  flagVersions: FlagVersion[];
-};
-
-export async function updateFeatureAccess(appId: string, query: FeatureAccess) {
-  const {
-    envId,
-    featureKey,
-    isEnabled,
-    companyIds = [],
-    segmentIds = [],
-    userIds = [],
-  } = FeatureAccessSchema.parse(query);
-
-  const targets = [
-    ...companyIds.map((id) => ({
-      key: featureKey,
-      companyId: id,
-      enabled: isEnabled,
-    })),
-    ...segmentIds.map((id) => ({
-      key: featureKey,
-      segmentId: id,
-      enabled: isEnabled,
-    })),
-    ...userIds.map((id) => ({
-      key: featureKey,
-      userId: id,
-      enabled: isEnabled,
-    })),
-  ];
-
-  return authRequest<UpdateFeatureAccessResponse>(
-    `/apps/${appId}/features/targeting`,
-    {
-      method: "PATCH",
-      params: {
-        envId,
-      },
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        targets,
-      }),
-    },
-  );
 }

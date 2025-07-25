@@ -36,8 +36,7 @@ export const initAction = async (args: InitArgs = {}) => {
     spinner.succeed(`Loaded apps from ${chalk.cyan(baseUrl)}.`);
   } catch (error) {
     spinner?.fail("Loading apps failed.");
-    void handleError(error, "Initialization");
-    return;
+    handleError(error, "Initialization");
   }
 
   try {
@@ -83,12 +82,13 @@ export const initAction = async (args: InitArgs = {}) => {
     // Create config file
     spinner = ora("Creating configuration...").start();
     await configStore.saveConfigFile(args.overwrite);
+
     spinner.succeed(
       `Configuration created at ${chalk.cyan(relative(process.cwd(), configStore.getConfigPath()!))}.`,
     );
   } catch (error) {
     spinner?.fail("Configuration creation failed.");
-    void handleError(error, "Initialization");
+    handleError(error, "Initialization");
   }
 };
 

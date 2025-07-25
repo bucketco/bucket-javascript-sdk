@@ -101,7 +101,7 @@ ${chalk.grey("These rules should be committed to your project's version control.
       );
     } catch (error) {
       spinner.fail("Failed to add rules.");
-      void handleError(error, "Rules");
+      handleError(error, "Rules");
     }
   } else {
     console.log("Skipping adding rules.");

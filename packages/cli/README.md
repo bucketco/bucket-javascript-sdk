@@ -241,6 +241,7 @@ These options can be used with any command:
 - `--debug`: Enable debug mode for verbose output.
 - `--base-url <url>`: Set the base URL for Bucket API.
 - `--api-url <url>`: Set the API URL directly (overrides base URL).
+- `--api-key <key>`: Bucket API key for non-interactive authentication.
 - `--help`: Display help information for a command.
 
 ## AI-Assisted Development
@@ -296,6 +297,50 @@ The command will guide you through:
 4. Setting up the appropriate configuration file for your chosen editor .
 
 _**Note: The setup uses [mcp-remote](https://github.com/geelen/mcp-remote) as a compatibility layer allowing the remote hosted Bucket MCP server to work with all editors/clients that support MCP STDIO servers. If your editor/client supports HTTP Streaming with OAuth you can connect to the Bucket MCP server directly.**_
+
+## Using in CI/CD Pipelines (Beta)
+
+The Bucket CLI is designed to work seamlessly in CI/CD pipelines. For automated environments where interactive login is not possible, use the `--api-key` option.
+
+```bash
+# Generate types in CI/CD
+npx bucket apps list --api-key $BUCKET_API_KEY
+```
+
+**Important restrictions:**
+
+- When using `--api-key`, the `login` and `logout` commands are disabled.
+- API keys bypass all interactive authentication flows.
+- Only _read-only_ access to Bucket API is granted at the moment.
+- API keys are bound to one app only. Commands such as `apps list` will only return the bound app.
+- Store API keys securely using your CI/CD platform's secret management.
+
+### Primary Use Case: Type Validation in CI/CD
+
+Use the `--check-only` flag with `features types` to validate that generated types are up-to-date:
+
+```bash
+# Check if types are current (exits with non-zero code if not)
+npx bucket features types --check-only --api-key $BUCKET_API_KEY --app-id ap123456789
+```
+
+This is particularly useful for:
+
+- **Pull Request validation**: Ensure developers have regenerated types after feature changes.
+- **Build verification**: Confirm types are synchronized before deployment.
+- **Automated quality checks**: Catch type drift in your CI pipeline.
+
+Example CI workflow:
+
+```yaml
+# GitHub Actions example
+- name: Validate Bucket types
+  run: npx bucket features types --check-only --api-key ${{ secrets.BUCKET_API_KEY }}
+
+- name: Generate types if validation fails
+  if: failure()
+  run: npx bucket features types --api-key ${{ secrets.BUCKET_API_KEY }}
+```
 
 ## Development
 
