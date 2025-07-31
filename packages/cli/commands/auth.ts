@@ -9,25 +9,57 @@ import { handleError } from "../utils/errors.js";
 
 export const loginAction = async () => {
   const { baseUrl, apiUrl } = configStore.getConfig();
+  const { token, isApiKey } = authStore.getToken(baseUrl);
+
+  if (isApiKey) {
+    handleError(
+      "Login is not allowed when an API token was supplied.",
+      "Login",
+    );
+  }
+
+  if (token) {
+    console.log("Already logged in, nothing to do.");
+    return;
+  }
 
   try {
-    await waitForAccessToken(baseUrl, apiUrl);
+    const { accessToken } = await waitForAccessToken(baseUrl, apiUrl);
+    await authStore.setToken(baseUrl, accessToken);
+
     console.log(`Logged in to ${chalk.cyan(baseUrl)} successfully!`);
   } catch (error) {
     console.error("Login failed.");
-    void handleError(error, "Login");
+    handleError(error, "Login");
   }
 };
 
 export const logoutAction = async () => {
   const baseUrl = configStore.getConfig("baseUrl");
+
+  const { token, isApiKey } = authStore.getToken(baseUrl);
+
+  if (isApiKey) {
+    handleError(
+      "Logout is not allowed when an API token was supplied.",
+      "Logout",
+    );
+  }
+
+  if (!token) {
+    console.log("Not logged in, nothing to do.");
+    return;
+  }
+
   const spinner = ora("Logging out...").start();
+
   try {
-    await authStore.setToken(baseUrl, undefined);
+    await authStore.setToken(baseUrl, null);
+
     spinner.succeed("Logged out successfully!");
   } catch (error) {
     spinner.fail("Logout failed.");
-    void handleError(error, "Logout");
+    handleError(error, "Logout");
   }
 };
 

@@ -5,7 +5,6 @@ import ora from "ora";
 
 import { registerAppCommands } from "./commands/apps.js";
 import { registerAuthCommands } from "./commands/auth.js";
-import { registerCompanyCommands } from "./commands/companies.js";
 import { registerFeatureCommands } from "./commands/features.js";
 import { registerInitCommand } from "./commands/init.js";
 import { registerMcpCommand } from "./commands/mcp.js";
@@ -16,8 +15,14 @@ import { authStore } from "./stores/auth.js";
 import { configStore } from "./stores/config.js";
 import { commandName } from "./utils/commander.js";
 import { handleError } from "./utils/errors.js";
-import { apiUrlOption, baseUrlOption, debugOption } from "./utils/options.js";
+import {
+  apiKeyOption,
+  apiUrlOption,
+  baseUrlOption,
+  debugOption,
+} from "./utils/options.js";
 import { stripTrailingSlash } from "./utils/urls.js";
+import { checkLatest as checkLatestVersion } from "./utils/version.js";
 
 const skipBootstrapCommands = [/^login/, /^logout/, /^rules/];
 
@@ -25,9 +30,13 @@ type Options = {
   debug?: boolean;
   baseUrl?: string;
   apiUrl?: string;
+  apiKey?: string;
 };
 
 async function main() {
+  // Start a version check in the background
+  const cliVersionCheckPromise = checkLatestVersion();
+
   // Must load tokens and config before anything else
   await authStore.initialize();
   await configStore.initialize();
@@ -36,17 +45,27 @@ async function main() {
   program.addOption(debugOption);
   program.addOption(baseUrlOption);
   program.addOption(apiUrlOption);
+  program.addOption(apiKeyOption);
 
   // Pre-action hook
   program.hook("preAction", async (_, actionCommand) => {
-    const { debug, baseUrl, apiUrl } = program.opts<Options>();
+    const { debug, baseUrl, apiUrl, apiKey } = program.opts<Options>();
     const cleanedBaseUrl = stripTrailingSlash(baseUrl?.trim());
+    const cleanedApiUrl = stripTrailingSlash(apiUrl?.trim());
+
+    if (apiKey) {
+      console.info(
+        chalk.yellow(
+          "API key supplied. Using it instead of normal personal authentication.",
+        ),
+      );
+      authStore.useApiKey(apiKey);
+    }
+
     // Set baseUrl and apiUrl in config store, will skip if undefined
     configStore.setConfig({
       baseUrl: cleanedBaseUrl,
-      apiUrl:
-        stripTrailingSlash(apiUrl) ||
-        (cleanedBaseUrl && `${cleanedBaseUrl}/api`),
+      apiUrl: cleanedApiUrl || (cleanedBaseUrl && `${cleanedBaseUrl}/api`),
     });
 
     // Skip bootstrapping for commands that don't require it
@@ -54,19 +73,30 @@ async function main() {
       !skipBootstrapCommands.some((cmd) => cmd.test(commandName(actionCommand)))
     ) {
       const spinner = ora("Bootstrapping...").start();
+
       try {
         // Load bootstrap data if not already loaded
         await bootstrap();
         spinner.stop();
       } catch (error) {
         spinner.fail("Bootstrap failed.");
-        void handleError(
-          debug
-            ? error
-            : `Unable to reach ${configStore.getConfig("baseUrl")}.`,
-          "Connect",
+        handleError(error, "Connect");
+      }
+    }
+
+    try {
+      const { latestVersion, currentVersion, isNewerAvailable } =
+        await cliVersionCheckPromise;
+
+      if (isNewerAvailable) {
+        console.info(
+          `A new version of the CLI is available: ${chalk.yellow(
+            currentVersion,
+          )} -> ${chalk.green(latestVersion)}. Update to ensure you have the latest features and bug fixes.`,
         );
       }
+    } catch {
+      // Ignore errors
     }
 
     if (debug) {
@@ -87,7 +117,6 @@ async function main() {
   registerAuthCommands(program);
   registerAppCommands(program);
   registerFeatureCommands(program);
-  registerCompanyCommands(program);
   registerMcpCommand(program);
   registerRulesCommand(program);
 
