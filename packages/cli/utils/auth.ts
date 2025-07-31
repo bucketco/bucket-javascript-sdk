@@ -105,8 +105,8 @@ async function exchangeCodeForToken(
     let errorDescription: string | undefined;
 
     try {
-      const jsonResponse = await response.json();
-      errorDescription = jsonResponse.error_description || jsonResponse.error;
+      const errorResponse = await response.json();
+      errorDescription = errorResponse.error_description || errorResponse.error;
     } catch {
       // ignore
     }
@@ -114,9 +114,14 @@ async function exchangeCodeForToken(
     return { error: errorDescription ?? "unknown error" };
   }
 
+  const successResponse = (await response.json()) as {
+    access_token: string;
+    expires_in: number;
+  };
+
   return {
-    accessToken: (await response.json()).access_token,
-    expiresAt: new Date(Date.now() + (await response.json()).expires_in * 1000),
+    accessToken: successResponse.access_token,
+    expiresAt: new Date(Date.now() + successResponse.expires_in * 1000),
   };
 }
 
