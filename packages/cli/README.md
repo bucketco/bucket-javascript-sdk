@@ -300,7 +300,8 @@ _**Note: The setup uses [mcp-remote](https://github.com/geelen/mcp-remote) as a 
 
 ## Using in CI/CD Pipelines (Beta)
 
-The Bucket CLI is designed to work seamlessly in CI/CD pipelines. For automated environments where interactive login is not possible, use the `--api-key` option.
+The Bucket CLI is designed to work seamlessly in CI/CD pipelines. For automated environments where interactive login is not possible, use the `--api-key` option,
+or specify the API key in `BUCKET_API_KEY` environment variable.
 
 ```bash
 # Generate types in CI/CD
@@ -315,31 +316,18 @@ npx bucket apps list --api-key $BUCKET_API_KEY
 - API keys are bound to one app only. Commands such as `apps list` will only return the bound app.
 - Store API keys securely using your CI/CD platform's secret management.
 
-### Primary Use Case: Type Validation in CI/CD
-
-Use the `--check-only` flag with `features types` to validate that generated types are up-to-date:
-
-```bash
-# Check if types are current (exits with non-zero code if not)
-npx bucket features types --check-only --api-key $BUCKET_API_KEY --app-id ap123456789
-```
-
-This is particularly useful for:
-
-- **Pull Request validation**: Ensure developers have regenerated types after feature changes.
-- **Build verification**: Confirm types are synchronized before deployment.
-- **Automated quality checks**: Catch type drift in your CI pipeline.
-
 Example CI workflow:
 
 ```yaml
 # GitHub Actions example
-- name: Validate Bucket types
-  run: npx bucket features types --check-only --api-key ${{ secrets.BUCKET_API_KEY }}
-
-- name: Generate types if validation fails
-  if: failure()
+- name: Generate types
   run: npx bucket features types --api-key ${{ secrets.BUCKET_API_KEY }}
+
+# GitHub Actions example (using environment):
+- name: Generate types (environment)
+  run: npx bucket features types
+  env:
+    BUCKET_API_KEY: ${{ secrets.BUCKET_CI_API_KEY }}
 ```
 
 ## Development

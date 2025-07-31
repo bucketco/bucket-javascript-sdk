@@ -49,11 +49,18 @@ async function main() {
 
   // Pre-action hook
   program.hook("preAction", async (_, actionCommand) => {
-    const { debug, baseUrl, apiUrl, apiKey } = program.opts<Options>();
+    const {
+      debug,
+      baseUrl,
+      apiUrl,
+      apiKey: explicitApiKey,
+    } = program.opts<Options>();
     const cleanedBaseUrl = stripTrailingSlash(baseUrl?.trim());
     const cleanedApiUrl = stripTrailingSlash(apiUrl?.trim());
 
-    if (apiKey) {
+    const apiKey = explicitApiKey ?? process.env.BUCKET_API_KEY;
+
+    if (typeof apiKey === "string" && apiKey.length > 0) {
       console.info(
         chalk.yellow(
           "API key supplied. Using it instead of normal personal authentication.",
