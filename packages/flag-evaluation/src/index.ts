@@ -344,15 +344,19 @@ export function evaluate(
         ? fieldValueDate > daysAgo.getTime()
         : fieldValueDate < daysAgo.getTime();
     }
-    case "DATE_AFTER": {
-      const fieldValueDate = new Date(fieldValue).getTime();
-      const valueDate = new Date(value).getTime();
-      return fieldValueDate >= valueDate;
-    }
+    case "DATE_AFTER":
     case "DATE_BEFORE": {
       const fieldValueDate = new Date(fieldValue).getTime();
       const valueDate = new Date(value).getTime();
-      return fieldValueDate <= valueDate;
+      if (isNaN(fieldValueDate) || isNaN(valueDate)) {
+        console.error(
+          `${operator} operator requires valid date values: ${fieldValue}, ${value}`,
+        );
+        return false;
+      }
+      return operator === "DATE_AFTER"
+        ? fieldValueDate >= valueDate
+        : fieldValueDate <= valueDate;
     }
     case "SET":
       return fieldValue !== "";
