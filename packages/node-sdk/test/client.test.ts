@@ -1130,6 +1130,70 @@ describe("BucketClient", () => {
       );
     });
 
+    it("`track` does not send evaluation events when `emitEvaluationEvents` is `false`", async () => {
+      client = new BucketClient({
+        ...validOptions,
+        emitEvaluationEvents: false,
+      });
+
+      const context = {
+        company,
+        user,
+        other: otherContext,
+      };
+
+      // test that the feature is returned
+      await client.initialize();
+      const feature = client.getFeature(
+        {
+          ...context,
+          meta: {
+            active: true,
+          },
+          enableTracking: true,
+        },
+        "feature1",
+      );
+
+      await feature.track();
+      await client.flush();
+
+      expect(httpClient.post).toHaveBeenCalledWith(
+        BULK_ENDPOINT,
+        expectedHeaders,
+        [
+          {
+            attributes: {
+              employees: 100,
+              name: "Acme Inc.",
+            },
+            companyId: "company123",
+            context: {
+              active: true,
+            },
+            type: "company",
+          },
+          {
+            attributes: {
+              age: 1,
+              name: "John",
+            },
+            context: {
+              active: true,
+            },
+            type: "user",
+            userId: "user123",
+          },
+          {
+            type: "event",
+            event: "feature1",
+            userId: user.id,
+            companyId: company.id,
+          },
+        ],
+      );
+    });
+
     it("`isEnabled` sends `check` event", async () => {
       const context = {
         company,
