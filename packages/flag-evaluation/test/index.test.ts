@@ -471,6 +471,235 @@ describe("evaluate feature targeting integration ", () => {
       expect(res.value ?? false).toEqual(expected);
     },
   );
+
+  describe("DATE_AFTER and DATE_BEFORE in feature rules", () => {
+    it("should evaluate DATE_AFTER operator in feature rules", () => {
+      const res = evaluateFeatureRules({
+        featureKey: "time_based_feature",
+        rules: [
+          {
+            value: "enabled",
+            filter: {
+              type: "context",
+              field: "user.createdAt",
+              operator: "DATE_AFTER",
+              values: ["2024-01-01"],
+            },
+          },
+        ],
+        context: {
+          user: {
+            createdAt: "2024-06-15",
+          },
+        },
+      });
+
+      expect(res).toEqual({
+        featureKey: "time_based_feature",
+        value: "enabled",
+        context: {
+          "user.createdAt": "2024-06-15",
+        },
+        ruleEvaluationResults: [true],
+        reason: "rule #0 matched",
+        missingContextFields: [],
+      });
+    });
+
+    it("should evaluate DATE_BEFORE operator in feature rules", () => {
+      const res = evaluateFeatureRules({
+        featureKey: "legacy_feature",
+        rules: [
+          {
+            value: "enabled",
+            filter: {
+              type: "context",
+              field: "user.lastLogin",
+              operator: "DATE_BEFORE",
+              values: ["2024-12-31"],
+            },
+          },
+        ],
+        context: {
+          user: {
+            lastLogin: "2024-01-15",
+          },
+        },
+      });
+
+      expect(res).toEqual({
+        featureKey: "legacy_feature",
+        value: "enabled",
+        context: {
+          "user.lastLogin": "2024-01-15",
+        },
+        ruleEvaluationResults: [true],
+        reason: "rule #0 matched",
+        missingContextFields: [],
+      });
+    });
+
+    it("should handle complex rules with DATE_AFTER and DATE_BEFORE in groups", () => {
+      const res = evaluateFeatureRules({
+        featureKey: "time_window_feature",
+        rules: [
+          {
+            value: "active",
+            filter: {
+              type: "group",
+              operator: "and",
+              filters: [
+                {
+                  type: "context",
+                  field: "event.startDate",
+                  operator: "DATE_AFTER",
+                  values: ["2024-01-01"],
+                },
+                {
+                  type: "context",
+                  field: "event.endDate",
+                  operator: "DATE_BEFORE",
+                  values: ["2024-12-31"],
+                },
+              ],
+            },
+          },
+        ],
+        context: {
+          event: {
+            startDate: "2024-06-01",
+            endDate: "2024-11-30",
+          },
+        },
+      });
+
+      expect(res).toEqual({
+        featureKey: "time_window_feature",
+        value: "active",
+        context: {
+          "event.startDate": "2024-06-01",
+          "event.endDate": "2024-11-30",
+        },
+        ruleEvaluationResults: [true],
+        reason: "rule #0 matched",
+        missingContextFields: [],
+      });
+    });
+
+    it("should fail when DATE_AFTER condition is not met", () => {
+      const res = evaluateFeatureRules({
+        featureKey: "future_feature",
+        rules: [
+          {
+            value: "enabled",
+            filter: {
+              type: "context",
+              field: "user.signupDate",
+              operator: "DATE_AFTER",
+              values: ["2024-12-01"],
+            },
+          },
+        ],
+        context: {
+          user: {
+            signupDate: "2024-01-15", // Too early
+          },
+        },
+      });
+
+      expect(res).toEqual({
+        featureKey: "future_feature",
+        value: undefined,
+        context: {
+          "user.signupDate": "2024-01-15",
+        },
+        ruleEvaluationResults: [false],
+        reason: "no matched rules",
+        missingContextFields: [],
+      });
+    });
+
+    it("should fail when DATE_BEFORE condition is not met", () => {
+      const res = evaluateFeatureRules({
+        featureKey: "past_feature",
+        rules: [
+          {
+            value: "enabled",
+            filter: {
+              type: "context",
+              field: "user.lastActivity",
+              operator: "DATE_BEFORE",
+              values: ["2024-01-01"],
+            },
+          },
+        ],
+        context: {
+          user: {
+            lastActivity: "2024-06-15", // Too late
+          },
+        },
+      });
+
+      expect(res).toEqual({
+        featureKey: "past_feature",
+        value: undefined,
+        context: {
+          "user.lastActivity": "2024-06-15",
+        },
+        ruleEvaluationResults: [false],
+        reason: "no matched rules",
+        missingContextFields: [],
+      });
+    });
+
+    it("should work with optimized evaluator", () => {
+      const evaluator = newEvaluator([
+        {
+          value: "time_sensitive",
+          filter: {
+            type: "group",
+            operator: "and",
+            filters: [
+              {
+                type: "context",
+                field: "user.subscriptionDate",
+                operator: "DATE_AFTER",
+                values: ["2024-01-01"],
+              },
+              {
+                type: "context",
+                field: "user.trialEndDate",
+                operator: "DATE_BEFORE",
+                values: ["2024-12-31"],
+              },
+            ],
+          },
+        },
+      ]);
+
+      const res = evaluator(
+        {
+          user: {
+            subscriptionDate: "2024-03-15",
+            trialEndDate: "2024-09-30",
+          },
+        },
+        "subscription_feature",
+      );
+
+      expect(res).toEqual({
+        featureKey: "subscription_feature",
+        value: "time_sensitive",
+        context: {
+          "user.subscriptionDate": "2024-03-15",
+          "user.trialEndDate": "2024-09-30",
+        },
+        ruleEvaluationResults: [true],
+        reason: "rule #0 matched",
+        missingContextFields: [],
+      });
+    });
+  });
 });
 
 describe("operator evaluation", () => {
@@ -533,6 +762,65 @@ describe("operator evaluation", () => {
       expect(res).toEqual(expected);
     });
   }
+
+  describe("DATE_AFTER and DATE_BEFORE operators", () => {
+    const dateTests = [
+      // DATE_AFTER tests
+      ["2024-01-15", "DATE_AFTER", "2024-01-10", true], // After
+      ["2024-01-10", "DATE_AFTER", "2024-01-10", true], // Same date (>=)
+      ["2024-01-05", "DATE_AFTER", "2024-01-10", false], // Before
+      ["2024-12-31", "DATE_AFTER", "2024-01-01", true], // Much later
+      ["2023-01-01", "DATE_AFTER", "2024-01-01", false], // Much earlier
+
+      // DATE_BEFORE tests
+      ["2024-01-05", "DATE_BEFORE", "2024-01-10", true], // Before
+      ["2024-01-10", "DATE_BEFORE", "2024-01-10", true], // Same date (<=)
+      ["2024-01-15", "DATE_BEFORE", "2024-01-10", false], // After
+      ["2023-01-01", "DATE_BEFORE", "2024-01-01", true], // Much earlier
+      ["2024-12-31", "DATE_BEFORE", "2024-01-01", false], // Much later
+
+      // Edge cases with different date formats
+      ["2024-01-10T10:30:00Z", "DATE_AFTER", "2024-01-10T10:00:00Z", true], // ISO format with time
+      ["2024-01-10T09:30:00Z", "DATE_BEFORE", "2024-01-10T10:00:00Z", true], // ISO format with time
+      [
+        "2024-01-10T10:30:00.123Z",
+        "DATE_AFTER",
+        "2024-01-10T10:00:00.000Z",
+        true,
+      ], // ISO format with time and milliseconds
+      [
+        "2024-01-10T09:30:00.123Z",
+        "DATE_BEFORE",
+        "2024-01-10T10:00:00.000Z",
+        true,
+      ], // ISO format with time and milliseconds
+      ["01/15/2024", "DATE_AFTER", "01/10/2024", true], // US format
+      ["01/05/2024", "DATE_BEFORE", "01/10/2024", true], // US format
+    ] as const;
+
+    for (const [fieldValue, operator, filterValue, expected] of dateTests) {
+      it(`evaluates '${fieldValue}' ${operator} '${filterValue}' = ${expected}`, () => {
+        const res = evaluate(fieldValue, operator, [filterValue]);
+        expect(res).toEqual(expected);
+      });
+    }
+
+    it("handles invalid date formats gracefully", () => {
+      // Invalid dates should result in NaN comparisons and return false
+      expect(evaluate("invalid-date", "DATE_AFTER", ["2024-01-10"])).toBe(
+        false,
+      );
+      expect(evaluate("2024-01-10", "DATE_AFTER", ["invalid-date"])).toBe(
+        false,
+      );
+      expect(evaluate("invalid-date", "DATE_BEFORE", ["2024-01-10"])).toBe(
+        false,
+      );
+      expect(evaluate("2024-01-10", "DATE_BEFORE", ["invalid-date"])).toBe(
+        false,
+      );
+    });
+  });
 });
 
 describe("rollout hash", () => {
