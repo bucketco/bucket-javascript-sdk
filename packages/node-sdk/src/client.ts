@@ -123,6 +123,7 @@ export class BucketClient {
     fallbackFeatures?: Record<keyof TypedFeatures, RawFeature>;
     featureOverrides: FeatureOverridesFn;
     offline: boolean;
+    emitEvaluationEvents: boolean;
     configFile?: string;
     featuresFetchRetries: number;
     fetchTimeoutMs: number;
@@ -302,6 +303,7 @@ export class BucketClient {
 
     this._config = {
       offline,
+      emitEvaluationEvents: config.emitEvaluationEvents ?? true,
       apiBaseUrl: (config.apiBaseUrl ?? config.host) || API_BASE_URL,
       headers: {
         "Content-Type": "application/json",
@@ -905,6 +907,13 @@ export class BucketClient {
     ).toString();
 
     if (this._config.offline) {
+      return;
+    }
+
+    if (
+      !this._config.emitEvaluationEvents &&
+      (event.action === "evaluate" || event.action === "evaluate-config")
+    ) {
       return;
     }
 

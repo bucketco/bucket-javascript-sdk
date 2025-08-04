@@ -645,6 +645,11 @@ export type ClientOptions = {
   offline?: boolean;
 
   /**
+   * If set to `false`, no evaluation events will be emitted.
+   */
+  emitEvaluationEvents?: boolean;
+
+  /**
    * The path to the config file. If supplied, the config file will be loaded.
    * Defaults to `bucket.json` when NODE_ENV is not production. Can also be
    * set through the environment variable BUCKET_CONFIG_FILE.
