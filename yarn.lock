@@ -770,16 +770,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@bucketco/flag-evaluation@npm:0.1.4":
-  version: 0.1.4
-  resolution: "@bucketco/flag-evaluation@npm:0.1.4"
-  dependencies:
-    js-sha256: "npm:0.11.0"
-  checksum: 10c0/d1f0513a3167d1c4d2a3caf782072f949f508760d77be2c6d5957f5a92d76aaf70467c1d923591c6663a6dcbe01f4d476e46eb501834231ae3d4f28ecff6640c
-  languageName: node
-  linkType: hard
-
-"@bucketco/flag-evaluation@workspace:packages/flag-evaluation":
+"@bucketco/flag-evaluation@npm:0.2.1, @bucketco/flag-evaluation@workspace:packages/flag-evaluation":
   version: 0.0.0-use.local
   resolution: "@bucketco/flag-evaluation@workspace:packages/flag-evaluation"
   dependencies:
@@ -801,7 +792,7 @@ __metadata:
   dependencies:
     "@babel/core": "npm:~7.24.7"
     "@bucketco/eslint-config": "npm:~0.0.2"
-    "@bucketco/flag-evaluation": "npm:0.1.4"
+    "@bucketco/flag-evaluation": "npm:0.2.1"
     "@bucketco/tsconfig": "npm:~0.0.2"
     "@types/node": "npm:^22.12.0"
     "@vitest/coverage-v8": "npm:~1.6.0"
