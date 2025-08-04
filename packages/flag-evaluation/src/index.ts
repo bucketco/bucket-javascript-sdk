@@ -85,6 +85,8 @@ type ContextFilterOperator =
   | "LT"
   | "AFTER"
   | "BEFORE"
+  | "DATE_AFTER"
+  | "DATE_BEFORE"
   | "SET"
   | "NOT_SET"
   | "IS_TRUE"
@@ -341,6 +343,16 @@ export function evaluate(
       return operator === "AFTER"
         ? fieldValueDate > daysAgo.getTime()
         : fieldValueDate < daysAgo.getTime();
+    }
+    case "DATE_AFTER": {
+      const fieldValueDate = new Date(fieldValue).getTime();
+      const valueDate = new Date(value).getTime();
+      return fieldValueDate >= valueDate;
+    }
+    case "DATE_BEFORE": {
+      const fieldValueDate = new Date(fieldValue).getTime();
+      const valueDate = new Date(value).getTime();
+      return fieldValueDate <= valueDate;
     }
     case "SET":
       return fieldValue !== "";
