@@ -786,7 +786,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@bucketco/node-sdk@npm:1.9.1, @bucketco/node-sdk@workspace:packages/node-sdk":
+"@bucketco/node-sdk@npm:1.9.3, @bucketco/node-sdk@workspace:packages/node-sdk":
   version: 0.0.0-use.local
   resolution: "@bucketco/node-sdk@workspace:packages/node-sdk"
   dependencies:
@@ -836,7 +836,7 @@ __metadata:
   dependencies:
     "@babel/core": "npm:~7.24.7"
     "@bucketco/eslint-config": "npm:~0.0.2"
-    "@bucketco/node-sdk": "npm:1.9.1"
+    "@bucketco/node-sdk": "npm:1.9.3"
     "@bucketco/tsconfig": "npm:~0.0.2"
     "@openfeature/core": "npm:^1.5.0"
     "@openfeature/server-sdk": "npm:>=1.16.1"

@@ -123,6 +123,7 @@ export class BucketClient {
     fallbackFeatures?: Record<keyof TypedFeatures, RawFeature>;
     featureOverrides: FeatureOverridesFn;
     offline: boolean;
+    emitEvaluationEvents: boolean;
     configFile?: string;
     featuresFetchRetries: number;
     fetchTimeoutMs: number;
@@ -302,6 +303,7 @@ export class BucketClient {
 
     this._config = {
       offline,
+      emitEvaluationEvents: config.emitEvaluationEvents ?? true,
       apiBaseUrl: (config.apiBaseUrl ?? config.host) || API_BASE_URL,
       headers: {
         "Content-Type": "application/json",
@@ -664,14 +666,17 @@ export class BucketClient {
     const features = this._getFeatures(options);
     const feature = features[key];
 
-    return this._wrapRawFeature(options, {
-      key,
-      isEnabled: feature?.isEnabled ?? false,
-      targetingVersion: feature?.targetingVersion,
-      config: feature?.config,
-      ruleEvaluationResults: feature?.ruleEvaluationResults,
-      missingContextFields: feature?.missingContextFields,
-    });
+    return this._wrapRawFeature(
+      { ...options, enableChecks: true },
+      {
+        key,
+        isEnabled: feature?.isEnabled ?? false,
+        targetingVersion: feature?.targetingVersion,
+        config: feature?.config,
+        ruleEvaluationResults: feature?.ruleEvaluationResults,
+        missingContextFields: feature?.missingContextFields,
+      },
+    );
   }
 
   /**
@@ -905,6 +910,13 @@ export class BucketClient {
     ).toString();
 
     if (this._config.offline) {
+      return;
+    }
+
+    if (
+      !this._config.emitEvaluationEvents &&
+      (event.action === "evaluate" || event.action === "evaluate-config")
+    ) {
       return;
     }
 
@@ -1190,7 +1202,11 @@ export class BucketClient {
   }
 
   private _wrapRawFeature<TKey extends keyof TypedFeatures>(
-    { enableTracking, ...context }: { enableTracking: boolean } & Context,
+    {
+      enableTracking,
+      enableChecks = false,
+      ...context
+    }: { enableTracking: boolean; enableChecks?: boolean } & Context,
     { config, ...feature }: RawFeature,
   ): TypedFeatures[TKey] {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -1202,7 +1218,7 @@ export class BucketClient {
 
     return {
       get isEnabled() {
-        if (enableTracking) {
+        if (enableTracking && enableChecks) {
           void client
             .sendFeatureEvent({
               action: "check",
@@ -1223,7 +1239,7 @@ export class BucketClient {
         return feature.isEnabled;
       },
       get config() {
-        if (enableTracking) {
+        if (enableTracking && enableChecks) {
           void client
             .sendFeatureEvent({
               action: "check-config",

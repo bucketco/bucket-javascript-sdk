@@ -1130,6 +1130,70 @@ describe("BucketClient", () => {
       );
     });
 
+    it("`track` does not send evaluation events when `emitEvaluationEvents` is `false`", async () => {
+      client = new BucketClient({
+        ...validOptions,
+        emitEvaluationEvents: false,
+      });
+
+      const context = {
+        company,
+        user,
+        other: otherContext,
+      };
+
+      // test that the feature is returned
+      await client.initialize();
+      const feature = client.getFeature(
+        {
+          ...context,
+          meta: {
+            active: true,
+          },
+          enableTracking: true,
+        },
+        "feature1",
+      );
+
+      await feature.track();
+      await client.flush();
+
+      expect(httpClient.post).toHaveBeenCalledWith(
+        BULK_ENDPOINT,
+        expectedHeaders,
+        [
+          {
+            attributes: {
+              employees: 100,
+              name: "Acme Inc.",
+            },
+            companyId: "company123",
+            context: {
+              active: true,
+            },
+            type: "company",
+          },
+          {
+            attributes: {
+              age: 1,
+              name: "John",
+            },
+            context: {
+              active: true,
+            },
+            type: "user",
+            userId: "user123",
+          },
+          {
+            type: "event",
+            event: "feature1",
+            userId: user.id,
+            companyId: company.id,
+          },
+        ],
+      );
+    });
+
     it("`isEnabled` sends `check` event", async () => {
       const context = {
         company,
@@ -1582,7 +1646,7 @@ describe("BucketClient", () => {
       expect(events).toStrictEqual([]);
     });
 
-    it("`isEnabled` sends `check` event", async () => {
+    it("`isEnabled` does not send `check` event", async () => {
       const context = {
         company,
         user,
@@ -1601,21 +1665,10 @@ describe("BucketClient", () => {
         .flatMap((call) => call[2])
         .filter((e) => e.action === "check");
 
-      expect(checkEvents).toStrictEqual([
-        {
-          type: "feature-flag-event",
-          action: "check",
-          key: "feature1",
-          targetingVersion: 1,
-          evalResult: true,
-          evalContext: context,
-          evalRuleResults: [true],
-          evalMissingFields: [],
-        },
-      ]);
+      expect(checkEvents).toStrictEqual([]);
     });
 
-    it("`config` sends `check` event", async () => {
+    it("`config` does not send `check` event", async () => {
       const context = {
         company,
         user,
@@ -1626,7 +1679,7 @@ describe("BucketClient", () => {
       await client.initialize();
       const feature = client.getFeatures(context);
 
-      // trigger `check` event
+      // attempt to trigger `check` event
       expect(feature.feature1.config).toBeDefined();
 
       await client.flush();
@@ -1635,23 +1688,7 @@ describe("BucketClient", () => {
         .flatMap((call) => call[2])
         .filter((e) => e.action === "check-config");
 
-      expect(checkEvents).toStrictEqual([
-        {
-          type: "feature-flag-event",
-          action: "check-config",
-          key: "feature1",
-          evalResult: {
-            key: "config-1",
-            payload: {
-              something: "else",
-            },
-          },
-          targetingVersion: 1,
-          evalContext: context,
-          evalRuleResults: [true],
-          evalMissingFields: [],
-        },
-      ]);
+      expect(checkEvents).toStrictEqual([]);
     });
 
     it("sends company/user events", async () => {
