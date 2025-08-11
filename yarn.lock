@@ -683,7 +683,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@bucketco/browser-sdk@npm:3.3.1, @bucketco/browser-sdk@workspace:packages/browser-sdk":
+"@bucketco/browser-sdk@npm:3.3.1":
+  version: 3.3.1
+  resolution: "@bucketco/browser-sdk@npm:3.3.1"
+  dependencies:
+    "@floating-ui/dom": "npm:^1.6.8"
+    canonical-json: "npm:^0.0.4"
+    js-cookie: "npm:^3.0.5"
+    preact: "npm:^10.22.1"
+  checksum: 10c0/30bd1fa0f084c7eee0a22f917bfe488667243013711787bc36c9befa0d3aa27a4aed6f0576416a098b3d3d64ff1cf873587022d4d9c07198e11d4f81f31380de
+  languageName: node
+  linkType: hard
+
+"@bucketco/browser-sdk@workspace:packages/browser-sdk":
   version: 0.0.0-use.local
   resolution: "@bucketco/browser-sdk@workspace:packages/browser-sdk"
   dependencies:
