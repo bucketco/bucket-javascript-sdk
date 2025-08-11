@@ -25,11 +25,24 @@ export function FeaturesTable({
       .toLocaleLowerCase()
       .includes(searchQuery?.toLocaleLowerCase() ?? ""),
   );
-  // List features that match the search query first
+
+  // List features that match the search query first then alphabetically
   const searchedFeatures =
     searchQuery === null
       ? features
-      : [...features].sort((a, _b) => (a.key.includes(searchQuery) ? -1 : 1));
+      : [...features].sort((a, b) => {
+          const aMatches = a.key.includes(searchQuery);
+          const bMatches = b.key.includes(searchQuery);
+
+          // If both match or both don't match, sort alphabetically
+          if (aMatches === bMatches) {
+            return a.key.localeCompare(b.key);
+          }
+
+          // Otherwise, matching features come first
+          return aMatches ? -1 : 1;
+        });
+
   return (
     <table class="features-table" style={{ "--n": searchedFeatures.length }}>
       <tbody>
