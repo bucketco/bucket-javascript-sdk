@@ -63,6 +63,12 @@
   }
 }
 
+.feature-empty-cell {
+  width: 100%;
+  color: var(--gray500);
+  padding: 6px 0;
+}
+
 .feature-name-cell {
   white-space: nowrap;
   overflow: hidden;

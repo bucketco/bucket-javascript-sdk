@@ -19,17 +19,29 @@ export function FeaturesTable({
   isOpen: boolean;
   setIsEnabledOverride: (key: string, isEnabled: boolean | null) => void;
 }) {
+  const hasFeatures = features.length > 0;
+  const hasShownFeatures = features.some((feature) =>
+    feature.key
+      .toLocaleLowerCase()
+      .includes(searchQuery?.toLocaleLowerCase() ?? ""),
+  );
+  // List features that match the search query first
   const searchedFeatures =
     searchQuery === null
       ? features
       : [...features].sort((a, _b) => (a.key.includes(searchQuery) ? -1 : 1));
-
-  if (searchedFeatures.length === 0) {
-    return <div style={{ color: "var(--gray500)" }}>No features found</div>;
-  }
   return (
     <table class="features-table" style={{ "--n": searchedFeatures.length }}>
       <tbody>
+        {(!hasFeatures || !hasShownFeatures) && (
+          <tr>
+            <td class="feature-empty-cell" colSpan={3}>
+              No features{" "}
+              {!hasShownFeatures ? `matching "${searchQuery} "` : ""}
+              found
+            </td>
+          </tr>
+        )}
         {searchedFeatures.map((feature, index) => (
           <FeatureRow
             key={feature.key}

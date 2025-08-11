@@ -37,6 +37,7 @@ export default function Toolbar({
   position: ToolbarPosition;
 }) {
   const toggleToolbarRef = useRef<HTMLDivElement>(null);
+  const dialogContentRef = useRef<HTMLDivElement>(null);
   const [features, setFeatures] = useState<Feature[]>([]);
 
   const updateFeatures = useCallback(() => {
@@ -67,6 +68,7 @@ export default function Toolbar({
   const [search, setSearch] = useState<string | null>(null);
   const onSearch = (val: string) => {
     setSearch(val === "" ? null : val);
+    dialogContentRef.current?.scrollTo({ top: 0 });
   };
 
   const sortedFeatures = [...features].sort((a, b) =>
@@ -102,7 +104,7 @@ export default function Toolbar({
         <DialogHeader>
           <FeatureSearch onSearch={onSearch} />
         </DialogHeader>
-        <DialogContent>
+        <DialogContent innerRef={dialogContentRef}>
           <FeaturesTable
             appBaseUrl={appBaseUrl}
             features={sortedFeatures}
