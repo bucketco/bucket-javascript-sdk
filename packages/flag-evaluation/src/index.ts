@@ -359,9 +359,9 @@ export function evaluate(
         : fieldValueDate <= valueDate;
     }
     case "SET":
-      return fieldValue !== "" && fieldValue !== "null";
+      return fieldValue !== "" && fieldValue.toLowerCase() !== "null";
     case "NOT_SET":
-      return fieldValue === "" || fieldValue === "null";
+      return fieldValue === "" || fieldValue.toLowerCase() === "null";
     case "IS":
       return fieldValue === value;
     case "IS_NOT":
