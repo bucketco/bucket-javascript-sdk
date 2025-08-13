@@ -26,7 +26,7 @@ function attachDialogContainer() {
     document.body.appendChild(container);
 
     for (const event of propagatedEvents) {
-      container.addEventListener(event, stopPropagation);
+      container.addEventListener(event, stopPropagation, { passive: true });
     }
   }
 
