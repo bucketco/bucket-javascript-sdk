@@ -60,6 +60,8 @@ import {
 
 const bucketConfigDefaultFile = "bucketConfig.json";
 
+type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+
 type BulkEvent =
   | {
       type: "company";
@@ -1045,7 +1047,7 @@ export class BucketClient {
         if (key) {
           return this._wrapRawFeature(
             { ...options, enableChecks: true },
-            { key, isEnabled: false, ...fallbackFeatures[key] },
+            { key, ...fallbackFeatures[key] },
           );
         }
         return Object.fromEntries(
@@ -1177,11 +1179,7 @@ export class BucketClient {
     if (key) {
       return this._wrapRawFeature(
         { ...options, enableChecks: true },
-        {
-          key,
-          isEnabled: false,
-          ...evaluatedFeatures[key],
-        },
+        { key, ...evaluatedFeatures[key] },
       );
     }
 
@@ -1199,7 +1197,7 @@ export class BucketClient {
       enableChecks = false,
       ...context
     }: { enableTracking: boolean; enableChecks?: boolean } & Context,
-    { config, ...feature }: RawFeature,
+    { config, ...feature }: PartialBy<RawFeature, "isEnabled">,
   ): TypedFeatures[TKey] {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const client = this;
@@ -1218,7 +1216,7 @@ export class BucketClient {
               action: "check",
               key: feature.key,
               targetingVersion: feature.targetingVersion,
-              evalResult: feature.isEnabled,
+              evalResult: feature.isEnabled ?? false,
               evalContext: context,
               evalRuleResults: feature.ruleEvaluationResults,
               evalMissingFields: feature.missingContextFields,
@@ -1230,7 +1228,7 @@ export class BucketClient {
               );
             });
         }
-        return feature.isEnabled;
+        return feature.isEnabled ?? false;
       },
       get config() {
         if (enableTracking && enableChecks) {
@@ -1323,11 +1321,7 @@ export class BucketClient {
       if (!feature) {
         this.logger.error(`feature ${key} not found`);
       }
-      return this._wrapRawFeature(contextWithTracking, {
-        key,
-        isEnabled: false,
-        ...feature,
-      });
+      return this._wrapRawFeature(contextWithTracking, { key, ...feature });
     } else {
       return res?.features
         ? Object.fromEntries(
