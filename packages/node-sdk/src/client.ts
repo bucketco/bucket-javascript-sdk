@@ -794,7 +794,7 @@ export class BucketClient {
         `get request to "${path}" failed with error after ${retries} retries`,
         error,
       );
-      throw error;
+      return undefined;
     }
   }
 
@@ -1314,13 +1314,19 @@ export class BucketClient {
       params.append("key", key);
     }
 
-    try {
-      const res = await this.get<EvaluatedFeaturesAPIResponse>(
-        `features/evaluated?${params}`,
-      );
+    const res = await this.get<EvaluatedFeaturesAPIResponse>(
+      `features/evaluated?${params}`,
+    );
 
+    if (res) {
       if (key) {
-        if (!res.features[key]) throw new Error(`Feature ${key} not found`);
+        if (!res.features[key]) {
+          this.logger.error(`feature ${key} not found`);
+          return this._wrapRawFeature(contextWithTracking, {
+            key,
+            isEnabled: false,
+          });
+        }
         return this._wrapRawFeature(contextWithTracking, res.features[key]);
       } else {
         return Object.fromEntries(
@@ -1330,16 +1336,14 @@ export class BucketClient {
           ]),
         );
       }
-    } catch (err) {
-      this.logger.error(`failed to fetch evaluated features: ${err}`, err);
-      if (key) {
-        return this._wrapRawFeature(contextWithTracking, {
-          key,
-          isEnabled: false,
-        });
-      } else {
-        return {};
-      }
+    }
+    if (key) {
+      return this._wrapRawFeature(contextWithTracking, {
+        key,
+        isEnabled: false,
+      });
+    } else {
+      return {};
     }
   }
 }
