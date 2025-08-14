@@ -1320,7 +1320,8 @@ export class BucketClient {
       );
 
       if (key) {
-        return this._wrapRawFeature(contextWithTracking, res.features[key]!);
+        if (!res.features[key]) throw new Error(`Feature ${key} not found`);
+        return this._wrapRawFeature(contextWithTracking, res.features[key]);
       } else {
         return Object.fromEntries(
           Object.entries(res.features).map(([featureKey, feature]) => [
