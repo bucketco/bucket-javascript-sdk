@@ -27,7 +27,10 @@ export function newRateLimiter(windowSizeMs: number) {
     for (const key of keys) {
       const lastAllowedTimestamp = lastAllowedTimestampsByKey[key];
 
-      if (lastAllowedTimestamp < expireBeforeTimestamp) {
+      if (
+        lastAllowedTimestamp &&
+        lastAllowedTimestamp < expireBeforeTimestamp
+      ) {
         delete lastAllowedTimestampsByKey[key];
       }
     }

@@ -100,7 +100,7 @@ export class BucketNodeProvider implements Provider {
       });
     }
 
-    const features = this._client.getFeatures(context);
+    const features = this._client.getFeatureDefinitions();
     if (flagKey in features) {
       return resolveFn(this._client.getFeature(context, flagKey));
     }

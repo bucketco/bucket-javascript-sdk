@@ -1073,6 +1073,7 @@ describe("BucketClient", () => {
               active: true,
             },
             type: "company",
+            userId: undefined,
           },
           {
             attributes: {
@@ -1109,16 +1110,6 @@ describe("BucketClient", () => {
             },
             evalRuleResults: [true],
             evalMissingFields: [],
-          },
-          {
-            type: "feature-flag-event",
-            action: "evaluate",
-            key: "feature2",
-            targetingVersion: 2,
-            evalContext: flattenJSON(context),
-            evalResult: false,
-            evalRuleResults: [false],
-            evalMissingFields: ["attributeKey"],
           },
           {
             type: "event",
@@ -1227,6 +1218,45 @@ describe("BucketClient", () => {
       ]);
     });
 
+    it("`isEnabled` warns about missing context fields", async () => {
+      const context = {
+        company,
+        user,
+        other: otherContext,
+      };
+
+      // test that the feature is returned
+      await client.initialize();
+      const feature = client.getFeature(context, "feature2");
+
+      // trigger the warning
+      expect(feature.isEnabled).toBe(false);
+
+      expect(logger.warn).toHaveBeenCalledWith(
+        "feature/remote config targeting rules might not be correctly evaluated due to missing context fields.",
+        {
+          feature2: ["attributeKey"],
+        },
+      );
+    });
+
+    it("`isEnabled` should not warn about missing context fields if not needed", async () => {
+      const context = {
+        company,
+        user,
+        other: otherContext,
+      };
+
+      // test that the feature is returned
+      await client.initialize();
+      const feature = client.getFeature(context, "feature1");
+
+      // should not trigger the warning
+      expect(feature.isEnabled).toBe(true);
+
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+
     it("`config` sends `check` event", async () => {
       const context = {
         company,
@@ -1287,21 +1317,6 @@ describe("BucketClient", () => {
         .filter((e) => e.type === "feature-flag-event");
 
       expect(checkEvents).toStrictEqual([
-        expect.objectContaining({
-          type: "feature-flag-event",
-          action: "evaluate",
-          key: "feature1",
-        }),
-        expect.objectContaining({
-          type: "feature-flag-event",
-          action: "evaluate-config",
-          key: "feature1",
-        }),
-        expect.objectContaining({
-          type: "feature-flag-event",
-          action: "evaluate",
-          key: "feature2",
-        }),
         {
           type: "feature-flag-event",
           action: "check",
@@ -1426,24 +1441,6 @@ describe("BucketClient", () => {
       await client.flush();
 
       expect(httpClient.post).toHaveBeenCalledTimes(1);
-    });
-
-    it("should warn about missing context fields", async () => {
-      httpClient.post.mockClear();
-
-      await client.initialize();
-      client.getFeatures({
-        company,
-        user,
-        other: otherContext,
-      });
-
-      expect(logger.warn).toHaveBeenCalledWith(
-        "feature/remote config targeting rules might not be correctly evaluated due to missing context fields.",
-        {
-          feature2: ["attributeKey"],
-        },
-      );
     });
 
     it("should properly define the rate limiter key", async () => {
@@ -2073,18 +2070,6 @@ describe("BucketClient", () => {
         API_TIMEOUT_MS,
       );
     });
-
-    it("should warn if missing context fields", async () => {
-      await client.getFeaturesRemote();
-      expect(logger.warn).toHaveBeenCalledWith(
-        "feature/remote config targeting rules might not be correctly evaluated due to missing context fields.",
-        {
-          feature1: ["something", "funny"],
-          "feature1.config": ["funny"],
-          feature2: ["another"],
-        },
-      );
-    });
   });
 
   describe("getFeatureRemote", () => {
@@ -2153,17 +2138,6 @@ describe("BucketClient", () => {
         "https://api.example.com/features/evaluated?key=feature1",
         expectedHeaders,
         API_TIMEOUT_MS,
-      );
-    });
-
-    it("should warn if missing context fields", async () => {
-      await client.getFeatureRemote("feature1");
-      expect(logger.warn).toHaveBeenCalledWith(
-        "feature/remote config targeting rules might not be correctly evaluated due to missing context fields.",
-        {
-          feature1: ["one", "two"],
-          "feature1.config": ["two"],
-        },
       );
     });
   });
