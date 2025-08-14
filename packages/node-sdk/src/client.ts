@@ -1318,32 +1318,25 @@ export class BucketClient {
       `features/evaluated?${params}`,
     );
 
-    if (res) {
-      if (key) {
-        if (!res.features[key]) {
-          this.logger.error(`feature ${key} not found`);
-          return this._wrapRawFeature(contextWithTracking, {
-            key,
-            isEnabled: false,
-          });
-        }
-        return this._wrapRawFeature(contextWithTracking, res.features[key]);
-      } else {
-        return Object.fromEntries(
-          Object.entries(res.features).map(([featureKey, feature]) => [
-            featureKey,
-            this._wrapRawFeature(contextWithTracking, feature),
-          ]),
-        );
-      }
-    }
     if (key) {
+      const feature = res?.features[key];
+      if (!feature) {
+        this.logger.error(`feature ${key} not found`);
+      }
       return this._wrapRawFeature(contextWithTracking, {
         key,
         isEnabled: false,
+        ...feature,
       });
     } else {
-      return {};
+      return res?.features
+        ? Object.fromEntries(
+            Object.entries(res?.features).map(([featureKey, feature]) => [
+              featureKey,
+              this._wrapRawFeature(contextWithTracking, feature),
+            ]),
+          )
+        : {};
     }
   }
 }
