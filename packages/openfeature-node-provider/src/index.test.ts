@@ -16,8 +16,8 @@ vi.mock("@bucketco/node-sdk", () => {
 });
 
 const bucketClientMock = {
-  getFeatures: vi.fn(),
   getFeature: vi.fn(),
+  getFeatureDefinitions: vi.fn().mockReturnValue([]),
   initialize: vi.fn().mockResolvedValue({}),
   flush: vi.fn(),
   track: vi.fn(),
@@ -54,6 +54,7 @@ describe("BucketNodeProvider", () => {
     enabled: boolean,
     configKey?: string | null,
     configPayload?: any,
+    flagKey = testFlagKey,
   ) {
     const config = {
       key: configKey,
@@ -65,15 +66,15 @@ describe("BucketNodeProvider", () => {
       config,
     });
 
-    bucketClientMock.getFeatures = vi.fn().mockReturnValue({
-      [testFlagKey]: {
-        isEnabled: enabled,
-        config: {
-          key: "key",
-          payload: configPayload,
-        },
+    // Mock getFeatureDefinitions to return feature definitions that include the specified flag
+    bucketClientMock.getFeatureDefinitions = vi.fn().mockReturnValue([
+      {
+        key: flagKey,
+        description: "Test feature flag",
+        flag: {},
+        config: {},
       },
-    });
+    ]);
   }
 
   beforeEach(async () => {
@@ -181,8 +182,11 @@ describe("BucketNodeProvider", () => {
       expect(mockTranslatorFn).toHaveBeenCalledTimes(1);
       expect(mockTranslatorFn).toHaveBeenCalledWith(context);
 
-      expect(bucketClientMock.getFeatures).toHaveBeenCalledTimes(1);
-      expect(bucketClientMock.getFeatures).toHaveBeenCalledWith(bucketContext);
+      expect(bucketClientMock.getFeatureDefinitions).toHaveBeenCalledTimes(1);
+      expect(bucketClientMock.getFeature).toHaveBeenCalledWith(
+        bucketContext,
+        testFlagKey,
+      );
     });
   });
 
@@ -239,7 +243,7 @@ describe("BucketNodeProvider", () => {
         value: true,
       });
 
-      expect(bucketClientMock.getFeatures).toHaveBeenCalled();
+      expect(bucketClientMock.getFeatureDefinitions).toHaveBeenCalled();
       expect(bucketClientMock.getFeature).toHaveBeenCalledWith(
         bucketContext,
         testFlagKey,

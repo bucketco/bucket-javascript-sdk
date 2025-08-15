@@ -385,7 +385,7 @@ export type EvaluatedFeaturesAPIResponse = {
   /**
    * True if request successful.
    */
-  success: boolean;
+  success: true;
 
   /**
    * True if additional context for user or company was found and used for evaluation on the remote server.
@@ -395,7 +395,7 @@ export type EvaluatedFeaturesAPIResponse = {
   /**
    * The feature definitions.
    */
-  features: RawFeature[];
+  features: Record<string, RawFeature>;
 };
 
 /**

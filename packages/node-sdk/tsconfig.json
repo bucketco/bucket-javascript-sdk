@@ -4,7 +4,8 @@
     "lib": [],
     "outDir": "./dist/",
     "declarationDir": "./dist/types",
-    "declarationMap": true
+    "declarationMap": true,
+    "noUncheckedIndexedAccess": true
   },
   "include": ["src"],
   "typeRoots": ["./node_modules/@types", "./types"]
