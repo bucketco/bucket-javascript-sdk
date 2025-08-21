@@ -56,7 +56,7 @@ You can also [use the HTTP API directly](https://docs.bucket.co/api/http-api)
 
 ## Basic usage
 
-To get started you need to obtain your secret key from the [environment settings](https://app.bucket.co/envs/current/settings/app-environments)
+To get started you need to obtain your secret key from the [environment settings](https://app.bucket.co/env-current/settings/app-environments)
 in Bucket.
 
 > [!CAUTION]
@@ -65,7 +65,7 @@ in Bucket.
 
 Bucket will load settings through the various environment variables automatically (see [Configuring](#configuring) below).
 
-1. Find the Bucket secret key for your development environment under [environment settings](https://app.bucket.co/envs/current/settings/app-environments) in Bucket.
+1. Find the Bucket secret key for your development environment under [environment settings](https://app.bucket.co/env-current/settings/app-environments) in Bucket.
 2. Set `BUCKET_SECRET_KEY` in your `.env` file
 3. Create a `bucket.ts` file containing the following:
 
