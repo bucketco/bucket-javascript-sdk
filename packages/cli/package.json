@@ -1,6 +1,6 @@
 {
   "name": "@bucketco/cli",
-  "version": "2.0.2",
+  "version": "2.0.1",
   "packageManager": "yarn@4.1.1",
   "description": "CLI for Bucket service",
   "main": "./dist/index.js",

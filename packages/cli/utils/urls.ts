@@ -22,7 +22,7 @@ export const baseUrlSuffix = (baseUrl: string) => {
 };
 
 export function environmentUrl(baseUrl: string, environment: UrlArgs): string {
-  return `${baseUrl}/env-current${slug(environment)}`;
+  return `${baseUrl}/envs/${slug(environment)}`;
 }
 
 export function featureUrl(
