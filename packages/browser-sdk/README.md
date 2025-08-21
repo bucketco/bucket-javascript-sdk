@@ -6,7 +6,7 @@ Bucket supports feature toggling, tracking feature usage, [collecting feedback](
 
 ## Install
 
-First find your `publishableKey` under [environment settings](https://app.bucket.co/envs/current/settings/app-environments) in Bucket.
+First find your `publishableKey` under [environment settings](https://app.bucket.co/env-current/settings/app-environments) in Bucket.
 
 The package can be imported or used directly in a HTML script tag:
 
