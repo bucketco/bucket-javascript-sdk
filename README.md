@@ -1,5 +1,6 @@
 # Bucket
 
+[![Trust Score](https://www.archestra.ai/mcp-catalog/bucketco__bucket-javascript-sdk__packages__cli)](https://archestra.ai/mcp-catalog/bucketco__bucket-javascript-sdk__packages__cli)
 Feature flags for SaaS that run on TypeScript. [Learn more and get started](https://bucket.co/)
 
 ## React SDK
