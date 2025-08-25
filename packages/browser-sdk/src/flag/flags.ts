@@ -6,7 +6,7 @@ import RateLimiter from "../rateLimiter";
 import { FlagCache, isObject, parseAPIFeaturesResponse } from "./flagCache";
 
 /**
- * A feature fetched from the server.
+ * A flag fetched from the server.
  */
 export type FetchedFlag = {
   /**
@@ -141,15 +141,15 @@ export function validateFlagsResponse(response: any) {
     return;
   }
 
-  const features = parseAPIFeaturesResponse(response.features);
+  const flags = parseAPIFeaturesResponse(response.features);
 
-  if (!features) {
+  if (!flags) {
     return;
   }
 
   return {
     success: response.success,
-    features,
+    flags,
   };
 }
 
@@ -388,7 +388,7 @@ export class FlagsClient {
         throw new Error("unable to validate response");
       }
 
-      return typeRes.features;
+      return typeRes.flags;
     } catch (e) {
       this.logger.error("error fetching flags: ", e);
       return;

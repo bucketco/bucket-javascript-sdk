@@ -20,7 +20,7 @@ import {
   ReflagProps,
   ReflagProvider,
   useClient,
-  useFeature,
+  useFlag,
   useRequestFeedback,
   useSendFeedback,
   useTrack,
@@ -174,7 +174,7 @@ describe("<ReflagProvider />", () => {
       timeoutMs: 1002,
       expireTimeMs: 1003,
       staleWhileRevalidate: true,
-      fallbackFeatures: ["feature2"],
+      fallbackFlags: ["flag2"],
       feedback: { enableAutoFeedback: true },
       toolbar: { show: true },
       newReflagClient,
@@ -202,7 +202,7 @@ describe("<ReflagProvider />", () => {
         logger: undefined,
         enableTracking: false,
         expireTimeMs: 1003,
-        fallbackFeatures: ["feature2"],
+        fallbackFlags: ["flag2"],
         feedback: {
           enableAutoFeedback: true,
         },
@@ -281,9 +281,9 @@ describe("<ReflagProvider />", () => {
   });
 });
 
-describe("useFeature", () => {
+describe("useFlag", () => {
   test("returns a loading state initially", async () => {
-    const { result, unmount } = renderHook(() => useFeature("huddle"), {
+    const { result, unmount } = renderHook(() => useFlag("huddle"), {
       wrapper: ({ children }) => getProvider({ children }),
     });
 
@@ -300,7 +300,7 @@ describe("useFeature", () => {
   });
 
   test("finishes loading", async () => {
-    const { result, unmount } = renderHook(() => useFeature("huddle"), {
+    const { result, unmount } = renderHook(() => useFlag("huddle"), {
       wrapper: ({ children }) => getProvider({ children }),
     });
 
@@ -318,8 +318,8 @@ describe("useFeature", () => {
     unmount();
   });
 
-  test("provides the expected values if feature is enabled", async () => {
-    const { result, unmount } = renderHook(() => useFeature("abc"), {
+  test("provides the expected values if flag is enabled", async () => {
+    const { result, unmount } = renderHook(() => useFlag("abc"), {
       wrapper: ({ children }) => getProvider({ children }),
     });
 
@@ -364,7 +364,7 @@ describe("useSendFeedback", () => {
 
     await waitFor(async () => {
       await result.current({
-        featureKey: "huddles",
+        flagKey: "huddles",
         score: 5,
       });
       expect(events).toStrictEqual(["FEEDBACK"]);
@@ -386,14 +386,14 @@ describe("useRequestFeedback", () => {
 
     await waitFor(async () => {
       result.current({
-        featureKey: "huddles",
+        flagKey: "huddles",
         title: "Test question",
         companyId: "456",
       });
 
       expect(requestFeedback).toHaveBeenCalledOnce();
       expect(requestFeedback).toHaveBeenCalledWith({
-        featureKey: "huddles",
+        flagKey: "huddles",
         companyId: "456",
         title: "Test question",
       });

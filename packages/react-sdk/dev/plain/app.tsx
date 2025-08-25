@@ -1,20 +1,20 @@
 import React, { useState } from "react";
 
 import {
-  FeatureKey,
   ReflagProvider,
-  useFeature,
   useRequestFeedback,
   useTrack,
   useUpdateCompany,
   useUpdateOtherContext,
   useUpdateUser,
   useClient,
+  useFlag,
+  FlagKey,
 } from "../../src";
 
-// Extending the Features interface to define the available features
+// Extending the Flags interface to define the available flags
 declare module "../../src" {
-  interface Features {
+  interface Flags {
     huddles: {
       config: {
         payload: {
@@ -26,16 +26,16 @@ declare module "../../src" {
 }
 
 const publishableKey = import.meta.env.VITE_PUBLISHABLE_KEY || "";
-const apiBaseUrl = import.meta.env.VITE_REFLAG_API_BASE_URL || import.meta.env.VITE_BUCKET_API_BASE_URL;
+const apiBaseUrl = import.meta.env.VITE_REFLAG_API_BASE_URL;
 
 function HuddleFeature() {
   // Type safe feature
-  const feature = useFeature("huddles");
+  const flag = useFlag("huddles");
   return (
     <div>
       <h2>Huddle feature</h2>
       <pre>
-        <code>{JSON.stringify(feature, null, 2)}</code>
+        <code>{JSON.stringify(flag, null, 2)}</code>
       </pre>
     </div>
   );
@@ -155,7 +155,7 @@ function Feedback() {
         onClick={(e) =>
           requestFeedback({
             title: "How do you like Huddles?",
-            featureKey: "huddle",
+            flagKey: "huddles",
             position: {
               type: "POPOVER",
               anchor: e.currentTarget as HTMLElement,
@@ -179,11 +179,11 @@ function Demos() {
 
       <h2>Feature opt-in</h2>
       <div>
-        Create a <code>huddle</code> feature and set a rule:{" "}
+        Create a <code>huddle</code> flag and set a rule:{" "}
         <code>optin-huddles IS TRUE</code>. Hit the checkbox below to opt-in/out
-        of the feature.
+        of the flag.
       </div>
-      <FeatureOptIn featureKey={"huddles"} featureName={"Huddles"} />
+      <FeatureOptIn flagKey={"huddles"} featureName={"Huddles"} />
 
       <UpdateContext />
       <Feedback />
@@ -194,15 +194,15 @@ function Demos() {
 }
 
 function FeatureOptIn({
-  featureKey,
+  flagKey,
   featureName,
 }: {
-  featureKey: FeatureKey;
+  flagKey: FlagKey;
   featureName: string;
 }) {
   const updateUser = useUpdateUser();
   const [sendingUpdate, setSendingUpdate] = useState(false);
-  const { isEnabled } = useFeature(featureKey);
+  const { isEnabled } = useFlag(flagKey);
 
   return (
     <div>
@@ -215,7 +215,7 @@ function FeatureOptIn({
         onChange={() => {
           setSendingUpdate(true);
           updateUser({
-            [`optin-${featureKey}`]: isEnabled ? "false" : "true",
+            [`optin-${flagKey}`]: isEnabled ? "false" : "true",
           })?.then(() => {
             setSendingUpdate(false);
           });
@@ -236,28 +236,28 @@ function CustomToolbar() {
     <div>
       <h2>Custom toolbar</h2>
       <ul>
-        {Object.entries(client.getFeatures()).map(([featureKey, feature]) => (
-          <li key={featureKey}>
-            {featureKey} -
-            {(feature.isEnabledOverride ?? feature.isEnabled)
+        {Object.entries(client.getFlags()).map(([flagKey, flag]) => (
+          <li key={flagKey}>
+            {flagKey} -
+            {(flag.isEnabledOverride ?? flag.isEnabled)
               ? "Enabled"
               : "Disabled"}{" "}
-            {feature.isEnabledOverride !== null && (
+            {flag.isEnabledOverride !== null && (
               <button
                 onClick={() => {
-                  client.getFeature(featureKey).setIsEnabledOverride(null);
+                  client.getFlag(flagKey).setIsEnabledOverride(null);
                 }}
               >
                 Reset
               </button>
             )}
             <input
-              checked={feature.isEnabledOverride ?? feature.isEnabled}
+              checked={flag.isEnabledOverride ?? flag.isEnabled}
               type="checkbox"
               onChange={(e) => {
                 // this uses slightly simplified logic compared to the Reflag Toolbar
                 client
-                  .getFeature(featureKey)
+                  .getFlag(flagKey)
                   .setIsEnabledOverride(e.target.checked ?? false);
               }}
             />

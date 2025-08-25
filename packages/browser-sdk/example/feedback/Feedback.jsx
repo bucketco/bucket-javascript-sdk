@@ -19,7 +19,7 @@ export const FeedbackForm = () => {
 
     /*
     // Using the Reflag API
-    fetch("https://tracking.reflag.co/feedback", {
+    fetch("https://tracking.bucket.co/feedback", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

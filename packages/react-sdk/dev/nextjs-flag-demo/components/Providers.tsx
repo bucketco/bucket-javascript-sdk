@@ -14,7 +14,7 @@ export const Providers = ({ publishableKey, children }: Props) => {
       publishableKey={publishableKey}
       company={{ id: "acme_inc" }}
       user={{ id: "john doe" }}
-      fallbackFeatures={["fallback-feature"]}
+      fallbackFlags={["fallback-flag"]}
     >
       {children}
     </ReflagProvider>

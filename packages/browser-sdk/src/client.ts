@@ -697,7 +697,7 @@ export class ReflagClient {
    *
    * This can be used to collect feedback from users in Reflag in cases where Automated Feedback Surveys isn't appropriate.
    *
-   * @param options
+   * @param options The feedback details to submit.
    */
   requestFeedback(options: RequestFeedbackData) {
     if (!this.context.user?.id) {
