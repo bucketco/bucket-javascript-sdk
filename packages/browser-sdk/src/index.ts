@@ -5,8 +5,13 @@ export type {
   InitOptions,
   ToolbarOptions,
 } from "./client";
-export { BucketClient } from "./client";
-export type { BucketContext, CompanyContext, UserContext } from "./context";
+export { BucketClient, ReflagClient } from "./client";
+export type {
+  BucketContext,
+  CompanyContext,
+  ReflagContext,
+  UserContext,
+} from "./context";
 export type {
   CheckEvent,
   FallbackFeatureOverride,

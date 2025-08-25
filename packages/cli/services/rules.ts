@@ -1,7 +1,7 @@
 export function getCursorRules() {
   return `
 ---
-description: Guidelines for implementing feature flagging using Bucket feature management service
+description: Guidelines for implementing feature flagging using Reflag feature management service
 globs: "**/*.ts, **/*.tsx, **/*.js, **/*.jsx"
 ---
 
@@ -14,20 +14,20 @@ export function getCopilotInstructions() {
 }
 
 const rules = /* markdown */ `
-# Bucket Feature Management Service for LLMs
+# Reflag Feature Management Service for LLMs
 
-Bucket is a comprehensive feature management service offering feature flags, user feedback collection, adoption tracking, and remote configuration for your applications across various JavaScript frameworks, particularly React, Next.js, Node.js, vanilla browser, CLI, and OpenFeature environments. Follow these best practices for feature flagging.
+Reflag is a comprehensive feature management service offering feature flags, user feedback collection, adoption tracking, and remote configuration for your applications across various JavaScript frameworks, particularly React, Next.js, Node.js, vanilla browser, CLI, and OpenFeature environments. Follow these best practices for feature flagging.
 
 ## Follow Official Documentation
 
-- Refer to [Bucket's official documentation](mdc:https:/docs.bucket.co) for implementation details.
-- Adhere to Bucket's recommended patterns for each framework.
+- Refer to [Reflag's official documentation](mdc:https:/docs.reflag.com) for implementation details.
+- Adhere to Reflag's recommended patterns for each framework.
 
-## Bucket SDK Usage
+## Reflag SDK Usage
 
-- Configure \`BucketProvider\` or \`BucketClient\` properly at application entry points.
-- Leverage Bucket CLI for generating type-safe feature definitions.
-- Write clean, type-safe code when applying Bucket feature flags.
+- Configure \`ReflagProvider\` or \`ReflagClient\` properly at application entry points.
+- Leverage Reflag CLI for generating type-safe feature definitions.
+- Write clean, type-safe code when applying Reflag feature flags.
 - Follow established patterns in the project.
 
 ## Feature Flag Implementation
@@ -48,7 +48,7 @@ Bucket is a comprehensive feature management service offering feature flags, use
 
 ## Analytics and Feedback
 
-- Track feature usage with Bucket analytics.
+- Track feature usage with Reflag analytics.
 - Collect user feedback on features.
 - Monitor feature adoption and health.
 
@@ -56,11 +56,11 @@ Bucket is a comprehensive feature management service offering feature flags, use
 
 ### Targeting Rules
 
-Targeting rules are entities used in Bucket to describe the target audience of a given feature. The target audience refers to the users who can interact with the feature within your application. Additionally, each targeting rule contains a value that is used for the target audience.
+Targeting rules are entities used in Reflag to describe the target audience of a given feature. The target audience refers to the users who can interact with the feature within your application. Additionally, each targeting rule contains a value that is used for the target audience.
 
 ### Feature Stages
 
-Release stages in Bucket allow setting up app-wide feature access targeting rules. Each release stage defines targeting rules for each available environment. Later, during the development of new features, you can apply all those rules automatically by selecting an available release stage.
+Release stages in Reflag allow setting up app-wide feature access targeting rules. Each release stage defines targeting rules for each available environment. Later, during the development of new features, you can apply all those rules automatically by selecting an available release stage.
 
 Release stages are useful tools when a standard release workflow is used in your organization.
 
@@ -73,7 +73,7 @@ Predefined stages:
 
 ### Segments
 
-A segment entity in Bucket is a dynamic collection of companies. Segments' dynamic nature results from the fact that they use filters to evaluate which companies are included in them.
+A segment entity in Reflag is a dynamic collection of companies. Segments' dynamic nature results from the fact that they use filters to evaluate which companies are included in them.
 
 #### Segment filters can be constructed using any combination of the following rules:
 
@@ -84,7 +84,7 @@ A segment entity in Bucket is a dynamic collection of companies. Segments' dynam
 
 ### Integrations
 
-Connect Bucket with your existing tools:
+Connect Reflag with your existing tools:
 
 - Linear
 - Datadog
@@ -100,7 +100,7 @@ Connect Bucket with your existing tools:
 ### Installation
 
 \`\`\`bash
-npm i @bucketco/react-sdk
+npm i @reflag/react-sdk
 \`\`\`
 
 ### Key Features
@@ -113,34 +113,34 @@ npm i @bucketco/react-sdk
 
 ### Basic Setup
 
-1. Add the \`BucketProvider\` to wrap your application:
+1. Add the \`ReflagProvider\` to wrap your application:
 
 \`\`\`jsx
-import { BucketProvider } from "@bucketco/react-sdk";
+import { ReflagProvider } from "@reflag/react-sdk";
 
-<BucketProvider
+<ReflagProvider
   publishableKey="{YOUR_PUBLISHABLE_KEY}"
   company={{ id: "acme_inc", plan: "pro" }}
   user={{ id: "john_doe" }}
 >
   <YourApp />
-</BucketProvider>;
+</ReflagProvider>;
 \`\`\`
 
 1. Create a feature and generate type-safe definitions:
 
 \`\`\`bash
-npm i --save-dev @bucketco/cli
-npx bucket new "Feature name"
+npm i --save-dev @reflag/cli
+npx reflag new "Feature name"
 \`\`\`
 
 \`\`\`typescript
-// DO NOT EDIT THIS FILE. IT IS GENERATED BY THE BUCKET CLI AND WILL BE OVERWRITTEN.
+// DO NOT EDIT THIS FILE. IT IS GENERATED BY THE REFLAG CLI AND WILL BE OVERWRITTEN.
 // eslint-disable
 // prettier-ignore
-import "@bucketco/react-sdk";
+import "@reflag/react-sdk";
 
-declare module "@bucketco/react-sdk" {
+declare module "@reflag/react-sdk" {
   export interface Features {
     "feature-key": {
       config: {
@@ -156,7 +156,7 @@ declare module "@bucketco/react-sdk" {
 1. Use features in your components:
 
 \`\`\`jsx
-import { useFeature } from "@bucketco/react-sdk";
+import { useFeature } from "@reflag/react-sdk";
 
 function StartHuddleButton() {
   const {
@@ -203,19 +203,19 @@ function StartHuddleButton() {
 ### Core React Hooks
 
 - \`useFeature()\` - Access feature status, config, and tracking
-- \`useTrack()\` - Send custom events to Bucket
+- \`useTrack()\` - Send custom events to Reflag
 - \`useRequestFeedback()\` - Open feedback dialog for a feature
 - \`useSendFeedback()\` - Programmatically send feedback
 - \`useUpdateUser()\` / \`useUpdateCompany()\` - Update user/company data
 - \`useUpdateOtherContext()\` - Update session-only context data
-- \`useClient()\` - Access the underlying Bucket client
+- \`useClient()\` - Access the underlying Reflag client
 
 ## Node.js SDK Implementation
 
 ### Installation
 
 \`\`\`bash
-npm i @bucketco/node-sdk
+npm i @reflag/node-sdk
 \`\`\`
 
 ### Key Features
@@ -228,10 +228,10 @@ npm i @bucketco/node-sdk
 ### Basic Setup
 
 \`\`\`javascript
-import { BucketClient } from "@bucketco/node-sdk";
+import { ReflagClient } from "@reflag/node-sdk";
 
-const client = new BucketClient({
-  secretKey: process.env.BUCKET_SECRET_KEY,
+const client = new ReflagClient({
+  secretKey: process.env.REFLAG_SECRET_KEY,
 });
 
 // Check if a feature is enabled

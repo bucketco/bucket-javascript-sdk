@@ -6,12 +6,12 @@ import { LOG_LEVELS } from "./types";
 import { isObject, ok } from "./utils";
 
 export const API_BASE_URL = "https://front.bucket.co";
-export const SDK_VERSION_HEADER_NAME = "bucket-sdk-version";
+export const SDK_VERSION_HEADER_NAME = "reflag-sdk-version";
 export const SDK_VERSION = `node-sdk/${version}`;
 export const API_TIMEOUT_MS = 10000;
 export const END_FLUSH_TIMEOUT_MS = 5000;
 
-export const BUCKET_LOG_PREFIX = "[Bucket]";
+export const REFLAG_LOG_PREFIX = "[Reflag]";
 
 export const FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS = 60 * 1000;
 
@@ -87,15 +87,22 @@ function loadConfigFile(file: string) {
 }
 
 function loadEnvVars() {
-  const secretKey = process.env.BUCKET_SECRET_KEY;
-  const enabledFeatures = process.env.BUCKET_FEATURES_ENABLED;
-  const disabledFeatures = process.env.BUCKET_FEATURES_DISABLED;
-  const logLevel = process.env.BUCKET_LOG_LEVEL;
-  const apiBaseUrl = process.env.BUCKET_API_BASE_URL ?? process.env.BUCKET_HOST;
+  const secretKey =
+    process.env.REFLAG_SECRET_KEY ?? process.env.BUCKET_SECRET_KEY;
+  const enabledFeatures =
+    process.env.REFLAG_FEATURES_ENABLED ?? process.env.BUCKET_FEATURES_ENABLED;
+  const disabledFeatures =
+    process.env.REFLAG_FEATURES_DISABLED ??
+    process.env.BUCKET_FEATURES_DISABLED;
+  const logLevel = process.env.REFLAG_LOG_LEVEL ?? process.env.BUCKET_LOG_LEVEL;
+  const apiBaseUrl =
+    process.env.REFLAG_API_BASE_URL ??
+    process.env.BUCKET_API_BASE_URL ??
+    process.env.BUCKET_HOST;
+
+  const offlineVar = process.env.REFLAG_OFFLINE ?? process.env.BUCKET_OFFLINE;
   const offline =
-    process.env.BUCKET_OFFLINE !== undefined
-      ? ["true", "on"].includes(process.env.BUCKET_OFFLINE)
-      : undefined;
+    offlineVar !== undefined ? ["true", "on"].includes(offlineVar) : undefined;
 
   let featureOverrides: Record<string, boolean> = {};
   if (enabledFeatures) {

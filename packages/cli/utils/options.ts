@@ -9,22 +9,22 @@ export const debugOption = new Option("--debug", "Enable debug mode.");
 
 export const baseUrlOption = new Option(
   "--base-url [url]",
-  `Bucket service URL (useful if behind a proxy). Falls back to baseUrl value in ${CONFIG_FILE_NAME}.`,
+  `Reflag service URL (useful if behind a proxy). Falls back to baseUrl value in ${CONFIG_FILE_NAME}.`,
 );
 
 export const apiUrlOption = new Option(
   "--api-url [url]",
-  `Bucket API URL (useful if behind a proxy). Falls back to apiUrl value in ${CONFIG_FILE_NAME} or baseUrl with /api appended.`,
+  `Reflag API URL (useful if behind a proxy). Falls back to apiUrl value in ${CONFIG_FILE_NAME} or baseUrl with /api appended.`,
 );
 
 export const apiKeyOption = new Option(
   "--api-key [key]",
-  `Bucket API key. Can be used in CI/CD pipelines where logging in is not possible.`,
+  `Reflag API key. Can be used in CI/CD pipelines where logging in is not possible.`,
 );
 
 export const appIdOption = new Option(
   "-a, --appId [appId]",
-  `Bucket App ID. Falls back to appId value in ${CONFIG_FILE_NAME}.`,
+  `Reflag App ID. Falls back to appId value in ${CONFIG_FILE_NAME}.`,
 );
 
 export const overwriteOption = new Option(

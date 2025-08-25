@@ -12,7 +12,7 @@
     <h3 style="margin: 0 0 10px 0; color: #d63031">Missing Publishable Key</h3>
     <p style="margin: 0; line-height: 1.5">
       The <code>VITE_PUBLISHABLE_KEY</code> environment variable is not set.
-      Please set this variable in your <code>.env</code> file to use the Bucket
+      Please set this variable in your <code>.env</code> file to use the Reflag
       SDK.
     </p>
     <p style="margin: 10px 0 0 0; font-size: 14px; opacity: 0.8">

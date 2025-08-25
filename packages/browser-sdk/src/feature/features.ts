@@ -188,8 +188,8 @@ type context = {
 
 export const FEATURES_EXPIRE_MS = 30 * 24 * 60 * 60 * 1000; // expire entirely after 30 days
 
-const localStorageFetchedFeaturesKey = `__bucket_fetched_features`;
-const localStorageOverridesKey = `__bucket_overrides`;
+const localStorageFetchedFeaturesKey = `__reflag_fetched_features`;
+const localStorageOverridesKey = `__reflag_overrides`;
 
 type OverridesFeatures = Record<string, boolean | null>;
 

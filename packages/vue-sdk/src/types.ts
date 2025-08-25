@@ -1,11 +1,11 @@
 import type { Ref } from "vue";
 
 import type {
-  BucketClient,
-  BucketContext,
   InitOptions,
+  ReflagClient,
+  ReflagContext,
   RequestFeedbackData,
-} from "@bucketco/browser-sdk";
+} from "@reflag/browser-sdk";
 
 export type EmptyFeatureRemoteConfig = { key: undefined; payload: undefined };
 
@@ -47,18 +47,40 @@ export type TypedFeatures = keyof Features extends never
 export type FeatureKey = keyof TypedFeatures;
 
 export interface ProviderContextType {
-  client: Ref<BucketClient>;
+  client: Ref<ReflagClient>;
   isLoading: Ref<boolean>;
   updatedCount: Ref<number>;
   provider: boolean;
 }
 
-export type BucketProps = BucketContext &
+/**
+ * Props for the ReflagProvider component.
+ */
+export type ReflagProps = ReflagContext &
   InitOptions & {
+    /**
+     * Whether to enable debug mode.
+     */
     debug?: boolean;
+
+    /**
+     * @deprecated
+     * New ReflagClient constructor. Use `newReflagClient` instead.
+     *
+     * @internal
+     */
     newBucketClient?: (
-      ...args: ConstructorParameters<typeof BucketClient>
-    ) => BucketClient;
+      ...args: ConstructorParameters<typeof ReflagClient>
+    ) => ReflagClient;
+
+    /**
+     * New ReflagClient constructor.
+     *
+     * @internal
+     */
+    newReflagClient?: (
+      ...args: ConstructorParameters<typeof ReflagClient>
+    ) => ReflagClient;
   };
 
 export type RequestFeatureFeedbackOptions = Omit<

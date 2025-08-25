@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useFeature } from "@bucketco/react-sdk";
+import { useFeature } from "@reflag/react-sdk";
 
 export const Features = () => {
   const { isEnabled } = useFeature("huddle");

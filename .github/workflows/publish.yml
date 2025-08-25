@@ -17,7 +17,7 @@ jobs:
           cache: "yarn"
           cache-dependency-path: "**/yarn.lock"
           registry-url: "https://registry.npmjs.org"
-          scope: "@bucketco"
+          scope: "@reflag"
       - name: Install dependencies
         run: yarn install --immutable
       - name: Build packages
@@ -44,6 +44,6 @@ jobs:
         run: |
           cd bucket-docs
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@bucket.co"
+          git config user.email "github-actions[bot]@reflag.com"
           git add sdk
           git commit -m "Update documentation" && git push || echo "No docs changes to commit"

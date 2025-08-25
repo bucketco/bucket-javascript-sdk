@@ -11,7 +11,7 @@ import {
   TrackingEventDetails,
 } from "@openfeature/web-sdk";
 
-import { BucketClient, Feature, InitOptions } from "@bucketco/browser-sdk";
+import { Feature, InitOptions, ReflagClient } from "@reflag/browser-sdk";
 
 export type ContextTranslationFn = (
   context?: EvaluationContext,
@@ -38,12 +38,12 @@ export function defaultContextTranslator(
   };
 }
 
-export class BucketBrowserSDKProvider implements Provider {
+export class ReflagBrowserSDKProvider implements Provider {
   readonly metadata: ProviderMetadata = {
-    name: "bucket-browser-provider",
+    name: "reflag-browser-provider",
   };
 
-  private _client?: BucketClient;
+  private _client?: ReflagClient;
 
   private readonly _clientOptions: InitOptions;
   private readonly _contextTranslator: ContextTranslationFn;
@@ -73,7 +73,7 @@ export class BucketBrowserSDKProvider implements Provider {
   }
 
   async initialize(context?: EvaluationContext): Promise<void> {
-    const client = new BucketClient({
+    const client = new ReflagClient({
       ...this._clientOptions,
       ...this._contextTranslator(context),
     });
@@ -111,7 +111,7 @@ export class BucketBrowserSDKProvider implements Provider {
         value: defaultValue,
         reason: StandardResolutionReasons.DEFAULT,
         errorCode: ErrorCode.PROVIDER_NOT_READY,
-        errorMessage: "Bucket client not initialized",
+        errorMessage: "Reflag client not initialized",
       } satisfies ResolutionDetails<T>;
     }
 
@@ -144,7 +144,7 @@ export class BucketBrowserSDKProvider implements Provider {
       reason: StandardResolutionReasons.ERROR,
       errorCode: ErrorCode.GENERAL,
       errorMessage:
-        "Bucket doesn't support this method. Use `resolveObjectEvaluation` instead.",
+        "Reflag doesn't support this method. Use `resolveObjectEvaluation` instead.",
     };
   }
 
@@ -215,3 +215,10 @@ export class BucketBrowserSDKProvider implements Provider {
       });
   }
 }
+
+/**
+ * @deprecated
+ *
+ * Use ReflagBrowserSDKProvider instead
+ */
+export const BucketBrowserSDKProvider = ReflagBrowserSDKProvider;

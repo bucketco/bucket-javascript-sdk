@@ -1,60 +1,60 @@
-# Bucket React SDK
+# Reflag React SDK
 
-React client side library for [Bucket.co](https://bucket.co)
+React client side library for [Reflag.com](https://bucket.co)
 
-Bucket supports feature toggling, tracking feature usage, [requesting feedback](#userequestfeedback) on features, and [remotely configuring features](#remote-config-beta).
+Reflag supports feature toggling, tracking feature usage, [requesting feedback](#userequestfeedback) on features, and [remotely configuring features](#remote-config).
 
-The Bucket React SDK comes with a [built-in toolbar](https://docs.bucket.co/supported-languages/browser-sdk#toolbar) which appears on `localhost` by default.
+The Reflag React SDK comes with a [built-in toolbar](https://docs.bucket.co/supported-languages/browser-sdk#toolbar) which appears on `localhost` by default.
 
 ## Install
 
 Install via npm:
 
 ```shell
-npm i @bucketco/react-sdk
+npm i @reflag/react-sdk
 ```
 
 ## Get started
 
-### 1. Add the `BucketProvider` context provider
+### 1. Add the `ReflagProvider` context provider
 
-Add the `BucketProvider` context provider to your application:
+Add the `ReflagProvider` context provider to your application:
 
 **Example:**
 
 ```tsx
-import { BucketProvider } from "@bucketco/react-sdk";
+import { ReflagProvider } from "@reflag/react-sdk";
 
-<BucketProvider
+<ReflagProvider
   publishableKey="{YOUR_PUBLISHABLE_KEY}"
   company={{ id: "acme_inc", plan: "pro" }}
   user={{ id: "john doe" }}
   loadingComponent={<Loading />}
 >
   {/* children here are shown when loading finishes or immediately if no `loadingComponent` is given */}
-</BucketProvider>;
+</ReflagProvider>;
 ```
 
 ### 2. Create a new feature and set up type safety
 
-Install the Bucket CLI:
+Install the Reflag CLI:
 
 ```shell
-npm i --save-dev @bucketco/cli
+npm i --save-dev @reflag/cli
 ```
 
-Run `npx bucket new` to create your first feature!
-On the first run, it will sign into Bucket and set up type generation for your project:
+Run `npx reflag new` to create your first feature!
+On the first run, it will sign into Reflag and set up type generation for your project:
 
 ```shell
-❯ npx bucket new
+❯ npx reflag new
 Opened web browser to facilitate login: https://app.bucket.co/api/oauth/cli/authorize
 
-Welcome to Bucket!
+Welcome to Reflag!
 
 ? Where should we generate the types? gen/features.d.ts
 ? What is the output format? react
-✔ Configuration created at bucket.config.json.
+✔ Configuration created at reflag.config.json.
 
 Creating feature for app Slick app.
 ? New feature name: Huddle
@@ -92,8 +92,8 @@ function StartHuddleButton() {
 
 ## Setting `user` and `company`
 
-Bucket determines which features are active for a given `user`, `company`, or `otherContext`.
-You pass these to the `BucketProvider` as props.
+Reflag determines which features are active for a given `user`, `company`, or `otherContext`.
+You pass these to the `ReflagProvider` as props.
 
 If you supply `user` or `company` objects, they must include at least the `id` property otherwise they will be ignored in their entirety.
 In addition to the `id`, you must also supply anything additional that you want to be able to evaluate feature targeting rules against.
@@ -107,16 +107,16 @@ A number of special attributes exist:
 - `avatar` -- the URL for `user`/`company` avatar image.
 
 ```tsx
- <BucketProvider
-    publishableKey={YOUR_PUBLISHABLE_KEY}
-    user={{ id: "user_123", name: "John Doe", email: "john@acme.com" }}
-    company={{ id: "company_123", name: "Acme, Inc" }}
-    otherContext={{ completedSteps: [1, 4, 7] }}
-  >
-    <LoadingBucket>
+<ReflagProvider
+  publishableKey={YOUR_PUBLISHABLE_KEY}
+  user={{ id: "user_123", name: "John Doe", email: "john@acme.com" }}
+  company={{ id: "company_123", name: "Acme, Inc" }}
+  otherContext={{ completedSteps: [1, 4, 7] }}
+>
+  <LoadingReflag>
     {/* children here are shown when loading finishes */}
-    </LoadingBucket>
-  <BucketProvider>
+  </LoadingReflag>
+</ReflagProvider>
 ```
 
 To retrieve features along with their targeting information, use `useFeature(key: string)` hook (described in a section below).
@@ -128,7 +128,7 @@ generates a `check` event.
 
 Remote config is a dynamic and flexible approach to configuring feature behavior outside of your app – without needing to re-deploy it.
 
-Similar to `isEnabled`, each feature accessed using the `useFeature()` hook, has a `config` property. This configuration is managed from within Bucket. It is managed similar to the way access to features is managed, but instead of the
+Similar to `isEnabled`, each feature accessed using the `useFeature()` hook, has a `config` property. This configuration is managed from within Reflag. It is managed similar to the way access to features is managed, but instead of the
 binary `isEnabled` you can have multiple configuration values which are given to different user/companies.
 
 ### Get started with Remote config
@@ -136,10 +136,10 @@ binary `isEnabled` you can have multiple configuration values which are given to
 1. Update your feature definitions:
 
 ```typescript
-import "@bucketco/react-sdk";
+import "@reflag/react-sdk";
 
-// Define your features by extending the `Features` interface in @bucketco/react-sdk
-declare module "@bucketco/react-sdk" {
+// Define your features by extending the `Features` interface in @reflag/react-sdk
+declare module "@reflag/react-sdk" {
   interface Features {
     huddle: {
       // change from `boolean` to an object which sets
@@ -167,12 +167,12 @@ const {
 Note that, similar to `isEnabled`, accessing `config` on the object returned by `useFeature()` automatically
 generates a `check` event.
 
-## `<BucketProvider>` component
+## `<ReflagProvider>` component
 
-The `<BucketProvider>` initializes the Bucket SDK, fetches features and starts listening for automated feedback survey events. The component can be configured using a number of props:
+The `<ReflagProvider>` initializes the Reflag SDK, fetches features and starts listening for automated feedback survey events. The component can be configured using a number of props:
 
-- `publishableKey` is used to connect the provider to an _environment_ on Bucket. Find your `publishableKey` under [environment settings](https://app.bucket.co/envs/current/settings/app-environments) in Bucket,
-- `company`, `user` and `otherContext` make up the _context_ that is used to determine if a feature is enabled or not. `company` and `user` contexts are automatically transmitted to Bucket servers so the Bucket app can show you which companies have access to which features etc.
+- `publishableKey` is used to connect the provider to an _environment_ on Reflag. Find your `publishableKey` under [environment settings](https://app.bucket.co/envs/current/settings/app-environments) in Reflag,
+- `company`, `user` and `otherContext` make up the _context_ that is used to determine if a feature is enabled or not. `company` and `user` contexts are automatically transmitted to Reflag servers so the Reflag app can show you which companies have access to which features etc.
   > [!Note]
   > If you specify `company` and/or `user` they must have at least the `id` property, otherwise they will be ignored in their entirety. You should also supply anything additional you want to be able to evaluate feature targeting against,
 - `fallbackFeatures`: A list of strings which specify which features to consider enabled if the SDK is unable to fetch features. Can be provided in two formats:
@@ -198,33 +198,33 @@ The `<BucketProvider>` initializes the Bucket SDK, fetches features and starts l
 - `staleWhileRevalidate`: If set to `true`, stale features will be returned while refetching features in the background.
 - `expireTimeMs`: If set, features will be cached between page loads for this duration (in milliseconds).
 - `staleTimeMs`: Maximum time (in milliseconds) that stale features will be returned if `staleWhileRevalidate` is true and new features cannot be fetched.
-- `offline`: Provide this option when testing or in local development environments to avoid contacting Bucket servers.
-- `loadingComponent` lets you specify an React component to be rendered instead of the children while the Bucket provider is initializing. If you want more control over loading screens, `useFeature()` returns `isLoading` which you can use to customize the loading experience:
+- `offline`: Provide this option when testing or in local development environments to avoid contacting Reflag servers.
+- `loadingComponent` lets you specify an React component to be rendered instead of the children while the Reflag provider is initializing. If you want more control over loading screens, `useFeature()` returns `isLoading` which you can use to customize the loading experience:
 
   ```tsx
-  function LoadingBucket({ children }) {
-    const { isLoading } = useFeature("myFeature")
+  function LoadingReflag({ children }) {
+    const { isLoading } = useFeature("myFeature");
     if (isLoading) {
-      return <Spinner />
+      return <Spinner />;
     }
 
-    return children
+    return children;
   }
 
-  //-- Initialize the Bucket provider
-  <BucketProvider publishableKey={YOUR_PUBLISHABLE_KEY} /*...*/>
-    <LoadingBucket>
-    {/* children here are shown when loading finishes */}
-    </LoadingBucket>
-  <BucketProvider>
+  //-- Initialize the Reflag provider
+  <ReflagProvider publishableKey={YOUR_PUBLISHABLE_KEY} /*...*/>
+    <LoadingReflag>
+      {/* children here are shown when loading finishes */}
+    </LoadingReflag>
+  </ReflagProvider>;
   ```
 
-- `enableTracking`: Set to `false` to stop sending tracking events and user/company updates to Bucket. Useful when you're impersonating a user (defaults to `true`),
-- `apiBaseUrl`: Optional base URL for the Bucket API. Use this to override the default API endpoint,
-- `appBaseUrl`: Optional base URL for the Bucket application. Use this to override the default app URL,
+- `enableTracking`: Set to `false` to stop sending tracking events and user/company updates to Reflag. Useful when you're impersonating a user (defaults to `true`),
+- `apiBaseUrl`: Optional base URL for the Reflag API. Use this to override the default API endpoint,
+- `appBaseUrl`: Optional base URL for the Reflag application. Use this to override the default app URL,
 - `sseBaseUrl`: Optional base URL for Server-Sent Events. Use this to override the default SSE endpoint,
 - `debug`: Set to `true` to enable debug logging to the console,
-- `toolbar`: Optional [configuration](https://docs.bucket.co/supported-languages/browser-sdk/globals#toolbaroptions) for the Bucket toolbar,
+- `toolbar`: Optional [configuration](https://docs.bucket.co/supported-languages/browser-sdk/globals#toolbaroptions) for the Reflag toolbar,
 - `feedback`: Optional configuration for feedback collection
 
 ## Hooks
@@ -234,7 +234,7 @@ The `<BucketProvider>` initializes the Bucket SDK, fetches features and starts l
 Returns the state of a given feature for the current context. The hook provides type-safe access to feature flags and their configurations.
 
 ```tsx
-import { useFeature } from "@bucketco/react-sdk";
+import { useFeature } from "@reflag/react-sdk";
 
 function StartHuddleButton() {
   const {
@@ -280,11 +280,11 @@ function StartHuddleButton() {
 
 ### `useTrack()`
 
-`useTrack()` lets you send custom events to Bucket. Use this whenever a user _uses_ a feature. Create [features](https://docs.bucket.co/introduction/concepts/feature) in Bucket based off of these events to analyze feature usage.
-Returns a function to send custom events to Bucket. Use this whenever a user _uses_ a feature. These events can be used to analyze feature usage and create new features in Bucket.
+`useTrack()` lets you send custom events to Reflag. Use this whenever a user _uses_ a feature. Create [features](https://docs.bucket.co/introduction/concepts/feature) in Reflag based off of these events to analyze feature usage.
+Returns a function to send custom events to Reflag. Use this whenever a user _uses_ a feature. These events can be used to analyze feature usage and create new features in Reflag.
 
 ```tsx
-import { useTrack } from "@bucketco/react-sdk";
+import { useTrack } from "@reflag/react-sdk";
 
 function StartHuddle() {
   <div>
@@ -306,7 +306,7 @@ When using the `useRequestFeedback` you must pass the feature key to `requestFee
 The example below shows how to use `position` to ensure the popover appears next to the "Give feedback!" button.
 
 ```tsx
-import { useRequestFeedback } from "@bucketco/react-sdk";
+import { useRequestFeedback } from "@reflag/react-sdk";
 
 function FeedbackButton() {
   const requestFeedback = useRequestFeedback();
@@ -338,17 +338,17 @@ See the [Feedback Documentation](https://github.com/bucketco/bucket-javascript-s
 
 ### `useSendFeedback()`
 
-Returns a function that lets you send feedback to Bucket. This is useful if you've manually collected feedback through your own UI and want to send it to Bucket.
+Returns a function that lets you send feedback to Reflag. This is useful if you've manually collected feedback through your own UI and want to send it to Reflag.
 
 ```tsx
-import { useSendFeedback } from "@bucketco/react-sdk";
+import { useSendFeedback } from "@reflag/react-sdk";
 
 function CustomFeedbackForm() {
   const sendFeedback = useSendFeedback();
 
   const handleSubmit = async (data: FormData) => {
     await sendFeedback({
-      featureKey: "bucket-feature-key",
+      flagKey: "flag-key",
       score: parseInt(data.get("score") as string),
       comment: data.get("comment") as string,
     });
@@ -367,7 +367,7 @@ import {
   useUpdateUser,
   useUpdateCompany,
   useUpdateOtherContext,
-} from "@bucketco/react-sdk";
+} from "@reflag/react-sdk";
 
 function FeatureOptIn() {
   const updateUser = useUpdateUser();
@@ -405,15 +405,15 @@ function FeatureOptIn() {
 }
 ```
 
-Note: To change the `user.id` or `company.id`, you need to update the props passed to `BucketProvider` instead of using these hooks.
+Note: To change the `user.id` or `company.id`, you need to update the props passed to `ReflagProvider` instead of using these hooks.
 
 ### `useClient()`
 
-Returns the `BucketClient` used by the `BucketProvider`. The client offers more functionality that
+Returns the `ReflagClient` used by the `ReflagProvider`. The client offers more functionality that
 is not directly accessible thorough the other hooks.
 
 ```tsx
-import { useClient } from "@bucketco/react-sdk";
+import { useClient } from "@reflag/react-sdk";
 
 function LoggingWrapper({ children }: { children: ReactNode }) {
   const client = useClient();
@@ -430,10 +430,10 @@ function LoggingWrapper({ children }: { children: ReactNode }) {
 
 ## Content Security Policy (CSP)
 
-See [CSP](https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/browser-sdk/README.md#content-security-policy-csp) for info on using Bucket React SDK with CSP
+See [CSP](https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/browser-sdk/README.md#content-security-policy-csp) for info on using Reflag React SDK with CSP
 
 ## License
 
 MIT License
 
-Copyright (c) 2025 Bucket ApS
+Copyright (c) 2025 Reflag ApS

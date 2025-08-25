@@ -4,16 +4,16 @@ import {
   EvaluationResult,
   flattenJSON,
   newEvaluator,
-} from "@bucketco/flag-evaluation";
+} from "@reflag/flag-evaluation";
 
 import BatchBuffer from "./batch-buffer";
 import {
   API_BASE_URL,
   API_TIMEOUT_MS,
-  BUCKET_LOG_PREFIX,
   FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
   FEATURES_REFETCH_MS,
   loadConfig,
+  REFLAG_LOG_PREFIX,
   SDK_VERSION,
   SDK_VERSION_HEADER_NAME,
 } from "./config";
@@ -58,8 +58,6 @@ import {
   once,
 } from "./utils";
 
-const bucketConfigDefaultFile = "bucketConfig.json";
-
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
 type BulkEvent =
@@ -102,13 +100,13 @@ type BulkEvent =
  * The SDK client.
  *
  * @remarks
- * This is the main class for interacting with Bucket.
+ * This is the main class for interacting with Reflag.
  * It is used to evaluate feature flags, update user and company contexts, and track events.
  *
  * @example
  * ```ts
- * // set the BUCKET_SECRET_KEY environment variable or pass the secret key to the constructor
- * const client = new BucketClient();
+ * // set the REFLAG_SECRET_KEY environment variable or pass the secret key to the constructor
+ * const client = new ReflagClient();
  *
  * // evaluate a feature flag
  * const isFeatureEnabled = client.getFeature("feature-flag-key", {
@@ -117,7 +115,7 @@ type BulkEvent =
  * });
  * ```
  **/
-export class BucketClient {
+export class ReflagClient {
   private _config: {
     apiBaseUrl: string;
     refetchInterval: number;
@@ -150,7 +148,7 @@ export class BucketClient {
       await this.featuresCache.refresh();
     }
     this.logger.info(
-      "Bucket initialized in " +
+      "Reflag initialized in " +
         Math.round(Date.now() - start) +
         "ms" +
         (this._config.offline ? " (offline mode)" : ""),
@@ -232,11 +230,13 @@ export class BucketClient {
     );
 
     if (!options.configFile) {
-      options.configFile =
-        (process.env.BUCKET_CONFIG_FILE ??
-        fs.existsSync(bucketConfigDefaultFile))
-          ? bucketConfigDefaultFile
-          : undefined;
+      const files = [
+        process.env.BUCKET_CONFIG_FILE,
+        process.env.REFLAG_CONFIG_FILE,
+        "reflagConfig.json",
+        "bucketConfig.json",
+      ];
+      options.configFile = files.find((file) => file && fs.existsSync(file));
     }
 
     const externalConfig = loadConfig(options.configFile);
@@ -256,7 +256,7 @@ export class BucketClient {
 
     this.logger = options.logger
       ? options.logger
-      : applyLogLevel(decorateLogger(BUCKET_LOG_PREFIX, console), logLevel);
+      : applyLogLevel(decorateLogger(REFLAG_LOG_PREFIX, console), logLevel);
 
     // todo: deprecate fallback features in favour of a more operationally
     //  friendly way of setting fall backs.
@@ -426,7 +426,7 @@ export class BucketClient {
   }
 
   /**
-   * Returns a new BoundBucketClient with the user/company/otherContext
+   * Returns a new BoundReflagClient with the user/company/otherContext
    * set to be used in subsequent calls.
    * For example, for evaluating feature targeting or tracking events.
    *
@@ -448,11 +448,11 @@ export class BucketClient {
     enableTracking = true,
     ...context
   }: ContextWithTracking) {
-    return new BoundBucketClient(this, { enableTracking, ...context });
+    return new BoundReflagClient(this, { enableTracking, ...context });
   }
 
   /**
-   * Updates the associated user in Bucket.
+   * Updates the associated user in Reflag.
    *
    * @param userId - The userId of the user to update.
    * @param options - The options for the user.
@@ -488,7 +488,7 @@ export class BucketClient {
   }
 
   /**
-   * Updates the associated company in Bucket.
+   * Updates the associated company in Reflag.
    *
    * @param companyId - The companyId of the company to update.
    * @param options - The options for the company.
@@ -533,7 +533,7 @@ export class BucketClient {
   }
 
   /**
-   * Tracks an event in Bucket.
+   * Tracks an event in Reflag.
 
    * @param options.companyId - Optional company ID for the event (optional).
    *
@@ -645,7 +645,7 @@ export class BucketClient {
 
   /**
    * Gets the evaluated feature for the current context which includes the user, company, and custom context.
-   * Using the `isEnabled` property sends a `check` event to Bucket.
+   * Using the `isEnabled` property sends a `check` event to Reflag.
    *
    * @param key - The key of the feature to get.
    * @returns The evaluated feature.
@@ -801,7 +801,7 @@ export class BucketClient {
   }
 
   /**
-   * Sends a batch of events to the Bucket API.
+   * Sends a batch of events to the Reflag API.
    *
    * @param events - The events to send.
    *
@@ -820,7 +820,7 @@ export class BucketClient {
   }
 
   /**
-   * Sends a feature event to the Bucket API.
+   * Sends a feature event to the Reflag API.
    *
    * Feature events are used to track the evaluation of feature targeting rules.
    * "check" events are sent when a feature's `isEnabled` property is checked.
@@ -921,7 +921,7 @@ export class BucketClient {
   }
 
   /**
-   * Updates the context in Bucket (if needed).
+   * Updates the context in Reflag (if needed).
    * This method should be used before requesting feature flags or binding a client.
    *
    * @param options - The options for the context.
@@ -1031,7 +1031,7 @@ export class BucketClient {
     checkContextWithTracking(options);
 
     if (!this.initializationFinished) {
-      this.logger.error("getFeature(s): BucketClient is not initialized yet.");
+      this.logger.error("getFeature(s): ReflagClient is not initialized yet.");
     }
 
     void this.syncContext(options);
@@ -1338,21 +1338,21 @@ export class BucketClient {
 /**
  * A client bound with a specific user, company, and other context.
  */
-export class BoundBucketClient {
-  private readonly _client: BucketClient;
+export class BoundReflagClient {
+  private readonly _client: ReflagClient;
   private readonly _options: ContextWithTracking;
 
   /**
-   * (Internal) Creates a new BoundBucketClient. Use `bindClient` to create a new client bound with a specific context.
+   * (Internal) Creates a new BoundReflagClient. Use `bindClient` to create a new client bound with a specific context.
    *
-   * @param client - The `BucketClient` to use.
+   * @param client - The `ReflagClient` to use.
    * @param options - The options for the client.
    * @param options.enableTracking - Whether to enable tracking for the client.
    *
    * @internal
    */
   constructor(
-    client: BucketClient,
+    client: ReflagClient,
     { enableTracking = true, ...context }: ContextWithTracking,
   ) {
     this._client = client;
@@ -1402,7 +1402,7 @@ export class BoundBucketClient {
 
   /**
    * Get a specific feature for the user/company/other context bound to this client.
-   * Using the `isEnabled` property sends a `check` event to Bucket.
+   * Using the `isEnabled` property sends a `check` event to Reflag.
    *
    * @param key - The key of the feature to get.
    *
@@ -1442,7 +1442,7 @@ export class BoundBucketClient {
   }
 
   /**
-   * Track an event in Bucket.
+   * Track an event in Reflag.
    *
    * @param event - The event to track.
    * @param options - The options for the event.
@@ -1512,7 +1512,7 @@ export class BoundBucketClient {
       meta: meta ?? this._options.meta,
     };
 
-    return new BoundBucketClient(this._client, boundConfig);
+    return new BoundReflagClient(this._client, boundConfig);
   }
 
   /**
@@ -1567,3 +1567,15 @@ function checkContextWithTracking(
 
   checkMeta(context.meta);
 }
+
+/**
+ * @deprecated
+ * Use ReflagClient instead
+ */
+export const BucketClient = ReflagClient;
+
+/**
+ * @deprecated
+ * Use BoundReflagClient instead
+ */
+export const BoundBucketClient = BoundReflagClient;

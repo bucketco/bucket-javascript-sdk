@@ -13,12 +13,12 @@ import {
   vi,
 } from "vitest";
 
-import { BucketClient } from "@bucketco/browser-sdk";
+import { ReflagClient } from "@reflag/browser-sdk";
 
 import { version } from "../package.json";
 import {
-  BucketProps,
-  BucketProvider,
+  ReflagProps,
+  ReflagProvider,
   useClient,
   useFeature,
   useRequestFeedback,
@@ -42,9 +42,9 @@ const company = { id: "123", name: "test" };
 const user = { id: "456", name: "test" };
 const otherContext = { test: "test" };
 
-function getProvider(props: Partial<BucketProps> = {}) {
+function getProvider(props: Partial<ReflagProps> = {}) {
   return (
-    <BucketProvider
+    <ReflagProvider
       company={company}
       otherContext={otherContext}
       publishableKey={publishableKey}
@@ -144,19 +144,19 @@ afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
 beforeAll(() => {
-  vi.spyOn(BucketClient.prototype, "initialize");
-  vi.spyOn(BucketClient.prototype, "stop");
+  vi.spyOn(ReflagClient.prototype, "initialize");
+  vi.spyOn(ReflagClient.prototype, "stop");
 });
 
 beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe("<BucketProvider />", () => {
+describe("<ReflagProvider />", () => {
   test("calls initialize", () => {
     const on = vi.fn();
 
-    const newBucketClient = vi.fn().mockReturnValue({
+    const newReflagClient = vi.fn().mockReturnValue({
       initialize: vi.fn().mockResolvedValue(undefined),
       on,
     });
@@ -177,12 +177,12 @@ describe("<BucketProvider />", () => {
       fallbackFeatures: ["feature2"],
       feedback: { enableAutoFeedback: true },
       toolbar: { show: true },
-      newBucketClient,
+      newReflagClient,
     });
 
     render(provider);
 
-    expect(newBucketClient.mock.calls.at(0)).toStrictEqual([
+    expect(newReflagClient.mock.calls.at(0)).toStrictEqual([
       {
         publishableKey: "KEY",
         user: {
@@ -221,7 +221,7 @@ describe("<BucketProvider />", () => {
 
   test("only calls init once with the same args", () => {
     const node = getProvider();
-    const initialize = vi.spyOn(BucketClient.prototype, "initialize");
+    const initialize = vi.spyOn(ReflagClient.prototype, "initialize");
 
     const x = render(node);
     x.rerender(node);
@@ -229,7 +229,7 @@ describe("<BucketProvider />", () => {
     x.rerender(node);
 
     expect(initialize).toHaveBeenCalledOnce();
-    expect(BucketClient.prototype.stop).not.toHaveBeenCalledOnce();
+    expect(ReflagClient.prototype.stop).not.toHaveBeenCalledOnce();
   });
 
   test("resets loading state when context changes", async () => {
@@ -377,7 +377,7 @@ describe("useSendFeedback", () => {
 describe("useRequestFeedback", () => {
   test("sends feedback", async () => {
     const requestFeedback = vi
-      .spyOn(BucketClient.prototype, "requestFeedback")
+      .spyOn(ReflagClient.prototype, "requestFeedback")
       .mockReturnValue(undefined);
 
     const { result, unmount } = renderHook(() => useRequestFeedback(), {
@@ -406,7 +406,7 @@ describe("useRequestFeedback", () => {
 describe("useUpdateUser", () => {
   test("updates user", async () => {
     const updateUser = vi
-      .spyOn(BucketClient.prototype, "updateUser")
+      .spyOn(ReflagClient.prototype, "updateUser")
       .mockResolvedValue(undefined);
 
     const { result: updateUserFn, unmount } = renderHook(
@@ -434,7 +434,7 @@ describe("useUpdateUser", () => {
 describe("useUpdateCompany", () => {
   test("updates company", async () => {
     const updateCompany = vi
-      .spyOn(BucketClient.prototype, "updateCompany")
+      .spyOn(ReflagClient.prototype, "updateCompany")
       .mockResolvedValue(undefined);
 
     const { result: updateCompanyFn, unmount } = renderHook(
@@ -461,7 +461,7 @@ describe("useUpdateCompany", () => {
 describe("useUpdateOtherContext", () => {
   test("updates other context", async () => {
     const updateOtherContext = vi
-      .spyOn(BucketClient.prototype, "updateOtherContext")
+      .spyOn(ReflagClient.prototype, "updateOtherContext")
       .mockResolvedValue(undefined);
 
     const { result: updateOtherContextFn, unmount } = renderHook(

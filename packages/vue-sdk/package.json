@@ -1,6 +1,6 @@
 {
-  "name": "@bucketco/vue-sdk",
-  "version": "0.2.1",
+  "name": "@reflag/vue-sdk",
+  "version": "1.0.0-alpha.1",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -24,25 +24,25 @@
   "files": [
     "dist"
   ],
-  "main": "./dist/bucket-vue-sdk.umd.js",
+  "main": "./dist/reflag-vue-sdk.umd.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/bucket-vue-sdk.mjs",
-      "require": "./dist/bucket-vue-sdk.umd.js",
+      "import": "./dist/reflag-vue-sdk.mjs",
+      "require": "./dist/reflag-vue-sdk.umd.js",
       "types": "./dist/index.d.ts"
     }
   },
   "dependencies": {
-    "@bucketco/browser-sdk": "3.3.3",
+    "@reflag/browser-sdk": "1.0.0-alpha.1",
     "canonical-json": "^0.2.0"
   },
   "peerDependencies": {
     "vue": "^3.0.0"
   },
   "devDependencies": {
-    "@bucketco/eslint-config": "workspace:^",
-    "@bucketco/tsconfig": "workspace:^",
+    "@reflag/eslint-config": "workspace:^",
+    "@reflag/tsconfig": "workspace:^",
     "@types/jsdom": "^21.1.6",
     "@types/node": "^22.12.0",
     "@vitejs/plugin-vue": "^5.2.4",

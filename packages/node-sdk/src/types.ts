@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 
-import { newEvaluator, RuleFilter } from "@bucketco/flag-evaluation";
+import { newEvaluator, RuleFilter } from "@reflag/flag-evaluation";
 
 /**
  * Describes the meta context associated with tracking.
@@ -170,7 +170,7 @@ export interface Feature<
     | EmptyFeatureRemoteConfig;
 
   /**
-   * Track feature usage in Bucket.
+   * Track feature usage in Reflag.
    */
   track(): Promise<void>;
 }
@@ -567,7 +567,7 @@ export type CacheStrategy = "periodically-update" | "in-request";
  **/
 export type ClientOptions = {
   /**
-   * The secret key used to authenticate with the Bucket API.
+   * The secret key used to authenticate with the Reflag API.
    **/
   secretKey?: string;
 
@@ -634,12 +634,12 @@ export type ClientOptions = {
    * If a function is specified, the function will be called with the context
    * and should return a record of feature keys and boolean or object values.
    *
-   * Defaults to "bucketFeatures.json".
+   * Defaults to "reflagFeatures.json".
    **/
   featureOverrides?: string | ((context: Context) => FeatureOverrides);
 
   /**
-   * In offline mode, no data is sent or fetched from the the Bucket API.
+   * In offline mode, no data is sent or fetched from the the Reflag API.
    * This is useful for testing or development.
    */
   offline?: boolean;
@@ -651,8 +651,8 @@ export type ClientOptions = {
 
   /**
    * The path to the config file. If supplied, the config file will be loaded.
-   * Defaults to `bucket.json` when NODE_ENV is not production. Can also be
-   * set through the environment variable BUCKET_CONFIG_FILE.
+   * Defaults to `reflag.json` when NODE_ENV is not production. Can also be
+   * set through the environment variable REFLAG_CONFIG_FILE.
    */
   configFile?: string;
 

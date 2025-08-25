@@ -1,17 +1,17 @@
 import { Client, OpenFeature } from "@openfeature/web-sdk";
 import { beforeEach, describe, expect, it, Mock, vi } from "vitest";
 
-import { BucketClient } from "@bucketco/browser-sdk";
+import { ReflagClient } from "@reflag/browser-sdk";
 
-import { BucketBrowserSDKProvider, defaultContextTranslator } from ".";
+import { defaultContextTranslator, ReflagBrowserSDKProvider } from ".";
 
-vi.mock("@bucketco/browser-sdk", () => {
-  const actualModule = vi.importActual("@bucketco/browser-sdk");
+vi.mock("@reflag/browser-sdk", () => {
+  const actualModule = vi.importActual("@reflag/browser-sdk");
 
   return {
     __esModule: true,
     ...actualModule,
-    BucketClient: vi.fn(),
+    ReflagClient: vi.fn(),
   };
 });
 
@@ -19,10 +19,10 @@ const testFlagKey = "a-key";
 
 const publishableKey = "your-publishable-key";
 
-describe("BucketBrowserSDKProvider", () => {
-  let provider: BucketBrowserSDKProvider;
+describe("ReflagBrowserSDKProvider", () => {
+  let provider: ReflagBrowserSDKProvider;
   let ofClient: Client;
-  const bucketClientMock = {
+  const reflagClientMock = {
     getFeatures: vi.fn(),
     getFeature: vi.fn(),
     initialize: vi.fn().mockResolvedValue({}),
@@ -30,13 +30,13 @@ describe("BucketBrowserSDKProvider", () => {
     stop: vi.fn(),
   };
 
-  const mockBucketClient = BucketClient as Mock;
-  mockBucketClient.mockReturnValue(bucketClientMock);
+  const mockReflagClient = ReflagClient as Mock;
+  mockReflagClient.mockReturnValue(reflagClientMock);
 
   beforeEach(async () => {
     await OpenFeature.clearProviders();
 
-    provider = new BucketBrowserSDKProvider({ publishableKey });
+    provider = new ReflagBrowserSDKProvider({ publishableKey });
     OpenFeature.setProvider(provider);
     ofClient = OpenFeature.getClient();
   });
@@ -50,32 +50,32 @@ describe("BucketBrowserSDKProvider", () => {
   describe("lifecycle", () => {
     it("should call initialize function with correct arguments", async () => {
       await provider.initialize();
-      expect(BucketClient).toHaveBeenCalledTimes(1);
-      expect(BucketClient).toHaveBeenCalledWith({
+      expect(ReflagClient).toHaveBeenCalledTimes(1);
+      expect(ReflagClient).toHaveBeenCalledWith({
         publishableKey,
       });
-      expect(bucketClientMock.initialize).toHaveBeenCalledTimes(1);
+      expect(reflagClientMock.initialize).toHaveBeenCalledTimes(1);
     });
 
     it("should set the status to READY if initialization succeeds", async () => {
-      bucketClientMock.initialize.mockReturnValue(Promise.resolve());
+      reflagClientMock.initialize.mockReturnValue(Promise.resolve());
       await provider.initialize();
-      expect(bucketClientMock.initialize).toHaveBeenCalledTimes(1);
+      expect(reflagClientMock.initialize).toHaveBeenCalledTimes(1);
       expect(provider.status).toBe("READY");
     });
 
     it("should call stop function when provider is closed", async () => {
       await OpenFeature.clearProviders();
-      expect(bucketClientMock.stop).toHaveBeenCalledTimes(1);
+      expect(reflagClientMock.stop).toHaveBeenCalledTimes(1);
     });
 
     it("onContextChange re-initializes client", async () => {
-      const p = new BucketBrowserSDKProvider({ publishableKey });
+      const p = new ReflagBrowserSDKProvider({ publishableKey });
       expect(p["_client"]).toBeUndefined();
-      expect(mockBucketClient).toHaveBeenCalledTimes(0);
+      expect(mockReflagClient).toHaveBeenCalledTimes(0);
 
       await p.onContextChange({}, {});
-      expect(mockBucketClient).toHaveBeenCalledTimes(1);
+      expect(mockReflagClient).toHaveBeenCalledTimes(1);
       expect(p["_client"]).toBeDefined();
     });
   });
@@ -84,15 +84,15 @@ describe("BucketBrowserSDKProvider", () => {
     it("uses contextTranslatorFn if provided", async () => {
       const ofContext = {
         userId: "123",
-        email: "ron@bucket.co",
-        avatar: "https://bucket.co/avatar.png",
+        email: "ron@reflag.co",
+        avatar: "https://reflag.co/avatar.png",
         groupId: "456",
-        groupName: "bucket",
-        groupAvatar: "https://bucket.co/group-avatar.png",
+        groupName: "reflag",
+        groupAvatar: "https://reflag.co/group-avatar.png",
         groupPlan: "pro",
       };
 
-      const bucketContext = {
+      const reflagContext = {
         user: {
           id: "123",
           name: "John Doe",
@@ -107,8 +107,8 @@ describe("BucketBrowserSDKProvider", () => {
         },
       };
 
-      contextTranslatorFn.mockReturnValue(bucketContext);
-      provider = new BucketBrowserSDKProvider({
+      contextTranslatorFn.mockReturnValue(reflagContext);
+      provider = new ReflagBrowserSDKProvider({
         publishableKey,
         contextTranslator: contextTranslatorFn,
       });
@@ -116,9 +116,9 @@ describe("BucketBrowserSDKProvider", () => {
       await provider.initialize(ofContext);
 
       expect(contextTranslatorFn).toHaveBeenCalledWith(ofContext);
-      expect(mockBucketClient).toHaveBeenCalledWith({
+      expect(mockReflagClient).toHaveBeenCalledWith({
         publishableKey,
-        ...bucketContext,
+        ...reflagContext,
       });
     });
 
@@ -127,8 +127,8 @@ describe("BucketBrowserSDKProvider", () => {
         defaultContextTranslator({
           userId: 123,
           name: "John Doe",
-          email: "ron@bucket.co",
-          avatar: "https://bucket.co/avatar.png",
+          email: "ron@reflag.co",
+          avatar: "https://reflag.co/avatar.png",
           companyId: "456",
           companyName: "Acme, Inc.",
           companyAvatar: "https://acme.com/company-avatar.png",
@@ -138,8 +138,8 @@ describe("BucketBrowserSDKProvider", () => {
         user: {
           id: "123",
           name: "John Doe",
-          email: "ron@bucket.co",
-          avatar: "https://bucket.co/avatar.png",
+          email: "ron@reflag.co",
+          avatar: "https://reflag.co/avatar.png",
         },
         company: {
           id: "456",
@@ -181,12 +181,12 @@ describe("BucketBrowserSDKProvider", () => {
         payload: configPayload,
       };
 
-      bucketClientMock.getFeature = vi.fn().mockReturnValue({
+      reflagClientMock.getFeature = vi.fn().mockReturnValue({
         isEnabled: enabled,
         config,
       });
 
-      bucketClientMock.getFeatures = vi.fn().mockReturnValue({
+      reflagClientMock.getFeatures = vi.fn().mockReturnValue({
         [testFlagKey]: {
           isEnabled: enabled,
           config: {
@@ -237,8 +237,8 @@ describe("BucketBrowserSDKProvider", () => {
         value: true,
       });
 
-      expect(bucketClientMock.getFeatures).toHaveBeenCalled();
-      expect(bucketClientMock.getFeature).toHaveBeenCalledWith(testFlagKey);
+      expect(reflagClientMock.getFeatures).toHaveBeenCalled();
+      expect(reflagClientMock.getFeature).toHaveBeenCalledWith(testFlagKey);
     });
 
     it.each([
@@ -325,8 +325,8 @@ describe("BucketBrowserSDKProvider", () => {
       await provider.initialize();
 
       ofClient.track(testEvent, { key: "value" });
-      expect(bucketClientMock.track).toHaveBeenCalled();
-      expect(bucketClientMock.track).toHaveBeenCalledWith(testEvent, {
+      expect(reflagClientMock.track).toHaveBeenCalled();
+      expect(reflagClientMock.track).toHaveBeenCalledWith(testEvent, {
         key: "value",
       });
     });

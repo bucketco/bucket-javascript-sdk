@@ -11,17 +11,17 @@ import React, {
 import canonicalJSON from "canonical-json";
 
 import {
-  BucketClient,
-  BucketContext,
   CheckEvent,
   CompanyContext,
   InitOptions,
   RawFeatures,
+  ReflagClient,
+  ReflagContext,
   RequestFeedbackData,
   TrackEvent,
   UnassignedFeedback,
   UserContext,
-} from "@bucketco/browser-sdk";
+} from "@reflag/browser-sdk";
 
 import { version } from "../package.json";
 
@@ -89,7 +89,7 @@ export interface Feature<
     | EmptyFeatureRemoteConfig;
 
   /**
-   * Track feature usage in Bucket.
+   * Track feature usage in Reflag.
    */
   track(): Promise<Response | undefined> | undefined;
   /**
@@ -122,7 +122,7 @@ export type FeatureKey = keyof TypedFeatures;
 const SDK_VERSION = `react-sdk/${version}`;
 
 type ProviderContextType = {
-  client?: BucketClient;
+  client?: ReflagClient;
   features: {
     features: RawFeatures;
     isLoading: boolean;
@@ -139,9 +139,9 @@ const ProviderContext = createContext<ProviderContextType>({
 });
 
 /**
- * Props for the BucketProvider.
+ * Props for the ReflagProvider.
  */
-export type BucketProps = BucketContext &
+export type ReflagProps = ReflagContext &
   InitOptions & {
     /**
      * Children to be rendered.
@@ -159,31 +159,42 @@ export type BucketProps = BucketContext &
     debug?: boolean;
 
     /**
-     * New BucketClient constructor.
+     * @deprecated
+     * New ReflagClient constructor. Use `newReflagClient` instead.
      *
      * @internal
      */
     newBucketClient?: (
-      ...args: ConstructorParameters<typeof BucketClient>
-    ) => BucketClient;
+      ...args: ConstructorParameters<typeof ReflagClient>
+    ) => ReflagClient;
+
+    /**
+     * New ReflagClient constructor.
+     *
+     * @internal
+     */
+    newReflagClient?: (
+      ...args: ConstructorParameters<typeof ReflagClient>
+    ) => ReflagClient;
   };
 
 /**
- * Provider for the BucketClient.
+ * Provider for the ReflagClient.
  */
-export function BucketProvider({
+export function ReflagProvider({
   children,
   user,
   company,
   otherContext,
   loadingComponent,
-  newBucketClient = (...args) => new BucketClient(...args),
+  newBucketClient,
+  newReflagClient = (...args) => new ReflagClient(...args),
   ...config
-}: BucketProps) {
+}: ReflagProps) {
   const [featuresLoading, setFeaturesLoading] = useState(true);
   const [rawFeatures, setRawFeatures] = useState<RawFeatures>({});
 
-  const clientRef = useRef<BucketClient>();
+  const clientRef = useRef<ReflagClient>();
   const contextKeyRef = useRef<string>();
 
   const featureContext = { user, company, otherContext };
@@ -204,7 +215,10 @@ export function BucketProvider({
 
     setFeaturesLoading(true);
 
-    const client = newBucketClient({
+    // Deprecated, compatibility with Bucket SDK
+    const newClient = newBucketClient ?? newReflagClient;
+
+    const client = newClient({
       ...config,
       user,
       company,
@@ -323,11 +337,11 @@ export function useTrack() {
  * Returns a function to open up the feedback form
  * Note: When calling `useRequestFeedback`, user/company must already be set.
  *
- * See [link](../../browser-sdk/FEEDBACK.md#bucketclientrequestfeedback-options) for more information
+ * See [link](../../browser-sdk/FEEDBACK.md#reflagclientrequestfeedback-options) for more information
  *
  * ```ts
  * const requestFeedback = useRequestFeedback();
- * bucket.requestFeedback({
+ * reflag.requestFeedback({
  *   featureKey: "file-uploads",
  *   title: "How satisfied are you with file uploads?",
  * });
@@ -419,9 +433,9 @@ export function useUpdateOtherContext() {
 }
 
 /**
- * Returns the current `BucketClient` used by the `BucketProvider`.
+ * Returns the current `ReflagClient` used by the `ReflagProvider`.
  *
- * This is useful if you need to access the `BucketClient` outside of the `BucketProvider`.
+ * This is useful if you need to access the `ReflagClient` outside of the `ReflagProvider`.
  *
  * ```ts
  * const client = useClient();
@@ -436,7 +450,7 @@ export function useClient() {
   const { client, provider } = useContext<ProviderContextType>(ProviderContext);
   if (!provider) {
     throw new Error(
-      "BucketProvider is missing. Please ensure your component is wrapped with a BucketProvider.",
+      "ReflagProvider is missing. Please ensure your component is wrapped with a ReflagProvider.",
     );
   }
 

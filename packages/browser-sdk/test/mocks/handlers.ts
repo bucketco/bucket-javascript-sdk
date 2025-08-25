@@ -49,8 +49,8 @@ function checkRequest(request: StrictRequest<DefaultBodyType>) {
     request.headers.get("Authorization");
 
   const hasSdkVersion =
-    url.searchParams.get("bucket-sdk-version") ||
-    request.headers.get("bucket-sdk-version");
+    url.searchParams.get("reflag-sdk-version") ||
+    request.headers.get("reflag-sdk-version");
 
   const valid = hasKey && hasSdkVersion;
   if (!valid) {

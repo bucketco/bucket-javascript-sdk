@@ -7,7 +7,7 @@ import {
   useState,
 } from "preact/hooks";
 
-import { BucketClient } from "../client";
+import { ReflagClient } from "../client";
 import { toolbarContainerId } from "../ui/constants";
 import { Dialog, DialogContent, DialogHeader, useDialog } from "../ui/Dialog";
 import { Logo } from "../ui/icons/Logo";
@@ -30,10 +30,10 @@ type Feature = {
 };
 
 export default function Toolbar({
-  bucketClient,
+  reflagClient,
   position,
 }: {
-  bucketClient: BucketClient;
+  reflagClient: ReflagClient;
   position: ToolbarPosition;
 }) {
   const toggleToolbarRef = useRef<HTMLDivElement>(null);
@@ -41,7 +41,7 @@ export default function Toolbar({
   const [features, setFeatures] = useState<Feature[]>([]);
 
   const updateFeatures = useCallback(() => {
-    const rawFeatures = bucketClient.getFeatures();
+    const rawFeatures = reflagClient.getFeatures();
     setFeatures(
       Object.values(rawFeatures)
         .filter((f) => f !== undefined)
@@ -54,7 +54,7 @@ export default function Toolbar({
             }) satisfies FeatureItem,
         ),
     );
-  }, [bucketClient]);
+  }, [reflagClient]);
 
   const hasAnyOverrides = useMemo(() => {
     return features.some((f) => f.localOverride !== null);
@@ -62,8 +62,8 @@ export default function Toolbar({
 
   useEffect(() => {
     updateFeatures();
-    bucketClient.on("featuresUpdated", updateFeatures);
-  }, [bucketClient, updateFeatures]);
+    reflagClient.on("featuresUpdated", updateFeatures);
+  }, [reflagClient, updateFeatures]);
 
   const [search, setSearch] = useState<string | null>(null);
   const onSearch = (val: string) => {
@@ -75,7 +75,7 @@ export default function Toolbar({
     a.key.localeCompare(b.key),
   );
 
-  const appBaseUrl = bucketClient.getConfig().appBaseUrl;
+  const appBaseUrl = reflagClient.getConfig().appBaseUrl;
 
   const { isOpen, close, toggle } = useDialog();
 
@@ -111,7 +111,7 @@ export default function Toolbar({
             isOpen={isOpen}
             searchQuery={search}
             setIsEnabledOverride={(key, isEnabled) =>
-              bucketClient.getFeature(key).setIsEnabledOverride(isEnabled)
+              reflagClient.getFeature(key).setIsEnabledOverride(isEnabled)
             }
           />
         </DialogContent>

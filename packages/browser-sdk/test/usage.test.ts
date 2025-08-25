@@ -10,7 +10,7 @@ import {
   vi,
 } from "vitest";
 
-import { BucketClient } from "../src";
+import { ReflagClient } from "../src";
 import { API_BASE_URL } from "../src/config";
 import { FeaturesClient } from "../src/feature/features";
 import { FeedbackPromptHandler } from "../src/feedback/feedback";
@@ -54,16 +54,16 @@ describe("usage", () => {
   });
 
   test("golden path - register `user`, `company`, send `event`, send `feedback`, get `features`", async () => {
-    const bucketInstance = new BucketClient({
+    const reflagInstance = new ReflagClient({
       publishableKey: KEY,
       user: { id: "foo " },
       company: { id: "bar", name: "bar corp" },
     });
-    await bucketInstance.initialize();
+    await reflagInstance.initialize();
 
-    await bucketInstance.track("baz", { baz: true });
+    await reflagInstance.track("baz", { baz: true });
 
-    await bucketInstance.feedback({
+    await reflagInstance.feedback({
       featureKey: "huddles",
       score: 5,
       comment: "Sunt bine!",
@@ -71,10 +71,10 @@ describe("usage", () => {
       promptedQuestion: "How are you?",
     });
 
-    const features = bucketInstance.getFeatures();
+    const features = reflagInstance.getFeatures();
     expect(features).toEqual(featuresResult);
 
-    const featureId1 = bucketInstance.getFeature("featureId1");
+    const featureId1 = reflagInstance.getFeature("featureId1");
     expect(featureId1).toStrictEqual({
       isEnabled: false,
       track: expect.any(Function),
@@ -86,15 +86,15 @@ describe("usage", () => {
   });
 
   test("accepts `featureKey` instead of `featureId` for manual feedback", async () => {
-    const bucketInstance = new BucketClient({
+    const reflagInstance = new ReflagClient({
       publishableKey: KEY,
       user: { id: "foo" },
       company: { id: "bar" },
     });
 
-    await bucketInstance.initialize();
+    await reflagInstance.initialize();
 
-    await bucketInstance.feedback({
+    await reflagInstance.feedback({
       featureKey: "feature-key",
       score: 5,
       question: "What's up?",
@@ -105,7 +105,7 @@ describe("usage", () => {
 
 // TODO:
 // Since we now have AutoFeedback as it's own class, we should rewrite these tests
-// to test that class instead of the BucketClient class.
+// to test that class instead of the ReflagClient class.
 // Same for feedback state management below
 
 describe("feedback prompting", () => {
@@ -123,17 +123,17 @@ describe("feedback prompting", () => {
   });
 
   test("initiates and stops feedback prompting", async () => {
-    const bucketInstance = new BucketClient({
+    const reflagInstance = new ReflagClient({
       publishableKey: KEY,
       user: { id: "foo" },
     });
-    await bucketInstance.initialize();
+    await reflagInstance.initialize();
 
     expect(openAblySSEChannel).toBeCalledTimes(1);
 
     // call twice, expect only one reset to go through
-    await bucketInstance.stop();
-    await bucketInstance.stop();
+    await reflagInstance.stop();
+    await reflagInstance.stop();
 
     expect(closeChannel).toBeCalledTimes(1);
   });
@@ -151,11 +151,11 @@ describe("feedback prompting", () => {
       }),
     );
 
-    const bucketInstance = new BucketClient({
+    const reflagInstance = new ReflagClient({
       publishableKey: KEY,
       user: { id: "foo" },
     });
-    await bucketInstance.initialize();
+    await reflagInstance.initialize();
 
     expect(openAblySSEChannel).toBeCalledTimes(1);
     const args = vi.mocked(openAblySSEChannel).mock.calls[0][0];
@@ -170,29 +170,29 @@ describe("feedback prompting", () => {
       }),
     );
 
-    const bucketInstance = new BucketClient({
+    const reflagInstance = new ReflagClient({
       publishableKey: KEY,
       user: { id: "foo" },
     });
-    await bucketInstance.initialize();
+    await reflagInstance.initialize();
 
     expect(openAblySSEChannel).toBeCalledTimes(0);
   });
 
   test("skip feedback prompting if no user id configured", async () => {
-    const bucketInstance = new BucketClient({ publishableKey: KEY });
-    await bucketInstance.initialize();
+    const reflagInstance = new ReflagClient({ publishableKey: KEY });
+    await reflagInstance.initialize();
 
     expect(openAblySSEChannel).toBeCalledTimes(0);
   });
 
   test("skip feedback prompting if automated feedback surveys are disabled", async () => {
-    const bucketInstance = new BucketClient({
+    const reflagInstance = new ReflagClient({
       publishableKey: KEY,
       user: { id: "foo" },
       feedback: { enableAutoFeedback: false },
     });
-    await bucketInstance.initialize();
+    await reflagInstance.initialize();
 
     expect(openAblySSEChannel).toBeCalledTimes(0);
   });
@@ -208,7 +208,7 @@ describe("feedback state management", () => {
   };
 
   let events: string[] = [];
-  let bucketInstance: BucketClient | null = null;
+  let reflagInstance: ReflagClient | null = null;
   beforeEach(() => {
     vi.mocked(openAblySSEChannel).mockImplementation(({ callback }) => {
       callback(message);
@@ -232,21 +232,21 @@ describe("feedback state management", () => {
   });
 
   afterEach(async () => {
-    if (bucketInstance) await bucketInstance.stop();
+    if (reflagInstance) await reflagInstance.stop();
 
     vi.resetAllMocks();
   });
 
-  const createBucketInstance = async (callback: FeedbackPromptHandler) => {
-    bucketInstance = new BucketClient({
+  const createreflagInstance = async (callback: FeedbackPromptHandler) => {
+    reflagInstance = new ReflagClient({
       publishableKey: KEY,
       user: { id: "foo" },
       feedback: {
         autoFeedbackHandler: callback,
       },
     });
-    await bucketInstance.initialize();
-    return bucketInstance;
+    await reflagInstance.initialize();
+    return reflagInstance;
   };
 
   test("ignores prompt if expired", async () => {
@@ -255,7 +255,7 @@ describe("feedback state management", () => {
 
     const callback = vi.fn();
 
-    await createBucketInstance(callback);
+    await createreflagInstance(callback);
 
     expect(callback).not.toHaveBeenCalled();
 
@@ -271,7 +271,7 @@ describe("feedback state management", () => {
 
     const callback = vi.fn();
 
-    await createBucketInstance(callback);
+    await createreflagInstance(callback);
 
     expect(callback).not.toHaveBeenCalled();
     await vi.waitFor(() =>
@@ -284,7 +284,7 @@ describe("feedback state management", () => {
   test("propagates prompt to the callback", async () => {
     const callback = vi.fn();
 
-    await createBucketInstance(callback);
+    await createreflagInstance(callback);
     await vi.waitUntil(() => callback.mock.calls.length > 0);
 
     await vi.waitUntil(() => events.length > 1);
@@ -312,7 +312,7 @@ describe("feedback state management", () => {
     vi.useFakeTimers();
     vi.setSystemTime(message.showAfter - 500);
 
-    await createBucketInstance(callback);
+    await createreflagInstance(callback);
 
     expect(callback).not.toBeCalled();
 
@@ -336,7 +336,7 @@ describe("feedback state management", () => {
       await handlers.reply(null);
     };
 
-    await createBucketInstance(callback);
+    await createreflagInstance(callback);
 
     await vi.waitUntil(() => events.length > 2);
 
@@ -360,7 +360,7 @@ describe("feedback state management", () => {
       });
     };
 
-    await createBucketInstance(callback);
+    await createreflagInstance(callback);
 
     await vi.waitUntil(() => events.length > 1);
 
@@ -378,7 +378,7 @@ describe(`sends "check" events `, () => {
   test("getFeatures() does not send `check` events", async () => {
     vi.spyOn(FeaturesClient.prototype, "sendCheckEvent");
 
-    const client = new BucketClient({
+    const client = new ReflagClient({
       publishableKey: KEY,
       user: { id: "123" },
     });
@@ -402,7 +402,7 @@ describe(`sends "check" events `, () => {
     });
 
     it(`returns get the expected feature details`, async () => {
-      const client = new BucketClient({
+      const client = new ReflagClient({
         publishableKey: KEY,
         user: { id: "uid" },
         company: { id: "cid" },
@@ -447,7 +447,7 @@ describe(`sends "check" events `, () => {
     it(`does not send check events when offline`, async () => {
       const postSpy = vi.spyOn(HttpClient.prototype, "post");
 
-      const client = new BucketClient({
+      const client = new ReflagClient({
         publishableKey: KEY,
         user: { id: "uid" },
         company: { id: "cid" },
@@ -469,7 +469,7 @@ describe(`sends "check" events `, () => {
 
       const postSpy = vi.spyOn(HttpClient.prototype, "post");
 
-      const client = new BucketClient({
+      const client = new ReflagClient({
         publishableKey: KEY,
         user: { id: "uid" },
         company: { id: "cid" },
@@ -519,7 +519,7 @@ describe(`sends "check" events `, () => {
     it(`sends check event when accessing "config"`, async () => {
       const postSpy = vi.spyOn(HttpClient.prototype, "post");
 
-      const client = new BucketClient({
+      const client = new ReflagClient({
         publishableKey: KEY,
         user: { id: "uid" },
       });
@@ -556,7 +556,7 @@ describe(`sends "check" events `, () => {
       // disabled features don't appear in the API response
       vi.spyOn(FeaturesClient.prototype, "sendCheckEvent");
 
-      const client = new BucketClient({ publishableKey: KEY });
+      const client = new ReflagClient({ publishableKey: KEY });
       await client.initialize();
 
       const nonExistentFeature = client.getFeature("non-existent");
@@ -583,7 +583,7 @@ describe(`sends "check" events `, () => {
     });
 
     it("calls client.track with the featureId", async () => {
-      const client = new BucketClient({ publishableKey: KEY });
+      const client = new ReflagClient({ publishableKey: KEY });
       await client.initialize();
 
       const featureId1 = client.getFeature("featureId1");
@@ -604,7 +604,7 @@ describe(`sends "check" events `, () => {
     });
 
     it("calls client.requestFeedback with the featureId", async () => {
-      const client = new BucketClient({ publishableKey: KEY });
+      const client = new ReflagClient({ publishableKey: KEY });
       await client.initialize();
 
       const featureId1 = client.getFeature("featureId1");

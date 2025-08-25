@@ -27,11 +27,11 @@ describe("config tests", () => {
   });
 
   it("should load ENV VARS", () => {
-    process.env.BUCKET_SECRET_KEY = "mySecretKeyFromEnv";
-    process.env.BUCKET_OFFLINE = "true";
-    process.env.BUCKET_HOST = "http://localhost:4999";
-    process.env.BUCKET_FEATURES_ENABLED = "myNewFeature";
-    process.env.BUCKET_FEATURES_DISABLED = "myNewFeatureFalse";
+    process.env.REFLAG_SECRET_KEY = "mySecretKeyFromEnv";
+    process.env.REFLAG_OFFLINE = "true";
+    process.env.REFLAG_HOST = "http://localhost:4999";
+    process.env.REFLAG_FEATURES_ENABLED = "myNewFeature";
+    process.env.REFLAG_FEATURES_DISABLED = "myNewFeatureFalse";
 
     const config = loadConfig("test/testConfig.json");
     expect(config).toEqual({

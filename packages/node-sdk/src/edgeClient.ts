@@ -1,4 +1,4 @@
-import { BucketClient } from "./client";
+import { ReflagClient } from "./client";
 import { ClientOptions } from "./types";
 
 export type EdgeClientOptions = Omit<
@@ -7,12 +7,12 @@ export type EdgeClientOptions = Omit<
 >;
 
 /**
- * The EdgeClient is BucketClient pre-configured to be used in edge runtimes, like
+ * The EdgeClient is ReflagClient pre-configured to be used in edge runtimes, like
  * Cloudflare Workers.
  *
  * @example
  * ```ts
- * // set the BUCKET_SECRET_KEY environment variable or pass the secret key in the constructor
+ * // set the REFLAG_SECRET_KEY environment variable or pass the secret key in the constructor
  * const client = new EdgeClient();
  *
  * // evaluate a feature flag
@@ -24,7 +24,7 @@ export type EdgeClientOptions = Omit<
  *
  * ```
  */
-export class EdgeClient extends BucketClient {
+export class EdgeClient extends ReflagClient {
   constructor(options: EdgeClientOptions = {}) {
     const opts = {
       ...options,

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 
 import {
   FeatureKey,
-  BucketProvider,
+  ReflagProvider,
   useFeature,
   useRequestFeedback,
   useTrack,
@@ -26,7 +26,7 @@ declare module "../../src" {
 }
 
 const publishableKey = import.meta.env.VITE_PUBLISHABLE_KEY || "";
-const apiBaseUrl = import.meta.env.VITE_BUCKET_API_BASE_URL;
+const apiBaseUrl = import.meta.env.VITE_REFLAG_API_BASE_URL || import.meta.env.VITE_BUCKET_API_BASE_URL;
 
 function HuddleFeature() {
   // Type safe feature
@@ -255,7 +255,7 @@ function CustomToolbar() {
               checked={feature.isEnabledOverride ?? feature.isEnabled}
               type="checkbox"
               onChange={(e) => {
-                // this uses slightly simplified logic compared to the Bucket Toolbar
+                // this uses slightly simplified logic compared to the Reflag Toolbar
                 client
                   .getFeature(featureKey)
                   .setIsEnabledOverride(e.target.checked ?? false);
@@ -270,7 +270,7 @@ function CustomToolbar() {
 
 export function App() {
   return (
-    <BucketProvider
+    <ReflagProvider
       publishableKey={publishableKey}
       company={initialCompany}
       user={initialUser}
@@ -284,6 +284,6 @@ export function App() {
         </div>
       )}
       <Demos />
-    </BucketProvider>
+    </ReflagProvider>
   );
 }

@@ -43,6 +43,7 @@
     "booleanish",
     "bucketco",
     "openfeature",
-    "PKCE"
+    "PKCE",
+    "reflag"
   ]
 }

@@ -5,7 +5,7 @@ import {
   useBooleanFlagValue,
   useObjectFlagDetails,
 } from "@openfeature/react-sdk";
-import { track } from "@/app/featureManagement";
+import { track } from "@/app/flagManagement";
 
 const featureKey = "huddle";
 

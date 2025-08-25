@@ -46,10 +46,10 @@ async function getOpenedWidgetContainer(
   // Golden path requests
   await page.evaluate(`
     ;(async () => {
-      const { BucketClient } = await import("/dist/bucket-browser-sdk.mjs");
-      const bucket = new BucketClient({publishableKey: "${KEY}", user: {id: "foo"}, company: {id: "bar"}, ...${JSON.stringify(initOptions ?? {})}});
-      await bucket.initialize();
-      await bucket.requestFeedback({
+      const { ReflagClient } = await import("/dist/reflag-browser-sdk.mjs");
+      const reflag = new ReflagClient({publishableKey: "${KEY}", user: {id: "foo"}, company: {id: "bar"}, ...${JSON.stringify(initOptions ?? {})}});
+      await reflag.initialize();
+      await reflag.requestFeedback({
         featureKey: "feature1",
         title: "baz",
       });
@@ -83,13 +83,13 @@ async function getGiveFeedbackPageContainer(
   // Golden path requests
   await page.evaluate(`
     ;(async () => {
-      const { BucketClient } = await import("/dist/bucket-browser-sdk.mjs");
-      const bucket = new BucketClient({publishableKey: "${KEY}", user: {id: "foo"}, company: {id: "bar"}, ...${JSON.stringify(initOptions ?? {})}});
-      await bucket.initialize();
+      const { ReflagClient } = await import("/dist/reflag-browser-sdk.mjs");
+      const reflag = new ReflagClient({publishableKey: "${KEY}", user: {id: "foo"}, company: {id: "bar"}, ...${JSON.stringify(initOptions ?? {})}});
+      await reflag.initialize();
       console.log("setup clicky", document.querySelector("#give-feedback-button"))
       document.querySelector("#give-feedback-button")?.addEventListener("click", () => {
         console.log("cliked!");
-        bucket.requestFeedback({
+        reflag.requestFeedback({
           featureKey: "feature1",
           title: "baz",
         });
@@ -103,12 +103,12 @@ async function getGiveFeedbackPageContainer(
 async function setScore(container: Locator, score: number) {
   await new Promise((resolve) => setTimeout(resolve, 50)); // allow react to update its state
   await container
-    .locator(`#bucket-feedback-score-${score}`)
+    .locator(`#reflag-feedback-score-${score}`)
     .dispatchEvent("click");
 }
 
 async function setComment(container: Locator, comment: string) {
-  await container.locator("#bucket-feedback-comment-label").fill(comment);
+  await container.locator("#reflag-feedback-comment-label").fill(comment);
 }
 
 async function submitForm(container: Locator) {

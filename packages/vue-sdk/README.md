@@ -1,44 +1,44 @@
-# Bucket Vue SDK (beta)
+# Reflag Vue SDK (beta)
 
-Vue client side library for [Bucket.co](https://bucket.co)
+Vue client side library for [Reflag.com](https://bucket.co)
 
-Bucket supports feature toggling, tracking feature usage, requesting feedback on features and remotely configuring features.
+Reflag supports feature toggling, tracking feature usage, requesting feedback on features and remotely configuring features.
 
-The Bucket Vue SDK comes with the same built-in toolbar as the browser SDK which appears on `localhost` by default.
+The Reflag Vue SDK comes with the same built-in toolbar as the browser SDK which appears on `localhost` by default.
 
 ## Install
 
 Install via npm:
 
 ```shell
-npm i @bucketco/vue-sdk
+npm i @reflag/vue-sdk
 ```
 
 ## Get started
 
-### 1. Wrap your application with the `BucketProvider`
+### 1. Wrap your application with the `ReflagProvider`
 
 ```vue
 <script setup lang="ts">
-import { BucketProvider } from "@bucketco/vue-sdk";
+import { ReflagProvider } from "@reflag/vue-sdk";
 </script>
 
-<BucketProvider
+<ReflagProvider
   :publishable-key="publishableKey"
   :user="{ id: 'user_123', name: 'John Doe', email: 'john@acme.com' }"
   :company="{ id: 'acme_inc', plan: 'pro' }"
 >
   <!-- your app -->
-</BucketProvider>
+</ReflagProvider>
 ```
 
-If using Nuxt, wrap `<BucketProvider>` in `<ClientOnly>`. `<BucketProvider>` only renders client-side currently.
+If using Nuxt, wrap `<ReflagProvider>` in `<ClientOnly>`. `<ReflagProvider>` only renders client-side currently.
 
 ### 2. Use `useFeature(key)` to get feature status
 
 ```vue
 <script setup lang="ts">
-import { useFeature } from "@bucketco/vue-sdk";
+import { useFeature } from "@reflag/vue-sdk";
 
 const { isEnabled } = useFeature("huddle");
 </script>
@@ -54,8 +54,8 @@ See [useFeature()](#usefeature) for a full example
 
 ## Setting `user` and `company`
 
-Bucket determines which features are active for a given `user`, `company`, or `otherContext`.
-You pass these to the `BucketProvider` as props.
+Reflag determines which features are active for a given `user`, `company`, or `otherContext`.
+You pass these to the `ReflagProvider` as props.
 
 If you supply `user` or `company` objects, they must include at least the `id` property otherwise they will be ignored in their entirety.
 In addition to the `id`, you must also supply anything additional that you want to be able to evaluate feature targeting rules against.
@@ -69,13 +69,13 @@ A number of special attributes exist:
 - `avatar` -- the URL for `user`/`company` avatar image.
 
 ```vue
-<BucketProvider
+<ReflagProvider
   :publishable-key="publishableKey"
   :user="{ id: 'user_123', name: 'John Doe', email: 'john@acme.com' }"
   :company="{ id: 'acme_inc', plan: 'pro' }"
 >
   <!-- your app -->
-</BucketProvider>
+</ReflagProvider>
 ```
 
 To retrieve features along with their targeting information, use `useFeature(key: string)` hook (described in a section below).
@@ -87,7 +87,7 @@ generates a `check` event.
 
 Remote config is a dynamic and flexible approach to configuring feature behavior outside of your app – without needing to re-deploy it.
 
-Similar to `isEnabled`, each feature accessed using the `useFeature()` hook, has a `config` property. This configuration is managed from within Bucket. It is managed similar to the way access to features is managed, but instead of the
+Similar to `isEnabled`, each feature accessed using the `useFeature()` hook, has a `config` property. This configuration is managed from within Reflag. It is managed similar to the way access to features is managed, but instead of the
 binary `isEnabled` you can have multiple configuration values which are given to different user/companies.
 
 ### Get started with Remote config
@@ -108,12 +108,12 @@ const {
 Note that, similar to `isEnabled`, accessing `config` on the object returned by `useFeature()` automatically
 generates a `check` event.
 
-## `<BucketProvider>` component
+## `<ReflagProvider>` component
 
-The `<BucketProvider>` initializes the Bucket SDK, fetches features and starts listening for automated feedback survey events. The component can be configured using a number of props:
+The `<ReflagProvider>` initializes the Reflag SDK, fetches features and starts listening for automated feedback survey events. The component can be configured using a number of props:
 
-- `publishableKey` is used to connect the provider to an _environment_ on Bucket. Find your `publishableKey` under [environment settings](https://app.bucket.co/envs/current/settings/app-environments) in Bucket,
-- `company`, `user` and `otherContext` make up the _context_ that is used to determine if a feature is enabled or not. `company` and `user` contexts are automatically transmitted to Bucket servers so the Bucket app can show you which companies have access to which features etc.
+- `publishableKey` is used to connect the provider to an _environment_ on Reflag. Find your `publishableKey` under [environment settings](https://app.bucket.co/envs/current/settings/app-environments) in Reflag,
+- `company`, `user` and `otherContext` make up the _context_ that is used to determine if a feature is enabled or not. `company` and `user` contexts are automatically transmitted to Reflag servers so the Reflag app can show you which companies have access to which features etc.
 
   > [!Note]
   > If you specify `company` and/or `user` they must have at least the `id` property, otherwise they will be ignored in their entirety. You should also supply anything additional you want to be able to evaluate feature targeting against,
@@ -123,32 +123,32 @@ The `<BucketProvider>` initializes the Bucket SDK, fetches features and starts l
 - `expireTimeMs`: If set, features will be cached between page loads for this duration (in milliseconds),
 - `staleTimeMs`: Maximum time (in milliseconds) that stale features will be returned if `staleWhileRevalidate` is true and new features cannot be fetched.
 
-- `enableTracking`: Set to `false` to stop sending tracking events and user/company updates to Bucket. Useful when you're impersonating a user (defaults to `true`),
-- `apiBaseUrl`: Optional base URL for the Bucket API. Use this to override the default API endpoint,
-- `appBaseUrl`: Optional base URL for the Bucket application. Use this to override the default app URL,
+- `enableTracking`: Set to `false` to stop sending tracking events and user/company updates to Reflag. Useful when you're impersonating a user (defaults to `true`),
+- `apiBaseUrl`: Optional base URL for the Reflag API. Use this to override the default API endpoint,
+- `appBaseUrl`: Optional base URL for the Reflag application. Use this to override the default app URL,
 - `sseBaseUrl`: Optional base URL for Server-Sent Events. Use this to override the default SSE endpoint,
 - `debug`: Set to `true` to enable debug logging to the console,
-- `toolbar`: Optional [configuration](https://docs.bucket.co/supported-languages/browser-sdk/globals#toolbaroptions) for the Bucket toolbar,
+- `toolbar`: Optional [configuration](https://docs.bucket.co/supported-languages/browser-sdk/globals#toolbaroptions) for the Reflag toolbar,
 - `feedback`: Optional configuration for feedback collection
 
 ### Loading states
 
-BucketProvider lets you define a template to be shown while BucketProvider is inititalizing:
+ReflagProvider lets you define a template to be shown while ReflagProvider is initializing:
 
 ```vue
 <template>
-  <BucketProvider
+  <ReflagProvider
     :publishable-key="publishableKey"
     :user="user"
     :company="{ id: 'acme_inc', plan: 'pro' }"
   >
     <template #loading>Loading...</template>
     <StartHuddleButton />
-  </BucketProvider>
+  </ReflagProvider>
 </template>
 ```
 
-If you want more control over loading screens, `useIsLoading()` returns a Ref<boolean> which you can use to customize the loading experience.
+If you want more control over loading screens, `useIsLoading()` returns a `Ref<boolean>` which you can use to customize the loading experience.
 
 ## Hooks
 
@@ -172,7 +172,7 @@ Example:
 
 ```vue
 <script setup lang="ts">
-import { useFeature } from "@bucketco/vue-sdk";
+import { useFeature } from "@reflag/vue-sdk";
 
 const { isEnabled, track, requestFeedback, config } = useFeature("huddle");
 </script>
@@ -206,13 +206,13 @@ See the reference docs for details.
 
 ### `useTrack()`
 
-`useTrack()` returns a function which lets you send custom events to Bucket. It takes a string argument with the event name and optionally an object with properties to attach the event.
+`useTrack()` returns a function which lets you send custom events to Reflag. It takes a string argument with the event name and optionally an object with properties to attach the event.
 
-Using `track` returned from `useFeature()` calles this track function with the feature key as the event name.
+Using `track` returned from `useFeature()` calls this track function with the feature key as the event name.
 
 ```vue
 <script setup lang="ts">
-import { useTrack } from "@bucketco/vue-sdk";
+import { useTrack } from "@reflag/vue-sdk";
 
 const track = useTrack();
 </script>
@@ -237,7 +237,7 @@ The example below shows how to use `position` to ensure the popover appears next
 
 ```vue
 <script setup lang="ts">
-import { useRequestFeedback } from "@bucketco/vue-sdk";
+import { useRequestFeedback } from "@reflag/vue-sdk";
 
 const requestFeedback = useRequestFeedback();
 </script>
@@ -270,17 +270,17 @@ See the [Feedback Documentation](https://github.com/bucketco/bucket-javascript-s
 
 ### `useSendFeedback()`
 
-Returns a function that lets you send feedback to Bucket. This is useful if you've manually collected feedback through your own UI and want to send it to Bucket.
+Returns a function that lets you send feedback to Reflag. This is useful if you've manually collected feedback through your own UI and want to send it to Reflag.
 
 ```vue
 <script setup lang="ts">
-import { useSendFeedback } from "@bucketco/vue-sdk";
+import { useSendFeedback } from "@reflag/vue-sdk";
 
 const sendFeedback = useSendFeedback();
 
 const handleSubmit = async (data: FormData) => {
   await sendFeedback({
-    featureKey: "bucket-feature-key",
+    flagKey: "flag-key",
     score: parseInt(data.get("score") as string),
     comment: data.get("comment") as string,
   });
@@ -304,7 +304,7 @@ import {
   useUpdateUser,
   useUpdateCompany,
   useUpdateOtherContext,
-} from "@bucketco/vue-sdk";
+} from "@reflag/vue-sdk";
 
 const updateUser = useUpdateUser();
 const updateCompany = useUpdateCompany();
@@ -341,16 +341,16 @@ const handleContextUpdate = async () => {
 </template>
 ```
 
-Note: To change the `user.id` or `company.id`, you need to update the props passed to `BucketProvider` instead of using these composables.
+Note: To change the `user.id` or `company.id`, you need to update the props passed to `ReflagProvider` instead of using these composables.
 
 ### `useClient()`
 
-Returns the `BucketClient` used by the `BucketProvider`. The client offers more functionality that
+Returns the `ReflagClient` used by the `ReflagProvider`. The client offers more functionality that
 is not directly accessible through the other composables.
 
 ```vue
 <script setup>
-import { useClient } from "@bucketco/vue-sdk";
+import { useClient } from "@reflag/vue-sdk";
 import { onMounted } from "vue";
 
 const client = useClient();
@@ -369,14 +369,14 @@ onMounted(() => {
 
 ### `useIsLoading()`
 
-Returns a `Ref<boolean>` to indicate if Bucket has finished loading.
+Returns a `Ref<boolean>` to indicate if Reflag has finished loading.
 
 ## Content Security Policy (CSP)
 
-See [CSP](https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/browser-sdk/README.md#content-security-policy-csp) for info on using Bucket React SDK with CSP
+See [CSP](https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/browser-sdk/README.md#content-security-policy-csp) for info on using Reflag Vue SDK with CSP
 
 ## License
 
 MIT License
 
-Copyright (c) 2025 Bucket ApS
+Copyright (c) 2025 Reflag ApS

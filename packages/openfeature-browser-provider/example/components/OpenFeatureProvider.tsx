@@ -1,6 +1,6 @@
 "use client";
 
-import { initOpenFeature } from "@/app/featureManagement";
+import { initOpenFeature } from "@/app/flagManagement";
 import { OpenFeatureProvider as OFProvider } from "@openfeature/react-sdk";
 import { useEffect } from "react";
 

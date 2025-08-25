@@ -60,7 +60,7 @@ async function registerClient(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      client_name: "Bucket CLI",
+      client_name: "Reflag CLI",
       token_endpoint_auth_method: "none",
       grant_types: ["authorization_code"],
       redirect_uris: [redirectUri],

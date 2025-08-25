@@ -1,21 +1,21 @@
 import { ProviderStatus } from "@openfeature/server-sdk";
 import { beforeEach, describe, expect, it, Mock, vi } from "vitest";
 
-import { BucketClient } from "@bucketco/node-sdk";
+import { ReflagClient } from "@reflag/node-sdk";
 
-import { BucketNodeProvider, defaultContextTranslator } from "./index";
+import { defaultContextTranslator, ReflagNodeProvider } from "./index";
 
-vi.mock("@bucketco/node-sdk", () => {
-  const actualModule = vi.importActual("@bucketco/node-sdk");
+vi.mock("@reflag/node-sdk", () => {
+  const actualModule = vi.importActual("@reflag/node-sdk");
 
   return {
     __esModule: true,
     ...actualModule,
-    BucketClient: vi.fn(),
+    ReflagClient: vi.fn(),
   };
 });
 
-const bucketClientMock = {
+const reflagClientMock = {
   getFeature: vi.fn(),
   getFeatureDefinitions: vi.fn().mockReturnValue([]),
   initialize: vi.fn().mockResolvedValue({}),
@@ -31,7 +31,7 @@ const context = {
   email: "john@acme.inc",
 };
 
-const bucketContext = {
+const reflagContext = {
   user: { id: "42" },
   company: { id: "99" },
 };
@@ -42,11 +42,11 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe("BucketNodeProvider", () => {
-  let provider: BucketNodeProvider;
+describe("ReflagNodeProvider", () => {
+  let provider: ReflagNodeProvider;
 
-  const mockBucketClient = BucketClient as Mock;
-  mockBucketClient.mockReturnValue(bucketClientMock);
+  const mockReflagClient = ReflagClient as Mock;
+  mockReflagClient.mockReturnValue(reflagClientMock);
 
   let mockTranslatorFn: Mock;
 
@@ -61,13 +61,13 @@ describe("BucketNodeProvider", () => {
       payload: configPayload,
     };
 
-    bucketClientMock.getFeature = vi.fn().mockReturnValue({
+    reflagClientMock.getFeature = vi.fn().mockReturnValue({
       isEnabled: enabled,
       config,
     });
 
     // Mock getFeatureDefinitions to return feature definitions that include the specified flag
-    bucketClientMock.getFeatureDefinitions = vi.fn().mockReturnValue([
+    reflagClientMock.getFeatureDefinitions = vi.fn().mockReturnValue([
       {
         key: flagKey,
         description: "Test feature flag",
@@ -78,9 +78,9 @@ describe("BucketNodeProvider", () => {
   }
 
   beforeEach(async () => {
-    mockTranslatorFn = vi.fn().mockReturnValue(bucketContext);
+    mockTranslatorFn = vi.fn().mockReturnValue(reflagContext);
 
-    provider = new BucketNodeProvider({
+    provider = new ReflagNodeProvider({
       secretKey,
       contextTranslator: mockTranslatorFn,
     });
@@ -94,8 +94,8 @@ describe("BucketNodeProvider", () => {
         defaultContextTranslator({
           userId: 123,
           name: "John Doe",
-          email: "ron@bucket.co",
-          avatar: "https://bucket.co/avatar.png",
+          email: "ron@reflag.com",
+          avatar: "https://reflag.com/avatar.png",
           companyId: "456",
           companyName: "Acme, Inc.",
           companyAvatar: "https://acme.com/company-avatar.png",
@@ -105,8 +105,8 @@ describe("BucketNodeProvider", () => {
         user: {
           id: "123",
           name: "John Doe",
-          email: "ron@bucket.co",
-          avatar: "https://bucket.co/avatar.png",
+          email: "ron@reflag.com",
+          avatar: "https://reflag.com/avatar.png",
         },
         company: {
           id: "456",
@@ -134,20 +134,20 @@ describe("BucketNodeProvider", () => {
   });
 
   describe("lifecycle", () => {
-    it("calls the constructor of BucketClient", () => {
-      mockBucketClient.mockClear();
+    it("calls the constructor of ReflagClient", () => {
+      mockReflagClient.mockClear();
 
-      provider = new BucketNodeProvider({
+      provider = new ReflagNodeProvider({
         secretKey,
         contextTranslator: mockTranslatorFn,
       });
 
-      expect(mockBucketClient).toHaveBeenCalledTimes(1);
-      expect(mockBucketClient).toHaveBeenCalledWith({ secretKey });
+      expect(mockReflagClient).toHaveBeenCalledTimes(1);
+      expect(mockReflagClient).toHaveBeenCalledWith({ secretKey });
     });
 
     it("should set the status to READY if initialization succeeds", async () => {
-      provider = new BucketNodeProvider({
+      provider = new ReflagNodeProvider({
         secretKey,
         contextTranslator: mockTranslatorFn,
       });
@@ -158,7 +158,7 @@ describe("BucketNodeProvider", () => {
     });
 
     it("should keep the status as READY after closing", async () => {
-      provider = new BucketNodeProvider({
+      provider = new ReflagNodeProvider({
         secretKey: "invalid",
         contextTranslator: mockTranslatorFn,
       });
@@ -171,7 +171,7 @@ describe("BucketNodeProvider", () => {
 
     it("calls flush when provider is closed", async () => {
       await provider.onClose();
-      expect(bucketClientMock.flush).toHaveBeenCalledTimes(1);
+      expect(reflagClientMock.flush).toHaveBeenCalledTimes(1);
     });
 
     it("uses the contextTranslator function", async () => {
@@ -182,9 +182,9 @@ describe("BucketNodeProvider", () => {
       expect(mockTranslatorFn).toHaveBeenCalledTimes(1);
       expect(mockTranslatorFn).toHaveBeenCalledWith(context);
 
-      expect(bucketClientMock.getFeatureDefinitions).toHaveBeenCalledTimes(1);
-      expect(bucketClientMock.getFeature).toHaveBeenCalledWith(
-        bucketContext,
+      expect(reflagClientMock.getFeatureDefinitions).toHaveBeenCalledTimes(1);
+      expect(reflagClientMock.getFeature).toHaveBeenCalledWith(
+        reflagContext,
         testFlagKey,
       );
     });
@@ -196,7 +196,7 @@ describe("BucketNodeProvider", () => {
     });
 
     it("returns error if provider is not initialized", async () => {
-      provider = new BucketNodeProvider({
+      provider = new ReflagNodeProvider({
         secretKey: "invalid",
         contextTranslator: mockTranslatorFn,
       });
@@ -243,9 +243,9 @@ describe("BucketNodeProvider", () => {
         value: true,
       });
 
-      expect(bucketClientMock.getFeatureDefinitions).toHaveBeenCalled();
-      expect(bucketClientMock.getFeature).toHaveBeenCalledWith(
-        bucketContext,
+      expect(reflagClientMock.getFeatureDefinitions).toHaveBeenCalled();
+      expect(reflagClientMock.getFeature).toHaveBeenCalledWith(
+        reflagContext,
         testFlagKey,
       );
     });
@@ -348,10 +348,10 @@ describe("BucketNodeProvider", () => {
 
       expect(mockTranslatorFn).toHaveBeenCalledTimes(1);
       expect(mockTranslatorFn).toHaveBeenCalledWith(context);
-      expect(bucketClientMock.track).toHaveBeenCalledTimes(1);
-      expect(bucketClientMock.track).toHaveBeenCalledWith("42", "event", {
+      expect(reflagClientMock.track).toHaveBeenCalledTimes(1);
+      expect(reflagClientMock.track).toHaveBeenCalledWith("42", "event", {
         attributes: { action: "click" },
-        companyId: bucketContext.company.id,
+        companyId: reflagContext.company.id,
       });
     });
   });

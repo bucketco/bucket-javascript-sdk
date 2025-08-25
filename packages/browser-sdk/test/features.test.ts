@@ -81,7 +81,7 @@ describe("FeaturesClient", () => {
 
     const paramsObj = Object.fromEntries(new URLSearchParams(params));
     expect(paramsObj).toEqual({
-      "bucket-sdk-version": "browser-sdk/" + version,
+      "reflag-sdk-version": "browser-sdk/" + version,
       "context.user.id": "123",
       "context.company.id": "456",
       "context.other.eventId": "big-conference1",
@@ -131,7 +131,7 @@ describe("FeaturesClient", () => {
 
     const paramsObj = Object.fromEntries(new URLSearchParams(params));
     expect(paramsObj).toEqual({
-      "bucket-sdk-version": "browser-sdk/" + version,
+      "reflag-sdk-version": "browser-sdk/" + version,
       publishableKey: "pk",
     });
 

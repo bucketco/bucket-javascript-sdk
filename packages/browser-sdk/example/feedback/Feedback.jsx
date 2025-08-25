@@ -12,14 +12,14 @@ export const FeedbackForm = () => {
       comment: formData.comment ? formData.comment : null,
     };
 
-    // Using the Bucket SDK
-    new BucketClient({
+    // Using the Reflag SDK
+    new ReflagClient({
       publishableKey: "EXAMPLE_PUBLISHABLE_KEY",
     }).feedback(feedbackPayload);
 
     /*
-    // Using the Bucket API
-    fetch("https://tracking.bucket.co/feedback", {
+    // Using the Reflag API
+    fetch("https://tracking.reflag.co/feedback", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

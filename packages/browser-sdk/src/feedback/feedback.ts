@@ -21,7 +21,7 @@ export type Key = string;
 
 export type FeedbackOptions = {
   /**
-   * Enables automatic feedback prompting if it's set up in Bucket
+   * Enables automatic feedback prompting if it's set up in Reflag
    */
   enableAutoFeedback?: boolean;
 
@@ -68,7 +68,7 @@ export type RequestFeedbackData = Omit<
   onAfterSubmit?: (data: FeedbackSubmission) => void;
 
   /**
-   * Bucket feature key.
+   * Reflag flag key.
    */
   featureKey: string;
 };
@@ -82,12 +82,12 @@ export type RequestFeedbackOptions = RequestFeedbackData & {
 
 export type UnassignedFeedback = {
   /**
-   * Bucket feature key.
+   * Reflag flag key.
    */
   featureKey: string;
 
   /**
-   * Bucket feedback ID
+   * Reflag feedback ID
    */
   feedbackId?: string;
 
@@ -113,10 +113,10 @@ export type UnassignedFeedback = {
   comment?: string;
 
   /**
-   * Bucket feedback prompt ID.
+   * Reflag flag prompt ID.
    *
    * This only exists if the feedback was submitted
-   * as part of an automated prompt from Bucket.
+   * as part of an automated prompt from Reflag.
    *
    * Used for internal state management of automated
    * feedback.
@@ -166,7 +166,7 @@ export type FeedbackPrompt = {
   promptId: string;
 
   /**
-   * Feature ID from Bucket
+   * Feature ID from Reflag
    */
   featureId: string;
 };

@@ -1,16 +1,16 @@
 import { OpenFeature } from "@openfeature/server-sdk";
-import { BucketNodeProvider } from "../src";
+import { ReflagNodeProvider } from "../src";
 
-if (!process.env.BUCKET_SECRET_KEY) {
-  throw new Error("BUCKET_SECRET_KEY is required");
+if (!process.env.REFLAG_SECRET_KEY) {
+  throw new Error("REFLAG_SECRET_KEY is required");
 }
 
 export type CreateTodosConfig = {
   maxLength: number;
 };
 
-const provider = new BucketNodeProvider({
-  secretKey: process.env.BUCKET_SECRET_KEY!,
+const provider = new ReflagNodeProvider({
+  secretKey: process.env.REFLAG_SECRET_KEY!,
   fallbackFeatures: {
     "show-todos": {
       isEnabled: true,

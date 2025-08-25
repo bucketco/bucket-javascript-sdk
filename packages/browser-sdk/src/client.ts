@@ -15,7 +15,7 @@ import {
 import * as feedbackLib from "./feedback/ui";
 import { ToolbarPosition } from "./ui/types";
 import { API_BASE_URL, APP_BASE_URL, SSE_REALTIME_BASE_URL } from "./config";
-import { BucketContext, CompanyContext, UserContext } from "./context";
+import { CompanyContext, ReflagContext, UserContext } from "./context";
 import { HookArgs, HooksManager } from "./hooksManager";
 import { HttpClient } from "./httpClient";
 import { Logger, loggerWithPrefix, quietConsoleLogger } from "./logger";
@@ -143,21 +143,21 @@ export type PayloadContext = {
 };
 
 /**
- * BucketClient configuration.
+ * ReflagClient configuration.
  */
 export interface Config {
   /**
-   * Base URL of Bucket servers.
+   * Base URL of Reflag servers.
    */
   apiBaseUrl: string;
 
   /**
-   * Base URL of the Bucket web app.
+   * Base URL of the Reflag web app.
    */
   appBaseUrl: string;
 
   /**
-   * Base URL of Bucket servers for SSE connections used by AutoFeedback.
+   * Base URL of Reflag servers for SSE connections used by AutoFeedback.
    */
   sseBaseUrl: string;
 
@@ -188,7 +188,7 @@ export type ToolbarOptions =
 export type FeatureDefinitions = Readonly<Array<string>>;
 
 /**
- * BucketClient initialization options.
+ * ReflagClient initialization options.
  */
 export type InitOptions = {
   /**
@@ -197,14 +197,14 @@ export type InitOptions = {
   publishableKey: string;
 
   /**
-   * User related context. If you provide `id` Bucket will enrich the evaluation context with
-   * user attributes on Bucket servers.
+   * User related context. If you provide `id` Reflag will enrich the evaluation context with
+   * user attributes on Reflag servers.
    */
   user?: UserContext;
 
   /**
-   * Company related context. If you provide `id` Bucket will enrich the evaluation context with
-   * company attributes on Bucket servers.
+   * Company related context. If you provide `id` Reflag will enrich the evaluation context with
+   * company attributes on Reflag servers.
    */
   company?: CompanyContext;
 
@@ -224,12 +224,12 @@ export type InitOptions = {
   logger?: Logger;
 
   /**
-   * Base URL of Bucket servers. You can override this to use your mocked server.
+   * Base URL of Reflag servers. You can override this to use your mocked server.
    */
   apiBaseUrl?: string;
 
   /**
-   * Base URL of the Bucket web app. Links open ín this app by default.
+   * Base URL of the Reflag web app. Links open ín this app by default.
    */
   appBaseUrl?: string;
 
@@ -240,7 +240,7 @@ export type InitOptions = {
 
   /**
    * Feature keys for which `isEnabled` should fallback to true
-   * if SDK fails to fetch features from Bucket servers. If a record
+   * if SDK fails to fetch features from Reflag servers. If a record
    * is supplied instead of array, the values of each key represent the
    * configuration values and `isEnabled` is assume `true`.
    */
@@ -274,7 +274,7 @@ export type InitOptions = {
   credentials?: "include" | "same-origin" | "omit";
 
   /**
-   * Base URL of Bucket servers for SSE connections used by AutoFeedback.
+   * Base URL of Reflag servers for SSE connections used by AutoFeedback.
    */
   sseBaseUrl?: string;
 
@@ -372,11 +372,11 @@ function shouldShowToolbar(opts: InitOptions) {
 }
 
 /**
- * BucketClient lets you interact with the Bucket API.
+ * ReflagClient lets you interact with the Reflag API.
  */
-export class BucketClient {
+export class ReflagClient {
   private readonly publishableKey: string;
-  private readonly context: BucketContext;
+  private readonly context: ReflagContext;
   private config: Config;
   private requestFeedbackOptions: Partial<RequestFeedbackOptions>;
   private readonly httpClient: HttpClient;
@@ -390,12 +390,12 @@ export class BucketClient {
   private readonly hooks: HooksManager;
 
   /**
-   * Create a new BucketClient instance.
+   * Create a new ReflagClient instance.
    */
   constructor(opts: InitOptions) {
     this.publishableKey = opts.publishableKey;
     this.logger =
-      opts?.logger ?? loggerWithPrefix(quietConsoleLogger, "[Bucket]");
+      opts?.logger ?? loggerWithPrefix(quietConsoleLogger, "[Reflag]");
     this.context = {
       user: opts?.user?.id ? opts.user : undefined,
       company: opts?.company?.id ? opts.company : undefined,
@@ -465,7 +465,7 @@ export class BucketClient {
     if (shouldShowToolbar(opts)) {
       this.logger.info("opening toolbar toggler");
       showToolbarToggle({
-        bucketClient: this,
+        reflagClient: this,
         position:
           typeof opts.toolbar === "object" ? opts.toolbar.position : undefined,
       });
@@ -479,7 +479,7 @@ export class BucketClient {
   }
 
   /**
-   * Initialize the Bucket SDK.
+   * Initialize the Reflag SDK.
    *
    * Must be called before calling other SDK methods.
    */
@@ -506,7 +506,7 @@ export class BucketClient {
     }
 
     this.logger.info(
-      "Bucket initialized in " +
+      "Reflag initialized in " +
         Math.round(Date.now() - start) +
         "ms" +
         (this.config.offline ? " (offline mode)" : ""),
@@ -559,7 +559,7 @@ export class BucketClient {
   async updateUser(user: { [key: string]: string | number | undefined }) {
     if (user.id && user.id !== this.context.user?.id) {
       this.logger.warn(
-        "ignoring attempt to update the user ID. Re-initialize the BucketClient with a new user ID instead.",
+        "ignoring attempt to update the user ID. Re-initialize the ReflagClient with a new user ID instead.",
       );
       return;
     }
@@ -583,7 +583,7 @@ export class BucketClient {
   async updateCompany(company: { [key: string]: string | number | undefined }) {
     if (company.id && company.id !== this.context.company?.id) {
       this.logger.warn(
-        "ignoring attempt to update the company ID. Re-initialize the BucketClient with a new company ID instead.",
+        "ignoring attempt to update the company ID. Re-initialize the ReflagClient with a new company ID instead.",
       );
       return;
     }
@@ -614,7 +614,7 @@ export class BucketClient {
   }
 
   /**
-   * Track an event in Bucket.
+   * Track an event in Reflag.
    *
    * @param eventName The name of the event.
    * @param attributes Any attributes you want to attach to the event.
@@ -654,7 +654,7 @@ export class BucketClient {
   }
 
   /**
-   * Submit user feedback to Bucket. Must include either `score` or `comment`, or both.
+   * Submit user feedback to Reflag. Must include either `score` or `comment`, or both.
    *
    * @param payload The feedback details to submit.
    * @returns The server response.
@@ -680,9 +680,9 @@ export class BucketClient {
   }
 
   /**
-   * Display the Bucket feedback form UI programmatically.
+   * Display the Reflag feedback form UI programmatically.
    *
-   * This can be used to collect feedback from users in Bucket in cases where Automated Feedback Surveys isn't appropriate.
+   * This can be used to collect feedback from users in Reflag in cases where Automated Feedback Surveys isn't appropriate.
    *
    * @param options
    */
@@ -854,7 +854,7 @@ export class BucketClient {
   }
 
   /**
-   * Send attributes to Bucket for the current user
+   * Send attributes to Reflag for the current user
    */
   private async user() {
     if (!this.context.user) {
@@ -881,7 +881,7 @@ export class BucketClient {
   }
 
   /**
-   * Send attributes to Bucket for the current company.
+   * Send attributes to Reflag for the current company.
    */
   private async company() {
     if (!this.context.user) {
@@ -915,3 +915,10 @@ export class BucketClient {
     return res;
   }
 }
+
+/**
+ * @deprecated
+ *
+ * Use ReflagClient instead.
+ */
+export const BucketClient = ReflagClient;

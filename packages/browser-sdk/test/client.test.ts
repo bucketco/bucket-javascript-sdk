@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { BucketClient } from "../src/client";
+import { ReflagClient } from "../src/client";
 import { FeaturesClient } from "../src/feature/features";
 import { HttpClient } from "../src/httpClient";
 
 import { featuresResult } from "./mocks/handlers";
 
-describe("BucketClient", () => {
-  let client: BucketClient;
+describe("ReflagClient", () => {
+  let client: ReflagClient;
   const httpClientPost = vi.spyOn(HttpClient.prototype as any, "post");
   const httpClientGet = vi.spyOn(HttpClient.prototype as any, "get");
 
@@ -17,7 +17,7 @@ describe("BucketClient", () => {
   );
 
   beforeEach(() => {
-    client = new BucketClient({
+    client = new ReflagClient({
       publishableKey: "test-key",
       user: { id: "user1" },
       company: { id: "company1" },
@@ -167,7 +167,7 @@ describe("BucketClient", () => {
 
   describe("offline mode", () => {
     it("should not make HTTP calls when offline", async () => {
-      client = new BucketClient({
+      client = new ReflagClient({
         publishableKey: "test-key",
         user: { id: "user1" },
         company: { id: "company1" },
