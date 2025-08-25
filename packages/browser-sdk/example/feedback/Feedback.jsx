@@ -5,7 +5,7 @@ export const FeedbackForm = () => {
     const formData = Object.fromEntries(new FormData(e.target).entries());
 
     const feedbackPayload = {
-      featureId: "EXAMPLE_FEATURE",
+      flagKey: "EXAMPLE_FLAG_KEY",
       userId: "EXAMPLE_USER",
       companyId: "EXAMPLE_COMPANY",
       score: formData.score ? Number(formData.score) : null,

@@ -1,4 +1,4 @@
-import { CheckEvent, RawFeatures } from "./feature/features";
+import { CheckEvent, RawFlags } from "./flag/flags";
 import { CompanyContext, UserContext } from "./context";
 
 export interface HookArgs {
@@ -13,7 +13,14 @@ export interface HookArgs {
    */
   enabledCheck: CheckEvent;
   check: CheckEvent;
-  featuresUpdated: RawFeatures;
+  flagsUpdated: RawFlags;
+
+  /**
+   * @deprecated
+   *
+   * Use `flagsUpdated` instead.
+   */
+  featuresUpdated: RawFlags;
   user: UserContext;
   company: CompanyContext;
   track: TrackEvent;
@@ -35,7 +42,8 @@ export class HooksManager {
     enabledCheck: ((arg0: CheckEvent) => void)[];
     configCheck: ((arg0: CheckEvent) => void)[];
     check: ((arg0: CheckEvent) => void)[];
-    featuresUpdated: ((arg0: RawFeatures) => void)[];
+    flagsUpdated: ((arg0: RawFlags) => void)[];
+    featuresUpdated: ((arg0: RawFlags) => void)[];
     user: ((arg0: UserContext) => void)[];
     company: ((arg0: CompanyContext) => void)[];
     track: ((arg0: TrackEvent) => void)[];
@@ -43,6 +51,7 @@ export class HooksManager {
     enabledCheck: [],
     configCheck: [],
     check: [],
+    flagsUpdated: [],
     featuresUpdated: [],
     user: [],
     company: [],

@@ -1,4 +1,4 @@
-import { FetchedFeatures } from "./features";
+import { FetchedFlags } from "./flags";
 
 interface StorageItem {
   get(): string | null;
@@ -8,18 +8,18 @@ interface StorageItem {
 interface cacheEntry {
   expireAt: number;
   staleAt: number;
-  features: FetchedFeatures;
+  flags: FetchedFlags;
 }
 
 // Parse and validate an API feature response
 export function parseAPIFeaturesResponse(
   featuresInput: any,
-): FetchedFeatures | undefined {
+): FetchedFlags | undefined {
   if (!isObject(featuresInput)) {
     return;
   }
 
-  const features: FetchedFeatures = {};
+  const flags: FetchedFlags = {};
   for (const key in featuresInput) {
     const feature = featuresInput[key];
 
@@ -36,7 +36,7 @@ export function parseAPIFeaturesResponse(
       return;
     }
 
-    features[key] = {
+    flags[key] = {
       isEnabled: feature.isEnabled,
       targetingVersion: feature.targetingVersion,
       key,
@@ -46,15 +46,15 @@ export function parseAPIFeaturesResponse(
     };
   }
 
-  return features;
+  return flags;
 }
 
 export interface CacheResult {
-  features: FetchedFeatures;
+  flags: FetchedFlags;
   stale: boolean;
 }
 
-export class FeatureCache {
+export class FlagCache {
   private storage: StorageItem;
   private readonly staleTimeMs: number;
   private readonly expireTimeMs: number;
@@ -76,9 +76,9 @@ export class FeatureCache {
   set(
     key: string,
     {
-      features,
+      flags,
     }: {
-      features: FetchedFeatures;
+      flags: FetchedFlags;
     },
   ) {
     let cacheData: CacheData = {};
@@ -95,7 +95,7 @@ export class FeatureCache {
     cacheData[key] = {
       expireAt: Date.now() + this.expireTimeMs,
       staleAt: Date.now() + this.staleTimeMs,
-      features,
+      flags,
     } satisfies cacheEntry;
 
     cacheData = Object.fromEntries(
@@ -118,7 +118,7 @@ export class FeatureCache {
           cachedResponse[key].expireAt > Date.now()
         ) {
           return {
-            features: cachedResponse[key].features,
+            flags: cachedResponse[key].flags,
             stale: cachedResponse[key].staleAt < Date.now(),
           };
         }
@@ -144,7 +144,7 @@ function validateCacheData(cacheDataInput: any) {
     if (
       typeof cacheEntry.expireAt !== "number" ||
       typeof cacheEntry.staleAt !== "number" ||
-      (cacheEntry.features && !parseAPIFeaturesResponse(cacheEntry.features))
+      (cacheEntry.flags && !parseAPIFeaturesResponse(cacheEntry.flags))
     ) {
       return;
     }
@@ -152,7 +152,7 @@ function validateCacheData(cacheDataInput: any) {
     cacheData[key] = {
       expireAt: cacheEntry.expireAt,
       staleAt: cacheEntry.staleAt,
-      features: cacheEntry.features,
+      flags: cacheEntry.flags,
     };
   }
   return cacheData;

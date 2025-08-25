@@ -2,7 +2,7 @@
 
 Basic client for [Reflag.com](https://bucket.co). If you're using React, you'll be better off with the Reflag React SDK.
 
-Reflag supports flags, tracking flag usage, [collecting feedback](#qualitative-feedback-on-beta-flags), and [remotely configuring features](#remote-config).
+Reflag supports flags, tracking flag usage, [collecting feedback](#qualitative-feedback-on-beta-flags), and [remotely configuring flags](#remote-config).
 
 ## Install
 
@@ -38,10 +38,10 @@ const {
 
 if (isEnabled) {
   // Show feature. When retrieving `isEnabled` the client automatically
-  // sends a "check" event for the "huddle" feature which is shown in the
+  // sends a "check" event for the "huddle" flag which is shown in the
   // Reflag UI.
 
-  // On usage, call `track` to let Reflag know that a user interacted with the feature
+  // On usage, call `track` to let Reflag know that a user interacted with the flag
   track();
 
   // The `payload` is a user-supplied JSON in Reflag that is dynamically picked
@@ -49,17 +49,17 @@ if (isEnabled) {
   const question = payload?.question ?? "Tell us what you think of Huddles";
 
   // Use `requestFeedback` to create "Send feedback" buttons easily for specific
-  // features. This is not related to `track` and you can call them individually.
+  // flags. This is not related to `track` and you can call them individually.
   requestFeedback({ title: question });
 }
 
-// `track` just calls `reflagClient.track(<featureKey>)` to send an event using the same feature key
+// `track` just calls `reflagClient.track(<flagKey>)` to send an event using the same flag key
 // You can also use `track` on the client directly to send any custom event.
 reflagClient.track("huddle");
 
-// similarly, `requestFeedback` just calls `reflagClient.requestFeedback({featureKey: <featureKey>})`
+// similarly, `requestFeedback` just calls `reflagClient.requestFeedback({flagKey: <flagKey>})`
 // which you can also call directly:
-reflagClient.requestFeedback({ featureKey: "huddle" });
+reflagClient.requestFeedback({ flagKey: "huddle" });
 ```
 
 B. Script tag (client-side directly in html)
@@ -104,21 +104,21 @@ type Configuration = {
   enableTracking?: true; // set to `false` to stop sending track events and user/company updates to Reflag servers. Useful when you're impersonating a user
   fallbackFeatures?:
     | string[]
-    | Record<string, { key: string; payload: any } | true>; // Enable these features if unable to contact reflag.com. Can be a list of feature keys or a record with configuration values
-  timeoutMs?: number; // Timeout for fetching features (default: 5000ms)
-  staleWhileRevalidate?: boolean; // Revalidate in the background when cached features turn stale to avoid latency in the UI (default: false)
-  staleTimeMs?: number; // at initialization time features are loaded from the cache unless they have gone stale. Defaults to 0 which means the cache is disabled. Increase this in the case of a non-SPA
-  expireTimeMs?: number; // In case we're unable to fetch features from Reflag, cached/stale features will be used instead until they expire after `expireTimeMs`. Default is 30 days
+    | Record<string, { key: string; payload: any } | true>; // Enable these flags if unable to contact reflag.com. Can be a list of flag keys or a record with configuration values
+  timeoutMs?: number; // Timeout for fetching flags (default: 5000ms)
+  staleWhileRevalidate?: boolean; // Revalidate in the background when cached flags turn stale to avoid latency in the UI (default: false)
+  staleTimeMs?: number; // at initialization time flags are loaded from the cache unless they have gone stale. Defaults to 0 which means the cache is disabled. Increase this in the case of a non-SPA
+  expireTimeMs?: number; // In case we're unable to fetch flags from Reflag, cached/stale flags will be used instead until they expire after `expireTimeMs`. Default is 30 days
   offline?: boolean; // Use the SDK in offline mode. Offline mode is useful during testing and local development
 };
 ```
 
 ## Feature toggles
 
-Reflag determines which features are active for a given user/company. The user/company is given in the `ReflagClient` constructor.
+Reflag determines which flags are active for a given user/company. The user/company is given in the `ReflagClient` constructor.
 
 If you supply `user` or `company` objects, they must include at least the `id` property otherwise they will be ignored in their entirety.
-In addition to the `id`, you must also supply anything additional that you want to be able to evaluate feature targeting rules against.
+In addition to the `id`, you must also supply anything additional that you want to be able to evaluate flag targeting against.
 
 Attributes cannot be nested (multiple levels) and must be either strings, integers or booleans.
 Some attributes are special and used in Reflag UI:
@@ -144,7 +144,7 @@ const reflagClient = new ReflagClient({
 });
 ```
 
-To retrieve features along with their targeting information, use `getFeature(key: string)`:
+To retrieve flags along with their targeting information, use `getFeature(flagKey: string)`:
 
 ```ts
 const huddle = reflagClient.getFeature("huddle");
@@ -156,10 +156,10 @@ const huddle = reflagClient.getFeature("huddle");
 // }
 ```
 
-You can use `getFeatures()` to retrieve all enabled features currently.
+You can use `getFeatures()` to retrieve all enabled flags currently.
 
 ```ts
-const features = reflagClient.getFeatures();
+const flags = reflagClient.getFeatures();
 // {
 //   huddle: {
 //     isEnabled: true,
@@ -177,14 +177,14 @@ generate a `check` event, contrary to the `isEnabled` property on the object ret
 
 ## Remote config
 
-Remote config is a dynamic and flexible approach to configuring feature behavior outside of your app – without needing to re-deploy it.
+Remote config is a dynamic and flexible approach to configuring flag behavior outside of your app – without needing to re-deploy it.
 
-Similar to `isEnabled`, each feature has a `config` property. This configuration is managed from within Reflag.
-It is managed similar to the way access to features is managed, but instead of the binary `isEnabled` you can have
+Similar to `isEnabled`, each flag has a `config` property. This configuration is managed from within Reflag.
+It is managed similar to the way access to flags is managed, but instead of the binary `isEnabled` you can have
 multiple configuration values which are given to different user/companies.
 
 ```ts
-const features = reflagClient.getFeatures();
+const flags = reflagClient.getFeatures();
 // {
 //   huddle: {
 //     isEnabled: true,
@@ -197,31 +197,31 @@ const features = reflagClient.getFeatures();
 // }
 ```
 
-`key` is mandatory for a config, but if a feature has no config or no config value was matched against the context, the `key` will be `undefined`. Make sure to check against this case when trying to use the configuration in your application. `payload` is an optional JSON value for arbitrary configuration needs.
+`key` is mandatory for a config, but if a flag has no config or no config value was matched against the context, the `key` will be `undefined`. Make sure to check against this case when trying to use the configuration in your application. `payload` is an optional JSON value for arbitrary configuration needs.
 
 Just as `isEnabled`, accessing `config` on the object returned by `getFeatures` does not automatically
 generate a `check` event, contrary to the `config` property on the object returned by `getFeature`.
 
 ## Updating user/company/other context
 
-Attributes given for the user/company/other context in the `ReflagClient` constructor can be updated for use in feature targeting evaluation with the `updateUser()`, `updateCompany()` and `updateOtherContext()` methods.
-They return a promise which resolves once the features have been re-evaluated follow the update of the attributes.
+Attributes given for the user/company/other context in the `ReflagClient` constructor can be updated for use in flag targeting evaluation with the `updateUser()`, `updateCompany()` and `updateOtherContext()` methods.
+They return a promise which resolves once the flags have been re-evaluated follow the update of the attributes.
 
-The following shows how to let users self-opt-in for a new feature. The feature must have the rule `voiceHuddleOptIn IS true` set in the Reflag UI.
+The following shows how to let users self-opt-in for a new flag. The flag must have the rule `voiceHuddleOptIn IS true` set in the Reflag UI.
 
 ```ts
-// toggle opt-in for the voiceHuddle feature:
+// toggle opt-in for the voiceHuddle flag:
 const { isEnabled } = reflagClient.getFeature("voiceHuddle");
-// this toggles the feature on/off. The promise returns once feature targeting has been
+// this toggles the flag on/off. The promise returns once flag targeting has been
 // re-evaluated.
 await reflagClient.updateUser({ voiceHuddleOptIn: (!isEnabled).toString() });
 ```
 
-> [!NOTE] > `user`/`company` attributes are also stored remotely on the Reflag servers and will automatically be used to evaluate feature targeting if the page is refreshed.
+> [!NOTE] > `user`/`company` attributes are also stored remotely on the Reflag servers and will automatically be used to evaluate flag targeting if the page is refreshed.
 
 ## Toolbar
 
-The Reflag Toolbar is great for toggling features on/off for yourself to ensure that everything works both when a feature is on and when it's off.
+The Reflag Toolbar is great for toggling flags on/off for yourself to ensure that everything works both when a flag is on and when it's off.
 
 <img width="352" alt="Toolbar screenshot" src="https://github.com/user-attachments/assets/c223df5a-4bd8-49a1-8b4a-ad7001357693" />
 
@@ -261,7 +261,7 @@ Reflag can collect qualitative feedback from your users in the form of a [Custom
 
 ### Automated feedback collection
 
-The Reflag Browser SDK comes with automated feedback collection mode enabled by default, which lets the Reflag service ask your users for feedback for relevant features just after they've used them.
+The Reflag Browser SDK comes with automated feedback collection mode enabled by default, which lets the Reflag service ask your users for feedback for relevant flags just after they've used them.
 
 > [!NOTE]
 > To get started with automatic feedback collection, make sure you've set `user` in the `ReflagClient` constructor.
@@ -295,10 +295,10 @@ If you are not using the Reflag Browser SDK, you can still submit feedback using
 
 See details in [Feedback HTTP API](https://docs.bucket.co/api/http-api#post-feedback)
 
-## Tracking feature usage
+## Tracking flag usage
 
-The `track` function lets you send events to Reflag to denote feature usage.
-By default Reflag expects event names to align with the feature keys, but
+The `track` function lets you send events to Reflag to denote flag usage.
+By default Reflag expects event names to align with the flag keys, but
 you can customize it as you wish.
 
 ```ts
@@ -309,8 +309,8 @@ reflagClient.track("huddle", { voiceHuddle: true });
 
 Event listeners allow for capturing various events occurring in the `ReflagClient`. This is useful to build integrations with other system or for various debugging purposes. There are 5 kinds of events:
 
-- `check`: Your code used `isEnabled` or `config` for a feature
-- `featuresUpdated`: Features were updated. Either because they were loaded as part of initialization or because the user/company updated
+- `check`: Your code used `isEnabled` or `config` for a flag
+- `flagsUpdated`: Features were updated. Either because they were loaded as part of initialization or because the user/company updated
 - `user`: User information updated (similar to the `identify` call used in tracking terminology)
 - `company`: Company information updated (sometimes to the `group` call used in tracking terminology)
 - `track`: Track event occurred.
@@ -360,7 +360,7 @@ The two cookies are:
 Breaking changes:
 
 - `client.onFeaturesUpdated()` is now replaced by [event listeners](#event-listeners)
-- Arguments to the `ReflagClient` constructor which were previously under `featureOptions` are now supplied directly in the root.
+- Arguments to the `ReflagClient` constructor which were previously under `flagOptions` are now supplied directly in the root.
 
 ## TypeScript
 
@@ -370,11 +370,11 @@ Types are bundled together with the library and exposed automatically when impor
 
 If you are running with strict Content Security Policies active on your website, you will need to enable these directives in order to use the SDK:
 
-| Directive   | Values                                                             | Reason                                                                                                                                   |
-| ----------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| connect-src | [https://front.bucket.co](https://front.bucket.co)                 | Basic functionality`                                                                                                                     |
-| connect-src | [https://livemessaging.bucket.co](https://livemessaging.bucket.co) | Server sent events for use in automated feedback surveys, which allows for automatically collecting feedback when a user used a feature. |
-| style-src   | 'unsafe-inline'                                                    | The feedback UI is styled with inline styles. Not having this directive results unstyled HTML elements.                                  |
+| Directive   | Values                                                             | Reason                                                                                                                                |
+| ----------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| connect-src | [https://front.bucket.co](https://front.bucket.co)                 | Basic functionality`                                                                                                                  |
+| connect-src | [https://livemessaging.bucket.co](https://livemessaging.bucket.co) | Server sent events for use in automated feedback surveys, which allows for automatically collecting feedback when a user used a flag. |
+| style-src   | 'unsafe-inline'                                                    | The feedback UI is styled with inline styles. Not having this directive results unstyled HTML elements.                               |
 
 If you are including the Reflag tracking SDK with a `<script>`-tag from `jsdelivr.net` you will also need:
 

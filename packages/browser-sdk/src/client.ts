@@ -1,10 +1,4 @@
 import {
-  CheckEvent,
-  FallbackFeatureOverride,
-  FeaturesClient,
-  RawFeatures,
-} from "./feature/features";
-import {
   AutoFeedback,
   Feedback,
   feedback,
@@ -13,6 +7,12 @@ import {
   RequestFeedbackOptions,
 } from "./feedback/feedback";
 import * as feedbackLib from "./feedback/ui";
+import {
+  CheckEvent,
+  FallbackFlagOverride,
+  FlagsClient,
+  RawFlags,
+} from "./flag/flags";
 import { ToolbarPosition } from "./ui/types";
 import { API_BASE_URL, APP_BASE_URL, SSE_REALTIME_BASE_URL } from "./config";
 import { CompanyContext, ReflagContext, UserContext } from "./context";
@@ -183,11 +183,6 @@ export type ToolbarOptions =
     };
 
 /**
- * Feature definitions.
- */
-export type FeatureDefinitions = Readonly<Array<string>>;
-
-/**
  * ReflagClient initialization options.
  */
 export type InitOptions = {
@@ -239,30 +234,36 @@ export type InitOptions = {
   offline?: boolean;
 
   /**
-   * Feature keys for which `isEnabled` should fallback to true
-   * if SDK fails to fetch features from Reflag servers. If a record
+   * Flag keys for which `isEnabled` should fallback to true
+   * if SDK fails to fetch flags from Reflag servers. If a record
    * is supplied instead of array, the values of each key represent the
    * configuration values and `isEnabled` is assume `true`.
    */
-  fallbackFeatures?: string[] | Record<string, FallbackFeatureOverride>;
+  fallbackFlags?: string[] | Record<string, FallbackFlagOverride>;
 
   /**
-   * Timeout in milliseconds when fetching features
+   * @deprecated
+   * Use `fallbackFlags` instead.
+   */
+  fallbackFeatures?: string[] | Record<string, FallbackFlagOverride>;
+
+  /**
+   * Timeout in milliseconds when fetching flags
    */
   timeoutMs?: number;
 
   /**
-   * If set to true stale features will be returned while refetching features
+   * If set to true stale flags will be returned while refetching flags
    */
   staleWhileRevalidate?: boolean;
 
   /**
-   * If set, features will be cached between page loads for this duration
+   * If set, flags will be cached between page loads for this duration
    */
   expireTimeMs?: number;
 
   /**
-   * Stale features will be returned if staleWhileRevalidate is true if no new features can be fetched
+   * Stale flags will be returned if staleWhileRevalidate is true if no new flags can be fetched
    */
   staleTimeMs?: number;
 
@@ -308,9 +309,9 @@ const defaultConfig: Config = {
 };
 
 /**
- * A remotely managed configuration value for a feature.
+ * A remotely managed configuration value for a flag.
  */
-export type FeatureRemoteConfig =
+export type FlagRemoteConfig =
   | {
       /**
        * The key of the matched configuration value.
@@ -325,11 +326,17 @@ export type FeatureRemoteConfig =
   | { key: undefined; payload: undefined };
 
 /**
- * Represents a feature.
+ * @deprecated
+ * Use `FlagRemoteConfig` instead.
  */
-export interface Feature {
+export type FeatureRemoteConfig = FlagRemoteConfig;
+
+/**
+ * Represents a flag.
+ */
+export interface Flag {
   /**
-   * Result of feature flag evaluation.
+   * Result of flag evaluation.
    * Note: Does not take local overrides into account.
    */
   isEnabled: boolean;
@@ -337,31 +344,37 @@ export interface Feature {
   /*
    * Optional user-defined configuration.
    */
-  config: FeatureRemoteConfig;
+  config: FlagRemoteConfig;
 
   /**
-   * Function to send analytics events for this feature.
+   * Function to send analytics events for this flag.
    */
   track: () => Promise<Response | undefined>;
 
   /**
-   * Function to request feedback for this feature.
+   * Function to request feedback for this flag.
    */
   requestFeedback: (
-    options: Omit<RequestFeedbackData, "featureKey" | "featureId">,
+    options: Omit<RequestFeedbackData, "featureKey" | "flagKey">,
   ) => void;
 
   /**
-   * The current override status of isEnabled for the feature.
+   * The current override status of isEnabled for the flag.
    */
   isEnabledOverride: boolean | null;
 
   /**
-   * Set the override status for isEnabled for the feature.
+   * Set the override status for `isEnabled` for the flag.
    * Set to `null` to remove the override.
    */
   setIsEnabledOverride(isEnabled: boolean | null): void;
 }
+
+/**
+ * @deprecated
+ * Use `Flag` instead.
+ */
+export type Feature = Flag;
 
 function shouldShowToolbar(opts: InitOptions) {
   const toolbarOpts = opts.toolbar;
@@ -383,7 +396,7 @@ export class ReflagClient {
 
   private readonly autoFeedback: AutoFeedback | undefined;
   private autoFeedbackInit: Promise<void> | undefined;
-  private readonly featuresClient: FeaturesClient;
+  private readonly flagsClient: FlagsClient;
 
   public readonly logger: Logger;
 
@@ -421,7 +434,7 @@ export class ReflagClient {
       credentials: opts?.credentials,
     });
 
-    this.featuresClient = new FeaturesClient(
+    this.flagsClient = new FlagsClient(
       this.httpClient,
       // API expects `other` and we have `otherContext`.
       {
@@ -433,7 +446,7 @@ export class ReflagClient {
       {
         expireTimeMs: opts.expireTimeMs,
         staleTimeMs: opts.staleTimeMs,
-        fallbackFeatures: opts.fallbackFeatures,
+        fallbackFlags: opts.fallbackFlags ?? opts.fallbackFeatures,
         timeoutMs: opts.timeoutMs,
         offline: this.config.offline,
       },
@@ -473,8 +486,8 @@ export class ReflagClient {
 
     // Register hooks
     this.hooks = new HooksManager();
-    this.featuresClient.onUpdated(() => {
-      this.hooks.trigger("featuresUpdated", this.featuresClient.getFeatures());
+    this.flagsClient.onUpdated(() => {
+      this.hooks.trigger("flagsUpdated", this.flagsClient.getFlags());
     });
   }
 
@@ -492,7 +505,7 @@ export class ReflagClient {
       });
     }
 
-    await this.featuresClient.initialize();
+    await this.flagsClient.initialize();
     if (this.context.user && this.config.enableTracking) {
       this.user().catch((e) => {
         this.logger.error("error sending user", e);
@@ -570,7 +583,7 @@ export class ReflagClient {
       id: user.id ?? this.context.user?.id,
     };
     void this.user();
-    await this.featuresClient.setContext(this.context);
+    await this.flagsClient.setContext(this.context);
   }
 
   /**
@@ -593,7 +606,7 @@ export class ReflagClient {
       id: company.id ?? this.context.company?.id,
     };
     void this.company();
-    await this.featuresClient.setContext(this.context);
+    await this.flagsClient.setContext(this.context);
   }
 
   /**
@@ -610,7 +623,7 @@ export class ReflagClient {
       ...this.context.otherContext,
       ...otherContext,
     };
-    await this.featuresClient.setContext(this.context);
+    await this.flagsClient.setContext(this.context);
   }
 
   /**
@@ -694,15 +707,22 @@ export class ReflagClient {
       return;
     }
 
-    if (!options.featureKey) {
+    const flagKey =
+      "flagKey" in options
+        ? options.flagKey
+        : "featureKey" in options
+          ? options.featureKey
+          : undefined;
+
+    if (!flagKey) {
       this.logger.error(
-        "`requestFeedback` call ignored. No `featureKey` provided",
+        "`requestFeedback` call ignored. No `flagKey` provided",
       );
       return;
     }
 
     const feedbackData = {
-      featureKey: options.featureKey,
+      flagKey,
       companyId:
         options.companyId ||
         (this.context.company?.id
@@ -715,7 +735,7 @@ export class ReflagClient {
     // to prevent the same click from closing it.
     setTimeout(() => {
       feedbackLib.openFeedbackForm({
-        key: options.featureKey,
+        key: flagKey,
         title: options.title,
         position: options.position || this.requestFeedbackOptions.position,
         translations:
@@ -749,23 +769,41 @@ export class ReflagClient {
   }
 
   /**
-   * Returns a map of enabled features.
-   * Accessing a feature will *not* send a check event
-   * and `isEnabled` does not take any feature overrides
-   * into account.
-   *
-   * @returns Map of features.
+   * @deprecated
+   * Use `getFlags` instead.
    */
-  getFeatures(): RawFeatures {
-    return this.featuresClient.getFeatures();
+  getFeatures(): RawFlags {
+    return this.getFlags();
   }
 
   /**
-   * Return a feature. Accessing `isEnabled` or `config` will automatically send a `check` event.
-   * @returns A feature.
+   * Returns a map of enabled flags.
+   * Accessing a flag will *not* send a check event
+   * and `isEnabled` does not take any flag overrides
+   * into account.
+   *
+   * @returns Map of flags.
    */
-  getFeature(key: string): Feature {
-    const f = this.getFeatures()[key];
+  getFlags(): RawFlags {
+    return this.flagsClient.getFlags();
+  }
+
+  /**
+   * @deprecated
+   * Use `getFlag` instead.
+   */
+  getFeature(key: string): Flag {
+    return this.getFlag(key);
+  }
+
+  /**
+   * Return a flag. Accessing `isEnabled` or `config` will automatically send a `check` event.
+   *
+   * @param flagKey The key of the flag to return.
+   * @returns A flag.
+   */
+  getFlag(flagKey: string): Flag {
+    const f = this.getFlags()[flagKey];
 
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
@@ -782,7 +820,7 @@ export class ReflagClient {
         self
           .sendCheckEvent({
             action: "check-is-enabled",
-            key,
+            flagKey,
             version: f?.targetingVersion,
             ruleEvaluationResults: f?.ruleEvaluationResults,
             missingContextFields: f?.missingContextFields,
@@ -797,7 +835,7 @@ export class ReflagClient {
         self
           .sendCheckEvent({
             action: "check-config",
-            key,
+            flagKey,
             version: f?.config?.version,
             ruleEvaluationResults: f?.config?.ruleEvaluationResults,
             missingContextFields: f?.config?.missingContextFields,
@@ -812,24 +850,24 @@ export class ReflagClient {
 
         return config;
       },
-      track: () => this.track(key),
+      track: () => this.track(flagKey),
       requestFeedback: (
-        options: Omit<RequestFeedbackData, "featureKey" | "featureId">,
+        options: Omit<RequestFeedbackData, "flagKey" | "featureKey">,
       ) => {
         this.requestFeedback({
-          featureKey: key,
+          flagKey,
           ...options,
         });
       },
-      isEnabledOverride: this.featuresClient.getFeatureOverride(key),
+      isEnabledOverride: this.flagsClient.getFlagOverride(flagKey),
       setIsEnabledOverride(isEnabled: boolean | null) {
-        self.featuresClient.setFeatureOverride(key, isEnabled);
+        self.flagsClient.setFlagOverride(flagKey, isEnabled);
       },
     };
   }
 
   private sendCheckEvent(checkEvent: CheckEvent) {
-    return this.featuresClient.sendCheckEvent(checkEvent, () => {
+    return this.flagsClient.sendCheckEvent(checkEvent, () => {
       this.hooks.trigger(
         checkEvent.action == "check-config" ? "configCheck" : "enabledCheck",
         checkEvent,
@@ -840,8 +878,8 @@ export class ReflagClient {
 
   /**
    * Stop the SDK.
-   * This will stop any automated feedback surveys.
    *
+   * This will stop any automated feedback surveys.
    **/
   async stop() {
     if (this.autoFeedback) {
@@ -850,7 +888,7 @@ export class ReflagClient {
       this.autoFeedback.stop();
     }
 
-    this.featuresClient.stop();
+    this.flagsClient.stop();
   }
 
   /**

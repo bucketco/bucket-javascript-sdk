@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, test, vi, vitest } from "vitest";
 import { ReflagClient } from "../src";
 import { HttpClient } from "../src/httpClient";
 
-import { getFeatures } from "./mocks/handlers";
+import { getFlags } from "./mocks/handlers";
 import { server } from "./mocks/server";
 
 const KEY = "123";
@@ -43,7 +43,7 @@ describe("init", () => {
         "https://example.com/features/evaluated",
         ({ request }: { request: StrictRequest<DefaultBodyType> }) => {
           usedSpecialHost = true;
-          return getFeatures({ request });
+          return getFlags({ request });
         },
       ),
     );

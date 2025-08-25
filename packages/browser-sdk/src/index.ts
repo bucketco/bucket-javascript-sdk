@@ -2,6 +2,8 @@ export type {
   Config,
   Feature,
   FeatureRemoteConfig,
+  Flag,
+  FlagRemoteConfig,
   InitOptions,
   ToolbarOptions,
 } from "./client";
@@ -12,13 +14,6 @@ export type {
   ReflagContext,
   UserContext,
 } from "./context";
-export type {
-  CheckEvent,
-  FallbackFeatureOverride,
-  FetchedFeature,
-  RawFeature,
-  RawFeatures,
-} from "./feature/features";
 export type {
   Feedback,
   FeedbackOptions,
@@ -40,6 +35,17 @@ export type {
   OnScoreSubmitResult,
   OpenFeedbackFormOptions,
 } from "./feedback/ui/types";
+export type {
+  CheckEvent,
+  FallbackFeatureOverride,
+  FallbackFlagOverride,
+  FetchedFeature,
+  FetchedFlag,
+  RawFeature,
+  RawFeatures,
+  RawFlag,
+  RawFlags,
+} from "./flag/flags";
 export type { HookArgs, TrackEvent } from "./hooksManager";
 export type { Logger } from "./logger";
 export { feedbackContainerId, propagatedEvents } from "./ui/constants";

@@ -1,25 +1,21 @@
-import { FEATURE_EVENTS_PER_MIN } from "../config";
+import { FLAG_EVENTS_PER_MIN } from "../config";
 import { HttpClient } from "../httpClient";
 import { Logger, loggerWithPrefix } from "../logger";
 import RateLimiter from "../rateLimiter";
 
-import {
-  FeatureCache,
-  isObject,
-  parseAPIFeaturesResponse,
-} from "./featureCache";
+import { FlagCache, isObject, parseAPIFeaturesResponse } from "./flagCache";
 
 /**
  * A feature fetched from the server.
  */
-export type FetchedFeature = {
+export type FetchedFlag = {
   /**
-   * Feature key.
+   * Flag key.
    */
   key: string;
 
   /**
-   * Result of feature flag evaluation.
+   * Result of flag evaluation.
    * Note: does not take local overrides into account.
    */
   isEnabled: boolean;
@@ -70,44 +66,73 @@ export type FetchedFeature = {
   };
 };
 
+/**
+ * @deprecated
+ * Use FetchedFlag instead
+ */
+export type FetchedFeature = FetchedFlag;
+
+/**
+ * @deprecated
+ * Use FLAGS_UPDATED_EVENT instead
+ */
 const FEATURES_UPDATED_EVENT = "featuresUpdated";
+const FLAGS_UPDATED_EVENT = "flagsUpdated";
 
 /**
  * @internal
  */
-export type FetchedFeatures = Record<string, FetchedFeature | undefined>;
+export type FetchedFlags = Record<string, FetchedFlag | undefined>;
 
-export type RawFeature = FetchedFeature & {
+export type RawFlag = FetchedFlag & {
   /**
    * If not null, the result is being overridden locally
    */
   isEnabledOverride: boolean | null;
 };
 
-export type RawFeatures = Record<string, RawFeature>;
+/**
+ * @deprecated
+ * Use RawFlag instead
+ */
+export type RawFeature = RawFlag;
 
-export type FallbackFeatureOverride =
+export type RawFlags = Record<string, RawFlag>;
+
+/**
+ * @deprecated
+ * Use RawFlags instead
+ */
+export type RawFeatures = RawFlags;
+
+export type FallbackFlagOverride =
   | {
       key: string;
       payload: any;
     }
   | true;
 
+/**
+ * @deprecated
+ * Use FallbackFlagOverride instead
+ */
+export type FallbackFeatureOverride = FallbackFlagOverride;
+
 type Config = {
-  fallbackFeatures: Record<string, FallbackFeatureOverride>;
+  fallbackFlags: Record<string, FallbackFlagOverride>;
   timeoutMs: number;
   staleWhileRevalidate: boolean;
   offline: boolean;
 };
 
-export const DEFAULT_FEATURES_CONFIG: Config = {
-  fallbackFeatures: {},
+export const DEFAULT_FLAGS_CONFIG: Config = {
+  fallbackFlags: {},
   timeoutMs: 5000,
   staleWhileRevalidate: false,
   offline: false,
 };
 
-export function validateFeaturesResponse(response: any) {
+export function validateFlagsResponse(response: any) {
   if (!isObject(response)) {
     return;
   }
@@ -144,7 +169,7 @@ export function flattenJSON(obj: Record<string, any>): Record<string, any> {
 }
 
 /**
- * Event representing checking the feature flag evaluation result
+ * Event representing checking the flag evaluation result
  */
 export interface CheckEvent {
   /**
@@ -153,13 +178,20 @@ export interface CheckEvent {
   action: "check-is-enabled" | "check-config";
 
   /**
-   * Feature key.
+   * Flag key.
    */
-  key: string;
+  flagKey?: string;
 
   /**
-   * Result of feature flag or configuration evaluation.
-   * If `action` is `check-is-enabled`, this is the result of the feature flag evaluation and `value` is a boolean.
+   * @deprecated
+   *
+   * Use `flagKey` instead
+   */
+  key?: string;
+
+  /**
+   * Result of flag or configuration evaluation.
+   * If `action` is `check-is-enabled`, this is the result of the flag evaluation and `value` is a boolean.
    * If `action` is `check-config`, this is the result of the configuration evaluation.
    */
   value?: boolean | { key: string; payload: any };
@@ -186,18 +218,18 @@ type context = {
   other?: Record<string, any>;
 };
 
-export const FEATURES_EXPIRE_MS = 30 * 24 * 60 * 60 * 1000; // expire entirely after 30 days
+export const FLAGS_EXPIRE_MS = 30 * 24 * 60 * 60 * 1000; // expire entirely after 30 days
 
-const localStorageFetchedFeaturesKey = `__reflag_fetched_features`;
+const localStorageFetchedFlagsKey = `__reflag_fetched_flags`;
 const localStorageOverridesKey = `__reflag_overrides`;
 
-type OverridesFeatures = Record<string, boolean | null>;
+type OverridesFlags = Record<string, boolean | null>;
 
-function setOverridesCache(overrides: OverridesFeatures) {
+function setOverridesCache(overrides: OverridesFlags) {
   localStorage.setItem(localStorageOverridesKey, JSON.stringify(overrides));
 }
 
-function getOverridesCache(): OverridesFeatures {
+function getOverridesCache(): OverridesFlags {
   const cachedOverrides = JSON.parse(
     localStorage.getItem(localStorageOverridesKey) || "{}",
   );
@@ -212,12 +244,12 @@ function getOverridesCache(): OverridesFeatures {
 /**
  * @internal
  */
-export class FeaturesClient {
-  private cache: FeatureCache;
-  private fetchedFeatures: FetchedFeatures;
-  private featureOverrides: OverridesFeatures = {};
+export class FlagsClient {
+  private cache: FlagCache;
+  private fetchedFlags: FetchedFlags;
+  private flagOverrides: OverridesFlags = {};
 
-  private features: RawFeatures = {};
+  private flags: RawFlags = {};
 
   private config: Config;
   private rateLimiter: RateLimiter;
@@ -231,67 +263,66 @@ export class FeaturesClient {
     private context: context,
     logger: Logger,
     options?: {
-      fallbackFeatures?: Record<string, FallbackFeatureOverride> | string[];
+      fallbackFlags?: Record<string, FallbackFlagOverride> | string[];
       timeoutMs?: number;
       staleTimeMs?: number;
       expireTimeMs?: number;
-      cache?: FeatureCache;
+      cache?: FlagCache;
       rateLimiter?: RateLimiter;
       offline?: boolean;
     },
   ) {
-    this.fetchedFeatures = {};
-    this.logger = loggerWithPrefix(logger, "[Features]");
+    this.fetchedFlags = {};
+    this.logger = loggerWithPrefix(logger, "[Flags]");
     this.cache = options?.cache
       ? options.cache
-      : new FeatureCache({
+      : new FlagCache({
           storage: {
-            get: () => localStorage.getItem(localStorageFetchedFeaturesKey),
+            get: () => localStorage.getItem(localStorageFetchedFlagsKey),
             set: (value) =>
-              localStorage.setItem(localStorageFetchedFeaturesKey, value),
+              localStorage.setItem(localStorageFetchedFlagsKey, value),
           },
           staleTimeMs: options?.staleTimeMs ?? 0,
-          expireTimeMs: options?.expireTimeMs ?? FEATURES_EXPIRE_MS,
+          expireTimeMs: options?.expireTimeMs ?? FLAGS_EXPIRE_MS,
         });
 
-    let fallbackFeatures: Record<string, FallbackFeatureOverride>;
+    let fallbackFlags: Record<string, FallbackFlagOverride>;
 
-    if (Array.isArray(options?.fallbackFeatures)) {
-      fallbackFeatures = options.fallbackFeatures.reduce(
+    if (Array.isArray(options?.fallbackFlags)) {
+      fallbackFlags = options.fallbackFlags.reduce(
         (acc, key) => {
           acc[key] = true;
           return acc;
         },
-        {} as Record<string, FallbackFeatureOverride>,
+        {} as Record<string, FallbackFlagOverride>,
       );
     } else {
-      fallbackFeatures = options?.fallbackFeatures ?? {};
+      fallbackFlags = options?.fallbackFlags ?? {};
     }
 
     this.config = {
-      ...DEFAULT_FEATURES_CONFIG,
+      ...DEFAULT_FLAGS_CONFIG,
       ...options,
-      fallbackFeatures,
+      fallbackFlags,
     };
 
     this.rateLimiter =
-      options?.rateLimiter ??
-      new RateLimiter(FEATURE_EVENTS_PER_MIN, this.logger);
+      options?.rateLimiter ?? new RateLimiter(FLAG_EVENTS_PER_MIN, this.logger);
 
     try {
-      const storedFeatureOverrides = getOverridesCache();
-      for (const key in storedFeatureOverrides) {
-        this.featureOverrides[key] = storedFeatureOverrides[key];
+      const storedFlagOverrides = getOverridesCache();
+      for (const key in storedFlagOverrides) {
+        this.flagOverrides[key] = storedFlagOverrides[key];
       }
     } catch (e) {
-      this.logger.warn("error getting feature overrides from cache", e);
-      this.featureOverrides = {};
+      this.logger.warn("error getting flag overrides from cache", e);
+      this.flagOverrides = {};
     }
   }
 
   async initialize() {
-    const features = (await this.maybeFetchFeatures()) || {};
-    this.setFetchedFeatures(features);
+    const flags = (await this.maybeFetchFlags()) || {};
+    this.setFetchedFlags(flags);
   }
 
   async setContext(context: context) {
@@ -307,27 +338,27 @@ export class FeaturesClient {
   }
 
   /**
-   * Register a callback to be called when the features are updated.
-   * Features are not guaranteed to have actually changed when the callback is called.
+   * Register a callback to be called when the flags are updated.
+   * Flags are not guaranteed to have actually changed when the callback is called.
    *
-   * @param callback this will be called when the features are updated.
+   * @param callback this will be called when the flags are updated.
    * @returns a function that can be called to remove the listener
    */
   onUpdated(callback: () => void) {
-    this.eventTarget.addEventListener(FEATURES_UPDATED_EVENT, callback, {
+    this.eventTarget.addEventListener(FLAGS_UPDATED_EVENT, callback, {
       signal: this.abortController.signal,
     });
   }
 
-  getFeatures(): RawFeatures {
-    return this.features;
+  getFlags(): RawFlags {
+    return this.flags;
   }
 
-  getFetchedFeatures(): FetchedFeatures {
-    return this.fetchedFeatures;
+  getFetchedFlags(): FetchedFlags {
+    return this.fetchedFlags;
   }
 
-  public async fetchFeatures(): Promise<FetchedFeatures | undefined> {
+  public async fetchFlags(): Promise<FetchedFlags | undefined> {
     const params = this.fetchParams();
     try {
       const res = await this.httpClient.get({
@@ -352,23 +383,23 @@ export class FeaturesClient {
         );
       }
 
-      const typeRes = validateFeaturesResponse(await res.json());
+      const typeRes = validateFlagsResponse(await res.json());
       if (!typeRes || !typeRes.success) {
         throw new Error("unable to validate response");
       }
 
       return typeRes.features;
     } catch (e) {
-      this.logger.error("error fetching features: ", e);
+      this.logger.error("error fetching flags: ", e);
       return;
     }
   }
 
   /**
-   * Send a feature "check" event.
+   * Send a flag "check" event.
    *
    *
-   * @param checkEvent - The feature to send the event for.
+   * @param checkEvent - The flag to send the event for.
    * @param cb - Callback to call after the event is sent. Might be skipped if the event was rate limited.
    */
   async sendCheckEvent(checkEvent: CheckEvent, cb: () => void) {
@@ -380,7 +411,7 @@ export class FeaturesClient {
     await this.rateLimiter.rateLimited(rateLimitKey, async () => {
       const payload = {
         action: checkEvent.action,
-        key: checkEvent.key,
+        key: checkEvent.flagKey ?? checkEvent.key,
         targetingVersion: checkEvent.version,
         evalContext: this.context,
         evalResult: checkEvent.value,
@@ -394,38 +425,42 @@ export class FeaturesClient {
           body: payload,
         })
         .catch((e: any) => {
-          this.logger.warn(`failed to send feature check event`, e);
+          this.logger.warn(`failed to send flag check event`, e);
         });
 
-      this.logger.debug(`sent feature event`, payload);
+      this.logger.debug(`sent flag event`, payload);
       cb();
     });
 
     return checkEvent.value;
   }
 
-  private triggerFeaturesChanged() {
-    const mergedFeatures: RawFeatures = {};
+  private triggerFlagsChanged() {
+    const mergedFlags: RawFlags = {};
 
-    // merge fetched features with overrides into `this.features`
-    for (const key in this.fetchedFeatures) {
-      const fetchedFeature = this.fetchedFeatures[key];
-      if (!fetchedFeature) continue;
-      const isEnabledOverride = this.featureOverrides[key] ?? null;
-      mergedFeatures[key] = {
-        ...fetchedFeature,
+    // merge fetched flags with overrides into `this.flags`
+    for (const key in this.fetchedFlags) {
+      const fetchedFlag = this.fetchedFlags[key];
+      if (!fetchedFlag) {
+        continue;
+      }
+
+      const isEnabledOverride = this.flagOverrides[key] ?? null;
+      mergedFlags[key] = {
+        ...fetchedFlag,
         isEnabledOverride,
       };
     }
 
-    this.features = mergedFeatures;
+    this.flags = mergedFlags;
 
     this.eventTarget.dispatchEvent(new Event(FEATURES_UPDATED_EVENT));
+    this.eventTarget.dispatchEvent(new Event(FLAGS_UPDATED_EVENT));
   }
 
-  private setFetchedFeatures(features: FetchedFeatures) {
-    this.fetchedFeatures = features;
-    this.triggerFeaturesChanged();
+  private setFetchedFlags(flags: FetchedFlags) {
+    this.fetchedFlags = flags;
+    this.triggerFlagsChanged();
   }
 
   private fetchParams() {
@@ -440,25 +475,25 @@ export class FeaturesClient {
     return params;
   }
 
-  private warnMissingFeatureContextFields(features: FetchedFeatures) {
+  private warnMissingFlagContextFields(flags: FetchedFlags) {
     const report: Record<string, string[]> = {};
-    for (const featureKey in features) {
-      const feature = features[featureKey];
-      if (feature?.missingContextFields?.length) {
-        report[feature.key] = feature.missingContextFields;
+    for (const flagKey in flags) {
+      const flag = flags[flagKey];
+      if (flag?.missingContextFields?.length) {
+        report[flag.key] = flag.missingContextFields;
       }
 
-      if (feature?.config?.missingContextFields?.length) {
-        report[`${feature.key}.config`] = feature.config.missingContextFields;
+      if (flag?.config?.missingContextFields?.length) {
+        report[`${flag.key}.config`] = flag.config.missingContextFields;
       }
     }
 
     if (Object.keys(report).length > 0) {
       this.rateLimiter.rateLimited(
-        `feature-missing-context-fields:${this.fetchParams().toString()}`,
+        `flag-missing-context-fields:${this.fetchParams().toString()}`,
         () => {
           this.logger.warn(
-            `feature/remote config targeting rules might not be correctly evaluated due to missing context fields.`,
+            `flag/remote config targeting might not be correctly evaluated due to missing context fields.`,
             report,
           );
         },
@@ -466,7 +501,7 @@ export class FeaturesClient {
     }
   }
 
-  private async maybeFetchFeatures(): Promise<FetchedFeatures | undefined> {
+  private async maybeFetchFlags(): Promise<FetchedFlags | undefined> {
     if (this.config.offline) {
       return;
     }
@@ -475,47 +510,47 @@ export class FeaturesClient {
     const cachedItem = this.cache.get(cacheKey);
 
     if (cachedItem) {
-      if (!cachedItem.stale) return cachedItem.features;
+      if (!cachedItem.stale) return cachedItem.flags;
 
       // serve successful stale cache if `staleWhileRevalidate` is enabled
       if (this.config.staleWhileRevalidate) {
         // re-fetch in the background, but immediately return last successful value
-        this.fetchFeatures()
-          .then((features) => {
-            if (!features) return;
+        this.fetchFlags()
+          .then((flags) => {
+            if (!flags) return;
 
             this.cache.set(cacheKey, {
-              features,
+              flags,
             });
-            this.setFetchedFeatures(features);
+            this.setFetchedFlags(flags);
           })
           .catch(() => {
             // we don't care about the result, we just want to re-fetch
           });
-        return cachedItem.features;
+        return cachedItem.flags;
       }
     }
 
     // if there's no cached item or there is a stale one but `staleWhileRevalidate` is disabled
     // try fetching a new one
-    const fetchedFeatures = await this.fetchFeatures();
+    const fetchedFlags = await this.fetchFlags();
 
-    if (fetchedFeatures) {
+    if (fetchedFlags) {
       this.cache.set(cacheKey, {
-        features: fetchedFeatures,
+        flags: fetchedFlags,
       });
 
-      this.warnMissingFeatureContextFields(fetchedFeatures);
-      return fetchedFeatures;
+      this.warnMissingFlagContextFields(fetchedFlags);
+      return fetchedFlags;
     }
 
     if (cachedItem) {
       // fetch failed, return stale cache
-      return cachedItem.features;
+      return cachedItem.flags;
     }
 
     // fetch failed, nothing cached => return fallbacks
-    return Object.entries(this.config.fallbackFeatures).reduce(
+    return Object.entries(this.config.fallbackFlags).reduce(
       (acc, [key, override]) => {
         acc[key] = {
           key,
@@ -530,26 +565,26 @@ export class FeaturesClient {
         };
         return acc;
       },
-      {} as FetchedFeatures,
+      {} as FetchedFlags,
     );
   }
 
-  setFeatureOverride(key: string, isEnabled: boolean | null) {
+  setFlagOverride(flagKey: string, isEnabled: boolean | null) {
     if (!(typeof isEnabled === "boolean" || isEnabled === null)) {
-      throw new Error("setFeatureOverride: isEnabled must be boolean or null");
+      throw new Error("setFlagOverride: isEnabled must be boolean or null");
     }
 
     if (isEnabled === null) {
-      delete this.featureOverrides[key];
+      delete this.flagOverrides[flagKey];
     } else {
-      this.featureOverrides[key] = isEnabled;
+      this.flagOverrides[flagKey] = isEnabled;
     }
-    setOverridesCache(this.featureOverrides);
+    setOverridesCache(this.flagOverrides);
 
-    this.triggerFeaturesChanged();
+    this.triggerFlagsChanged();
   }
 
-  getFeatureOverride(key: string): boolean | null {
-    return this.featureOverrides[key] ?? null;
+  getFlagOverride(flagKey: string): boolean | null {
+    return this.flagOverrides[flagKey] ?? null;
   }
 }

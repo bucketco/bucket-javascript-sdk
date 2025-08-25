@@ -1,20 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ReflagClient } from "../src/client";
-import { FeaturesClient } from "../src/feature/features";
+import { FlagsClient } from "../src/flag/flags";
 import { HttpClient } from "../src/httpClient";
 
-import { featuresResult } from "./mocks/handlers";
+import { flagsResult } from "./mocks/handlers";
 
 describe("ReflagClient", () => {
   let client: ReflagClient;
   const httpClientPost = vi.spyOn(HttpClient.prototype as any, "post");
   const httpClientGet = vi.spyOn(HttpClient.prototype as any, "get");
 
-  const featureClientSetContext = vi.spyOn(
-    FeaturesClient.prototype,
-    "setContext",
-  );
+  const flagsClientSetContext = vi.spyOn(FlagsClient.prototype, "setContext");
 
   beforeEach(() => {
     client = new ReflagClient({
@@ -28,7 +25,7 @@ describe("ReflagClient", () => {
 
   describe("updateUser", () => {
     it("should update the user context", async () => {
-      // and send new user data and trigger feature update
+      // and send new user data and trigger flag update
       const updatedUser = { name: "New User" };
 
       await client.updateUser(updatedUser);
@@ -41,13 +38,13 @@ describe("ReflagClient", () => {
           attributes: { name: updatedUser.name },
         },
       });
-      expect(featureClientSetContext).toHaveBeenCalledWith(client["context"]);
+      expect(flagsClientSetContext).toHaveBeenCalledWith(client["context"]);
     });
   });
 
   describe("updateCompany", () => {
     it("should update the company context", async () => {
-      // send new company data and trigger feature update
+      // send new company data and trigger flag update
       const updatedCompany = { name: "New Company" };
 
       await client.updateCompany(updatedCompany);
@@ -64,17 +61,19 @@ describe("ReflagClient", () => {
           attributes: { name: updatedCompany.name },
         },
       });
-      expect(featureClientSetContext).toHaveBeenCalledWith(client["context"]);
+      expect(flagsClientSetContext).toHaveBeenCalledWith(client["context"]);
     });
   });
 
-  describe("getFeature", () => {
+  describe("getFlag", () => {
     it("takes overrides into account", async () => {
       await client.initialize();
-      expect(featuresResult["featureA"].isEnabled).toBe(true);
-      expect(client.getFeature("featureA").isEnabled).toBe(true);
-      client.getFeature("featureA").setIsEnabledOverride(false);
-      expect(client.getFeature("featureA").isEnabled).toBe(false);
+
+      expect(flagsResult["flagA"].isEnabled).toBe(true);
+      expect(client.getFlag("flagA").isEnabled).toBe(true);
+
+      client.getFlag("flagA").setIsEnabledOverride(false);
+      expect(client.getFlag("flagA").isEnabled).toBe(false);
     });
   });
 
@@ -86,7 +85,7 @@ describe("ReflagClient", () => {
       const checkHook = vi.fn();
       const checkHookIsEnabled = vi.fn();
       const checkHookConfig = vi.fn();
-      const featuresUpdated = vi.fn();
+      const flagsUpdated = vi.fn();
 
       client.on("track", trackHook);
       client.on("user", userHook);
@@ -94,7 +93,7 @@ describe("ReflagClient", () => {
       client.on("check", checkHook);
       client.on("configCheck", checkHookConfig);
       client.on("enabledCheck", checkHookIsEnabled);
-      client.on("featuresUpdated", featuresUpdated);
+      client.on("flagsUpdated", flagsUpdated);
 
       await client.track("test-event");
       expect(trackHook).toHaveBeenCalledWith({
@@ -111,20 +110,20 @@ describe("ReflagClient", () => {
       expect(companyHook).toHaveBeenCalledWith(client["context"].company);
 
       // eslint-disable-next-line @typescript-eslint/no-unused-expressions -- special getter triggering event
-      client.getFeature("featureA").isEnabled;
+      client.getFlag("flagA").isEnabled;
       expect(checkHookIsEnabled).toHaveBeenCalled();
       expect(checkHook).toHaveBeenCalled();
 
       checkHook.mockReset();
 
       // eslint-disable-next-line @typescript-eslint/no-unused-expressions -- special getter triggering event
-      client.getFeature("featureA").config;
+      client.getFlag("flagA").config;
       expect(checkHookConfig).toHaveBeenCalled();
       expect(checkHook).toHaveBeenCalled();
 
-      expect(featuresUpdated).not.toHaveBeenCalled();
+      expect(flagsUpdated).not.toHaveBeenCalled();
       await client.updateOtherContext({ key: "value" });
-      expect(featuresUpdated).toHaveBeenCalled();
+      expect(flagsUpdated).toHaveBeenCalled();
 
       // Remove hooks
       client.off("track", trackHook);
@@ -133,7 +132,7 @@ describe("ReflagClient", () => {
       client.off("check", checkHook);
       client.off("configCheck", checkHookConfig);
       client.off("enabledCheck", checkHookIsEnabled);
-      client.off("featuresUpdated", featuresUpdated);
+      client.off("flagsUpdated", flagsUpdated);
 
       // Reset mocks
       trackHook.mockReset();
@@ -142,16 +141,16 @@ describe("ReflagClient", () => {
       checkHook.mockReset();
       checkHookIsEnabled.mockReset();
       checkHookConfig.mockReset();
-      featuresUpdated.mockReset();
+      flagsUpdated.mockReset();
 
       // Trigger events again
       await client.track("test-event");
       await client["user"]();
       await client["company"]();
       // eslint-disable-next-line @typescript-eslint/no-unused-expressions -- special getter triggering event
-      client.getFeature("featureA").isEnabled;
+      client.getFlag("flagA").isEnabled;
       // eslint-disable-next-line @typescript-eslint/no-unused-expressions -- special getter triggering event
-      client.getFeature("featureA").config;
+      client.getFlag("flagA").config;
       await client.updateOtherContext({ key: "value" });
 
       // Ensure hooks are not called
@@ -161,7 +160,7 @@ describe("ReflagClient", () => {
       expect(checkHook).not.toHaveBeenCalled();
       expect(checkHookIsEnabled).not.toHaveBeenCalled();
       expect(checkHookConfig).not.toHaveBeenCalled();
-      expect(featuresUpdated).not.toHaveBeenCalled();
+      expect(flagsUpdated).not.toHaveBeenCalled();
     });
   });
 
@@ -177,7 +176,7 @@ describe("ReflagClient", () => {
 
       await client.initialize();
       await client.track("offline-event");
-      await client.feedback({ featureKey: "featureA", score: 5 });
+      await client.feedback({ flagKey: "flagA", score: 5 });
       await client.updateUser({ name: "New User" });
       await client.updateCompany({ name: "New Company" });
       await client.stop();

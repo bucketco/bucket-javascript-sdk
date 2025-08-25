@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CompanyContext, UserContext } from "../src";
-import { CheckEvent, RawFeatures } from "../src/feature/features";
+import { CheckEvent, RawFeatures } from "../src/flag/flags";
 import { HooksManager } from "../src/hooksManager";
 
 describe("HookManager", () => {

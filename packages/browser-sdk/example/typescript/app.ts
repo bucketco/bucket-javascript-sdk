@@ -2,7 +2,7 @@ import { ReflagClient, CheckEvent, RawFeatures } from "../../src";
 
 const urlParams = new URLSearchParams(window.location.search);
 const publishableKey = urlParams.get("publishableKey");
-const featureKey = urlParams.get("featureKey") ?? "huddles";
+const flagKey = urlParams.get("flagKey") ?? "huddles";
 
 if (!publishableKey) {
   throw Error("publishableKey is missing");
@@ -20,10 +20,10 @@ const reflag = new ReflagClient({
 
 document
   .getElementById("startHuddle")
-  ?.addEventListener("click", () => reflag.track(featureKey));
+  ?.addEventListener("click", () => reflag.track(flagKey));
 document.getElementById("giveFeedback")?.addEventListener("click", (event) =>
   reflag.requestFeedback({
-    featureKey,
+    flagKey,
     position: { type: "POPOVER", anchor: event.currentTarget as HTMLElement },
   }),
 );
@@ -34,8 +34,8 @@ reflag.initialize().then(() => {
   if (loadingElem) loadingElem.style.display = "none";
 });
 
-reflag.on("featuresUpdated", (features: RawFeatures) => {
-  const { isEnabled } = features[featureKey];
+reflag.on("flagsUpdated", (flags: RawFeatures) => {
+  const { isEnabled } = flags[flagKey];
 
   const startHuddleElem = document.getElementById("start-huddle");
   if (isEnabled) {
