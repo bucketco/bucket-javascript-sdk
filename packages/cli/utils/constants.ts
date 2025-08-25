@@ -6,7 +6,7 @@ export const CLIENT_VERSION_HEADER_NAME = "reflag-sdk-version";
 export const CLIENT_VERSION_HEADER_VALUE = (version: string) =>
   `cli/${version}`;
 
-export const CONFIG_FILE_NAME = "bucket.config.json";
+export const CONFIG_FILE_NAME = "reflag.config.json";
 export const AUTH_FILE = join(os.homedir(), ".reflag-auth");
 export const SCHEMA_URL = `https://unpkg.com/@reflag/cli@latest/schema.json`;
 

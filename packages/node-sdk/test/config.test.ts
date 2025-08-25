@@ -29,7 +29,7 @@ describe("config tests", () => {
   it("should load ENV VARS", () => {
     process.env.REFLAG_SECRET_KEY = "mySecretKeyFromEnv";
     process.env.REFLAG_OFFLINE = "true";
-    process.env.REFLAG_HOST = "http://localhost:4999";
+    process.env.REFLAG_API_BASE_URL = "http://localhost:4999";
     process.env.REFLAG_FEATURES_ENABLED = "myNewFeature";
     process.env.REFLAG_FEATURES_DISABLED = "myNewFeatureFalse";
 
