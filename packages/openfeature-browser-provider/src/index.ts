@@ -11,7 +11,7 @@ import {
   TrackingEventDetails,
 } from "@openfeature/web-sdk";
 
-import { Feature, InitOptions, ReflagClient } from "@reflag/browser-sdk";
+import { Flag, InitOptions, ReflagClient } from "@reflag/browser-sdk";
 
 export type ContextTranslationFn = (
   context?: EvaluationContext,
@@ -101,10 +101,10 @@ export class ReflagBrowserSDKProvider implements Provider {
     await this.initialize(newContext);
   }
 
-  private resolveFeature<T extends JsonValue>(
+  private resolveFlag<T extends JsonValue>(
     flagKey: string,
     defaultValue: T,
-    resolveFn: (feature: Feature) => ResolutionDetails<T>,
+    resolveFn: (flag: Flag) => ResolutionDetails<T>,
   ): ResolutionDetails<T> {
     if (!this._client) {
       return {
@@ -115,9 +115,9 @@ export class ReflagBrowserSDKProvider implements Provider {
       } satisfies ResolutionDetails<T>;
     }
 
-    const features = this._client.getFeatures();
-    if (flagKey in features) {
-      return resolveFn(this._client.getFeature(flagKey));
+    const flags = this._client.getFlags();
+    if (flagKey in flags) {
+      return resolveFn(this._client.getFlag(flagKey));
     }
 
     return {
@@ -129,10 +129,10 @@ export class ReflagBrowserSDKProvider implements Provider {
   }
 
   resolveBooleanEvaluation(flagKey: string, defaultValue: boolean) {
-    return this.resolveFeature(flagKey, defaultValue, (feature) => {
+    return this.resolveFlag(flagKey, defaultValue, (flag) => {
       return {
-        value: feature.isEnabled,
-        variant: feature.config.key,
+        value: flag.isEnabled,
+        variant: flag.config.key,
         reason: StandardResolutionReasons.TARGETING_MATCH,
       };
     });
@@ -152,8 +152,8 @@ export class ReflagBrowserSDKProvider implements Provider {
     flagKey: string,
     defaultValue: string,
   ): ResolutionDetails<string> {
-    return this.resolveFeature(flagKey, defaultValue, (feature) => {
-      if (!feature.config.key) {
+    return this.resolveFlag(flagKey, defaultValue, (flag) => {
+      if (!flag.config.key) {
         return {
           value: defaultValue,
           reason: StandardResolutionReasons.DEFAULT,
@@ -161,8 +161,8 @@ export class ReflagBrowserSDKProvider implements Provider {
       }
 
       return {
-        value: feature.config.key as string,
-        variant: feature.config.key,
+        value: flag.config.key as string,
+        variant: flag.config.key,
         reason: StandardResolutionReasons.TARGETING_MATCH,
       };
     });
@@ -172,28 +172,28 @@ export class ReflagBrowserSDKProvider implements Provider {
     flagKey: string,
     defaultValue: T,
   ) {
-    return this.resolveFeature(flagKey, defaultValue, (feature) => {
+    return this.resolveFlag(flagKey, defaultValue, (flag) => {
       const expType = typeof defaultValue;
 
-      const payloadType = typeof feature.config.payload;
+      const payloadType = typeof flag.config.payload;
 
       if (
-        feature.config.payload === undefined ||
-        feature.config.payload === null ||
+        flag.config.payload === undefined ||
+        flag.config.payload === null ||
         payloadType !== expType
       ) {
         return {
           value: defaultValue,
           reason: StandardResolutionReasons.ERROR,
-          variant: feature.config.key,
+          variant: flag.config.key,
           errorCode: ErrorCode.TYPE_MISMATCH,
           errorMessage: `Expected remote config payload of type \`${expType}\` but got \`${payloadType}\`.`,
         };
       }
 
       return {
-        value: feature.config.payload,
-        variant: feature.config.key,
+        value: flag.config.payload,
+        variant: flag.config.key,
         reason: StandardResolutionReasons.TARGETING_MATCH,
       };
     });
