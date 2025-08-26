@@ -111,7 +111,7 @@ function FeatureRow({
         <Feature class="feature-icon" />
         <a
           class="feature-link"
-          href={`${appBaseUrl}/envs/current/features/by-key/${feature.key}`}
+          href={`${appBaseUrl}/env-current/features/by-key/${feature.key}`}
           rel="noreferrer"
           tabIndex={index + 1}
           target="_blank"

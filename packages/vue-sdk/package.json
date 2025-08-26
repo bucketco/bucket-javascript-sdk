@@ -1,6 +1,6 @@
 {
   "name": "@bucketco/vue-sdk",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -34,7 +34,7 @@
     }
   },
   "dependencies": {
-    "@bucketco/browser-sdk": "3.3.3",
+    "@bucketco/browser-sdk": "3.3.4",
     "canonical-json": "^0.2.0"
   },
   "peerDependencies": {
