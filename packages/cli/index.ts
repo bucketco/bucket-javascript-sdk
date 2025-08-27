@@ -5,7 +5,7 @@ import ora from "ora";
 
 import { registerAppCommands } from "./commands/apps.js";
 import { registerAuthCommands } from "./commands/auth.js";
-import { registerFeatureCommands } from "./commands/features.js";
+import { registerFlagsCommands } from "./commands/flags.js";
 import { registerInitCommand } from "./commands/init.js";
 import { registerMcpCommand } from "./commands/mcp.js";
 import { registerNewCommand } from "./commands/new.js";
@@ -123,7 +123,7 @@ async function main() {
   registerInitCommand(program);
   registerAuthCommands(program);
   registerAppCommands(program);
-  registerFeatureCommands(program);
+  registerFlagsCommands(program);
   registerMcpCommand(program);
   registerRulesCommand(program);
 
