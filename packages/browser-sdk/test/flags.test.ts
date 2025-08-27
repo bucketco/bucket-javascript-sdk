@@ -156,7 +156,7 @@ describe("FlagsClient", () => {
         isEnabled: true,
         config: undefined,
         key: "huddle",
-        isEnabledOverride: null,
+        valueOverride: null,
       },
     });
   });
@@ -183,13 +183,13 @@ describe("FlagsClient", () => {
         isEnabled: true,
         config: { key: "john", payload: { something: "else" } },
         key: "huddle",
-        isEnabledOverride: null,
+        valueOverride: null,
       },
       zoom: {
         isEnabled: true,
         config: undefined,
         key: "zoom",
-        isEnabledOverride: null,
+        valueOverride: null,
       },
     });
   });
@@ -264,7 +264,7 @@ describe("FlagsClient", () => {
         isEnabled: true,
         key: "flagB",
         targetingVersion: 1,
-        isEnabledOverride: null,
+        valueOverride: null,
       } satisfies RawFlag,
     });
 
@@ -303,7 +303,7 @@ describe("FlagsClient", () => {
           isEnabled: true,
           targetingVersion: 1,
           key: "flagA",
-          isEnabledOverride: null,
+          valueOverride: null,
         } satisfies RawFlag,
       }),
     );
@@ -350,7 +350,7 @@ describe("FlagsClient", () => {
     });
 
     expect(client.getFlags().flagA.isEnabled).toBe(true);
-    expect(client.getFlags().flagA.isEnabledOverride).toBe(null);
+    expect(client.getFlags().flagA.valueOverride).toBe(null);
 
     expect(updated).toBe(false);
 
@@ -358,7 +358,7 @@ describe("FlagsClient", () => {
 
     expect(updated).toBe(true);
     expect(client.getFlags().flagA.isEnabled).toBe(true);
-    expect(client.getFlags().flagA.isEnabledOverride).toBe(false);
+    expect(client.getFlags().flagA.valueOverride).toBe(false);
   });
 
   test("handled overrides for flags not returned by API", async () => {
@@ -375,7 +375,7 @@ describe("FlagsClient", () => {
     });
 
     expect(client.getFlags().flagB.isEnabled).toBe(true);
-    expect(client.getFlags().flagB.isEnabledOverride).toBe(null);
+    expect(client.getFlags().flagB.valueOverride).toBe(null);
 
     client.setFlagOverride("flagC", true);
 

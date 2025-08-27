@@ -35,7 +35,7 @@ export const flagsResult = Object.entries(flagsResponse.features).reduce(
     acc[key] = {
       ...flag!,
       config: flag.config,
-      isEnabledOverride: null,
+      valueOverride: null,
     };
     return acc;
   },

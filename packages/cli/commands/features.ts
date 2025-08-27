@@ -5,7 +5,7 @@ import { relative } from "node:path";
 import ora, { Ora } from "ora";
 
 import { App, getApp, getOrg } from "../services/bootstrap.js";
-import { createFeature, Feature, listFeatures } from "../services/features.js";
+import { createFeature, Feature, listFeatures } from "../services/flags.js";
 import { configStore } from "../stores/config.js";
 import {
   handleError,

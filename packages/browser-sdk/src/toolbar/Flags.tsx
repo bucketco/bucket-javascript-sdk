@@ -6,22 +6,24 @@ import { Feature as Flag } from "../ui/icons/Feature";
 import { Switch } from "./Switch";
 import { FlagItem } from "./Toolbar";
 
+type FlagTableProps = {
+  flags: FlagItem[];
+  searchQuery: string | null;
+  appBaseUrl: string;
+  isOpen: boolean;
+  setOverride: (key: string, value: boolean | null) => void;
+};
+
 export function FlagsTable({
   flags,
   searchQuery,
   appBaseUrl,
   isOpen,
-  setIsEnabledOverride,
-}: {
-  flags: FlagItem[];
-  searchQuery: string | null;
-  appBaseUrl: string;
-  isOpen: boolean;
-  setIsEnabledOverride: (key: string, isEnabled: boolean | null) => void;
-}) {
+  setOverride,
+}: FlagTableProps) {
   const hasFlags = flags.length > 0;
   const hasShownFlags = flags.some((flag) =>
-    flag.key
+    flag.flagKey
       .toLocaleLowerCase()
       .includes(searchQuery?.toLocaleLowerCase() ?? ""),
   );
@@ -31,12 +33,12 @@ export function FlagsTable({
     searchQuery === null
       ? flags
       : [...flags].sort((a, b) => {
-          const aMatches = a.key.includes(searchQuery);
-          const bMatches = b.key.includes(searchQuery);
+          const aMatches = a.flagKey.includes(searchQuery);
+          const bMatches = b.flagKey.includes(searchQuery);
 
           // If both match or both don't match, sort alphabetically
           if (aMatches === bMatches) {
-            return a.key.localeCompare(b.key);
+            return a.flagKey.localeCompare(b.flagKey);
           }
 
           // Otherwise, matching flags come first
@@ -56,20 +58,18 @@ export function FlagsTable({
         )}
         {searchedFlags.map((flag, index) => (
           <FlagRow
-            key={flag.key}
+            key={flag.flagKey}
             appBaseUrl={appBaseUrl}
             flag={flag}
             index={index}
             isNotVisible={
               searchQuery !== null &&
-              !flag.key
+              !flag.flagKey
                 .toLocaleLowerCase()
                 .includes(searchQuery.toLocaleLowerCase())
             }
             isOpen={isOpen}
-            setEnabledOverride={(override) =>
-              setIsEnabledOverride(flag.key, override)
-            }
+            setOverride={(value) => setOverride(flag.flagKey, value)}
           />
         ))}
       </tbody>
@@ -77,28 +77,30 @@ export function FlagsTable({
   );
 }
 
+type FlagRowProps = {
+  flag: FlagItem;
+  appBaseUrl: string;
+  setOverride: (value: boolean | null) => void;
+  isOpen: boolean;
+  index: number;
+  isNotVisible: boolean;
+};
+
 function FlagRow({
-  setEnabledOverride,
+  setOverride,
   appBaseUrl,
   flag,
   isOpen,
   index,
   isNotVisible,
-}: {
-  flag: FlagItem;
-  appBaseUrl: string;
-  setEnabledOverride: (isEnabled: boolean | null) => void;
-  isOpen: boolean;
-  index: number;
-  isNotVisible: boolean;
-}) {
+}: FlagRowProps) {
   const [showOnOpen, setShowOnOpen] = useState(isOpen);
   useEffect(() => {
     setShowOnOpen(isOpen);
   }, [isOpen]);
   return (
     <tr
-      key={flag.key}
+      key={flag.flagKey}
       class={[
         "flag-row",
         showOnOpen ? "show-on-open" : undefined,
@@ -110,27 +112,29 @@ function FlagRow({
         <Flag class="flag-icon" />
         <a
           class="flag-link"
-          href={`${appBaseUrl}/envs/current/flags/by-key/${flag.key}`}
+          href={`${appBaseUrl}/envs/current/flags/by-key/${flag.flagKey}`}
           rel="noreferrer"
           tabIndex={index + 1}
           target="_blank"
         >
-          {flag.key}
+          {flag.flagKey}
         </a>
       </td>
       <td class="flag-reset-cell">
-        {flag.localOverride !== null ? (
-          <Reset setEnabledOverride={setEnabledOverride} tabIndex={index + 1} />
+        {flag.override !== null ? (
+          <Reset setOverride={setOverride} tabIndex={index + 1} />
         ) : null}
       </td>
       <td class="flag-switch-cell">
         <Switch
-          checked={flag.localOverride ?? flag.isEnabled}
+          checked={flag.override === true || flag.value === true}
+          disabled={typeof flag.value !== "boolean"}
           tabIndex={index + 1}
           onChange={(e) => {
             const isChecked = e.currentTarget.checked;
-            const isOverridden = isChecked !== flag.isEnabled;
-            setEnabledOverride(isOverridden ? isChecked : null);
+            const isOverridden = isChecked !== flag.value;
+
+            setOverride(isOverridden ? isChecked : null);
           }}
         />
       </td>
@@ -138,7 +142,11 @@ function FlagRow({
   );
 }
 
-export function FlagSearch({ onSearch }: { onSearch: (val: string) => void }) {
+type FlagSearchProps = {
+  onSearch: (val: string) => void;
+};
+
+export function FlagSearch({ onSearch }: FlagSearchProps) {
   return (
     <input
       class="search-input"
@@ -151,19 +159,18 @@ export function FlagSearch({ onSearch }: { onSearch: (val: string) => void }) {
   );
 }
 
-function Reset({
-  setEnabledOverride,
-  ...props
-}: {
-  setEnabledOverride: (isEnabled: boolean | null) => void;
-} & h.JSX.HTMLAttributes<HTMLAnchorElement>) {
+type ResetProps = {
+  setOverride: (value: boolean | null) => void;
+} & h.JSX.HTMLAttributes<HTMLAnchorElement>;
+
+function Reset({ setOverride, ...props }: ResetProps) {
   return (
     <a
       class="reset"
       href=""
       onClick={(e) => {
         e.preventDefault();
-        setEnabledOverride(null);
+        setOverride(null);
       }}
       {...props}
     >

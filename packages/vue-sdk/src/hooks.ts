@@ -1,22 +1,52 @@
 import { computed, inject, InjectionKey, onBeforeUnmount, ref } from "vue";
 
-import { RequestFeedbackData, UnassignedFeedback } from "@reflag/browser-sdk";
+import {
+  Flag,
+  RequestFeedbackData,
+  UnassignedFeedback,
+} from "@reflag/browser-sdk";
 
 import {
   Feature,
   ProviderContextType,
-  RequestFeatureFeedbackOptions,
+  RequestFlagFeedbackOptions,
 } from "./types";
 
 export const ProviderSymbol: InjectionKey<ProviderContextType> =
   Symbol("ReflagProvider");
 
-export function useFeature(key: string): Feature<any> {
+/**
+ * @deprecated
+ *
+ * Use `useFlag` instead.
+ *
+ * Vue composable for getting a feature.
+ *
+ * @example
+ * ```ts
+ * import { useFeature } from '@reflag/vue-sdk';
+ *
+ * const feature = useFeature('my-feature');
+ *
+ * // Use the feature
+ * console.log(feature.isEnabled);
+ * ```
+ *
+ * @returns A feature object.
+ *   - `isEnabled`: A boolean indicating whether the feature is enabled.
+ *   - `config`: An object containing the feature's configuration.
+ *   - `track`: A function that tracks the feature.
+ *   - `requestFeedback`: A function that requests feedback for the feature.
+ *   - `isLoading`: A boolean indicating whether the feature is loading.
+ *
+ * @param key The key of the feature to get.
+ */
+export function useFeature(key: string): Feature {
   const client = useClient();
   const ctx = injectSafe();
 
   const track = () => client?.value.track(key);
-  const requestFeedback = (opts: RequestFeatureFeedbackOptions) =>
+  const requestFeedback = (opts: RequestFlagFeedbackOptions) =>
     client.value.requestFeedback({ ...opts, featureKey: key });
 
   const feature = ref(client.value.getFeature(key));
@@ -43,6 +73,28 @@ export function useFeature(key: string): Feature<any> {
 }
 
 /**
+ * Vue composable for getting a flag value.
+ *
+ * @example
+ * ```ts
+ * import { useFlag } from '@reflag/vue-sdk';
+ *
+ * const flag = useFlag('my-flag');
+ *
+ * // Use the flag
+ * console.log(flag.value);
+ * ```
+ *
+ * @param flagKey The key of the flag to get.
+ * @returns The value of the flag.
+ */
+export function useFlag(flagKey: string): Flag {
+  const client = useClient();
+
+  return client.value.getFlag(flagKey);
+}
+
+/**
  * Vue composable for tracking custom events.
  *
  * This composable returns a function that can be used to track custom events
@@ -64,8 +116,8 @@ export function useFeature(key: string): Feature<any> {
  */
 export function useTrack() {
   const client = useClient();
-  return (eventName: string, attributes?: Record<string, any> | null) =>
-    client?.value.track(eventName, attributes);
+  return (flagKey: string, attributes?: Record<string, any> | null) =>
+    client.value.track(flagKey, attributes);
 }
 
 /**
@@ -94,7 +146,7 @@ export function useTrack() {
 export function useRequestFeedback() {
   const client = useClient();
   return (options: RequestFeedbackData) =>
-    client?.value.requestFeedback(options);
+    client.value.requestFeedback(options);
 }
 
 /**
@@ -121,7 +173,7 @@ export function useRequestFeedback() {
  */
 export function useSendFeedback() {
   const client = useClient();
-  return (opts: UnassignedFeedback) => client?.value.feedback(opts);
+  return (opts: UnassignedFeedback) => client.value.feedback(opts);
 }
 
 /**
@@ -147,7 +199,7 @@ export function useSendFeedback() {
 export function useUpdateUser() {
   const client = useClient();
   return (opts: { [key: string]: string | number | undefined }) =>
-    client?.value.updateUser(opts);
+    client.value.updateUser(opts);
 }
 
 /**
@@ -173,7 +225,7 @@ export function useUpdateUser() {
 export function useUpdateCompany() {
   const client = useClient();
   return (opts: { [key: string]: string | number | undefined }) =>
-    client?.value.updateCompany(opts);
+    client.value.updateCompany(opts);
 }
 
 /**

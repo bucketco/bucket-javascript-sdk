@@ -6,6 +6,13 @@ import RateLimiter from "../rateLimiter";
 import { FlagCache, isObject, parseAPIFeaturesResponse } from "./flagCache";
 
 /**
+ * Represents a flag value.
+ */
+export type Flag = boolean | { key: string; payload: any };
+
+/**
+ * @internal
+ *
  * A flag fetched from the server.
  */
 export type FetchedFlag = {
@@ -66,44 +73,28 @@ export type FetchedFlag = {
   };
 };
 
-/**
- * @deprecated
- * Use FetchedFlag instead
- */
-export type FetchedFeature = FetchedFlag;
-
-/**
- * @deprecated
- * Use FLAGS_UPDATED_EVENT instead
- */
-const FEATURES_UPDATED_EVENT = "featuresUpdated";
 const FLAGS_UPDATED_EVENT = "flagsUpdated";
 
 /**
  * @internal
+ *
+ * A map of flag keys to fetched flags.
  */
 export type FetchedFlags = Record<string, FetchedFlag | undefined>;
 
+/**
+ * @internal
+ *
+ * A flag fetched from the server with an optional override.
+ */
 export type RawFlag = FetchedFlag & {
   /**
    * If not null, the result is being overridden locally
    */
-  isEnabledOverride: boolean | null;
+  valueOverride: Flag | null;
 };
 
-/**
- * @deprecated
- * Use RawFlag instead
- */
-export type RawFeature = RawFlag;
-
 export type RawFlags = Record<string, RawFlag>;
-
-/**
- * @deprecated
- * Use RawFlags instead
- */
-export type RawFeatures = RawFlags;
 
 export type FallbackFlagOverride =
   | {
@@ -112,20 +103,14 @@ export type FallbackFlagOverride =
     }
   | true;
 
-/**
- * @deprecated
- * Use FallbackFlagOverride instead
- */
-export type FallbackFeatureOverride = FallbackFlagOverride;
-
-type Config = {
+type FlagsConfig = {
   fallbackFlags: Record<string, FallbackFlagOverride>;
   timeoutMs: number;
   staleWhileRevalidate: boolean;
   offline: boolean;
 };
 
-export const DEFAULT_FLAGS_CONFIG: Config = {
+export const DEFAULT_FLAGS_CONFIG: FlagsConfig = {
   fallbackFlags: {},
   timeoutMs: 5000,
   staleWhileRevalidate: false,
@@ -212,7 +197,20 @@ export interface CheckEvent {
   missingContextFields?: string[];
 }
 
-type context = {
+/**
+ * Options for the FlagsClient.
+ */
+interface FlagsClientOptions {
+  fallbackFlags?: Record<string, FallbackFlagOverride> | string[];
+  timeoutMs?: number;
+  staleTimeMs?: number;
+  expireTimeMs?: number;
+  cache?: FlagCache;
+  rateLimiter?: RateLimiter;
+  offline?: boolean;
+}
+
+type EvaluationContext = {
   user?: Record<string, any>;
   company?: Record<string, any>;
   other?: Record<string, any>;
@@ -223,13 +221,13 @@ export const FLAGS_EXPIRE_MS = 30 * 24 * 60 * 60 * 1000; // expire entirely afte
 const localStorageFetchedFlagsKey = `__reflag_fetched_flags`;
 const localStorageOverridesKey = `__reflag_overrides`;
 
-type OverridesFlags = Record<string, boolean | null>;
+type FlagsOverrides = Record<string, Flag | null>;
 
-function setOverridesCache(overrides: OverridesFlags) {
+function setOverridesCache(overrides: FlagsOverrides) {
   localStorage.setItem(localStorageOverridesKey, JSON.stringify(overrides));
 }
 
-function getOverridesCache(): OverridesFlags {
+function getOverridesCache(): FlagsOverrides {
   const cachedOverrides = JSON.parse(
     localStorage.getItem(localStorageOverridesKey) || "{}",
   );
@@ -247,11 +245,11 @@ function getOverridesCache(): OverridesFlags {
 export class FlagsClient {
   private cache: FlagCache;
   private fetchedFlags: FetchedFlags;
-  private flagOverrides: OverridesFlags = {};
+  private flagsOverrides: FlagsOverrides = {};
 
   private flags: RawFlags = {};
 
-  private config: Config;
+  private config: FlagsConfig;
   private rateLimiter: RateLimiter;
   private readonly logger: Logger;
 
@@ -260,17 +258,9 @@ export class FlagsClient {
 
   constructor(
     private httpClient: HttpClient,
-    private context: context,
+    private context: EvaluationContext,
     logger: Logger,
-    options?: {
-      fallbackFlags?: Record<string, FallbackFlagOverride> | string[];
-      timeoutMs?: number;
-      staleTimeMs?: number;
-      expireTimeMs?: number;
-      cache?: FlagCache;
-      rateLimiter?: RateLimiter;
-      offline?: boolean;
-    },
+    options?: FlagsClientOptions,
   ) {
     this.fetchedFlags = {};
     this.logger = loggerWithPrefix(logger, "[Flags]");
@@ -288,8 +278,9 @@ export class FlagsClient {
 
     let fallbackFlags: Record<string, FallbackFlagOverride>;
 
-    if (Array.isArray(options?.fallbackFlags)) {
-      fallbackFlags = options.fallbackFlags.reduce(
+    const optionsFallbackFlags = options?.fallbackFlags ?? {};
+    if (Array.isArray(optionsFallbackFlags)) {
+      fallbackFlags = optionsFallbackFlags.reduce(
         (acc, key) => {
           acc[key] = true;
           return acc;
@@ -297,7 +288,7 @@ export class FlagsClient {
         {} as Record<string, FallbackFlagOverride>,
       );
     } else {
-      fallbackFlags = options?.fallbackFlags ?? {};
+      fallbackFlags = optionsFallbackFlags;
     }
 
     this.config = {
@@ -312,11 +303,11 @@ export class FlagsClient {
     try {
       const storedFlagOverrides = getOverridesCache();
       for (const key in storedFlagOverrides) {
-        this.flagOverrides[key] = storedFlagOverrides[key];
+        this.flagsOverrides[key] = storedFlagOverrides[key];
       }
     } catch (e) {
       this.logger.warn("error getting flag overrides from cache", e);
-      this.flagOverrides = {};
+      this.flagsOverrides = {};
     }
   }
 
@@ -325,7 +316,7 @@ export class FlagsClient {
     this.setFetchedFlags(flags);
   }
 
-  async setContext(context: context) {
+  async setContext(context: EvaluationContext) {
     this.context = context;
     await this.initialize();
   }
@@ -445,16 +436,15 @@ export class FlagsClient {
         continue;
       }
 
-      const isEnabledOverride = this.flagOverrides[key] ?? null;
+      const valueOverride = this.flagsOverrides[key] ?? null;
       mergedFlags[key] = {
         ...fetchedFlag,
-        isEnabledOverride,
+        valueOverride,
       };
     }
 
     this.flags = mergedFlags;
 
-    this.eventTarget.dispatchEvent(new Event(FEATURES_UPDATED_EVENT));
     this.eventTarget.dispatchEvent(new Event(FLAGS_UPDATED_EVENT));
   }
 
@@ -569,22 +559,26 @@ export class FlagsClient {
     );
   }
 
-  setFlagOverride(flagKey: string, isEnabled: boolean | null) {
-    if (!(typeof isEnabled === "boolean" || isEnabled === null)) {
-      throw new Error("setFlagOverride: isEnabled must be boolean or null");
+  setFlagOverride(flagKey: string, value: Flag | null) {
+    if (
+      typeof value !== "boolean" &&
+      value !== null &&
+      !(typeof value === "object" && "key" in value)
+    ) {
+      throw new Error("setFlagOverride: value must be boolean, object or null");
     }
 
-    if (isEnabled === null) {
-      delete this.flagOverrides[flagKey];
+    if (value === null) {
+      delete this.flagsOverrides[flagKey];
     } else {
-      this.flagOverrides[flagKey] = isEnabled;
+      this.flagsOverrides[flagKey] = value;
     }
-    setOverridesCache(this.flagOverrides);
+    setOverridesCache(this.flagsOverrides);
 
     this.triggerFlagsChanged();
   }
 
-  getFlagOverride(flagKey: string): boolean | null {
-    return this.flagOverrides[flagKey] ?? null;
+  getFlagOverride(flagKey: string): Flag | null {
+    return this.flagsOverrides[flagKey] ?? null;
   }
 }

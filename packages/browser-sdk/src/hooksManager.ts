@@ -26,6 +26,8 @@ export interface HookArgs {
   track: TrackEvent;
 }
 
+type HookType = keyof HookArgs;
+
 export type TrackEvent = {
   user: UserContext;
   company?: CompanyContext;
@@ -43,7 +45,6 @@ export class HooksManager {
     configCheck: ((arg0: CheckEvent) => void)[];
     check: ((arg0: CheckEvent) => void)[];
     flagsUpdated: ((arg0: RawFlags) => void)[];
-    featuresUpdated: ((arg0: RawFlags) => void)[];
     user: ((arg0: UserContext) => void)[];
     company: ((arg0: CompanyContext) => void)[];
     track: ((arg0: TrackEvent) => void)[];
@@ -52,33 +53,44 @@ export class HooksManager {
     configCheck: [],
     check: [],
     flagsUpdated: [],
-    featuresUpdated: [],
     user: [],
     company: [],
     track: [],
   };
 
-  addHook<THookType extends keyof HookArgs>(
+  #adjustHookType(event: HookType): Exclude<HookType, "featuresUpdated"> {
+    if (event === "featuresUpdated") {
+      return "flagsUpdated";
+    }
+    return event;
+  }
+
+  addHook<THookType extends HookType>(
     event: THookType,
     cb: (arg0: HookArgs[THookType]) => void,
   ): () => void {
-    (this.hooks[event] as any[]).push(cb);
+    const adjustedEvent = this.#adjustHookType(event);
+    (this.hooks[adjustedEvent] as any[]).push(cb);
     return () => {
       this.removeHook(event, cb);
     };
   }
 
-  removeHook<THookType extends keyof HookArgs>(
+  removeHook<THookType extends HookType>(
     event: THookType,
     cb: (arg0: HookArgs[THookType]) => void,
   ): void {
-    this.hooks[event] = this.hooks[event].filter((hook) => hook !== cb) as any;
+    const adjustedEvent = this.#adjustHookType(event);
+    this.hooks[adjustedEvent] = this.hooks[adjustedEvent].filter(
+      (hook) => hook !== cb,
+    ) as any;
   }
 
-  trigger<THookType extends keyof HookArgs>(
-    event: THookType,
+  trigger<THookType extends HookType>(
+    event: Exclude<THookType, "featuresUpdated">,
     arg: HookArgs[THookType],
   ): void {
-    this.hooks[event].forEach((hook) => hook(arg as any));
+    const adjustedEvent = this.#adjustHookType(event);
+    this.hooks[adjustedEvent].forEach((hook) => hook(arg as any));
   }
 }

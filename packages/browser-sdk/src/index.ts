@@ -37,12 +37,8 @@ export type {
 } from "./feedback/ui/types";
 export type {
   CheckEvent,
-  FallbackFeatureOverride,
   FallbackFlagOverride,
-  FetchedFeature,
   FetchedFlag,
-  RawFeature,
-  RawFeatures,
   RawFlag,
   RawFlags,
 } from "./flag/flags";

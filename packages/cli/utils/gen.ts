@@ -2,7 +2,7 @@ import { camelCase, kebabCase, pascalCase, snakeCase } from "change-case";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, join } from "node:path";
 
-import { Feature, RemoteConfig } from "../services/features.js";
+import { Flag, RemoteConfig } from "../services/flags.js";
 
 import { JSONToType } from "./json.js";
 
@@ -81,7 +81,7 @@ export function indentLines(
     .join(lineBreak);
 }
 
-export function genFeatureKey(input: string, format: KeyFormat): string {
+export function genFlagKey(input: string, format: KeyFormat): string {
   return KeyFormatPatterns[format].transform(input);
 }
 
@@ -93,16 +93,16 @@ export function genRemoteConfig(remoteConfigs?: RemoteConfig[]) {
   );
 }
 
-export function genTypes(features: Feature[], format: GenFormat = "react") {
+export function genTypes(flags: Flag[], format: GenFormat = "react") {
   const configDefs = new Map<string, { name: string; definition: string }>();
-  features.forEach(({ key, name, remoteConfigs }) => {
+  flags.forEach(({ key, name, remoteConfigs }) => {
     const definition = genRemoteConfig(remoteConfigs);
 
     if (!definition) {
       return;
     }
 
-    const configName = `${pascalCase(name)}ConfigPayload`;
+    const configName = `${pascalCase(name)}FlagPayload`;
     configDefs.set(key, { name: configName, definition });
   });
 
@@ -113,8 +113,8 @@ export function genTypes(features: Feature[], format: GenFormat = "react") {
 import "@reflag/${format}-sdk";
 
 declare module "@reflag/${format}-sdk" {
-  export interface Features {
-${features
+  export interface Flags {
+${flags
   .map(({ key }) => {
     const config = configDefs.get(key);
     return indentLines(

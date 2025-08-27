@@ -74,14 +74,40 @@ describe("usage", () => {
     const flags = reflagInstance.getFlags();
     expect(flags).toEqual(flagsResult);
 
-    const flag1 = reflagInstance.getFlag("flagId1");
-    expect(flag1).toStrictEqual({
+    // unknown feature
+    const feature1 = reflagInstance.getFeature("unknown");
+    expect(feature1).toStrictEqual({
       isEnabled: false,
       track: expect.any(Function),
       config: { key: undefined, payload: undefined },
       isEnabledOverride: null,
       setIsEnabledOverride: expect.any(Function),
       requestFeedback: expect.any(Function),
+    });
+
+    // known feature
+    const feature2 = reflagInstance.getFeature("flagB");
+    expect(feature2).toStrictEqual({
+      isEnabled: true,
+      track: expect.any(Function),
+      config: {
+        key: "gpt3",
+        payload: { model: "gpt-something", temperature: 0.5 },
+      },
+      isEnabledOverride: null,
+      setIsEnabledOverride: expect.any(Function),
+      requestFeedback: expect.any(Function),
+    });
+
+    // unknown flag
+    const flag1 = reflagInstance.getFlag("flagId1");
+    expect(flag1).toBe(false);
+
+    // known flag
+    const flag2 = reflagInstance.getFlag("flagB");
+    expect(flag2).toStrictEqual({
+      key: "gpt3",
+      payload: { model: "gpt-something", temperature: 0.5 },
     });
   });
 
@@ -237,7 +263,7 @@ describe("feedback state management", () => {
     vi.resetAllMocks();
   });
 
-  const createreflagInstance = async (callback: FeedbackPromptHandler) => {
+  const createReflagInstance = async (callback: FeedbackPromptHandler) => {
     reflagInstance = new ReflagClient({
       publishableKey: KEY,
       user: { id: "foo" },
@@ -255,7 +281,7 @@ describe("feedback state management", () => {
 
     const callback = vi.fn();
 
-    await createreflagInstance(callback);
+    await createReflagInstance(callback);
 
     expect(callback).not.toHaveBeenCalled();
 
@@ -271,7 +297,7 @@ describe("feedback state management", () => {
 
     const callback = vi.fn();
 
-    await createreflagInstance(callback);
+    await createReflagInstance(callback);
 
     expect(callback).not.toHaveBeenCalled();
     await vi.waitFor(() =>
@@ -284,7 +310,7 @@ describe("feedback state management", () => {
   test("propagates prompt to the callback", async () => {
     const callback = vi.fn();
 
-    await createreflagInstance(callback);
+    await createReflagInstance(callback);
     await vi.waitUntil(() => callback.mock.calls.length > 0);
 
     await vi.waitUntil(() => events.length > 1);
@@ -312,7 +338,7 @@ describe("feedback state management", () => {
     vi.useFakeTimers();
     vi.setSystemTime(message.showAfter - 500);
 
-    await createreflagInstance(callback);
+    await createReflagInstance(callback);
 
     expect(callback).not.toBeCalled();
 
@@ -336,7 +362,7 @@ describe("feedback state management", () => {
       await handlers.reply(null);
     };
 
-    await createreflagInstance(callback);
+    await createReflagInstance(callback);
 
     await vi.waitUntil(() => events.length > 2);
 
@@ -360,7 +386,7 @@ describe("feedback state management", () => {
       });
     };
 
-    await createreflagInstance(callback);
+    await createReflagInstance(callback);
 
     await vi.waitUntil(() => events.length > 1);
 
@@ -375,7 +401,7 @@ describe("feedback state management", () => {
 });
 
 describe(`sends "check" events `, () => {
-  test("getFeatures() does not send `check` events", async () => {
+  test("getFlags does not send `check` events", async () => {
     vi.spyOn(FlagsClient.prototype, "sendCheckEvent");
 
     const client = new ReflagClient({
@@ -396,7 +422,7 @@ describe(`sends "check" events `, () => {
     ).toHaveBeenCalledTimes(0);
   });
 
-  describe("getFlag", async () => {
+  describe("getFeature (deprecated)", async () => {
     afterEach(() => {
       vi.clearAllMocks();
     });
@@ -410,7 +436,7 @@ describe(`sends "check" events `, () => {
 
       await client.initialize();
 
-      expect(client.getFlag("flagA")).toStrictEqual({
+      expect(client.getFeature("flagA")).toStrictEqual({
         isEnabled: true,
         config: { key: undefined, payload: undefined },
         track: expect.any(Function),
@@ -419,7 +445,7 @@ describe(`sends "check" events `, () => {
         setIsEnabledOverride: expect.any(Function),
       });
 
-      expect(client.getFlag("flagB")).toStrictEqual({
+      expect(client.getFeature("flagB")).toStrictEqual({
         isEnabled: true,
         config: {
           key: "gpt3",
@@ -434,7 +460,7 @@ describe(`sends "check" events `, () => {
         setIsEnabledOverride: expect.any(Function),
       });
 
-      expect(client.getFlag("flagC")).toStrictEqual({
+      expect(client.getFeature("flagC")).toStrictEqual({
         isEnabled: false,
         config: { key: undefined, payload: undefined },
         track: expect.any(Function),
@@ -455,7 +481,7 @@ describe(`sends "check" events `, () => {
       });
       await client.initialize();
 
-      const flagA = client.getFlag("flagA");
+      const flagA = client.getFeature("flagA");
       expect(flagA.isEnabled).toBe(false);
 
       expect(postSpy).not.toHaveBeenCalled();
@@ -476,7 +502,7 @@ describe(`sends "check" events `, () => {
       });
       await client.initialize();
 
-      const flagA = client.getFlag("flagA");
+      const flagA = client.getFeature("flagA");
 
       expect(sendCheckEventSpy).toHaveBeenCalledTimes(0);
       expect(flagA.isEnabled).toBe(true);
@@ -485,7 +511,7 @@ describe(`sends "check" events `, () => {
       expect(sendCheckEventSpy).toHaveBeenCalledWith(
         {
           action: "check-is-enabled",
-          flagKey: "flagA",
+          key: "flagA",
           value: true,
           version: 1,
           missingContextFields: ["field1", "field2"],
@@ -526,7 +552,7 @@ describe(`sends "check" events `, () => {
 
       await client.initialize();
 
-      const flagB = client.getFlag("flagB");
+      const flagB = client.getFeature("flagB");
       expect(flagB.config).toMatchObject({
         key: "gpt3",
       });
@@ -560,7 +586,7 @@ describe(`sends "check" events `, () => {
       const client = new ReflagClient({ publishableKey: KEY });
       await client.initialize();
 
-      const nonExistentFlag = client.getFlag("non-existent");
+      const nonExistentFlag = client.getFeature("non-existent");
 
       expect(
         vi.mocked(FlagsClient.prototype.sendCheckEvent),
@@ -576,18 +602,18 @@ describe(`sends "check" events `, () => {
         {
           action: "check-is-enabled",
           value: false,
-          flagKey: "non-existent",
+          key: "non-existent",
           version: undefined,
         },
         expect.any(Function),
       );
     });
 
-    it("calls client.track with the featureId", async () => {
+    it("calls `client.track` with the `featureKey`", async () => {
       const client = new ReflagClient({ publishableKey: KEY });
       await client.initialize();
 
-      const flag1 = client.getFlag("flag-1");
+      const flag1 = client.getFeature("flag-1");
       expect(flag1).toStrictEqual({
         isEnabled: false,
         track: expect.any(Function),
@@ -604,11 +630,11 @@ describe(`sends "check" events `, () => {
       expect(client.track).toHaveBeenCalledWith("flag-1");
     });
 
-    it("calls client.requestFeedback with the featureId", async () => {
+    it("calls `client.requestFeedback` with the `featureKey`", async () => {
       const client = new ReflagClient({ publishableKey: KEY });
       await client.initialize();
 
-      const flag1 = client.getFlag("flag-1");
+      const flag1 = client.getFeature("flag-1");
       expect(flag1).toStrictEqual({
         isEnabled: false,
         track: expect.any(Function),
@@ -625,9 +651,173 @@ describe(`sends "check" events `, () => {
       });
 
       expect(client.requestFeedback).toHaveBeenCalledWith({
-        flagKey: "flag-1",
+        featureKey: "flag-1",
         title: "Feedback",
       });
+    });
+  });
+
+  describe("getFlag", async () => {
+    afterEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it(`returns get the expected flag value`, async () => {
+      const client = new ReflagClient({
+        publishableKey: KEY,
+        user: { id: "uid" },
+        company: { id: "cid" },
+      });
+
+      await client.initialize();
+
+      expect(client.getFlag("flagA")).toBe(true);
+      expect(client.getFlag("flagB")).toStrictEqual({
+        key: "gpt3",
+        payload: {
+          model: "gpt-something",
+          temperature: 0.5,
+        },
+      });
+
+      expect(client.getFlag("flagC")).toBe(false);
+    });
+
+    it(`does not send check events when offline`, async () => {
+      const postSpy = vi.spyOn(HttpClient.prototype, "post");
+
+      const client = new ReflagClient({
+        publishableKey: KEY,
+        user: { id: "uid" },
+        company: { id: "cid" },
+        offline: true,
+      });
+      await client.initialize();
+
+      client.getFlag("flagA");
+
+      expect(postSpy).not.toHaveBeenCalled();
+    });
+
+    it(`sends check event when reading a flag value (boolean)`, async () => {
+      const sendCheckEventSpy = vi.spyOn(
+        FlagsClient.prototype,
+        "sendCheckEvent",
+      );
+
+      const postSpy = vi.spyOn(HttpClient.prototype, "post");
+
+      const client = new ReflagClient({
+        publishableKey: KEY,
+        user: { id: "uid" },
+        company: { id: "cid" },
+      });
+      await client.initialize();
+
+      client.getFlag("flagA");
+
+      expect(sendCheckEventSpy).toHaveBeenCalledTimes(1);
+      expect(sendCheckEventSpy).toHaveBeenCalledWith(
+        {
+          action: "check-is-enabled",
+          key: "flagA",
+          value: true,
+          version: 1,
+          missingContextFields: ["field1", "field2"],
+          ruleEvaluationResults: [false, true],
+        },
+        expect.any(Function),
+      );
+
+      expect(postSpy).toHaveBeenCalledWith({
+        body: {
+          action: "check-is-enabled",
+          evalContext: {
+            company: {
+              id: "cid",
+            },
+            other: undefined,
+            user: {
+              id: "uid",
+            },
+          },
+          evalResult: true,
+          evalRuleResults: [false, true],
+          evalMissingFields: ["field1", "field2"],
+          key: "flagA",
+          targetingVersion: 1,
+        },
+        path: "features/events",
+      });
+    });
+
+    it(`sends check event when reading a flag value (object)`, async () => {
+      const postSpy = vi.spyOn(HttpClient.prototype, "post");
+
+      const client = new ReflagClient({
+        publishableKey: KEY,
+        user: { id: "uid" },
+      });
+
+      await client.initialize();
+
+      const flagB = client.getFlag("flagB");
+      expect(flagB).toStrictEqual({
+        key: "gpt3",
+        payload: {
+          model: "gpt-something",
+          temperature: 0.5,
+        },
+      });
+
+      expect(postSpy).toHaveBeenCalledWith({
+        body: {
+          action: "check-config",
+          evalContext: {
+            other: undefined,
+            user: {
+              id: "uid",
+            },
+          },
+          evalResult: {
+            key: "gpt3",
+            payload: { model: "gpt-something", temperature: 0.5 },
+          },
+          evalRuleResults: [true, false, false],
+          evalMissingFields: ["field3"],
+          key: "flagB",
+          targetingVersion: 12,
+        },
+        path: "features/events",
+      });
+    });
+
+    it("sends check event for not-enabled flags", async () => {
+      // disabled features don't appear in the API response
+      vi.spyOn(FlagsClient.prototype, "sendCheckEvent");
+
+      const client = new ReflagClient({ publishableKey: KEY });
+      await client.initialize();
+
+      const nonExistentFlag = client.getFlag("non-existent");
+
+      expect(nonExistentFlag).toBe(false);
+
+      expect(
+        vi.mocked(FlagsClient.prototype.sendCheckEvent),
+      ).toHaveBeenCalledTimes(1);
+
+      expect(
+        vi.mocked(FlagsClient.prototype.sendCheckEvent),
+      ).toHaveBeenCalledWith(
+        {
+          action: "check-is-enabled",
+          value: false,
+          key: "non-existent",
+          version: undefined,
+        },
+        expect.any(Function),
+      );
     });
   });
 });

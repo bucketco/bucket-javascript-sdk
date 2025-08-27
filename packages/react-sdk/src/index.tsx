@@ -13,8 +13,8 @@ import canonicalJSON from "canonical-json";
 import {
   CheckEvent,
   CompanyContext,
+  Flag,
   InitOptions,
-  RawFeatures,
   RawFlags,
   ReflagClient,
   ReflagContext,
@@ -26,27 +26,26 @@ import {
 
 import { version } from "../package.json";
 
-export type {
-  CheckEvent,
-  CompanyContext,
-  RawFeatures,
-  RawFlags,
-  TrackEvent,
-  UserContext,
-};
+export type { CheckEvent, CompanyContext, RawFlags, TrackEvent, UserContext };
 
-type EmptyFlagRemoteConfig = { key: undefined; payload: undefined };
+type EmptyFeatureRemoteConfig = { key: undefined; payload: undefined };
 
-export type FlagType = {
+/**
+ * @internal
+ *
+ * Describes a feature with a remote config.
+ */
+export type FeatureWithRemoteConfigType = {
   config?: {
     payload: any;
   };
 };
 
 /**
+ * @deprecated
  * A remotely managed configuration value for a flag.
  */
-export type FlagRemoteConfig =
+export type FeatureRemoteConfig =
   | {
       /**
        * The key of the matched configuration value.
@@ -58,19 +57,16 @@ export type FlagRemoteConfig =
        */
       payload: any;
     }
-  | EmptyFlagRemoteConfig;
+  | EmptyFeatureRemoteConfig;
 
 /**
  * @deprecated
- * Use `FlagRemoteConfig` instead.
+ *
+ * Describes a feature.
  */
-export type FeatureRemoteConfig = FlagRemoteConfig;
-
-/**
- * Describes a flag
- */
-export interface Flag<
-  TConfig extends FlagType["config"] = EmptyFlagRemoteConfig,
+export interface Feature<
+  TConfig extends
+    FeatureWithRemoteConfigType["config"] = EmptyFeatureRemoteConfig,
 > {
   /**
    * The key of the flag.
@@ -94,7 +90,7 @@ export interface Flag<
     | ({
         key: string;
       } & TConfig)
-    | EmptyFlagRemoteConfig;
+    | EmptyFeatureRemoteConfig;
 
   /**
    * Track flag usage in Reflag.
@@ -108,18 +104,35 @@ export interface Flag<
 
 /**
  * @deprecated
- * Use `Flag` instead.
+ * Use `Flags` instead.
  */
-export type Feature = Flag;
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface Features {}
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface Flags {}
+export interface Flags extends Features {}
 
 /**
  * @deprecated
- * Use `Flags` instead.
+ * Describes a collection of evaluated flags.
+ *
+ * @remarks
+ * This types falls back to a generic Record<string, Flag> if the Flags interface
+ * has not been extended.
  */
-export type Features = Flags;
+export type TypedFeatures = keyof Flags extends never
+  ? Record<string, Feature>
+  : {
+      [TKey in keyof Flags]: Flags[TKey] extends FeatureWithRemoteConfigType
+        ? Feature<Flags[TKey]["config"]>
+        : Feature;
+    };
+
+/**
+ * @deprecated
+ * Use `FlagKey` instead.
+ */
+export type FeatureKey = keyof TypedFeatures;
 
 /**
  * Describes a collection of evaluated flags.
@@ -127,29 +140,19 @@ export type Features = Flags;
  * @remarks
  * This types falls back to a generic Record<string, Flag> if the Flags interface
  * has not been extended.
- *
  */
 export type TypedFlags = keyof Flags extends never
   ? Record<string, Flag>
   : {
-      [TypedFeatureKey in keyof Flags]: Flags[TypedFeatureKey] extends FlagType
-        ? Flag<Flags[TypedFeatureKey]["config"]>
-        : Flag;
+      [TKey in keyof Flags]: Flags[TKey] extends FeatureWithRemoteConfigType
+        ? Flags[TKey]["config"] & { key: TKey }
+        : boolean;
     };
 
 /**
- * @deprecated
- * Use `TypedFlags` instead.
+ * The key of a flag.
  */
-export type TypedFeatures = TypedFlags;
-
 export type FlagKey = keyof TypedFlags;
-
-/**
- * @deprecated
- * Use `FlagKey` instead.
- */
-export type FeatureKey = FlagKey;
 
 const SDK_VERSION = `react-sdk/${version}`;
 
@@ -304,6 +307,9 @@ type RequestFeedbackOptions = Omit<
 >;
 
 /**
+ * @deprecated
+ * Use `useFlag` instead.
+ *
  * Returns the state of a given flag for the current context, e.g.
  *
  * ```ts
@@ -314,7 +320,9 @@ type RequestFeedbackOptions = Omit<
  * }
  * ```
  */
-export function useFlag<TKey extends FlagKey>(flagKey: TKey): TypedFlags[TKey] {
+export function useFeature<TKey extends FeatureKey>(
+  flagKey: TKey,
+): TypedFeatures[TKey] {
   const client = useClient();
   const {
     flags: { isLoading },
@@ -332,13 +340,13 @@ export function useFlag<TKey extends FlagKey>(flagKey: TKey): TypedFlags[TKey] {
       config: {
         key: undefined,
         payload: undefined,
-      } as TypedFlags[TKey]["config"],
+      } as TypedFeatures[TKey]["config"],
       track,
       requestFeedback,
     };
   }
 
-  const flag = client.getFlag(flagKey);
+  const flag = client.getFeature(flagKey);
 
   return {
     key: flagKey,
@@ -349,17 +357,51 @@ export function useFlag<TKey extends FlagKey>(flagKey: TKey): TypedFlags[TKey] {
       return flag.isEnabled ?? false;
     },
     get config() {
-      return flag.config as TypedFlags[TKey]["config"];
+      return flag.config as TypedFeatures[TKey]["config"];
     },
   };
 }
 
 /**
- * @deprecated
- * Use `useFlag` instead.
+ * Returns the state of a given flag for the current context, e.g.
+ *
+ * ```ts
+ * function HuddleButton() {
+ *   const enabled = useFlag("huddle");
+ *
+ *   if (enabled) {
+ *    return <button onClick={() => alert("Huddle started")}>Start Huddle</button>;
+ * }
+ * ```
  */
-export function useFeature<TKey extends FlagKey>(flagKey: TKey) {
-  return useFlag(flagKey);
+export function useFlag<TKey extends FlagKey>(
+  flagKey: TKey,
+): TypedFlags[TKey] | undefined {
+  const client = useClient();
+
+  if (!client) {
+    return undefined;
+  }
+
+  return client.getFlag(flagKey) as TypedFlags[TKey];
+}
+
+/**
+ * Returns a boolean indicating whether the flags are loading.
+ *
+ * ```ts
+ * const isLoading = useIsLoading();
+ * if (isLoading) {
+ *   return <div>Loading...</div>;
+ * }
+ * ```
+ */
+export function useIsLoading() {
+  const {
+    flags: { isLoading },
+  } = useContext<ProviderContextType>(ProviderContext);
+
+  return isLoading;
 }
 
 /**
@@ -410,6 +452,7 @@ type TypedRequestFeedbackData = Omit<
  */
 export function useRequestFeedback() {
   const client = useClient();
+
   return (options: TypedRequestFeedbackData) =>
     client?.requestFeedback(options);
 }

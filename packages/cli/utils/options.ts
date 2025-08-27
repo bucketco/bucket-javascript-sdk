@@ -34,22 +34,22 @@ export const overwriteOption = new Option(
 
 export const typesOutOption = new Option(
   "-o, --out [path]",
-  `Single output path for generated feature types. Falls back to typesOutput value in ${CONFIG_FILE_NAME}.`,
+  `Single output path for generated flag types. Falls back to typesOutput value in ${CONFIG_FILE_NAME}.`,
 );
 
 export const typesFormatOption = new Option(
   "-f, --format [format]",
-  "Single output format for generated feature types",
+  "Single output format for generated flag types",
 ).choices(["react", "node"]);
 
-export const featureNameArgument = new Argument(
+export const flagNameArgument = new Argument(
   "[name]",
-  "Feature's name. If not provided, you'll be prompted to enter one.",
+  "Flag's name. If not provided, you'll be prompted to enter one.",
 );
 
-export const featureKeyOption = new Option(
-  "-k, --key [feature key]",
-  "Feature key. If not provided, a key is generated from the feature's name.",
+export const flagKeyOption = new Option(
+  "-k, --key [flag key]",
+  "Flag key. If not provided, a key is generated from the flag's name.",
 );
 
 export const editorOption = new Option(

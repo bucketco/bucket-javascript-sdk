@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CompanyContext, UserContext } from "../src";
-import { CheckEvent, RawFeatures } from "../src/flag/flags";
+import { CheckEvent, RawFlags } from "../src/flag/flags";
 import { HooksManager } from "../src/hooksManager";
 
 describe("HookManager", () => {
@@ -53,16 +53,28 @@ describe("HookManager", () => {
     expect(callback).toHaveBeenCalledWith(checkEvent);
   });
 
-  it("should add and trigger `featuresUpdated` hooks", () => {
+  it("should add and trigger `featuresUpdated` hooks (deprecated)", () => {
     const callback = vi.fn();
     hookManager.addHook("featuresUpdated", callback);
 
-    const features: RawFeatures = {
-      /* mock RawFeatures data */
+    const flags: RawFlags = {
+      /* mock RawFlags data */
     };
-    hookManager.trigger("featuresUpdated", features);
+    hookManager.trigger("flagsUpdated", flags);
 
-    expect(callback).toHaveBeenCalledWith(features);
+    expect(callback).toHaveBeenCalledWith(flags);
+  });
+
+  it("should add and trigger `flagsUpdated` hooks", () => {
+    const callback = vi.fn();
+    hookManager.addHook("flagsUpdated", callback);
+
+    const flags: RawFlags = {
+      /* mock RawFlags data */
+    };
+    hookManager.trigger("flagsUpdated", flags);
+
+    expect(callback).toHaveBeenCalledWith(flags);
   });
 
   it("should add and trigger `track` hooks", () => {

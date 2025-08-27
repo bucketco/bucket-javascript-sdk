@@ -130,10 +130,18 @@ export class ReflagBrowserSDKProvider implements Provider {
 
   resolveBooleanEvaluation(flagKey: string, defaultValue: boolean) {
     return this.resolveFlag(flagKey, defaultValue, (flag) => {
+      if (typeof flag === "boolean") {
+        return {
+          value: flag,
+          reason: StandardResolutionReasons.TARGETING_MATCH,
+        };
+      }
+
       return {
-        value: flag.isEnabled,
-        variant: flag.config.key,
-        reason: StandardResolutionReasons.TARGETING_MATCH,
+        value: defaultValue,
+        reason: StandardResolutionReasons.ERROR,
+        errorCode: ErrorCode.TYPE_MISMATCH,
+        errorMessage: `Expected flag ${flagKey} to be a boolean, but got ${typeof flag}`,
       };
     });
   }
@@ -153,17 +161,19 @@ export class ReflagBrowserSDKProvider implements Provider {
     defaultValue: string,
   ): ResolutionDetails<string> {
     return this.resolveFlag(flagKey, defaultValue, (flag) => {
-      if (!flag.config.key) {
+      if (typeof flag === "object" && "key" in flag) {
         return {
-          value: defaultValue,
-          reason: StandardResolutionReasons.DEFAULT,
+          value: flag.key,
+          variant: flag.key,
+          reason: StandardResolutionReasons.TARGETING_MATCH,
         };
       }
 
       return {
-        value: flag.config.key as string,
-        variant: flag.config.key,
-        reason: StandardResolutionReasons.TARGETING_MATCH,
+        value: defaultValue,
+        reason: StandardResolutionReasons.ERROR,
+        errorCode: ErrorCode.TYPE_MISMATCH,
+        errorMessage: `Expected flag ${flagKey} to be a multi-variant, but got ${typeof flag}`,
       };
     });
   }
@@ -173,28 +183,36 @@ export class ReflagBrowserSDKProvider implements Provider {
     defaultValue: T,
   ) {
     return this.resolveFlag(flagKey, defaultValue, (flag) => {
-      const expType = typeof defaultValue;
+      if (typeof flag === "object" && "key" in flag) {
+        const expType = typeof defaultValue;
+        const payloadType = typeof flag.payload;
 
-      const payloadType = typeof flag.config.payload;
+        if (
+          flag.payload === undefined ||
+          flag.payload === null ||
+          payloadType !== expType
+        ) {
+          return {
+            value: defaultValue,
+            reason: StandardResolutionReasons.ERROR,
+            variant: flag.key,
+            errorCode: ErrorCode.TYPE_MISMATCH,
+            errorMessage: `Expected flag ${flagKey} to be a multi-variant with payload of type \`${expType}\` but got \`${payloadType}\`.`,
+          };
+        }
 
-      if (
-        flag.config.payload === undefined ||
-        flag.config.payload === null ||
-        payloadType !== expType
-      ) {
         return {
-          value: defaultValue,
-          reason: StandardResolutionReasons.ERROR,
-          variant: flag.config.key,
-          errorCode: ErrorCode.TYPE_MISMATCH,
-          errorMessage: `Expected remote config payload of type \`${expType}\` but got \`${payloadType}\`.`,
+          value: flag.payload,
+          variant: flag.key,
+          reason: StandardResolutionReasons.TARGETING_MATCH,
         };
       }
 
       return {
-        value: flag.config.payload,
-        variant: flag.config.key,
-        reason: StandardResolutionReasons.TARGETING_MATCH,
+        value: defaultValue,
+        reason: StandardResolutionReasons.ERROR,
+        errorCode: ErrorCode.TYPE_MISMATCH,
+        errorMessage: `Expected flag ${flagKey} to be a multi-variant, but got ${typeof flag}`,
       };
     });
   }

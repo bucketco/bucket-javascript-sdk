@@ -11,6 +11,7 @@ import {
   CheckEvent,
   FallbackFlagOverride,
   FlagsClient,
+  RawFlag,
   RawFlags,
 } from "./flag/flags";
 import { ToolbarPosition } from "./ui/types";
@@ -332,9 +333,11 @@ export type FlagRemoteConfig =
 export type FeatureRemoteConfig = FlagRemoteConfig;
 
 /**
- * Represents a flag.
+ * @deprecated
+ *
+ * Represents a feature. This is deprecated. Use `useFlag` and other flag-related hooks instead.
  */
-export interface Flag {
+export interface Feature {
   /**
    * Result of flag evaluation.
    * Note: Does not take local overrides into account.
@@ -371,10 +374,9 @@ export interface Flag {
 }
 
 /**
- * @deprecated
- * Use `Flag` instead.
+ * Represents a flag value.
  */
-export type Feature = Flag;
+export type Flag = boolean | { key: string; payload: any };
 
 function shouldShowToolbar(opts: InitOptions) {
   const toolbarOpts = opts.toolbar;
@@ -627,12 +629,31 @@ export class ReflagClient {
   }
 
   /**
-   * Track an event in Reflag.
+   * @internal
    *
-   * @param eventName The name of the event.
+   * Get the raw flag from the flags client.
+   *
+   * @param flagKey The key of the flag to get.
+   * @returns The raw flag.
+   */
+  #getRawFlag(flagKey: string): RawFlag | undefined {
+    const f = this.getFlags()[flagKey];
+    if (!f) {
+      this.logger.debug(`flag not found. using fallback value.`, {
+        flagKey,
+      });
+    }
+
+    return f;
+  }
+
+  /**
+   * Track an event/flag in Reflag.
+   *
+   * @param flagKey The name of the event or flag to track.
    * @param attributes Any attributes you want to attach to the event.
    */
-  async track(eventName: string, attributes?: Record<string, any> | null) {
+  async track(flagKey: string, attributes?: Record<string, any> | null) {
     if (!this.context.user) {
       this.logger.warn("'track' call ignored. No user context provided");
       return;
@@ -648,7 +669,7 @@ export class ReflagClient {
 
     const payload: TrackedEvent = {
       userId: String(this.context.user.id),
-      event: eventName,
+      event: flagKey,
     };
     if (attributes) payload.attributes = attributes;
     if (this.context.company?.id)
@@ -658,7 +679,7 @@ export class ReflagClient {
     this.logger.debug(`sent event`, res);
 
     this.hooks.trigger("track", {
-      eventName,
+      eventName: flagKey,
       attributes,
       user: this.context.user,
       company: this.context.company,
@@ -769,6 +790,31 @@ export class ReflagClient {
   }
 
   /**
+   * Get the override status for a flag.
+   *
+   * @param flagKey The key of the flag to get the override for.
+   * @returns The override status.
+   */
+  getFlagOverride(flagKey: string): Flag | null {
+    const f = this.#getRawFlag(flagKey);
+    return f ? this.flagsClient.getFlagOverride(flagKey) : null;
+  }
+
+  /**
+   * Set the override status for a flag.
+   *
+   * @param flagKey The key of the flag to set the override for.
+   * @param value The override status.
+   */
+  setFlagOverride(flagKey: string, value: Flag | null) {
+    const f = this.#getRawFlag(flagKey);
+    if (!f) {
+      return;
+    }
+    this.flagsClient.setFlagOverride(flagKey, value);
+  }
+
+  /**
    * @deprecated
    * Use `getFlags` instead.
    */
@@ -778,8 +824,8 @@ export class ReflagClient {
 
   /**
    * Returns a map of enabled flags.
-   * Accessing a flag will *not* send a check event
-   * and `isEnabled` does not take any flag overrides
+   *
+   * Accessing a flag will *not* send a check event, and flag value does not take any flag overrides
    * into account.
    *
    * @returns Map of flags.
@@ -789,26 +835,57 @@ export class ReflagClient {
   }
 
   /**
-   * @deprecated
-   * Use `getFlag` instead.
+   * @internal
+   *
+   * Trigger a check event for a flag.
+   *
+   * @param flag The flag to trigger the check event for.
    */
-  getFeature(key: string): Flag {
-    return this.getFlag(key);
+  #triggerCheckEvent(flag: RawFlag, configEvent: boolean) {
+    if (configEvent) {
+      this.sendCheckEvent({
+        action: "check-config",
+        key: flag.key,
+        version: flag.config?.version,
+        ruleEvaluationResults: flag.config?.ruleEvaluationResults,
+        missingContextFields: flag.config?.missingContextFields,
+        value: flag.config && {
+          key: flag.config.key,
+          payload: flag.config.payload,
+        },
+      }).catch(() => {
+        // ignore
+      });
+    } else {
+      this.sendCheckEvent({
+        action: "check-is-enabled",
+        key: flag.key,
+        version: flag.targetingVersion,
+        ruleEvaluationResults: flag.ruleEvaluationResults,
+        missingContextFields: flag.missingContextFields,
+        value: flag.isEnabled,
+      }).catch(() => {
+        // ignore
+      });
+    }
   }
 
   /**
-   * Return a flag. Accessing `isEnabled` or `config` will automatically send a `check` event.
+   * @deprecated
    *
-   * @param flagKey The key of the flag to return.
-   * @returns A flag.
+   * Use `getFlag` instead.
    */
-  getFlag(flagKey: string): Flag {
-    const f = this.getFlags()[flagKey];
+  getFeature(key: string): Feature {
+    const f = this.getFlags()[key] ?? {
+      key,
+      isEnabled: false,
+      valueOverride: null,
+    };
 
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
-    const value = f?.isEnabledOverride ?? f?.isEnabled ?? false;
-    const config = f?.config
+    const value = !!(f.valueOverride ?? f.isEnabled);
+    const config = f.config
       ? {
           key: f.config.key,
           payload: f.config.payload,
@@ -817,53 +894,60 @@ export class ReflagClient {
 
     return {
       get isEnabled() {
-        self
-          .sendCheckEvent({
-            action: "check-is-enabled",
-            flagKey,
-            version: f?.targetingVersion,
-            ruleEvaluationResults: f?.ruleEvaluationResults,
-            missingContextFields: f?.missingContextFields,
-            value,
-          })
-          .catch(() => {
-            // ignore
-          });
+        self.#triggerCheckEvent(f, false);
         return value;
       },
       get config() {
-        self
-          .sendCheckEvent({
-            action: "check-config",
-            flagKey,
-            version: f?.config?.version,
-            ruleEvaluationResults: f?.config?.ruleEvaluationResults,
-            missingContextFields: f?.config?.missingContextFields,
-            value: f?.config && {
-              key: f.config.key,
-              payload: f.config.payload,
-            },
-          })
-          .catch(() => {
-            // ignore
-          });
-
+        self.#triggerCheckEvent(f, true);
         return config;
       },
-      track: () => this.track(flagKey),
+      track: () => this.track(key),
       requestFeedback: (
         options: Omit<RequestFeedbackData, "flagKey" | "featureKey">,
       ) => {
         this.requestFeedback({
-          flagKey,
+          featureKey: key,
           ...options,
         });
       },
-      isEnabledOverride: this.flagsClient.getFlagOverride(flagKey),
+      get isEnabledOverride() {
+        const override = self.getFlagOverride(key);
+        return override === null ? null : !!override;
+      },
       setIsEnabledOverride(isEnabled: boolean | null) {
-        self.flagsClient.setFlagOverride(flagKey, isEnabled);
+        self.setFlagOverride(key, isEnabled);
       },
     };
+  }
+
+  /**
+   * Return the value of a flag.
+   *
+   * @param flagKey The key of the flag to return.
+   * @returns The value of the flag.
+   */
+  getFlag(flagKey: string): Flag {
+    const f = this.#getRawFlag(flagKey) ?? {
+      key: flagKey,
+      isEnabled: false,
+      valueOverride: null,
+    };
+
+    if (f.valueOverride !== null) {
+      this.#triggerCheckEvent(f, !!f.config);
+      return f.valueOverride;
+    }
+
+    if (f.config) {
+      this.#triggerCheckEvent(f, true);
+      return {
+        key: f.config.key,
+        payload: f.config.payload,
+      };
+    }
+
+    this.#triggerCheckEvent(f, false);
+    return f.isEnabled;
   }
 
   private sendCheckEvent(checkEvent: CheckEvent) {

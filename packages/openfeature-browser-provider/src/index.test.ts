@@ -172,28 +172,26 @@ describe("ReflagBrowserSDKProvider", () => {
       await provider.initialize();
     });
 
-    function mockFlag(
-      enabled: boolean,
-      configKey?: string | null,
-      configPayload?: any,
-    ) {
-      const config = {
-        key: configKey,
-        payload: configPayload,
-      };
-
-      reflagClientMock.getFlag = vi.fn().mockReturnValue({
-        isEnabled: enabled,
-        config,
-      });
-
+    function mockBooleanFlag(enabled: boolean) {
+      reflagClientMock.getFlag = vi.fn().mockReturnValue(enabled);
       reflagClientMock.getFlags = vi.fn().mockReturnValue({
         [testFlagKey]: {
           isEnabled: enabled,
-          config: {
-            key: "key",
-            payload: configPayload,
-          },
+        },
+      });
+    }
+
+    function mockMultiVariantFlag(key: string, payload: any) {
+      const config = {
+        key,
+        payload,
+      };
+
+      reflagClientMock.getFlag = vi.fn().mockReturnValue(config);
+      reflagClientMock.getFlags = vi.fn().mockReturnValue({
+        [testFlagKey]: {
+          isEnabled: true,
+          config,
         },
       });
     }
@@ -213,7 +211,8 @@ describe("ReflagBrowserSDKProvider", () => {
     });
 
     it("returns error if flag is not found", async () => {
-      mockFlag(true, "key", true);
+      mockBooleanFlag(false);
+
       const val = ofClient.getBooleanDetails("missing-key", true);
 
       expect(val).toMatchObject({
@@ -226,7 +225,7 @@ describe("ReflagBrowserSDKProvider", () => {
     });
 
     it("calls the client correctly when evaluating", async () => {
-      mockFlag(true, "key", true);
+      mockBooleanFlag(true);
 
       const val = ofClient.getBooleanDetails(testFlagKey, false);
 
@@ -234,36 +233,12 @@ describe("ReflagBrowserSDKProvider", () => {
         flagKey: testFlagKey,
         flagMetadata: {},
         reason: "TARGETING_MATCH",
-        variant: "key",
         value: true,
       });
 
       expect(reflagClientMock.getFlags).toHaveBeenCalled();
       expect(reflagClientMock.getFlag).toHaveBeenCalledWith(testFlagKey);
     });
-
-    it.each([
-      [true, false, true, "TARGETING_MATCH", undefined],
-      [undefined, true, true, "ERROR", "FLAG_NOT_FOUND"],
-      [undefined, false, false, "ERROR", "FLAG_NOT_FOUND"],
-    ])(
-      "should return the correct result when evaluating boolean. enabled: %s, value: %s, default: %s, expected: %s, reason: %s, errorCode: %s`",
-      (enabled, def, expected, reason, errorCode) => {
-        const configKey = enabled !== undefined ? "variant-1" : undefined;
-        const flagKey = enabled ? testFlagKey : "missing-key";
-
-        mockFlag(enabled ?? false, configKey);
-
-        expect(ofClient.getBooleanDetails(flagKey, def)).toMatchObject({
-          flagKey,
-          flagMetadata: {},
-          reason,
-          value: expected,
-          ...(errorCode ? { errorCode } : {}),
-          ...(configKey ? { variant: configKey } : {}),
-        });
-      },
-    );
 
     it("should return error when evaluating number", async () => {
       expect(ofClient.getNumberDetails(testFlagKey, 1)).toMatchObject({
@@ -275,49 +250,103 @@ describe("ReflagBrowserSDKProvider", () => {
       });
     });
 
-    it.each([
-      ["key-1", "default", "key-1", "TARGETING_MATCH"],
-      [null, "default", "default", "DEFAULT"],
-      [undefined, "default", "default", "DEFAULT"],
-    ])(
-      "should return the correct result when evaluating string. variant: %s, def: %s, expected: %s, reason: %s, errorCode: %s`",
-      (variant, def, expected, reason) => {
-        mockFlag(true, variant, {});
-        expect(ofClient.getStringDetails(testFlagKey, def)).toMatchObject({
+    describe("boolean", () => {
+      it.each([
+        [true, false, true, "TARGETING_MATCH", undefined],
+        [false, true, true, "ERROR", "FLAG_NOT_FOUND"],
+        [false, false, false, "ERROR", "FLAG_NOT_FOUND"],
+      ])(
+        "should return the correct result when evaluating boolean. enabled: %s, value: %s, default: %s, expected: %s, reason: %s, errorCode: %s`",
+        (enabled, def, expected, reason, errorCode) => {
+          const flagKey = enabled ? testFlagKey : "missing-key";
+
+          mockBooleanFlag(enabled);
+
+          expect(ofClient.getBooleanDetails(flagKey, def)).toMatchObject({
+            flagKey,
+            flagMetadata: {},
+            reason,
+            value: expected,
+            ...(errorCode ? { errorCode } : {}),
+          });
+        },
+      );
+
+      it("should return error when evaluating string", async () => {
+        mockBooleanFlag(true);
+
+        expect(ofClient.getStringDetails(testFlagKey, "a")).toMatchObject({
           flagKey: testFlagKey,
           flagMetadata: {},
-          reason,
-          value: expected,
-          ...(variant ? { variant } : {}),
+          reason: "ERROR",
+          errorCode: "TYPE_MISMATCH",
+          value: "a",
         });
-      },
-    );
+      });
 
-    it.each([
-      ["one", {}, { a: 1 }, {}, "TARGETING_MATCH", undefined],
-      ["two", "string", "default", "string", "TARGETING_MATCH", undefined],
-      ["three", 15, 16, 15, "TARGETING_MATCH", undefined],
-      ["four", true, true, true, "TARGETING_MATCH", undefined],
-      ["five", 100, "string", "string", "ERROR", "TYPE_MISMATCH"],
-      ["six", 1337, true, true, "ERROR", "TYPE_MISMATCH"],
-      ["seven", "string", 1337, 1337, "ERROR", "TYPE_MISMATCH"],
-      [undefined, null, { a: 2 }, { a: 2 }, "ERROR", "TYPE_MISMATCH"],
-      [undefined, undefined, "a", "a", "ERROR", "TYPE_MISMATCH"],
-    ])(
-      "should return the correct result when evaluating object. variant: %s, value: %s, default: %s, expected: %s, reason: %s, errorCode: %s`",
-      (variant, value, def, expected, reason, errorCode) => {
-        mockFlag(true, variant, value);
+      it("should return error when evaluating object", async () => {
+        mockBooleanFlag(true);
 
-        expect(ofClient.getObjectDetails(testFlagKey, def)).toMatchObject({
+        expect(ofClient.getObjectDetails(testFlagKey, { a: 1 })).toMatchObject({
           flagKey: testFlagKey,
           flagMetadata: {},
-          reason,
-          value: expected,
-          ...(errorCode ? { errorCode } : {}),
-          ...(variant && !errorCode ? { variant } : {}),
+          reason: "ERROR",
+          errorCode: "TYPE_MISMATCH",
+          value: { a: 1 },
         });
-      },
-    );
+      });
+    });
+
+    describe("multi-variant", () => {
+      it("should return error when evaluating boolean", async () => {
+        mockMultiVariantFlag("key", { a: 1 });
+
+        expect(ofClient.getBooleanDetails(testFlagKey, true)).toMatchObject({
+          flagKey: testFlagKey,
+          flagMetadata: {},
+          reason: "ERROR",
+          errorCode: "TYPE_MISMATCH",
+          value: true,
+        });
+      });
+
+      it("should return the correct result when evaluating string", () => {
+        mockMultiVariantFlag("key", { a: 1 });
+        expect(ofClient.getStringDetails(testFlagKey, "default")).toMatchObject(
+          {
+            flagKey: testFlagKey,
+            flagMetadata: {},
+            reason: "TARGETING_MATCH",
+            value: "key",
+            variant: "key",
+          },
+        );
+      });
+
+      it.each([
+        ["one", {}, { a: 1 }, {}, "TARGETING_MATCH", undefined],
+        ["two", "string", "default", "string", "TARGETING_MATCH", undefined],
+        ["three", 15, 16, 15, "TARGETING_MATCH", undefined],
+        ["four", true, true, true, "TARGETING_MATCH", undefined],
+        ["five", 100, "string", "string", "ERROR", "TYPE_MISMATCH"],
+        ["six", 1337, true, true, "ERROR", "TYPE_MISMATCH"],
+        ["seven", "string", 1337, 1337, "ERROR", "TYPE_MISMATCH"],
+      ])(
+        "should return the correct result when evaluating object. variant: %s, value: %s, default: %s, expected: %s, reason: %s, errorCode: %s`",
+        (variant, value, def, expected, reason, errorCode) => {
+          mockMultiVariantFlag(variant, value);
+
+          expect(ofClient.getObjectDetails(testFlagKey, def)).toMatchObject({
+            flagKey: testFlagKey,
+            flagMetadata: {},
+            reason,
+            value: expected,
+            ...(errorCode ? { errorCode } : {}),
+            ...(!errorCode ? { variant } : {}),
+          });
+        },
+      );
+    });
   });
 
   describe("track", () => {

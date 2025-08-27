@@ -8,6 +8,7 @@ import {
 } from "preact/hooks";
 
 import { ReflagClient } from "../client";
+import { Flag } from "../flag/flags";
 import { toolbarContainerId } from "../ui/constants";
 import { Dialog, DialogContent, DialogHeader, useDialog } from "../ui/Dialog";
 import { Logo } from "../ui/icons/Logo";
@@ -18,15 +19,9 @@ import { FlagSearch, FlagsTable } from "./Flags";
 import styles from "./index.css?inline";
 
 export type FlagItem = {
-  key: string;
-  localOverride: boolean | null;
-  isEnabled: boolean;
-};
-
-type Flag = {
-  key: string;
-  isEnabled: boolean;
-  localOverride: boolean | null;
+  flagKey: string;
+  value: Flag;
+  override: Flag | null;
 };
 
 export default function Toolbar({
@@ -38,26 +33,29 @@ export default function Toolbar({
 }) {
   const toggleToolbarRef = useRef<HTMLDivElement>(null);
   const dialogContentRef = useRef<HTMLDivElement>(null);
-  const [flags, setFlags] = useState<Flag[]>([]);
+  const [flags, setFlags] = useState<FlagItem[]>([]);
 
   const updateFlags = useCallback(() => {
     const rawFlags = reflagClient.getFlags();
     setFlags(
-      Object.values(rawFlags)
-        .filter((f) => f !== undefined)
-        .map(
-          (flag) =>
-            ({
-              key: flag.key,
-              localOverride: flag.isEnabledOverride,
-              isEnabled: flag.isEnabled,
-            }) satisfies FlagItem,
-        ),
+      Object.values(rawFlags).map(
+        (flag) =>
+          ({
+            flagKey: flag.key,
+            override: flag.valueOverride,
+            value: flag.config
+              ? {
+                  key: flag.config.key,
+                  payload: flag.config.payload,
+                }
+              : flag.isEnabled,
+          }) satisfies FlagItem,
+      ),
     );
   }, [reflagClient]);
 
   const hasAnyOverrides = useMemo(() => {
-    return flags.some((f) => f.localOverride !== null);
+    return flags.some((f) => f.override !== null);
   }, [flags]);
 
   useEffect(() => {
@@ -71,7 +69,9 @@ export default function Toolbar({
     dialogContentRef.current?.scrollTo({ top: 0 });
   };
 
-  const sortedFlags = [...flags].sort((a, b) => a.key.localeCompare(b.key));
+  const sortedFlags = [...flags].sort((a, b) =>
+    a.flagKey.localeCompare(b.flagKey),
+  );
 
   const appBaseUrl = reflagClient.getConfig().appBaseUrl;
 
@@ -108,8 +108,8 @@ export default function Toolbar({
             flags={sortedFlags}
             isOpen={isOpen}
             searchQuery={search}
-            setIsEnabledOverride={(key, isEnabled) =>
-              reflagClient.getFlag(key).setIsEnabledOverride(isEnabled)
+            setOverride={(key, value) =>
+              reflagClient.setFlagOverride(key, value)
             }
           />
         </DialogContent>

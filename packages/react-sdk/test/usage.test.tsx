@@ -20,7 +20,9 @@ import {
   ReflagProps,
   ReflagProvider,
   useClient,
+  useFeature,
   useFlag,
+  useIsLoading,
   useRequestFeedback,
   useSendFeedback,
   useTrack,
@@ -281,9 +283,9 @@ describe("<ReflagProvider />", () => {
   });
 });
 
-describe("useFlag", () => {
+describe("useFeature (deprecated)", () => {
   test("returns a loading state initially", async () => {
-    const { result, unmount } = renderHook(() => useFlag("huddle"), {
+    const { result, unmount } = renderHook(() => useFeature("huddle"), {
       wrapper: ({ children }) => getProvider({ children }),
     });
 
@@ -300,7 +302,7 @@ describe("useFlag", () => {
   });
 
   test("finishes loading", async () => {
-    const { result, unmount } = renderHook(() => useFlag("huddle"), {
+    const { result, unmount } = renderHook(() => useFeature("huddle"), {
       wrapper: ({ children }) => getProvider({ children }),
     });
 
@@ -319,7 +321,7 @@ describe("useFlag", () => {
   });
 
   test("provides the expected values if flag is enabled", async () => {
-    const { result, unmount } = renderHook(() => useFlag("abc"), {
+    const { result, unmount } = renderHook(() => useFeature("abc"), {
       wrapper: ({ children }) => getProvider({ children }),
     });
 
@@ -334,6 +336,68 @@ describe("useFlag", () => {
         },
         track: expect.any(Function),
         requestFeedback: expect.any(Function),
+      });
+    });
+
+    unmount();
+  });
+});
+
+describe("useIsLoading", () => {
+  test("returns `true` initially", async () => {
+    const { result, unmount } = renderHook(() => useIsLoading(), {
+      wrapper: ({ children }) => getProvider({ children }),
+    });
+
+    expect(result.current).toBe(true);
+    unmount();
+  });
+
+  test("finishes loading", async () => {
+    const { result, unmount } = renderHook(() => useIsLoading(), {
+      wrapper: ({ children }) => getProvider({ children }),
+    });
+
+    await waitFor(() => {
+      expect(result.current).toBe(false);
+    });
+
+    unmount();
+  });
+});
+
+describe("useFlag", () => {
+  test("returns `undefined` initially", async () => {
+    const { result, unmount } = renderHook(() => useFlag("huddle"), {
+      wrapper: ({ children }) => getProvider({ children }),
+    });
+
+    expect(result.current).toBeUndefined();
+
+    unmount();
+  });
+
+  test("finishes loading", async () => {
+    const { result, unmount } = renderHook(() => useFlag("huddle"), {
+      wrapper: ({ children }) => getProvider({ children }),
+    });
+
+    await waitFor(() => {
+      expect(result.current).toBe(false);
+    });
+
+    unmount();
+  });
+
+  test("provides the expected values if flag is enabled", async () => {
+    const { result, unmount } = renderHook(() => useFlag("abc"), {
+      wrapper: ({ children }) => getProvider({ children }),
+    });
+
+    await waitFor(() => {
+      expect(result.current).toStrictEqual({
+        key: "gpt3",
+        payload: { model: "gpt-something", temperature: 0.5 },
       });
     });
 

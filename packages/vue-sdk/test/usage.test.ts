@@ -14,7 +14,7 @@ function getProvider() {
   return {
     props: {
       publishableKey: "key",
-      newReflagClient: () => fakeClient,
+      newReflagClient: () => fakeClient as any,
     },
   };
 }

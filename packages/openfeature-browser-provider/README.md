@@ -1,9 +1,9 @@
 # Reflag Browser OpenFeature Provider
 
-The official OpenFeature Browser provider for [Reflag](https://bucket.co) feature management service.
+The official OpenFeature Browser provider for [Reflag.com](https://bucket.co) flag management service.
 
 It uses the Reflag Browser SDK internally and thus allow you to collect [automated feedback surveys](https://github.com/bucketco/bucket-javascript-sdk/tree/main/packages/browser-sdk#qualitative-feedback)
-when people use your features as well as tracking which customers use which features.
+when people use your flags as well as tracking which customers use which flags.
 
 If you're using React, you'll be better off with the [Reflag React SDK](https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/react-sdk/README.md) or the [OpenFeature React SDK](https://openfeature.dev/docs/reference/technologies/client/web/react/).
 
@@ -30,14 +30,14 @@ const publishableKey = "<your-reflag-publishable-key>";
 
 const reflagProvider = new ReflagBrowserProvider({ publishableKey });
 
-// set open feature provider and get client
+// set OpenFeature provider and get client
 await OpenFeature.setProviderAndWait(reflagProvider);
 const client = OpenFeature.getClient();
 
 // use client
 const boolValue = client.getBooleanValue("huddles", false);
 
-// use more complex, dynamic config-enabled functionality.
+// use more complex, multi-variate flags.
 const feedbackConfig = client.getObjectValue("ask-feedback", {
   question: "How are you enjoying this feature?",
 });
@@ -46,9 +46,10 @@ const feedbackConfig = client.getObjectValue("ask-feedback", {
 Initializing the Reflag Browser Provider will
 also initialize [automatic feedback surveys](https://github.com/bucketco/bucket-javascript-sdk/tree/main/packages/browser-sdk#qualitative-feedback).
 
-## Feature resolution methods
+## Flag resolution methods
 
-The Reflag OpenFeature Provider implements the OpenFeature evaluation interface for different value types. Each method handles the resolution of feature flags according to the OpenFeature specification.
+The Reflag OpenFeature Provider implements the OpenFeature evaluation interface for different value types. Each method handles the resolution of
+flags according to the OpenFeature specification.
 
 ### Common behavior
 
@@ -67,7 +68,7 @@ All resolution methods share these behaviors:
 client.getBooleanValue("my-flag", false);
 ```
 
-Returns the feature's enabled state. This is the most common use case for feature flags.
+Returns the flags's value when the flag is expected to be a simple boolean toggle. Will fail for multi-variate flags.
 
 #### String Resolution
 
@@ -75,7 +76,7 @@ Returns the feature's enabled state. This is the most common use case for featur
 client.getStringValue("my-flag", "default");
 ```
 
-Returns the feature's remote config key (also known as "variant"). Useful for multi-variate use cases.
+Returns the flag's variant key when the flag is multi-variate. Will fail for toggle flags.
 
 #### Number Resolution
 
@@ -94,10 +95,12 @@ client.getObjectValue("my-flag", "string-value");
 client.getObjectValue("my-flag", 199);
 ```
 
-Returns the feature's remote config payload with type validation. This is the most flexible method,
+Returns the flags's variant payload with type validation. This is the most flexible method,
 allowing for complex configuration objects or simple types.
 
-The object resolution performs runtime type checking between the default value and the feature payload to ensure type safety.
+The object resolution performs runtime type checking between the default value and the flag payload to ensure type safety.
+
+Will fail for toggle flags.
 
 ## Context
 
@@ -144,7 +147,7 @@ To update the context, call `OpenFeature.setContext(myNewContext);`
 await OpenFeature.setContext({ userId: "my-key" });
 ```
 
-## Tracking feature usage
+## Tracking flag usage
 
 The Reflag OpenFeature Provider supports the OpenFeature tracking API
 natively.
