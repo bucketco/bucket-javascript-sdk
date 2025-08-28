@@ -33,15 +33,17 @@ describe("config tests", () => {
     process.env.BUCKET_SECRET_KEY = "mySecretKeyFromEnv";
     process.env.BUCKET_OFFLINE = "true";
     process.env.BUCKET_API_BASE_URL = "http://localhost:4999";
-    process.env.BUCKET_FLAGS_ENABLED = "flag-1,flag-2";
-    process.env.BUCKET_FLAGS_DISABLED = "flag-3,flag-4";
+    process.env.BUCKET_FEATURES_ENABLED = "flag-1,flag-2";
+    process.env.BUCKET_FEATURES_DISABLED = "flag-3,flag-4";
 
     const config = loadConfig();
     expect(config).toEqual({
+      featureOverrides: {},
       flagOverrides: {
         "flag-1": true,
         "flag-2": true,
         "flag-3": false,
+        "flag-4": false,
       },
       secretKey: "mySecretKeyFromEnv",
       offline: true,
@@ -53,8 +55,8 @@ describe("config tests", () => {
     process.env.REFLAG_SECRET_KEY = "mySecretKeyFromEnv";
     process.env.REFLAG_OFFLINE = "true";
     process.env.REFLAG_API_BASE_URL = "http://localhost:4999";
-    process.env.REFLAG_FEATURES_ENABLED = "flag-5,flag-7";
-    process.env.REFLAG_FEATURES_DISABLED = "flag-4,flag-8";
+    process.env.REFLAG_FLAGS_ENABLED = "flag-5,flag-7";
+    process.env.REFLAG_FLAGS_DISABLED = "flag-4,flag-8";
 
     const config = loadConfig("test/testConfig.json");
     expect(config).toEqual({

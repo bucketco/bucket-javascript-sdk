@@ -313,7 +313,7 @@ export class ReflagClient {
         (acc, [key, fallback]) => {
           if (typeof fallback === "object" && fallback) {
             acc[key as FlagKey] = {
-              key: fallback.key,
+              key,
               isEnabled: true,
               config: fallback,
             };
@@ -373,6 +373,7 @@ export class ReflagClient {
         "features",
         this._config.fetchRetries,
       );
+
       if (!isObject(res) || !Array.isArray(res?.features)) {
         this.logger.warn("flags cache: invalid response", res);
         return undefined;
@@ -418,7 +419,7 @@ export class ReflagClient {
     }
   }
 
-  #convertFlagOverrides = (overrides: TypedFlags): FeatureOverrides => {
+  private _convertFlagOverrides = (overrides: TypedFlags): FeatureOverrides => {
     return Object.fromEntries(
       Object.entries(overrides).map(([key, override]) => {
         if (typeof override === "object" && override) {
@@ -458,11 +459,11 @@ export class ReflagClient {
    **/
   set flagOverrides(overrides: FlagOverridesFn | TypedFlags) {
     if (typeof overrides === "object") {
-      const converted = this.#convertFlagOverrides(overrides);
+      const converted = this._convertFlagOverrides(overrides);
       this._config.flagOverrides = () => converted;
     } else {
       this._config.flagOverrides = (context) =>
-        this.#convertFlagOverrides(overrides(context));
+        this._convertFlagOverrides(overrides(context));
     }
   }
 
@@ -766,7 +767,7 @@ export class ReflagClient {
     });
   }
 
-  #wrapRawFlagAsFeature<TKey extends FlagKey>(
+  private _wrapRawFlagAsFeature<TKey extends FlagKey>(
     {
       enableTracking,
       enableChecks = false,
@@ -846,25 +847,27 @@ export class ReflagClient {
     };
   }
 
-  #expandRawFlag<TKey extends FlagKey>(
+  private _expandRawFlag<TKey extends FlagKey>(
     {
-      enableTracking,
+      enableTracking = true,
       enableChecks = false,
       ...context
-    }: { enableTracking: boolean; enableChecks?: boolean } & Context,
+    }: { enableTracking?: boolean; enableChecks?: boolean } & Context,
     { config, ...flag }: PartialBy<RawFlag, "isEnabled">,
   ): TypedFlags[TKey] {
-    if (config) {
-      if (enableChecks) {
-        this._warnMissingFeatureContextFields(context, config);
-      }
+    if (config?.key) {
+      const value = {
+        key: config.key,
+        payload: config.payload,
+      };
 
-      if (enableTracking) {
+      if (enableTracking && enableChecks) {
+        this._warnMissingFeatureContextFields(context, config);
         void this.sendFlagEvent({
           action: "check-config",
           key: flag.key,
           targetingVersion: config?.targetingVersion,
-          evalResult: config,
+          evalResult: value,
           evalContext: context,
           evalRuleResults: config?.ruleEvaluationResults,
           evalMissingFields: config?.missingContextFields,
@@ -876,16 +879,10 @@ export class ReflagClient {
         });
       }
 
-      return {
-        key: config.key,
-        payload: config.payload,
-      };
+      return value;
     } else {
-      if (enableChecks) {
+      if (enableTracking && enableChecks) {
         this._warnMissingFeatureContextFields(context, flag);
-      }
-
-      if (enableTracking) {
         void this.sendFlagEvent({
           action: "check",
           key: flag.key,
@@ -927,12 +924,12 @@ export class ReflagClient {
     enableTracking = true,
     ...context
   }: ContextWithTracking): TypedFeatures {
-    const flags = this.#getRawFlags({ enableTracking, ...context });
+    const flags = this._getRawFlags({ enableTracking, ...context });
 
     return Object.fromEntries(
       Object.entries(flags).map(([k, v]) => [
         k,
-        this.#wrapRawFlagAsFeature({ enableTracking, ...context }, v),
+        this._wrapRawFlagAsFeature({ enableTracking, ...context }, v),
       ]),
     );
   }
@@ -954,9 +951,9 @@ export class ReflagClient {
     { enableTracking = true, ...context }: ContextWithTracking,
     key: TKey,
   ): TypedFeatures[TKey] {
-    const flag = this.#getRawFlags({ enableTracking, ...context }, key);
+    const flag = this._getRawFlags({ enableTracking, ...context }, key);
 
-    return this.#wrapRawFlagAsFeature(
+    return this._wrapRawFlagAsFeature(
       { ...context, enableTracking, enableChecks: true },
       { key, ...flag },
     );
@@ -978,14 +975,15 @@ export class ReflagClient {
    **/
   public getFlags({
     enableTracking = true,
+    meta,
     ...context
   }: ContextWithTracking): TypedFlags {
-    const flags = this.#getRawFlags({ enableTracking, ...context });
+    const flags = this._getRawFlags({ enableTracking, meta, ...context });
 
     return Object.fromEntries(
       Object.entries(flags).map(([k, v]) => [
         k,
-        this.#expandRawFlag({ enableTracking, ...context }, v),
+        this._expandRawFlag({ enableTracking, ...context }, v),
       ]),
     );
   }
@@ -1001,12 +999,15 @@ export class ReflagClient {
    * Call `initialize` before calling this method to ensure the flag definitions are cached, no flags will be returned otherwise.
    **/
   public getFlag<TKey extends FlagKey>(
-    { enableTracking = true, ...context }: ContextWithTracking,
+    { enableTracking = true, meta, ...context }: ContextWithTracking,
     flagKey: TKey,
   ): TypedFlags[TKey] {
-    const flag = this.#getRawFlags({ enableTracking, ...context }, flagKey);
+    const flag = this._getRawFlags(
+      { enableTracking, meta, ...context },
+      flagKey,
+    );
 
-    return this.#expandRawFlag(
+    return this._expandRawFlag(
       { ...context, enableTracking, enableChecks: true },
       { key: flagKey, ...flag },
     );
@@ -1032,15 +1033,15 @@ export class ReflagClient {
     companyId?: IdType,
     additionalContext?: Context,
   ): Promise<TypedFeatures[TKey]> {
-    const context = this.#expandRemoteContext(
+    const context = this._expandRemoteContext(
       userId,
       companyId,
       additionalContext,
     );
 
-    const flag = await this.#evaluateFlagsRemote(key, context);
+    const flag = await this._evaluateFlagsRemote(key, context);
 
-    return this.#wrapRawFlagAsFeature(
+    return this._wrapRawFlagAsFeature(
       { ...context, enableTracking: true },
       { key, ...flag },
     );
@@ -1064,18 +1065,18 @@ export class ReflagClient {
     companyId?: IdType,
     additionalContext?: Context,
   ): Promise<TypedFeatures> {
-    const context = this.#expandRemoteContext(
+    const context = this._expandRemoteContext(
       userId,
       companyId,
       additionalContext,
     );
 
-    const flags = await this.#evaluateFlagsRemote(undefined, context);
+    const flags = await this._evaluateFlagsRemote(undefined, context);
 
     return Object.fromEntries(
       Object.entries(flags).map(([k, v]) => [
         k,
-        this.#wrapRawFlagAsFeature({ ...context, enableTracking: true }, v),
+        this._wrapRawFlagAsFeature({ ...context, enableTracking: true }, v),
       ]),
     );
   }
@@ -1097,15 +1098,15 @@ export class ReflagClient {
     companyId?: IdType,
     additionalContext?: Context,
   ): Promise<TypedFlags[TKey]> {
-    const context = this.#expandRemoteContext(
+    const context = this._expandRemoteContext(
       userId,
       companyId,
       additionalContext,
     );
 
-    const flag = await this.#evaluateFlagsRemote(flagKey, context);
+    const flag = await this._evaluateFlagsRemote(flagKey, context);
 
-    return this.#expandRawFlag(
+    return this._expandRawFlag(
       { ...context, enableTracking: true, enableChecks: true },
       { key: flagKey, ...flag },
     );
@@ -1124,25 +1125,25 @@ export class ReflagClient {
   public async getFlagsRemote(
     userId?: IdType,
     companyId?: IdType,
-    additionalContext?: ContextWithTracking,
+    additionalContext?: Context,
   ): Promise<TypedFlags> {
-    const context = this.#expandRemoteContext(
+    const context = this._expandRemoteContext(
       userId,
       companyId,
       additionalContext,
     );
 
-    const flags = await this.#evaluateFlagsRemote(undefined, context);
+    const flags = await this._evaluateFlagsRemote(undefined, context);
 
     return Object.fromEntries(
       Object.entries(flags).map(([k, v]) => [
         k,
-        this.#expandRawFlag({ ...context, enableTracking: true }, v),
+        this._expandRawFlag({ ...context, enableTracking: true }, v),
       ]),
     );
   }
 
-  #buildUrl(path: string) {
+  private _buildUrl(path: string) {
     if (path.startsWith("/")) {
       path = path.slice(1);
     }
@@ -1165,7 +1166,7 @@ export class ReflagClient {
     ok(typeof path === "string" && path.length > 0, "path must be a string");
     ok(typeof body === "object", "body must be an object");
 
-    const url = this.#buildUrl(path);
+    const url = this._buildUrl(path);
     try {
       const response = await this.httpClient.post<TBody, { success: boolean }>(
         url,
@@ -1202,7 +1203,7 @@ export class ReflagClient {
     ok(typeof path === "string" && path.length > 0, "path must be a string");
 
     try {
-      const url = this.#buildUrl(path);
+      const url = this._buildUrl(path);
       return await withRetry(
         async () => {
           const response = await this.httpClient.get<
@@ -1458,12 +1459,12 @@ export class ReflagClient {
     }
   }
 
-  #getRawFlags(options: ContextWithTracking): Record<FlagKey, RawFlag>;
-  #getRawFlags<TKey extends FlagKey>(
+  private _getRawFlags(options: ContextWithTracking): Record<FlagKey, RawFlag>;
+  private _getRawFlags<TKey extends FlagKey>(
     options: ContextWithTracking,
     flagKey: TKey,
   ): RawFlag | undefined;
-  #getRawFlags<TKey extends FlagKey>(
+  private _getRawFlags<TKey extends FlagKey>(
     options: ContextWithTracking,
     flagKey?: TKey,
   ): RawFlag | Record<FlagKey, RawFlag> | undefined {
@@ -1572,12 +1573,12 @@ export class ReflagClient {
           ruleEvaluationResults: res.enabledResult.ruleEvaluationResults,
           missingContextFields: res.enabledResult.missingContextFields,
           targetingVersion: res.targetingVersion,
-          config: {
-            key: res.configResult?.value?.key,
-            payload: res.configResult?.value?.payload,
+          config: res.configResult && {
+            key: res.configResult.value?.key,
+            payload: res.configResult.value?.payload,
             targetingVersion: res.configVersion,
-            ruleEvaluationResults: res.configResult?.ruleEvaluationResults,
-            missingContextFields: res.configResult?.missingContextFields,
+            ruleEvaluationResults: res.configResult.ruleEvaluationResults,
+            missingContextFields: res.configResult.missingContextFields,
           },
         };
         return acc;
@@ -1593,8 +1594,8 @@ export class ReflagClient {
         isObject(override)
           ? {
               key,
-              isEnabled: true,
-              config: override,
+              isEnabled: override.isEnabled,
+              config: override.config,
             }
           : {
               key,
@@ -1618,7 +1619,7 @@ export class ReflagClient {
     return evaluatedFlags;
   }
 
-  #expandRemoteContext(
+  private _expandRemoteContext(
     userId: IdType | undefined,
     companyId: IdType | undefined,
     additionalContext: Context | undefined,
@@ -1634,19 +1635,19 @@ export class ReflagClient {
     return context;
   }
 
-  async #evaluateFlagsRemote(
+  private async _evaluateFlagsRemote(
     flagKey: undefined,
-    context: ContextWithTracking,
+    context: Context,
   ): Promise<Record<FlagKey, RawFlag>>;
-  async #evaluateFlagsRemote<TKey extends FlagKey>(
+  private async _evaluateFlagsRemote<TKey extends FlagKey>(
     flagKey: TKey,
-    context: ContextWithTracking,
+    context: Context,
   ): Promise<RawFlag | undefined>;
-  async #evaluateFlagsRemote<TKey extends FlagKey>(
+  private async _evaluateFlagsRemote<TKey extends FlagKey>(
     flagKey: TKey | undefined,
-    context: ContextWithTracking,
+    context: Context,
   ): Promise<Record<FlagKey, RawFlag> | RawFlag | undefined> {
-    checkContextWithTracking(context);
+    checkContext(context);
 
     const params = new URLSearchParams(
       Object.keys(context).length ? flattenJSON({ context }) : undefined,
@@ -1933,9 +1934,7 @@ function checkMeta(
   );
 }
 
-function checkContextWithTracking(
-  context: ContextWithTracking,
-): asserts context is ContextWithTracking & { enableTracking: boolean } {
+function checkContext(context: Context): asserts context is Context {
   ok(isObject(context), "context must be an object");
   ok(
     typeof context.user === "undefined" || isObject(context.user),
@@ -1957,6 +1956,13 @@ function checkContextWithTracking(
     context.other === undefined || isObject(context.other),
     "other must be an object if given",
   );
+}
+
+function checkContextWithTracking(
+  context: ContextWithTracking,
+): asserts context is ContextWithTracking & { enableTracking: boolean } {
+  checkContext(context);
+
   ok(
     typeof context.enableTracking === "boolean",
     "enableTracking must be a boolean",

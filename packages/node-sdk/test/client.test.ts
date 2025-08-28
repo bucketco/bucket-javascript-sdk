@@ -240,11 +240,11 @@ describe("ReflagClient", () => {
       expect(reflagInstance["_config"].fallbackFlags).toStrictEqual({
         "flag-1": {
           key: "flag-1",
-          config: undefined,
           isEnabled: true,
         },
         "flag-2": {
           key: "flag-2",
+          isEnabled: true,
           config: {
             key: "config1",
             payload: { value: true },
@@ -370,7 +370,7 @@ describe("ReflagClient", () => {
         fallbackFlags: "invalid" as any,
       };
       expect(() => new ReflagClient(invalidOptions)).toThrow(
-        "fallbackFlags must be an array or object",
+        "fallbackFlags must be an object",
       );
     });
 
@@ -1416,6 +1416,850 @@ describe("ReflagClient", () => {
     });
   });
 
+  describe("getFlag", () => {
+    let client: ReflagClient;
+
+    beforeEach(async () => {
+      httpClient.get.mockResolvedValue({
+        ok: true,
+        status: 200,
+        body: {
+          success: true,
+          ...flagDefinitions,
+        },
+      });
+
+      client = new ReflagClient(validOptions);
+
+      httpClient.post.mockResolvedValue({
+        status: 200,
+        body: { success: true },
+      });
+    });
+
+    it("returns the value of the flag (boolean)", async () => {
+      await client.initialize();
+      const flag = client.getFlag(
+        {
+          company,
+          user,
+          other: otherContext,
+        },
+        "flag-2",
+      );
+
+      expect(flag).toBe(false);
+    });
+
+    it("returns the value of the flag (multi-variate)", async () => {
+      await client.initialize();
+      const flag = client.getFlag(
+        {
+          company,
+          user,
+          other: otherContext,
+        },
+        "flag-1",
+      );
+
+      expect(flag).toStrictEqual({
+        key: "config-1",
+        payload: { something: "else" },
+      });
+    });
+
+    it("sends all expected events when `enableTracking` is `true`", async () => {
+      const context = {
+        company,
+        user,
+        other: otherContext,
+      };
+
+      await client.initialize();
+      client.getFlag(
+        {
+          ...context,
+          meta: {
+            active: true,
+          },
+          enableTracking: true,
+        },
+        "flag-1",
+      );
+
+      await client.flush();
+
+      expect(httpClient.post).toHaveBeenCalledWith(
+        BULK_ENDPOINT,
+        expectedHeaders,
+        [
+          {
+            attributes: {
+              employees: 100,
+              name: "Acme Inc.",
+            },
+            companyId: "company123",
+            context: {
+              active: true,
+            },
+            type: "company",
+            userId: undefined,
+          },
+          {
+            attributes: {
+              age: 1,
+              name: "John",
+            },
+            context: {
+              active: true,
+            },
+            type: "user",
+            userId: "user123",
+          },
+          {
+            type: "feature-flag-event",
+            action: "evaluate",
+            key: "flag-1",
+            targetingVersion: 1,
+            evalContext: flattenJSON(context),
+            evalResult: true,
+            evalRuleResults: [true],
+            evalMissingFields: [],
+          },
+          {
+            type: "feature-flag-event",
+            action: "evaluate-config",
+            key: "flag-1",
+            targetingVersion: 1,
+            evalContext: flattenJSON(context),
+            evalResult: {
+              key: "config-1",
+              payload: {
+                something: "else",
+              },
+            },
+            evalRuleResults: [true],
+            evalMissingFields: [],
+          },
+          {
+            type: "feature-flag-event",
+            action: "check-config",
+            key: "flag-1",
+            evalResult: {
+              key: "config-1",
+              payload: {
+                something: "else",
+              },
+            },
+            targetingVersion: 1,
+            evalContext: context,
+            evalRuleResults: [true],
+            evalMissingFields: [],
+          },
+        ],
+      );
+    });
+
+    it("does not send evaluation events when `emitEvaluationEvents` is `false`", async () => {
+      client = new ReflagClient({
+        ...validOptions,
+        emitEvaluationEvents: false,
+      });
+
+      const context = {
+        company,
+        user,
+        other: otherContext,
+      };
+
+      // test that the feature is returned
+      await client.initialize();
+      client.getFlag(
+        {
+          ...context,
+          meta: {
+            active: true,
+          },
+          enableTracking: true,
+        },
+        "flag-1",
+      );
+
+      await client.flush();
+
+      expect(httpClient.post).toHaveBeenCalledWith(
+        BULK_ENDPOINT,
+        expectedHeaders,
+        [
+          {
+            attributes: {
+              employees: 100,
+              name: "Acme Inc.",
+            },
+            companyId: "company123",
+            context: {
+              active: true,
+            },
+            type: "company",
+          },
+          {
+            attributes: {
+              age: 1,
+              name: "John",
+            },
+            context: {
+              active: true,
+            },
+            type: "user",
+            userId: "user123",
+          },
+          {
+            type: "feature-flag-event",
+            action: "check-config",
+            key: "flag-1",
+            evalResult: {
+              key: "config-1",
+              payload: {
+                something: "else",
+              },
+            },
+            targetingVersion: 1,
+            evalContext: context,
+            evalRuleResults: [true],
+            evalMissingFields: [],
+          },
+        ],
+      );
+    });
+
+    it("warns about missing context fields", async () => {
+      const context = {
+        company,
+        user,
+        other: otherContext,
+      };
+
+      // test that the feature is returned
+      await client.initialize();
+      client.getFlag(context, "flag-2");
+
+      expect(logger.warn).toHaveBeenCalledWith(
+        "feature/remote config targeting rules might not be correctly evaluated due to missing context fields.",
+        {
+          "flag-2": ["attributeKey"],
+        },
+      );
+    });
+
+    it("should not warn about missing context fields if not needed", async () => {
+      const context = {
+        company,
+        user,
+        other: otherContext,
+      };
+
+      // test that the feature is returned
+      await client.initialize();
+      client.getFlag(context, "flag-1");
+
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+
+    it("emits `check-config` event (multi-variate)", async () => {
+      const context = {
+        company,
+        user,
+        other: otherContext,
+      };
+
+      await client.initialize();
+      client.getFlag(context, "flag-1");
+
+      await client.flush();
+
+      const checkEvents = httpClient.post.mock.calls
+        .flatMap((call) => call[2])
+        .filter((e) => e.action === "check-config");
+
+      expect(checkEvents).toStrictEqual([
+        {
+          type: "feature-flag-event",
+          action: "check-config",
+          key: "flag-1",
+          evalResult: {
+            key: "config-1",
+            payload: {
+              something: "else",
+            },
+          },
+          targetingVersion: 1,
+          evalContext: context,
+          evalRuleResults: [true],
+          evalMissingFields: [],
+        },
+      ]);
+    });
+
+    it("emits `check` event (boolean)", async () => {
+      const context = {
+        company,
+        user,
+        other: otherContext,
+      };
+
+      await client.initialize();
+      client.getFlag(context, "flag-2");
+
+      await client.flush();
+
+      const checkEvents = httpClient.post.mock.calls
+        .flatMap((call) => call[2])
+        .filter((e) => e.action === "check");
+
+      expect(checkEvents).toStrictEqual([
+        {
+          type: "feature-flag-event",
+          action: "check",
+          key: "flag-2",
+          evalResult: false,
+          targetingVersion: 2,
+          evalContext: context,
+          evalRuleResults: [false],
+          evalMissingFields: ["attributeKey"],
+        },
+      ]);
+    });
+
+    it("sends events for unknown flags", async () => {
+      const context: Context = {
+        company,
+        user,
+        other: otherContext,
+      };
+
+      // test that the feature is returned
+      await client.initialize();
+      client.getFlag(context, "unknown-flag");
+
+      await client.flush();
+
+      const checkEvents = httpClient.post.mock.calls
+        .flatMap((call) => call[2])
+        .filter((e) => e.type !== "company" && e.type !== "user");
+
+      expect(checkEvents).toStrictEqual([
+        {
+          type: "feature-flag-event",
+          action: "check",
+          key: "unknown-flag",
+          targetingVersion: undefined,
+          evalContext: context,
+          evalResult: false,
+          evalRuleResults: undefined,
+          evalMissingFields: undefined,
+        },
+      ]);
+    });
+  });
+
+  describe("getFlags", () => {
+    let client: ReflagClient;
+
+    beforeEach(async () => {
+      httpClient.get.mockResolvedValue({
+        ok: true,
+        status: 200,
+        body: {
+          success: true,
+          ...flagDefinitions,
+        },
+      });
+
+      client = new ReflagClient(validOptions);
+
+      client["rateLimiter"].clearStale(true);
+
+      httpClient.post.mockResolvedValue({
+        ok: true,
+        status: 200,
+        body: { success: true },
+      });
+    });
+
+    it("should return evaluated flags", async () => {
+      httpClient.post.mockClear(); // not interested in updates
+
+      await client.initialize();
+      const result = client.getFlags({
+        company,
+        user,
+        other: otherContext,
+      });
+
+      expect(result).toStrictEqual({
+        "flag-1": {
+          key: "config-1",
+          payload: {
+            something: "else",
+          },
+        },
+        "flag-2": false,
+      });
+
+      await client.flush();
+
+      expect(httpClient.post).toHaveBeenCalledTimes(1);
+    });
+
+    it("should properly define the rate limiter key", async () => {
+      const isAllowedSpy = vi.spyOn(client["rateLimiter"], "isAllowed");
+
+      await client.initialize();
+      client.getFlags({ user, company, other: otherContext });
+
+      expect(isAllowedSpy).toHaveBeenCalledWith("1GHpP+QfYperQ0AtD8bWPiRE4H0=");
+    });
+
+    it("should return evaluated flags when only user is defined", async () => {
+      httpClient.post.mockClear(); // not interested in updates
+
+      await client.initialize();
+      const flags = client.getFlags({ user });
+
+      expect(flags).toStrictEqual({
+        "flag-1": false,
+        "flag-2": false,
+      });
+
+      await client.flush();
+
+      expect(httpClient.post).toHaveBeenCalledTimes(1);
+    });
+
+    it("should return evaluated flags when only company is defined", async () => {
+      await client.initialize();
+      const flags = client.getFlags({ company });
+
+      expect(flags).toStrictEqual({
+        "flag-1": {
+          key: "config-1",
+          payload: {
+            something: "else",
+          },
+        },
+        "flag-2": false,
+      });
+
+      await client.flush();
+
+      expect(httpClient.post).toHaveBeenCalledTimes(1);
+    });
+
+    it("should not send flag events when `enableTracking` is `false`", async () => {
+      await client.initialize();
+      const flags = client.getFlags({ company, enableTracking: false });
+
+      expect(flags).toStrictEqual({
+        "flag-1": {
+          key: "config-1",
+          payload: {
+            something: "else",
+          },
+        },
+        "flag-2": false,
+      });
+
+      await client.flush();
+
+      expect(httpClient.post).not.toHaveBeenCalled();
+    });
+
+    it("should return evaluated flags when only other context is defined", async () => {
+      await client.initialize();
+      const flags = client.getFlags({ other: otherContext });
+
+      expect(flags).toStrictEqual({
+        "flag-1": false,
+        "flag-2": false,
+      });
+
+      await client.flush();
+
+      expect(httpClient.post).toHaveBeenCalledTimes(1);
+    });
+
+    it("no `check` events are emitted", async () => {
+      const context = {
+        company,
+        user,
+        other: otherContext,
+      };
+
+      await client.initialize();
+      client.getFlags(context);
+
+      await client.flush();
+      const checkEvents = httpClient.post.mock.calls
+        .flatMap((call) => call[2])
+        .filter((e) => e.action === "check");
+
+      expect(checkEvents).toStrictEqual([]);
+    });
+
+    it("emits company/user events", async () => {
+      const context: Context = {
+        company,
+        user,
+        other: otherContext,
+      };
+
+      await client.initialize();
+      client.getFlags(context);
+
+      await client.flush();
+
+      const checkEvents = httpClient.post.mock.calls
+        .flatMap((call) => call[2])
+        .filter(
+          (e) =>
+            e.type === "company" || e.type === "user" || e.type === "event",
+        );
+
+      expect(checkEvents).toStrictEqual([
+        {
+          type: "company",
+          companyId: "company123",
+          attributes: {
+            employees: 100,
+            name: "Acme Inc.",
+          },
+          userId: undefined, // this is a bug, will fix in separate PR
+          context: undefined,
+        },
+        {
+          type: "user",
+          userId: "user123",
+          attributes: {
+            age: 1,
+            name: "John",
+          },
+          context: undefined,
+        },
+      ]);
+    });
+
+    it("should use fallback flags when no definitions are available", async () => {
+      httpClient.get.mockResolvedValue({
+        success: false,
+      });
+
+      await client.initialize();
+      const result = client.getFlag(
+        { user: { id: "user123" }, enableTracking: true },
+        "key",
+      );
+
+      expect(result).toBe(true);
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringMatching(
+          "no flag definitions available, using fallback flags",
+        ),
+      );
+
+      await client.flush();
+
+      expect(httpClient.post).toHaveBeenCalledTimes(1);
+      expect(httpClient.post).toHaveBeenCalledWith(
+        BULK_ENDPOINT,
+        expectedHeaders,
+        [
+          expect.objectContaining({ type: "user" }),
+          expect.objectContaining({
+            type: "feature-flag-event",
+            action: "check",
+            key: "key",
+            evalResult: true,
+          }),
+        ],
+      );
+    });
+
+    it("should not fail if `sendFlagEvent` fails to send evaluate event", async () => {
+      httpClient.post.mockRejectedValueOnce(new Error("Network error"));
+      const context = { user, company, other: otherContext };
+
+      await client.initialize();
+      const flags = client.getFlags(context);
+
+      await client.flush();
+
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.stringMatching("post request .* failed with error"),
+        expect.any(Error),
+      );
+
+      expect(flags).toStrictEqual({
+        "flag-1": {
+          key: "config-1",
+          payload: {
+            something: "else",
+          },
+        },
+        "flag-2": false,
+      });
+    });
+
+    it("should not fail if `sendFlagEvent` fails to send check event", async () => {
+      httpClient.post.mockResolvedValue({
+        status: 200,
+        body: { success: true },
+      });
+
+      await client.initialize();
+      httpClient.post.mockRejectedValue(new Error("Network error"));
+      const context = { user, company, other: otherContext };
+
+      const result = client.getFlags(context);
+
+      expect(result).toStrictEqual({
+        "flag-1": {
+          key: "config-1",
+          payload: {
+            something: "else",
+          },
+        },
+        "flag-2": false,
+      });
+
+      await client.flush();
+
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.stringMatching("post request .* failed with error"),
+        expect.any(Error),
+      );
+    });
+
+    it("should use flag overrides", async () => {
+      await client.initialize();
+      const context = { user, company, other: otherContext };
+
+      const pristineResults = client.getFlags(context);
+      expect(pristineResults).toStrictEqual({
+        "flag-1": {
+          key: "config-1",
+          payload: {
+            something: "else",
+          },
+        },
+        "flag-2": false,
+      });
+
+      client.flagOverrides = {
+        "flag-1": false,
+      };
+      const flags = client.getFlags(context);
+
+      expect(flags).toStrictEqual({
+        "flag-1": false,
+        "flag-2": false,
+      });
+
+      client.clearFlagOverrides();
+      const flags2 = client.getFlags(context);
+
+      expect(flags2).toStrictEqual({
+        ...pristineResults,
+        "flag-1": pristineResults["flag-1"],
+        "flag-2": pristineResults["flag-2"],
+      });
+    });
+
+    it("should use flag overrides from function", async () => {
+      await client.initialize();
+      const context = { user, company, other: otherContext };
+
+      const pristineResults = client.getFlags(context);
+      expect(pristineResults).toStrictEqual({
+        "flag-1": {
+          key: "config-1",
+          payload: {
+            something: "else",
+          },
+        },
+        "flag-2": false,
+      });
+
+      client.flagOverrides = (_context: Context) => {
+        expect(context).toStrictEqual(context);
+        return {
+          "flag-1": false,
+          "flag-2": true,
+          "flag-3": {
+            key: "config-1",
+            payload: { something: "else" },
+          },
+        };
+      };
+
+      const flags = client.getFlags(context);
+      expect(flags).toStrictEqual({
+        "flag-1": false,
+        "flag-2": true,
+        "flag-3": {
+          key: "config-1",
+          payload: { something: "else" },
+        },
+      });
+    });
+  });
+
+  describe("getFlagsRemote", () => {
+    let client: ReflagClient;
+
+    beforeEach(async () => {
+      httpClient.get.mockResolvedValue({
+        ok: true,
+        status: 200,
+        body: {
+          success: true,
+          remoteContextUsed: true,
+          features: {
+            "flag-1": {
+              key: "flag-1",
+              targetingVersion: 1,
+              isEnabled: true,
+              config: {
+                key: "config-1",
+                version: 3,
+                default: true,
+                payload: { something: "else" },
+                missingContextFields: ["funny"],
+              },
+              missingContextFields: ["something", "funny"],
+            },
+            "flag-2": {
+              key: "flag-2",
+              targetingVersion: 2,
+              isEnabled: false,
+              missingContextFields: ["another"],
+            },
+            "flag-3": {
+              key: "flag-3",
+              targetingVersion: 5,
+              isEnabled: true,
+            },
+          },
+        },
+      });
+
+      client = new ReflagClient(validOptions);
+    });
+
+    afterEach(() => {
+      httpClient.get.mockClear();
+    });
+
+    it("should return evaluated flags", async () => {
+      const result = await client.getFlagsRemote("c1", "u1", {
+        other: otherContext,
+      });
+
+      expect(result).toStrictEqual({
+        "flag-1": {
+          key: "config-1",
+          payload: { something: "else" },
+        },
+        "flag-2": false,
+        "flag-3": true,
+      });
+
+      expect(httpClient.get).toHaveBeenCalledTimes(1);
+
+      expect(httpClient.get).toHaveBeenCalledWith(
+        "https://api.example.com/features/evaluated?context.other.custom=context&context.other.key=value&context.user.id=c1&context.company.id=u1",
+        expectedHeaders,
+        API_TIMEOUT_MS,
+      );
+    });
+
+    it("should not try to append the context if it's empty", async () => {
+      await client.getFlagsRemote();
+
+      expect(httpClient.get).toHaveBeenCalledTimes(1);
+
+      expect(httpClient.get).toHaveBeenCalledWith(
+        "https://api.example.com/features/evaluated?",
+        expectedHeaders,
+        API_TIMEOUT_MS,
+      );
+    });
+  });
+
+  describe("getFlagRemote", () => {
+    let client: ReflagClient;
+
+    beforeEach(async () => {
+      httpClient.get.mockResolvedValue({
+        ok: true,
+        status: 200,
+        body: {
+          success: true,
+          remoteContextUsed: true,
+          features: {
+            "flag-1": {
+              key: "flag-1",
+              targetingVersion: 1,
+              isEnabled: true,
+              config: {
+                key: "config-1",
+                version: 3,
+                default: true,
+                payload: { something: "else" },
+                missingContextFields: ["two"],
+              },
+              missingContextFields: ["one", "two"],
+            },
+          },
+        },
+      });
+
+      client = new ReflagClient(validOptions);
+    });
+
+    afterEach(() => {
+      httpClient.get.mockClear();
+    });
+
+    it("should return evaluated flag", async () => {
+      const result = await client.getFlagRemote("flag-1", "c1", "u1", {
+        other: otherContext,
+      });
+
+      expect(result).toStrictEqual({
+        key: "config-1",
+        payload: { something: "else" },
+      });
+
+      expect(httpClient.get).toHaveBeenCalledTimes(1);
+
+      expect(httpClient.get).toHaveBeenCalledWith(
+        "https://api.example.com/features/evaluated?context.other.custom=context&context.other.key=value&context.user.id=c1&context.company.id=u1&key=flag-1",
+        expectedHeaders,
+        API_TIMEOUT_MS,
+      );
+    });
+
+    it("should not try to append the context if it's empty", async () => {
+      await client.getFlagRemote("flag-1");
+
+      expect(httpClient.get).toHaveBeenCalledWith(
+        "https://api.example.com/features/evaluated?key=flag-1",
+        expectedHeaders,
+        API_TIMEOUT_MS,
+      );
+    });
+  });
+
   describe("getFeatures (deprecated)", () => {
     let client: ReflagClient;
 
@@ -1764,7 +2608,7 @@ describe("ReflagClient", () => {
       ]);
     });
 
-    it("should use fallback features when `getFeatureDefinitions` returns `undefined`", async () => {
+    it("should use fallback features when no definitions are available", async () => {
       httpClient.get.mockResolvedValue({
         success: false,
       });
@@ -1784,7 +2628,7 @@ describe("ReflagClient", () => {
 
       expect(logger.warn).toHaveBeenCalledWith(
         expect.stringMatching(
-          "no feature definitions available, using fallback features",
+          "no flag definitions available, using fallback flags",
         ),
       );
 
@@ -1979,8 +2823,8 @@ describe("ReflagClient", () => {
           },
         };
       };
-      const features = client.getFeatures(context);
 
+      const features = client.getFeatures(context);
       expect(features).toStrictEqual({
         "flag-1": {
           key: "flag-1",
@@ -2281,7 +3125,6 @@ describe("BoundReflagClient", () => {
   it("should add company ID from the context if not explicitly supplied", async () => {
     const boundClient = client.bindClient({ user, company });
 
-    boundClient.getFlags();
     await boundClient.track("flag");
 
     await client.flush();
@@ -2412,6 +3255,89 @@ describe("BoundReflagClient", () => {
         isEnabled: true,
         config: { key: "config-1", payload: { something: "else" } },
         track: expect.any(Function),
+      });
+
+      expect(httpClient.get).toHaveBeenCalledTimes(1);
+
+      expect(httpClient.get).toHaveBeenCalledWith(
+        "https://api.example.com/features/evaluated?context.user.id=user123&context.user.age=1&context.user.name=John&context.company.id=company123&context.company.employees=100&context.company.name=Acme+Inc.&context.other.custom=context&context.other.key=value&key=flag-1",
+        expectedHeaders,
+        API_TIMEOUT_MS,
+      );
+    });
+  });
+
+  describe("getFlagRemote/getFlagsRemote", () => {
+    beforeEach(async () => {
+      httpClient.get.mockClear();
+      httpClient.get.mockResolvedValue({
+        ok: true,
+        status: 200,
+        body: {
+          success: true,
+          remoteContextUsed: true,
+          features: {
+            "flag-1": {
+              key: "flag-1",
+              targetingVersion: 1,
+              isEnabled: true,
+              config: {
+                key: "config-1",
+                version: 3,
+                default: true,
+                payload: { something: "else" },
+                missingContextFields: ["else"],
+              },
+            },
+            "flag-2": {
+              key: "flag-2",
+              targetingVersion: 2,
+              isEnabled: false,
+              missingContextFields: ["something"],
+            },
+          },
+        },
+      });
+    });
+
+    it("should return evaluated flags", async () => {
+      const boundClient = client.bindClient({
+        user,
+        company,
+        other: otherContext,
+      });
+
+      const result = await boundClient.getFlagsRemote();
+
+      expect(result).toStrictEqual({
+        "flag-1": {
+          key: "config-1",
+          payload: { something: "else" },
+        },
+        "flag-2": false,
+      });
+
+      expect(httpClient.get).toHaveBeenCalledTimes(1);
+
+      expect(httpClient.get).toHaveBeenCalledWith(
+        "https://api.example.com/features/evaluated?context.user.id=user123&context.user.age=1&context.user.name=John&context.company.id=company123&context.company.employees=100&context.company.name=Acme+Inc.&context.other.custom=context&context.other.key=value",
+        expectedHeaders,
+        API_TIMEOUT_MS,
+      );
+    });
+
+    it("should return evaluated flag", async () => {
+      const boundClient = client.bindClient({
+        user,
+        company,
+        other: otherContext,
+      });
+
+      const result = await boundClient.getFlagRemote("flag-1");
+
+      expect(result).toStrictEqual({
+        key: "config-1",
+        payload: { something: "else" },
       });
 
       expect(httpClient.get).toHaveBeenCalledTimes(1);

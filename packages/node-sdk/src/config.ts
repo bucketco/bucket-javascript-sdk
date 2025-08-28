@@ -74,11 +74,11 @@ function parseFlagOverrides(config: object | undefined): TypedFlags {
           `invalid type "${typeof value.key}" for key ${key}.key, expected string`,
         );
         ok(
-          typeof value.value === "boolean" ||
-            typeof value.value === "object" ||
-            typeof value.value === "string" ||
-            typeof value.value === "number",
-          `invalid type "${typeof value.value}" for key ${key}.value, expected boolean, object, string or number`,
+          typeof value.payload === "boolean" ||
+            typeof value.payload === "object" ||
+            typeof value.payload === "string" ||
+            typeof value.payload === "number",
+          `invalid type "${typeof value.payload}" for key ${key}.payload, expected boolean, object, string or number`,
         );
       }
     });
@@ -128,9 +128,9 @@ function loadEnvVars() {
   const secretKey =
     process.env.REFLAG_SECRET_KEY ?? process.env.BUCKET_SECRET_KEY;
   const enabledFlags =
-    process.env.REFLAG_FLAGS_ENABLED ?? process.env.BUCKET_FLAGS_ENABLED;
+    process.env.REFLAG_FLAGS_ENABLED ?? process.env.BUCKET_FEATURES_ENABLED;
   const disabledFlags =
-    process.env.REFLAG_FLAGS_DISABLED ?? process.env.BUCKET_FLAGS_DISABLED;
+    process.env.REFLAG_FLAGS_DISABLED ?? process.env.BUCKET_FEATURES_DISABLED;
   const logLevel = process.env.REFLAG_LOG_LEVEL ?? process.env.BUCKET_LOG_LEVEL;
   const apiBaseUrl =
     process.env.REFLAG_API_BASE_URL ??
