@@ -11,38 +11,35 @@ interface cacheEntry {
   flags: FetchedFlags;
 }
 
-// Parse and validate an API feature response
-export function parseAPIFeaturesResponse(
-  featuresInput: any,
-): FetchedFlags | undefined {
-  if (!isObject(featuresInput)) {
+// Parse and validate an API flag response
+export function parseAPIFlagsResponse(input: any): FetchedFlags | undefined {
+  if (!isObject(input)) {
     return;
   }
 
   const flags: FetchedFlags = {};
-  for (const key in featuresInput) {
-    const feature = featuresInput[key];
+  for (const key in input) {
+    const flag = input[key];
 
     if (
-      typeof feature.isEnabled !== "boolean" ||
-      feature.key !== key ||
-      typeof feature.targetingVersion !== "number" ||
-      (feature.config && typeof feature.config !== "object") ||
-      (feature.missingContextFields &&
-        !Array.isArray(feature.missingContextFields)) ||
-      (feature.ruleEvaluationResults &&
-        !Array.isArray(feature.ruleEvaluationResults))
+      typeof flag.isEnabled !== "boolean" ||
+      flag.key !== key ||
+      typeof flag.targetingVersion !== "number" ||
+      (flag.config && typeof flag.config !== "object") ||
+      (flag.missingContextFields &&
+        !Array.isArray(flag.missingContextFields)) ||
+      (flag.ruleEvaluationResults && !Array.isArray(flag.ruleEvaluationResults))
     ) {
       return;
     }
 
     flags[key] = {
-      isEnabled: feature.isEnabled,
-      targetingVersion: feature.targetingVersion,
+      isEnabled: flag.isEnabled,
+      targetingVersion: flag.targetingVersion,
       key,
-      config: feature.config,
-      missingContextFields: feature.missingContextFields,
-      ruleEvaluationResults: feature.ruleEvaluationResults,
+      config: flag.config,
+      missingContextFields: flag.missingContextFields,
+      ruleEvaluationResults: flag.ruleEvaluationResults,
     };
   }
 
@@ -144,7 +141,7 @@ function validateCacheData(cacheDataInput: any) {
     if (
       typeof cacheEntry.expireAt !== "number" ||
       typeof cacheEntry.staleAt !== "number" ||
-      (cacheEntry.flags && !parseAPIFeaturesResponse(cacheEntry.flags))
+      (cacheEntry.flags && !parseAPIFlagsResponse(cacheEntry.flags))
     ) {
       return;
     }

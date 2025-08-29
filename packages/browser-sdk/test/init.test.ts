@@ -40,7 +40,7 @@ describe("init", () => {
 
     server.use(
       http.get(
-        "https://example.com/features/evaluated",
+        "https://example.com/flags/evaluated",
         ({ request }: { request: StrictRequest<DefaultBodyType> }) => {
           usedSpecialHost = true;
           return getFlags({ request });

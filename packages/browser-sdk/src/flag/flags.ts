@@ -3,7 +3,7 @@ import { HttpClient } from "../httpClient";
 import { Logger, loggerWithPrefix } from "../logger";
 import RateLimiter from "../rateLimiter";
 
-import { FlagCache, isObject, parseAPIFeaturesResponse } from "./flagCache";
+import { FlagCache, isObject, parseAPIFlagsResponse } from "./flagCache";
 
 /**
  * Represents a flag value.
@@ -126,7 +126,7 @@ export function validateFlagsResponse(response: any) {
     return;
   }
 
-  const flags = parseAPIFeaturesResponse(response.features);
+  const flags = parseAPIFlagsResponse(response.features);
 
   if (!flags) {
     return;

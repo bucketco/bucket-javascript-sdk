@@ -379,4 +379,4 @@ See [CSP](https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/b
 
 MIT License
 
-Copyright (c) 2025 Reflag ApS
+Copyright (c) 2025 Bucket ApS

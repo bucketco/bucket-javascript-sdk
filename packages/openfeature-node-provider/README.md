@@ -196,4 +196,4 @@ const enterpriseFeatureEnabled = await client.track(
 ## License
 
 > MIT License
-> Copyright (c) 2025 Reflag ApS
+> Copyright (c) 2025 Bucket ApS

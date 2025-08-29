@@ -385,4 +385,4 @@ If you are including the Reflag tracking SDK with a `<script>`-tag from `jsdeliv
 ## License
 
 > MIT License
-> Copyright (c) 2025 Reflag ApS
+> Copyright (c) 2025 Bucket ApS

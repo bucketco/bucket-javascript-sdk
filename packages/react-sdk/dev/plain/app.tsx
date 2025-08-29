@@ -22,6 +22,7 @@ declare module "../../src" {
         };
       };
     };
+    showHeader: true;
   }
 }
 
@@ -31,6 +32,7 @@ const apiBaseUrl = import.meta.env.VITE_REFLAG_API_BASE_URL;
 function HuddleFeature() {
   // Type safe feature
   const flag = useFlag("huddles");
+
   return (
     <div>
       <h2>Huddle feature</h2>
@@ -202,7 +204,7 @@ function FeatureOptIn({
 }) {
   const updateUser = useUpdateUser();
   const [sendingUpdate, setSendingUpdate] = useState(false);
-  const { isEnabled } = useFlag(flagKey);
+  const value = useFlag(flagKey);
 
   return (
     <div>
@@ -211,11 +213,11 @@ function FeatureOptIn({
         disabled={sendingUpdate}
         id="huddlesOptIn"
         type="checkbox"
-        checked={isEnabled}
+        checked={!!value}
         onChange={() => {
           setSendingUpdate(true);
           updateUser({
-            [`optin-${flagKey}`]: isEnabled ? "false" : "true",
+            [`optin-${flagKey}`]: value ? "false" : "true",
           })?.then(() => {
             setSendingUpdate(false);
           });
@@ -239,26 +241,22 @@ function CustomToolbar() {
         {Object.entries(client.getFlags()).map(([flagKey, flag]) => (
           <li key={flagKey}>
             {flagKey} -
-            {(flag.isEnabledOverride ?? flag.isEnabled)
-              ? "Enabled"
-              : "Disabled"}{" "}
-            {flag.isEnabledOverride !== null && (
+            {(flag.valueOverride ?? flag.isEnabled) ? "Enabled" : "Disabled"}{" "}
+            {flag.valueOverride !== null && (
               <button
                 onClick={() => {
-                  client.getFlag(flagKey).setIsEnabledOverride(null);
+                  client.setFlagOverride(flagKey, null);
                 }}
               >
                 Reset
               </button>
             )}
             <input
-              checked={flag.isEnabledOverride ?? flag.isEnabled}
+              checked={!!flag.valueOverride ?? flag.isEnabled}
               type="checkbox"
               onChange={(e) => {
                 // this uses slightly simplified logic compared to the Reflag Toolbar
-                client
-                  .getFlag(flagKey)
-                  .setIsEnabledOverride(e.target.checked ?? false);
+                client.setFlagOverride(flagKey, e.target.checked ?? false);
               }}
             />
           </li>

@@ -21,6 +21,7 @@ const reflag = new ReflagClient({
 document
   .getElementById("startHuddle")
   ?.addEventListener("click", () => reflag.track(flagKey));
+
 document.getElementById("giveFeedback")?.addEventListener("click", (event) =>
   reflag.requestFeedback({
     flagKey,
