@@ -79,7 +79,7 @@ export class ReflagNodeProvider implements Provider {
     defaultValue: T,
     context: ReflagContext,
     resolveFn: (
-      feature: ReturnType<typeof this._client.getFeature>,
+      feature: ReturnType<typeof this._client.getFlag>,
     ) => Promise<ResolutionDetails<T>>,
   ): Promise<ResolutionDetails<T>> {
     if (this.status !== ServerProviderStatus.READY) {
@@ -100,9 +100,9 @@ export class ReflagNodeProvider implements Provider {
       });
     }
 
-    const featureDefs = this._client.getFeatureDefinitions();
-    if (featureDefs.some(({ key }) => key === flagKey)) {
-      return resolveFn(this._client.getFeature(context, flagKey));
+    const flagDefs = this._client.getFlagDefinitions();
+    if (flagDefs.some(({ flagKey: key }) => key === flagKey)) {
+      return resolveFn(this._client.getFlag(context, flagKey));
     }
 
     return Promise.resolve({
@@ -122,12 +122,20 @@ export class ReflagNodeProvider implements Provider {
       flagKey,
       defaultValue,
       this.contextTranslator(context),
-      (feature) => {
-        return Promise.resolve({
-          value: feature.isEnabled,
-          variant: feature.config?.key,
-          reason: StandardResolutionReasons.TARGETING_MATCH,
-        });
+      async (flag) => {
+        if (typeof flag === "boolean") {
+          return {
+            value: flag,
+            reason: StandardResolutionReasons.TARGETING_MATCH,
+          };
+        }
+
+        return {
+          value: defaultValue,
+          reason: StandardResolutionReasons.ERROR,
+          errorCode: ErrorCode.TYPE_MISMATCH,
+          errorMessage: `Expected flag ${flagKey} to be a boolean, but got ${typeof flag}`,
+        };
       },
     );
   }
@@ -141,19 +149,21 @@ export class ReflagNodeProvider implements Provider {
       flagKey,
       defaultValue,
       this.contextTranslator(context),
-      (feature) => {
-        if (!feature.config.key) {
-          return Promise.resolve({
-            value: defaultValue,
-            reason: StandardResolutionReasons.DEFAULT,
-          });
+      async (flag) => {
+        if (typeof flag === "object" && "key" in flag) {
+          return {
+            value: flag.key,
+            variant: flag.key,
+            reason: StandardResolutionReasons.TARGETING_MATCH,
+          };
         }
 
-        return Promise.resolve({
-          value: feature.config.key as string,
-          variant: feature.config.key,
-          reason: StandardResolutionReasons.TARGETING_MATCH,
-        });
+        return {
+          value: defaultValue,
+          reason: StandardResolutionReasons.ERROR,
+          errorCode: ErrorCode.TYPE_MISMATCH,
+          errorMessage: `Expected flag ${flagKey} to be a multi-variant, but got ${typeof flag}`,
+        };
       },
     );
   }
@@ -180,29 +190,38 @@ export class ReflagNodeProvider implements Provider {
       flagKey,
       defaultValue,
       this.contextTranslator(context),
-      (feature) => {
-        const expType = typeof defaultValue;
-        const payloadType = typeof feature.config.payload;
+      async (flag) => {
+        if (typeof flag === "object" && "key" in flag) {
+          const expType = typeof defaultValue;
+          const payloadType = typeof flag.payload;
 
-        if (
-          feature.config.payload === undefined ||
-          feature.config.payload === null ||
-          payloadType !== expType
-        ) {
-          return Promise.resolve({
-            value: defaultValue,
-            variant: feature.config.key,
-            reason: StandardResolutionReasons.ERROR,
-            errorCode: ErrorCode.TYPE_MISMATCH,
-            errorMessage: `Expected remote config payload of type \`${expType}\` but got \`${payloadType}\`.`,
-          });
+          if (
+            flag.payload === undefined ||
+            flag.payload === null ||
+            payloadType !== expType
+          ) {
+            return {
+              value: defaultValue,
+              reason: StandardResolutionReasons.ERROR,
+              variant: flag.key,
+              errorCode: ErrorCode.TYPE_MISMATCH,
+              errorMessage: `Expected flag ${flagKey} to be a multi-variant with payload of type \`${expType}\` but got \`${payloadType}\`.`,
+            };
+          }
+
+          return {
+            value: flag.payload,
+            variant: flag.key,
+            reason: StandardResolutionReasons.TARGETING_MATCH,
+          };
         }
 
-        return Promise.resolve({
-          value: feature.config.payload,
-          variant: feature.config.key,
-          reason: StandardResolutionReasons.TARGETING_MATCH,
-        });
+        return {
+          value: defaultValue,
+          reason: StandardResolutionReasons.ERROR,
+          errorCode: ErrorCode.TYPE_MISMATCH,
+          errorMessage: `Expected flag ${flagKey} to be a multi-variant, but got ${typeof flag}`,
+        };
       },
     );
   }

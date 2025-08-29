@@ -213,7 +213,7 @@ export type FeatureOverride =
 export type UntypedFlag =
   | {
       key: string;
-      payload: boolean | object | string | number | null;
+      payload: any;
     }
   | boolean;
 
@@ -222,13 +222,12 @@ export type UntypedFlag =
  *
  * @typeParam TValue - The type of the flag value. Defaults to `boolean`.
  */
-export type Flag<TValue extends boolean | object | string | number | null> =
-  TValue extends boolean
-    ? boolean
-    : {
-        key: string;
-        payload: TValue;
-      };
+export type Flag<TValue extends {} = boolean> = TValue extends boolean
+  ? boolean
+  : {
+      key: string;
+      payload: TValue;
+    };
 
 /**
  * @deprecated
@@ -380,14 +379,14 @@ export type TypedFeatures = keyof Flags extends never
   ? Record<string, Feature>
   : {
       [TKey in keyof Flags]: Flags[TKey] extends FeatureWithRemoteConfigSignature
-        ? Flags[TKey] extends MultiVariateFlagSignature
+        ? Feature<Flags[TKey]["config"]>
+        : Flags[TKey] extends MultiVariateFlagSignature
           ? Feature<Flags[TKey]>
-          : Feature<Flags[TKey]["config"]>
-        : Feature;
+          : Feature;
     };
 
 /**
- * Describes a collection of evaluated flags.
+ * Describes a collection of typed flags.
  *
  * @remarks
  * This types falls back to a generic `Record<string, Flag>` if the `Flags` interface
@@ -397,10 +396,16 @@ export type TypedFlags = keyof Flags extends never
   ? Record<string, UntypedFlag>
   : {
       [TKey in keyof Flags]: Flags[TKey] extends FeatureWithRemoteConfigSignature
-        ? Flags[TKey] extends MultiVariateFlagSignature
-          ? Flag<Flags[TKey]["payload"]>
-          : Flag<Flags[TKey]["config"]>
-        : UntypedFlag;
+        ? {
+            key: string;
+            payload: Flags[TKey]["config"];
+          }
+        : Flags[TKey] extends MultiVariateFlagSignature
+          ? {
+              key: string;
+              payload: Flags[TKey]["payload"];
+            }
+          : UntypedFlag;
     };
 
 /**

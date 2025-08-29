@@ -1025,10 +1025,14 @@ describe("ReflagClient", () => {
     });
   });
 
-  describe("getFeature (deprecated)", () => {
+  describe("getFlagDefinitions", () => {
     let client: ReflagClient;
 
     beforeEach(async () => {
+      client = new ReflagClient(validOptions);
+    });
+
+    it("returns the definitions", async () => {
       httpClient.get.mockResolvedValue({
         ok: true,
         status: 200,
@@ -1038,381 +1042,39 @@ describe("ReflagClient", () => {
         },
       });
 
-      client = new ReflagClient(validOptions);
-
-      httpClient.post.mockResolvedValue({
-        status: 200,
-        body: { success: true },
-      });
-    });
-
-    it("returns a feature", async () => {
       await client.initialize();
-      const feature = client.getFeature(
-        {
-          company,
-          user,
-          other: otherContext,
-        },
-        "flag-1",
-      );
+      const defs = client.getFlagDefinitions();
 
-      expect(feature).toStrictEqual({
-        key: "flag-1",
-        isEnabled: true,
-        config: {
-          key: "config-1",
-          payload: { something: "else" },
-        },
-        track: expect.any(Function),
-      });
-    });
-
-    it("`track` sends all expected events when `enableTracking` is `true`", async () => {
-      const context = {
-        company,
-        user,
-        other: otherContext,
-      };
-
-      // test that the feature is returned
-      await client.initialize();
-      const feature = client.getFeature(
-        {
-          ...context,
-          meta: {
-            active: true,
-          },
-          enableTracking: true,
-        },
-        "flag-1",
-      );
-
-      await feature.track();
-      await client.flush();
-
-      expect(httpClient.post).toHaveBeenCalledWith(
-        BULK_ENDPOINT,
-        expectedHeaders,
-        [
-          {
-            attributes: {
-              employees: 100,
-              name: "Acme Inc.",
-            },
-            companyId: "company123",
-            context: {
-              active: true,
-            },
-            type: "company",
-            userId: undefined,
-          },
-          {
-            attributes: {
-              age: 1,
-              name: "John",
-            },
-            context: {
-              active: true,
-            },
-            type: "user",
-            userId: "user123",
-          },
-          {
-            type: "feature-flag-event",
-            action: "evaluate",
-            key: "flag-1",
-            targetingVersion: 1,
-            evalContext: flattenJSON(context),
-            evalResult: true,
-            evalRuleResults: [true],
-            evalMissingFields: [],
-          },
-          {
-            type: "feature-flag-event",
-            action: "evaluate-config",
-            key: "flag-1",
-            targetingVersion: 1,
-            evalContext: flattenJSON(context),
-            evalResult: {
-              key: "config-1",
-              payload: {
-                something: "else",
-              },
-            },
-            evalRuleResults: [true],
-            evalMissingFields: [],
-          },
-          {
-            type: "event",
-            event: "flag-1",
-            userId: user.id,
-            companyId: company.id,
-          },
-        ],
+      expect(defs).toStrictEqual(
+        flagDefinitions.features.map(
+          ({ targeting, config, key, description }) => ({
+            description,
+            version: config?.version ?? targeting.version,
+            flagKey: key,
+            type: config ? "multi-variate" : "toggle",
+            rules: config
+              ? config.variants.map((v) => ({
+                  filter: v.filter,
+                  value: { key: v.key, payload: v.payload },
+                }))
+              : targeting.rules.map((r) => ({
+                  filter: r.filter,
+                  value: true,
+                })),
+          }),
+        ),
       );
     });
 
-    it("`track` does not send evaluation events when `emitEvaluationEvents` is `false`", async () => {
-      client = new ReflagClient({
-        ...validOptions,
-        emitEvaluationEvents: false,
+    it("should return an empty array when no definitions are available", async () => {
+      httpClient.get.mockResolvedValue({
+        success: false,
       });
 
-      const context = {
-        company,
-        user,
-        other: otherContext,
-      };
-
-      // test that the feature is returned
       await client.initialize();
-      const feature = client.getFeature(
-        {
-          ...context,
-          meta: {
-            active: true,
-          },
-          enableTracking: true,
-        },
-        "flag-1",
-      );
+      const result = client.getFlagDefinitions();
 
-      await feature.track();
-      await client.flush();
-
-      expect(httpClient.post).toHaveBeenCalledWith(
-        BULK_ENDPOINT,
-        expectedHeaders,
-        [
-          {
-            attributes: {
-              employees: 100,
-              name: "Acme Inc.",
-            },
-            companyId: "company123",
-            context: {
-              active: true,
-            },
-            type: "company",
-          },
-          {
-            attributes: {
-              age: 1,
-              name: "John",
-            },
-            context: {
-              active: true,
-            },
-            type: "user",
-            userId: "user123",
-          },
-          {
-            type: "event",
-            event: "flag-1",
-            userId: user.id,
-            companyId: company.id,
-          },
-        ],
-      );
-    });
-
-    it("`isEnabled` sends `check` event", async () => {
-      const context = {
-        company,
-        user,
-        other: otherContext,
-      };
-
-      // test that the feature is returned
-      await client.initialize();
-      const feature = client.getFeature(context, "flag-1");
-
-      // trigger `check` event
-      expect(feature.isEnabled).toBe(true);
-
-      await client.flush();
-      const checkEvents = httpClient.post.mock.calls
-        .flatMap((call) => call[2])
-        .filter((e) => e.action === "check");
-
-      expect(checkEvents).toStrictEqual([
-        {
-          type: "feature-flag-event",
-          action: "check",
-          key: "flag-1",
-          targetingVersion: 1,
-          evalResult: true,
-          evalContext: context,
-          evalRuleResults: [true],
-          evalMissingFields: [],
-        },
-      ]);
-    });
-
-    it("`isEnabled` warns about missing context fields", async () => {
-      const context = {
-        company,
-        user,
-        other: otherContext,
-      };
-
-      // test that the feature is returned
-      await client.initialize();
-      const feature = client.getFeature(context, "flag-2");
-
-      // trigger the warning
-      expect(feature.isEnabled).toBe(false);
-
-      expect(logger.warn).toHaveBeenCalledWith(
-        "feature/remote config targeting rules might not be correctly evaluated due to missing context fields.",
-        {
-          "flag-2": ["attributeKey"],
-        },
-      );
-    });
-
-    it("`isEnabled` should not warn about missing context fields if not needed", async () => {
-      const context = {
-        company,
-        user,
-        other: otherContext,
-      };
-
-      // test that the feature is returned
-      await client.initialize();
-      const feature = client.getFeature(context, "flag-1");
-
-      // should not trigger the warning
-      expect(feature.isEnabled).toBe(true);
-
-      expect(logger.warn).not.toHaveBeenCalled();
-    });
-
-    it("`config` sends `check` event", async () => {
-      const context = {
-        company,
-        user,
-        other: otherContext,
-      };
-
-      // test that the feature is returned
-      await client.initialize();
-      const feature = client.getFeature(context, "flag-1");
-
-      // trigger `check` event
-      expect(feature.config).toBeDefined();
-
-      await client.flush();
-
-      const checkEvents = httpClient.post.mock.calls
-        .flatMap((call) => call[2])
-        .filter((e) => e.action === "check-config");
-
-      expect(checkEvents).toStrictEqual([
-        {
-          type: "feature-flag-event",
-          action: "check-config",
-          key: "flag-1",
-          evalResult: {
-            key: "config-1",
-            payload: {
-              something: "else",
-            },
-          },
-          targetingVersion: 1,
-          evalContext: context,
-          evalRuleResults: [true],
-          evalMissingFields: [],
-        },
-      ]);
-    });
-
-    it("sends events for unknown features", async () => {
-      const context: Context = {
-        company,
-        user,
-        other: otherContext,
-      };
-
-      // test that the feature is returned
-      await client.initialize();
-      const feature = client.getFeature(context, "unknown-flag");
-
-      // trigger `check` event
-      expect(feature.isEnabled).toBe(false);
-      await feature.track();
-      await client.flush();
-
-      const checkEvents = httpClient.post.mock.calls
-        .flatMap((call) => call[2])
-        .filter((e) => e.type === "feature-flag-event");
-
-      expect(checkEvents).toStrictEqual([
-        {
-          type: "feature-flag-event",
-          action: "check",
-          key: "unknown-flag",
-          targetingVersion: undefined,
-          evalContext: context,
-          evalResult: false,
-          evalRuleResults: undefined,
-          evalMissingFields: undefined,
-        },
-      ]);
-    });
-
-    it("sends company/user and track events", async () => {
-      const context: Context = {
-        company,
-        user,
-        other: otherContext,
-      };
-
-      // test that the feature is returned
-      await client.initialize();
-      const feature = client.getFeature(context, "flag-1");
-
-      // trigger `check` event
-      await feature.track();
-      await client.flush();
-
-      const checkEvents = httpClient.post.mock.calls
-        .flatMap((call) => call[2])
-        .filter(
-          (e) =>
-            e.type === "company" || e.type === "user" || e.type === "event",
-        );
-
-      expect(checkEvents).toStrictEqual([
-        {
-          type: "company",
-          companyId: "company123",
-          attributes: {
-            employees: 100,
-            name: "Acme Inc.",
-          },
-          userId: undefined, // this is a bug, will fix in separate PR
-          context: undefined,
-        },
-        {
-          type: "user",
-          userId: "user123",
-          attributes: {
-            age: 1,
-            name: "John",
-          },
-          context: undefined,
-        },
-        {
-          type: "event",
-          event: "flag-1",
-          userId: user.id,
-          companyId: company.id,
-          context: undefined,
-          attributes: undefined,
-        },
-      ]);
+      expect(result).toStrictEqual([]);
     });
   });
 
@@ -1437,7 +1099,7 @@ describe("ReflagClient", () => {
       });
     });
 
-    it("returns the value of the flag (boolean)", async () => {
+    it("returns the value of the flag (toggle)", async () => {
       await client.initialize();
       const flag = client.getFlag(
         {
@@ -1700,7 +1362,7 @@ describe("ReflagClient", () => {
       ]);
     });
 
-    it("emits `check` event (boolean)", async () => {
+    it("emits `check` event (toggle)", async () => {
       const context = {
         company,
         user,
@@ -2257,6 +1919,438 @@ describe("ReflagClient", () => {
         expectedHeaders,
         API_TIMEOUT_MS,
       );
+    });
+  });
+
+  describe("getFeatureDefinitions (deprecated)", () => {
+    let client: ReflagClient;
+
+    beforeEach(async () => {
+      client = new ReflagClient(validOptions);
+    });
+
+    it("returns the definitions", async () => {
+      httpClient.get.mockResolvedValue({
+        ok: true,
+        status: 200,
+        body: {
+          success: true,
+          ...flagDefinitions,
+        },
+      });
+
+      await client.initialize();
+      const feature = client.getFeatureDefinitions();
+
+      expect(feature).toStrictEqual(
+        flagDefinitions.features.map(({ targeting, config, ...rest }) => ({
+          ...rest,
+          config,
+          flag: targeting,
+        })),
+      );
+    });
+
+    it("should return an empty array when no definitions are available", async () => {
+      httpClient.get.mockResolvedValue({
+        success: false,
+      });
+
+      await client.initialize();
+      const result = client.getFeatureDefinitions();
+
+      expect(result).toStrictEqual([]);
+    });
+  });
+
+  describe("getFeature (deprecated)", () => {
+    let client: ReflagClient;
+
+    beforeEach(async () => {
+      httpClient.get.mockResolvedValue({
+        ok: true,
+        status: 200,
+        body: {
+          success: true,
+          ...flagDefinitions,
+        },
+      });
+
+      client = new ReflagClient(validOptions);
+
+      httpClient.post.mockResolvedValue({
+        status: 200,
+        body: { success: true },
+      });
+    });
+
+    it("returns a feature", async () => {
+      await client.initialize();
+      const feature = client.getFeature(
+        {
+          company,
+          user,
+          other: otherContext,
+        },
+        "flag-1",
+      );
+
+      expect(feature).toStrictEqual({
+        key: "flag-1",
+        isEnabled: true,
+        config: {
+          key: "config-1",
+          payload: { something: "else" },
+        },
+        track: expect.any(Function),
+      });
+    });
+
+    it("`track` sends all expected events when `enableTracking` is `true`", async () => {
+      const context = {
+        company,
+        user,
+        other: otherContext,
+      };
+
+      // test that the feature is returned
+      await client.initialize();
+      const feature = client.getFeature(
+        {
+          ...context,
+          meta: {
+            active: true,
+          },
+          enableTracking: true,
+        },
+        "flag-1",
+      );
+
+      await feature.track();
+      await client.flush();
+
+      expect(httpClient.post).toHaveBeenCalledWith(
+        BULK_ENDPOINT,
+        expectedHeaders,
+        [
+          {
+            attributes: {
+              employees: 100,
+              name: "Acme Inc.",
+            },
+            companyId: "company123",
+            context: {
+              active: true,
+            },
+            type: "company",
+            userId: undefined,
+          },
+          {
+            attributes: {
+              age: 1,
+              name: "John",
+            },
+            context: {
+              active: true,
+            },
+            type: "user",
+            userId: "user123",
+          },
+          {
+            type: "feature-flag-event",
+            action: "evaluate",
+            key: "flag-1",
+            targetingVersion: 1,
+            evalContext: flattenJSON(context),
+            evalResult: true,
+            evalRuleResults: [true],
+            evalMissingFields: [],
+          },
+          {
+            type: "feature-flag-event",
+            action: "evaluate-config",
+            key: "flag-1",
+            targetingVersion: 1,
+            evalContext: flattenJSON(context),
+            evalResult: {
+              key: "config-1",
+              payload: {
+                something: "else",
+              },
+            },
+            evalRuleResults: [true],
+            evalMissingFields: [],
+          },
+          {
+            type: "event",
+            event: "flag-1",
+            userId: user.id,
+            companyId: company.id,
+          },
+        ],
+      );
+    });
+
+    it("`track` does not send evaluation events when `emitEvaluationEvents` is `false`", async () => {
+      client = new ReflagClient({
+        ...validOptions,
+        emitEvaluationEvents: false,
+      });
+
+      const context = {
+        company,
+        user,
+        other: otherContext,
+      };
+
+      // test that the feature is returned
+      await client.initialize();
+      const feature = client.getFeature(
+        {
+          ...context,
+          meta: {
+            active: true,
+          },
+          enableTracking: true,
+        },
+        "flag-1",
+      );
+
+      await feature.track();
+      await client.flush();
+
+      expect(httpClient.post).toHaveBeenCalledWith(
+        BULK_ENDPOINT,
+        expectedHeaders,
+        [
+          {
+            attributes: {
+              employees: 100,
+              name: "Acme Inc.",
+            },
+            companyId: "company123",
+            context: {
+              active: true,
+            },
+            type: "company",
+          },
+          {
+            attributes: {
+              age: 1,
+              name: "John",
+            },
+            context: {
+              active: true,
+            },
+            type: "user",
+            userId: "user123",
+          },
+          {
+            type: "event",
+            event: "flag-1",
+            userId: user.id,
+            companyId: company.id,
+          },
+        ],
+      );
+    });
+
+    it("`isEnabled` sends `check` event", async () => {
+      const context = {
+        company,
+        user,
+        other: otherContext,
+      };
+
+      // test that the feature is returned
+      await client.initialize();
+      const feature = client.getFeature(context, "flag-1");
+
+      // trigger `check` event
+      expect(feature.isEnabled).toBe(true);
+
+      await client.flush();
+      const checkEvents = httpClient.post.mock.calls
+        .flatMap((call) => call[2])
+        .filter((e) => e.action === "check");
+
+      expect(checkEvents).toStrictEqual([
+        {
+          type: "feature-flag-event",
+          action: "check",
+          key: "flag-1",
+          targetingVersion: 1,
+          evalResult: true,
+          evalContext: context,
+          evalRuleResults: [true],
+          evalMissingFields: [],
+        },
+      ]);
+    });
+
+    it("`isEnabled` warns about missing context fields", async () => {
+      const context = {
+        company,
+        user,
+        other: otherContext,
+      };
+
+      // test that the feature is returned
+      await client.initialize();
+      const feature = client.getFeature(context, "flag-2");
+
+      // trigger the warning
+      expect(feature.isEnabled).toBe(false);
+
+      expect(logger.warn).toHaveBeenCalledWith(
+        "feature/remote config targeting rules might not be correctly evaluated due to missing context fields.",
+        {
+          "flag-2": ["attributeKey"],
+        },
+      );
+    });
+
+    it("`isEnabled` should not warn about missing context fields if not needed", async () => {
+      const context = {
+        company,
+        user,
+        other: otherContext,
+      };
+
+      // test that the feature is returned
+      await client.initialize();
+      const feature = client.getFeature(context, "flag-1");
+
+      // should not trigger the warning
+      expect(feature.isEnabled).toBe(true);
+
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+
+    it("`config` sends `check` event", async () => {
+      const context = {
+        company,
+        user,
+        other: otherContext,
+      };
+
+      // test that the feature is returned
+      await client.initialize();
+      const feature = client.getFeature(context, "flag-1");
+
+      // trigger `check` event
+      expect(feature.config).toBeDefined();
+
+      await client.flush();
+
+      const checkEvents = httpClient.post.mock.calls
+        .flatMap((call) => call[2])
+        .filter((e) => e.action === "check-config");
+
+      expect(checkEvents).toStrictEqual([
+        {
+          type: "feature-flag-event",
+          action: "check-config",
+          key: "flag-1",
+          evalResult: {
+            key: "config-1",
+            payload: {
+              something: "else",
+            },
+          },
+          targetingVersion: 1,
+          evalContext: context,
+          evalRuleResults: [true],
+          evalMissingFields: [],
+        },
+      ]);
+    });
+
+    it("sends events for unknown features", async () => {
+      const context: Context = {
+        company,
+        user,
+        other: otherContext,
+      };
+
+      // test that the feature is returned
+      await client.initialize();
+      const feature = client.getFeature(context, "unknown-flag");
+
+      // trigger `check` event
+      expect(feature.isEnabled).toBe(false);
+      await feature.track();
+      await client.flush();
+
+      const checkEvents = httpClient.post.mock.calls
+        .flatMap((call) => call[2])
+        .filter((e) => e.type === "feature-flag-event");
+
+      expect(checkEvents).toStrictEqual([
+        {
+          type: "feature-flag-event",
+          action: "check",
+          key: "unknown-flag",
+          targetingVersion: undefined,
+          evalContext: context,
+          evalResult: false,
+          evalRuleResults: undefined,
+          evalMissingFields: undefined,
+        },
+      ]);
+    });
+
+    it("sends company/user and track events", async () => {
+      const context: Context = {
+        company,
+        user,
+        other: otherContext,
+      };
+
+      // test that the feature is returned
+      await client.initialize();
+      const feature = client.getFeature(context, "flag-1");
+
+      // trigger `check` event
+      await feature.track();
+      await client.flush();
+
+      const checkEvents = httpClient.post.mock.calls
+        .flatMap((call) => call[2])
+        .filter(
+          (e) =>
+            e.type === "company" || e.type === "user" || e.type === "event",
+        );
+
+      expect(checkEvents).toStrictEqual([
+        {
+          type: "company",
+          companyId: "company123",
+          attributes: {
+            employees: 100,
+            name: "Acme Inc.",
+          },
+          userId: undefined, // this is a bug, will fix in separate PR
+          context: undefined,
+        },
+        {
+          type: "user",
+          userId: "user123",
+          attributes: {
+            age: 1,
+            name: "John",
+          },
+          context: undefined,
+        },
+        {
+          type: "event",
+          event: "flag-1",
+          userId: user.id,
+          companyId: company.id,
+          context: undefined,
+          attributes: undefined,
+        },
+      ]);
     });
   });
 
