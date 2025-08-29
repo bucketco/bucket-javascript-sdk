@@ -6,7 +6,7 @@ Reflag supports flags, tracking flag usage, [collecting feedback](#qualitative-f
 
 ## Install
 
-First find your `publishableKey` under [environment settings](https://app.bucket.co/envs/current/settings/app-environments) in Reflag.
+First find your `publishableKey` under [environment settings](https://app.bucket.co/env-current/settings/app-environments) in Reflag.
 
 The package can be imported or used directly in a HTML script tag:
 

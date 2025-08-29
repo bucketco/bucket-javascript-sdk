@@ -671,6 +671,249 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@bucketco/browser-sdk@npm:3.3.4, @bucketco/browser-sdk@workspace:packages/browser-sdk":
+  version: 0.0.0-use.local
+  resolution: "@bucketco/browser-sdk@workspace:packages/browser-sdk"
+  dependencies:
+    "@bucketco/eslint-config": "npm:0.0.2"
+    "@bucketco/tsconfig": "npm:0.0.2"
+    "@floating-ui/dom": "npm:^1.6.8"
+    "@playwright/test": "npm:^1.49.1"
+    "@types/js-cookie": "npm:^3.0.6"
+    "@types/node": "npm:^22.12.0"
+    "@vitest/coverage-v8": "npm:^2.0.4"
+    c8: "npm:~10.1.3"
+    canonical-json: "npm:^0.0.4"
+    eslint: "npm:^9.21.0"
+    eslint-config-preact: "npm:^1.5.0"
+    http-server: "npm:^14.1.1"
+    js-cookie: "npm:^3.0.5"
+    jsdom: "npm:^24.1.0"
+    msw: "npm:^2.3.4"
+    nock: "npm:^14.0.1"
+    postcss: "npm:^8.4.33"
+    postcss-nesting: "npm:^12.0.2"
+    postcss-preset-env: "npm:^9.3.0"
+    preact: "npm:^10.22.1"
+    prettier: "npm:^3.5.2"
+    typescript: "npm:^5.7.3"
+    vite: "npm:^5.3.5"
+    vite-plugin-dts: "npm:^4.0.0-beta.1"
+    vitest: "npm:^2.0.4"
+  languageName: unknown
+  linkType: soft
+
+"@bucketco/cli@workspace:packages/cli":
+  version: 0.0.0-use.local
+  resolution: "@bucketco/cli@workspace:packages/cli"
+  dependencies:
+    "@bucketco/eslint-config": "workspace:^"
+    "@bucketco/tsconfig": "workspace:^"
+    "@inquirer/prompts": "npm:^5.3.8"
+    "@types/express": "npm:^5.0.0"
+    "@types/node": "npm:^22.5.1"
+    "@types/semver": "npm:^7.7.0"
+    "@types/slug": "npm:^5.0.9"
+    ajv: "npm:^8.17.1"
+    chalk: "npm:^5.3.0"
+    change-case: "npm:^5.4.4"
+    commander: "npm:^12.1.0"
+    comment-json: "npm:^4.2.5"
+    eslint: "npm:^9.21.0"
+    express: "npm:^4.21.2"
+    fast-deep-equal: "npm:^3.1.3"
+    find-up: "npm:^7.0.0"
+    open: "npm:^10.1.0"
+    ora: "npm:^8.1.0"
+    prettier: "npm:^3.5.2"
+    semver: "npm:^7.7.2"
+    shx: "npm:^0.3.4"
+    slug: "npm:^10.0.0"
+    typescript: "npm:^5.5.4"
+    vitest: "npm:^3.0.8"
+    zod: "npm:^3.24.2"
+  bin:
+    bucket: ./dist/index.js
+  languageName: unknown
+  linkType: soft
+
+"@bucketco/eslint-config@npm:0.0.2, @bucketco/eslint-config@npm:~0.0.2, @bucketco/eslint-config@workspace:^, @bucketco/eslint-config@workspace:packages/eslint-config":
+  version: 0.0.0-use.local
+  resolution: "@bucketco/eslint-config@workspace:packages/eslint-config"
+  dependencies:
+    "@eslint/js": "npm:^9.21.0"
+    "@typescript-eslint/eslint-plugin": "npm:^8.25.0"
+    "@typescript-eslint/parser": "npm:^8.25.0"
+    eslint: "npm:^9.21.0"
+    eslint-config-prettier: "npm:^10.0.1"
+    eslint-import-resolver-typescript: "npm:^3.8.3"
+    eslint-plugin-import: "npm:^2.31.0"
+    eslint-plugin-react: "npm:^7.37.4"
+    eslint-plugin-react-hooks: "npm:^5.1.0"
+    eslint-plugin-simple-import-sort: "npm:^12.1.1"
+    eslint-plugin-unused-imports: "npm:^4.1.4"
+    globals: "npm:^16.2.0"
+    prettier: "npm:^3.5.2"
+    typescript: "npm:^5.7.3"
+  languageName: unknown
+  linkType: soft
+
+"@bucketco/flag-evaluation@npm:0.2.1, @bucketco/flag-evaluation@workspace:packages/flag-evaluation":
+  version: 0.0.0-use.local
+  resolution: "@bucketco/flag-evaluation@workspace:packages/flag-evaluation"
+  dependencies:
+    "@bucketco/eslint-config": "workspace:^"
+    "@bucketco/tsconfig": "workspace:^"
+    "@types/node": "npm:^22.12.0"
+    eslint: "npm:^9.21.0"
+    js-sha256: "npm:0.11.0"
+    prettier: "npm:^3.5.2"
+    ts-node: "npm:^10.9.2"
+    typescript: "npm:^5.7.3"
+    vitest: "npm:^2.0.5"
+  languageName: unknown
+  linkType: soft
+
+"@bucketco/node-sdk@npm:1.10.0, @bucketco/node-sdk@workspace:packages/node-sdk":
+  version: 0.0.0-use.local
+  resolution: "@bucketco/node-sdk@workspace:packages/node-sdk"
+  dependencies:
+    "@babel/core": "npm:~7.24.7"
+    "@bucketco/eslint-config": "npm:~0.0.2"
+    "@bucketco/flag-evaluation": "npm:0.2.1"
+    "@bucketco/tsconfig": "npm:~0.0.2"
+    "@types/node": "npm:^22.12.0"
+    "@vitest/coverage-v8": "npm:~1.6.0"
+    c8: "npm:~10.1.0"
+    eslint: "npm:^9.21.0"
+    flush-promises: "npm:~1.0.2"
+    prettier: "npm:^3.5.2"
+    ts-node: "npm:~10.9.2"
+    typescript: "npm:^5.7.3"
+    vite: "npm:~5.4.18"
+    vite-plugin-dts: "npm:~3.9.1"
+    vitest: "npm:~1.6.0"
+  languageName: unknown
+  linkType: soft
+
+"@bucketco/openfeature-browser-provider@workspace:packages/openfeature-browser-provider":
+  version: 0.0.0-use.local
+  resolution: "@bucketco/openfeature-browser-provider@workspace:packages/openfeature-browser-provider"
+  dependencies:
+    "@bucketco/browser-sdk": "npm:3.3.4"
+    "@bucketco/eslint-config": "npm:0.0.2"
+    "@bucketco/tsconfig": "npm:0.0.2"
+    "@openfeature/core": "npm:1.5.0"
+    "@openfeature/web-sdk": "npm:^1.3.0"
+    "@types/node": "npm:^22.12.0"
+    eslint: "npm:^9.21.0"
+    jsdom: "npm:^24.1.0"
+    prettier: "npm:^3.5.2"
+    typescript: "npm:^5.7.3"
+    vite: "npm:^5.3.5"
+    vite-plugin-dts: "npm:^4.0.0-beta.1"
+    vitest: "npm:^2.0.4"
+  peerDependencies:
+    "@openfeature/web-sdk": ">=1.3"
+  languageName: unknown
+  linkType: soft
+
+"@bucketco/openfeature-node-provider@workspace:packages/openfeature-node-provider":
+  version: 0.0.0-use.local
+  resolution: "@bucketco/openfeature-node-provider@workspace:packages/openfeature-node-provider"
+  dependencies:
+    "@babel/core": "npm:~7.24.7"
+    "@bucketco/eslint-config": "npm:~0.0.2"
+    "@bucketco/node-sdk": "npm:1.10.0"
+    "@bucketco/tsconfig": "npm:~0.0.2"
+    "@openfeature/core": "npm:^1.5.0"
+    "@openfeature/server-sdk": "npm:>=1.16.1"
+    "@types/node": "npm:^22.12.0"
+    eslint: "npm:^9.21.0"
+    flush-promises: "npm:~1.0.2"
+    prettier: "npm:^3.5.2"
+    ts-node: "npm:~10.9.2"
+    typescript: "npm:^5.7.3"
+    vite: "npm:~5.4.18"
+    vite-plugin-dts: "npm:~3.9.1"
+    vitest: "npm:~1.6.0"
+  peerDependencies:
+    "@openfeature/server-sdk": ">=1.16.1"
+  languageName: unknown
+  linkType: soft
+
+"@bucketco/react-sdk@workspace:^, @bucketco/react-sdk@workspace:packages/react-sdk":
+  version: 0.0.0-use.local
+  resolution: "@bucketco/react-sdk@workspace:packages/react-sdk"
+  dependencies:
+    "@bucketco/browser-sdk": "npm:3.3.4"
+    "@bucketco/eslint-config": "workspace:^"
+    "@bucketco/tsconfig": "workspace:^"
+    "@testing-library/react": "npm:^15.0.7"
+    "@types/jsdom": "npm:^21.1.6"
+    "@types/node": "npm:^22.12.0"
+    "@types/react": "npm:^18.3.2"
+    "@types/react-dom": "npm:^18.3.0"
+    "@types/webpack": "npm:^5.28.5"
+    canonical-json: "npm:^0.0.4"
+    eslint: "npm:^9.21.0"
+    jsdom: "npm:^24.1.0"
+    msw: "npm:^2.3.5"
+    prettier: "npm:^3.5.2"
+    react: "npm:*"
+    react-dom: "npm:*"
+    rollup: "npm:^4.2.0"
+    rollup-preserve-directives: "npm:^1.1.2"
+    ts-node: "npm:^10.9.2"
+    typescript: "npm:^5.7.3"
+    vite: "npm:^5.0.13"
+    vite-plugin-dts: "npm:^4.0.0-beta.1"
+    vitest: "npm:^2.0.4"
+    webpack: "npm:^5.89.0"
+    webpack-cli: "npm:^5.1.4"
+  peerDependencies:
+    react: "*"
+    react-dom: "*"
+  languageName: unknown
+  linkType: soft
+
+"@bucketco/tsconfig@npm:0.0.2, @bucketco/tsconfig@npm:~0.0.2, @bucketco/tsconfig@workspace:^, @bucketco/tsconfig@workspace:packages/tsconfig":
+  version: 0.0.0-use.local
+  resolution: "@bucketco/tsconfig@workspace:packages/tsconfig"
+  languageName: unknown
+  linkType: soft
+
+"@bucketco/vue-sdk@workspace:packages/vue-sdk":
+  version: 0.0.0-use.local
+  resolution: "@bucketco/vue-sdk@workspace:packages/vue-sdk"
+  dependencies:
+    "@bucketco/browser-sdk": "npm:3.3.4"
+    "@bucketco/eslint-config": "workspace:^"
+    "@bucketco/tsconfig": "workspace:^"
+    "@types/jsdom": "npm:^21.1.6"
+    "@types/node": "npm:^22.12.0"
+    "@vitejs/plugin-vue": "npm:^5.2.4"
+    "@vue/test-utils": "npm:^2.3.2"
+    canonical-json: "npm:^0.2.0"
+    eslint: "npm:^9.21.0"
+    eslint-plugin-vue: "npm:^9.28.0"
+    jsdom: "npm:^24.1.0"
+    msw: "npm:^2.3.5"
+    prettier: "npm:^3.5.2"
+    rollup: "npm:^4.2.0"
+    rollup-preserve-directives: "npm:^1.1.2"
+    ts-node: "npm:^10.9.2"
+    typescript: "npm:^5.7.3"
+    vite: "npm:^5.0.13"
+    vite-plugin-dts: "npm:^4.5.4"
+    vitest: "npm:^2.0.4"
+    vue: "npm:^3.5.16"
+    vue-eslint-parser: "npm:^9.4.2"
+  peerDependencies:
+    vue: ^3.0.0
+  languageName: unknown
+  linkType: soft
+
 "@bundled-es-modules/cookie@npm:^2.0.0":
   version: 2.0.0
   resolution: "@bundled-es-modules/cookie@npm:2.0.0"

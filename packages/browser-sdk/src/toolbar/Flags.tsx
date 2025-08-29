@@ -112,7 +112,7 @@ function FlagRow({
         <Flag class="flag-icon" />
         <a
           class="flag-link"
-          href={`${appBaseUrl}/envs/current/flags/by-key/${flag.flagKey}`}
+          href={`${appBaseUrl}/env-current/flags/by-key/${flag.flagKey}`}
           rel="noreferrer"
           tabIndex={index + 1}
           target="_blank"

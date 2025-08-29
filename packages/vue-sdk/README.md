@@ -112,7 +112,7 @@ generates a `check` event.
 
 The `<ReflagProvider>` initializes the Reflag SDK, fetches features and starts listening for automated feedback survey events. The component can be configured using a number of props:
 
-- `publishableKey` is used to connect the provider to an _environment_ on Reflag. Find your `publishableKey` under [environment settings](https://app.bucket.co/envs/current/settings/app-environments) in Reflag,
+- `publishableKey` is used to connect the provider to an _environment_ on Reflag. Find your `publishableKey` under [environment settings](https://app.bucket.co/env-current/settings/app-environments) in Reflag,
 - `company`, `user` and `otherContext` make up the _context_ that is used to determine if a feature is enabled or not. `company` and `user` contexts are automatically transmitted to Reflag servers so the Reflag app can show you which companies have access to which features etc.
 
   > [!Note]
