@@ -161,8 +161,6 @@ If you're migrating from the legacy Bucket SDK to Reflag SDK, here are the key c
 
   // New (Reflag SDK)
   <ReflagProvider
-    fallbackFlags={["flag1", "flag2"]}
-    // or with configuration
     fallbackFlags={{
       "flag1": true,
       "flag2": { key: "variant-a", payload: { limit: 100 } }

@@ -83,7 +83,7 @@ export async function listFlags(appId: string, query: FlagsQuery) {
 }
 
 type CreateFlagResponse = {
-  feature: FlagName & {
+  flag: FlagName & {
     description: string | null;
   };
 };
@@ -98,5 +98,5 @@ export async function createFlag(appId: string, flagData: FlagCreate) {
       source: "event",
       ...FlagCreateSchema.parse(flagData),
     }),
-  }).then(({ feature }) => feature);
+  }).then(({ flag }) => flag);
 }

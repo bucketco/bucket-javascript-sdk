@@ -10,9 +10,9 @@ import * as feedbackLib from "./feedback/ui";
 import {
   CheckEvent,
   FallbackFlagOverride,
+  Flag,
   FlagsClient,
   RawFlag,
-  RawFlags,
 } from "./flag/flags";
 import { ToolbarPosition } from "./ui/types";
 import { API_BASE_URL, APP_BASE_URL, SSE_REALTIME_BASE_URL } from "./config";
@@ -235,18 +235,10 @@ export type InitOptions = {
   offline?: boolean;
 
   /**
-   * Flag keys for which `isEnabled` should fallback to true
-   * if SDK fails to fetch flags from Reflag servers. If a record
-   * is supplied instead of array, the values of each key represent the
-   * configuration values and `isEnabled` is assume `true`.
+   * Flags for which should be served as fallback
+   * if SDK fails to fetch flags from Reflag servers.
    */
   fallbackFlags?: string[] | Record<string, FallbackFlagOverride>;
-
-  /**
-   * @deprecated
-   * Use `fallbackFlags` instead.
-   */
-  fallbackFeatures?: string[] | Record<string, FallbackFlagOverride>;
 
   /**
    * Timeout in milliseconds when fetching flags
@@ -308,75 +300,6 @@ const defaultConfig: Config = {
   enableTracking: true,
   offline: false,
 };
-
-/**
- * A remotely managed configuration value for a flag.
- */
-export type FlagRemoteConfig =
-  | {
-      /**
-       * The key of the matched configuration value.
-       */
-      key: string;
-
-      /**
-       * The optional user-supplied payload data.
-       */
-      payload: any;
-    }
-  | { key: undefined; payload: undefined };
-
-/**
- * @deprecated
- * Use `FlagRemoteConfig` instead.
- */
-export type FeatureRemoteConfig = FlagRemoteConfig;
-
-/**
- * @deprecated
- *
- * Represents a feature. This is deprecated. Use `useFlag` and other flag-related hooks instead.
- */
-export interface Feature {
-  /**
-   * Result of flag evaluation.
-   * Note: Does not take local overrides into account.
-   */
-  isEnabled: boolean;
-
-  /*
-   * Optional user-defined configuration.
-   */
-  config: FlagRemoteConfig;
-
-  /**
-   * Function to send analytics events for this flag.
-   */
-  track: () => Promise<Response | undefined>;
-
-  /**
-   * Function to request feedback for this flag.
-   */
-  requestFeedback: (
-    options: Omit<RequestFeedbackData, "featureKey" | "flagKey">,
-  ) => void;
-
-  /**
-   * The current override status of isEnabled for the flag.
-   */
-  isEnabledOverride: boolean | null;
-
-  /**
-   * Set the override status for `isEnabled` for the flag.
-   * Set to `null` to remove the override.
-   */
-  setIsEnabledOverride(isEnabled: boolean | null): void;
-}
-
-/**
- * Represents a flag value.
- */
-export type Flag = boolean | { key: string; payload: any };
 
 function shouldShowToolbar(opts: InitOptions) {
   const toolbarOpts = opts.toolbar;
@@ -448,7 +371,7 @@ export class ReflagClient {
       {
         expireTimeMs: opts.expireTimeMs,
         staleTimeMs: opts.staleTimeMs,
-        fallbackFlags: opts.fallbackFlags ?? opts.fallbackFeatures,
+        fallbackFlags: opts.fallbackFlags,
         timeoutMs: opts.timeoutMs,
         offline: this.config.offline,
       },
@@ -636,8 +559,8 @@ export class ReflagClient {
    * @param flagKey The key of the flag to get.
    * @returns The raw flag.
    */
-  #getRawFlag(flagKey: string): RawFlag | undefined {
-    const f = this.getFlags()[flagKey];
+  private _getRawFlag(flagKey: string): RawFlag | undefined {
+    const f = this.flagsClient.getFlags()[flagKey];
     if (!f) {
       this.logger.debug(`flag not found. using fallback value.`, {
         flagKey,
@@ -650,10 +573,10 @@ export class ReflagClient {
   /**
    * Track an event/flag in Reflag.
    *
-   * @param flagKey The name of the event or flag to track.
+   * @param event The name of the event to track.
    * @param attributes Any attributes you want to attach to the event.
    */
-  async track(flagKey: string, attributes?: Record<string, any> | null) {
+  async track(event: string, attributes?: Record<string, any> | null) {
     if (!this.context.user) {
       this.logger.warn("'track' call ignored. No user context provided");
       return;
@@ -669,7 +592,7 @@ export class ReflagClient {
 
     const payload: TrackedEvent = {
       userId: String(this.context.user.id),
-      event: flagKey,
+      event,
     };
     if (attributes) payload.attributes = attributes;
     if (this.context.company?.id)
@@ -679,7 +602,7 @@ export class ReflagClient {
     this.logger.debug(`sent event`, res);
 
     this.hooks.trigger("track", {
-      eventName: flagKey,
+      eventName: event,
       attributes,
       user: this.context.user,
       company: this.context.company,
@@ -728,22 +651,8 @@ export class ReflagClient {
       return;
     }
 
-    const flagKey =
-      "flagKey" in options
-        ? options.flagKey
-        : "featureKey" in options
-          ? options.featureKey
-          : undefined;
-
-    if (!flagKey) {
-      this.logger.error(
-        "`requestFeedback` call ignored. No `flagKey` provided",
-      );
-      return;
-    }
-
     const feedbackData = {
-      flagKey,
+      flagKey: options.flagKey,
       companyId:
         options.companyId ||
         (this.context.company?.id
@@ -756,7 +665,7 @@ export class ReflagClient {
     // to prevent the same click from closing it.
     setTimeout(() => {
       feedbackLib.openFeedbackForm({
-        key: flagKey,
+        flagKey: options.flagKey,
         title: options.title,
         position: options.position || this.requestFeedbackOptions.position,
         translations:
@@ -796,7 +705,7 @@ export class ReflagClient {
    * @returns The override status.
    */
   getFlagOverride(flagKey: string): Flag | null {
-    const f = this.#getRawFlag(flagKey);
+    const f = this._getRawFlag(flagKey);
     return f ? this.flagsClient.getFlagOverride(flagKey) : null;
   }
 
@@ -807,31 +716,11 @@ export class ReflagClient {
    * @param value The override status.
    */
   setFlagOverride(flagKey: string, value: Flag | null) {
-    const f = this.#getRawFlag(flagKey);
+    const f = this._getRawFlag(flagKey);
     if (!f) {
       return;
     }
     this.flagsClient.setFlagOverride(flagKey, value);
-  }
-
-  /**
-   * @deprecated
-   * Use `getFlags` instead.
-   */
-  getFeatures(): RawFlags {
-    return this.getFlags();
-  }
-
-  /**
-   * Returns a map of enabled flags.
-   *
-   * Accessing a flag will *not* send a check event, and flag value does not take any flag overrides
-   * into account.
-   *
-   * @returns Map of flags.
-   */
-  getFlags(): RawFlags {
-    return this.flagsClient.getFlags();
   }
 
   /**
@@ -841,9 +730,9 @@ export class ReflagClient {
    *
    * @param flag The flag to trigger the check event for.
    */
-  #triggerCheckEvent(flag: RawFlag, configEvent: boolean) {
+  private _triggerCheckEvent(flag: RawFlag, configEvent: boolean) {
     if (configEvent) {
-      this.sendCheckEvent({
+      this._sendCheckEvent({
         action: "check-config",
         key: flag.key,
         version: flag.config?.version,
@@ -857,7 +746,7 @@ export class ReflagClient {
         // ignore
       });
     } else {
-      this.sendCheckEvent({
+      this._sendCheckEvent({
         action: "check-is-enabled",
         key: flag.key,
         version: flag.targetingVersion,
@@ -871,53 +760,26 @@ export class ReflagClient {
   }
 
   /**
-   * @deprecated
+   * Returns a map of enabled flags.
    *
-   * Use `getFlag` instead.
+   * Accessing a flag will *not* send a check event, and flag value does not take any flag overrides
+   * into account.
+   *
+   * @returns Map of flags.
    */
-  getFeature(key: string): Feature {
-    const f = this.getFlags()[key] ?? {
-      key,
-      isEnabled: false,
-      valueOverride: null,
-    };
-
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    const self = this;
-    const value = !!(f.valueOverride ?? f.isEnabled);
-    const config = f.config
-      ? {
-          key: f.config.key,
-          payload: f.config.payload,
-        }
-      : { key: undefined, payload: undefined };
-
-    return {
-      get isEnabled() {
-        self.#triggerCheckEvent(f, false);
-        return value;
-      },
-      get config() {
-        self.#triggerCheckEvent(f, true);
-        return config;
-      },
-      track: () => this.track(key),
-      requestFeedback: (
-        options: Omit<RequestFeedbackData, "flagKey" | "featureKey">,
-      ) => {
-        this.requestFeedback({
-          featureKey: key,
-          ...options,
-        });
-      },
-      get isEnabledOverride() {
-        const override = self.getFlagOverride(key);
-        return override === null ? null : !!override;
-      },
-      setIsEnabledOverride(isEnabled: boolean | null) {
-        self.setFlagOverride(key, isEnabled);
-      },
-    };
+  getFlags(): Record<string, Flag> {
+    const flags = this.flagsClient.getFlags();
+    return Object.fromEntries(
+      Object.entries(flags).map(([k, f]) => [
+        k,
+        f.config
+          ? {
+              key: f.config.key,
+              payload: f.config.payload,
+            }
+          : f.isEnabled,
+      ]),
+    );
   }
 
   /**
@@ -927,35 +789,31 @@ export class ReflagClient {
    * @returns The value of the flag.
    */
   getFlag(flagKey: string): Flag {
-    const f = this.#getRawFlag(flagKey) ?? {
+    const f = this._getRawFlag(flagKey) ?? {
       key: flagKey,
       isEnabled: false,
       valueOverride: null,
     };
 
     if (f.valueOverride !== null) {
-      this.#triggerCheckEvent(f, !!f.config);
+      this._triggerCheckEvent(f, !!f.config);
       return f.valueOverride;
     }
 
     if (f.config) {
-      this.#triggerCheckEvent(f, true);
+      this._triggerCheckEvent(f, true);
       return {
         key: f.config.key,
         payload: f.config.payload,
       };
     }
 
-    this.#triggerCheckEvent(f, false);
+    this._triggerCheckEvent(f, false);
     return f.isEnabled;
   }
 
-  private sendCheckEvent(checkEvent: CheckEvent) {
+  private _sendCheckEvent(checkEvent: CheckEvent) {
     return this.flagsClient.sendCheckEvent(checkEvent, () => {
-      this.hooks.trigger(
-        checkEvent.action == "check-config" ? "configCheck" : "enabledCheck",
-        checkEvent,
-      );
       this.hooks.trigger("check", checkEvent);
     });
   }
@@ -1037,10 +895,3 @@ export class ReflagClient {
     return res;
   }
 }
-
-/**
- * @deprecated
- *
- * Use ReflagClient instead.
- */
-export const BucketClient = ReflagClient;

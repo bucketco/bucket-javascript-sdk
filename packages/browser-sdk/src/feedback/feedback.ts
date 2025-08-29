@@ -52,6 +52,11 @@ export type RequestFeedbackData = Omit<
   "key" | "onSubmit"
 > & {
   /**
+   * Flag key.
+   */
+  flagKey: string;
+
+  /**
    * Company ID from your own application.
    */
   companyId?: string;
@@ -66,21 +71,7 @@ export type RequestFeedbackData = Omit<
    * @param {Object} data
    */
   onAfterSubmit?: (data: FeedbackSubmission) => void;
-} & (
-    | {
-        /**
-         * @deprecated
-         * Use `flagKey` instead.
-         */
-        featureKey: string;
-      }
-    | {
-        /**
-         * Reflag flag key.
-         */
-        flagKey?: string;
-      }
-  );
+};
 
 export type RequestFeedbackOptions = RequestFeedbackData & {
   /**
@@ -199,7 +190,7 @@ export type FeedbackPromptReplyHandler = <T extends FeedbackPromptReply | null>(
 
 export type FeedbackPromptHandlerOpenFeedbackFormOptions = Omit<
   RequestFeedbackOptions,
-  "featureId" | "flagKey" | "userId" | "companyId" | "onClose" | "onDismiss"
+  "flagKey" | "userId" | "companyId" | "onClose" | "onDismiss"
 >;
 
 export type FeedbackPromptHandlerCallbacks = {

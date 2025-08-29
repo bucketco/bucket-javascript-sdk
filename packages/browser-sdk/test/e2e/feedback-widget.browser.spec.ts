@@ -50,7 +50,7 @@ async function getOpenedWidgetContainer(
       const reflag = new ReflagClient({publishableKey: "${KEY}", user: {id: "foo"}, company: {id: "bar"}, ...${JSON.stringify(initOptions ?? {})}});
       await reflag.initialize();
       await reflag.requestFeedback({
-        featureKey: "feature1",
+        flagKey: "feature1",
         title: "baz",
       });
     })()
@@ -90,7 +90,7 @@ async function getGiveFeedbackPageContainer(
       document.querySelector("#give-feedback-button")?.addEventListener("click", () => {
         console.log("cliked!");
         reflag.requestFeedback({
-          featureKey: "feature1",
+          flagKey: "feature1",
           title: "baz",
         });
       });
