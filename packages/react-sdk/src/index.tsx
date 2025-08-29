@@ -28,111 +28,12 @@ import { version } from "../package.json";
 
 export type { CheckEvent, CompanyContext, RawFlags, TrackEvent, UserContext };
 
-type EmptyFeatureRemoteConfig = { key: undefined; payload: undefined };
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface Flags {}
 
-/**
- * @internal
- *
- * Describes a feature with a remote config.
- */
-export type FeatureWithRemoteConfigType = {
-  config?: {
-    payload: any;
-  };
+type MultiVariateFlagSignature = {
+  payload: any;
 };
-
-/**
- * @deprecated
- * A remotely managed configuration value for a flag.
- */
-export type FeatureRemoteConfig =
-  | {
-      /**
-       * The key of the matched configuration value.
-       */
-      key: string;
-
-      /**
-       * The optional user-supplied payload data.
-       */
-      payload: any;
-    }
-  | EmptyFeatureRemoteConfig;
-
-/**
- * @deprecated
- *
- * Describes a feature.
- */
-export interface Feature<
-  TConfig extends
-    FeatureWithRemoteConfigType["config"] = EmptyFeatureRemoteConfig,
-> {
-  /**
-   * The key of the flag.
-   */
-  key: string;
-
-  /**
-   * If the flag is enabled.
-   */
-  isEnabled: boolean;
-
-  /**
-   * If the flag is loading.
-   */
-  isLoading: boolean;
-
-  /*
-   * Optional user-defined configuration.
-   */
-  config:
-    | ({
-        key: string;
-      } & TConfig)
-    | EmptyFeatureRemoteConfig;
-
-  /**
-   * Track flag usage in Reflag.
-   */
-  track(): Promise<Response | undefined> | undefined;
-  /**
-   * Request feedback from the user.
-   */
-  requestFeedback: (opts: RequestFeedbackOptions) => void;
-}
-
-/**
- * @deprecated
- * Use `Flags` instead.
- */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface Features {}
-
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface Flags extends Features {}
-
-/**
- * @deprecated
- * Describes a collection of evaluated flags.
- *
- * @remarks
- * This types falls back to a generic Record<string, Flag> if the Flags interface
- * has not been extended.
- */
-export type TypedFeatures = keyof Flags extends never
-  ? Record<string, Feature>
-  : {
-      [TKey in keyof Flags]: Flags[TKey] extends FeatureWithRemoteConfigType
-        ? Feature<Flags[TKey]["config"]>
-        : Feature;
-    };
-
-/**
- * @deprecated
- * Use `FlagKey` instead.
- */
-export type FeatureKey = keyof TypedFeatures;
 
 /**
  * Describes a collection of evaluated flags.
@@ -144,8 +45,11 @@ export type FeatureKey = keyof TypedFeatures;
 export type TypedFlags = keyof Flags extends never
   ? Record<string, Flag>
   : {
-      [TKey in keyof Flags]: Flags[TKey] extends FeatureWithRemoteConfigType
-        ? Flags[TKey]["config"] & { key: TKey }
+      [TKey in keyof Flags]: Flags[TKey] extends MultiVariateFlagSignature
+        ? {
+            key: string;
+            payload: Flags[TKey]["payload"];
+          }
         : boolean;
     };
 
@@ -194,17 +98,7 @@ export type ReflagProps = ReflagContext &
     debug?: boolean;
 
     /**
-     * @deprecated
-     * New ReflagClient constructor. Use `newReflagClient` instead.
-     *
-     * @internal
-     */
-    newBucketClient?: (
-      ...args: ConstructorParameters<typeof ReflagClient>
-    ) => ReflagClient;
-
-    /**
-     * New ReflagClient constructor.
+     * New `ReflagClient` constructor.
      *
      * @internal
      */
@@ -222,7 +116,6 @@ export function ReflagProvider({
   company,
   otherContext,
   loadingComponent,
-  newBucketClient,
   newReflagClient = (...args) => new ReflagClient(...args),
   ...config
 }: ReflagProps) {
@@ -250,10 +143,7 @@ export function ReflagProvider({
 
     setFlagsLoading(true);
 
-    // Deprecated, compatibility with Bucket SDK
-    const newClient = newBucketClient ?? newReflagClient;
-
-    const client = newClient({
+    const client = newReflagClient({
       ...config,
       user,
       company,
@@ -296,81 +186,26 @@ export function ReflagProvider({
 }
 
 /**
- * @deprecated
- * Use `ReflagProvider` instead.
- */
-export const BucketProvider = ReflagProvider;
-
-type RequestFeedbackOptions = Omit<
-  RequestFeedbackData,
-  "featureKey" | "flagKey"
->;
-
-/**
- * @deprecated
- * Use `useFlag` instead.
- *
- * Returns the state of a given flag for the current context, e.g.
+ * Returns the value of a given flag for the current context, e.g.:
  *
  * ```ts
- * function HuddleButton() {
- *   const {isEnabled, config: { payload }, track} = useFlag("huddle");
- *   if (isEnabled) {
- *    return <button onClick={() => track()}>{payload?.buttonTitle ?? "Start Huddle"}</button>;
- * }
- * ```
- */
-export function useFeature<TKey extends FeatureKey>(
-  flagKey: TKey,
-): TypedFeatures[TKey] {
-  const client = useClient();
-  const {
-    flags: { isLoading },
-  } = useContext<ProviderContextType>(ProviderContext);
-
-  const track = () => client?.track(flagKey);
-  const requestFeedback = (opts: RequestFeedbackOptions) =>
-    client?.requestFeedback({ ...opts, flagKey });
-
-  if (isLoading || !client) {
-    return {
-      key: flagKey,
-      isLoading,
-      isEnabled: false,
-      config: {
-        key: undefined,
-        payload: undefined,
-      } as TypedFeatures[TKey]["config"],
-      track,
-      requestFeedback,
-    };
-  }
-
-  const flag = client.getFeature(flagKey);
-
-  return {
-    key: flagKey,
-    isLoading,
-    track,
-    requestFeedback,
-    get isEnabled() {
-      return flag.isEnabled ?? false;
-    },
-    get config() {
-      return flag.config as TypedFeatures[TKey]["config"];
-    },
-  };
-}
-
-/**
- * Returns the state of a given flag for the current context, e.g.
- *
- * ```ts
+ * // For "toggle" flags
  * function HuddleButton() {
  *   const enabled = useFlag("huddle");
  *
  *   if (enabled) {
  *    return <button onClick={() => alert("Huddle started")}>Start Huddle</button>;
+ * }
+ *
+ * // For "multi-variate" flags
+ * function HuddleButton() {
+ *   const { key, payload } = useFlag("huddle");
+ *
+ *   if (key === "full-mode") {
+ *    return <button onClick={() => alert("Huddle started")}>Start Huddle</button>;
+ *   }
+ *
+ *   return null;
  * }
  * ```
  */
@@ -399,62 +234,63 @@ export function useFlag<TKey extends FlagKey>(
 export function useIsLoading() {
   const {
     flags: { isLoading },
+    client,
   } = useContext<ProviderContextType>(ProviderContext);
 
-  return isLoading;
+  return isLoading || !client;
 }
 
 /**
- * Returns a function to send an event when a user performs an action
+ * Returns a function to send a track event when a user performs an action.
  * Note: When calling `useTrack`, user/company must already be set.
  *
  * ```ts
- * const track = useTrack();
- * track("Started Huddle", { button: "cta" });
+ * const track = useTrack("huddle");
+ * track({ button: "cta" });
  * ```
  */
-export function useTrack() {
+export function useTrack<TKey extends FlagKey>(flagKey: TKey) {
   const client = useClient();
-  return (eventName: string, attributes?: Record<string, any> | null) =>
-    client?.track(eventName, attributes);
+
+  return (attributes?: Record<string, any> | null) =>
+    client?.track(flagKey, attributes);
 }
 
-type TypedRequestFeedbackData = Omit<
-  RequestFeedbackData,
-  "featureKey" | "flagKey"
-> &
-  (
-    | {
-        flagKey: FlagKey;
-      }
-    | {
-        /**
-         * @deprecated
-         * Use `flagKey` instead.
-         */
-        featureKey: FlagKey;
-      }
-  );
-
 /**
- * Returns a function to open up the feedback form
- * Note: When calling `useRequestFeedback`, user/company must already be set.
- *
- * See [link](../../browser-sdk/FEEDBACK.md#reflagclientrequestfeedback-options) for more information
+ * Returns a function to send a custom track event when a user performs an action.
+ * Note: When calling `useTrackCustom`, user/company must already be set.
  *
  * ```ts
- * const requestFeedback = useRequestFeedback();
+ * const track = useTrackCustom("Custom Event");
+ * track({ button: "cta" });
+ * ```
+ */
+export function useTrackCustom(event: string) {
+  const client = useClient();
+
+  return (attributes?: Record<string, any> | null) =>
+    client?.track(event, attributes);
+}
+
+/**
+ * Returns a function to open up the feedback form.
+ *
+ * Note: When calling `useRequestFeedback`, user/company must already be set.
+ *
+ * See [link](../../browser-sdk/FEEDBACK.md#reflagclientrequestfeedback-options) for more information.
+ *
+ * ```ts
+ * const requestFeedback = useRequestFeedback("huddle");
  * reflag.requestFeedback({
- *   featureKey: "file-uploads",
  *   title: "How satisfied are you with file uploads?",
  * });
  * ```
  */
-export function useRequestFeedback() {
+export function useRequestFeedback<TKey extends FlagKey>(flagKey: TKey) {
   const client = useClient();
 
-  return (options: TypedRequestFeedbackData) =>
-    client?.requestFeedback(options);
+  return (options: Omit<RequestFeedbackData, "flagKey">) =>
+    client?.requestFeedback({ ...options, flagKey });
 }
 
 /**
@@ -464,18 +300,19 @@ export function useRequestFeedback() {
  * See [link](./../../browser-sdk/FEEDBACK.md#using-your-own-ui-to-collect-feedback) for more information
  *
  * ```ts
- * const sendFeedback = useSendFeedback();
+ * const sendFeedback = useSendFeedback("huddle");
  * sendFeedback({
- *   featureKey: "huddle";
  *   question: "How did you like the new huddle feature?";
  *   score: 5;
  *   comment: "I loved it!";
  * });
  * ```
  */
-export function useSendFeedback() {
+export function useSendFeedback<TKey extends FlagKey>(flagKey: TKey) {
   const client = useClient();
-  return (opts: UnassignedFeedback) => client?.feedback(opts);
+
+  return (opts: Omit<UnassignedFeedback, "flagKey" | "feedbackId">) =>
+    client?.feedback({ ...opts, flagKey });
 }
 
 /**

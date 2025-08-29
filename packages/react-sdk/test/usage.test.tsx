@@ -20,12 +20,12 @@ import {
   ReflagProps,
   ReflagProvider,
   useClient,
-  useFeature,
   useFlag,
   useIsLoading,
   useRequestFeedback,
   useSendFeedback,
   useTrack,
+  useTrackCustom,
   useUpdateCompany,
   useUpdateOtherContext,
   useUpdateUser,
@@ -283,66 +283,6 @@ describe("<ReflagProvider />", () => {
   });
 });
 
-describe("useFeature (deprecated)", () => {
-  test("returns a loading state initially", async () => {
-    const { result, unmount } = renderHook(() => useFeature("huddle"), {
-      wrapper: ({ children }) => getProvider({ children }),
-    });
-
-    expect(result.current).toStrictEqual({
-      key: "huddle",
-      isEnabled: false,
-      isLoading: true,
-      config: { key: undefined, payload: undefined },
-      track: expect.any(Function),
-      requestFeedback: expect.any(Function),
-    });
-
-    unmount();
-  });
-
-  test("finishes loading", async () => {
-    const { result, unmount } = renderHook(() => useFeature("huddle"), {
-      wrapper: ({ children }) => getProvider({ children }),
-    });
-
-    await waitFor(() => {
-      expect(result.current).toStrictEqual({
-        key: "huddle",
-        config: { key: undefined, payload: undefined },
-        isEnabled: false,
-        isLoading: false,
-        track: expect.any(Function),
-        requestFeedback: expect.any(Function),
-      });
-    });
-
-    unmount();
-  });
-
-  test("provides the expected values if flag is enabled", async () => {
-    const { result, unmount } = renderHook(() => useFeature("abc"), {
-      wrapper: ({ children }) => getProvider({ children }),
-    });
-
-    await waitFor(() => {
-      expect(result.current).toStrictEqual({
-        key: "abc",
-        isEnabled: true,
-        isLoading: false,
-        config: {
-          key: "gpt3",
-          payload: { model: "gpt-something", temperature: 0.5 },
-        },
-        track: expect.any(Function),
-        requestFeedback: expect.any(Function),
-      });
-    });
-
-    unmount();
-  });
-});
-
 describe("useIsLoading", () => {
   test("returns `true` initially", async () => {
     const { result, unmount } = renderHook(() => useIsLoading(), {
@@ -407,12 +347,30 @@ describe("useFlag", () => {
 
 describe("useTrack", () => {
   test("sends track request", async () => {
-    const { result, unmount } = renderHook(() => useTrack(), {
+    const { result, unmount } = renderHook(() => useTrack("event"), {
       wrapper: ({ children }) => getProvider({ children }),
     });
 
     await waitFor(async () => {
-      await result.current("event", { test: "test" });
+      await result.current({ test: "test" });
+      expect(events).toStrictEqual(["EVENT"]);
+    });
+
+    unmount();
+  });
+});
+
+describe("useTrackCustom", () => {
+  test("sends track request", async () => {
+    const { result, unmount } = renderHook(
+      () => useTrackCustom("Custom Event"),
+      {
+        wrapper: ({ children }) => getProvider({ children }),
+      },
+    );
+
+    await waitFor(async () => {
+      await result.current({ test: "test" });
       expect(events).toStrictEqual(["EVENT"]);
     });
 
@@ -422,13 +380,12 @@ describe("useTrack", () => {
 
 describe("useSendFeedback", () => {
   test("sends feedback", async () => {
-    const { result, unmount } = renderHook(() => useSendFeedback(), {
+    const { result, unmount } = renderHook(() => useSendFeedback("huddles"), {
       wrapper: ({ children }) => getProvider({ children }),
     });
 
     await waitFor(async () => {
       await result.current({
-        flagKey: "huddles",
         score: 5,
       });
       expect(events).toStrictEqual(["FEEDBACK"]);
@@ -444,13 +401,15 @@ describe("useRequestFeedback", () => {
       .spyOn(ReflagClient.prototype, "requestFeedback")
       .mockReturnValue(undefined);
 
-    const { result, unmount } = renderHook(() => useRequestFeedback(), {
-      wrapper: ({ children }) => getProvider({ children }),
-    });
+    const { result, unmount } = renderHook(
+      () => useRequestFeedback("huddles"),
+      {
+        wrapper: ({ children }) => getProvider({ children }),
+      },
+    );
 
     await waitFor(async () => {
       result.current({
-        flagKey: "huddles",
         title: "Test question",
         companyId: "456",
       });

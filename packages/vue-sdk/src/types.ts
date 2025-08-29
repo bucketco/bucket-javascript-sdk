@@ -1,30 +1,47 @@
 import type { Ref } from "vue";
 
 import type {
+  Flag,
   InitOptions,
   ReflagClient,
   ReflagContext,
-  RequestFeedbackData,
 } from "@reflag/browser-sdk";
 
-export type FeatureRemoteConfig =
-  | { key: string; payload: any }
-  | { key: undefined; payload: undefined };
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface Flags {}
 
-export type RequestFlagFeedbackOptions = Omit<
-  RequestFeedbackData,
-  "featureKey" | "flagKey"
->;
+type MultiVariateFlagSignature = {
+  payload: any;
+};
 
-export interface Feature {
-  key: string;
-  isEnabled: Ref<boolean>;
-  isLoading: Ref<boolean>;
-  config: Ref<FeatureRemoteConfig>;
-  track(): Promise<Response | undefined> | undefined;
-  requestFeedback: (opts: RequestFlagFeedbackOptions) => void;
-}
+/**
+ * Describes a collection of evaluated flags.
+ *
+ * @remarks
+ * This types falls back to a generic Record<string, Flag> if the Flags interface
+ * has not been extended.
+ */
+export type TypedFlags = keyof Flags extends never
+  ? Record<string, Flag>
+  : {
+      [TKey in keyof Flags]: Flags[TKey] extends MultiVariateFlagSignature
+        ? {
+            key: string;
+            payload: Flags[TKey]["payload"];
+          }
+        : boolean;
+    };
 
+/**
+ * The key of a flag.
+ */
+export type FlagKey = keyof TypedFlags;
+
+/**
+ * @internal
+ *
+ * The context type for the ReflagProvider component.
+ */
 export interface ProviderContextType {
   client: Ref<ReflagClient>;
   isLoading: Ref<boolean>;
@@ -41,16 +58,6 @@ export type ReflagProps = ReflagContext &
      * Whether to enable debug mode.
      */
     debug?: boolean;
-
-    /**
-     * @deprecated
-     * New ReflagClient constructor. Use `newReflagClient` instead.
-     *
-     * @internal
-     */
-    newBucketClient?: (
-      ...args: ConstructorParameters<typeof ReflagClient>
-    ) => ReflagClient;
 
     /**
      * New ReflagClient constructor.

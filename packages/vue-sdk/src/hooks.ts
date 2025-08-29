@@ -1,76 +1,11 @@
-import { computed, inject, InjectionKey, onBeforeUnmount, ref } from "vue";
+import { inject, InjectionKey } from "vue";
 
-import {
-  Flag,
-  RequestFeedbackData,
-  UnassignedFeedback,
-} from "@reflag/browser-sdk";
+import { RequestFeedbackData, UnassignedFeedback } from "@reflag/browser-sdk";
 
-import {
-  Feature,
-  ProviderContextType,
-  RequestFlagFeedbackOptions,
-} from "./types";
+import { FlagKey, ProviderContextType, TypedFlags } from "./types";
 
 export const ProviderSymbol: InjectionKey<ProviderContextType> =
   Symbol("ReflagProvider");
-
-/**
- * @deprecated
- *
- * Use `useFlag` instead.
- *
- * Vue composable for getting a feature.
- *
- * @example
- * ```ts
- * import { useFeature } from '@reflag/vue-sdk';
- *
- * const feature = useFeature('my-feature');
- *
- * // Use the feature
- * console.log(feature.isEnabled);
- * ```
- *
- * @returns A feature object.
- *   - `isEnabled`: A boolean indicating whether the feature is enabled.
- *   - `config`: An object containing the feature's configuration.
- *   - `track`: A function that tracks the feature.
- *   - `requestFeedback`: A function that requests feedback for the feature.
- *   - `isLoading`: A boolean indicating whether the feature is loading.
- *
- * @param key The key of the feature to get.
- */
-export function useFeature(key: string): Feature {
-  const client = useClient();
-  const ctx = injectSafe();
-
-  const track = () => client?.value.track(key);
-  const requestFeedback = (opts: RequestFlagFeedbackOptions) =>
-    client.value.requestFeedback({ ...opts, featureKey: key });
-
-  const feature = ref(client.value.getFeature(key));
-
-  updateFeature();
-
-  function updateFeature() {
-    feature.value = client.value.getFeature(key);
-  }
-
-  client.value.on("featuresUpdated", updateFeature);
-  onBeforeUnmount(() => {
-    client.value.off("featuresUpdated", updateFeature);
-  });
-
-  return {
-    key,
-    isEnabled: computed(() => feature.value.isEnabled),
-    config: computed(() => feature.value.config),
-    track,
-    requestFeedback,
-    isLoading: computed(() => ctx.isLoading.value),
-  };
-}
 
 /**
  * Vue composable for getting a flag value.
@@ -82,16 +17,45 @@ export function useFeature(key: string): Feature {
  * const flag = useFlag('my-flag');
  *
  * // Use the flag
- * console.log(flag.value);
+ * console.log(flag);
  * ```
  *
  * @param flagKey The key of the flag to get.
  * @returns The value of the flag.
  */
-export function useFlag(flagKey: string): Flag {
+export function useFlag<TKey extends FlagKey>(
+  flagKey: TKey,
+): TypedFlags[TKey] | undefined {
   const client = useClient();
 
   return client.value.getFlag(flagKey);
+}
+
+/**
+ * Vue composable for tracking custom events.
+ *
+ * This composable returns a function that can be used to track flag events
+ * with the Reflag SDK.
+ *
+ * @example
+ * ```ts
+ * import { useTrack } from '@reflag/vue-sdk';
+ *
+ * const track = useTrack('button_clicked');
+ *
+ * // Track a custom event
+ * track({ buttonName: 'Start Huddle' });
+ * ```
+ *
+ * @returns A function that tracks an event. The function accepts:
+ *   - `eventName`: The name of the event to track.
+ *   - `attributes`: (Optional) Additional attributes to associate with the event.
+ */
+export function useTrack<TKey extends FlagKey>(flagKey: TKey) {
+  const client = useClient();
+
+  return (attributes?: Record<string, any> | null) =>
+    client.value.track(flagKey, attributes);
 }
 
 /**
@@ -102,22 +66,23 @@ export function useFlag(flagKey: string): Flag {
  *
  * @example
  * ```ts
- * import { useTrack } from '@reflag/vue-sdk';
+ * import { useTrackCustom } from '@reflag/vue-sdk';
  *
- * const track = useTrack();
+ * const track = useTrackCustom('button_clicked');
  *
  * // Track a custom event
- * track('button_clicked', { buttonName: 'Start Huddle' });
+ * track({ buttonName: 'Start Huddle' });
  * ```
  *
  * @returns A function that tracks an event. The function accepts:
  *   - `eventName`: The name of the event to track.
  *   - `attributes`: (Optional) Additional attributes to associate with the event.
  */
-export function useTrack() {
+export function useTrackCustom(event: string) {
   const client = useClient();
-  return (flagKey: string, attributes?: Record<string, any> | null) =>
-    client.value.track(flagKey, attributes);
+
+  return (attributes?: Record<string, any> | null) =>
+    client.value.track(event, attributes);
 }
 
 /**
@@ -131,7 +96,7 @@ export function useTrack() {
  * ```ts
  * import { useRequestFeedback } from '@reflag/vue-sdk';
  *
- * const requestFeedback = useRequestFeedback();
+ * const requestFeedback = useRequestFeedback('my-flag');
  *
  * // Request feedback from the user
  * requestFeedback({
@@ -143,10 +108,10 @@ export function useTrack() {
  * @returns A function that requests feedback from the user. The function accepts:
  *   - `options`: An object containing feedback request options.
  */
-export function useRequestFeedback() {
+export function useRequestFeedback<TKey extends FlagKey>(flagKey: TKey) {
   const client = useClient();
-  return (options: RequestFeedbackData) =>
-    client.value.requestFeedback(options);
+  return (options: Omit<RequestFeedbackData, "flagKey">) =>
+    client.value.requestFeedback({ ...options, flagKey });
 }
 
 /**
@@ -159,7 +124,7 @@ export function useRequestFeedback() {
  * ```ts
  * import { useSendFeedback } from '@reflag/vue-sdk';
  *
- * const sendFeedback = useSendFeedback();
+ * const sendFeedback = useSendFeedback('my-flag');
  *
  * // Send feedback from the user
  * sendFeedback({
@@ -171,9 +136,11 @@ export function useRequestFeedback() {
  * @returns A function that sends feedback to the Reflag SDK. The function accepts:
  *   - `options`: An object containing feedback options.
  */
-export function useSendFeedback() {
+export function useSendFeedback<TKey extends FlagKey>(flagKey: TKey) {
   const client = useClient();
-  return (opts: UnassignedFeedback) => client.value.feedback(opts);
+
+  return (opts: Omit<UnassignedFeedback, "flagKey" | "feedbackId">) =>
+    client.value.feedback({ ...opts, flagKey });
 }
 
 /**

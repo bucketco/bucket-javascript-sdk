@@ -21,9 +21,7 @@ const props = withDefaults(defineProps<ReflagProps>(), {
 
 function updateClient() {
   const cnext = (
-    props.newReflagClient ??
-    props.newBucketClient ??
-    ((...args) => new ReflagClient(...args))
+    props.newReflagClient ?? ((...args) => new ReflagClient(...args))
   )({
     ...props,
     logger: props.debug ? console : undefined,

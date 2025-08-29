@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { useTrack } from "../../../src";
+import { useTrackCustom } from "../../../src";
 
 import Section from "./Section.vue";
 
-const track = useTrack();
+const track = useTrackCustom("Huddle Started");
 </script>
 
 <template>
   <Section title="Custom track event">
-    <button @click="track('Huddle Started', { huddleType: 'voice' })">
+    <button @click="track({ huddleType: 'voice' })">
       Send custom track event
     </button>
   </Section>

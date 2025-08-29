@@ -1,7 +1,7 @@
 import { h } from "preact";
 import { useEffect, useState } from "preact/hooks";
 
-import { Feature as Flag } from "../ui/icons/Feature";
+import { Flag } from "../ui/icons/Flag";
 
 import { Switch } from "./Switch";
 import { FlagItem } from "./Toolbar";

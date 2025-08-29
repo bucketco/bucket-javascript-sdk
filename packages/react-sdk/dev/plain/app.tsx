@@ -3,13 +3,13 @@ import React, { useState } from "react";
 import {
   ReflagProvider,
   useRequestFeedback,
-  useTrack,
   useUpdateCompany,
   useUpdateOtherContext,
   useUpdateUser,
   useClient,
   useFlag,
   FlagKey,
+  useTrackCustom,
 } from "../../src";
 
 // Extending the Flags interface to define the available flags
@@ -26,8 +26,7 @@ declare module "../../src" {
   }
 }
 
-const publishableKey = import.meta.env.VITE_PUBLISHABLE_KEY || "";
-const apiBaseUrl = import.meta.env.VITE_REFLAG_API_BASE_URL;
+const publishableKey = "trCqxMDGo1lk3Lcct5NHLjWy";
 
 function HuddleFeature() {
   // Type safe feature
@@ -126,7 +125,8 @@ function UpdateContext() {
 function SendEvent() {
   // Send track event
   const [eventName, setEventName] = useState("event1");
-  const track = useTrack();
+  const track = useTrackCustom(eventName);
+
   return (
     <div>
       <h2>Send event</h2>
@@ -138,7 +138,7 @@ function SendEvent() {
       />
       <button
         onClick={() => {
-          track(eventName);
+          track();
         }}
       >
         Send event
@@ -148,7 +148,7 @@ function SendEvent() {
 }
 
 function Feedback() {
-  const requestFeedback = useRequestFeedback();
+  const requestFeedback = useRequestFeedback("huddles");
 
   return (
     <div>
@@ -157,7 +157,6 @@ function Feedback() {
         onClick={(e) =>
           requestFeedback({
             title: "How do you like Huddles?",
-            flagKey: "huddles",
             position: {
               type: "POPOVER",
               anchor: e.currentTarget as HTMLElement,
@@ -273,7 +272,6 @@ export function App() {
       company={initialCompany}
       user={initialUser}
       otherContext={initialOtherContext}
-      apiBaseUrl={apiBaseUrl}
     >
       {!publishableKey && (
         <div>
