@@ -1,20 +1,29 @@
 <script setup lang="ts">
-import { useFeature } from "../../../src";
+import {
+  useFlag,
+  useIsLoading,
+  useRequestFeedback,
+  useTrackCustom,
+} from "../../../src";
 
 import Section from "./Section.vue";
 
-const { isLoading, isEnabled, config, requestFeedback, track } =
-  useFeature("huddle");
+const flag = useFlag("huddles");
+const track = useTrackCustom("Huddle Started");
+const isLoading = useIsLoading();
+const payload =
+  flag && typeof flag === "object" && "payload" in flag ? flag.payload : {};
+const requestFeedback = useRequestFeedback("huddles");
 </script>
 <template>
   <Section title="Huddle">
     <div style="display: flex; gap: 10px; flex-wrap: wrap">
-      <div>Huddle enabled: {{ isEnabled }}</div>
+      <div>Huddle enabled: {{ flag }}</div>
       <div v-if="isLoading">Loading...</div>
       <div v-else style="display: flex; gap: 10px; flex-wrap: wrap">
         <div>
           <button @click="track()">
-            {{ config?.payload?.buttonTitle ?? "Start Huddle (track event)" }}
+            {{ payload.buttonTitle ?? "Start Huddle (track event)" }}
           </button>
         </div>
         <div>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 
-import { BucketProvider } from "../../src";
+import { ReflagProvider } from "../../src";
 
 import Events from "./components/Events.vue";
 import MissingKeyMessage from "./components/MissingKeyMessage.vue";
@@ -18,7 +18,7 @@ const publishableKey = import.meta.env.VITE_PUBLISHABLE_KEY || "";
   <div v-if="!publishableKey">
     <MissingKeyMessage />
   </div>
-  <BucketProvider
+  <ReflagProvider
     v-else
     :publishable-key="publishableKey"
     :user="user"
@@ -33,5 +33,5 @@ const publishableKey = import.meta.env.VITE_PUBLISHABLE_KEY || "";
       <input v-model="user.id" />
     </Section>
     <Events />
-  </BucketProvider>
+  </ReflagProvider>
 </template>

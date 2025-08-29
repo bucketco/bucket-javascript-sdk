@@ -170,11 +170,11 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
         >
           <div
             ref={headerRef}
-            aria-labelledby="bucket-feedback-score-label"
+            aria-labelledby="reflag-feedback-score-label"
             class="form-control"
             role="group"
           >
-            <div class="title" id="bucket-feedback-score-label">
+            <div class="title" id="reflag-feedback-score-label">
               {question}
             </div>
             <StarRating
@@ -196,7 +196,7 @@ export const FeedbackForm: FunctionComponent<FeedbackFormProps> = ({
             <div class="form-control">
               <textarea
                 class="textarea"
-                id="bucket-feedback-comment-label"
+                id="reflag-feedback-comment-label"
                 name="comment"
                 placeholder={t.QuestionPlaceholder}
                 rows={4}

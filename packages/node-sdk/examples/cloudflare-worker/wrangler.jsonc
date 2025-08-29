@@ -28,7 +28,7 @@
    * Environment Variables
    * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
    */
-  // "vars": { "BUCKET_SECRET_KEY": "---SECRET_KEY---" },
+  // "vars": { "REFLAG_SECRET_KEY": "---SECRET_KEY---" },
   /**
    * Note: Use secrets to store sensitive data.
    * https://developers.cloudflare.com/workers/configuration/secrets/

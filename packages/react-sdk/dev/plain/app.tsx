@@ -1,20 +1,20 @@
 import React, { useState } from "react";
 
 import {
-  FeatureKey,
-  BucketProvider,
-  useFeature,
+  ReflagProvider,
   useRequestFeedback,
-  useTrack,
   useUpdateCompany,
   useUpdateOtherContext,
   useUpdateUser,
   useClient,
+  useFlag,
+  FlagKey,
+  useTrackCustom,
 } from "../../src";
 
-// Extending the Features interface to define the available features
+// Extending the Flags interface to define the available flags
 declare module "../../src" {
-  interface Features {
+  interface Flags {
     huddles: {
       config: {
         payload: {
@@ -22,20 +22,21 @@ declare module "../../src" {
         };
       };
     };
+    showHeader: true;
   }
 }
 
-const publishableKey = import.meta.env.VITE_PUBLISHABLE_KEY || "";
-const apiBaseUrl = import.meta.env.VITE_BUCKET_API_BASE_URL;
+const publishableKey = "trCqxMDGo1lk3Lcct5NHLjWy";
 
 function HuddleFeature() {
   // Type safe feature
-  const feature = useFeature("huddles");
+  const flag = useFlag("huddles");
+
   return (
     <div>
       <h2>Huddle feature</h2>
       <pre>
-        <code>{JSON.stringify(feature, null, 2)}</code>
+        <code>{JSON.stringify(flag, null, 2)}</code>
       </pre>
     </div>
   );
@@ -124,7 +125,8 @@ function UpdateContext() {
 function SendEvent() {
   // Send track event
   const [eventName, setEventName] = useState("event1");
-  const track = useTrack();
+  const track = useTrackCustom(eventName);
+
   return (
     <div>
       <h2>Send event</h2>
@@ -136,7 +138,7 @@ function SendEvent() {
       />
       <button
         onClick={() => {
-          track(eventName);
+          track();
         }}
       >
         Send event
@@ -146,7 +148,7 @@ function SendEvent() {
 }
 
 function Feedback() {
-  const requestFeedback = useRequestFeedback();
+  const requestFeedback = useRequestFeedback("huddles");
 
   return (
     <div>
@@ -155,7 +157,6 @@ function Feedback() {
         onClick={(e) =>
           requestFeedback({
             title: "How do you like Huddles?",
-            featureKey: "huddle",
             position: {
               type: "POPOVER",
               anchor: e.currentTarget as HTMLElement,
@@ -179,11 +180,11 @@ function Demos() {
 
       <h2>Feature opt-in</h2>
       <div>
-        Create a <code>huddle</code> feature and set a rule:{" "}
+        Create a <code>huddle</code> flag and set a rule:{" "}
         <code>optin-huddles IS TRUE</code>. Hit the checkbox below to opt-in/out
-        of the feature.
+        of the flag.
       </div>
-      <FeatureOptIn featureKey={"huddles"} featureName={"Huddles"} />
+      <FeatureOptIn flagKey={"huddles"} featureName={"Huddles"} />
 
       <UpdateContext />
       <Feedback />
@@ -194,15 +195,15 @@ function Demos() {
 }
 
 function FeatureOptIn({
-  featureKey,
+  flagKey,
   featureName,
 }: {
-  featureKey: FeatureKey;
+  flagKey: FlagKey;
   featureName: string;
 }) {
   const updateUser = useUpdateUser();
   const [sendingUpdate, setSendingUpdate] = useState(false);
-  const { isEnabled } = useFeature(featureKey);
+  const value = useFlag(flagKey);
 
   return (
     <div>
@@ -211,11 +212,11 @@ function FeatureOptIn({
         disabled={sendingUpdate}
         id="huddlesOptIn"
         type="checkbox"
-        checked={isEnabled}
+        checked={!!value}
         onChange={() => {
           setSendingUpdate(true);
           updateUser({
-            [`optin-${featureKey}`]: isEnabled ? "false" : "true",
+            [`optin-${flagKey}`]: value ? "false" : "true",
           })?.then(() => {
             setSendingUpdate(false);
           });
@@ -236,29 +237,25 @@ function CustomToolbar() {
     <div>
       <h2>Custom toolbar</h2>
       <ul>
-        {Object.entries(client.getFeatures()).map(([featureKey, feature]) => (
-          <li key={featureKey}>
-            {featureKey} -
-            {(feature.isEnabledOverride ?? feature.isEnabled)
-              ? "Enabled"
-              : "Disabled"}{" "}
-            {feature.isEnabledOverride !== null && (
+        {Object.entries(client.getFlags()).map(([flagKey, flag]) => (
+          <li key={flagKey}>
+            {flagKey} -
+            {(flag.valueOverride ?? flag.isEnabled) ? "Enabled" : "Disabled"}{" "}
+            {flag.valueOverride !== null && (
               <button
                 onClick={() => {
-                  client.getFeature(featureKey).setIsEnabledOverride(null);
+                  client.setFlagOverride(flagKey, null);
                 }}
               >
                 Reset
               </button>
             )}
             <input
-              checked={feature.isEnabledOverride ?? feature.isEnabled}
+              checked={!!flag.valueOverride ?? flag.isEnabled}
               type="checkbox"
               onChange={(e) => {
-                // this uses slightly simplified logic compared to the Bucket Toolbar
-                client
-                  .getFeature(featureKey)
-                  .setIsEnabledOverride(e.target.checked ?? false);
+                // this uses slightly simplified logic compared to the Reflag Toolbar
+                client.setFlagOverride(flagKey, e.target.checked ?? false);
               }}
             />
           </li>
@@ -270,12 +267,11 @@ function CustomToolbar() {
 
 export function App() {
   return (
-    <BucketProvider
+    <ReflagProvider
       publishableKey={publishableKey}
       company={initialCompany}
       user={initialUser}
       otherContext={initialOtherContext}
-      apiBaseUrl={apiBaseUrl}
     >
       {!publishableKey && (
         <div>
@@ -284,6 +280,6 @@ export function App() {
         </div>
       )}
       <Demos />
-    </BucketProvider>
+    </ReflagProvider>
   );
 }

@@ -1,23 +1,15 @@
-import { CheckEvent, RawFeatures } from "./feature/features";
+import { CheckEvent, RawFlags } from "./flag/flags";
 import { CompanyContext, UserContext } from "./context";
 
 export interface HookArgs {
-  /**
-   * Deprecated: Use `check` instead.
-   * @deprecated
-   */
-  configCheck: CheckEvent;
-  /**
-   * Deprecated: Use `check` instead.
-   * @deprecated
-   */
-  enabledCheck: CheckEvent;
   check: CheckEvent;
-  featuresUpdated: RawFeatures;
+  flagsUpdated: RawFlags;
   user: UserContext;
   company: CompanyContext;
   track: TrackEvent;
 }
+
+type HookType = keyof HookArgs;
 
 export type TrackEvent = {
   user: UserContext;
@@ -35,7 +27,7 @@ export class HooksManager {
     enabledCheck: ((arg0: CheckEvent) => void)[];
     configCheck: ((arg0: CheckEvent) => void)[];
     check: ((arg0: CheckEvent) => void)[];
-    featuresUpdated: ((arg0: RawFeatures) => void)[];
+    flagsUpdated: ((arg0: RawFlags) => void)[];
     user: ((arg0: UserContext) => void)[];
     company: ((arg0: CompanyContext) => void)[];
     track: ((arg0: TrackEvent) => void)[];
@@ -43,13 +35,13 @@ export class HooksManager {
     enabledCheck: [],
     configCheck: [],
     check: [],
-    featuresUpdated: [],
+    flagsUpdated: [],
     user: [],
     company: [],
     track: [],
   };
 
-  addHook<THookType extends keyof HookArgs>(
+  addHook<THookType extends HookType>(
     event: THookType,
     cb: (arg0: HookArgs[THookType]) => void,
   ): () => void {
@@ -59,14 +51,14 @@ export class HooksManager {
     };
   }
 
-  removeHook<THookType extends keyof HookArgs>(
+  removeHook<THookType extends HookType>(
     event: THookType,
     cb: (arg0: HookArgs[THookType]) => void,
   ): void {
     this.hooks[event] = this.hooks[event].filter((hook) => hook !== cb) as any;
   }
 
-  trigger<THookType extends keyof HookArgs>(
+  trigger<THookType extends HookType>(
     event: THookType,
     arg: HookArgs[THookType],
   ): void {

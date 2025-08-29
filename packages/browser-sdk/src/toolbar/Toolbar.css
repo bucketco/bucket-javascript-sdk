@@ -37,12 +37,15 @@
   to {
     transform: scale(1, 1);
   }
+
   25% {
     transform: scale(0.9, 1.1);
   }
+
   50% {
     transform: scale(1.1, 0.9);
   }
+
   75% {
     transform: scale(0.95, 1.05);
   }
@@ -105,10 +108,10 @@
   min-width: 220px;
   padding: 0;
 
-  --visible-features: 15;
+  --visible-flags: 15;
   max-height: min(
     calc(100vh - 36px - 35px),
-    calc(45px + (var(--visible-features) * 27px))
+    calc(45px + (var(--visible-flags) * 27px))
   );
   height: auto;
 
@@ -127,9 +130,11 @@
   &::-webkit-scrollbar {
     width: 8px;
   }
+
   &::-webkit-scrollbar-track {
     background: transparent;
   }
+
   &::-webkit-scrollbar-thumb {
     background-color: rgba(255, 255, 255, 0.2);
     border-radius: 999px;
@@ -139,6 +144,7 @@
       background-color: rgba(255, 255, 255, 0.3);
     }
   }
+
   &::-webkit-scrollbar-button {
     display: none;
   }

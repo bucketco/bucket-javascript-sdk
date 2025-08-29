@@ -1,14 +1,19 @@
 {
   "featureOverrides": {
-    "myFeature": { "isEnabled": true },
-    "myFeatureFalse": false,
-    "myFeatureWithConfig": {
+    "flag-1": { "isEnabled": true },
+    "flag-2": false,
+    "flag-3": {
       "isEnabled": true,
       "config": {
         "key": "config-1",
         "payload": { "something": "else" }
       }
     }
+  },
+  "flagOverrides": {
+    "flag-4": true,
+    "flag-5": false,
+    "flag-6": { "key": "config-2", "payload": { "something": "else entirely" } }
   },
   "secretKey": "mySecretKey",
   "offline": true,

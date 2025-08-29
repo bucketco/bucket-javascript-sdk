@@ -3,47 +3,33 @@ import { App } from "vue";
 import {
   CheckEvent,
   CompanyContext,
-  RawFeatures,
   TrackEvent,
   UserContext,
-} from "@bucketco/browser-sdk";
+} from "@reflag/browser-sdk";
 
-import BucketProvider from "./BucketProvider.vue";
-import {
-  BucketProps,
-  EmptyFeatureRemoteConfig,
-  Feature,
-  FeatureType,
-} from "./types";
+import ReflagProvider from "./ReflagProvider.vue";
+import { FlagKey, ReflagProps } from "./types";
 
 export {
   useClient,
-  useFeature,
+  useFlag,
   useIsLoading,
   useRequestFeedback,
   useSendFeedback,
   useTrack,
+  useTrackCustom,
   useUpdateCompany,
   useUpdateOtherContext,
   useUpdateUser,
 } from "./hooks";
-export type { BucketProps, RequestFeatureFeedbackOptions } from "./types";
+export type { ReflagProps } from "./types";
 
-export { BucketProvider };
+export { ReflagProvider };
 
-export type {
-  CheckEvent,
-  CompanyContext,
-  EmptyFeatureRemoteConfig,
-  Feature,
-  FeatureType,
-  RawFeatures,
-  TrackEvent,
-  UserContext,
-};
+export type { CheckEvent, CompanyContext, FlagKey, TrackEvent, UserContext };
 
 export default {
-  install(app: App, _options?: BucketProps) {
-    app.component("BucketProvider", BucketProvider);
+  install(app: App, _options?: ReflagProps) {
+    app.component("ReflagProvider", ReflagProvider);
   },
 };

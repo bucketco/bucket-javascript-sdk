@@ -1,4 +1,4 @@
-import { FetchedFeatures } from "./features";
+import { FetchedFlags } from "./flags";
 
 interface StorageItem {
   get(): string | null;
@@ -8,53 +8,50 @@ interface StorageItem {
 interface cacheEntry {
   expireAt: number;
   staleAt: number;
-  features: FetchedFeatures;
+  flags: FetchedFlags;
 }
 
-// Parse and validate an API feature response
-export function parseAPIFeaturesResponse(
-  featuresInput: any,
-): FetchedFeatures | undefined {
-  if (!isObject(featuresInput)) {
+// Parse and validate an API flag response
+export function parseAPIFlagsResponse(input: any): FetchedFlags | undefined {
+  if (!isObject(input)) {
     return;
   }
 
-  const features: FetchedFeatures = {};
-  for (const key in featuresInput) {
-    const feature = featuresInput[key];
+  const flags: FetchedFlags = {};
+  for (const key in input) {
+    const flag = input[key];
 
     if (
-      typeof feature.isEnabled !== "boolean" ||
-      feature.key !== key ||
-      typeof feature.targetingVersion !== "number" ||
-      (feature.config && typeof feature.config !== "object") ||
-      (feature.missingContextFields &&
-        !Array.isArray(feature.missingContextFields)) ||
-      (feature.ruleEvaluationResults &&
-        !Array.isArray(feature.ruleEvaluationResults))
+      typeof flag.isEnabled !== "boolean" ||
+      flag.key !== key ||
+      typeof flag.targetingVersion !== "number" ||
+      (flag.config && typeof flag.config !== "object") ||
+      (flag.missingContextFields &&
+        !Array.isArray(flag.missingContextFields)) ||
+      (flag.ruleEvaluationResults && !Array.isArray(flag.ruleEvaluationResults))
     ) {
       return;
     }
 
-    features[key] = {
-      isEnabled: feature.isEnabled,
-      targetingVersion: feature.targetingVersion,
+    flags[key] = {
+      isEnabled: flag.isEnabled,
+      targetingVersion: flag.targetingVersion,
       key,
-      config: feature.config,
-      missingContextFields: feature.missingContextFields,
-      ruleEvaluationResults: feature.ruleEvaluationResults,
+      config: flag.config,
+      missingContextFields: flag.missingContextFields,
+      ruleEvaluationResults: flag.ruleEvaluationResults,
     };
   }
 
-  return features;
+  return flags;
 }
 
 export interface CacheResult {
-  features: FetchedFeatures;
+  flags: FetchedFlags;
   stale: boolean;
 }
 
-export class FeatureCache {
+export class FlagCache {
   private storage: StorageItem;
   private readonly staleTimeMs: number;
   private readonly expireTimeMs: number;
@@ -76,9 +73,9 @@ export class FeatureCache {
   set(
     key: string,
     {
-      features,
+      flags,
     }: {
-      features: FetchedFeatures;
+      flags: FetchedFlags;
     },
   ) {
     let cacheData: CacheData = {};
@@ -95,7 +92,7 @@ export class FeatureCache {
     cacheData[key] = {
       expireAt: Date.now() + this.expireTimeMs,
       staleAt: Date.now() + this.staleTimeMs,
-      features,
+      flags,
     } satisfies cacheEntry;
 
     cacheData = Object.fromEntries(
@@ -118,7 +115,7 @@ export class FeatureCache {
           cachedResponse[key].expireAt > Date.now()
         ) {
           return {
-            features: cachedResponse[key].features,
+            flags: cachedResponse[key].flags,
             stale: cachedResponse[key].staleAt < Date.now(),
           };
         }
@@ -144,7 +141,7 @@ function validateCacheData(cacheDataInput: any) {
     if (
       typeof cacheEntry.expireAt !== "number" ||
       typeof cacheEntry.staleAt !== "number" ||
-      (cacheEntry.features && !parseAPIFeaturesResponse(cacheEntry.features))
+      (cacheEntry.flags && !parseAPIFlagsResponse(cacheEntry.flags))
     ) {
       return;
     }
@@ -152,7 +149,7 @@ function validateCacheData(cacheDataInput: any) {
     cacheData[key] = {
       expireAt: cacheEntry.expireAt,
       staleAt: cacheEntry.staleAt,
-      features: cacheEntry.features,
+      flags: cacheEntry.flags,
     };
   }
   return cacheData;

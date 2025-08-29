@@ -9,7 +9,7 @@ export default defineConfig({
     environment: "jsdom",
   },
   optimizeDeps: {
-    include: ["@bucketco/browser-sdk"],
+    include: ["@reflag/browser-sdk"],
   },
   resolve: {
     alias: {
@@ -26,8 +26,8 @@ export default defineConfig({
     sourcemap: true,
     lib: {
       entry: resolve(__dirname, "src/index.ts"),
-      name: "BucketVueSDK",
-      fileName: "bucket-vue-sdk",
+      name: "ReflagVueSDK",
+      fileName: "reflag-vue-sdk",
       formats: ["es", "umd"],
     },
     rollupOptions: {

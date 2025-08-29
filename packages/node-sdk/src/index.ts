@@ -1,4 +1,9 @@
-export { BoundBucketClient, BucketClient } from "./client";
+export {
+  BoundBucketClient,
+  BoundReflagClient,
+  BucketClient,
+  ReflagClient,
+} from "./client";
 export { EdgeClient, EdgeClientOptions } from "./edgeClient";
 export type {
   Attributes,
@@ -7,26 +12,24 @@ export type {
   ClientOptions,
   Context,
   ContextWithTracking,
-  EmptyFeatureRemoteConfig,
   Feature,
-  FeatureConfigVariant,
   FeatureDefinition,
   FeatureOverride,
   FeatureOverrides,
   FeatureOverridesFn,
-  FeatureRemoteConfig,
   Features,
-  FeatureType,
+  FlagDefinition,
+  FlagKey,
+  FlagOverridesFn,
   HttpClient,
   HttpClientResponse,
   IdType,
   LOG_LEVELS,
   Logger,
   LogLevel,
-  RawFeature,
-  RawFeatureRemoteConfig,
   TrackingMeta,
   TrackOptions,
   TypedFeatureKey,
   TypedFeatures,
+  TypedFlags,
 } from "./types";

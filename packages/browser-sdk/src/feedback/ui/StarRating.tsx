@@ -16,36 +16,36 @@ import { FeedbackTranslations } from "./types";
 
 const scores = [
   {
-    color: "var(--bucket-feedback-dialog-rating-1-color, #dd6b20)",
-    bg: "var(--bucket-feedback-dialog-rating-1-background-color, #fbd38d)",
+    color: "var(--reflag-feedback-dialog-rating-1-color, #dd6b20)",
+    bg: "var(--reflag-feedback-dialog-rating-1-background-color, #fbd38d)",
     icon: <VeryDissatisfied />,
     getLabel: (t: FeedbackTranslations) => t.ScoreVeryDissatisfiedLabel,
     value: 1,
   },
   {
-    color: "var(--bucket-feedback-dialog-rating-2-color, #ed8936)",
-    bg: "var(--bucket-feedback-dialog-rating-2-background-color, #feebc8)",
+    color: "var(--reflag-feedback-dialog-rating-2-color, #ed8936)",
+    bg: "var(--reflag-feedback-dialog-rating-2-background-color, #feebc8)",
     icon: <Dissatisfied />,
     getLabel: (t: FeedbackTranslations) => t.ScoreDissatisfiedLabel,
     value: 2,
   },
   {
-    color: "var(--bucket-feedback-dialog-rating-3-color, #787c91)",
-    bg: "var(--bucket-feedback-dialog-rating-3-background-color, #e9e9ed)",
+    color: "var(--reflag-feedback-dialog-rating-3-color, #787c91)",
+    bg: "var(--reflag-feedback-dialog-rating-3-background-color, #e9e9ed)",
     icon: <Neutral />,
     getLabel: (t: FeedbackTranslations) => t.ScoreNeutralLabel,
     value: 3,
   },
   {
-    color: "var(--bucket-feedback-dialog-rating-4-color, #48bb78)",
-    bg: "var(--bucket-feedback-dialog-rating-4-background-color, #c6f6d5)",
+    color: "var(--reflag-feedback-dialog-rating-4-color, #48bb78)",
+    bg: "var(--reflag-feedback-dialog-rating-4-background-color, #c6f6d5)",
     icon: <Satisfied />,
     getLabel: (t: FeedbackTranslations) => t.ScoreSatisfiedLabel,
     value: 4,
   },
   {
-    color: "var(--bucket-feedback-dialog-rating-5-color, #38a169)",
-    bg: "var(--bucket-feedback-dialog-rating-5-background-color, #9ae6b4)",
+    color: "var(--reflag-feedback-dialog-rating-5-color, #38a169)",
+    bg: "var(--reflag-feedback-dialog-rating-5-background-color, #9ae6b4)",
     icon: <VerySatisfied />,
     getLabel: (t: FeedbackTranslations) => t.ScoreVerySatisfiedLabel,
     value: 5,
@@ -136,7 +136,7 @@ const Score = ({
     <>
       <input
         defaultChecked={isSelected}
-        id={`bucket-feedback-score-${score.value}`}
+        id={`reflag-feedback-score-${score.value}`}
         name={name}
         type="radio"
         value={score.value}
@@ -146,7 +146,7 @@ const Score = ({
         ref={refs.setReference}
         aria-label={score.getLabel(t)}
         class="button"
-        for={`bucket-feedback-score-${score.value}`}
+        for={`reflag-feedback-score-${score.value}`}
         style={{ color: score.color }}
       >
         <div

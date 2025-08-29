@@ -11,7 +11,7 @@ import {
   TrackingEventDetails,
 } from "@openfeature/web-sdk";
 
-import { BucketClient, Feature, InitOptions } from "@bucketco/browser-sdk";
+import { Flag, InitOptions, ReflagClient } from "@reflag/browser-sdk";
 
 export type ContextTranslationFn = (
   context?: EvaluationContext,
@@ -38,12 +38,12 @@ export function defaultContextTranslator(
   };
 }
 
-export class BucketBrowserSDKProvider implements Provider {
+export class ReflagBrowserSDKProvider implements Provider {
   readonly metadata: ProviderMetadata = {
-    name: "bucket-browser-provider",
+    name: "reflag-browser-provider",
   };
 
-  private _client?: BucketClient;
+  private _client?: ReflagClient;
 
   private readonly _clientOptions: InitOptions;
   private readonly _contextTranslator: ContextTranslationFn;
@@ -73,7 +73,7 @@ export class BucketBrowserSDKProvider implements Provider {
   }
 
   async initialize(context?: EvaluationContext): Promise<void> {
-    const client = new BucketClient({
+    const client = new ReflagClient({
       ...this._clientOptions,
       ...this._contextTranslator(context),
     });
@@ -101,23 +101,23 @@ export class BucketBrowserSDKProvider implements Provider {
     await this.initialize(newContext);
   }
 
-  private resolveFeature<T extends JsonValue>(
+  private resolveFlag<T extends JsonValue>(
     flagKey: string,
     defaultValue: T,
-    resolveFn: (feature: Feature) => ResolutionDetails<T>,
+    resolveFn: (flag: Flag) => ResolutionDetails<T>,
   ): ResolutionDetails<T> {
     if (!this._client) {
       return {
         value: defaultValue,
         reason: StandardResolutionReasons.DEFAULT,
         errorCode: ErrorCode.PROVIDER_NOT_READY,
-        errorMessage: "Bucket client not initialized",
+        errorMessage: "Reflag client not initialized",
       } satisfies ResolutionDetails<T>;
     }
 
-    const features = this._client.getFeatures();
-    if (flagKey in features) {
-      return resolveFn(this._client.getFeature(flagKey));
+    const flags = this._client.getFlags();
+    if (flagKey in flags) {
+      return resolveFn(this._client.getFlag(flagKey));
     }
 
     return {
@@ -129,11 +129,19 @@ export class BucketBrowserSDKProvider implements Provider {
   }
 
   resolveBooleanEvaluation(flagKey: string, defaultValue: boolean) {
-    return this.resolveFeature(flagKey, defaultValue, (feature) => {
+    return this.resolveFlag(flagKey, defaultValue, (flag) => {
+      if (typeof flag === "boolean") {
+        return {
+          value: flag,
+          reason: StandardResolutionReasons.TARGETING_MATCH,
+        };
+      }
+
       return {
-        value: feature.isEnabled,
-        variant: feature.config.key,
-        reason: StandardResolutionReasons.TARGETING_MATCH,
+        value: defaultValue,
+        reason: StandardResolutionReasons.ERROR,
+        errorCode: ErrorCode.TYPE_MISMATCH,
+        errorMessage: `Expected flag ${flagKey} to be a boolean, but got ${typeof flag}`,
       };
     });
   }
@@ -144,7 +152,7 @@ export class BucketBrowserSDKProvider implements Provider {
       reason: StandardResolutionReasons.ERROR,
       errorCode: ErrorCode.GENERAL,
       errorMessage:
-        "Bucket doesn't support this method. Use `resolveObjectEvaluation` instead.",
+        "Reflag doesn't support this method. Use `resolveObjectEvaluation` instead.",
     };
   }
 
@@ -152,18 +160,20 @@ export class BucketBrowserSDKProvider implements Provider {
     flagKey: string,
     defaultValue: string,
   ): ResolutionDetails<string> {
-    return this.resolveFeature(flagKey, defaultValue, (feature) => {
-      if (!feature.config.key) {
+    return this.resolveFlag(flagKey, defaultValue, (flag) => {
+      if (typeof flag === "object" && "key" in flag) {
         return {
-          value: defaultValue,
-          reason: StandardResolutionReasons.DEFAULT,
+          value: flag.key,
+          variant: flag.key,
+          reason: StandardResolutionReasons.TARGETING_MATCH,
         };
       }
 
       return {
-        value: feature.config.key as string,
-        variant: feature.config.key,
-        reason: StandardResolutionReasons.TARGETING_MATCH,
+        value: defaultValue,
+        reason: StandardResolutionReasons.ERROR,
+        errorCode: ErrorCode.TYPE_MISMATCH,
+        errorMessage: `Expected flag ${flagKey} to be a multi-variant, but got ${typeof flag}`,
       };
     });
   }
@@ -172,29 +182,37 @@ export class BucketBrowserSDKProvider implements Provider {
     flagKey: string,
     defaultValue: T,
   ) {
-    return this.resolveFeature(flagKey, defaultValue, (feature) => {
-      const expType = typeof defaultValue;
+    return this.resolveFlag(flagKey, defaultValue, (flag) => {
+      if (typeof flag === "object" && "key" in flag) {
+        const expType = typeof defaultValue;
+        const payloadType = typeof flag.payload;
 
-      const payloadType = typeof feature.config.payload;
+        if (
+          flag.payload === undefined ||
+          flag.payload === null ||
+          payloadType !== expType
+        ) {
+          return {
+            value: defaultValue,
+            reason: StandardResolutionReasons.ERROR,
+            variant: flag.key,
+            errorCode: ErrorCode.TYPE_MISMATCH,
+            errorMessage: `Expected flag ${flagKey} to be a multi-variant with payload of type \`${expType}\` but got \`${payloadType}\`.`,
+          };
+        }
 
-      if (
-        feature.config.payload === undefined ||
-        feature.config.payload === null ||
-        payloadType !== expType
-      ) {
         return {
-          value: defaultValue,
-          reason: StandardResolutionReasons.ERROR,
-          variant: feature.config.key,
-          errorCode: ErrorCode.TYPE_MISMATCH,
-          errorMessage: `Expected remote config payload of type \`${expType}\` but got \`${payloadType}\`.`,
+          value: flag.payload,
+          variant: flag.key,
+          reason: StandardResolutionReasons.TARGETING_MATCH,
         };
       }
 
       return {
-        value: feature.config.payload,
-        variant: feature.config.key,
-        reason: StandardResolutionReasons.TARGETING_MATCH,
+        value: defaultValue,
+        reason: StandardResolutionReasons.ERROR,
+        errorCode: ErrorCode.TYPE_MISMATCH,
+        errorMessage: `Expected flag ${flagKey} to be a multi-variant, but got ${typeof flag}`,
       };
     });
   }
@@ -215,3 +233,10 @@ export class BucketBrowserSDKProvider implements Provider {
       });
   }
 }
+
+/**
+ * @deprecated
+ *
+ * Use ReflagBrowserSDKProvider instead
+ */
+export const BucketBrowserSDKProvider = ReflagBrowserSDKProvider;

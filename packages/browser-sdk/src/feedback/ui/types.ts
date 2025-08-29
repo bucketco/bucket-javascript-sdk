@@ -20,7 +20,16 @@ export interface OnScoreSubmitResult {
 }
 
 export interface OpenFeedbackFormOptions {
+  /**
+   * Dialog key.
+   */
   key: string;
+
+  /**
+   * Title of the feedback form.
+   *
+   * @default "Feedback"
+   */
   title?: string;
 
   /**

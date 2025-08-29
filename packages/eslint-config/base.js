@@ -11,7 +11,7 @@ const vuePlugin = require("eslint-plugin-vue");
 
 module.exports = [
   {
-    // Blacklisted Folders, including **/node_modules/ and .git/
+    // Blacklisted folders, including **/node_modules/ and .git/
     ignores: ["build/", "**/gen"],
   },
   {
@@ -86,10 +86,10 @@ module.exports = [
             [
               `^(${builtinModules.join("|")})(/|$)`,
               "^react",
-              "^(?!@bucket)@?\\w",
+              "^(?!@reflag)@?\\w",
             ],
-            // Shared bucket packages.
-            ["^@bucketco/(.*)$"],
+            // Shared reflag packages.
+            ["^@reflag/(.*)$"],
             // Path aliased root, parent imports, and just `..`.
             ["^@/", "^\\.\\.(?!/?$)", "^\\.\\./?$"],
             // Relative imports, same-folder imports, and just `.`.
@@ -149,7 +149,7 @@ module.exports = [
     },
   },
   {
-    // Prettier Overrides
+    // Prettier overrides
     files: [
       "**/*.js",
       "**/*.cjs",

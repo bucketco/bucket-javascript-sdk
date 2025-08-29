@@ -15,7 +15,7 @@ export type App = {
   environments: Environment[];
 };
 
-export type BucketUser = {
+export type ReflagUser = {
   id: string;
   email: string;
   name: string;
@@ -30,7 +30,7 @@ export type Org = {
 
 export type BootstrapResponse = {
   org: Org;
-  user: BucketUser;
+  user: ReflagUser;
 };
 
 let bootstrapResponse: BootstrapResponse | null = null;
@@ -75,7 +75,7 @@ export function getApp(id: string): App {
   return app;
 }
 
-export function getBucketUser(): BucketUser {
+export function getReflagUser(): ReflagUser {
   if (!bootstrapResponse) {
     throw new Error("CLI has not been bootstrapped.");
   }

@@ -1,67 +1,70 @@
 import type { Ref } from "vue";
 
 import type {
-  BucketClient,
-  BucketContext,
+  Flag,
   InitOptions,
-  RequestFeedbackData,
-} from "@bucketco/browser-sdk";
-
-export type EmptyFeatureRemoteConfig = { key: undefined; payload: undefined };
-
-export type FeatureType = {
-  config?: {
-    payload: any;
-  };
-};
-
-export type FeatureRemoteConfig =
-  | {
-      key: string;
-      payload: any;
-    }
-  | EmptyFeatureRemoteConfig;
-
-export interface Feature<
-  TConfig extends FeatureType["config"] = EmptyFeatureRemoteConfig,
-> {
-  key: string;
-  isEnabled: Ref<boolean>;
-  isLoading: Ref<boolean>;
-  config: Ref<({ key: string } & TConfig) | EmptyFeatureRemoteConfig>;
-  track(): Promise<Response | undefined> | undefined;
-  requestFeedback: (opts: RequestFeatureFeedbackOptions) => void;
-}
+  ReflagClient,
+  ReflagContext,
+} from "@reflag/browser-sdk";
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface Features {}
+export interface Flags {}
 
-export type TypedFeatures = keyof Features extends never
-  ? Record<string, Feature>
+type MultiVariateFlagSignature = {
+  payload: any;
+};
+
+/**
+ * Describes a collection of evaluated flags.
+ *
+ * @remarks
+ * This types falls back to a generic Record<string, Flag> if the Flags interface
+ * has not been extended.
+ */
+export type TypedFlags = keyof Flags extends never
+  ? Record<string, Flag>
   : {
-      [TypedFeatureKey in keyof Features]: Features[TypedFeatureKey] extends FeatureType
-        ? Feature<Features[TypedFeatureKey]["config"]>
-        : Feature;
+      [TKey in keyof Flags]: Flags[TKey] extends MultiVariateFlagSignature
+        ? {
+            key: string;
+            payload: Flags[TKey]["payload"];
+          }
+        : boolean;
     };
 
-export type FeatureKey = keyof TypedFeatures;
+/**
+ * The key of a flag.
+ */
+export type FlagKey = keyof TypedFlags;
 
+/**
+ * @internal
+ *
+ * The context type for the ReflagProvider component.
+ */
 export interface ProviderContextType {
-  client: Ref<BucketClient>;
+  client: Ref<ReflagClient>;
   isLoading: Ref<boolean>;
   updatedCount: Ref<number>;
   provider: boolean;
 }
 
-export type BucketProps = BucketContext &
+/**
+ * Props for the ReflagProvider component.
+ */
+export type ReflagProps = ReflagContext &
   InitOptions & {
+    /**
+     * Whether to enable debug mode.
+     */
     debug?: boolean;
-    newBucketClient?: (
-      ...args: ConstructorParameters<typeof BucketClient>
-    ) => BucketClient;
-  };
 
-export type RequestFeatureFeedbackOptions = Omit<
-  RequestFeedbackData,
-  "featureKey" | "featureId"
->;
+    /**
+     * New ReflagClient constructor.
+     *
+     * @internal
+     */
+    newReflagClient?: (
+      ...args: ConstructorParameters<typeof ReflagClient>
+    ) => ReflagClient;
+  };

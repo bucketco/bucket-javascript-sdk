@@ -64,7 +64,7 @@ export const logoutAction = async () => {
 };
 
 export function registerAuthCommands(cli: Command) {
-  cli.command("login").description("Login to Bucket.").action(loginAction);
+  cli.command("login").description("Login to Reflag.").action(loginAction);
 
-  cli.command("logout").description("Logout from Bucket.").action(logoutAction);
+  cli.command("logout").description("Logout from Reflag.").action(logoutAction);
 }

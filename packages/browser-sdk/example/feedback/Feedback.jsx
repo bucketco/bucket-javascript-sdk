@@ -5,20 +5,20 @@ export const FeedbackForm = () => {
     const formData = Object.fromEntries(new FormData(e.target).entries());
 
     const feedbackPayload = {
-      featureId: "EXAMPLE_FEATURE",
+      flagKey: "EXAMPLE_FLAG_KEY",
       userId: "EXAMPLE_USER",
       companyId: "EXAMPLE_COMPANY",
       score: formData.score ? Number(formData.score) : null,
       comment: formData.comment ? formData.comment : null,
     };
 
-    // Using the Bucket SDK
-    new BucketClient({
+    // Using the Reflag SDK
+    new ReflagClient({
       publishableKey: "EXAMPLE_PUBLISHABLE_KEY",
     }).feedback(feedbackPayload);
 
     /*
-    // Using the Bucket API
+    // Using the Reflag API
     fetch("https://tracking.bucket.co/feedback", {
       method: "POST",
       headers: {
@@ -32,7 +32,7 @@ export const FeedbackForm = () => {
 
   return (
     <form action="#" onSubmit={handleSubmit}>
-      <h2>How satisfied are you with our ExampleFeature?</h2>
+      <h2>How satisfied are you with our ExampleFlag?</h2>
 
       <fieldset>
         <legend>Satisfaction</legend>
