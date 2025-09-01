@@ -1,4 +1,4 @@
-import { FLAGS_EXPIRE_MS, FLAG_EVENTS_PER_MIN } from "../config";
+import { FLAG_EVENTS_PER_MIN, FLAGS_EXPIRE_MS } from "../config";
 import { HttpClient } from "../httpClient";
 import { Logger, loggerWithPrefix } from "../logger";
 import RateLimiter from "../rateLimiter";

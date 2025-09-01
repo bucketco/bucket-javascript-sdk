@@ -12,13 +12,13 @@ import {
 
 import { ReflagClient } from "../src";
 import { API_BASE_URL } from "../src/config";
-import { FlagsClient } from "../src/flag/flags";
 import { FeedbackPromptHandler } from "../src/feedback/feedback";
 import {
   checkPromptMessageCompleted,
   getAuthToken,
   markPromptMessageCompleted,
 } from "../src/feedback/promptStorage";
+import { FlagsClient } from "../src/flag/flags";
 import { HttpClient } from "../src/httpClient";
 import {
   AblySSEChannel,

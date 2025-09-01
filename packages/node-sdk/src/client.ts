@@ -972,7 +972,7 @@ export class ReflagClient {
    */
   private _warnMissingFlagContextFields(
     context: Context,
-    feature: {
+    flag: {
       key: string;
       missingContextFields?: string[];
       config?: {

@@ -10,7 +10,7 @@ import {
   unflattenJSON,
 } from "../src";
 
-const feature = {
+const flag = {
   flagKey: "flag",
   rules: [
     {
@@ -37,7 +37,7 @@ const feature = {
   ],
 } satisfies Omit<EvaluationParams<true>, "context">;
 
-describe("evaluate feature targeting integration ", () => {
+describe("evaluate flag targeting integration ", () => {
   it("evaluates all kinds of filters", async () => {
     const res = evaluateFlagRules({
       flagKey: "flag",
@@ -111,7 +111,7 @@ describe("evaluate feature targeting integration ", () => {
 
   it("evaluates flag when there's no matching rule", async () => {
     const res = evaluateFlagRules({
-      ...feature,
+      ...flag,
       context: {
         company: {
           id: "wrong value",
@@ -139,7 +139,7 @@ describe("evaluate feature targeting integration ", () => {
     };
 
     const res = evaluateFlagRules({
-      ...feature,
+      ...flag,
       context,
     });
 
@@ -200,7 +200,7 @@ describe("evaluate feature targeting integration ", () => {
 
   it("returns list of missing context keys ", async () => {
     const res = evaluateFlagRules({
-      ...feature,
+      ...flag,
       context: {},
     });
 
@@ -216,13 +216,13 @@ describe("evaluate feature targeting integration ", () => {
 
   it("fails evaluation and includes key in missing keys when rollout attribute is missing from context", async () => {
     const res = evaluateFlagRules({
-      flagKey: "myfeature",
+      flagKey: "flag-1",
       rules: [
         {
           value: 123,
           filter: {
             type: "rolloutPercentage" as const,
-            key: "myfeature",
+            key: "flag-1",
             partialRolloutAttribute: "happening.id",
             partialRolloutThreshold: 50000,
           },
@@ -232,7 +232,7 @@ describe("evaluate feature targeting integration ", () => {
     });
 
     expect(res).toEqual({
-      flagKey: "myfeature",
+      flagKey: "flag-1",
       context: {},
       value: undefined,
       reason: "no matched rules",
@@ -314,7 +314,7 @@ describe("evaluate feature targeting integration ", () => {
   describe("SET and NOT_SET operators", () => {
     it("should handle `SET` operator with missing field value", () => {
       const res = evaluateFlagRules({
-        flagKey: "test_feature",
+        flagKey: "test_flag",
         rules: [
           {
             value: true,
@@ -330,7 +330,7 @@ describe("evaluate feature targeting integration ", () => {
       });
 
       expect(res).toEqual({
-        flagKey: "test_feature",
+        flagKey: "test_flag",
         value: undefined,
         context: {},
         ruleEvaluationResults: [false],
@@ -341,7 +341,7 @@ describe("evaluate feature targeting integration ", () => {
 
     it("should handle `NOT_SET` operator with missing field value", () => {
       const res = evaluateFlagRules({
-        flagKey: "test_feature",
+        flagKey: "test_flag",
         rules: [
           {
             value: true,
@@ -357,7 +357,7 @@ describe("evaluate feature targeting integration ", () => {
       });
 
       expect(res).toEqual({
-        flagKey: "test_feature",
+        flagKey: "test_flag",
         value: true,
         context: {},
         ruleEvaluationResults: [true],
@@ -368,7 +368,7 @@ describe("evaluate feature targeting integration ", () => {
 
     it("should handle `SET` operator with empty string field value", () => {
       const res = evaluateFlagRules({
-        flagKey: "test_feature",
+        flagKey: "test_flag",
         rules: [
           {
             value: true,
@@ -388,7 +388,7 @@ describe("evaluate feature targeting integration ", () => {
       });
 
       expect(res).toEqual({
-        flagKey: "test_feature",
+        flagKey: "test_flag",
         value: undefined,
         context: {
           "user.name": "",
@@ -400,8 +400,8 @@ describe("evaluate feature targeting integration ", () => {
     });
 
     it("should handle `NOT_SET` operator with empty string field value", () => {
-      const res = evaluateFlags({
-        flagKey: "test_feature",
+      const res = evaluateFlagRules({
+        flagKey: "test_flag",
         rules: [
           {
             value: true,
@@ -421,7 +421,7 @@ describe("evaluate feature targeting integration ", () => {
       });
 
       expect(res).toEqual({
-        flagKey: "test_feature",
+        flagKey: "test_flag",
         value: true,
         context: {
           "user.name": "",
@@ -467,15 +467,15 @@ describe("evaluate feature targeting integration ", () => {
         },
       ]);
 
-      const res = evaluator(context, "flag");
+      const res = evaluator(context, "flag-1");
       expect(res.value ?? false).toEqual(expected);
     },
   );
 
-  describe("DATE_AFTER and DATE_BEFORE in feature rules", () => {
-    it("should evaluate DATE_AFTER operator in feature rules", () => {
+  describe("DATE_AFTER and DATE_BEFORE in flag rules", () => {
+    it("should evaluate DATE_AFTER operator in flag rules", () => {
       const res = evaluateFlagRules({
-        flagKey: "time_based_feature",
+        flagKey: "time_based_flag",
         rules: [
           {
             value: "enabled",
@@ -495,7 +495,7 @@ describe("evaluate feature targeting integration ", () => {
       });
 
       expect(res).toEqual({
-        flagKey: "time_based_feature",
+        flagKey: "time_based_flag",
         value: "enabled",
         context: {
           "user.createdAt": "2024-06-15",
@@ -506,9 +506,9 @@ describe("evaluate feature targeting integration ", () => {
       });
     });
 
-    it("should evaluate DATE_BEFORE operator in feature rules", () => {
+    it("should evaluate DATE_BEFORE operator in flag rules", () => {
       const res = evaluateFlagRules({
-        flagKey: "legacy_feature",
+        flagKey: "legacy_flag",
         rules: [
           {
             value: "enabled",
@@ -528,7 +528,7 @@ describe("evaluate feature targeting integration ", () => {
       });
 
       expect(res).toEqual({
-        flagKey: "legacy_feature",
+        flagKey: "legacy_flag",
         value: "enabled",
         context: {
           "user.lastLogin": "2024-01-15",
@@ -541,7 +541,7 @@ describe("evaluate feature targeting integration ", () => {
 
     it("should handle complex rules with DATE_AFTER and DATE_BEFORE in groups", () => {
       const res = evaluateFlagRules({
-        flagKey: "time_window_feature",
+        flagKey: "time_window_flag",
         rules: [
           {
             value: "active",
@@ -574,7 +574,7 @@ describe("evaluate feature targeting integration ", () => {
       });
 
       expect(res).toEqual({
-        flagKey: "time_window_feature",
+        flagKey: "time_window_flag",
         value: "active",
         context: {
           "event.startDate": "2024-06-01",
@@ -588,7 +588,7 @@ describe("evaluate feature targeting integration ", () => {
 
     it("should fail when DATE_AFTER condition is not met", () => {
       const res = evaluateFlagRules({
-        flagKey: "future_feature",
+        flagKey: "future_flag",
         rules: [
           {
             value: "enabled",
@@ -608,7 +608,7 @@ describe("evaluate feature targeting integration ", () => {
       });
 
       expect(res).toEqual({
-        flagKey: "future_feature",
+        flagKey: "future_flag",
         value: undefined,
         context: {
           "user.signupDate": "2024-01-15",
@@ -621,7 +621,7 @@ describe("evaluate feature targeting integration ", () => {
 
     it("should fail when DATE_BEFORE condition is not met", () => {
       const res = evaluateFlagRules({
-        flagKey: "past_feature",
+        flagKey: "past_flag",
         rules: [
           {
             value: "enabled",
@@ -641,7 +641,7 @@ describe("evaluate feature targeting integration ", () => {
       });
 
       expect(res).toEqual({
-        flagKey: "past_feature",
+        flagKey: "past_flag",
         value: undefined,
         context: {
           "user.lastActivity": "2024-06-15",
@@ -684,11 +684,11 @@ describe("evaluate feature targeting integration ", () => {
             trialEndDate: "2024-09-30",
           },
         },
-        "subscription_feature",
+        "subscription_flag",
       );
 
       expect(res).toEqual({
-        flagKey: "subscription_feature",
+        flagKey: "subscription_flag",
         value: "time_sensitive",
         context: {
           "user.subscriptionDate": "2024-03-15",

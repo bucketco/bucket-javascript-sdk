@@ -1,13 +1,13 @@
 import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
 
 import { version } from "../package.json";
-import { FlagsClient, FetchedFlag, RawFlag } from "../src/flag/flags";
+import { FLAGS_EXPIRE_MS } from "../src/config";
+import { FetchedFlag, FlagsClient, RawFlag } from "../src/flag/flags";
 import { HttpClient } from "../src/httpClient";
 
 import { flagsResult } from "./mocks/handlers";
 import { newCache, TEST_STALE_MS } from "./flagCache.test";
 import { testLogger } from "./testLogger";
-import { FLAGS_EXPIRE_MS } from "../src/config";
 
 beforeEach(() => {
   vi.useFakeTimers();

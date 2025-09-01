@@ -1,10 +1,4 @@
 import {
-  CheckEvent,
-  FallbackFlagOverride,
-  FlagsClient,
-  RawFlags,
-} from "./flag/flags";
-import {
   AutoFeedback,
   Feedback,
   feedback,
@@ -13,9 +7,15 @@ import {
   RequestFeedbackOptions,
 } from "./feedback/feedback";
 import * as feedbackLib from "./feedback/ui";
+import {
+  CheckEvent,
+  FallbackFlagOverride,
+  FlagsClient,
+  RawFlags,
+} from "./flag/flags";
 import { ToolbarPosition } from "./ui/types";
 import { API_BASE_URL, APP_BASE_URL, SSE_REALTIME_BASE_URL } from "./config";
-import { ReflagContext, CompanyContext, UserContext } from "./context";
+import { CompanyContext, ReflagContext, UserContext } from "./context";
 import { HookArgs, HooksManager } from "./hooksManager";
 import { HttpClient } from "./httpClient";
 import { Logger, loggerWithPrefix, quietConsoleLogger } from "./logger";

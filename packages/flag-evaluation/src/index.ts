@@ -122,9 +122,9 @@ export interface ContextFilter {
 }
 
 /**
- * Represents a filter configuration to enable percentage-based rollout of a feature or functionality.
+ * Represents a filter configuration to enable percentage-based rollout of a flag or functionality.
  *
- * This type defines the necessary parameters to control access to a feature
+ * This type defines the necessary parameters to control access to a flag
  * by evaluating a specific attribute and applying it against a defined percentage threshold.
  *
  * Properties:
@@ -442,11 +442,11 @@ function evaluateRecursively(
 }
 
 /**
- * Represents the parameters required for evaluating rules against a specific feature in a given context.
+ * Represents the parameters required for evaluating rules against a specific flag in a given context.
  *
  * @template T - The type of the rule value used in evaluation.
  *
- * @property {string} flagKey - The key that identifies the specific feature to be evaluated.
+ * @property {string} flagKey - The key that identifies the specific flag to be evaluated.
  * @property {Rule<T>[]} rules - An array of rules used for evaluation.
  * @property {Record<string, unknown>} context - The contextual data used during the evaluation process.
  */
@@ -457,12 +457,12 @@ export interface EvaluationParams<T extends RuleValue> {
 }
 
 /**
- * Represents the result of an evaluation process for a specific feature and its associated rules.
+ * Represents the result of an evaluation process for a specific flag and its associated rules.
  *
  * @template T - The type of the rule value being evaluated.
  *
- * @property {string} flagKey - The unique key identifying the feature being evaluated.
- * @property {T | undefined} value - The resolved value of the feature, if the evaluation is successful.
+ * @property {string} flagKey - The unique key identifying the flag being evaluated.
+ * @property {T | undefined} value - The resolved value of the flag, if the evaluation is successful.
  * @property {Record<string, any>} context - The contextual information used during the evaluation process.
  * @property {boolean[]} ruleEvaluationResults - Array indicating the success or failure of each rule evaluated.
  * @property {string} [reason] - Optional field providing additional explanation regarding the evaluation result.

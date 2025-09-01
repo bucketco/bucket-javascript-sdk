@@ -1,7 +1,6 @@
 export type { Config, Flag, InitOptions, ToolbarOptions } from "./client";
 export { ReflagClient } from "./client";
-export type { ReflagContext, CompanyContext, UserContext } from "./context";
-export type { FallbackFlagOverride } from "./flag/flags";
+export type { CompanyContext, ReflagContext, UserContext } from "./context";
 export type {
   Feedback,
   FeedbackOptions,
@@ -23,6 +22,7 @@ export type {
   OnScoreSubmitResult,
   OpenFeedbackFormOptions,
 } from "./feedback/ui/types";
+export type { FallbackFlagOverride } from "./flag/flags";
 export type { HookArgs, TrackEvent } from "./hooksManager";
 export type { Logger } from "./logger";
 export { feedbackContainerId, propagatedEvents } from "./ui/constants";

@@ -5,7 +5,10 @@ import { HttpClient } from "../src/httpClient";
 const cases = [
   ["https://front.reflag.com", "https://front.reflag.com/path"],
   ["https://front.reflag.com/", "https://front.reflag.com/path"],
-  ["https://front.reflag.com/basepath", "https://front.reflag.com/basepath/path"],
+  [
+    "https://front.reflag.com/basepath",
+    "https://front.reflag.com/basepath/path",
+  ],
 ];
 
 test.each(cases)(

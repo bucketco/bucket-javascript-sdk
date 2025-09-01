@@ -362,11 +362,11 @@ Types are bundled together with the library and exposed automatically when impor
 
 If you are running with strict Content Security Policies active on your website, you will need to enable these directives in order to use the SDK:
 
-| Directive   | Values                                                               | Reason                                                                                                                                   |
-| ----------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| connect-src | [https://front.reflag.com](https://front.reflag.com)                 | Basic functionality`                                                                                                                     |
+| Directive   | Values                                                               | Reason                                                                                                                                |
+| ----------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| connect-src | [https://front.reflag.com](https://front.reflag.com)                 | Basic functionality`                                                                                                                  |
 | connect-src | [https://livemessaging.reflag.com](https://livemessaging.reflag.com) | Server sent events for use in automated feedback surveys, which allows for automatically collecting feedback when a user used a flag. |
-| style-src   | 'unsafe-inline'                                                      | The feedback UI is styled with inline styles. Not having this directive results unstyled HTML elements.                                  |
+| style-src   | 'unsafe-inline'                                                      | The feedback UI is styled with inline styles. Not having this directive results unstyled HTML elements.                               |
 
 If you are including the Reflag tracking SDK with a `<script>`-tag from `jsdelivr.net` you will also need:
 

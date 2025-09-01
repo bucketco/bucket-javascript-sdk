@@ -3014,7 +3014,7 @@ __metadata:
     vitest: "npm:^3.0.8"
     zod: "npm:^3.24.2"
   bin:
-    bucket: ./dist/index.js
+    reflag: ./dist/index.js
   languageName: unknown
   linkType: soft
 
