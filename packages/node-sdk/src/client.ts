@@ -4,7 +4,7 @@ import {
   EvaluationResult,
   flattenJSON,
   newEvaluator,
-} from "@bucketco/flag-evaluation";
+} from "@reflag/flag-evaluation";
 
 import BatchBuffer from "./batch-buffer";
 import {
@@ -103,14 +103,14 @@ type BulkEvent =
  *
  * @remarks
  * This is the main class for interacting with Bucket.
- * It is used to evaluate feature flags, update user and company contexts, and track events.
+ * It is used to evaluate flags, update user and company contexts, and track events.
  *
  * @example
  * ```ts
  * // set the BUCKET_SECRET_KEY environment variable or pass the secret key to the constructor
  * const client = new ReflagClient();
  *
- * // evaluate a feature flag
+ * // evaluate a flag
  * const isFeatureEnabled = client.getFeature("feature-flag-key", {
  *   user: { id: "user-id" },
  *   company: { id: "company-id" },
@@ -922,7 +922,7 @@ export class ReflagClient {
 
   /**
    * Updates the context in Bucket (if needed).
-   * This method should be used before requesting feature flags or binding a client.
+   * This method should be used before requesting flags or binding a client.
    *
    * @param options - The options for the context.
    * @param options.enableTracking - Whether to enable tracking for the context.

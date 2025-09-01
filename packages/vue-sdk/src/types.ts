@@ -5,7 +5,7 @@ import type {
   BucketContext,
   InitOptions,
   RequestFeedbackData,
-} from "@bucketco/browser-sdk";
+} from "@reflag/browser-sdk";
 
 export type EmptyFeatureRemoteConfig = { key: undefined; payload: undefined };
 

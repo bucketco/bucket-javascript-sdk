@@ -108,7 +108,7 @@ export type UnassignedFeedback = {
   score?: number;
 
   /**
-   * User supplied comment about your feature.
+   * User supplied comment about your flag.
    */
   comment?: string;
 

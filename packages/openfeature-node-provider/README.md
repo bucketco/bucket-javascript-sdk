@@ -5,28 +5,28 @@ The official OpenFeature Node.js provider for [Bucket](https://bucket.co) featur
 ## Installation
 
 ```shell
-npm install @bucketco/openfeature-node-provider
+npm install @reflag/openfeature-node-provider
 ```
 
 ### Required peer dependencies
 
 The OpenFeature SDK is required as peer dependency.
 The minimum required version of `@openfeature/server-sdk` currently is `1.13.5`.
-The minimum required version of `@bucketco/node-sdk` currently is `2.0.0`.
+The minimum required version of `@reflag/node-sdk` currently is `2.0.0`.
 
 ```shell
-npm install @openfeature/server-sdk @bucketco/node-sdk
+npm install @openfeature/server-sdk @reflag/node-sdk
 ```
 
 ## Usage
 
-The provider uses the [Bucket Node.js SDK](https://docs.bucket.co/quickstart/supported-languages-frameworks/node.js-sdk).
-The available options can be found in the [Bucket Node.js SDK](https://github.com/bucketco/bucket-javascript-sdk/tree/main/packages/node-sdk#initialization-options).
+The provider uses the [Bucket Node.js SDK](https://docs.reflag.com/quickstart/supported-languages-frameworks/node.js-sdk).
+The available options can be found in the [Bucket Node.js SDK](https://github.com/reflagcom/javascript/tree/main/packages/node-sdk#initialization-options).
 
 ### Example using the default configuration
 
 ```typescript
-import { BucketNodeProvider } from "@bucketco/openfeature-node-provider";
+import { BucketNodeProvider } from "@reflag/openfeature-node-provider";
 import { OpenFeature } from "@openfeature/server-sdk";
 
 const provider = new BucketNodeProvider({ secretKey });
@@ -55,7 +55,7 @@ const enterpriseFeatureEnabled = await client.getBooleanValue(
 
 ## Feature resolution methods
 
-The Bucket OpenFeature Provider implements the OpenFeature evaluation interface for different value types. Each method handles the resolution of feature flags according to the OpenFeature specification.
+The Bucket OpenFeature Provider implements the OpenFeature evaluation interface for different value types. Each method handles the resolution of flags according to the OpenFeature specification.
 
 ### Common behavior
 
@@ -74,7 +74,7 @@ All resolution methods share these behaviors:
 client.getBooleanValue("my-flag", false);
 ```
 
-Returns the feature's enabled state. This is the most common use case for feature flags.
+Returns the feature's enabled state. This is the most common use case for flags.
 
 #### String Resolution
 
@@ -177,7 +177,7 @@ It's straight forward to start sending tracking events through OpenFeature.
 Simply call the "track" method on the OpenFeature client:
 
 ```typescript
-import { BucketNodeProvider } from "@bucketco/openfeature-node-provider";
+import { BucketNodeProvider } from "@reflag/openfeature-node-provider";
 import { OpenFeature } from "@openfeature/server-sdk";
 
 const provider = new BucketNodeProvider({ secretKey });

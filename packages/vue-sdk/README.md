@@ -11,7 +11,7 @@ The Bucket Vue SDK comes with the same built-in toolbar as the browser SDK which
 Install via npm:
 
 ```shell
-npm i @bucketco/vue-sdk
+npm i @reflag/vue-sdk
 ```
 
 ## Get started
@@ -20,7 +20,7 @@ npm i @bucketco/vue-sdk
 
 ```vue
 <script setup lang="ts">
-import { BucketProvider } from "@bucketco/vue-sdk";
+import { BucketProvider } from "@reflag/vue-sdk";
 </script>
 
 <BucketProvider
@@ -38,7 +38,7 @@ If using Nuxt, wrap `<BucketProvider>` in `<ClientOnly>`. `<BucketProvider>` onl
 
 ```vue
 <script setup lang="ts">
-import { useFeature } from "@bucketco/vue-sdk";
+import { useFeature } from "@reflag/vue-sdk";
 
 const { isEnabled } = useFeature("huddle");
 </script>
@@ -128,7 +128,7 @@ The `<BucketProvider>` initializes the Bucket SDK, fetches features and starts l
 - `appBaseUrl`: Optional base URL for the Bucket application. Use this to override the default app URL,
 - `sseBaseUrl`: Optional base URL for Server-Sent Events. Use this to override the default SSE endpoint,
 - `debug`: Set to `true` to enable debug logging to the console,
-- `toolbar`: Optional [configuration](https://docs.bucket.co/supported-languages/browser-sdk/globals#toolbaroptions) for the Bucket toolbar,
+- `toolbar`: Optional [configuration](https://docs.reflag.com/supported-languages/browser-sdk/globals#toolbaroptions) for the Bucket toolbar,
 - `feedback`: Optional configuration for feedback collection
 
 ### Loading states
@@ -154,7 +154,7 @@ If you want more control over loading screens, `useIsLoading()` returns a Ref<bo
 
 ### `useFeature()`
 
-Returns the state of a given feature for the current context. The composable provides access to feature flags and their configurations.
+Returns the state of a given feature for the current context. The composable provides access to flags and their configurations.
 
 `useFeature()` returns an object with this shape:
 
@@ -172,7 +172,7 @@ Example:
 
 ```vue
 <script setup lang="ts">
-import { useFeature } from "@bucketco/vue-sdk";
+import { useFeature } from "@reflag/vue-sdk";
 
 const { isEnabled, track, requestFeedback, config } = useFeature("huddle");
 </script>
@@ -212,7 +212,7 @@ Using `track` returned from `useFeature()` calles this track function with the f
 
 ```vue
 <script setup lang="ts">
-import { useTrack } from "@bucketco/vue-sdk";
+import { useTrack } from "@reflag/vue-sdk";
 
 const track = useTrack();
 </script>
@@ -230,14 +230,14 @@ const track = useTrack();
 
 Returns a function that lets you open up a dialog to ask for feedback on a specific feature. This is useful for collecting targeted feedback about specific features.
 
-See [Automated Feedback Surveys](https://docs.bucket.co/product-handbook/live-satisfaction) for how to do this automatically, without code.
+See [Automated Feedback Surveys](https://docs.reflag.com/product-handbook/live-satisfaction) for how to do this automatically, without code.
 
 When using the `useRequestFeedback` you must pass the feature key to `requestFeedback`.
 The example below shows how to use `position` to ensure the popover appears next to the "Give feedback!" button.
 
 ```vue
 <script setup lang="ts">
-import { useRequestFeedback } from "@bucketco/vue-sdk";
+import { useRequestFeedback } from "@reflag/vue-sdk";
 
 const requestFeedback = useRequestFeedback();
 </script>
@@ -266,7 +266,7 @@ const requestFeedback = useRequestFeedback();
 </template>
 ```
 
-See the [Feedback Documentation](https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/browser-sdk/FEEDBACK.md#manual-feedback-collection) for more information on `requestFeedback` options.
+See the [Feedback Documentation](https://github.com/reflagcom/javascript/blob/main/packages/browser-sdk/FEEDBACK.md#manual-feedback-collection) for more information on `requestFeedback` options.
 
 ### `useSendFeedback()`
 
@@ -274,7 +274,7 @@ Returns a function that lets you send feedback to Bucket. This is useful if you'
 
 ```vue
 <script setup lang="ts">
-import { useSendFeedback } from "@bucketco/vue-sdk";
+import { useSendFeedback } from "@reflag/vue-sdk";
 
 const sendFeedback = useSendFeedback();
 
@@ -304,7 +304,7 @@ import {
   useUpdateUser,
   useUpdateCompany,
   useUpdateOtherContext,
-} from "@bucketco/vue-sdk";
+} from "@reflag/vue-sdk";
 
 const updateUser = useUpdateUser();
 const updateCompany = useUpdateCompany();
@@ -350,7 +350,7 @@ is not directly accessible through the other composables.
 
 ```vue
 <script setup>
-import { useClient } from "@bucketco/vue-sdk";
+import { useClient } from "@reflag/vue-sdk";
 import { onMounted } from "vue";
 
 const client = useClient();
@@ -373,7 +373,7 @@ Returns a `Ref<boolean>` to indicate if Bucket has finished loading.
 
 ## Content Security Policy (CSP)
 
-See [CSP](https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/browser-sdk/README.md#content-security-policy-csp) for info on using Bucket React SDK with CSP
+See [CSP](https://github.com/reflagcom/javascript/blob/main/packages/browser-sdk/README.md#content-security-policy-csp) for info on using Bucket React SDK with CSP
 
 ## License
 

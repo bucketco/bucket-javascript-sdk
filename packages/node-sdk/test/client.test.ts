@@ -10,7 +10,7 @@ import {
   vi,
 } from "vitest";
 
-import { flattenJSON } from "@bucketco/flag-evaluation";
+import { flattenJSON } from "@reflag/flag-evaluation";
 
 import { BoundBucketClient, ReflagClient } from "../src";
 import {

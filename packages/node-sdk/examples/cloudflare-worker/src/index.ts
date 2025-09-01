@@ -1,6 +1,6 @@
 /**
  * This is a simple example of how to use the Bucket SDK in a Cloudflare Worker.
- * It demonstrates how to initialize the client and evaluate feature flags.
+ * It demonstrates how to initialize the client and evaluate flags.
  * It also shows how to flush the client and wait for any in-flight requests to complete.
  *
  * Set the BUCKET_SECRET_KEY environment variable in wrangler.jsonc to get started.

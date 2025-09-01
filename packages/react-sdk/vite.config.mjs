@@ -8,7 +8,7 @@ export default defineConfig({
     environment: "jsdom",
   },
   optimizeDeps: {
-    include: ["@bucketco/browser-sdk"],
+    include: ["@reflag/browser-sdk"],
   },
   plugins: [
     dts({ insertTypesEntry: true, exclude: ["dev"] }),

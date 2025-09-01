@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 
-import { newEvaluator, RuleFilter } from "@bucketco/flag-evaluation";
+import { newEvaluator, RuleFilter } from "@reflag/flag-evaluation";
 
 /**
  * Describes the meta context associated with tracking.

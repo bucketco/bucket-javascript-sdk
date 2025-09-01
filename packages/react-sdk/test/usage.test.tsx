@@ -13,7 +13,7 @@ import {
   vi,
 } from "vitest";
 
-import { ReflagClient } from "@bucketco/browser-sdk";
+import { ReflagClient } from "@reflag/browser-sdk";
 
 import { version } from "../package.json";
 import {

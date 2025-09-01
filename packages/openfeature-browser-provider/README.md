@@ -2,10 +2,10 @@
 
 The official OpenFeature Browser provider for [Bucket](https://bucket.co) feature management service.
 
-It uses the Bucket Browser SDK internally and thus allow you to collect [automated feedback surveys](https://github.com/bucketco/bucket-javascript-sdk/tree/main/packages/browser-sdk#qualitative-feedback)
+It uses the Bucket Browser SDK internally and thus allow you to collect [automated feedback surveys](https://github.com/reflagcom/javascript/tree/main/packages/browser-sdk#qualitative-feedback)
 when people use your features as well as tracking which customers use which features.
 
-If you're using React, you'll be better off with the [Bucket React SDK](https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/react-sdk/README.md) or the [OpenFeature React SDK](https://openfeature.dev/docs/reference/technologies/client/web/react/).
+If you're using React, you'll be better off with the [Bucket React SDK](https://github.com/reflagcom/javascript/blob/main/packages/react-sdk/README.md) or the [OpenFeature React SDK](https://openfeature.dev/docs/reference/technologies/client/web/react/).
 
 See the `example` folder for how to use the OpenFeature React SDK with Next.js.
 
@@ -16,13 +16,13 @@ The OpenFeature SDK is required as peer dependency.
 The minimum required version of `@openfeature/web-sdk` currently is `1.0`.
 
 ```shell
-npm install @openfeature/web-sdk @bucketco/openfeature-browser-provider
+npm install @openfeature/web-sdk @reflag/openfeature-browser-provider
 ```
 
 ## Sample initialization
 
 ```ts
-import { BucketBrowserProvider } from "@bucketco/openfeature-browser-provider";
+import { BucketBrowserProvider } from "@reflag/openfeature-browser-provider";
 import { OpenFeature } from "@openfeature/web-sdk";
 
 // initialize provider
@@ -44,11 +44,11 @@ const feedbackConfig = client.getObjectValue("ask-feedback", {
 ```
 
 Initializing the Bucket Browser Provider will
-also initialize [automatic feedback surveys](https://github.com/bucketco/bucket-javascript-sdk/tree/main/packages/browser-sdk#qualitative-feedback).
+also initialize [automatic feedback surveys](https://github.com/reflagcom/javascript/tree/main/packages/browser-sdk#qualitative-feedback).
 
 ## Feature resolution methods
 
-The Bucket OpenFeature Provider implements the OpenFeature evaluation interface for different value types. Each method handles the resolution of feature flags according to the OpenFeature specification.
+The Bucket OpenFeature Provider implements the OpenFeature evaluation interface for different value types. Each method handles the resolution of flags according to the OpenFeature specification.
 
 ### Common behavior
 
@@ -67,7 +67,7 @@ All resolution methods share these behaviors:
 client.getBooleanValue("my-flag", false);
 ```
 
-Returns the feature's enabled state. This is the most common use case for feature flags.
+Returns the feature's enabled state. This is the most common use case for flags.
 
 #### String Resolution
 
@@ -106,7 +106,7 @@ pass a translation function along to the `BucketBrowserProvider` constructor
 like so:
 
 ```ts
-import { BucketBrowserProvider } from "@bucketco/openfeature-browser-provider";
+import { BucketBrowserProvider } from "@reflag/openfeature-browser-provider";
 import { EvaluationContext, OpenFeature } from "@openfeature/web-sdk";
 
 // initialize provider
@@ -150,7 +150,7 @@ The Bucket OpenFeature Provider supports the OpenFeature tracking API
 natively.
 
 ```ts
-import { BucketBrowserProvider } from "@bucketco/openfeature-browser-provider";
+import { BucketBrowserProvider } from "@reflag/openfeature-browser-provider";
 import { OpenFeature } from "@openfeature/web-sdk";
 
 // initialize provider

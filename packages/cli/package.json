@@ -1,5 +1,5 @@
 {
-  "name": "@bucketco/cli",
+  "name": "@reflag/cli",
   "version": "2.0.1",
   "packageManager": "yarn@4.1.1",
   "description": "CLI for Bucket service",
@@ -7,10 +7,10 @@
   "type": "module",
   "license": "MIT",
   "author": "Bucket.",
-  "homepage": "https://docs.bucket.co/",
+  "homepage": "https://docs.reflag.com/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/bucketco/bucket-javascript-sdk.git"
+    "url": "https://github.com/reflagcom/javascript.git"
   },
   "publishConfig": {
     "access": "public"
@@ -57,8 +57,8 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@bucketco/eslint-config": "workspace:^",
-    "@bucketco/tsconfig": "workspace:^",
+    "@reflag/eslint-config": "workspace:^",
+    "@reflag/tsconfig": "workspace:^",
     "@types/express": "^5.0.0",
     "@types/node": "^22.5.1",
     "@types/semver": "^7.7.0",

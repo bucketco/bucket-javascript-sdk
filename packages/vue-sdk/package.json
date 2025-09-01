@@ -1,10 +1,10 @@
 {
-  "name": "@bucketco/vue-sdk",
+  "name": "@reflag/vue-sdk",
   "version": "0.2.2",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/bucketco/bucket-javascript-sdk.git"
+    "url": "https://github.com/reflagcom/javascript.git"
   },
   "publishConfig": {
     "access": "public"
@@ -34,15 +34,15 @@
     }
   },
   "dependencies": {
-    "@bucketco/browser-sdk": "3.3.4",
+    "@reflag/browser-sdk": "3.3.4",
     "canonical-json": "^0.2.0"
   },
   "peerDependencies": {
     "vue": "^3.0.0"
   },
   "devDependencies": {
-    "@bucketco/eslint-config": "workspace:^",
-    "@bucketco/tsconfig": "workspace:^",
+    "@reflag/eslint-config": "workspace:^",
+    "@reflag/tsconfig": "workspace:^",
     "@types/jsdom": "^21.1.6",
     "@types/node": "^22.12.0",
     "@vitejs/plugin-vue": "^5.2.4",

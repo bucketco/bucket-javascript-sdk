@@ -1,7 +1,7 @@
 "use client";
 
 import React, { ReactNode } from "react";
-import { BucketProvider } from "@bucketco/react-sdk";
+import { BucketProvider } from "@reflag/react-sdk";
 
 type Props = {
   publishableKey: string;

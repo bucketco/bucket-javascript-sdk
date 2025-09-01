@@ -1,6 +1,6 @@
 "use client";
 
-import { BucketBrowserSDKProvider } from "@bucketco/openfeature-browser-provider";
+import { BucketBrowserSDKProvider } from "@reflag/openfeature-browser-provider";
 import { OpenFeature } from "@openfeature/react-sdk";
 
 const publishableKey = process.env.NEXT_PUBLIC_BUCKET_PUBLISHABLE_KEY;

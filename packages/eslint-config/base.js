@@ -86,10 +86,10 @@ module.exports = [
             [
               `^(${builtinModules.join("|")})(/|$)`,
               "^react",
-              "^(?!@bucket)@?\\w",
+              "^(?!@reflag)@?\\w",
             ],
             // Shared bucket packages.
-            ["^@bucketco/(.*)$"],
+            ["^@reflag/(.*)$"],
             // Path aliased root, parent imports, and just `..`.
             ["^@/", "^\\.\\.(?!/?$)", "^\\.\\./?$"],
             // Relative imports, same-folder imports, and just `.`.

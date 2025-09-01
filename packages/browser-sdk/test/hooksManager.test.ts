@@ -43,12 +43,12 @@ describe("HookManager", () => {
     const callback = vi.fn();
     hookManager.addHook("flagsUpdated", callback);
 
-    const features: RawFlags = {
-      /* mock RawFeatures data */
+    const flags: RawFlags = {
+      /* mock RawFlags data */
     };
-    hookManager.trigger("flagsUpdated", features);
+    hookManager.trigger("flagsUpdated", flags);
 
-    expect(callback).toHaveBeenCalledWith(features);
+    expect(callback).toHaveBeenCalledWith(flags);
   });
 
   it("should add and trigger `track` hooks", () => {

@@ -21,7 +21,7 @@ import {
   TrackEvent,
   UnassignedFeedback,
   UserContext,
-} from "@bucketco/browser-sdk";
+} from "@reflag/browser-sdk";
 
 import { version } from "../package.json";
 

@@ -9,7 +9,7 @@ export default defineConfig({
     environment: "jsdom",
   },
   optimizeDeps: {
-    include: ["@bucketco/browser-sdk"],
+    include: ["@reflag/browser-sdk"],
   },
   resolve: {
     alias: {

@@ -1,4 +1,4 @@
-import { ReflagClient, CheckEvent, RawFeatures } from "../../src";
+import { ReflagClient, CheckEvent, RawFlags } from "../../src";
 
 const urlParams = new URLSearchParams(window.location.search);
 const publishableKey = urlParams.get("publishableKey");
@@ -34,8 +34,8 @@ reflag.initialize().then(() => {
   if (loadingElem) loadingElem.style.display = "none";
 });
 
-reflag.on("flagsUpdated", (features: RawFeatures) => {
-  const { isEnabled } = features[flagKey];
+reflag.on("flagsUpdated", (flags: RawFlags) => {
+  const { isEnabled } = flags[flagKey];
 
   const startHuddleElem = document.getElementById("start-huddle");
   if (isEnabled) {

@@ -4,14 +4,14 @@ React client side library for [Reflag.com](https://reflag.com)
 
 Bucket supports feature toggling, tracking feature usage, [requesting feedback](#userequestfeedback) on features, and [remotely configuring features](#remote-config).
 
-The Bucket React SDK comes with a [built-in toolbar](https://docs.bucket.co/supported-languages/browser-sdk#toolbar) which appears on `localhost` by default.
+The Bucket React SDK comes with a [built-in toolbar](https://docs.reflag.com/supported-languages/browser-sdk#toolbar) which appears on `localhost` by default.
 
 ## Install
 
 Install via npm:
 
 ```shell
-npm i @bucketco/react-sdk
+npm i @reflag/react-sdk
 ```
 
 ## Get started
@@ -23,7 +23,7 @@ Add the `BucketProvider` context provider to your application:
 **Example:**
 
 ```tsx
-import { BucketProvider } from "@bucketco/react-sdk";
+import { BucketProvider } from "@reflag/react-sdk";
 
 <BucketProvider
   publishableKey="{YOUR_PUBLISHABLE_KEY}"
@@ -40,7 +40,7 @@ import { BucketProvider } from "@bucketco/react-sdk";
 Install the Bucket CLI:
 
 ```shell
-npm i --save-dev @bucketco/cli
+npm i --save-dev @reflag/cli
 ```
 
 Run `npx bucket new` to create your first feature!
@@ -136,10 +136,10 @@ binary `isEnabled` you can have multiple configuration values which are given to
 1. Update your feature definitions:
 
 ```typescript
-import "@bucketco/react-sdk";
+import "@reflag/react-sdk";
 
-// Define your features by extending the `Features` interface in @bucketco/react-sdk
-declare module "@bucketco/react-sdk" {
+// Define your features by extending the `Features` interface in @reflag/react-sdk
+declare module "@reflag/react-sdk" {
   interface Features {
     huddle: {
       // change from `boolean` to an object which sets
@@ -224,17 +224,17 @@ The `<BucketProvider>` initializes the Bucket SDK, fetches features and starts l
 - `appBaseUrl`: Optional base URL for the Bucket application. Use this to override the default app URL,
 - `sseBaseUrl`: Optional base URL for Server-Sent Events. Use this to override the default SSE endpoint,
 - `debug`: Set to `true` to enable debug logging to the console,
-- `toolbar`: Optional [configuration](https://docs.bucket.co/supported-languages/browser-sdk/globals#toolbaroptions) for the Bucket toolbar,
+- `toolbar`: Optional [configuration](https://docs.reflag.com/supported-languages/browser-sdk/globals#toolbaroptions) for the Bucket toolbar,
 - `feedback`: Optional configuration for feedback collection
 
 ## Hooks
 
 ### `useFeature()`
 
-Returns the state of a given feature for the current context. The hook provides type-safe access to feature flags and their configurations.
+Returns the state of a given feature for the current context. The hook provides type-safe access to flags and their configurations.
 
 ```tsx
-import { useFeature } from "@bucketco/react-sdk";
+import { useFeature } from "@reflag/react-sdk";
 
 function StartHuddleButton() {
   const {
@@ -280,11 +280,11 @@ function StartHuddleButton() {
 
 ### `useTrack()`
 
-`useTrack()` lets you send custom events to Bucket. Use this whenever a user _uses_ a feature. Create [features](https://docs.bucket.co/introduction/concepts/feature) in Bucket based off of these events to analyze feature usage.
+`useTrack()` lets you send custom events to Bucket. Use this whenever a user _uses_ a feature. Create [features](https://docs.reflag.com/introduction/concepts/feature) in Bucket based off of these events to analyze feature usage.
 Returns a function to send custom events to Bucket. Use this whenever a user _uses_ a feature. These events can be used to analyze feature usage and create new features in Bucket.
 
 ```tsx
-import { useTrack } from "@bucketco/react-sdk";
+import { useTrack } from "@reflag/react-sdk";
 
 function StartHuddle() {
   <div>
@@ -300,13 +300,13 @@ function StartHuddle() {
 Returns a function that lets you open up a dialog to ask for feedback on a specific feature. This is useful for collecting targeted feedback about specific features.
 
 `useRequestFeedback()` returns a function that lets you open up a dialog to ask for feedback on a specific feature.
-See [Automated Feedback Surveys](https://docs.bucket.co/product-handbook/live-satisfaction) for how to do this automatically, without code.
+See [Automated Feedback Surveys](https://docs.reflag.com/product-handbook/live-satisfaction) for how to do this automatically, without code.
 
 When using the `useRequestFeedback` you must pass the feature key to `requestFeedback`.
 The example below shows how to use `position` to ensure the popover appears next to the "Give feedback!" button.
 
 ```tsx
-import { useRequestFeedback } from "@bucketco/react-sdk";
+import { useRequestFeedback } from "@reflag/react-sdk";
 
 function FeedbackButton() {
   const requestFeedback = useRequestFeedback();
@@ -334,14 +334,14 @@ function FeedbackButton() {
 }
 ```
 
-See the [Feedback Documentation](https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/browser-sdk/FEEDBACK.md#manual-feedback-collection) for more information on `requestFeedback` options.
+See the [Feedback Documentation](https://github.com/reflagcom/javascript/blob/main/packages/browser-sdk/FEEDBACK.md#manual-feedback-collection) for more information on `requestFeedback` options.
 
 ### `useSendFeedback()`
 
 Returns a function that lets you send feedback to Bucket. This is useful if you've manually collected feedback through your own UI and want to send it to Bucket.
 
 ```tsx
-import { useSendFeedback } from "@bucketco/react-sdk";
+import { useSendFeedback } from "@reflag/react-sdk";
 
 function CustomFeedbackForm() {
   const sendFeedback = useSendFeedback();
@@ -367,7 +367,7 @@ import {
   useUpdateUser,
   useUpdateCompany,
   useUpdateOtherContext,
-} from "@bucketco/react-sdk";
+} from "@reflag/react-sdk";
 
 function FeatureOptIn() {
   const updateUser = useUpdateUser();
@@ -413,7 +413,7 @@ Returns the `ReflagClient` used by the `BucketProvider`. The client offers more 
 is not directly accessible thorough the other hooks.
 
 ```tsx
-import { useClient } from "@bucketco/react-sdk";
+import { useClient } from "@reflag/react-sdk";
 
 function LoggingWrapper({ children }: { children: ReactNode }) {
   const client = useClient();
@@ -430,7 +430,7 @@ function LoggingWrapper({ children }: { children: ReactNode }) {
 
 ## Content Security Policy (CSP)
 
-See [CSP](https://github.com/bucketco/bucket-javascript-sdk/blob/main/packages/browser-sdk/README.md#content-security-policy-csp) for info on using Bucket React SDK with CSP
+See [CSP](https://github.com/reflagcom/javascript/blob/main/packages/browser-sdk/README.md#content-security-policy-csp) for info on using Bucket React SDK with CSP
 
 ## License
 

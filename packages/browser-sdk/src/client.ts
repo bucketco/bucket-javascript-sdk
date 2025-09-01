@@ -348,7 +348,7 @@ export interface Flag {
    * Function to request feedback for this flag.
    */
   requestFeedback: (
-    options: Omit<RequestFeedbackData, "flagKey" | "flagId">,
+    options: Omit<RequestFeedbackData, "flagKey" | "featureId">,
   ) => void;
 
   /**
@@ -816,7 +816,7 @@ export class ReflagClient {
       },
       track: () => this.track(flagKey),
       requestFeedback: (
-        options: Omit<RequestFeedbackData, "flagKey" | "flagId">,
+        options: Omit<RequestFeedbackData, "flagKey" | "featureId">,
       ) => {
         this.requestFeedback({
           flagKey,

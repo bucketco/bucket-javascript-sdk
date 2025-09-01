@@ -2,7 +2,7 @@
 import canonicalJson from "canonical-json";
 import { provide, ref, shallowRef, watch } from "vue";
 
-import { ReflagClient } from "@bucketco/browser-sdk";
+import { ReflagClient } from "@reflag/browser-sdk";
 
 import { ProviderSymbol } from "./hooks";
 import { BucketProps, ProviderContextType } from "./types";

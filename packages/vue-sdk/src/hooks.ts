@@ -1,6 +1,6 @@
 import { computed, inject, InjectionKey, onBeforeUnmount, ref } from "vue";
 
-import { RequestFeedbackData, UnassignedFeedback } from "@bucketco/browser-sdk";
+import { RequestFeedbackData, UnassignedFeedback } from "@reflag/browser-sdk";
 
 import {
   Feature,
@@ -50,7 +50,7 @@ export function useFeature(key: string): Feature<any> {
  *
  * @example
  * ```ts
- * import { useTrack } from '@bucketco/vue-sdk';
+ * import { useTrack } from '@reflag/vue-sdk';
  *
  * const track = useTrack();
  *
@@ -77,7 +77,7 @@ export function useTrack() {
  *
  * @example
  * ```ts
- * import { useRequestFeedback } from '@bucketco/vue-sdk';
+ * import { useRequestFeedback } from '@reflag/vue-sdk';
  *
  * const requestFeedback = useRequestFeedback();
  *
@@ -105,7 +105,7 @@ export function useRequestFeedback() {
  *
  * @example
  * ```ts
- * import { useSendFeedback } from '@bucketco/vue-sdk';
+ * import { useSendFeedback } from '@reflag/vue-sdk';
  *
  * const sendFeedback = useSendFeedback();
  *
@@ -133,7 +133,7 @@ export function useSendFeedback() {
  *
  * @example
  * ```ts
- * import { useUpdateUser } from '@bucketco/vue-sdk';
+ * import { useUpdateUser } from '@reflag/vue-sdk';
  *
  * const updateUser = useUpdateUser();
  *
@@ -159,7 +159,7 @@ export function useUpdateUser() {
  *
  * @example
  * ```ts
- * import { useUpdateCompany } from '@bucketco/vue-sdk';
+ * import { useUpdateCompany } from '@reflag/vue-sdk';
  *
  * const updateCompany = useUpdateCompany();
  *
@@ -185,7 +185,7 @@ export function useUpdateCompany() {
  *
  * @example
  * ```ts
- * import { useUpdateOtherContext } from '@bucketco/vue-sdk';
+ * import { useUpdateOtherContext } from '@reflag/vue-sdk';
  *
  * const updateOtherContext = useUpdateOtherContext();
  *

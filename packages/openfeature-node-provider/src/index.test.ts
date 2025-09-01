@@ -1,12 +1,12 @@
 import { ProviderStatus } from "@openfeature/server-sdk";
 import { beforeEach, describe, expect, it, Mock, vi } from "vitest";
 
-import { ReflagClient } from "@bucketco/node-sdk";
+import { ReflagClient } from "@reflag/node-sdk";
 
 import { BucketNodeProvider, defaultContextTranslator } from "./index";
 
-vi.mock("@bucketco/node-sdk", () => {
-  const actualModule = vi.importActual("@bucketco/node-sdk");
+vi.mock("@reflag/node-sdk", () => {
+  const actualModule = vi.importActual("@reflag/node-sdk");
 
   return {
     __esModule: true,
@@ -70,7 +70,7 @@ describe("BucketNodeProvider", () => {
     bucketClientMock.getFeatureDefinitions = vi.fn().mockReturnValue([
       {
         key: flagKey,
-        description: "Test feature flag",
+        description: "Test flag",
         flag: {},
         config: {},
       },
@@ -95,7 +95,7 @@ describe("BucketNodeProvider", () => {
           userId: 123,
           name: "John Doe",
           email: "ron@bucket.co",
-          avatar: "https://bucket.co/avatar.png",
+          avatar: "https://reflag.com/avatar.png",
           companyId: "456",
           companyName: "Acme, Inc.",
           companyAvatar: "https://acme.com/company-avatar.png",
@@ -106,7 +106,7 @@ describe("BucketNodeProvider", () => {
           id: "123",
           name: "John Doe",
           email: "ron@bucket.co",
-          avatar: "https://bucket.co/avatar.png",
+          avatar: "https://reflag.com/avatar.png",
         },
         company: {
           id: "456",

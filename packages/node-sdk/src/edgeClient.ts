@@ -15,7 +15,7 @@ export type EdgeClientOptions = Omit<
  * // set the BUCKET_SECRET_KEY environment variable or pass the secret key in the constructor
  * const client = new EdgeClient();
  *
- * // evaluate a feature flag
+ * // evaluate a flag
  * const context = {
  *   user: { id: "user-id" },
  *   company: { id: "company-id" },

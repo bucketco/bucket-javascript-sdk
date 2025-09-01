@@ -1,10 +1,10 @@
 {
-  "name": "@bucketco/flag-evaluation",
+  "name": "@reflag/flag-evaluation",
   "version": "0.2.1",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/bucketco/bucket-javascript-sdk.git"
+    "url": "https://github.com/reflagcom/javascript.git"
   },
   "publishConfig": {
     "access": "public"
@@ -25,8 +25,8 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "devDependencies": {
-    "@bucketco/eslint-config": "workspace:^",
-    "@bucketco/tsconfig": "workspace:^",
+    "@reflag/eslint-config": "workspace:^",
+    "@reflag/tsconfig": "workspace:^",
     "@types/node": "^22.12.0",
     "eslint": "^9.21.0",
     "prettier": "^3.5.2",

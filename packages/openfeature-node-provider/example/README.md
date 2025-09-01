@@ -16,7 +16,7 @@ secret key which is found under _"Settings"_ -> _"Environments"_.
 
 ## Context
 
-See [defaultTranslator](https://github.com/bucketco/bucket-javascript-sdk/blob/7d108db2d1bde6e40d9eda92b66d06a1fbb7fa3f/packages/openfeature-node-provider/src/index.ts#L23-L45) for how OpenFeature context is translated into Bucket context
+See [defaultTranslator](https://github.com/reflagcom/javascript/blob/7d108db2d1bde6e40d9eda92b66d06a1fbb7fa3f/packages/openfeature-node-provider/src/index.ts#L23-L45) for how OpenFeature context is translated into Bucket context
 by default
 
 ## Running

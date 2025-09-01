@@ -15,7 +15,7 @@ import {
   ReflagClient,
   ClientOptions,
   Context as BucketContext,
-} from "@bucketco/node-sdk";
+} from "@reflag/node-sdk";
 
 type ProviderOptions = ClientOptions & {
   contextTranslator?: (context: EvaluationContext) => BucketContext;

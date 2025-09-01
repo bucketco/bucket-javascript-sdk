@@ -58,12 +58,12 @@
         console.log(`Check event for ${check.key}`),
       );
 
-      reflag.on("flagsUpdated", (features) => {
-        console.log("Features updated");
-        const feature = reflag.getFlag(flagKey);
+      reflag.on("flagsUpdated", (flags) => {
+        console.log("Flags updated");
+        const flag = reflag.getFlag(flagKey);
 
         const startHuddleElem = document.getElementById("start-huddle");
-        if (feature.isEnabled) {
+        if (flag.isEnabled) {
           // show the start-huddle button
           if (startHuddleElem) startHuddleElem.style.display = "block";
         } else {

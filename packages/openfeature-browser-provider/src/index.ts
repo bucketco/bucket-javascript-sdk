@@ -11,7 +11,7 @@ import {
   TrackingEventDetails,
 } from "@openfeature/web-sdk";
 
-import { ReflagClient, Feature, InitOptions } from "@bucketco/browser-sdk";
+import { ReflagClient, Feature, InitOptions } from "@reflag/browser-sdk";
 
 export type ContextTranslationFn = (
   context?: EvaluationContext,

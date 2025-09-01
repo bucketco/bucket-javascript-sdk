@@ -2,7 +2,7 @@
 
 Command-line interface for interacting with Bucket services. The CLI allows you to manage apps,
 features, authentication, and generate TypeScript types for your Bucket features. With this tool,
-you can streamline your feature flagging workflow directly from your terminal.
+you can streamline your flagging workflow directly from your terminal.
 
 ## Usage
 
@@ -10,10 +10,10 @@ Get started by installing the CLI locally in your project:
 
 ```bash
 # npm
-npm install --save-dev @bucketco/cli
+npm install --save-dev @reflag/cli
 
 # yarn
-yarn add --dev @bucketco/cli
+yarn add --dev @reflag/cli
 ```
 
 Then running the `new` command from your project's root directory,
@@ -53,7 +53,7 @@ Here's a comprehensive list of configuration options available in the `bucket.co
 
 ```json
 {
-  "$schema": "https://unpkg.com/@bucketco/cli@latest/schema.json",
+  "$schema": "https://unpkg.com/@reflag/cli@latest/schema.json",
   "baseUrl": "https://app.reflag.com",
   "apiUrl": "https://app.reflag.com/api",
   "appId": "ap123456789",
@@ -68,7 +68,7 @@ Here's a comprehensive list of configuration options available in the `bucket.co
 
 | Option        | Description                                                                                                                                                          | Default                                              |
 | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| `$schema`     | Autocompletion for the config. `latest` can be replaced with a specific version.                                                                                     | "https://unpkg.com/@bucketco/cli@latest/schema.json" |
+| `$schema`     | Autocompletion for the config. `latest` can be replaced with a specific version.                                                                                     | "https://unpkg.com/@reflag/cli@latest/schema.json" |
 | `baseUrl`     | Base URL for Bucket services.                                                                                                                                        | "https://app.reflag.com"                             |
 | `apiUrl`      | API URL for Bucket services (overrides baseUrl for API calls).                                                                                                       | "https://app.reflag.com/api"                         |
 | `appId`       | Your Bucket application ID.                                                                                                                                          | Required                                             |
@@ -250,7 +250,7 @@ Bucket provides powerful AI-assisted development capabilities through rules and 
 
 ### Bucket Rules (Recommended)
 
-The `rules` command helps you set up AI-specific rules for your project. These rules enable AI tools to better understand how to work with Bucket and feature flags and how they should be used in your codebase.
+The `rules` command helps you set up AI-specific rules for your project. These rules enable AI tools to better understand how to work with Bucket and flags and how they should be used in your codebase.
 
 ```bash
 npx bucket rules [--format <cursor|copilot>] [--yes]
@@ -263,17 +263,17 @@ Options:
   - `copilot`: Adds rules to `.github/copilot-instructions.md` for GitHub Copilot integration.
 - `--yes`: Skip confirmation prompts and overwrite existing files without asking.
 
-This command will add rules to your project that provide AI tools with context about how to setup and use Bucket feature flags. For the copilot format, the rules will be added to a dedicated section in the file, allowing you to maintain other copilot instructions alongside Bucket's rules.
+This command will add rules to your project that provide AI tools with context about how to setup and use Bucket flags. For the copilot format, the rules will be added to a dedicated section in the file, allowing you to maintain other copilot instructions alongside Bucket's rules.
 
 ## Model Context Protocol
 
-The Model Context Protocol (MCP) is an open protocol that provides a standardized way to connect AI models to different data sources and tools. In the context of Bucket, MCP enables your code editor to understand your feature flags, their states, and their relationships within your codebase. This creates a seamless bridge between your feature management workflow and AI-powered development tools. The MCP server is hosted by Bucket, so it's very easy to get started.
+The Model Context Protocol (MCP) is an open protocol that provides a standardized way to connect AI models to different data sources and tools. In the context of Bucket, MCP enables your code editor to understand your flags, their states, and their relationships within your codebase. This creates a seamless bridge between your feature management workflow and AI-powered development tools. The MCP server is hosted by Bucket, so it's very easy to get started.
 
 _\*\*Note: The Bucket `mcp` CLI command was previously used for a \_local_ server. However, in recent versions of the Bucket CLI, the `mcp` command has been repurposed to help you connect to the new remote MCP server.\*\*\_
 
 ### Setting up MCP
 
-The `mcp` command helps you configure your editor or AI client to connect with Bucket's remote MCP server. This allows your AI tools to understand your feature flags and provide more contextual assistance.
+The `mcp` command helps you configure your editor or AI client to connect with Bucket's remote MCP server. This allows your AI tools to understand your flags and provide more contextual assistance.
 
 ```bash
 npx bucket mcp [--app-id <id>] [--editor <editor>] [--scope <local|global>]

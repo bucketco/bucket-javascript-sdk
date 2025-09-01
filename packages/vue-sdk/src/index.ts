@@ -6,7 +6,7 @@ import {
   RawFeatures,
   TrackEvent,
   UserContext,
-} from "@bucketco/browser-sdk";
+} from "@reflag/browser-sdk";
 
 import BucketProvider from "./BucketProvider.vue";
 import {

@@ -1,12 +1,12 @@
 import { Client, OpenFeature } from "@openfeature/web-sdk";
 import { beforeEach, describe, expect, it, Mock, vi } from "vitest";
 
-import { ReflagClient } from "@bucketco/browser-sdk";
+import { ReflagClient } from "@reflag/browser-sdk";
 
 import { BucketBrowserSDKProvider, defaultContextTranslator } from ".";
 
-vi.mock("@bucketco/browser-sdk", () => {
-  const actualModule = vi.importActual("@bucketco/browser-sdk");
+vi.mock("@reflag/browser-sdk", () => {
+  const actualModule = vi.importActual("@reflag/browser-sdk");
 
   return {
     __esModule: true,
@@ -85,10 +85,10 @@ describe("BucketBrowserSDKProvider", () => {
       const ofContext = {
         userId: "123",
         email: "ron@bucket.co",
-        avatar: "https://bucket.co/avatar.png",
+        avatar: "https://reflag.com/avatar.png",
         groupId: "456",
         groupName: "bucket",
-        groupAvatar: "https://bucket.co/group-avatar.png",
+        groupAvatar: "https://reflag.com/group-avatar.png",
         groupPlan: "pro",
       };
 
@@ -128,7 +128,7 @@ describe("BucketBrowserSDKProvider", () => {
           userId: 123,
           name: "John Doe",
           email: "ron@bucket.co",
-          avatar: "https://bucket.co/avatar.png",
+          avatar: "https://reflag.com/avatar.png",
           companyId: "456",
           companyName: "Acme, Inc.",
           companyAvatar: "https://acme.com/company-avatar.png",
@@ -139,7 +139,7 @@ describe("BucketBrowserSDKProvider", () => {
           id: "123",
           name: "John Doe",
           email: "ron@bucket.co",
-          avatar: "https://bucket.co/avatar.png",
+          avatar: "https://reflag.com/avatar.png",
         },
         company: {
           id: "456",

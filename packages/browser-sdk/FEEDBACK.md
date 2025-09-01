@@ -1,7 +1,7 @@
 # Reflag Feedback UI
 
 The Reflag Browser SDK includes a UI you can use to collect feedback from user
-about particular features.
+about particular flags.
 
 ![image](https://github.com/reflagcom/javascript/assets/34348/c387bac1-f2e2-4efd-9dda-5030d76f9532)
 
@@ -49,7 +49,7 @@ Automated feedback surveys are enabled by default.
 
 When automated feedback surveys are enabled, the Reflag Browser SDK
 will open and maintain a connection to the Reflag service. When a user
-triggers an event tracked by a feature and is eligible to be prompted
+triggers an event tracked by a flag and is eligible to be prompted
 for feedback, the Reflag service will send a request to the SDK instance.
 By default, this request will open up the Reflag feedback UI in the user's
 browser, but you can intercept the request and override this behavior.
@@ -130,7 +130,7 @@ Minimal usage with defaults:
 
 ```javascript
 reflagClient.requestFeedback({
-  flagKey: "reflag-feature-key",
+  flagKey: "reflag-flag-key",
   title: "How satisfied are you with file uploads?",
 });
 ```
@@ -139,7 +139,7 @@ All options:
 
 ```javascript
 reflagClient.requestFeedback({
-  flagKey: "reflag-feature-key", // [Required]
+  flagKey: "reflag-flag-key", // [Required]
   userId: "your-user-id",  // [Optional] if user persistence is
                            // enabled (default in browsers),
   companyId: "users-company-or-account-id", // [Optional]
@@ -202,7 +202,7 @@ does not interact with it.
 
 Using a dialog is a soft push for feedback. It lets the user continue their work
 with a minimal amount of intrusion. The user can opt-in to respond but is not
-required to. A good use case for this behavior is when a user uses a feature where
+required to. A good use case for this behavior is when a user uses a flag where
 the expected outcome is predictable, possibly because they have used it multiple
 times before. For example: Uploading a file, switching to a different view of a
 visualization, visiting a specific page, or manipulating some data.
@@ -245,7 +245,7 @@ Popover feedback button example:
   const button = document.getElementById("feedbackButton");
   button.addEventListener("click", (e) => {
     reflagClient.requestFeedback({
-      flagKey: "reflag-feature-key",
+      flagKey: "reflag-flag-key",
       userId: "your-user-id",
       title: "How do you like the popover?",
       position: {
@@ -412,7 +412,7 @@ Once you have collected the feedback data, pass it along to `reflagClient.feedba
 
 ```javascript
 reflagClient.feedback({
-  flagKey: "reflag-feature-key",
+  flagKey: "reflag-flag-key",
   userId: "your-user-id",
   score: 5,
   comment: "Best thing I've ever tried!",
@@ -434,7 +434,7 @@ new ReflagClient({
     autoFeedbackHandler: async (promptMessage, handlers) => {
       // This opens your custom UI
       customFeedbackCollection({
-        // The question configured in the Reflag UI for the feature
+        // The question configured in the Reflag UI for the flag
         question: promptMessage.question,
         // When the user successfully submits feedback data.
         // Use this instead of `reflagClient.feedback()`, otherwise

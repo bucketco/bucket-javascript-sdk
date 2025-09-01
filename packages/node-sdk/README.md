@@ -12,7 +12,7 @@ Install using your favorite package manager:
 {% tab title="npm" %}
 
 ```sh
-npm i @bucketco/node-sdk
+npm i @reflag/node-sdk
 ```
 
 {% endtab %}
@@ -20,7 +20,7 @@ npm i @bucketco/node-sdk
 {% tab title="yarn" %}
 
 ```sh
-yarn add @bucketco/node-sdk
+yarn add @reflag/node-sdk
 ```
 
 {% endtab %}
@@ -28,7 +28,7 @@ yarn add @bucketco/node-sdk
 {% tab title="bun" %}
 
 ```sh
-bun add @bucketco/node-sdk
+bun add @reflag/node-sdk
 ```
 
 {% endtab %}
@@ -36,7 +36,7 @@ bun add @bucketco/node-sdk
 {% tab title="pnpm" %}
 
 ```sh
-pnpm add @bucketco/node-sdk
+pnpm add @reflag/node-sdk
 ```
 
 {% endtab %}
@@ -44,15 +44,15 @@ pnpm add @bucketco/node-sdk
 {% tab title="deno" %}
 
 ```sh
-deno add npm:@bucketco/node-sdk
+deno add npm:@reflag/node-sdk
 ```
 
 {% endtab %}
 {% endtabs %}
 
-Other supported languages/frameworks are in the [Supported languages](https://docs.bucket.co/quickstart/supported-languages) documentation pages.
+Other supported languages/frameworks are in the [Supported languages](https://docs.reflag.com/quickstart/supported-languages) documentation pages.
 
-You can also [use the HTTP API directly](https://docs.bucket.co/api/http-api)
+You can also [use the HTTP API directly](https://docs.reflag.com/api/http-api)
 
 ## Basic usage
 
@@ -70,7 +70,7 @@ Bucket will load settings through the various environment variables automaticall
 3. Create a `bucket.ts` file containing the following:
 
 ```typescript
-import { ReflagClient } from "@bucketco/node-sdk";
+import { ReflagClient } from "@reflag/node-sdk";
 
 // Create a new instance of the client with the secret key. Additional options
 // are available, such as supplying a logger and other custom properties.
@@ -214,7 +214,7 @@ To use the Bucket NodeSDK with Cloudflare workers, set the `node_compat` flag [i
 Instead of using `ReflagClient`, use `EdgeClient` and make sure you call `ctx.waitUntil(bucket.flush());` before returning from your worker function.
 
 ```typescript
-import { EdgeClient } from "@bucketco/node-sdk";
+import { EdgeClient } from "@reflag/node-sdk";
 
 // set the BUCKET_SECRET_KEY environment variable or pass the secret key in the constructor
 const bucket = new EdgeClient();
@@ -352,7 +352,7 @@ current working directory.
 | `logLevel`         | string                  | The log level for the SDK (e.g., `"DEBUG"`, `"INFO"`, `"WARN"`, `"ERROR"`). Default: `INFO`                                                                                                                                                                         | BUCKET_LOG_LEVEL                                  |
 | `offline`          | boolean                 | Operate in offline mode. Default: `false`, except in tests it will default to `true` based off of the `TEST` env. var.                                                                                                                                              | BUCKET_OFFLINE                                    |
 | `apiBaseUrl`       | string                  | The base API URL for the Bucket servers.                                                                                                                                                                                                                            | BUCKET_API_BASE_URL                               |
-| `featureOverrides` | Record<string, boolean> | An object specifying feature overrides for testing or local development. See [examples/express/app.test.ts](https://github.com/bucketco/bucket-javascript-sdk/tree/main/packages/node-sdk/examples/express/app.test.ts) for how to use `featureOverrides` in tests. | BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED |
+| `featureOverrides` | Record<string, boolean> | An object specifying feature overrides for testing or local development. See [examples/express/app.test.ts](https://github.com/reflagcom/javascript/tree/main/packages/node-sdk/examples/express/app.test.ts) for how to use `featureOverrides` in tests. | BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED |
 | `configFile`       | string                  | Load this config file from disk. Default: `bucketConfig.json`                                                                                                                                                                                                       | BUCKET_CONFIG_FILE                                |
 
 > [!NOTE] > `BUCKET_FEATURES_ENABLED` and `BUCKET_FEATURES_DISABLED` are comma separated lists of features which will be enabled or disabled respectively.
@@ -390,12 +390,12 @@ order of importance:
 2. Environment variable,
 3. The config file.
 
-## Type safe feature flags
+## Type safe flags
 
-To get type checked feature flags, install the Bucket CLI:
+To get type checked flags, install the Bucket CLI:
 
 ```
-npm i --save-dev @bucketco/cli
+npm i --save-dev @reflag/cli
 ```
 
 then generate the types:
@@ -410,7 +410,7 @@ Any feature look ups will now be checked against the features that exist in Buck
 Here's an example of a failed type check:
 
 ```typescript
-import { ReflagClient } from "@bucketco/node-sdk";
+import { ReflagClient } from "@reflag/node-sdk";
 
 export const bucketClient = new ReflagClient();
 
@@ -444,12 +444,12 @@ bucketClient.initialize().then(() => {
 
 ## Testing
 
-When writing tests that cover code with feature flags, you can toggle features on/off programmatically to test the different behavior.
+When writing tests that cover code with flags, you can toggle features on/off programmatically to test the different behavior.
 
 `bucket.ts`:
 
 ```typescript
-import { ReflagClient } from "@bucketco/node-sdk";
+import { ReflagClient } from "@reflag/node-sdk";
 
 export const bucket = new ReflagClient();
 ```
@@ -481,7 +481,7 @@ See more on feature overrides in the section below.
 
 ## Feature Overrides
 
-Feature overrides allow you to override feature flags and their configurations locally. This is particularly useful for development and testing. You can specify overrides in three ways:
+Feature overrides allow you to override flags and their configurations locally. This is particularly useful for development and testing. You can specify overrides in three ways:
 
 1. Through environment variables:
 
@@ -526,7 +526,7 @@ client.clearFeatureOverrides();
 To get dynamic overrides, use a function which takes a context and returns a boolean or an object with the shape of `{isEnabled, config}`:
 
 ```typescript
-import { ReflagClient, Context } from "@bucketco/node-sdk";
+import { ReflagClient, Context } from "@reflag/node-sdk";
 
 const featureOverrides = (context: Context) => ({
   "delete-todos": {
@@ -601,7 +601,7 @@ A popular way to integrate the Bucket Node.js SDK is through an express middlewa
 ```typescript
 import bucket from "./bucket";
 import express from "express";
-import { BoundBucketClient } from "@bucketco/node-sdk";
+import { BoundBucketClient } from "@reflag/node-sdk";
 
 // Augment the Express types to include a `boundBucketClient` property on the
 // `res.locals` object.
@@ -655,15 +655,15 @@ app.get("/todos", async (_req, res) => {
 }
 ```
 
-See [examples/express/app.ts](https://github.com/bucketco/bucket-javascript-sdk/tree/main/packages/node-sdk/example/express/app.ts) for a full example.
+See [examples/express/app.ts](https://github.com/reflagcom/javascript/tree/main/packages/node-sdk/example/express/app.ts) for a full example.
 
 ## Remote flag evaluation with stored context
 
-If you don't want to provide context each time when evaluating feature flags but
+If you don't want to provide context each time when evaluating flags but
 rather you would like to utilize the attributes you sent to Bucket previously
 (by calling `updateCompany` and `updateUser`) you can do so by calling `getFeaturesRemote`
 (or `getFeatureRemote` for a specific feature) with providing just `userId` and `companyId`.
-These methods will call Bucket's servers and feature flags will be evaluated remotely
+These methods will call Bucket's servers and flags will be evaluated remotely
 using the stored attributes.
 
 ```typescript
@@ -683,7 +683,7 @@ client.updateCompany("acme_inc", {
 });
 ...
 
-// This will evaluate feature flags with respecting the attributes sent previously
+// This will evaluate flags with respecting the attributes sent previously
 const features = await client.getFeaturesRemote("acme_inc", "john_doe");
 ```
 

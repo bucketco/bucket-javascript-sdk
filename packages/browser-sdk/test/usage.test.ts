@@ -85,7 +85,7 @@ describe("usage", () => {
     });
   });
 
-  test("accepts `flagKey` instead of `flagId` for manual feedback", async () => {
+  test("accepts `flagKey` instead of `featureId` for manual feedback", async () => {
     const reflagInstance = new ReflagClient({
       publishableKey: KEY,
       user: { id: "foo" },
