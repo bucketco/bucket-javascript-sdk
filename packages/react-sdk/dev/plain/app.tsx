@@ -255,7 +255,7 @@ function CustomToolbar() {
               checked={feature.isEnabledOverride ?? feature.isEnabled}
               type="checkbox"
               onChange={(e) => {
-                // this uses slightly simplified logic compared to the Bucket Toolbar
+                // this uses slightly simplified logic compared to the Reflag Toolbar
                 client
                   .getFeature(featureKey)
                   .setIsEnabledOverride(e.target.checked ?? false);

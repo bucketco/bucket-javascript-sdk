@@ -1,7 +1,7 @@
-# Bucket CLI
+# Reflag CLI
 
-Command-line interface for interacting with Bucket services. The CLI allows you to manage apps,
-features, authentication, and generate TypeScript types for your Bucket features. With this tool,
+Command-line interface for interacting with Reflag services. The CLI allows you to manage apps,
+features, authentication, and generate TypeScript types for your Reflag features. With this tool,
 you can streamline your flagging workflow directly from your terminal.
 
 ## Usage
@@ -32,7 +32,7 @@ yarn bucket new
 Instead of running `new` you can call each step individually.
 
 ```bash
-# Initialize Bucket in your project (if not already setup)
+# Initialize Reflag in your project (if not already setup)
 npx bucket init
 
 # Create a new feature
@@ -45,7 +45,7 @@ npx bucket features types
 ## Configuration
 
 The CLI creates a `bucket.config.json` file in your project directory when you run `bucket init`.
-This file contains all the necessary settings for your Bucket integration.
+This file contains all the necessary settings for your Reflag integration.
 
 ### Configuration File Structure
 
@@ -69,9 +69,9 @@ Here's a comprehensive list of configuration options available in the `bucket.co
 | Option        | Description                                                                                                                                                          | Default                                              |
 | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
 | `$schema`     | Autocompletion for the config. `latest` can be replaced with a specific version.                                                                                     | "https://unpkg.com/@reflag/cli@latest/schema.json" |
-| `baseUrl`     | Base URL for Bucket services.                                                                                                                                        | "https://app.reflag.com"                             |
-| `apiUrl`      | API URL for Bucket services (overrides baseUrl for API calls).                                                                                                       | "https://app.reflag.com/api"                         |
-| `appId`       | Your Bucket application ID.                                                                                                                                          | Required                                             |
+| `baseUrl`     | Base URL for Reflag services.                                                                                                                                        | "https://app.reflag.com"                             |
+| `apiUrl`      | API URL for Reflag services (overrides baseUrl for API calls).                                                                                                       | "https://app.reflag.com/api"                         |
+| `appId`       | Your Reflag application ID.                                                                                                                                          | Required                                             |
 | `typesOutput` | Path(s) where TypeScript types will be generated. Can be a string or an array of objects with `path` and `format` properties. Available formats: `react` and `node`. | "gen/features.ts" with format "react"                |
 
 You can override these settings using command-line options for individual commands.
@@ -80,7 +80,7 @@ You can override these settings using command-line options for individual comman
 
 ### `bucket init`
 
-Initialize a new Bucket configuration in your project.
+Initialize a new Reflag configuration in your project.
 This creates a `bucket.config.json` file with your settings and prompts for any required information not provided via options.
 
 ```bash
@@ -96,7 +96,7 @@ Options:
 ### `bucket new [featureName]`
 
 All-in-one command to get started quickly. This command combines `init`, feature creation,
-and type generation in a single step. Use this for the fastest way to get up and running with Bucket.
+and type generation in a single step. Use this for the fastest way to get up and running with Reflag.
 
 ```bash
 npx bucket new "My Feature" [--app-id ap123456789] [--key my-feature]  [--key-format custom] [--out gen/features.ts] [--format react]
@@ -114,7 +114,7 @@ If you prefer more control over each step, you can use the individual commands (
 
 ### `bucket login`
 
-Log in to your Bucket account. This will authenticate your CLI for subsequent operations and store credentials securely.
+Log in to your Reflag account. This will authenticate your CLI for subsequent operations and store credentials securely.
 
 ```bash
 npx bucket login
@@ -122,7 +122,7 @@ npx bucket login
 
 ### `bucket logout`
 
-Log out from your Bucket account, removing stored credentials.
+Log out from your Reflag account, removing stored credentials.
 
 ```bash
 npx bucket logout
@@ -130,11 +130,11 @@ npx bucket logout
 
 ### `bucket features`
 
-Manage your Bucket features with the following subcommands.
+Manage your Reflag features with the following subcommands.
 
 #### `bucket features create [featureName]`
 
-Create a new feature in your Bucket app.
+Create a new feature in your Reflag app.
 The command guides you through the feature creation process with interactive prompts if options are not provided.
 
 ```bash
@@ -163,7 +163,7 @@ Options:
 #### `bucket features types`
 
 Generate TypeScript types for your features.
-This ensures type safety when using Bucket features in your TypeScript/JavaScript applications.
+This ensures type safety when using Reflag features in your TypeScript/JavaScript applications.
 
 ```bash
 npx bucket features types [--app-id ap123456789] [--out gen/features.ts] [--format react]
@@ -232,25 +232,25 @@ npx bucket companies features access my-feature --enable --companies comp_123 --
 
 ### `bucket apps`
 
-Commands for managing Bucket apps.
+Commands for managing Reflag apps.
 
 ## Global Options
 
 These options can be used with any command:
 
 - `--debug`: Enable debug mode for verbose output.
-- `--base-url <url>`: Set the base URL for Bucket API.
+- `--base-url <url>`: Set the base URL for Reflag API.
 - `--api-url <url>`: Set the API URL directly (overrides base URL).
-- `--api-key <key>`: Bucket API key for non-interactive authentication.
+- `--api-key <key>`: Reflag API key for non-interactive authentication.
 - `--help`: Display help information for a command.
 
 ## AI-Assisted Development
 
-Bucket provides powerful AI-assisted development capabilities through rules and Model Context Protocol (MCP). These features help your AI development tools better understand your features and provide more accurate assistance.
+Reflag provides powerful AI-assisted development capabilities through rules and Model Context Protocol (MCP). These features help your AI development tools better understand your features and provide more accurate assistance.
 
-### Bucket Rules (Recommended)
+### Reflag Rules (Recommended)
 
-The `rules` command helps you set up AI-specific rules for your project. These rules enable AI tools to better understand how to work with Bucket and flags and how they should be used in your codebase.
+The `rules` command helps you set up AI-specific rules for your project. These rules enable AI tools to better understand how to work with Reflag and flags and how they should be used in your codebase.
 
 ```bash
 npx bucket rules [--format <cursor|copilot>] [--yes]
@@ -263,17 +263,17 @@ Options:
   - `copilot`: Adds rules to `.github/copilot-instructions.md` for GitHub Copilot integration.
 - `--yes`: Skip confirmation prompts and overwrite existing files without asking.
 
-This command will add rules to your project that provide AI tools with context about how to setup and use Bucket flags. For the copilot format, the rules will be added to a dedicated section in the file, allowing you to maintain other copilot instructions alongside Bucket's rules.
+This command will add rules to your project that provide AI tools with context about how to setup and use Reflag flags. For the copilot format, the rules will be added to a dedicated section in the file, allowing you to maintain other copilot instructions alongside Reflag's rules.
 
 ## Model Context Protocol
 
-The Model Context Protocol (MCP) is an open protocol that provides a standardized way to connect AI models to different data sources and tools. In the context of Bucket, MCP enables your code editor to understand your flags, their states, and their relationships within your codebase. This creates a seamless bridge between your feature management workflow and AI-powered development tools. The MCP server is hosted by Bucket, so it's very easy to get started.
+The Model Context Protocol (MCP) is an open protocol that provides a standardized way to connect AI models to different data sources and tools. In the context of Reflag, MCP enables your code editor to understand your flags, their states, and their relationships within your codebase. This creates a seamless bridge between your feature management workflow and AI-powered development tools. The MCP server is hosted by Reflag, so it's very easy to get started.
 
-_\*\*Note: The Bucket `mcp` CLI command was previously used for a \_local_ server. However, in recent versions of the Bucket CLI, the `mcp` command has been repurposed to help you connect to the new remote MCP server.\*\*\_
+_\*\*Note: The Reflag `mcp` CLI command was previously used for a \_local_ server. However, in recent versions of the Reflag CLI, the `mcp` command has been repurposed to help you connect to the new remote MCP server.\*\*\_
 
 ### Setting up MCP
 
-The `mcp` command helps you configure your editor or AI client to connect with Bucket's remote MCP server. This allows your AI tools to understand your flags and provide more contextual assistance.
+The `mcp` command helps you configure your editor or AI client to connect with Reflag's remote MCP server. This allows your AI tools to understand your flags and provide more contextual assistance.
 
 ```bash
 npx bucket mcp [--app-id <id>] [--editor <editor>] [--scope <local|global>]
@@ -292,15 +292,15 @@ Options:
 The command will guide you through:
 
 1. Selecting which editor/client to configure.
-2. Choosing which Bucket app to connect to.
+2. Choosing which Reflag app to connect to.
 3. Deciding between global or project-local configuration.
 4. Setting up the appropriate configuration file for your chosen editor .
 
-_**Note: The setup uses [mcp-remote](https://github.com/geelen/mcp-remote) as a compatibility layer allowing the remote hosted Bucket MCP server to work with all editors/clients that support MCP STDIO servers. If your editor/client supports HTTP Streaming with OAuth you can connect to the Bucket MCP server directly.**_
+_**Note: The setup uses [mcp-remote](https://github.com/geelen/mcp-remote) as a compatibility layer allowing the remote hosted Reflag MCP server to work with all editors/clients that support MCP STDIO servers. If your editor/client supports HTTP Streaming with OAuth you can connect to the Reflag MCP server directly.**_
 
 ## Using in CI/CD Pipelines (Beta)
 
-The Bucket CLI is designed to work seamlessly in CI/CD pipelines. For automated environments where interactive login is not possible, use the `--api-key` option,
+The Reflag CLI is designed to work seamlessly in CI/CD pipelines. For automated environments where interactive login is not possible, use the `--api-key` option,
 or specify the API key in `BUCKET_API_KEY` environment variable.
 
 ```bash
@@ -312,7 +312,7 @@ npx bucket apps list --api-key $BUCKET_API_KEY
 
 - When using `--api-key`, the `login` and `logout` commands are disabled.
 - API keys bypass all interactive authentication flows.
-- Only _read-only_ access to Bucket API is granted at the moment.
+- Only _read-only_ access to Reflag API is granted at the moment.
 - API keys are bound to one app only. Commands such as `apps list` will only return the bound app.
 - Store API keys securely using your CI/CD platform's secret management.
 

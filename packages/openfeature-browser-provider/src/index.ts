@@ -111,7 +111,7 @@ export class BucketBrowserSDKProvider implements Provider {
         value: defaultValue,
         reason: StandardResolutionReasons.DEFAULT,
         errorCode: ErrorCode.PROVIDER_NOT_READY,
-        errorMessage: "Bucket client not initialized",
+        errorMessage: "Reflag client not initialized",
       } satisfies ResolutionDetails<T>;
     }
 
@@ -144,7 +144,7 @@ export class BucketBrowserSDKProvider implements Provider {
       reason: StandardResolutionReasons.ERROR,
       errorCode: ErrorCode.GENERAL,
       errorMessage:
-        "Bucket doesn't support this method. Use `resolveObjectEvaluation` instead.",
+        "Reflag doesn't support this method. Use `resolveObjectEvaluation` instead.",
     };
   }
 

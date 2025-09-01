@@ -8,7 +8,7 @@ import { JSONToType } from "./json.js";
 
 export type GenFormat = "react" | "node";
 
-// Keep in sync with Bucket main repo
+// Keep in sync with Reflag main repo
 export const KeyFormats = [
   "custom",
   "pascalCase",

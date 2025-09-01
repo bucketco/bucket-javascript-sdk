@@ -435,7 +435,7 @@ describe("ReflagClient", () => {
       });
     });
 
-    it("should update user in Bucket when called", async () => {
+    it("should update user in Reflag when called", async () => {
       client.bindClient({ user: context.user });
       await client.flush();
 
@@ -457,7 +457,7 @@ describe("ReflagClient", () => {
       expect(httpClient.post).toHaveBeenCalledOnce();
     });
 
-    it("should update company in Bucket when called", async () => {
+    it("should update company in Reflag when called", async () => {
       client.bindClient({ company: context.company, meta: { active: true } });
       await client.flush();
 
@@ -481,7 +481,7 @@ describe("ReflagClient", () => {
       expect(httpClient.post).toHaveBeenCalledOnce();
     });
 
-    it("should not update `company` or `user` in Bucket when `enableTracking` is `false`", async () => {
+    it("should not update `company` or `user` in Reflag when `enableTracking` is `false`", async () => {
       client.bindClient({
         user: context.user,
         company: context.company,

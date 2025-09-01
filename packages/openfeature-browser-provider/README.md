@@ -1,11 +1,11 @@
-# Bucket Browser OpenFeature Provider
+# Reflag Browser OpenFeature Provider
 
-The official OpenFeature Browser provider for [Bucket](https://bucket.co) feature management service.
+The official OpenFeature Browser provider for [Reflag](https://bucket.co) feature management service.
 
-It uses the Bucket Browser SDK internally and thus allow you to collect [automated feedback surveys](https://github.com/reflagcom/javascript/tree/main/packages/browser-sdk#qualitative-feedback)
+It uses the Reflag Browser SDK internally and thus allow you to collect [automated feedback surveys](https://github.com/reflagcom/javascript/tree/main/packages/browser-sdk#qualitative-feedback)
 when people use your features as well as tracking which customers use which features.
 
-If you're using React, you'll be better off with the [Bucket React SDK](https://github.com/reflagcom/javascript/blob/main/packages/react-sdk/README.md) or the [OpenFeature React SDK](https://openfeature.dev/docs/reference/technologies/client/web/react/).
+If you're using React, you'll be better off with the [Reflag React SDK](https://github.com/reflagcom/javascript/blob/main/packages/react-sdk/README.md) or the [OpenFeature React SDK](https://openfeature.dev/docs/reference/technologies/client/web/react/).
 
 See the `example` folder for how to use the OpenFeature React SDK with Next.js.
 
@@ -43,12 +43,12 @@ const feedbackConfig = client.getObjectValue("ask-feedback", {
 });
 ```
 
-Initializing the Bucket Browser Provider will
+Initializing the Reflag Browser Provider will
 also initialize [automatic feedback surveys](https://github.com/reflagcom/javascript/tree/main/packages/browser-sdk#qualitative-feedback).
 
 ## Feature resolution methods
 
-The Bucket OpenFeature Provider implements the OpenFeature evaluation interface for different value types. Each method handles the resolution of flags according to the OpenFeature specification.
+The Reflag OpenFeature Provider implements the OpenFeature evaluation interface for different value types. Each method handles the resolution of flags according to the OpenFeature specification.
 
 ### Common behavior
 
@@ -83,7 +83,7 @@ Returns the feature's remote config key (also known as "variant"). Useful for mu
 client.getNumberValue("my-flag", 0);
 ```
 
-Not directly supported by Bucket. Use `getObjectValue` instead for numeric configurations.
+Not directly supported by Reflag. Use `getObjectValue` instead for numeric configurations.
 
 #### Object Resolution
 
@@ -101,7 +101,7 @@ The object resolution performs runtime type checking between the default value a
 
 ## Context
 
-To convert the OpenFeature context to a Bucket appropriate context
+To convert the OpenFeature context to a Reflag appropriate context
 pass a translation function along to the `BucketBrowserProvider` constructor
 like so:
 
@@ -112,7 +112,7 @@ import { EvaluationContext, OpenFeature } from "@openfeature/web-sdk";
 // initialize provider
 const publishableKey = "<your-bucket-publishable-key>";
 
-// this converts the context to a Bucket compatible context
+// this converts the context to a Reflag compatible context
 // adapt it to fit your need
 const contextTranslator = (context?: EvaluationContext) => {
   return {
@@ -146,7 +146,7 @@ await OpenFeature.setContext({ userId: "my-key" });
 
 ## Tracking feature usage
 
-The Bucket OpenFeature Provider supports the OpenFeature tracking API
+The Reflag OpenFeature Provider supports the OpenFeature tracking API
 natively.
 
 ```ts

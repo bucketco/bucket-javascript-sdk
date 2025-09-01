@@ -1,8 +1,8 @@
-# Bucket Node.js SDK
+# Reflag Node.js SDK
 
 Node.js, JavaScript/TypeScript client for [Reflag.com](https://reflag.com).
 
-Bucket supports feature toggling, tracking feature usage, collecting feedback on features, and [remotely configuring features](#remote-config).
+Reflag supports feature toggling, tracking feature usage, collecting feedback on features, and [remotely configuring features](#remote-config).
 
 ## Installation
 
@@ -57,15 +57,15 @@ You can also [use the HTTP API directly](https://docs.reflag.com/api/http-api)
 ## Basic usage
 
 To get started you need to obtain your secret key from the [environment settings](https://app.reflag.com/env-current/settings/app-environments)
-in Bucket.
+in Reflag.
 
 > [!CAUTION]
 > Secret keys are meant for use in server side SDKs only. Secret keys offer the users the ability to obtain
 > information that is often sensitive and thus should not be used in client-side applications.
 
-Bucket will load settings through the various environment variables automatically (see [Configuring](#configuring) below).
+Reflag will load settings through the various environment variables automatically (see [Configuring](#configuring) below).
 
-1. Find the Bucket secret key for your development environment under [environment settings](https://app.reflag.com/env-current/settings/app-environments) in Bucket.
+1. Find the Reflag secret key for your development environment under [environment settings](https://app.reflag.com/env-current/settings/app-environments) in Reflag.
 2. Set `BUCKET_SECRET_KEY` in your `.env` file
 3. Create a `bucket.ts` file containing the following:
 
@@ -83,7 +83,7 @@ export const bucketClient = new ReflagClient();
 // You must call this method prior to any calls to `getFeatures()`,
 // otherwise an empty object will be returned.
 bucketClient.initialize().then({
-  console.log("Bucket initialized!")
+  console.log("Reflag initialized!")
 })
 ```
 
@@ -142,13 +142,13 @@ const bothEnabled =
 
 ## High performance feature targeting
 
-The SDK contacts the Bucket servers when you call `initialize()`
+The SDK contacts the Reflag servers when you call `initialize()`
 and downloads the features with their targeting rules.
 These rules are then matched against the user/company information you provide
 to `getFeatures()` (or through `bindClient(..).getFeatures()`). That means the
-`getFeatures()` call does not need to contact the Bucket servers once
+`getFeatures()` call does not need to contact the Reflag servers once
 `initialize()` has completed. `ReflagClient` will continue to periodically
-download the targeting rules from the Bucket servers in the background.
+download the targeting rules from the Reflag servers in the background.
 
 ### Batch Operations
 
@@ -209,7 +209,7 @@ const featureDefs = await client.getFeatureDefinitions();
 
 ## Edge-runtimes like Cloudflare Workers
 
-To use the Bucket NodeSDK with Cloudflare workers, set the `node_compat` flag [in your wrangler file](https://developers.cloudflare.com/workers/runtime-apis/nodejs/#get-started).
+To use the Reflag NodeSDK with Cloudflare workers, set the `node_compat` flag [in your wrangler file](https://developers.cloudflare.com/workers/runtime-apis/nodejs/#get-started).
 
 Instead of using `ReflagClient`, use `EdgeClient` and make sure you call `ctx.waitUntil(bucket.flush());` before returning from your worker function.
 
@@ -242,9 +242,9 @@ export default {
 
 See [examples/cloudflare-worker](examples/cloudflare-worker/src/index.ts) for a deployable example.
 
-Bucket maintains a cached set of feature definitions in the memory of your worker which it uses to decide which features to turn on for which users/companies.
+Reflag maintains a cached set of feature definitions in the memory of your worker which it uses to decide which features to turn on for which users/companies.
 
-The SDK caches feature definitions in memory for fast performance. The first request to a new worker instance fetches definitions from Bucket's servers, while subsequent requests use the cache. When the cache expires, it's updated in the background. `ctx.waitUntil(bucket.flush())` ensures completion of the background work, so response times are not affected. This background work may increase wall-clock time for your worker, but it will not measurably increase billable CPU time on platforms like Cloudflare.
+The SDK caches feature definitions in memory for fast performance. The first request to a new worker instance fetches definitions from Reflag's servers, while subsequent requests use the cache. When the cache expires, it's updated in the background. `ctx.waitUntil(bucket.flush())` ensures completion of the background work, so response times are not affected. This background work may increase wall-clock time for your worker, but it will not measurably increase billable CPU time on platforms like Cloudflare.
 
 ## Error Handling
 
@@ -316,7 +316,7 @@ const client = new ReflagClient({
 
 Remote config is a dynamic and flexible approach to configuring feature behavior outside of your app – without needing to re-deploy it.
 
-Similar to `isEnabled`, each feature has a `config` property. This configuration is managed from within Bucket.
+Similar to `isEnabled`, each feature has a `config` property. This configuration is managed from within Reflag.
 It is managed similar to the way access to features is managed, but instead of the binary `isEnabled` you can have
 multiple configuration values which are given to different user/companies.
 
@@ -341,17 +341,17 @@ generate a `check` event, contrary to the `config` property on the object return
 
 ## Configuring
 
-The Bucket `Node.js` SDK can be configured through environment variables,
+The Reflag `Node.js` SDK can be configured through environment variables,
 a configuration file on disk or by passing options to the `ReflagClient`
 constructor. By default, the SDK searches for `bucketConfig.json` in the
 current working directory.
 
 | Option             | Type                    | Description                                                                                                                                                                                                                                                         | Env Var                                           |
 | ------------------ | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| `secretKey`        | string                  | The secret key used for authentication with Bucket's servers.                                                                                                                                                                                                       | BUCKET_SECRET_KEY                                 |
+| `secretKey`        | string                  | The secret key used for authentication with Reflag's servers.                                                                                                                                                                                                       | BUCKET_SECRET_KEY                                 |
 | `logLevel`         | string                  | The log level for the SDK (e.g., `"DEBUG"`, `"INFO"`, `"WARN"`, `"ERROR"`). Default: `INFO`                                                                                                                                                                         | BUCKET_LOG_LEVEL                                  |
 | `offline`          | boolean                 | Operate in offline mode. Default: `false`, except in tests it will default to `true` based off of the `TEST` env. var.                                                                                                                                              | BUCKET_OFFLINE                                    |
-| `apiBaseUrl`       | string                  | The base API URL for the Bucket servers.                                                                                                                                                                                                                            | BUCKET_API_BASE_URL                               |
+| `apiBaseUrl`       | string                  | The base API URL for the Reflag servers.                                                                                                                                                                                                                            | BUCKET_API_BASE_URL                               |
 | `featureOverrides` | Record<string, boolean> | An object specifying feature overrides for testing or local development. See [examples/express/app.test.ts](https://github.com/reflagcom/javascript/tree/main/packages/node-sdk/examples/express/app.test.ts) for how to use `featureOverrides` in tests. | BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED |
 | `configFile`       | string                  | Load this config file from disk. Default: `bucketConfig.json`                                                                                                                                                                                                       | BUCKET_CONFIG_FILE                                |
 
@@ -392,7 +392,7 @@ order of importance:
 
 ## Type safe flags
 
-To get type checked flags, install the Bucket CLI:
+To get type checked flags, install the Reflag CLI:
 
 ```
 npm i --save-dev @reflag/cli
@@ -405,7 +405,7 @@ npx bucket features types
 ```
 
 This will generate a `bucket.d.ts` containing all your features.
-Any feature look ups will now be checked against the features that exist in Bucket.
+Any feature look ups will now be checked against the features that exist in Reflag.
 
 Here's an example of a failed type check:
 
@@ -415,7 +415,7 @@ import { ReflagClient } from "@reflag/node-sdk";
 export const bucketClient = new ReflagClient();
 
 bucketClient.initialize().then(() => {
-  console.log("Bucket initialized!");
+  console.log("Reflag initialized!");
 
   // TypeScript will catch this error: "invalid-feature" doesn't exist
   bucketClient.getFeature("invalid-feature");
@@ -548,7 +548,7 @@ const client = new ReflagClient({
 
 ## Remote Feature Evaluation
 
-In addition to local feature evaluation, Bucket supports remote evaluation using stored context. This is useful when you want to evaluate features using user/company attributes that were previously sent to Bucket:
+In addition to local feature evaluation, Reflag supports remote evaluation using stored context. This is useful when you want to evaluate features using user/company attributes that were previously sent to Reflag:
 
 ```typescript
 // First, update user and company attributes
@@ -590,13 +590,13 @@ const featuresWithContext = await client.getFeaturesRemote(
 
 Remote evaluation is particularly useful when:
 
-- You want to use the most up-to-date user/company attributes stored in Bucket
+- You want to use the most up-to-date user/company attributes stored in Reflag
 - You don't want to pass all context attributes with every evaluation
 - You need to ensure consistent feature evaluation across different services
 
 ## Using with Express
 
-A popular way to integrate the Bucket Node.js SDK is through an express middleware.
+A popular way to integrate the Reflag Node.js SDK is through an express middleware.
 
 ```typescript
 import bucket from "./bucket";
@@ -660,10 +660,10 @@ See [examples/express/app.ts](https://github.com/reflagcom/javascript/tree/main/
 ## Remote flag evaluation with stored context
 
 If you don't want to provide context each time when evaluating flags but
-rather you would like to utilize the attributes you sent to Bucket previously
+rather you would like to utilize the attributes you sent to Reflag previously
 (by calling `updateCompany` and `updateUser`) you can do so by calling `getFeaturesRemote`
 (or `getFeatureRemote` for a specific feature) with providing just `userId` and `companyId`.
-These methods will call Bucket's servers and flags will be evaluated remotely
+These methods will call Reflag's servers and flags will be evaluated remotely
 using the stored attributes.
 
 ```typescript
@@ -697,7 +697,7 @@ const features = await client.getFeaturesRemote("acme_inc", "john_doe");
 There are use cases in which you not want to be sending `user`, `company` and
 `track` events to [Reflag.com](https://reflag.com). These are usually cases where you could be impersonating
 another user in the system and do not want to interfere with the data being
-collected by Bucket.
+collected by Reflag.
 
 To disable tracking, bind the client using `bindClient()` as follows:
 
@@ -705,9 +705,9 @@ To disable tracking, bind the client using `bindClient()` as follows:
 // binds the client to a given user and company and set `enableTracking` to `false`.
 const boundClient = client.bindClient({ user, company, enableTracking: false });
 
-boundClient.track("some event"); // this will not actually send the event to Bucket.
+boundClient.track("some event"); // this will not actually send the event to Reflag.
 
-// the following code will not update the `user` nor `company` in Bucket and will
+// the following code will not update the `user` nor `company` in Reflag and will
 // not send `track` events either.
 const { isEnabled, track } = boundClient.getFeature("user-menu");
 if (isEnabled) {
@@ -727,7 +727,7 @@ these functions.
 ## Flushing
 
 ReflagClient employs a batching technique to minimize the number of calls that are sent to
-Bucket's servers.
+Reflag's servers.
 
 By default, the SDK automatically subscribes to process exit signals and attempts to flush
 any pending events. This behavior is controlled by the `flushOnExit` option in the client configuration:
@@ -742,15 +742,15 @@ const client = new ReflagClient({
 
 ## Tracking custom events and setting custom attributes
 
-Tracking allows events and updating user/company attributes in Bucket.
-For example, if a customer changes their plan, you'll want Bucket to know about it,
-in order to continue to provide up-do-date targeting information in the Bucket interface.
+Tracking allows events and updating user/company attributes in Reflag.
+For example, if a customer changes their plan, you'll want Reflag to know about it,
+in order to continue to provide up-do-date targeting information in the Reflag interface.
 
 The following example shows how to register a new user, associate it with a company
 and finally update the plan they are on.
 
 ```typescript
-// registers the user with Bucket using the provided unique ID, and
+// registers the user with Reflag using the provided unique ID, and
 // providing a set of custom attributes (can be anything)
 client.updateUser("user_id", {
   attributes: { longTimeUser: true, payingCustomer: false },
@@ -772,7 +772,7 @@ const boundClient = client.bindClient({
 boundClient.track("huddle", { attributes: { voice: true } });
 ```
 
-Some attributes are used by Bucket to improve the UI, and are recommended
+Some attributes are used by Reflag to improve the UI, and are recommended
 to provide for easier navigation:
 
 - `name` -- display name for `user`/`company`,
@@ -785,7 +785,7 @@ integers or booleans.
 ## Managing `Last seen`
 
 By default `updateUser`/`updateCompany` calls automatically update the given
-user/company `Last seen` property on Bucket servers.
+user/company `Last seen` property on Reflag servers.
 
 You can control if `Last seen` should be updated when the events are sent by setting
 `meta.active = false`. This is often useful if you
@@ -806,17 +806,17 @@ client.updateCompany("acme_inc", {
 });
 ```
 
-`bindClient()` updates attributes on the Bucket servers but does not automatically
+`bindClient()` updates attributes on the Reflag servers but does not automatically
 update `Last seen`.
 
 ## Zero PII
 
-The Bucket SDK doesn't collect any metadata and HTTP IP addresses are _not_ being
+The Reflag SDK doesn't collect any metadata and HTTP IP addresses are _not_ being
 stored. For tracking individual users, we recommend using something like database
 ID as userId, as it's unique and doesn't include any PII (personal identifiable
 information). If, however, you're using e.g. email address as userId, but prefer
-not to send any PII to Bucket, you can hash the sensitive data before sending
-it to Bucket:
+not to send any PII to Reflag, you can hash the sensitive data before sending
+it to Reflag:
 
 ```typescript
 import { sha256 } from 'crypto-hash';

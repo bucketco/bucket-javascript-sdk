@@ -89,7 +89,7 @@ export interface Feature<
     | EmptyFeatureRemoteConfig;
 
   /**
-   * Track feature usage in Bucket.
+   * Track feature usage in Reflag.
    */
   track(): Promise<Response | undefined> | undefined;
   /**

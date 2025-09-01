@@ -1,7 +1,7 @@
 export function getCursorRules() {
   return `
 ---
-description: Guidelines for implementing flagging using Bucket feature management service
+description: Guidelines for implementing flagging using Reflag feature management service
 globs: "**/*.ts, **/*.tsx, **/*.js, **/*.jsx"
 ---
 
@@ -14,20 +14,20 @@ export function getCopilotInstructions() {
 }
 
 const rules = /* markdown */ `
-# Bucket Feature Management Service for LLMs
+# Reflag Feature Management Service for LLMs
 
-Bucket is a comprehensive feature management service offering flags, user feedback collection, adoption tracking, and remote configuration for your applications across various JavaScript frameworks, particularly React, Next.js, Node.js, vanilla browser, CLI, and OpenFeature environments. Follow these best practices for flagging.
+Reflag is a comprehensive feature management service offering flags, user feedback collection, adoption tracking, and remote configuration for your applications across various JavaScript frameworks, particularly React, Next.js, Node.js, vanilla browser, CLI, and OpenFeature environments. Follow these best practices for flagging.
 
 ## Follow Official Documentation
 
-- Refer to [Bucket's official documentation](mdc:https:/docs.bucket.co) for implementation details.
-- Adhere to Bucket's recommended patterns for each framework.
+- Refer to [Reflag's official documentation](mdc:https:/docs.bucket.co) for implementation details.
+- Adhere to Reflag's recommended patterns for each framework.
 
-## Bucket SDK Usage
+## Reflag SDK Usage
 
 - Configure \`BucketProvider\` or \`ReflagClient\` properly at application entry points.
-- Leverage Bucket CLI for generating type-safe feature definitions.
-- Write clean, type-safe code when applying Bucket flags.
+- Leverage Reflag CLI for generating type-safe feature definitions.
+- Write clean, type-safe code when applying Reflag flags.
 - Follow established patterns in the project.
 
 ## Feature Flag Implementation
@@ -48,7 +48,7 @@ Bucket is a comprehensive feature management service offering flags, user feedba
 
 ## Analytics and Feedback
 
-- Track feature usage with Bucket analytics.
+- Track feature usage with Reflag analytics.
 - Collect user feedback on features.
 - Monitor feature adoption and health.
 
@@ -56,11 +56,11 @@ Bucket is a comprehensive feature management service offering flags, user feedba
 
 ### Targeting Rules
 
-Targeting rules are entities used in Bucket to describe the target audience of a given feature. The target audience refers to the users who can interact with the feature within your application. Additionally, each targeting rule contains a value that is used for the target audience.
+Targeting rules are entities used in Reflag to describe the target audience of a given feature. The target audience refers to the users who can interact with the feature within your application. Additionally, each targeting rule contains a value that is used for the target audience.
 
 ### Feature Stages
 
-Release stages in Bucket allow setting up app-wide feature access targeting rules. Each release stage defines targeting rules for each available environment. Later, during the development of new features, you can apply all those rules automatically by selecting an available release stage.
+Release stages in Reflag allow setting up app-wide feature access targeting rules. Each release stage defines targeting rules for each available environment. Later, during the development of new features, you can apply all those rules automatically by selecting an available release stage.
 
 Release stages are useful tools when a standard release workflow is used in your organization.
 
@@ -73,7 +73,7 @@ Predefined stages:
 
 ### Segments
 
-A segment entity in Bucket is a dynamic collection of companies. Segments' dynamic nature results from the fact that they use filters to evaluate which companies are included in them.
+A segment entity in Reflag is a dynamic collection of companies. Segments' dynamic nature results from the fact that they use filters to evaluate which companies are included in them.
 
 #### Segment filters can be constructed using any combination of the following rules:
 
@@ -84,7 +84,7 @@ A segment entity in Bucket is a dynamic collection of companies. Segments' dynam
 
 ### Integrations
 
-Connect Bucket with your existing tools:
+Connect Reflag with your existing tools:
 
 - Linear
 - Datadog
@@ -203,12 +203,12 @@ function StartHuddleButton() {
 ### Core React Hooks
 
 - \`useFeature()\` - Access feature status, config, and tracking
-- \`useTrack()\` - Send custom events to Bucket
+- \`useTrack()\` - Send custom events to Reflag
 - \`useRequestFeedback()\` - Open feedback dialog for a feature
 - \`useSendFeedback()\` - Programmatically send feedback
 - \`useUpdateUser()\` / \`useUpdateCompany()\` - Update user/company data
 - \`useUpdateOtherContext()\` - Update session-only context data
-- \`useClient()\` - Access the underlying Bucket client
+- \`useClient()\` - Access the underlying Reflag client
 
 ## Node.js SDK Implementation
 

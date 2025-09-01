@@ -1,6 +1,6 @@
-# Bucket Node.js OpenFeature Provider
+# Reflag Node.js OpenFeature Provider
 
-The official OpenFeature Node.js provider for [Bucket](https://bucket.co) feature management service.
+The official OpenFeature Node.js provider for [Reflag](https://bucket.co) feature management service.
 
 ## Installation
 
@@ -20,8 +20,8 @@ npm install @openfeature/server-sdk @reflag/node-sdk
 
 ## Usage
 
-The provider uses the [Bucket Node.js SDK](https://docs.reflag.com/quickstart/supported-languages-frameworks/node.js-sdk).
-The available options can be found in the [Bucket Node.js SDK](https://github.com/reflagcom/javascript/tree/main/packages/node-sdk#initialization-options).
+The provider uses the [Reflag Node.js SDK](https://docs.reflag.com/quickstart/supported-languages-frameworks/node.js-sdk).
+The available options can be found in the [Reflag Node.js SDK](https://github.com/reflagcom/javascript/tree/main/packages/node-sdk#initialization-options).
 
 ### Example using the default configuration
 
@@ -55,7 +55,7 @@ const enterpriseFeatureEnabled = await client.getBooleanValue(
 
 ## Feature resolution methods
 
-The Bucket OpenFeature Provider implements the OpenFeature evaluation interface for different value types. Each method handles the resolution of flags according to the OpenFeature specification.
+The Reflag OpenFeature Provider implements the OpenFeature evaluation interface for different value types. Each method handles the resolution of flags according to the OpenFeature specification.
 
 ### Common behavior
 
@@ -90,7 +90,7 @@ Returns the feature's remote config key (also known as "variant"). Useful for mu
 client.getNumberValue("my-flag", 0);
 ```
 
-Not directly supported by Bucket. Use `getObjectValue` instead for numeric configurations.
+Not directly supported by Reflag. Use `getObjectValue` instead for numeric configurations.
 
 #### Object Resolution
 
@@ -108,7 +108,7 @@ The object resolution performs runtime type checking between the default value a
 
 ## Translating Evaluation Context
 
-Bucket uses a context object of the following shape:
+Reflag uses a context object of the following shape:
 
 ```ts
 /**
@@ -139,9 +139,9 @@ export type BucketContext = {
 };
 ```
 
-To use the Bucket Node.js OpenFeature provider, you must convert your OpenFeature contexts to Bucket contexts.
+To use the Reflag Node.js OpenFeature provider, you must convert your OpenFeature contexts to Reflag contexts.
 You can achieve this by supplying a context translation function which takes the Open Feature context and returns
-a corresponding Bucket Context:
+a corresponding Reflag Context:
 
 ```ts
 import { BucketNodeProvider } from "@openfeature/bucket-node-provider";
@@ -171,7 +171,7 @@ OpenFeature.setProvider(provider);
 
 ## Tracking feature adoption
 
-The Bucket OpenFeature provider supports the OpenFeature Tracking API.
+The Reflag OpenFeature provider supports the OpenFeature Tracking API.
 It's straight forward to start sending tracking events through OpenFeature.
 
 Simply call the "track" method on the OpenFeature client:

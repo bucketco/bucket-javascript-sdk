@@ -170,7 +170,7 @@ export interface Feature<
     | EmptyFeatureRemoteConfig;
 
   /**
-   * Track feature usage in Bucket.
+   * Track feature usage in Reflag.
    */
   track(): Promise<void>;
 }
@@ -567,7 +567,7 @@ export type CacheStrategy = "periodically-update" | "in-request";
  **/
 export type ClientOptions = {
   /**
-   * The secret key used to authenticate with the Bucket API.
+   * The secret key used to authenticate with the Reflag API.
    **/
   secretKey?: string;
 
@@ -639,7 +639,7 @@ export type ClientOptions = {
   featureOverrides?: string | ((context: Context) => FeatureOverrides);
 
   /**
-   * In offline mode, no data is sent or fetched from the the Bucket API.
+   * In offline mode, no data is sent or fetched from the the Reflag API.
    * This is useful for testing or development.
    */
   offline?: boolean;

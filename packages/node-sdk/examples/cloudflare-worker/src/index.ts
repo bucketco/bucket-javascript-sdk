@@ -1,5 +1,5 @@
 /**
- * This is a simple example of how to use the Bucket SDK in a Cloudflare Worker.
+ * This is a simple example of how to use the Reflag SDK in a Cloudflare Worker.
  * It demonstrates how to initialize the client and evaluate flags.
  * It also shows how to flush the client and wait for any in-flight requests to complete.
  *

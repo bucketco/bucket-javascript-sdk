@@ -145,14 +145,14 @@ export const mcpAction = async (options: {
     configPathType,
   );
 
-  // Check for existing Bucket servers
+  // Check for existing Reflag servers
   const existingBucketEntries = Object.keys(serversConfig).filter((key) =>
     /bucket/i.test(key),
   );
 
   // Prompt for Add/Update
   let targetEntryKey: string;
-  const defaultNewKey = `Bucket - ${selectedApp.name}`;
+  const defaultNewKey = `Reflag - ${selectedApp.name}`;
 
   if (existingBucketEntries.length === 0) {
     targetEntryKey = defaultNewKey;
@@ -227,7 +227,7 @@ export const mcpAction = async (options: {
 export function registerMcpCommand(cli: Command) {
   cli
     .command("mcp")
-    .description("Configure Bucket's remote MCP server for your AI assistant.")
+    .description("Configure Reflag's remote MCP server for your AI assistant.")
     .addOption(appIdOption)
     .addOption(editorOption)
     .addOption(configScopeOption)

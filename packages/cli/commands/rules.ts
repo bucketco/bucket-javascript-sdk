@@ -111,7 +111,7 @@ ${chalk.grey("These rules should be committed to your project's version control.
 export function registerRulesCommand(cli: Command) {
   cli
     .command("rules")
-    .description("Add Bucket LLM rules to your project.")
+    .description("Add Reflag LLM rules to your project.")
     .addOption(rulesFormatOption)
     .addOption(yesOption)
     .action(rulesAction);

@@ -102,7 +102,7 @@ type BulkEvent =
  * The SDK client.
  *
  * @remarks
- * This is the main class for interacting with Bucket.
+ * This is the main class for interacting with Reflag.
  * It is used to evaluate flags, update user and company contexts, and track events.
  *
  * @example
@@ -150,7 +150,7 @@ export class ReflagClient {
       await this.featuresCache.refresh();
     }
     this.logger.info(
-      "Bucket initialized in " +
+      "Reflag initialized in " +
         Math.round(Date.now() - start) +
         "ms" +
         (this._config.offline ? " (offline mode)" : ""),
@@ -452,7 +452,7 @@ export class ReflagClient {
   }
 
   /**
-   * Updates the associated user in Bucket.
+   * Updates the associated user in Reflag.
    *
    * @param userId - The userId of the user to update.
    * @param options - The options for the user.
@@ -488,7 +488,7 @@ export class ReflagClient {
   }
 
   /**
-   * Updates the associated company in Bucket.
+   * Updates the associated company in Reflag.
    *
    * @param companyId - The companyId of the company to update.
    * @param options - The options for the company.
@@ -533,7 +533,7 @@ export class ReflagClient {
   }
 
   /**
-   * Tracks an event in Bucket.
+   * Tracks an event in Reflag.
 
    * @param options.companyId - Optional company ID for the event (optional).
    *
@@ -645,7 +645,7 @@ export class ReflagClient {
 
   /**
    * Gets the evaluated feature for the current context which includes the user, company, and custom context.
-   * Using the `isEnabled` property sends a `check` event to Bucket.
+   * Using the `isEnabled` property sends a `check` event to Reflag.
    *
    * @param key - The key of the feature to get.
    * @returns The evaluated feature.
@@ -801,7 +801,7 @@ export class ReflagClient {
   }
 
   /**
-   * Sends a batch of events to the Bucket API.
+   * Sends a batch of events to the Reflag API.
    *
    * @param events - The events to send.
    *
@@ -820,7 +820,7 @@ export class ReflagClient {
   }
 
   /**
-   * Sends a feature event to the Bucket API.
+   * Sends a feature event to the Reflag API.
    *
    * Feature events are used to track the evaluation of feature targeting rules.
    * "check" events are sent when a feature's `isEnabled` property is checked.
@@ -921,7 +921,7 @@ export class ReflagClient {
   }
 
   /**
-   * Updates the context in Bucket (if needed).
+   * Updates the context in Reflag (if needed).
    * This method should be used before requesting flags or binding a client.
    *
    * @param options - The options for the context.
@@ -1402,7 +1402,7 @@ export class BoundBucketClient {
 
   /**
    * Get a specific feature for the user/company/other context bound to this client.
-   * Using the `isEnabled` property sends a `check` event to Bucket.
+   * Using the `isEnabled` property sends a `check` event to Reflag.
    *
    * @param key - The key of the feature to get.
    *
@@ -1442,7 +1442,7 @@ export class BoundBucketClient {
   }
 
   /**
-   * Track an event in Bucket.
+   * Track an event in Reflag.
    *
    * @param event - The event to track.
    * @param options - The options for the event.

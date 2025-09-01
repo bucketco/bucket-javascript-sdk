@@ -15,7 +15,7 @@ export async function initOpenFeature() {
   initialized = true;
 
   if (!publishableKey) {
-    console.error("No publishable key set for Bucket");
+    console.error("No publishable key set for Reflag");
     return;
   }
   bucketProvider = new BucketBrowserSDKProvider({
