@@ -2,7 +2,7 @@ import { mount } from "@vue/test-utils";
 import { describe, expect, test, vi } from "vitest";
 import { defineComponent, h, nextTick } from "vue";
 
-import { BucketProvider, useClient } from "../src";
+import { ReflagProvider, useClient } from "../src";
 
 const fakeClient = {
   initialize: vi.fn().mockResolvedValue(undefined),
@@ -14,12 +14,12 @@ function getProvider() {
   return {
     props: {
       publishableKey: "key",
-      newBucketClient: () => fakeClient,
+      newReflagClient: () => fakeClient,
     },
   };
 }
 
-describe("BucketProvider", () => {
+describe("ReflagProvider", () => {
   test("provides the client", async () => {
     const Child = defineComponent({
       setup() {
@@ -29,7 +29,7 @@ describe("BucketProvider", () => {
       template: "<div></div>",
     });
 
-    const wrapper = mount(BucketProvider, {
+    const wrapper = mount(ReflagProvider, {
       ...getProvider(),
       slots: { default: () => h(Child) },
     });

@@ -8,9 +8,9 @@ import {
   UserContext,
 } from "@reflag/browser-sdk";
 
-import BucketProvider from "./BucketProvider.vue";
+import ReflagProvider from "./ReflagProvider.vue";
 import {
-  BucketProps,
+  ReflagProps,
   EmptyFeatureRemoteConfig,
   Feature,
   FeatureType,
@@ -27,9 +27,9 @@ export {
   useUpdateOtherContext,
   useUpdateUser,
 } from "./hooks";
-export type { BucketProps, RequestFeatureFeedbackOptions } from "./types";
+export type { ReflagProps, RequestFeatureFeedbackOptions } from "./types";
 
-export { BucketProvider };
+export { ReflagProvider };
 
 export type {
   CheckEvent,
@@ -43,7 +43,7 @@ export type {
 };
 
 export default {
-  install(app: App, _options?: BucketProps) {
-    app.component("BucketProvider", BucketProvider);
+  install(app: App, _options?: ReflagProps) {
+    app.component("ReflagProvider", ReflagProvider);
   },
 };

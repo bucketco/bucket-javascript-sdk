@@ -88,7 +88,7 @@ module.exports = [
               "^react",
               "^(?!@reflag)@?\\w",
             ],
-            // Shared bucket packages.
+            // Shared reflag packages.
             ["^@reflag/(.*)$"],
             // Path aliased root, parent imports, and just `..`.
             ["^@/", "^\\.\\.(?!/?$)", "^\\.\\./?$"],

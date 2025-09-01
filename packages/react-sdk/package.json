@@ -24,12 +24,12 @@
   "files": [
     "dist"
   ],
-  "main": "./dist/bucket-react-sdk.umd.js",
+  "main": "./dist/reflag-react-sdk.umd.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/bucket-react-sdk.mjs",
-      "require": "./dist/bucket-react-sdk.umd.js",
+      "import": "./dist/reflag-react-sdk.mjs",
+      "require": "./dist/reflag-react-sdk.umd.js",
       "types": "./dist/index.d.ts"
     }
   },

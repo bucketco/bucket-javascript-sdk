@@ -14,26 +14,26 @@
 import { EdgeClient } from "../../../";
 
 // set the BUCKET_SECRET_KEY environment variable or pass the secret key in the constructor
-const bucket = new EdgeClient();
+const reflag = new EdgeClient();
 
 export default {
   async fetch(request, _env, ctx): Promise<Response> {
     // initialize the client and wait for it to complete
     // this is not required for the edge client, but is included for completeness
-    await bucket.initialize();
+    await reflag.initialize();
 
     const url = new URL(request.url);
     const userId = url.searchParams.get("user.id");
     const companyId = url.searchParams.get("company.id");
 
-    const f = bucket.getFeatures({
+    const f = reflag.getFeatures({
       user: { id: userId ?? undefined },
       company: { id: companyId ?? undefined },
     });
 
     // ensure all events are flushed and any requests to refresh the feature cache
     // have completed after the response is sent
-    ctx.waitUntil(bucket.flush());
+    ctx.waitUntil(reflag.flush());
 
     return new Response(
       `Features for user ${userId} and company ${companyId}: ${JSON.stringify(f, null, 2)}`,

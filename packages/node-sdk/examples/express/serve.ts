@@ -1,11 +1,11 @@
 import "dotenv/config";
 
-import bucket from "./bucket";
+import reflag from "./reflag";
 import app from "./app";
 
 // Initialize Reflag SDK before starting the server,
 // so that features are available when the server starts.
-bucket.initialize().then(() => {
+reflag.initialize().then(() => {
   // Start listening for requests only after Reflag is initialized,
   // which guarantees that features are available.
   app.listen(process.env.PORT ?? 3000, () => {

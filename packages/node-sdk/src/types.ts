@@ -634,7 +634,7 @@ export type ClientOptions = {
    * If a function is specified, the function will be called with the context
    * and should return a record of feature keys and boolean or object values.
    *
-   * Defaults to "bucketFeatures.json".
+   * Defaults to "reflagFeatures.json".
    **/
   featureOverrides?: string | ((context: Context) => FeatureOverrides);
 
@@ -651,7 +651,7 @@ export type ClientOptions = {
 
   /**
    * The path to the config file. If supplied, the config file will be loaded.
-   * Defaults to `bucket.json` when NODE_ENV is not production. Can also be
+   * Defaults to `reflag.json` when NODE_ENV is not production. Can also be
    * set through the environment variable BUCKET_CONFIG_FILE.
    */
   configFile?: string;

@@ -5,7 +5,7 @@ import chalk from "chalk";
 export class MissingAppIdError extends Error {
   constructor() {
     super(
-      "App ID is required. Please provide it with --appId or in the config file. Use `bucket apps list` to see available apps.",
+      "App ID is required. Please provide it with --appId or in the config file. Use `reflag apps list` to see available apps.",
     );
     this.name = "MissingAppIdError";
   }

@@ -12,7 +12,7 @@ import canonicalJSON from "canonical-json";
 
 import {
   ReflagClient,
-  BucketContext,
+  ReflagContext,
   CheckEvent,
   CompanyContext,
   InitOptions,
@@ -139,9 +139,9 @@ const ProviderContext = createContext<ProviderContextType>({
 });
 
 /**
- * Props for the BucketProvider.
+ * Props for the ReflagProvider.
  */
-export type BucketProps = BucketContext &
+export type ReflagProps = ReflagContext &
   InitOptions & {
     /**
      * Children to be rendered.
@@ -163,7 +163,7 @@ export type BucketProps = BucketContext &
      *
      * @internal
      */
-    newBucketClient?: (
+    newReflagClient?: (
       ...args: ConstructorParameters<typeof ReflagClient>
     ) => ReflagClient;
   };
@@ -171,15 +171,15 @@ export type BucketProps = BucketContext &
 /**
  * Provider for the ReflagClient.
  */
-export function BucketProvider({
+export function ReflagProvider({
   children,
   user,
   company,
   otherContext,
   loadingComponent,
-  newBucketClient = (...args) => new ReflagClient(...args),
+  newReflagClient = (...args) => new ReflagClient(...args),
   ...config
-}: BucketProps) {
+}: ReflagProps) {
   const [featuresLoading, setFeaturesLoading] = useState(true);
   const [rawFeatures, setRawFeatures] = useState<RawFeatures>({});
 
@@ -204,7 +204,7 @@ export function BucketProvider({
 
     setFeaturesLoading(true);
 
-    const client = newBucketClient({
+    const client = newReflagClient({
       ...config,
       user,
       company,
@@ -323,11 +323,11 @@ export function useTrack() {
  * Returns a function to open up the feedback form
  * Note: When calling `useRequestFeedback`, user/company must already be set.
  *
- * See [link](../../browser-sdk/FEEDBACK.md#bucketclientrequestfeedback-options) for more information
+ * See [link](../../browser-sdk/FEEDBACK.md#reflagclientrequestfeedback-options) for more information
  *
  * ```ts
  * const requestFeedback = useRequestFeedback();
- * bucket.requestFeedback({
+ * reflag.requestFeedback({
  *   featureKey: "file-uploads",
  *   title: "How satisfied are you with file uploads?",
  * });
@@ -419,9 +419,9 @@ export function useUpdateOtherContext() {
 }
 
 /**
- * Returns the current `ReflagClient` used by the `BucketProvider`.
+ * Returns the current `ReflagClient` used by the `ReflagProvider`.
  *
- * This is useful if you need to access the `ReflagClient` outside of the `BucketProvider`.
+ * This is useful if you need to access the `ReflagClient` outside of the `ReflagProvider`.
  *
  * ```ts
  * const client = useClient();
@@ -436,7 +436,7 @@ export function useClient() {
   const { client, provider } = useContext<ProviderContextType>(ProviderContext);
   if (!provider) {
     throw new Error(
-      "BucketProvider is missing. Please ensure your component is wrapped with a BucketProvider.",
+      "ReflagProvider is missing. Please ensure your component is wrapped with a ReflagProvider.",
     );
   }
 

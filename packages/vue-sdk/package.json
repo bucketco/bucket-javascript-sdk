@@ -24,12 +24,12 @@
   "files": [
     "dist"
   ],
-  "main": "./dist/bucket-vue-sdk.umd.js",
+  "main": "./dist/reflag-vue-sdk.umd.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/bucket-vue-sdk.mjs",
-      "require": "./dist/bucket-vue-sdk.umd.js",
+      "import": "./dist/reflag-vue-sdk.mjs",
+      "require": "./dist/reflag-vue-sdk.umd.js",
       "types": "./dist/index.d.ts"
     }
   },

@@ -146,21 +146,21 @@ export const mcpAction = async (options: {
   );
 
   // Check for existing Reflag servers
-  const existingBucketEntries = Object.keys(serversConfig).filter((key) =>
-    /bucket/i.test(key),
+  const existingReflagEntries = Object.keys(serversConfig).filter((key) =>
+    /reflag/i.test(key),
   );
 
   // Prompt for Add/Update
   let targetEntryKey: string;
   const defaultNewKey = `Reflag - ${selectedApp.name}`;
 
-  if (existingBucketEntries.length === 0) {
+  if (existingReflagEntries.length === 0) {
     targetEntryKey = defaultNewKey;
     console.log(`Adding new MCP server entry: ${chalk.cyan(targetEntryKey)}`);
   } else {
     const choices = [
       { name: `Add: ${defaultNewKey}`, value: "add_new" },
-      ...existingBucketEntries.map((key) => ({
+      ...existingReflagEntries.map((key) => ({
         name: `Update: ${key}`,
         value: key,
       })),

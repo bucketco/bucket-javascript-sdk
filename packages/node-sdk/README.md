@@ -67,7 +67,7 @@ Reflag will load settings through the various environment variables automaticall
 
 1. Find the Reflag secret key for your development environment under [environment settings](https://app.reflag.com/env-current/settings/app-environments) in Reflag.
 2. Set `BUCKET_SECRET_KEY` in your `.env` file
-3. Create a `bucket.ts` file containing the following:
+3. Create a `reflag.ts` file containing the following:
 
 ```typescript
 import { ReflagClient } from "@reflag/node-sdk";
@@ -77,12 +77,12 @@ import { ReflagClient } from "@reflag/node-sdk";
 //
 // We recommend that only one global instance of `client` should be created
 // to avoid multiple round-trips to our servers.
-export const bucketClient = new ReflagClient();
+export const reflagClient = new ReflagClient();
 
 // Initialize the client and begin fetching feature targeting definitions.
 // You must call this method prior to any calls to `getFeatures()`,
 // otherwise an empty object will be returned.
-bucketClient.initialize().then({
+reflagClient.initialize().then({
   console.log("Reflag initialized!")
 })
 ```
@@ -95,7 +95,7 @@ status to indicate whether the feature is targeted for this user/company:
 
 ```typescript
 // configure the client
-const boundClient = bucketClient.bindClient({
+const boundClient = reflagClient.bindClient({
   user: {
     id: "john_doe",
     name: "John Doe",
@@ -211,27 +211,27 @@ const featureDefs = await client.getFeatureDefinitions();
 
 To use the Reflag NodeSDK with Cloudflare workers, set the `node_compat` flag [in your wrangler file](https://developers.cloudflare.com/workers/runtime-apis/nodejs/#get-started).
 
-Instead of using `ReflagClient`, use `EdgeClient` and make sure you call `ctx.waitUntil(bucket.flush());` before returning from your worker function.
+Instead of using `ReflagClient`, use `EdgeClient` and make sure you call `ctx.waitUntil(reflag.flush());` before returning from your worker function.
 
 ```typescript
 import { EdgeClient } from "@reflag/node-sdk";
 
 // set the BUCKET_SECRET_KEY environment variable or pass the secret key in the constructor
-const bucket = new EdgeClient();
+const reflag = new EdgeClient();
 
 export default {
   async fetch(request, _env, ctx): Promise<Response> {
     // initialize the client and wait for it to complete
     // if the client was initialized on a previous invocation, this is a no-op.
-    await bucket.initialize();
-    const features = bucket.getFeatures({
+    await reflag.initialize();
+    const features = reflag.getFeatures({
       user: { id: "userId" },
       company: { id: "companyId" },
     });
 
     // ensure all events are flushed and any requests to refresh the feature cache
     // have completed after the response is sent
-    ctx.waitUntil(bucket.flush());
+    ctx.waitUntil(reflag.flush());
 
     return new Response(
       `Features for user ${userId} and company ${companyId}: ${JSON.stringify(features, null, 2)}`,
@@ -244,7 +244,7 @@ See [examples/cloudflare-worker](examples/cloudflare-worker/src/index.ts) for a 
 
 Reflag maintains a cached set of feature definitions in the memory of your worker which it uses to decide which features to turn on for which users/companies.
 
-The SDK caches feature definitions in memory for fast performance. The first request to a new worker instance fetches definitions from Reflag's servers, while subsequent requests use the cache. When the cache expires, it's updated in the background. `ctx.waitUntil(bucket.flush())` ensures completion of the background work, so response times are not affected. This background work may increase wall-clock time for your worker, but it will not measurably increase billable CPU time on platforms like Cloudflare.
+The SDK caches feature definitions in memory for fast performance. The first request to a new worker instance fetches definitions from Reflag's servers, while subsequent requests use the cache. When the cache expires, it's updated in the background. `ctx.waitUntil(reflag.flush())` ensures completion of the background work, so response times are not affected. This background work may increase wall-clock time for your worker, but it will not measurably increase billable CPU time on platforms like Cloudflare.
 
 ## Error Handling
 
@@ -321,7 +321,7 @@ It is managed similar to the way access to features is managed, but instead of t
 multiple configuration values which are given to different user/companies.
 
 ```ts
-const features = bucketClient.getFeatures();
+const features = reflagClient.getFeatures();
 // {
 //   huddle: {
 //     isEnabled: true,
@@ -343,7 +343,7 @@ generate a `check` event, contrary to the `config` property on the object return
 
 The Reflag `Node.js` SDK can be configured through environment variables,
 a configuration file on disk or by passing options to the `ReflagClient`
-constructor. By default, the SDK searches for `bucketConfig.json` in the
+constructor. By default, the SDK searches for `reflagConfig.json` in the
 current working directory.
 
 | Option             | Type                    | Description                                                                                                                                                                                                                                                         | Env Var                                           |
@@ -353,11 +353,11 @@ current working directory.
 | `offline`          | boolean                 | Operate in offline mode. Default: `false`, except in tests it will default to `true` based off of the `TEST` env. var.                                                                                                                                              | BUCKET_OFFLINE                                    |
 | `apiBaseUrl`       | string                  | The base API URL for the Reflag servers.                                                                                                                                                                                                                            | BUCKET_API_BASE_URL                               |
 | `featureOverrides` | Record<string, boolean> | An object specifying feature overrides for testing or local development. See [examples/express/app.test.ts](https://github.com/reflagcom/javascript/tree/main/packages/node-sdk/examples/express/app.test.ts) for how to use `featureOverrides` in tests. | BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED |
-| `configFile`       | string                  | Load this config file from disk. Default: `bucketConfig.json`                                                                                                                                                                                                       | BUCKET_CONFIG_FILE                                |
+| `configFile`       | string                  | Load this config file from disk. Default: `reflagConfig.json`                                                                                                                                                                                                       | BUCKET_CONFIG_FILE                                |
 
 > [!NOTE] > `BUCKET_FEATURES_ENABLED` and `BUCKET_FEATURES_DISABLED` are comma separated lists of features which will be enabled or disabled respectively.
 
-`bucketConfig.json` example:
+`reflagConfig.json` example:
 
 ```json
 {
@@ -381,7 +381,7 @@ current working directory.
 }
 ```
 
-When using a `bucketConfig.json` for local development, make sure you add it to your
+When using a `reflagConfig.json` for local development, make sure you add it to your
 `.gitignore` file. You can also set these options directly in the `ReflagClient`
 constructor. The precedence for configuration options is as follows, listed in the
 order of importance:
@@ -401,10 +401,10 @@ npm i --save-dev @reflag/cli
 then generate the types:
 
 ```
-npx bucket features types
+npx reflag features types
 ```
 
-This will generate a `bucket.d.ts` containing all your features.
+This will generate a `reflag.d.ts` containing all your features.
 Any feature look ups will now be checked against the features that exist in Reflag.
 
 Here's an example of a failed type check:
@@ -412,18 +412,18 @@ Here's an example of a failed type check:
 ```typescript
 import { ReflagClient } from "@reflag/node-sdk";
 
-export const bucketClient = new ReflagClient();
+export const reflagClient = new ReflagClient();
 
-bucketClient.initialize().then(() => {
+reflagClient.initialize().then(() => {
   console.log("Reflag initialized!");
 
   // TypeScript will catch this error: "invalid-feature" doesn't exist
-  bucketClient.getFeature("invalid-feature");
+  reflagClient.getFeature("invalid-feature");
 
   const {
     isEnabled,
     config: { payload },
-  } = bucketClient.getFeature("create-todos");
+  } = reflagClient.getFeature("create-todos");
 });
 ```
 
@@ -432,7 +432,7 @@ bucketClient.initialize().then(() => {
 This is an example of a failed config payload check:
 
 ```typescript
-bucketClient.initialize().then(() => {
+reflagClient.initialize().then(() => {
   // TypeScript will catch this error as well: "minLength" is not part of the payload.
   if (isEnabled && todo.length > config.payload.minLength) {
     // ...
@@ -446,27 +446,27 @@ bucketClient.initialize().then(() => {
 
 When writing tests that cover code with flags, you can toggle features on/off programmatically to test the different behavior.
 
-`bucket.ts`:
+`reflag.ts`:
 
 ```typescript
 import { ReflagClient } from "@reflag/node-sdk";
 
-export const bucket = new ReflagClient();
+export const reflag = new ReflagClient();
 ```
 
 `app.test.ts`:
 
 ```typescript
-import { bucket } from "./bucket.ts";
+import { reflag } from "./reflag.ts";
 
-beforeAll(async () => await bucket.initialize());
+beforeAll(async () => await reflag.initialize());
 afterEach(() => {
-  bucket.clearFeatureOverrides();
+  reflag.clearFeatureOverrides();
 });
 
 describe("API Tests", () => {
   it("should return 200 for the root endpoint", async () => {
-    bucket.featureOverrides = {
+    reflag.featureOverrides = {
       "show-todo": true,
     };
 
@@ -490,7 +490,7 @@ BUCKET_FEATURES_ENABLED=feature1,feature2
 BUCKET_FEATURES_DISABLED=feature3,feature4
 ```
 
-2. Through `bucketConfig.json`:
+2. Through `reflagConfig.json`:
 
 ```json
 {
@@ -599,18 +599,18 @@ Remote evaluation is particularly useful when:
 A popular way to integrate the Reflag Node.js SDK is through an express middleware.
 
 ```typescript
-import bucket from "./bucket";
+import reflag from "./reflag";
 import express from "express";
-import { BoundBucketClient } from "@reflag/node-sdk";
+import { BoundReflagClient } from "@reflag/node-sdk";
 
-// Augment the Express types to include a `boundBucketClient` property on the
+// Augment the Express types to include a `boundReflagClient` property on the
 // `res.locals` object.
 // This will allow us to access the ReflagClient instance in our route handlers
 // without having to pass it around manually
 declare global {
   namespace Express {
     interface Locals {
-      boundBucketClient: BoundBucketClient;
+      boundReflagClient: BoundReflagClient;
     }
   }
 }
@@ -631,20 +631,20 @@ app.use((req, res, next) => {
     name: req.user?.companyName
   }
 
-  // Create a new BoundBucketClient instance by calling the `bindClient`
+  // Create a new BoundReflagClient instance by calling the `bindClient`
   // method on a `ReflagClient` instance
   // This will create a new instance that is bound to the user/company given.
-  const boundBucketClient = bucket.bindClient({ user, company });
+  const boundReflagClient = reflag.bindClient({ user, company });
 
-  // Store the BoundBucketClient instance in the `res.locals` object so we
+  // Store the BoundReflagClient instance in the `res.locals` object so we
   // can access it in our route handlers
-  res.locals.boundBucketClient = boundBucketClient;
+  res.locals.boundReflagClient = boundReflagClient;
   next();
 });
 
-// Now use res.locals.boundBucketClient in your handlers
+// Now use res.locals.boundReflagClient in your handlers
 app.get("/todos", async (_req, res) => {
-  const { track, isEnabled } = res.locals.bucketUser.getFeature("show-todos");
+  const { track, isEnabled } = res.locals.reflagUser.getFeature("show-todos");
 
   if (!isEnabled) {
     res.status(403).send({"error": "feature inaccessible"})

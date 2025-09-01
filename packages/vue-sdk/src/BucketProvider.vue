@@ -5,7 +5,7 @@ import { provide, ref, shallowRef, watch } from "vue";
 import { ReflagClient } from "@reflag/browser-sdk";
 
 import { ProviderSymbol } from "./hooks";
-import { BucketProps, ProviderContextType } from "./types";
+import { ReflagProps, ProviderContextType } from "./types";
 import { SDK_VERSION } from "./version";
 
 const featuresLoading = ref(true);
@@ -14,14 +14,14 @@ const updatedCount = ref<number>(0);
 // any optional prop which has boolean as part of the type, will default to false
 // instead of `undefined`, so we use `withDefaults` here to pass the undefined
 // down into the client.
-const props = withDefaults(defineProps<BucketProps>(), {
+const props = withDefaults(defineProps<ReflagProps>(), {
   enableTracking: undefined,
   toolbar: undefined,
 });
 
 function updateClient() {
   const cnext = (
-    props.newBucketClient ?? ((...args) => new ReflagClient(...args))
+    props.newReflagClient ?? ((...args) => new ReflagClient(...args))
   )({
     ...props,
     logger: props.debug ? console : undefined,

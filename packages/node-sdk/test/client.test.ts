@@ -12,7 +12,7 @@ import {
 
 import { flattenJSON } from "@reflag/flag-evaluation";
 
-import { BoundBucketClient, ReflagClient } from "../src";
+import { BoundReflagClient, ReflagClient } from "../src";
 import {
   API_BASE_URL,
   API_TIMEOUT_MS,
@@ -168,20 +168,20 @@ describe("ReflagClient", () => {
       const secretKeyEnv = process.env.BUCKET_SECRET_KEY;
       process.env.BUCKET_SECRET_KEY = "validSecretKeyWithMoreThan22Chars";
       try {
-        const bucketInstance = new ReflagClient();
-        expect(bucketInstance).toBeInstanceOf(ReflagClient);
+        const reflagInstance = new ReflagClient();
+        expect(reflagInstance).toBeInstanceOf(ReflagClient);
       } finally {
         process.env.BUCKET_SECRET_KEY = secretKeyEnv;
       }
     });
 
     it("should accept fallback features as an array", async () => {
-      const bucketInstance = new ReflagClient({
+      const reflagInstance = new ReflagClient({
         secretKey: "validSecretKeyWithMoreThan22Chars",
         fallbackFlags: ["feature1", "feature2"],
       });
 
-      expect(bucketInstance["_config"].fallbackFlags).toEqual({
+      expect(reflagInstance["_config"].fallbackFlags).toEqual({
         feature1: {
           isEnabled: true,
           key: "feature1",
@@ -194,7 +194,7 @@ describe("ReflagClient", () => {
     });
 
     it("should accept fallback features as an object", async () => {
-      const bucketInstance = new ReflagClient({
+      const reflagInstance = new ReflagClient({
         secretKey: "validSecretKeyWithMoreThan22Chars",
         fallbackFlags: {
           feature1: true,
@@ -208,7 +208,7 @@ describe("ReflagClient", () => {
         },
       });
 
-      expect(bucketInstance["_config"].fallbackFlags).toStrictEqual({
+      expect(reflagInstance["_config"].fallbackFlags).toStrictEqual({
         feature1: {
           key: "feature1",
           config: undefined,
@@ -427,7 +427,7 @@ describe("ReflagClient", () => {
       expect(newClient.company).toEqual(company);
       expect(newClient.otherContext).toEqual(otherContext);
 
-      expect(newClient).toBeInstanceOf(BoundBucketClient);
+      expect(newClient).toBeInstanceOf(BoundReflagClient);
       expect(newClient).not.toBe(client); // Ensure a new instance is returned
       expect(newClient["_options"]).toEqual({
         enableTracking: true,
@@ -2162,7 +2162,7 @@ describe("ReflagClient", () => {
   });
 });
 
-describe("BoundBucketClient", () => {
+describe("BoundReflagClient", () => {
   beforeAll(() => {
     const response = {
       status: 200,

@@ -16,23 +16,23 @@ npm i @reflag/react-sdk
 
 ## Get started
 
-### 1. Add the `BucketProvider` context provider
+### 1. Add the `ReflagProvider` context provider
 
-Add the `BucketProvider` context provider to your application:
+Add the `ReflagProvider` context provider to your application:
 
 **Example:**
 
 ```tsx
-import { BucketProvider } from "@reflag/react-sdk";
+import { ReflagProvider } from "@reflag/react-sdk";
 
-<BucketProvider
+<ReflagProvider
   publishableKey="{YOUR_PUBLISHABLE_KEY}"
   company={{ id: "acme_inc", plan: "pro" }}
   user={{ id: "john doe" }}
   loadingComponent={<Loading />}
 >
   {/* children here are shown when loading finishes or immediately if no `loadingComponent` is given */}
-</BucketProvider>;
+</ReflagProvider>;
 ```
 
 ### 2. Create a new feature and set up type safety
@@ -43,18 +43,18 @@ Install the Reflag CLI:
 npm i --save-dev @reflag/cli
 ```
 
-Run `npx bucket new` to create your first feature!
+Run `npx reflag new` to create your first feature!
 On the first run, it will sign into Reflag and set up type generation for your project:
 
 ```shell
-❯ npx bucket new
+❯ npx reflag new
 Opened web browser to facilitate login: https://app.reflag.com/api/oauth/cli/authorize
 
 Welcome to Reflag!
 
 ? Where should we generate the types? gen/features.d.ts
 ? What is the output format? react
-✔ Configuration created at bucket.config.json.
+✔ Configuration created at reflag.config.json.
 
 Creating feature for app Slick app.
 ? New feature name: Huddle
@@ -93,7 +93,7 @@ function StartHuddleButton() {
 ## Setting `user` and `company`
 
 Reflag determines which features are active for a given `user`, `company`, or `otherContext`.
-You pass these to the `BucketProvider` as props.
+You pass these to the `ReflagProvider` as props.
 
 If you supply `user` or `company` objects, they must include at least the `id` property otherwise they will be ignored in their entirety.
 In addition to the `id`, you must also supply anything additional that you want to be able to evaluate feature targeting rules against.
@@ -107,16 +107,16 @@ A number of special attributes exist:
 - `avatar` -- the URL for `user`/`company` avatar image.
 
 ```tsx
- <BucketProvider
+ <ReflagProvider
     publishableKey={YOUR_PUBLISHABLE_KEY}
     user={{ id: "user_123", name: "John Doe", email: "john@acme.com" }}
     company={{ id: "company_123", name: "Acme, Inc" }}
     otherContext={{ completedSteps: [1, 4, 7] }}
   >
-    <LoadingBucket>
+    <LoadingReflag>
     {/* children here are shown when loading finishes */}
-    </LoadingBucket>
-  <BucketProvider>
+    </LoadingReflag>
+  <ReflagProvider>
 ```
 
 To retrieve features along with their targeting information, use `useFeature(key: string)` hook (described in a section below).
@@ -167,9 +167,9 @@ const {
 Note that, similar to `isEnabled`, accessing `config` on the object returned by `useFeature()` automatically
 generates a `check` event.
 
-## `<BucketProvider>` component
+## `<ReflagProvider>` component
 
-The `<BucketProvider>` initializes the Reflag SDK, fetches features and starts listening for automated feedback survey events. The component can be configured using a number of props:
+The `<ReflagProvider>` initializes the Reflag SDK, fetches features and starts listening for automated feedback survey events. The component can be configured using a number of props:
 
 - `publishableKey` is used to connect the provider to an _environment_ on Reflag. Find your `publishableKey` under [environment settings](https://app.reflag.com/env-current/settings/app-environments) in Reflag,
 - `company`, `user` and `otherContext` make up the _context_ that is used to determine if a feature is enabled or not. `company` and `user` contexts are automatically transmitted to Reflag servers so the Reflag app can show you which companies have access to which features etc.
@@ -202,7 +202,7 @@ The `<BucketProvider>` initializes the Reflag SDK, fetches features and starts l
 - `loadingComponent` lets you specify an React component to be rendered instead of the children while the Reflag provider is initializing. If you want more control over loading screens, `useFeature()` returns `isLoading` which you can use to customize the loading experience:
 
   ```tsx
-  function LoadingBucket({ children }) {
+  function LoadingReflag({ children }) {
     const { isLoading } = useFeature("myFeature")
     if (isLoading) {
       return <Spinner />
@@ -212,11 +212,11 @@ The `<BucketProvider>` initializes the Reflag SDK, fetches features and starts l
   }
 
   //-- Initialize the Reflag provider
-  <BucketProvider publishableKey={YOUR_PUBLISHABLE_KEY} /*...*/>
-    <LoadingBucket>
+  <ReflagProvider publishableKey={YOUR_PUBLISHABLE_KEY} /*...*/>
+    <LoadingReflag>
     {/* children here are shown when loading finishes */}
-    </LoadingBucket>
-  <BucketProvider>
+    </LoadingReflag>
+  <ReflagProvider>
   ```
 
 - `enableTracking`: Set to `false` to stop sending tracking events and user/company updates to Reflag. Useful when you're impersonating a user (defaults to `true`),
@@ -348,7 +348,7 @@ function CustomFeedbackForm() {
 
   const handleSubmit = async (data: FormData) => {
     await sendFeedback({
-      featureKey: "bucket-feature-key",
+      featureKey: "reflag-feature-key",
       score: parseInt(data.get("score") as string),
       comment: data.get("comment") as string,
     });
@@ -405,11 +405,11 @@ function FeatureOptIn() {
 }
 ```
 
-Note: To change the `user.id` or `company.id`, you need to update the props passed to `BucketProvider` instead of using these hooks.
+Note: To change the `user.id` or `company.id`, you need to update the props passed to `ReflagProvider` instead of using these hooks.
 
 ### `useClient()`
 
-Returns the `ReflagClient` used by the `BucketProvider`. The client offers more functionality that
+Returns the `ReflagClient` used by the `ReflagProvider`. The client offers more functionality that
 is not directly accessible thorough the other hooks.
 
 ```tsx

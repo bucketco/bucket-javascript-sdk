@@ -20,12 +20,12 @@ Reflag is a comprehensive feature management service offering flags, user feedba
 
 ## Follow Official Documentation
 
-- Refer to [Reflag's official documentation](mdc:https:/docs.bucket.co) for implementation details.
+- Refer to [Reflag's official documentation](mdc:https:/docs.reflag.co) for implementation details.
 - Adhere to Reflag's recommended patterns for each framework.
 
 ## Reflag SDK Usage
 
-- Configure \`BucketProvider\` or \`ReflagClient\` properly at application entry points.
+- Configure \`ReflagProvider\` or \`ReflagClient\` properly at application entry points.
 - Leverage Reflag CLI for generating type-safe feature definitions.
 - Write clean, type-safe code when applying Reflag flags.
 - Follow established patterns in the project.
@@ -113,25 +113,25 @@ npm i @reflag/react-sdk
 
 ### Basic Setup
 
-1. Add the \`BucketProvider\` to wrap your application:
+1. Add the \`ReflagProvider\` to wrap your application:
 
 \`\`\`jsx
-import { BucketProvider } from "@reflag/react-sdk";
+import { ReflagProvider } from "@reflag/react-sdk";
 
-<BucketProvider
+<ReflagProvider
   publishableKey="{YOUR_PUBLISHABLE_KEY}"
   company={{ id: "acme_inc", plan: "pro" }}
   user={{ id: "john_doe" }}
 >
   <YourApp />
-</BucketProvider>;
+</ReflagProvider>;
 \`\`\`
 
 1. Create a feature and generate type-safe definitions:
 
 \`\`\`bash
 npm i --save-dev @reflag/cli
-npx bucket new "Feature name"
+npx reflag new "Feature name"
 \`\`\`
 
 \`\`\`typescript
@@ -295,7 +295,7 @@ await client.trackEvent("custom-event", {
 
 ## Further Resources
 
-- [Official Documentation](mdc:https:/docs.bucket.co)
+- [Official Documentation](mdc:https:/docs.reflag.co)
 - [Docs llms.txt](mdc:https:/docs.reflag.com/llms.txt)
 - [GitHub Repository](mdc:https:/github.com/reflagcom/javascript)
 - [Example React App](mdc:https:/github.com/reflagcom/javascript/tree/main/packages/react-sdk/dev)

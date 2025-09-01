@@ -1,6 +1,6 @@
 # Reflag Browser OpenFeature Provider
 
-The official OpenFeature Browser provider for [Reflag](https://bucket.co) feature management service.
+The official OpenFeature Browser provider for [Reflag](https://reflag.co) feature management service.
 
 It uses the Reflag Browser SDK internally and thus allow you to collect [automated feedback surveys](https://github.com/reflagcom/javascript/tree/main/packages/browser-sdk#qualitative-feedback)
 when people use your features as well as tracking which customers use which features.
@@ -22,16 +22,16 @@ npm install @openfeature/web-sdk @reflag/openfeature-browser-provider
 ## Sample initialization
 
 ```ts
-import { BucketBrowserProvider } from "@reflag/openfeature-browser-provider";
+import { ReflagBrowserProvider } from "@reflag/openfeature-browser-provider";
 import { OpenFeature } from "@openfeature/web-sdk";
 
 // initialize provider
-const publishableKey = "<your-bucket-publishable-key>";
+const publishableKey = "<your-reflag-publishable-key>";
 
-const bucketProvider = new BucketBrowserProvider({ publishableKey });
+const reflagProvider = new ReflagBrowserProvider({ publishableKey });
 
 // set open feature provider and get client
-await OpenFeature.setProviderAndWait(bucketProvider);
+await OpenFeature.setProviderAndWait(reflagProvider);
 const client = OpenFeature.getClient();
 
 // use client
@@ -102,15 +102,15 @@ The object resolution performs runtime type checking between the default value a
 ## Context
 
 To convert the OpenFeature context to a Reflag appropriate context
-pass a translation function along to the `BucketBrowserProvider` constructor
+pass a translation function along to the `ReflagBrowserProvider` constructor
 like so:
 
 ```ts
-import { BucketBrowserProvider } from "@reflag/openfeature-browser-provider";
+import { ReflagBrowserProvider } from "@reflag/openfeature-browser-provider";
 import { EvaluationContext, OpenFeature } from "@openfeature/web-sdk";
 
 // initialize provider
-const publishableKey = "<your-bucket-publishable-key>";
+const publishableKey = "<your-reflag-publishable-key>";
 
 // this converts the context to a Reflag compatible context
 // adapt it to fit your need
@@ -132,7 +132,7 @@ const contextTranslator = (context?: EvaluationContext) => {
   };
 };
 
-const bucketOpenFeatureProvider = new BucketBrowserProvider({
+const reflagOpenFeatureProvider = new ReflagBrowserProvider({
   publishableKey,
   contextTranslator,
 });
@@ -150,16 +150,16 @@ The Reflag OpenFeature Provider supports the OpenFeature tracking API
 natively.
 
 ```ts
-import { BucketBrowserProvider } from "@reflag/openfeature-browser-provider";
+import { ReflagBrowserProvider } from "@reflag/openfeature-browser-provider";
 import { OpenFeature } from "@openfeature/web-sdk";
 
 // initialize provider
-const publishableKey = "<your-bucket-publishable-key>";
+const publishableKey = "<your-reflag-publishable-key>";
 
-const bucketProvider = new BucketBrowserProvider({ publishableKey });
+const reflagProvider = new ReflagBrowserProvider({ publishableKey });
 
 // set OpenFeature provider and get client
-await OpenFeature.setProviderAndWait(bucketProvider);
+await OpenFeature.setProviderAndWait(reflagProvider);
 const client = OpenFeature.getClient();
 
 // use client to send an event when user uses a feature

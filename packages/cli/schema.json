@@ -17,7 +17,7 @@
       "type": "string",
       "minLength": 14,
       "maxLength": 14,
-      "description": "Mandatory ID for the Reflag app. You can find it by calling bucket apps list."
+      "description": "Mandatory ID for the Reflag app. You can find it by calling reflag apps list."
     },
     "typesOutput": {
       "type": "array",

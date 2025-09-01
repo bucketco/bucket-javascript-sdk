@@ -1,6 +1,6 @@
 # Reflag Node.js OpenFeature Provider
 
-The official OpenFeature Node.js provider for [Reflag](https://bucket.co) feature management service.
+The official OpenFeature Node.js provider for [Reflag](https://reflag.co) feature management service.
 
 ## Installation
 
@@ -26,10 +26,10 @@ The available options can be found in the [Reflag Node.js SDK](https://github.co
 ### Example using the default configuration
 
 ```typescript
-import { BucketNodeProvider } from "@reflag/openfeature-node-provider";
+import { ReflagNodeProvider } from "@reflag/openfeature-node-provider";
 import { OpenFeature } from "@openfeature/server-sdk";
 
-const provider = new BucketNodeProvider({ secretKey });
+const provider = new ReflagNodeProvider({ secretKey });
 
 await OpenFeature.setProviderAndWait(provider);
 
@@ -115,7 +115,7 @@ Reflag uses a context object of the following shape:
  * Describes the current user context, company context, and other context.
  * This is used to determine if feature targeting matches and to track events.
  **/
-export type BucketContext = {
+export type ReflagContext = {
   /**
    * The user context. If the user is set, the user ID is required.
    */
@@ -144,9 +144,9 @@ You can achieve this by supplying a context translation function which takes the
 a corresponding Reflag Context:
 
 ```ts
-import { BucketNodeProvider } from "@openfeature/bucket-node-provider";
+import { ReflagNodeProvider } from "@openfeature/reflag-node-provider";
 
-const contextTranslator = (context: EvaluationContext): BucketContext => {
+const contextTranslator = (context: EvaluationContext): ReflagContext => {
   return {
     user: {
       id: context.targetingKey ?? context["userId"]?.toString(),
@@ -164,7 +164,7 @@ const contextTranslator = (context: EvaluationContext): BucketContext => {
   };
 };
 
-const provider = new BucketNodeProvider({ secretKey, contextTranslator });
+const provider = new ReflagNodeProvider({ secretKey, contextTranslator });
 
 OpenFeature.setProvider(provider);
 ```
@@ -177,10 +177,10 @@ It's straight forward to start sending tracking events through OpenFeature.
 Simply call the "track" method on the OpenFeature client:
 
 ```typescript
-import { BucketNodeProvider } from "@reflag/openfeature-node-provider";
+import { ReflagNodeProvider } from "@reflag/openfeature-node-provider";
 import { OpenFeature } from "@openfeature/server-sdk";
 
-const provider = new BucketNodeProvider({ secretKey });
+const provider = new ReflagNodeProvider({ secretKey });
 
 await OpenFeature.setProviderAndWait(provider);
 

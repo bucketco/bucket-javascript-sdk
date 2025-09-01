@@ -58,7 +58,7 @@ import {
   once,
 } from "./utils";
 
-const bucketConfigDefaultFile = "bucketConfig.json";
+const reflagConfigDefaultFile = "reflagConfig.json";
 
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
@@ -234,8 +234,8 @@ export class ReflagClient {
     if (!options.configFile) {
       options.configFile =
         (process.env.BUCKET_CONFIG_FILE ??
-        fs.existsSync(bucketConfigDefaultFile))
-          ? bucketConfigDefaultFile
+        fs.existsSync(reflagConfigDefaultFile))
+          ? reflagConfigDefaultFile
           : undefined;
     }
 
@@ -426,7 +426,7 @@ export class ReflagClient {
   }
 
   /**
-   * Returns a new BoundBucketClient with the user/company/otherContext
+   * Returns a new BoundReflagClient with the user/company/otherContext
    * set to be used in subsequent calls.
    * For example, for evaluating feature targeting or tracking events.
    *
@@ -448,7 +448,7 @@ export class ReflagClient {
     enableTracking = true,
     ...context
   }: ContextWithTracking) {
-    return new BoundBucketClient(this, { enableTracking, ...context });
+    return new BoundReflagClient(this, { enableTracking, ...context });
   }
 
   /**
@@ -1338,12 +1338,12 @@ export class ReflagClient {
 /**
  * A client bound with a specific user, company, and other context.
  */
-export class BoundBucketClient {
+export class BoundReflagClient {
   private readonly _client: ReflagClient;
   private readonly _options: ContextWithTracking;
 
   /**
-   * (Internal) Creates a new BoundBucketClient. Use `bindClient` to create a new client bound with a specific context.
+   * (Internal) Creates a new BoundReflagClient. Use `bindClient` to create a new client bound with a specific context.
    *
    * @param client - The `ReflagClient` to use.
    * @param options - The options for the client.
@@ -1512,7 +1512,7 @@ export class BoundBucketClient {
       meta: meta ?? this._options.meta,
     };
 
-    return new BoundBucketClient(this._client, boundConfig);
+    return new BoundReflagClient(this._client, boundConfig);
   }
 
   /**

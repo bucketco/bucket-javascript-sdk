@@ -2,7 +2,7 @@ import React, { useState } from "react";
 
 import {
   FeatureKey,
-  BucketProvider,
+  ReflagProvider,
   useFeature,
   useRequestFeedback,
   useTrack,
@@ -270,7 +270,7 @@ function CustomToolbar() {
 
 export function App() {
   return (
-    <BucketProvider
+    <ReflagProvider
       publishableKey={publishableKey}
       company={initialCompany}
       user={initialUser}
@@ -284,6 +284,6 @@ export function App() {
         </div>
       )}
       <Demos />
-    </BucketProvider>
+    </ReflagProvider>
   );
 }

@@ -19,8 +19,8 @@ export default defineConfig({
     sourcemap: true,
     lib: {
       entry: resolve(__dirname, "src/index.tsx"),
-      name: "BucketReactSDK",
-      fileName: "bucket-react-sdk",
+      name: "ReflagReactSDK",
+      fileName: "reflag-react-sdk",
       formats: ["es", "umd"],
     },
     rollupOptions: {

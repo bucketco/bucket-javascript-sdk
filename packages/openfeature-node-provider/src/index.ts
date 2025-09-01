@@ -14,16 +14,16 @@ import {
 import {
   ReflagClient,
   ClientOptions,
-  Context as BucketContext,
+  Context as ReflagContext,
 } from "@reflag/node-sdk";
 
 type ProviderOptions = ClientOptions & {
-  contextTranslator?: (context: EvaluationContext) => BucketContext;
+  contextTranslator?: (context: EvaluationContext) => ReflagContext;
 };
 
 export const defaultContextTranslator = (
   context: EvaluationContext,
-): BucketContext => {
+): ReflagContext => {
   const user = {
     id: context.targetingKey ?? context["userId"]?.toString(),
     name: context["name"]?.toString(),
@@ -45,19 +45,19 @@ export const defaultContextTranslator = (
   };
 };
 
-export class BucketNodeProvider implements Provider {
+export class ReflagNodeProvider implements Provider {
   public readonly events = new OpenFeatureEventEmitter();
 
   private _client: ReflagClient;
 
-  private contextTranslator: (context: EvaluationContext) => BucketContext;
+  private contextTranslator: (context: EvaluationContext) => ReflagContext;
 
   public runsOn: Paradigm = "server";
 
   public status: ServerProviderStatus = ServerProviderStatus.NOT_READY;
 
   public metadata = {
-    name: "bucket-node",
+    name: "reflag-node",
   };
 
   get client() {
@@ -77,7 +77,7 @@ export class BucketNodeProvider implements Provider {
   private resolveFeature<T extends JsonValue>(
     flagKey: string,
     defaultValue: T,
-    context: BucketContext,
+    context: ReflagContext,
     resolveFn: (
       feature: ReturnType<typeof this._client.getFeature>,
     ) => Promise<ResolutionDetails<T>>,

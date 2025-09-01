@@ -73,7 +73,7 @@ export const rulesAction = async ({
 
   // Determine destination and content based on format
   if (format === "cursor") {
-    destPath = join(projectPath, ".cursor", "rules", "bucket.mdc");
+    destPath = join(projectPath, ".cursor", "rules", "reflag.mdc");
     content = getCursorRules();
   } else if (format === "copilot") {
     destPath = join(projectPath, ".github", "copilot-instructions.md");

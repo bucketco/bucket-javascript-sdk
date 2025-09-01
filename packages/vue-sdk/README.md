@@ -16,23 +16,23 @@ npm i @reflag/vue-sdk
 
 ## Get started
 
-### 1. Wrap your application with the `BucketProvider`
+### 1. Wrap your application with the `ReflagProvider`
 
 ```vue
 <script setup lang="ts">
-import { BucketProvider } from "@reflag/vue-sdk";
+import { ReflagProvider } from "@reflag/vue-sdk";
 </script>
 
-<BucketProvider
+<ReflagProvider
   :publishable-key="publishableKey"
   :user="{ id: 'user_123', name: 'John Doe', email: 'john@acme.com' }"
   :company="{ id: 'acme_inc', plan: 'pro' }"
 >
   <!-- your app -->
-</BucketProvider>
+</ReflagProvider>
 ```
 
-If using Nuxt, wrap `<BucketProvider>` in `<ClientOnly>`. `<BucketProvider>` only renders client-side currently.
+If using Nuxt, wrap `<ReflagProvider>` in `<ClientOnly>`. `<ReflagProvider>` only renders client-side currently.
 
 ### 2. Use `useFeature(key)` to get feature status
 
@@ -55,7 +55,7 @@ See [useFeature()](#usefeature) for a full example
 ## Setting `user` and `company`
 
 Reflag determines which features are active for a given `user`, `company`, or `otherContext`.
-You pass these to the `BucketProvider` as props.
+You pass these to the `ReflagProvider` as props.
 
 If you supply `user` or `company` objects, they must include at least the `id` property otherwise they will be ignored in their entirety.
 In addition to the `id`, you must also supply anything additional that you want to be able to evaluate feature targeting rules against.
@@ -69,13 +69,13 @@ A number of special attributes exist:
 - `avatar` -- the URL for `user`/`company` avatar image.
 
 ```vue
-<BucketProvider
+<ReflagProvider
   :publishable-key="publishableKey"
   :user="{ id: 'user_123', name: 'John Doe', email: 'john@acme.com' }"
   :company="{ id: 'acme_inc', plan: 'pro' }"
 >
   <!-- your app -->
-</BucketProvider>
+</ReflagProvider>
 ```
 
 To retrieve features along with their targeting information, use `useFeature(key: string)` hook (described in a section below).
@@ -108,9 +108,9 @@ const {
 Note that, similar to `isEnabled`, accessing `config` on the object returned by `useFeature()` automatically
 generates a `check` event.
 
-## `<BucketProvider>` component
+## `<ReflagProvider>` component
 
-The `<BucketProvider>` initializes the Reflag SDK, fetches features and starts listening for automated feedback survey events. The component can be configured using a number of props:
+The `<ReflagProvider>` initializes the Reflag SDK, fetches features and starts listening for automated feedback survey events. The component can be configured using a number of props:
 
 - `publishableKey` is used to connect the provider to an _environment_ on Reflag. Find your `publishableKey` under [environment settings](https://app.reflag.com/env-current/settings/app-environments) in Reflag,
 - `company`, `user` and `otherContext` make up the _context_ that is used to determine if a feature is enabled or not. `company` and `user` contexts are automatically transmitted to Reflag servers so the Reflag app can show you which companies have access to which features etc.
@@ -133,18 +133,18 @@ The `<BucketProvider>` initializes the Reflag SDK, fetches features and starts l
 
 ### Loading states
 
-BucketProvider lets you define a template to be shown while BucketProvider is inititalizing:
+ReflagProvider lets you define a template to be shown while ReflagProvider is inititalizing:
 
 ```vue
 <template>
-  <BucketProvider
+  <ReflagProvider
     :publishable-key="publishableKey"
     :user="user"
     :company="{ id: 'acme_inc', plan: 'pro' }"
   >
     <template #loading>Loading...</template>
     <StartHuddleButton />
-  </BucketProvider>
+  </ReflagProvider>
 </template>
 ```
 
@@ -280,7 +280,7 @@ const sendFeedback = useSendFeedback();
 
 const handleSubmit = async (data: FormData) => {
   await sendFeedback({
-    featureKey: "bucket-feature-key",
+    featureKey: "reflag-feature-key",
     score: parseInt(data.get("score") as string),
     comment: data.get("comment") as string,
   });
@@ -341,11 +341,11 @@ const handleContextUpdate = async () => {
 </template>
 ```
 
-Note: To change the `user.id` or `company.id`, you need to update the props passed to `BucketProvider` instead of using these composables.
+Note: To change the `user.id` or `company.id`, you need to update the props passed to `ReflagProvider` instead of using these composables.
 
 ### `useClient()`
 
-Returns the `ReflagClient` used by the `BucketProvider`. The client offers more functionality that
+Returns the `ReflagClient` used by the `ReflagProvider`. The client offers more functionality that
 is not directly accessible through the other composables.
 
 ```vue

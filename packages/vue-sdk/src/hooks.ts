@@ -9,7 +9,7 @@ import {
 } from "./types";
 
 export const ProviderSymbol: InjectionKey<ProviderContextType> =
-  Symbol("BucketProvider");
+  Symbol("ReflagProvider");
 
 export function useFeature(key: string): Feature<any> {
   const client = useClient();
@@ -230,7 +230,7 @@ function injectSafe() {
   const ctx = inject(ProviderSymbol);
   if (!ctx?.provider) {
     throw new Error(
-      `BucketProvider is missing. Please ensure your component is wrapped with a BucketProvider.`,
+      `ReflagProvider is missing. Please ensure your component is wrapped with a ReflagProvider.`,
     );
   }
   return ctx;

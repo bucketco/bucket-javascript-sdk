@@ -38,9 +38,9 @@ export function defaultContextTranslator(
   };
 }
 
-export class BucketBrowserSDKProvider implements Provider {
+export class ReflagBrowserSDKProvider implements Provider {
   readonly metadata: ProviderMetadata = {
-    name: "bucket-browser-provider",
+    name: "reflag-browser-provider",
   };
 
   private _client?: ReflagClient;

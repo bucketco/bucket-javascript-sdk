@@ -17,8 +17,8 @@ import { ReflagClient } from "@reflag/browser-sdk";
 
 import { version } from "../package.json";
 import {
-  BucketProps,
-  BucketProvider,
+  ReflagProps,
+  ReflagProvider,
   useClient,
   useFeature,
   useRequestFeedback,
@@ -42,9 +42,9 @@ const company = { id: "123", name: "test" };
 const user = { id: "456", name: "test" };
 const otherContext = { test: "test" };
 
-function getProvider(props: Partial<BucketProps> = {}) {
+function getProvider(props: Partial<ReflagProps> = {}) {
   return (
-    <BucketProvider
+    <ReflagProvider
       company={company}
       otherContext={otherContext}
       publishableKey={publishableKey}
@@ -152,11 +152,11 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe("<BucketProvider />", () => {
+describe("<ReflagProvider />", () => {
   test("calls initialize", () => {
     const on = vi.fn();
 
-    const newBucketClient = vi.fn().mockReturnValue({
+    const newReflagClient = vi.fn().mockReturnValue({
       initialize: vi.fn().mockResolvedValue(undefined),
       on,
     });
@@ -177,12 +177,12 @@ describe("<BucketProvider />", () => {
       fallbackFlags: ["feature2"],
       feedback: { enableAutoFeedback: true },
       toolbar: { show: true },
-      newBucketClient,
+      newReflagClient,
     });
 
     render(provider);
 
-    expect(newBucketClient.mock.calls.at(0)).toStrictEqual([
+    expect(newReflagClient.mock.calls.at(0)).toStrictEqual([
       {
         publishableKey: "KEY",
         user: {

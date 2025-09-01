@@ -25,13 +25,13 @@
   "files": [
     "dist"
   ],
-  "main": "./dist/bucket-openfeature-browser-provider.umd.js",
+  "main": "./dist/reflag-openfeature-browser-provider.umd.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/bucket-openfeature-browser-provider.mjs",
-      "require": "./dist/bucket-openfeature-browser-provider.umd.js"
+      "import": "./dist/reflag-openfeature-browser-provider.mjs",
+      "require": "./dist/reflag-openfeature-browser-provider.umd.js"
     }
   },
   "dependencies": {

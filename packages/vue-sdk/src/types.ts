@@ -2,7 +2,7 @@ import type { Ref } from "vue";
 
 import type {
   ReflagClient,
-  BucketContext,
+  ReflagContext,
   InitOptions,
   RequestFeedbackData,
 } from "@reflag/browser-sdk";
@@ -53,10 +53,10 @@ export interface ProviderContextType {
   provider: boolean;
 }
 
-export type BucketProps = BucketContext &
+export type ReflagProps = ReflagContext &
   InitOptions & {
     debug?: boolean;
-    newBucketClient?: (
+    newReflagClient?: (
       ...args: ConstructorParameters<typeof ReflagClient>
     ) => ReflagClient;
   };

@@ -21,10 +21,10 @@ initializing the CLI, creating a feature, and generating the types all at once:
 
 ```bash
 # npm
-npx bucket new
+npx reflag new
 
 # yarn
-yarn bucket new
+yarn reflag new
 ```
 
 ### Individual commands
@@ -33,23 +33,23 @@ Instead of running `new` you can call each step individually.
 
 ```bash
 # Initialize Reflag in your project (if not already setup)
-npx bucket init
+npx reflag init
 
 # Create a new feature
-npx bucket features create "My Feature"
+npx reflag features create "My Feature"
 
 # Generate TypeScript types for your features
-npx bucket features types
+npx reflag features types
 ```
 
 ## Configuration
 
-The CLI creates a `bucket.config.json` file in your project directory when you run `bucket init`.
+The CLI creates a `reflag.config.json` file in your project directory when you run `reflag init`.
 This file contains all the necessary settings for your Reflag integration.
 
 ### Configuration File Structure
 
-Here's a comprehensive list of configuration options available in the `bucket.config.json` file:
+Here's a comprehensive list of configuration options available in the `reflag.config.json` file:
 
 ```json
 {
@@ -78,13 +78,13 @@ You can override these settings using command-line options for individual comman
 
 ## Commands
 
-### `bucket init`
+### `reflag init`
 
 Initialize a new Reflag configuration in your project.
-This creates a `bucket.config.json` file with your settings and prompts for any required information not provided via options.
+This creates a `reflag.config.json` file with your settings and prompts for any required information not provided via options.
 
 ```bash
-npx bucket init [--overwrite]
+npx reflag init [--overwrite]
 ```
 
 Options:
@@ -93,13 +93,13 @@ Options:
 - `--app-id <id>`: Set the application ID.
 - `--key-format <format>`: Set the key format for features.
 
-### `bucket new [featureName]`
+### `reflag new [featureName]`
 
 All-in-one command to get started quickly. This command combines `init`, feature creation,
 and type generation in a single step. Use this for the fastest way to get up and running with Reflag.
 
 ```bash
-npx bucket new "My Feature" [--app-id ap123456789] [--key my-feature]  [--key-format custom] [--out gen/features.ts] [--format react]
+npx reflag new "My Feature" [--app-id ap123456789] [--key my-feature]  [--key-format custom] [--out gen/features.ts] [--format react]
 ```
 
 Options:
@@ -112,33 +112,33 @@ Options:
 
 If you prefer more control over each step, you can use the individual commands (`init`, `features create`, `features types`) instead.
 
-### `bucket login`
+### `reflag login`
 
 Log in to your Reflag account. This will authenticate your CLI for subsequent operations and store credentials securely.
 
 ```bash
-npx bucket login
+npx reflag login
 ```
 
-### `bucket logout`
+### `reflag logout`
 
 Log out from your Reflag account, removing stored credentials.
 
 ```bash
-npx bucket logout
+npx reflag logout
 ```
 
-### `bucket features`
+### `reflag features`
 
 Manage your Reflag features with the following subcommands.
 
-#### `bucket features create [featureName]`
+#### `reflag features create [featureName]`
 
 Create a new feature in your Reflag app.
 The command guides you through the feature creation process with interactive prompts if options are not provided.
 
 ```bash
-npx bucket features create "My Feature" [--app-id ap123456789] [--key my-feature] [--key-format custom]
+npx reflag features create "My Feature" [--app-id ap123456789] [--key my-feature] [--key-format custom]
 ```
 
 Options:
@@ -147,26 +147,26 @@ Options:
 - `--app-id`: App ID to use.
 - `--key-format`: Format for feature keys.
 
-#### `bucket features list`
+#### `reflag features list`
 
 List all features for the current app.
 This helps you visualize what features are available and their current configurations.
 
 ```bash
-npx bucket features list [--app-id ap123456789]
+npx reflag features list [--app-id ap123456789]
 ```
 
 Options:
 
 - `--app-id`: App ID to use.
 
-#### `bucket features types`
+#### `reflag features types`
 
 Generate TypeScript types for your features.
 This ensures type safety when using Reflag features in your TypeScript/JavaScript applications.
 
 ```bash
-npx bucket features types [--app-id ap123456789] [--out gen/features.ts] [--format react]
+npx reflag features types [--app-id ap123456789] [--out gen/features.ts] [--format react]
 ```
 
 Options:
@@ -175,16 +175,16 @@ Options:
 - `--out`: Path to generate TypeScript types.
 - `--format`: Format of the generated types (react or node).
 
-### `bucket companies`
+### `reflag companies`
 
 Commands for managing companies.
 
-#### `bucket companies list`
+#### `reflag companies list`
 
 List all companies in your app.
 
 ```bash
-npx bucket companies list [--filter <text>] [--app-id ap123456789]
+npx reflag companies list [--filter <text>] [--app-id ap123456789]
 ```
 
 Options:
@@ -199,13 +199,13 @@ The command outputs a table with the following columns:
 - `users`: Number of users in the company.
 - `lastSeen`: Date when the company was last active.
 
-### `bucket companies features access`
+### `reflag companies features access`
 
 Grant or revoke access to specific features for companies, segments, and users.
 If no feature key is provided, you'll be prompted to select one from a list.
 
 ```bash
-npx bucket companies features access [--app-id ap123456789] [featureKey] [--enable|--disable] [--companies <id...>] [--segments <id...>] [--users <id...>]
+npx reflag companies features access [--app-id ap123456789] [featureKey] [--enable|--disable] [--companies <id...>] [--segments <id...>] [--users <id...>]
 ```
 
 Arguments:
@@ -227,10 +227,10 @@ Example:
 
 ```bash
 # Enable feature for multiple companies and users
-npx bucket companies features access my-feature --enable --companies comp_123 --companies comp_456 --users user_789
+npx reflag companies features access my-feature --enable --companies comp_123 --companies comp_456 --users user_789
 ```
 
-### `bucket apps`
+### `reflag apps`
 
 Commands for managing Reflag apps.
 
@@ -253,13 +253,13 @@ Reflag provides powerful AI-assisted development capabilities through rules and 
 The `rules` command helps you set up AI-specific rules for your project. These rules enable AI tools to better understand how to work with Reflag and flags and how they should be used in your codebase.
 
 ```bash
-npx bucket rules [--format <cursor|copilot>] [--yes]
+npx reflag rules [--format <cursor|copilot>] [--yes]
 ```
 
 Options:
 
 - `--format`: Format to add rules in:
-  - `cursor`: Adds rules to `.cursor/rules/bucket.mdc` for Cursor IDE integration.
+  - `cursor`: Adds rules to `.cursor/rules/reflag.mdc` for Cursor IDE integration.
   - `copilot`: Adds rules to `.github/copilot-instructions.md` for GitHub Copilot integration.
 - `--yes`: Skip confirmation prompts and overwrite existing files without asking.
 
@@ -276,7 +276,7 @@ _\*\*Note: The Reflag `mcp` CLI command was previously used for a \_local_ serve
 The `mcp` command helps you configure your editor or AI client to connect with Reflag's remote MCP server. This allows your AI tools to understand your flags and provide more contextual assistance.
 
 ```bash
-npx bucket mcp [--app-id <id>] [--editor <editor>] [--scope <local|global>]
+npx reflag mcp [--app-id <id>] [--editor <editor>] [--scope <local|global>]
 ```
 
 Options:
@@ -305,7 +305,7 @@ or specify the API key in `BUCKET_API_KEY` environment variable.
 
 ```bash
 # Generate types in CI/CD
-npx bucket apps list --api-key $BUCKET_API_KEY
+npx reflag apps list --api-key $BUCKET_API_KEY
 ```
 
 **Important restrictions:**
@@ -321,11 +321,11 @@ Example CI workflow:
 ```yaml
 # GitHub Actions example
 - name: Generate types
-  run: npx bucket features types --api-key ${{ secrets.BUCKET_API_KEY }}
+  run: npx reflag features types --api-key ${{ secrets.BUCKET_API_KEY }}
 
 # GitHub Actions example (using environment):
 - name: Generate types (environment)
-  run: npx bucket features types
+  run: npx reflag features types
   env:
     BUCKET_API_KEY: ${{ secrets.BUCKET_CI_API_KEY }}
 ```
@@ -337,7 +337,7 @@ Example CI workflow:
 yarn build
 
 # Run the CLI locally
-yarn bucket [command]
+yarn reflag [command]
 
 # Lint and format code
 yarn lint

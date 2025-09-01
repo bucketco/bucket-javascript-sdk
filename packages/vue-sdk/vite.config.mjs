@@ -26,8 +26,8 @@ export default defineConfig({
     sourcemap: true,
     lib: {
       entry: resolve(__dirname, "src/index.ts"),
-      name: "BucketVueSDK",
-      fileName: "bucket-vue-sdk",
+      name: "ReflagVueSDK",
+      fileName: "reflag-vue-sdk",
       formats: ["es", "umd"],
     },
     rollupOptions: {
