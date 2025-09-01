@@ -108,11 +108,11 @@ export function validateFlagsResponse(response: any) {
     return;
   }
 
-  if (typeof response.success !== "boolean" || !isObject(response.flags)) {
+  if (typeof response.success !== "boolean" || !isObject(response.features)) {
     return;
   }
 
-  const flags = parseAPIFlagsResponse(response.flags);
+  const flags = parseAPIFlagsResponse(response.features);
 
   if (!flags) {
     return;
@@ -411,7 +411,7 @@ export class FlagsClient {
       };
     }
 
-    this.fetchedFlags = mergedFlags;
+    this.flags = mergedFlags;
 
     this.eventTarget.dispatchEvent(new Event(FLAGS_UPDATED_EVENT));
   }
