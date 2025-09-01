@@ -1,19 +1,7 @@
-export type {
-  Config,
-  Feature,
-  FeatureRemoteConfig,
-  InitOptions,
-  ToolbarOptions,
-} from "./client";
-export { BucketClient } from "./client";
-export type { BucketContext, CompanyContext, UserContext } from "./context";
-export type {
-  CheckEvent,
-  FallbackFeatureOverride,
-  FetchedFeature,
-  RawFeature,
-  RawFeatures,
-} from "./feature/features";
+export type { Config, Flag, InitOptions, ToolbarOptions } from "./client";
+export { ReflagClient } from "./client";
+export type { ReflagContext, CompanyContext, UserContext } from "./context";
+export type { FallbackFlagOverride } from "./flag/flags";
 export type {
   Feedback,
   FeedbackOptions,

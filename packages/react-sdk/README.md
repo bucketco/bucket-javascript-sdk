@@ -1,8 +1,8 @@
 # Bucket React SDK
 
-React client side library for [Bucket.co](https://bucket.co)
+React client side library for [Reflag.com](https://reflag.com)
 
-Bucket supports feature toggling, tracking feature usage, [requesting feedback](#userequestfeedback) on features, and [remotely configuring features](#remote-config-beta).
+Bucket supports feature toggling, tracking feature usage, [requesting feedback](#userequestfeedback) on features, and [remotely configuring features](#remote-config).
 
 The Bucket React SDK comes with a [built-in toolbar](https://docs.bucket.co/supported-languages/browser-sdk#toolbar) which appears on `localhost` by default.
 
@@ -48,7 +48,7 @@ On the first run, it will sign into Bucket and set up type generation for your p
 
 ```shell
 ❯ npx bucket new
-Opened web browser to facilitate login: https://app.bucket.co/api/oauth/cli/authorize
+Opened web browser to facilitate login: https://app.reflag.com/api/oauth/cli/authorize
 
 Welcome to Bucket!
 
@@ -59,7 +59,7 @@ Welcome to Bucket!
 Creating feature for app Slick app.
 ? New feature name: Huddle
 ? New feature key: huddle
-✔ Created feature Huddle with key huddle (https://app.bucket.co/features/huddles)
+✔ Created feature Huddle with key huddle (https://app.reflag.com/features/huddles)
 ✔ Generated react types in gen/features.d.ts.
 ```
 
@@ -171,18 +171,18 @@ generates a `check` event.
 
 The `<BucketProvider>` initializes the Bucket SDK, fetches features and starts listening for automated feedback survey events. The component can be configured using a number of props:
 
-- `publishableKey` is used to connect the provider to an _environment_ on Bucket. Find your `publishableKey` under [environment settings](https://app.bucket.co/env-current/settings/app-environments) in Bucket,
+- `publishableKey` is used to connect the provider to an _environment_ on Bucket. Find your `publishableKey` under [environment settings](https://app.reflag.com/env-current/settings/app-environments) in Bucket,
 - `company`, `user` and `otherContext` make up the _context_ that is used to determine if a feature is enabled or not. `company` and `user` contexts are automatically transmitted to Bucket servers so the Bucket app can show you which companies have access to which features etc.
   > [!Note]
   > If you specify `company` and/or `user` they must have at least the `id` property, otherwise they will be ignored in their entirety. You should also supply anything additional you want to be able to evaluate feature targeting against,
-- `fallbackFeatures`: A list of strings which specify which features to consider enabled if the SDK is unable to fetch features. Can be provided in two formats:
+- `fallbackFlags`: A list of strings which specify which features to consider enabled if the SDK is unable to fetch features. Can be provided in two formats:
 
   ```ts
   // Simple array of feature keys
-  fallbackFeatures={["feature1", "feature2"]}
+  fallbackFlags={["feature1", "feature2"]}
 
   // Or with configuration overrides
-  fallbackFeatures: {
+  fallbackFlags: {
       "feature1": true,  // just enable the feature
       "feature2": {      // enable with configuration
         key: "variant-a",
@@ -409,7 +409,7 @@ Note: To change the `user.id` or `company.id`, you need to update the props pass
 
 ### `useClient()`
 
-Returns the `BucketClient` used by the `BucketProvider`. The client offers more functionality that
+Returns the `ReflagClient` used by the `BucketProvider`. The client offers more functionality that
 is not directly accessible thorough the other hooks.
 
 ```tsx

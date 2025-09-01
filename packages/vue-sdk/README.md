@@ -1,6 +1,6 @@
 # Bucket Vue SDK (beta)
 
-Vue client side library for [Bucket.co](https://bucket.co)
+Vue client side library for [Reflag.com](https://reflag.com)
 
 Bucket supports feature toggling, tracking feature usage, requesting feedback on features and remotely configuring features.
 
@@ -112,7 +112,7 @@ generates a `check` event.
 
 The `<BucketProvider>` initializes the Bucket SDK, fetches features and starts listening for automated feedback survey events. The component can be configured using a number of props:
 
-- `publishableKey` is used to connect the provider to an _environment_ on Bucket. Find your `publishableKey` under [environment settings](https://app.bucket.co/env-current/settings/app-environments) in Bucket,
+- `publishableKey` is used to connect the provider to an _environment_ on Bucket. Find your `publishableKey` under [environment settings](https://app.reflag.com/env-current/settings/app-environments) in Bucket,
 - `company`, `user` and `otherContext` make up the _context_ that is used to determine if a feature is enabled or not. `company` and `user` contexts are automatically transmitted to Bucket servers so the Bucket app can show you which companies have access to which features etc.
 
   > [!Note]
@@ -345,7 +345,7 @@ Note: To change the `user.id` or `company.id`, you need to update the props pass
 
 ### `useClient()`
 
-Returns the `BucketClient` used by the `BucketProvider`. The client offers more functionality that
+Returns the `ReflagClient` used by the `BucketProvider`. The client offers more functionality that
 is not directly accessible through the other composables.
 
 ```vue

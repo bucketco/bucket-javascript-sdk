@@ -2,7 +2,7 @@
 import canonicalJson from "canonical-json";
 import { provide, ref, shallowRef, watch } from "vue";
 
-import { BucketClient } from "@bucketco/browser-sdk";
+import { ReflagClient } from "@bucketco/browser-sdk";
 
 import { ProviderSymbol } from "./hooks";
 import { BucketProps, ProviderContextType } from "./types";
@@ -21,7 +21,7 @@ const props = withDefaults(defineProps<BucketProps>(), {
 
 function updateClient() {
   const cnext = (
-    props.newBucketClient ?? ((...args) => new BucketClient(...args))
+    props.newBucketClient ?? ((...args) => new ReflagClient(...args))
   )({
     ...props,
     logger: props.debug ? console : undefined,
@@ -55,7 +55,7 @@ watch(
   },
 );
 
-const clientRef = shallowRef<BucketClient>(updateClient());
+const clientRef = shallowRef<ReflagClient>(updateClient());
 
 const context = {
   isLoading: featuresLoading,

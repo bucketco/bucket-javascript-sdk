@@ -54,8 +54,8 @@ Here's a comprehensive list of configuration options available in the `bucket.co
 ```json
 {
   "$schema": "https://unpkg.com/@bucketco/cli@latest/schema.json",
-  "baseUrl": "https://app.bucket.co",
-  "apiUrl": "https://app.bucket.co/api",
+  "baseUrl": "https://app.reflag.com",
+  "apiUrl": "https://app.reflag.com/api",
   "appId": "ap123456789",
   "typesOutput": [
     {
@@ -69,8 +69,8 @@ Here's a comprehensive list of configuration options available in the `bucket.co
 | Option        | Description                                                                                                                                                          | Default                                              |
 | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
 | `$schema`     | Autocompletion for the config. `latest` can be replaced with a specific version.                                                                                     | "https://unpkg.com/@bucketco/cli@latest/schema.json" |
-| `baseUrl`     | Base URL for Bucket services.                                                                                                                                        | "https://app.bucket.co"                              |
-| `apiUrl`      | API URL for Bucket services (overrides baseUrl for API calls).                                                                                                       | "https://app.bucket.co/api"                          |
+| `baseUrl`     | Base URL for Bucket services.                                                                                                                                        | "https://app.reflag.com"                             |
+| `apiUrl`      | API URL for Bucket services (overrides baseUrl for API calls).                                                                                                       | "https://app.reflag.com/api"                         |
 | `appId`       | Your Bucket application ID.                                                                                                                                          | Required                                             |
 | `typesOutput` | Path(s) where TypeScript types will be generated. Can be a string or an array of objects with `path` and `format` properties. Available formats: `react` and `node`. | "gen/features.ts" with format "react"                |
 

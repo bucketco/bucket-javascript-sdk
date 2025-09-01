@@ -27,9 +27,9 @@ export function useFeature(key: string): Feature<any> {
     feature.value = client.value.getFeature(key);
   }
 
-  client.value.on("featuresUpdated", updateFeature);
+  client.value.on("flagsUpdated", updateFeature);
   onBeforeUnmount(() => {
-    client.value.off("featuresUpdated", updateFeature);
+    client.value.off("flagsUpdated", updateFeature);
   });
 
   return {

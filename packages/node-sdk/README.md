@@ -1,8 +1,8 @@
 # Bucket Node.js SDK
 
-Node.js, JavaScript/TypeScript client for [Bucket.co](https://bucket.co).
+Node.js, JavaScript/TypeScript client for [Reflag.com](https://reflag.com).
 
-Bucket supports feature toggling, tracking feature usage, collecting feedback on features, and [remotely configuring features](#remote-config-beta).
+Bucket supports feature toggling, tracking feature usage, collecting feedback on features, and [remotely configuring features](#remote-config).
 
 ## Installation
 
@@ -56,7 +56,7 @@ You can also [use the HTTP API directly](https://docs.bucket.co/api/http-api)
 
 ## Basic usage
 
-To get started you need to obtain your secret key from the [environment settings](https://app.bucket.co/env-current/settings/app-environments)
+To get started you need to obtain your secret key from the [environment settings](https://app.reflag.com/env-current/settings/app-environments)
 in Bucket.
 
 > [!CAUTION]
@@ -65,19 +65,19 @@ in Bucket.
 
 Bucket will load settings through the various environment variables automatically (see [Configuring](#configuring) below).
 
-1. Find the Bucket secret key for your development environment under [environment settings](https://app.bucket.co/env-current/settings/app-environments) in Bucket.
+1. Find the Bucket secret key for your development environment under [environment settings](https://app.reflag.com/env-current/settings/app-environments) in Bucket.
 2. Set `BUCKET_SECRET_KEY` in your `.env` file
 3. Create a `bucket.ts` file containing the following:
 
 ```typescript
-import { BucketClient } from "@bucketco/node-sdk";
+import { ReflagClient } from "@bucketco/node-sdk";
 
 // Create a new instance of the client with the secret key. Additional options
 // are available, such as supplying a logger and other custom properties.
 //
 // We recommend that only one global instance of `client` should be created
 // to avoid multiple round-trips to our servers.
-export const bucketClient = new BucketClient();
+export const bucketClient = new ReflagClient();
 
 // Initialize the client and begin fetching feature targeting definitions.
 // You must call this method prior to any calls to `getFeatures()`,
@@ -147,7 +147,7 @@ and downloads the features with their targeting rules.
 These rules are then matched against the user/company information you provide
 to `getFeatures()` (or through `bindClient(..).getFeatures()`). That means the
 `getFeatures()` call does not need to contact the Bucket servers once
-`initialize()` has completed. `BucketClient` will continue to periodically
+`initialize()` has completed. `ReflagClient` will continue to periodically
 download the targeting rules from the Bucket servers in the background.
 
 ### Batch Operations
@@ -156,7 +156,7 @@ The SDK automatically batches operations like user/company updates and feature t
 The batch buffer is configurable through the client options:
 
 ```typescript
-const client = new BucketClient({
+const client = new ReflagClient({
   batchOptions: {
     maxSize: 100, // Maximum number of events to batch
     intervalMs: 1000, // Flush interval in milliseconds
@@ -179,7 +179,7 @@ The SDK includes automatic rate limiting for feature events to prevent overwhelm
 Rate limiting is applied per unique combination of feature key and context. The rate limiter window size is configurable:
 
 ```typescript
-const client = new BucketClient({
+const client = new ReflagClient({
   rateLimiterOptions: {
     windowSizeMs: 60000, // Rate limiting window size in milliseconds
   },
@@ -196,7 +196,7 @@ It's also possible to get the currently in use feature definitions:
 ```typescript
 import fs from "fs";
 
-const client = new BucketClient();
+const client = new ReflagClient();
 
 const featureDefs = await client.getFeatureDefinitions();
 // [{
@@ -211,7 +211,7 @@ const featureDefs = await client.getFeatureDefinitions();
 
 To use the Bucket NodeSDK with Cloudflare workers, set the `node_compat` flag [in your wrangler file](https://developers.cloudflare.com/workers/runtime-apis/nodejs/#get-started).
 
-Instead of using `BucketClient`, use `EdgeClient` and make sure you call `ctx.waitUntil(bucket.flush());` before returning from your worker function.
+Instead of using `ReflagClient`, use `EdgeClient` and make sure you call `ctx.waitUntil(bucket.flush());` before returning from your worker function.
 
 ```typescript
 import { EdgeClient } from "@bucketco/node-sdk";
@@ -287,7 +287,7 @@ fallback behavior:
 
    ```typescript
    // In offline mode, the SDK uses feature overrides
-   const client = new BucketClient({
+   const client = new ReflagClient({
      offline: true,
      featureOverrides: () => ({
        "my-feature": true,
@@ -298,7 +298,7 @@ fallback behavior:
 The SDK logs all errors with appropriate severity levels. You can customize logging by providing your own logger:
 
 ```typescript
-const client = new BucketClient({
+const client = new ReflagClient({
   logger: {
     debug: (msg) => console.debug(msg),
     info: (msg) => console.info(msg),
@@ -342,7 +342,7 @@ generate a `check` event, contrary to the `config` property on the object return
 ## Configuring
 
 The Bucket `Node.js` SDK can be configured through environment variables,
-a configuration file on disk or by passing options to the `BucketClient`
+a configuration file on disk or by passing options to the `ReflagClient`
 constructor. By default, the SDK searches for `bucketConfig.json` in the
 current working directory.
 
@@ -382,7 +382,7 @@ current working directory.
 ```
 
 When using a `bucketConfig.json` for local development, make sure you add it to your
-`.gitignore` file. You can also set these options directly in the `BucketClient`
+`.gitignore` file. You can also set these options directly in the `ReflagClient`
 constructor. The precedence for configuration options is as follows, listed in the
 order of importance:
 
@@ -410,9 +410,9 @@ Any feature look ups will now be checked against the features that exist in Buck
 Here's an example of a failed type check:
 
 ```typescript
-import { BucketClient } from "@bucketco/node-sdk";
+import { ReflagClient } from "@bucketco/node-sdk";
 
-export const bucketClient = new BucketClient();
+export const bucketClient = new ReflagClient();
 
 bucketClient.initialize().then(() => {
   console.log("Bucket initialized!");
@@ -449,9 +449,9 @@ When writing tests that cover code with feature flags, you can toggle features o
 `bucket.ts`:
 
 ```typescript
-import { BucketClient } from "@bucketco/node-sdk";
+import { ReflagClient } from "@bucketco/node-sdk";
 
-export const bucket = new BucketClient();
+export const bucket = new ReflagClient();
 ```
 
 `app.test.ts`:
@@ -515,7 +515,7 @@ You can use a simple `Record<string, boolean>` and pass it either in the constru
 
 ```typescript
 // pass directly in the constructor
-const client = new BucketClient({ featureOverrides: { myFeature: true } });
+const client = new ReflagClient({ featureOverrides: { myFeature: true } });
 // or set on the client at a later time
 client.featureOverrides = { myFeature: false };
 
@@ -526,7 +526,7 @@ client.clearFeatureOverrides();
 To get dynamic overrides, use a function which takes a context and returns a boolean or an object with the shape of `{isEnabled, config}`:
 
 ```typescript
-import { BucketClient, Context } from "@bucketco/node-sdk";
+import { ReflagClient, Context } from "@bucketco/node-sdk";
 
 const featureOverrides = (context: Context) => ({
   "delete-todos": {
@@ -541,7 +541,7 @@ const featureOverrides = (context: Context) => ({
   },
 });
 
-const client = new BucketClient({
+const client = new ReflagClient({
   featureOverrides,
 });
 ```
@@ -605,7 +605,7 @@ import { BoundBucketClient } from "@bucketco/node-sdk";
 
 // Augment the Express types to include a `boundBucketClient` property on the
 // `res.locals` object.
-// This will allow us to access the BucketClient instance in our route handlers
+// This will allow us to access the ReflagClient instance in our route handlers
 // without having to pass it around manually
 declare global {
   namespace Express {
@@ -632,7 +632,7 @@ app.use((req, res, next) => {
   }
 
   // Create a new BoundBucketClient instance by calling the `bindClient`
-  // method on a `BucketClient` instance
+  // method on a `ReflagClient` instance
   // This will create a new instance that is bound to the user/company given.
   const boundBucketClient = bucket.bindClient({ user, company });
 
@@ -695,7 +695,7 @@ const features = await client.getFeaturesRemote("acme_inc", "john_doe");
 ## Opting out of tracking
 
 There are use cases in which you not want to be sending `user`, `company` and
-`track` events to Bucket.co. These are usually cases where you could be impersonating
+`track` events to [Reflag.com](https://reflag.com). These are usually cases where you could be impersonating
 another user in the system and do not want to interfere with the data being
 collected by Bucket.
 
@@ -720,20 +720,20 @@ or `getFeatures()` by supplying `enableTracking: false` in the arguments passed 
 these functions.
 
 > [!IMPORTANT]
-> Note, however, that calling `track()`, `updateCompany()` or `updateUser()` in the `BucketClient`
+> Note, however, that calling `track()`, `updateCompany()` or `updateUser()` in the `ReflagClient`
 > will still send tracking data. As such, it is always recommended to use `bindClient()`
 > when using this SDK.
 
 ## Flushing
 
-BucketClient employs a batching technique to minimize the number of calls that are sent to
+ReflagClient employs a batching technique to minimize the number of calls that are sent to
 Bucket's servers.
 
 By default, the SDK automatically subscribes to process exit signals and attempts to flush
 any pending events. This behavior is controlled by the `flushOnExit` option in the client configuration:
 
 ```typescript
-const client = new BucketClient({
+const client = new ReflagClient({
   batchOptions: {
     flushOnExit: false, // disable automatic flushing on exit
   },

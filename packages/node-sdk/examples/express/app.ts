@@ -3,7 +3,7 @@ import express from "express";
 import { BoundBucketClient } from "../src";
 
 // Augment the Express types to include the `bucketUser` property on the `res.locals` object
-// This will allow us to access the BucketClient instance in our route handlers
+// This will allow us to access the ReflagClient instance in our route handlers
 // without having to pass it around manually
 declare global {
   namespace Express {
@@ -22,7 +22,7 @@ app.use((req, res, next) => {
   // mechanism in a real-world application
   const { user, company } = extractBucketContextFromHeader(req);
 
-  // Create a new BoundBucketClient instance by calling the `bindClient` method on a `BucketClient` instance
+  // Create a new BoundBucketClient instance by calling the `bindClient` method on a `ReflagClient` instance
   // This will create a new instance that is bound to the user/company given.
   const bucketUser = bucket.bindClient({ user, company });
 

@@ -1,7 +1,7 @@
 import type { Ref } from "vue";
 
 import type {
-  BucketClient,
+  ReflagClient,
   BucketContext,
   InitOptions,
   RequestFeedbackData,
@@ -47,7 +47,7 @@ export type TypedFeatures = keyof Features extends never
 export type FeatureKey = keyof TypedFeatures;
 
 export interface ProviderContextType {
-  client: Ref<BucketClient>;
+  client: Ref<ReflagClient>;
   isLoading: Ref<boolean>;
   updatedCount: Ref<number>;
   provider: boolean;
@@ -57,8 +57,8 @@ export type BucketProps = BucketContext &
   InitOptions & {
     debug?: boolean;
     newBucketClient?: (
-      ...args: ConstructorParameters<typeof BucketClient>
-    ) => BucketClient;
+      ...args: ConstructorParameters<typeof ReflagClient>
+    ) => ReflagClient;
   };
 
 export type RequestFeatureFeedbackOptions = Omit<

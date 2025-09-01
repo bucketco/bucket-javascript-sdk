@@ -26,12 +26,12 @@ function trackEvent(evt: TrackEvent) {
 
 onMounted(() => {
   client.value.on("check", checkEvent);
-  client.value.on("featuresUpdated", featuresUpdatedEvent);
+  client.value.on("flagsUpdated", featuresUpdatedEvent);
   client.value.on("track", trackEvent);
 });
 onUnmounted(() => {
   client.value.off("check", checkEvent);
-  client.value.off("featuresUpdated", featuresUpdatedEvent);
+  client.value.off("flagsUpdated", featuresUpdatedEvent);
   client.value.off("track", trackEvent);
 });
 </script>

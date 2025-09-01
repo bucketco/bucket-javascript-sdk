@@ -11,7 +11,7 @@ import {
   TrackingEventDetails,
 } from "@openfeature/web-sdk";
 
-import { BucketClient, Feature, InitOptions } from "@bucketco/browser-sdk";
+import { ReflagClient, Feature, InitOptions } from "@bucketco/browser-sdk";
 
 export type ContextTranslationFn = (
   context?: EvaluationContext,
@@ -43,7 +43,7 @@ export class BucketBrowserSDKProvider implements Provider {
     name: "bucket-browser-provider",
   };
 
-  private _client?: BucketClient;
+  private _client?: ReflagClient;
 
   private readonly _clientOptions: InitOptions;
   private readonly _contextTranslator: ContextTranslationFn;
@@ -73,7 +73,7 @@ export class BucketBrowserSDKProvider implements Provider {
   }
 
   async initialize(context?: EvaluationContext): Promise<void> {
-    const client = new BucketClient({
+    const client = new ReflagClient({
       ...this._clientOptions,
       ...this._contextTranslator(context),
     });

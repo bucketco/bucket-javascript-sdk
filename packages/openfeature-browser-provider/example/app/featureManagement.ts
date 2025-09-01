@@ -20,7 +20,7 @@ export async function initOpenFeature() {
   }
   bucketProvider = new BucketBrowserSDKProvider({
     publishableKey,
-    fallbackFeatures: {
+    fallbackFlags: {
       huddle: {
         key: "zoom", // huddleMeetingProvider
         payload: {

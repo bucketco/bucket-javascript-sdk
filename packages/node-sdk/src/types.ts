@@ -599,7 +599,7 @@ export type ClientOptions = {
    * If a record is supplied instead of array, the values of each key are either the
    * configuration values or the boolean value `true`.
    **/
-  fallbackFeatures?:
+  fallbackFlags?:
     | TypedFeatureKey[]
     | Record<TypedFeatureKey, Exclude<FeatureOverride, false>>;
 

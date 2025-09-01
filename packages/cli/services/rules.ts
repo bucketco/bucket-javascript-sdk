@@ -25,7 +25,7 @@ Bucket is a comprehensive feature management service offering feature flags, use
 
 ## Bucket SDK Usage
 
-- Configure \`BucketProvider\` or \`BucketClient\` properly at application entry points.
+- Configure \`BucketProvider\` or \`ReflagClient\` properly at application entry points.
 - Leverage Bucket CLI for generating type-safe feature definitions.
 - Write clean, type-safe code when applying Bucket feature flags.
 - Follow established patterns in the project.
@@ -228,9 +228,9 @@ npm i @bucketco/node-sdk
 ### Basic Setup
 
 \`\`\`javascript
-import { BucketClient } from "@bucketco/node-sdk";
+import { ReflagClient } from "@bucketco/node-sdk";
 
-const client = new BucketClient({
+const client = new ReflagClient({
   secretKey: process.env.BUCKET_SECRET_KEY,
 });
 

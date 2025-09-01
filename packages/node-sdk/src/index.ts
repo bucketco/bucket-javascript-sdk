@@ -1,4 +1,4 @@
-export { BoundBucketClient, BucketClient } from "./client";
+export { BoundBucketClient, ReflagClient } from "./client";
 export { EdgeClient, EdgeClientOptions } from "./edgeClient";
 export type {
   Attributes,

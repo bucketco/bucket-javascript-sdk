@@ -1,7 +1,7 @@
 import { Client, OpenFeature } from "@openfeature/web-sdk";
 import { beforeEach, describe, expect, it, Mock, vi } from "vitest";
 
-import { BucketClient } from "@bucketco/browser-sdk";
+import { ReflagClient } from "@bucketco/browser-sdk";
 
 import { BucketBrowserSDKProvider, defaultContextTranslator } from ".";
 
@@ -11,7 +11,7 @@ vi.mock("@bucketco/browser-sdk", () => {
   return {
     __esModule: true,
     ...actualModule,
-    BucketClient: vi.fn(),
+    ReflagClient: vi.fn(),
   };
 });
 
@@ -30,7 +30,7 @@ describe("BucketBrowserSDKProvider", () => {
     stop: vi.fn(),
   };
 
-  const mockBucketClient = BucketClient as Mock;
+  const mockBucketClient = ReflagClient as Mock;
   mockBucketClient.mockReturnValue(bucketClientMock);
 
   beforeEach(async () => {
@@ -50,8 +50,8 @@ describe("BucketBrowserSDKProvider", () => {
   describe("lifecycle", () => {
     it("should call initialize function with correct arguments", async () => {
       await provider.initialize();
-      expect(BucketClient).toHaveBeenCalledTimes(1);
-      expect(BucketClient).toHaveBeenCalledWith({
+      expect(ReflagClient).toHaveBeenCalledTimes(1);
+      expect(ReflagClient).toHaveBeenCalledWith({
         publishableKey,
       });
       expect(bucketClientMock.initialize).toHaveBeenCalledTimes(1);

@@ -1,7 +1,7 @@
 import { ProviderStatus } from "@openfeature/server-sdk";
 import { beforeEach, describe, expect, it, Mock, vi } from "vitest";
 
-import { BucketClient } from "@bucketco/node-sdk";
+import { ReflagClient } from "@bucketco/node-sdk";
 
 import { BucketNodeProvider, defaultContextTranslator } from "./index";
 
@@ -11,7 +11,7 @@ vi.mock("@bucketco/node-sdk", () => {
   return {
     __esModule: true,
     ...actualModule,
-    BucketClient: vi.fn(),
+    ReflagClient: vi.fn(),
   };
 });
 
@@ -45,7 +45,7 @@ beforeEach(() => {
 describe("BucketNodeProvider", () => {
   let provider: BucketNodeProvider;
 
-  const mockBucketClient = BucketClient as Mock;
+  const mockBucketClient = ReflagClient as Mock;
   mockBucketClient.mockReturnValue(bucketClientMock);
 
   let mockTranslatorFn: Mock;
@@ -134,7 +134,7 @@ describe("BucketNodeProvider", () => {
   });
 
   describe("lifecycle", () => {
-    it("calls the constructor of BucketClient", () => {
+    it("calls the constructor of ReflagClient", () => {
       mockBucketClient.mockClear();
 
       provider = new BucketNodeProvider({

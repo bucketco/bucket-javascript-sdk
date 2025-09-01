@@ -2,8 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Bucket feedback collection</title>
-    <script src="https://cdn.jsdelivr.net/npm/@bucketco/browser-sdk@latest"></script>
+    <title>Reflag feedback collection</title>
+    <script src="https://cdn.jsdelivr.net/npm/@reflag/browser-sdk@latest"></script>
     <style>
       fieldset label {
         display: flex;
@@ -32,14 +32,14 @@
           comment: formData.comment ? formData.comment : null,
         };
 
-        // Using the Bucket SDK
-        new BucketClient({
+        // Using the Reflag SDK
+        new ReflagClient({
           publishableKey: "EXAMPLE_PUBLISHABLE_KEY",
         }).feedback(feedbackPayload);
 
         /*
-        // Using the Bucket API
-        fetch("https://tracking.bucket.co/feedback", {
+        // Using the Reflag API
+        fetch("https://front.reflag.com/feedback", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

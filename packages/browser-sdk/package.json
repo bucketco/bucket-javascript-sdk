@@ -1,11 +1,11 @@
 {
-  "name": "@bucketco/browser-sdk",
+  "name": "@reflag/browser-sdk",
   "version": "3.3.4",
   "packageManager": "yarn@4.1.1",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/bucketco/bucket-javascript-sdk.git"
+    "url": "https://github.com/reflagcom/reflag-javascript-sdk.git"
   },
   "publishConfig": {
     "access": "public"
@@ -26,12 +26,12 @@
   "files": [
     "dist"
   ],
-  "main": "./dist/bucket-browser-sdk.umd.js",
+  "main": "./dist/reflag-browser-sdk.umd.js",
   "types": "./dist/types/src/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/bucket-browser-sdk.mjs",
-      "require": "./dist/bucket-browser-sdk.umd.js",
+      "import": "./dist/reflag-browser-sdk.mjs",
+      "require": "./dist/reflag-browser-sdk.umd.js",
       "types": "./dist/types/src/index.d.ts"
     }
   },
@@ -42,8 +42,8 @@
     "preact": "^10.22.1"
   },
   "devDependencies": {
-    "@bucketco/eslint-config": "0.0.2",
-    "@bucketco/tsconfig": "0.0.2",
+    "@reflag/eslint-config": "0.0.2",
+    "@reflag/tsconfig": "0.0.2",
     "@playwright/test": "^1.49.1",
     "@types/js-cookie": "^3.0.6",
     "@types/node": "^22.12.0",

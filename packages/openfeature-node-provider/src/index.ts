@@ -12,7 +12,7 @@ import {
 } from "@openfeature/server-sdk";
 
 import {
-  BucketClient,
+  ReflagClient,
   ClientOptions,
   Context as BucketContext,
 } from "@bucketco/node-sdk";
@@ -48,7 +48,7 @@ export const defaultContextTranslator = (
 export class BucketNodeProvider implements Provider {
   public readonly events = new OpenFeatureEventEmitter();
 
-  private _client: BucketClient;
+  private _client: ReflagClient;
 
   private contextTranslator: (context: EvaluationContext) => BucketContext;
 
@@ -65,7 +65,7 @@ export class BucketNodeProvider implements Provider {
   }
 
   constructor({ contextTranslator, ...opts }: ProviderOptions) {
-    this._client = new BucketClient(opts);
+    this._client = new ReflagClient(opts);
     this.contextTranslator = contextTranslator ?? defaultContextTranslator;
   }
 

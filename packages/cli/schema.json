@@ -6,12 +6,12 @@
     "baseUrl": {
       "type": "string",
       "pattern": "^https?://.*",
-      "description": "Base URL for the API. Defaults to https://app.bucket.co."
+      "description": "Base URL for the API. Defaults to https://app.reflag.com."
     },
     "apiUrl": {
       "type": "string",
       "pattern": "^https?://.*",
-      "description": "API URL for the API. Defaults to https://app.bucket.co/api."
+      "description": "API URL for the API. Defaults to https://app.reflag.com/api."
     },
     "appId": {
       "type": "string",

@@ -108,7 +108,7 @@ type BulkEvent =
  * @example
  * ```ts
  * // set the BUCKET_SECRET_KEY environment variable or pass the secret key to the constructor
- * const client = new BucketClient();
+ * const client = new ReflagClient();
  *
  * // evaluate a feature flag
  * const isFeatureEnabled = client.getFeature("feature-flag-key", {
@@ -117,13 +117,13 @@ type BulkEvent =
  * });
  * ```
  **/
-export class BucketClient {
+export class ReflagClient {
   private _config: {
     apiBaseUrl: string;
     refetchInterval: number;
     staleWarningInterval: number;
     headers: Record<string, string>;
-    fallbackFeatures?: Record<TypedFeatureKey, RawFeature>;
+    fallbackFlags?: Record<TypedFeatureKey, RawFeature>;
     featureOverrides: FeatureOverridesFn;
     offline: boolean;
     emitEvaluationEvents: boolean;
@@ -169,7 +169,7 @@ export class BucketClient {
    * @param options.httpClient - The HTTP client to use for sending requests (optional).
    * @param options.logLevel - The log level to use for logging (optional).
    * @param options.offline - Whether to run in offline mode (optional).
-   * @param options.fallbackFeatures - The fallback features to use if the feature is not found (optional).
+   * @param options.fallbackFlags - The fallback features to use if the feature is not found (optional).
    * @param options.batchOptions - The options for the batch buffer (optional).
    * @param options.featureOverrides - The feature overrides to use for the client (optional).
    * @param options.configFile - The path to the config file (optional).
@@ -202,10 +202,10 @@ export class BucketClient {
       "httpClient must be an object",
     );
     ok(
-      options.fallbackFeatures === undefined ||
-        Array.isArray(options.fallbackFeatures) ||
-        isObject(options.fallbackFeatures),
-      "fallbackFeatures must be an array or object",
+      options.fallbackFlags === undefined ||
+        Array.isArray(options.fallbackFlags) ||
+        isObject(options.fallbackFlags),
+      "fallbackFlags must be an array or object",
     );
     ok(
       options.batchOptions === undefined || isObject(options.batchOptions),
@@ -260,8 +260,8 @@ export class BucketClient {
 
     // todo: deprecate fallback features in favour of a more operationally
     //  friendly way of setting fall backs.
-    const fallbackFeatures = Array.isArray(options.fallbackFeatures)
-      ? options.fallbackFeatures.reduce(
+    const fallbackFlags = Array.isArray(options.fallbackFlags)
+      ? options.fallbackFlags.reduce(
           (acc, key) => {
             acc[key as TypedFeatureKey] = {
               isEnabled: true,
@@ -271,8 +271,8 @@ export class BucketClient {
           },
           {} as Record<TypedFeatureKey, RawFeature>,
         )
-      : isObject(options.fallbackFeatures)
-        ? Object.entries(options.fallbackFeatures).reduce(
+      : isObject(options.fallbackFlags)
+        ? Object.entries(options.fallbackFlags).reduce(
             (acc, [key, fallback]) => {
               acc[key as TypedFeatureKey] = {
                 isEnabled:
@@ -315,7 +315,7 @@ export class BucketClient {
       },
       refetchInterval: FEATURES_REFETCH_MS,
       staleWarningInterval: FEATURES_REFETCH_MS * 5,
-      fallbackFeatures: fallbackFeatures,
+      fallbackFlags: fallbackFlags,
       featureOverrides:
         typeof config.featureOverrides === "function"
           ? config.featureOverrides
@@ -1031,7 +1031,7 @@ export class BucketClient {
     checkContextWithTracking(options);
 
     if (!this.initializationFinished) {
-      this.logger.error("getFeature(s): BucketClient is not initialized yet.");
+      this.logger.error("getFeature(s): ReflagClient is not initialized yet.");
     }
 
     void this.syncContext(options);
@@ -1043,15 +1043,15 @@ export class BucketClient {
         this.logger.warn(
           "no feature definitions available, using fallback features.",
         );
-        const fallbackFeatures = this._config.fallbackFeatures || {};
+        const fallbackFlags = this._config.fallbackFlags || {};
         if (key) {
           return this._wrapRawFeature(
             { ...options, enableChecks: true },
-            { key, ...fallbackFeatures[key] },
+            { key, ...fallbackFlags[key] },
           );
         }
         return Object.fromEntries(
-          Object.entries(fallbackFeatures).map(([k, v]) => [
+          Object.entries(fallbackFlags).map(([k, v]) => [
             k as TypedFeatureKey,
             this._wrapRawFeature(options, v),
           ]),
@@ -1339,20 +1339,20 @@ export class BucketClient {
  * A client bound with a specific user, company, and other context.
  */
 export class BoundBucketClient {
-  private readonly _client: BucketClient;
+  private readonly _client: ReflagClient;
   private readonly _options: ContextWithTracking;
 
   /**
    * (Internal) Creates a new BoundBucketClient. Use `bindClient` to create a new client bound with a specific context.
    *
-   * @param client - The `BucketClient` to use.
+   * @param client - The `ReflagClient` to use.
    * @param options - The options for the client.
    * @param options.enableTracking - Whether to enable tracking for the client.
    *
    * @internal
    */
   constructor(
-    client: BucketClient,
+    client: ReflagClient,
     { enableTracking = true, ...context }: ContextWithTracking,
   ) {
     this._client = client;

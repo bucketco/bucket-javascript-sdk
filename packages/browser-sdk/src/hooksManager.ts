@@ -1,19 +1,9 @@
-import { CheckEvent, RawFeatures } from "./feature/features";
+import { CheckEvent, RawFlags } from "./flag/flags";
 import { CompanyContext, UserContext } from "./context";
 
 export interface HookArgs {
-  /**
-   * Deprecated: Use `check` instead.
-   * @deprecated
-   */
-  configCheck: CheckEvent;
-  /**
-   * Deprecated: Use `check` instead.
-   * @deprecated
-   */
-  enabledCheck: CheckEvent;
   check: CheckEvent;
-  featuresUpdated: RawFeatures;
+  flagsUpdated: RawFlags;
   user: UserContext;
   company: CompanyContext;
   track: TrackEvent;
@@ -32,18 +22,14 @@ export type TrackEvent = {
  */
 export class HooksManager {
   private hooks: {
-    enabledCheck: ((arg0: CheckEvent) => void)[];
-    configCheck: ((arg0: CheckEvent) => void)[];
     check: ((arg0: CheckEvent) => void)[];
-    featuresUpdated: ((arg0: RawFeatures) => void)[];
+    flagsUpdated: ((arg0: RawFlags) => void)[];
     user: ((arg0: UserContext) => void)[];
     company: ((arg0: CompanyContext) => void)[];
     track: ((arg0: TrackEvent) => void)[];
   } = {
-    enabledCheck: [],
-    configCheck: [],
     check: [],
-    featuresUpdated: [],
+    flagsUpdated: [],
     user: [],
     company: [],
     track: [],

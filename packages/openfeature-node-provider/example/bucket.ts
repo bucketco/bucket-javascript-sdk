@@ -11,7 +11,7 @@ export type CreateTodosConfig = {
 
 const provider = new BucketNodeProvider({
   secretKey: process.env.BUCKET_SECRET_KEY!,
-  fallbackFeatures: {
+  fallbackFlags: {
     "show-todos": {
       isEnabled: true,
     },

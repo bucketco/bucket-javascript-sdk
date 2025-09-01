@@ -12,7 +12,7 @@ import {
 
 import { flattenJSON } from "@bucketco/flag-evaluation";
 
-import { BoundBucketClient, BucketClient } from "../src";
+import { BoundBucketClient, ReflagClient } from "../src";
 import {
   API_BASE_URL,
   API_TIMEOUT_MS,
@@ -69,14 +69,14 @@ const logger = {
 };
 const httpClient = { post: vi.fn(), get: vi.fn() };
 
-const fallbackFeatures = ["key"];
+const fallbackFlags = ["key"];
 
 const validOptions: ClientOptions = {
   secretKey: "validSecretKeyWithMoreThan22Chars",
   apiBaseUrl: "https://api.example.com/",
   logger,
   httpClient,
-  fallbackFeatures,
+  fallbackFlags,
   featuresFetchRetries: 2,
   batchOptions: {
     maxSize: 99,
@@ -158,7 +158,7 @@ const featureDefinitions: FeaturesAPIResponse = {
   ],
 };
 
-describe("BucketClient", () => {
+describe("ReflagClient", () => {
   afterEach(() => {
     vi.clearAllMocks();
   });
@@ -168,20 +168,20 @@ describe("BucketClient", () => {
       const secretKeyEnv = process.env.BUCKET_SECRET_KEY;
       process.env.BUCKET_SECRET_KEY = "validSecretKeyWithMoreThan22Chars";
       try {
-        const bucketInstance = new BucketClient();
-        expect(bucketInstance).toBeInstanceOf(BucketClient);
+        const bucketInstance = new ReflagClient();
+        expect(bucketInstance).toBeInstanceOf(ReflagClient);
       } finally {
         process.env.BUCKET_SECRET_KEY = secretKeyEnv;
       }
     });
 
     it("should accept fallback features as an array", async () => {
-      const bucketInstance = new BucketClient({
+      const bucketInstance = new ReflagClient({
         secretKey: "validSecretKeyWithMoreThan22Chars",
-        fallbackFeatures: ["feature1", "feature2"],
+        fallbackFlags: ["feature1", "feature2"],
       });
 
-      expect(bucketInstance["_config"].fallbackFeatures).toEqual({
+      expect(bucketInstance["_config"].fallbackFlags).toEqual({
         feature1: {
           isEnabled: true,
           key: "feature1",
@@ -194,9 +194,9 @@ describe("BucketClient", () => {
     });
 
     it("should accept fallback features as an object", async () => {
-      const bucketInstance = new BucketClient({
+      const bucketInstance = new ReflagClient({
         secretKey: "validSecretKeyWithMoreThan22Chars",
-        fallbackFeatures: {
+        fallbackFlags: {
           feature1: true,
           feature2: {
             isEnabled: true,
@@ -208,7 +208,7 @@ describe("BucketClient", () => {
         },
       });
 
-      expect(bucketInstance["_config"].fallbackFeatures).toStrictEqual({
+      expect(bucketInstance["_config"].fallbackFlags).toStrictEqual({
         feature1: {
           key: "feature1",
           config: undefined,
@@ -226,9 +226,9 @@ describe("BucketClient", () => {
     });
 
     it("should create a client instance with valid options", () => {
-      const client = new BucketClient(validOptions);
+      const client = new ReflagClient(validOptions);
 
-      expect(client).toBeInstanceOf(BucketClient);
+      expect(client).toBeInstanceOf(ReflagClient);
       expect(client["_config"].apiBaseUrl).toBe("https://api.example.com/");
       expect(client["_config"].refetchInterval).toBe(FEATURES_REFETCH_MS);
       expect(client["_config"].staleWarningInterval).toBe(
@@ -242,7 +242,7 @@ describe("BucketClient", () => {
         intervalMs: 10001,
       });
 
-      expect(client["_config"].fallbackFeatures).toEqual({
+      expect(client["_config"].fallbackFlags).toEqual({
         key: {
           key: "key",
           isEnabled: true,
@@ -252,7 +252,7 @@ describe("BucketClient", () => {
     });
 
     it("should route messages to the supplied logger", () => {
-      const client = new BucketClient(validOptions);
+      const client = new ReflagClient(validOptions);
 
       const actualLogger = client.logger!;
       actualLogger.debug("debug message");
@@ -275,7 +275,7 @@ describe("BucketClient", () => {
     });
 
     it("should create a client instance with default values for optional fields", () => {
-      const client = new BucketClient({
+      const client = new ReflagClient({
         secretKey: "validSecretKeyWithMoreThan22Chars",
       });
 
@@ -286,7 +286,7 @@ describe("BucketClient", () => {
       );
       expect(client.httpClient).toBe(fetchClient);
       expect(client["_config"].headers).toEqual(expectedHeaders);
-      expect(client["_config"].fallbackFeatures).toBeUndefined();
+      expect(client["_config"].fallbackFlags).toBeUndefined();
       expect(client["batchBuffer"]).toMatchObject({
         maxSize: BATCH_MAX_SIZE,
         intervalMs: BATCH_INTERVAL_MS,
@@ -295,17 +295,17 @@ describe("BucketClient", () => {
 
     it("should throw an error if options are invalid", () => {
       let invalidOptions: any = null;
-      expect(() => new BucketClient(invalidOptions)).toThrow(
+      expect(() => new ReflagClient(invalidOptions)).toThrow(
         "options must be an object",
       );
 
       invalidOptions = { ...validOptions, secretKey: "shortKey" };
-      expect(() => new BucketClient(invalidOptions)).toThrow(
+      expect(() => new ReflagClient(invalidOptions)).toThrow(
         "invalid secretKey specified",
       );
 
       invalidOptions = { ...validOptions, host: 123 };
-      expect(() => new BucketClient(invalidOptions)).toThrow(
+      expect(() => new ReflagClient(invalidOptions)).toThrow(
         "host must be a string",
       );
 
@@ -313,7 +313,7 @@ describe("BucketClient", () => {
         ...validOptions,
         logger: "invalidLogger" as any,
       };
-      expect(() => new BucketClient(invalidOptions)).toThrow(
+      expect(() => new ReflagClient(invalidOptions)).toThrow(
         "logger must be an object",
       );
 
@@ -321,7 +321,7 @@ describe("BucketClient", () => {
         ...validOptions,
         httpClient: "invalidHttpClient" as any,
       };
-      expect(() => new BucketClient(invalidOptions)).toThrow(
+      expect(() => new ReflagClient(invalidOptions)).toThrow(
         "httpClient must be an object",
       );
 
@@ -329,21 +329,21 @@ describe("BucketClient", () => {
         ...validOptions,
         batchOptions: "invalid" as any,
       };
-      expect(() => new BucketClient(invalidOptions)).toThrow(
+      expect(() => new ReflagClient(invalidOptions)).toThrow(
         "batchOptions must be an object",
       );
 
       invalidOptions = {
         ...validOptions,
-        fallbackFeatures: "invalid" as any,
+        fallbackFlags: "invalid" as any,
       };
-      expect(() => new BucketClient(invalidOptions)).toThrow(
-        "fallbackFeatures must be an array or object",
+      expect(() => new ReflagClient(invalidOptions)).toThrow(
+        "fallbackFlags must be an array or object",
       );
     });
 
     it("should create a new feature events rate-limiter", () => {
-      const client = new BucketClient(validOptions);
+      const client = new ReflagClient(validOptions);
 
       expect(client["rateLimiter"]).toBeDefined();
       expect(newRateLimiter).toHaveBeenCalledWith(
@@ -352,7 +352,7 @@ describe("BucketClient", () => {
     });
 
     it("should not register an exit flush handler if `batchOptions.flushOnExit` is false", () => {
-      new BucketClient({
+      new ReflagClient({
         ...validOptions,
         batchOptions: { ...validOptions.batchOptions, flushOnExit: false },
       });
@@ -361,7 +361,7 @@ describe("BucketClient", () => {
     });
 
     it("should not register an exit flush handler if `offline` is true", () => {
-      new BucketClient({
+      new ReflagClient({
         ...validOptions,
         offline: true,
       });
@@ -372,7 +372,7 @@ describe("BucketClient", () => {
     it.each([undefined, true])(
       "should register an exit flush handler if `batchOptions.flushOnExit` is `%s`",
       (flushOnExit) => {
-        new BucketClient({
+        new ReflagClient({
           ...validOptions,
           batchOptions: { ...validOptions.batchOptions, flushOnExit },
         });
@@ -389,7 +389,7 @@ describe("BucketClient", () => {
     ])(
       "should build the URLs correctly %s -> %s",
       async (apiBaseUrl, expectedUrl) => {
-        const client = new BucketClient({
+        const client = new ReflagClient({
           ...validOptions,
           apiBaseUrl,
         });
@@ -407,7 +407,7 @@ describe("BucketClient", () => {
   });
 
   describe("bindClient", () => {
-    const client = new BucketClient(validOptions);
+    const client = new ReflagClient(validOptions);
     const context = {
       user,
       company,
@@ -534,7 +534,7 @@ describe("BucketClient", () => {
   });
 
   describe("updateUser", () => {
-    const client = new BucketClient(validOptions);
+    const client = new ReflagClient(validOptions);
 
     beforeEach(() => {
       client["rateLimiter"].clearStale(true);
@@ -619,7 +619,7 @@ describe("BucketClient", () => {
   });
 
   describe("updateCompany", () => {
-    const client = new BucketClient(validOptions);
+    const client = new ReflagClient(validOptions);
 
     beforeEach(() => {
       client["rateLimiter"].clearStale(true);
@@ -713,7 +713,7 @@ describe("BucketClient", () => {
   });
 
   describe("track", () => {
-    const client = new BucketClient(validOptions);
+    const client = new ReflagClient(validOptions);
 
     beforeEach(() => {
       client["rateLimiter"].clearStale(true);
@@ -871,12 +871,12 @@ describe("BucketClient", () => {
 
   describe("user", () => {
     it("should return the undefined if user was not set", () => {
-      const client = new BucketClient(validOptions).bindClient({ company });
+      const client = new ReflagClient(validOptions).bindClient({ company });
       expect(client.user).toBeUndefined();
     });
 
     it("should return the user if user was associated", () => {
-      const client = new BucketClient(validOptions).bindClient({ user });
+      const client = new ReflagClient(validOptions).bindClient({ user });
 
       expect(client.user).toEqual(user);
     });
@@ -884,12 +884,12 @@ describe("BucketClient", () => {
 
   describe("company", () => {
     it("should return the undefined if company was not set", () => {
-      const client = new BucketClient(validOptions).bindClient({ user });
+      const client = new ReflagClient(validOptions).bindClient({ user });
       expect(client.company).toBeUndefined();
     });
 
     it("should return the user if company was associated", () => {
-      const client = new BucketClient(validOptions).bindClient({ company });
+      const client = new ReflagClient(validOptions).bindClient({ company });
 
       expect(client.company).toEqual(company);
     });
@@ -897,12 +897,12 @@ describe("BucketClient", () => {
 
   describe("otherContext", () => {
     it("should return the undefined if custom context was not set", () => {
-      const client = new BucketClient(validOptions).bindClient({ company });
+      const client = new ReflagClient(validOptions).bindClient({ company });
       expect(client.otherContext).toBeUndefined();
     });
 
     it("should return the user if custom context was associated", () => {
-      const client = new BucketClient(validOptions).bindClient({
+      const client = new ReflagClient(validOptions).bindClient({
         other: otherContext,
       });
 
@@ -912,7 +912,7 @@ describe("BucketClient", () => {
 
   describe("initialize", () => {
     it("should initialize the client", async () => {
-      const client = new BucketClient(validOptions);
+      const client = new ReflagClient(validOptions);
 
       const get = vi
         .spyOn(client["featuresCache"], "get")
@@ -930,7 +930,7 @@ describe("BucketClient", () => {
     });
 
     it("should call the backend to obtain features", async () => {
-      const client = new BucketClient(validOptions);
+      const client = new ReflagClient(validOptions);
 
       httpClient.get.mockResolvedValue({
         ok: true,
@@ -949,7 +949,7 @@ describe("BucketClient", () => {
 
   describe("flush", () => {
     it("should flush all bulk data", async () => {
-      const client = new BucketClient(validOptions);
+      const client = new ReflagClient(validOptions);
 
       await client.updateUser(user.id, { attributes: { age: 2 } });
       await client.updateUser(user.id, { attributes: { age: 3 } });
@@ -981,7 +981,7 @@ describe("BucketClient", () => {
     });
 
     it("should not flush all bulk data if `offline` is true", async () => {
-      const client = new BucketClient({
+      const client = new ReflagClient({
         ...validOptions,
         offline: true,
       });
@@ -994,7 +994,7 @@ describe("BucketClient", () => {
   });
 
   describe("getFeature", () => {
-    let client: BucketClient;
+    let client: ReflagClient;
 
     beforeEach(async () => {
       httpClient.get.mockResolvedValue({
@@ -1006,7 +1006,7 @@ describe("BucketClient", () => {
         },
       });
 
-      client = new BucketClient(validOptions);
+      client = new ReflagClient(validOptions);
 
       httpClient.post.mockResolvedValue({
         status: 200,
@@ -1122,7 +1122,7 @@ describe("BucketClient", () => {
     });
 
     it("`track` does not send evaluation events when `emitEvaluationEvents` is `false`", async () => {
-      client = new BucketClient({
+      client = new ReflagClient({
         ...validOptions,
         emitEvaluationEvents: false,
       });
@@ -1385,7 +1385,7 @@ describe("BucketClient", () => {
   });
 
   describe("getFeatures", () => {
-    let client: BucketClient;
+    let client: ReflagClient;
 
     beforeEach(async () => {
       httpClient.get.mockResolvedValue({
@@ -1397,7 +1397,7 @@ describe("BucketClient", () => {
         },
       });
 
-      client = new BucketClient(validOptions);
+      client = new ReflagClient(validOptions);
 
       client["rateLimiter"].clearStale(true);
 
@@ -1976,7 +1976,7 @@ describe("BucketClient", () => {
   });
 
   describe("getFeaturesRemote", () => {
-    let client: BucketClient;
+    let client: ReflagClient;
 
     beforeEach(async () => {
       httpClient.get.mockResolvedValue({
@@ -2014,7 +2014,7 @@ describe("BucketClient", () => {
         },
       });
 
-      client = new BucketClient(validOptions);
+      client = new ReflagClient(validOptions);
     });
 
     afterEach(() => {
@@ -2073,7 +2073,7 @@ describe("BucketClient", () => {
   });
 
   describe("getFeatureRemote", () => {
-    let client: BucketClient;
+    let client: ReflagClient;
 
     beforeEach(async () => {
       httpClient.get.mockResolvedValue({
@@ -2100,7 +2100,7 @@ describe("BucketClient", () => {
         },
       });
 
-      client = new BucketClient(validOptions);
+      client = new ReflagClient(validOptions);
     });
 
     afterEach(() => {
@@ -2143,10 +2143,10 @@ describe("BucketClient", () => {
   });
 
   describe("offline mode", () => {
-    let client: BucketClient;
+    let client: ReflagClient;
 
     beforeEach(async () => {
-      client = new BucketClient({
+      client = new ReflagClient({
         ...validOptions,
         offline: true,
       });
@@ -2179,7 +2179,7 @@ describe("BoundBucketClient", () => {
       },
     });
   });
-  const client = new BucketClient(validOptions);
+  const client = new ReflagClient(validOptions);
 
   beforeEach(async () => {
     await flushPromises();
@@ -2190,7 +2190,7 @@ describe("BoundBucketClient", () => {
   });
 
   it("should create a client instance", () => {
-    expect(client).toBeInstanceOf(BucketClient);
+    expect(client).toBeInstanceOf(ReflagClient);
   });
 
   it("should return a new client instance with merged attributes", () => {

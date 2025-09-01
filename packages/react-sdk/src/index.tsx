@@ -11,7 +11,7 @@ import React, {
 import canonicalJSON from "canonical-json";
 
 import {
-  BucketClient,
+  ReflagClient,
   BucketContext,
   CheckEvent,
   CompanyContext,
@@ -122,7 +122,7 @@ export type FeatureKey = keyof TypedFeatures;
 const SDK_VERSION = `react-sdk/${version}`;
 
 type ProviderContextType = {
-  client?: BucketClient;
+  client?: ReflagClient;
   features: {
     features: RawFeatures;
     isLoading: boolean;
@@ -159,17 +159,17 @@ export type BucketProps = BucketContext &
     debug?: boolean;
 
     /**
-     * New BucketClient constructor.
+     * New ReflagClient constructor.
      *
      * @internal
      */
     newBucketClient?: (
-      ...args: ConstructorParameters<typeof BucketClient>
-    ) => BucketClient;
+      ...args: ConstructorParameters<typeof ReflagClient>
+    ) => ReflagClient;
   };
 
 /**
- * Provider for the BucketClient.
+ * Provider for the ReflagClient.
  */
 export function BucketProvider({
   children,
@@ -177,13 +177,13 @@ export function BucketProvider({
   company,
   otherContext,
   loadingComponent,
-  newBucketClient = (...args) => new BucketClient(...args),
+  newBucketClient = (...args) => new ReflagClient(...args),
   ...config
 }: BucketProps) {
   const [featuresLoading, setFeaturesLoading] = useState(true);
   const [rawFeatures, setRawFeatures] = useState<RawFeatures>({});
 
-  const clientRef = useRef<BucketClient>();
+  const clientRef = useRef<ReflagClient>();
   const contextKeyRef = useRef<string>();
 
   const featureContext = { user, company, otherContext };
@@ -216,7 +216,7 @@ export function BucketProvider({
 
     clientRef.current = client;
 
-    client.on("featuresUpdated", setRawFeatures);
+    client.on("flagsUpdated", setRawFeatures);
 
     client
       .initialize()
@@ -419,9 +419,9 @@ export function useUpdateOtherContext() {
 }
 
 /**
- * Returns the current `BucketClient` used by the `BucketProvider`.
+ * Returns the current `ReflagClient` used by the `BucketProvider`.
  *
- * This is useful if you need to access the `BucketClient` outside of the `BucketProvider`.
+ * This is useful if you need to access the `ReflagClient` outside of the `BucketProvider`.
  *
  * ```ts
  * const client = useClient();
