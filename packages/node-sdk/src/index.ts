@@ -1,9 +1,4 @@
-export {
-  BoundBucketClient,
-  BoundReflagClient,
-  BucketClient,
-  ReflagClient,
-} from "./client";
+export { BoundReflagClient, ReflagClient } from "./client";
 export { EdgeClient, EdgeClientOptions } from "./edgeClient";
 export type {
   Attributes,
@@ -12,12 +7,6 @@ export type {
   ClientOptions,
   Context,
   ContextWithTracking,
-  Feature,
-  FeatureDefinition,
-  FeatureOverride,
-  FeatureOverrides,
-  FeatureOverridesFn,
-  Features,
   FlagDefinition,
   FlagKey,
   FlagOverridesFn,
@@ -29,7 +18,5 @@ export type {
   LogLevel,
   TrackingMeta,
   TrackOptions,
-  TypedFeatureKey,
-  TypedFeatures,
   TypedFlags,
 } from "./types";

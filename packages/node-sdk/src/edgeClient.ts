@@ -15,12 +15,12 @@ export type EdgeClientOptions = Omit<
  * // set the REFLAG_SECRET_KEY environment variable or pass the secret key in the constructor
  * const client = new EdgeClient();
  *
- * // evaluate a feature flag
+ * // evaluate a flag
  * const context = {
  *   user: { id: "user-id" },
  *   company: { id: "company-id" },
  * }
- * const { isEnabled } = client.getFeature(context, "feature-flag-key");
+ * const isEnabled = client.getFlag(context, "flag-key");
  *
  * ```
  */
