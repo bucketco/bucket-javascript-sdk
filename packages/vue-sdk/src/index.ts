@@ -25,16 +25,7 @@ export type { ReflagProps, RequestFlagFeedbackOptions } from "./types";
 
 export { ReflagProvider };
 
-export type {
-  CheckEvent,
-  CompanyContext,
-  EmptyFlagRemoteConfig,
-  Flag,
-  Flags,
-  FlagType,
-  TrackEvent,
-  UserContext,
-};
+export type { CheckEvent, CompanyContext, TrackEvent, UserContext };
 
 export default {
   install(app: App, _options?: ReflagProps) {

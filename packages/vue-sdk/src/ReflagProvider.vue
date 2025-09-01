@@ -8,7 +8,7 @@ import { ProviderSymbol } from "./hooks";
 import { ProviderContextType, ReflagProps } from "./types";
 import { SDK_VERSION } from "./version";
 
-const featuresLoading = ref(true);
+const flagsLoading = ref(true);
 const updatedCount = ref<number>(0);
 
 // any optional prop which has boolean as part of the type, will default to false
@@ -27,12 +27,12 @@ function updateClient() {
     logger: props.debug ? console : undefined,
     sdkVersion: SDK_VERSION,
   });
-  featuresLoading.value = true;
+  flagsLoading.value = true;
   cnext
     .initialize()
     .catch((e) => cnext.logger.error("failed to initialize client", e))
     .finally(() => {
-      featuresLoading.value = false;
+      flagsLoading.value = false;
     });
 
   return cnext;
@@ -58,7 +58,7 @@ watch(
 const clientRef = shallowRef<ReflagClient>(updateClient());
 
 const context = {
-  isLoading: featuresLoading,
+  isLoading: flagsLoading,
   updatedCount: updatedCount,
   client: clientRef,
   provider: true,
