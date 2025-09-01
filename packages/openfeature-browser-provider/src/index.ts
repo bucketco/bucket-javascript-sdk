@@ -2,7 +2,7 @@ import {
   ErrorCode,
   EvaluationContext,
   JsonValue,
-  OpenFeatureEventEmitter,
+  OpenFlagEventEmitter,
   Provider,
   ProviderMetadata,
   ProviderStatus,
@@ -11,7 +11,7 @@ import {
   TrackingEventDetails,
 } from "@openfeature/web-sdk";
 
-import { ReflagClient, Feature, InitOptions } from "@reflag/browser-sdk";
+import { ReflagClient, Flag, InitOptions } from "@reflag/browser-sdk";
 
 export type ContextTranslationFn = (
   context?: EvaluationContext,
@@ -48,7 +48,7 @@ export class ReflagBrowserSDKProvider implements Provider {
   private readonly _clientOptions: InitOptions;
   private readonly _contextTranslator: ContextTranslationFn;
 
-  public events = new OpenFeatureEventEmitter();
+  public events = new OpenFlagEventEmitter();
 
   private _status: ProviderStatus = ProviderStatus.NOT_READY;
 
@@ -101,10 +101,10 @@ export class ReflagBrowserSDKProvider implements Provider {
     await this.initialize(newContext);
   }
 
-  private resolveFeature<T extends JsonValue>(
+  private resolveFlag<T extends JsonValue>(
     flagKey: string,
     defaultValue: T,
-    resolveFn: (feature: Feature) => ResolutionDetails<T>,
+    resolveFn: (feature: Flag) => ResolutionDetails<T>,
   ): ResolutionDetails<T> {
     if (!this._client) {
       return {
@@ -115,9 +115,9 @@ export class ReflagBrowserSDKProvider implements Provider {
       } satisfies ResolutionDetails<T>;
     }
 
-    const features = this._client.getFeatures();
+    const features = this._client.getFlags();
     if (flagKey in features) {
-      return resolveFn(this._client.getFeature(flagKey));
+      return resolveFn(this._client.getFlag(flagKey));
     }
 
     return {
@@ -129,7 +129,7 @@ export class ReflagBrowserSDKProvider implements Provider {
   }
 
   resolveBooleanEvaluation(flagKey: string, defaultValue: boolean) {
-    return this.resolveFeature(flagKey, defaultValue, (feature) => {
+    return this.resolveFlag(flagKey, defaultValue, (feature) => {
       return {
         value: feature.isEnabled,
         variant: feature.config.key,
@@ -152,7 +152,7 @@ export class ReflagBrowserSDKProvider implements Provider {
     flagKey: string,
     defaultValue: string,
   ): ResolutionDetails<string> {
-    return this.resolveFeature(flagKey, defaultValue, (feature) => {
+    return this.resolveFlag(flagKey, defaultValue, (feature) => {
       if (!feature.config.key) {
         return {
           value: defaultValue,
@@ -172,7 +172,7 @@ export class ReflagBrowserSDKProvider implements Provider {
     flagKey: string,
     defaultValue: T,
   ) {
-    return this.resolveFeature(flagKey, defaultValue, (feature) => {
+    return this.resolveFlag(flagKey, defaultValue, (feature) => {
       const expType = typeof defaultValue;
 
       const payloadType = typeof feature.config.payload;

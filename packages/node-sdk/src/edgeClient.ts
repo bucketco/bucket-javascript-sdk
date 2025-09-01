@@ -20,7 +20,7 @@ export type EdgeClientOptions = Omit<
  *   user: { id: "user-id" },
  *   company: { id: "company-id" },
  * }
- * const { isEnabled } = client.getFeature(context, "feature-flag-key");
+ * const { isEnabled } = client.getFlag(context, "flag-key");
  *
  * ```
  */

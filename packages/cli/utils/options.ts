@@ -44,12 +44,12 @@ export const typesFormatOption = new Option(
 
 export const featureNameArgument = new Argument(
   "[name]",
-  "Feature's name. If not provided, you'll be prompted to enter one.",
+  "Flag's name. If not provided, you'll be prompted to enter one.",
 );
 
 export const flagKeyOption = new Option(
   "-k, --key [feature key]",
-  "Feature key. If not provided, a key is generated from the feature's name.",
+  "Flag key. If not provided, a key is generated from the feature's name.",
 );
 
 export const editorOption = new Option(

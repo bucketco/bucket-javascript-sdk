@@ -68,6 +68,6 @@ provide(ProviderSymbol, context);
 </script>
 
 <template>
-  <slot v-if="featuresLoading && $slots.loading" name="loading" />
+  <slot v-if="flagsLoading && $slots.loading" name="loading" />
   <slot v-else />
 </template>

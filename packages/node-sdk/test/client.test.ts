@@ -26,7 +26,7 @@ import {
 import fetchClient from "../src/fetch-http-client";
 import { subscribe as triggerOnExit } from "../src/flusher";
 import { newRateLimiter } from "../src/rate-limiter";
-import { ClientOptions, Context, FeaturesAPIResponse } from "../src/types";
+import { ClientOptions, Context, FlagsAPIResponse } from "../src/types";
 
 const BULK_ENDPOINT = "https://api.example.com/bulk";
 
@@ -56,7 +56,7 @@ const company = {
 };
 
 const event = {
-  event: "feature-event",
+  event: "flag-event",
   attrs: { key: "value" },
 };
 
@@ -92,11 +92,11 @@ const expectedHeaders = {
   Authorization: `Bearer ${validOptions.secretKey}`,
 };
 
-const featureDefinitions: FeaturesAPIResponse = {
+const featureDefinitions: FlagsAPIResponse = {
   features: [
     {
-      key: "feature1",
-      description: "Feature 1",
+      key: "flag1",
+      description: "Flag 1",
       targeting: {
         version: 1,
         rules: [
@@ -127,8 +127,8 @@ const featureDefinitions: FeaturesAPIResponse = {
       },
     },
     {
-      key: "feature2",
-      description: "Feature 2",
+      key: "flag2",
+      description: "Flag 2",
       targeting: {
         version: 2,
         rules: [
@@ -147,7 +147,7 @@ const featureDefinitions: FeaturesAPIResponse = {
                   partialRolloutThreshold: 0.5,
                   partialRolloutAttribute: "attributeKey",
                   type: "rolloutPercentage" as const,
-                  key: "feature2",
+                  key: "flag2",
                 },
               ],
             },
@@ -178,17 +178,17 @@ describe("ReflagClient", () => {
     it("should accept fallback features as an array", async () => {
       const reflagInstance = new ReflagClient({
         secretKey: "validSecretKeyWithMoreThan22Chars",
-        fallbackFlags: ["feature1", "feature2"],
+        fallbackFlags: ["flag1", "flag2"],
       });
 
       expect(reflagInstance["_config"].fallbackFlags).toEqual({
         feature1: {
           isEnabled: true,
-          key: "feature1",
+          key: "flag1",
         },
         feature2: {
           isEnabled: true,
-          key: "feature2",
+          key: "flag2",
         },
       });
     });
@@ -210,12 +210,12 @@ describe("ReflagClient", () => {
 
       expect(reflagInstance["_config"].fallbackFlags).toStrictEqual({
         feature1: {
-          key: "feature1",
+          key: "flag1",
           config: undefined,
           isEnabled: true,
         },
         feature2: {
-          key: "feature2",
+          key: "flag2",
           isEnabled: true,
           config: {
             key: "config1",
@@ -752,7 +752,7 @@ describe("ReflagClient", () => {
             context: {
               active: true,
             },
-            event: "feature-event",
+            event: "flag-event",
             type: "event",
             userId: testUser.id,
             companyId: company.id,
@@ -793,7 +793,7 @@ describe("ReflagClient", () => {
             context: {
               active: true,
             },
-            event: "feature-event",
+            event: "flag-event",
             companyId: "otherCompanyId",
             type: "event",
             userId: "user123",
@@ -915,10 +915,10 @@ describe("ReflagClient", () => {
       const client = new ReflagClient(validOptions);
 
       const get = vi
-        .spyOn(client["featuresCache"], "get")
+        .spyOn(client["flagsCache"], "get")
         .mockReturnValue(undefined);
       const refresh = vi
-        .spyOn(client["featuresCache"], "refresh")
+        .spyOn(client["flagsCache"], "refresh")
         .mockResolvedValue(undefined);
 
       await client.initialize();
@@ -993,7 +993,7 @@ describe("ReflagClient", () => {
     });
   });
 
-  describe("getFeature", () => {
+  describe("getFlag", () => {
     let client: ReflagClient;
 
     beforeEach(async () => {
@@ -1016,17 +1016,17 @@ describe("ReflagClient", () => {
 
     it("returns a feature", async () => {
       await client.initialize();
-      const feature = client.getFeature(
+      const feature = client.getFlag(
         {
           company,
           user,
           other: otherContext,
         },
-        "feature1",
+        "flag1",
       );
 
       expect(feature).toStrictEqual({
-        key: "feature1",
+        key: "flag1",
         isEnabled: true,
         config: {
           key: "config-1",
@@ -1045,7 +1045,7 @@ describe("ReflagClient", () => {
 
       // test that the feature is returned
       await client.initialize();
-      const feature = client.getFeature(
+      const feature = client.getFlag(
         {
           ...context,
           meta: {
@@ -1053,7 +1053,7 @@ describe("ReflagClient", () => {
           },
           enableTracking: true,
         },
-        "feature1",
+        "flag1",
       );
 
       await feature.track();
@@ -1089,7 +1089,7 @@ describe("ReflagClient", () => {
           {
             type: "feature-flag-event",
             action: "evaluate",
-            key: "feature1",
+            key: "flag1",
             targetingVersion: 1,
             evalContext: flattenJSON(context),
             evalResult: true,
@@ -1099,7 +1099,7 @@ describe("ReflagClient", () => {
           {
             type: "feature-flag-event",
             action: "evaluate-config",
-            key: "feature1",
+            key: "flag1",
             targetingVersion: 1,
             evalContext: flattenJSON(context),
             evalResult: {
@@ -1113,7 +1113,7 @@ describe("ReflagClient", () => {
           },
           {
             type: "event",
-            event: "feature1",
+            event: "flag1",
             userId: user.id,
             companyId: company.id,
           },
@@ -1135,7 +1135,7 @@ describe("ReflagClient", () => {
 
       // test that the feature is returned
       await client.initialize();
-      const feature = client.getFeature(
+      const feature = client.getFlag(
         {
           ...context,
           meta: {
@@ -1143,7 +1143,7 @@ describe("ReflagClient", () => {
           },
           enableTracking: true,
         },
-        "feature1",
+        "flag1",
       );
 
       await feature.track();
@@ -1177,7 +1177,7 @@ describe("ReflagClient", () => {
           },
           {
             type: "event",
-            event: "feature1",
+            event: "flag1",
             userId: user.id,
             companyId: company.id,
           },
@@ -1194,7 +1194,7 @@ describe("ReflagClient", () => {
 
       // test that the feature is returned
       await client.initialize();
-      const feature = client.getFeature(context, "feature1");
+      const feature = client.getFlag(context, "flag1");
 
       // trigger `check` event
       expect(feature.isEnabled).toBe(true);
@@ -1208,7 +1208,7 @@ describe("ReflagClient", () => {
         {
           type: "feature-flag-event",
           action: "check",
-          key: "feature1",
+          key: "flag1",
           targetingVersion: 1,
           evalResult: true,
           evalContext: context,
@@ -1227,13 +1227,13 @@ describe("ReflagClient", () => {
 
       // test that the feature is returned
       await client.initialize();
-      const feature = client.getFeature(context, "feature2");
+      const feature = client.getFlag(context, "flag2");
 
       // trigger the warning
       expect(feature.isEnabled).toBe(false);
 
       expect(logger.warn).toHaveBeenCalledWith(
-        "feature/remote config targeting rules might not be correctly evaluated due to missing context fields.",
+        "flag targeting rules might not be correctly evaluated due to missing context fields.",
         {
           feature2: ["attributeKey"],
         },
@@ -1249,7 +1249,7 @@ describe("ReflagClient", () => {
 
       // test that the feature is returned
       await client.initialize();
-      const feature = client.getFeature(context, "feature1");
+      const feature = client.getFlag(context, "flag1");
 
       // should not trigger the warning
       expect(feature.isEnabled).toBe(true);
@@ -1266,7 +1266,7 @@ describe("ReflagClient", () => {
 
       // test that the feature is returned
       await client.initialize();
-      const feature = client.getFeature(context, "feature1");
+      const feature = client.getFlag(context, "flag1");
 
       // trigger `check` event
       expect(feature.config).toBeDefined();
@@ -1281,7 +1281,7 @@ describe("ReflagClient", () => {
         {
           type: "feature-flag-event",
           action: "check-config",
-          key: "feature1",
+          key: "flag1",
           evalResult: {
             key: "config-1",
             payload: {
@@ -1305,7 +1305,7 @@ describe("ReflagClient", () => {
 
       // test that the feature is returned
       await client.initialize();
-      const feature = client.getFeature(context, "unknown-feature");
+      const feature = client.getFlag(context, "unknown-feature");
 
       // trigger `check` event
       expect(feature.isEnabled).toBe(false);
@@ -1339,7 +1339,7 @@ describe("ReflagClient", () => {
 
       // test that the feature is returned
       await client.initialize();
-      const feature = client.getFeature(context, "feature1");
+      const feature = client.getFlag(context, "flag1");
 
       // trigger `check` event
       await feature.track();
@@ -1374,7 +1374,7 @@ describe("ReflagClient", () => {
         },
         {
           type: "event",
-          event: "feature1",
+          event: "flag1",
           userId: user.id,
           companyId: company.id,
           context: undefined,
@@ -1384,7 +1384,7 @@ describe("ReflagClient", () => {
     });
   });
 
-  describe("getFeatures", () => {
+  describe("getFlags", () => {
     let client: ReflagClient;
 
     beforeEach(async () => {
@@ -1412,7 +1412,7 @@ describe("ReflagClient", () => {
       httpClient.post.mockClear(); // not interested in updates
 
       await client.initialize();
-      const result = client.getFeatures({
+      const result = client.getFlags({
         company,
         user,
         other: otherContext,
@@ -1420,7 +1420,7 @@ describe("ReflagClient", () => {
 
       expect(result).toStrictEqual({
         feature1: {
-          key: "feature1",
+          key: "flag1",
           isEnabled: true,
           config: {
             key: "config-1",
@@ -1431,7 +1431,7 @@ describe("ReflagClient", () => {
           track: expect.any(Function),
         },
         feature2: {
-          key: "feature2",
+          key: "flag2",
           isEnabled: false,
           config: { key: undefined, payload: undefined },
           track: expect.any(Function),
@@ -1447,7 +1447,7 @@ describe("ReflagClient", () => {
       const isAllowedSpy = vi.spyOn(client["rateLimiter"], "isAllowed");
 
       await client.initialize();
-      client.getFeatures({ user, company, other: otherContext });
+      client.getFlags({ user, company, other: otherContext });
 
       expect(isAllowedSpy).toHaveBeenCalledWith("1GHpP+QfYperQ0AtD8bWPiRE4H0=");
     });
@@ -1456,12 +1456,12 @@ describe("ReflagClient", () => {
       httpClient.post.mockClear(); // not interested in updates
 
       await client.initialize();
-      const features = client.getFeatures({ user });
+      const features = client.getFlags({ user });
 
       expect(features).toStrictEqual({
         feature1: {
           isEnabled: false,
-          key: "feature1",
+          key: "flag1",
           config: {
             key: undefined,
             payload: undefined,
@@ -1469,7 +1469,7 @@ describe("ReflagClient", () => {
           track: expect.any(Function),
         },
         feature2: {
-          key: "feature2",
+          key: "flag2",
           isEnabled: false,
           config: { key: undefined, payload: undefined },
           track: expect.any(Function),
@@ -1483,13 +1483,13 @@ describe("ReflagClient", () => {
 
     it("should return evaluated features when only company is defined", async () => {
       await client.initialize();
-      const features = client.getFeatures({ company });
+      const features = client.getFlags({ company });
 
       // expect will trigger the `isEnabled` getter and send a `check` event
       expect(features).toStrictEqual({
         feature1: {
           isEnabled: true,
-          key: "feature1",
+          key: "flag1",
           config: {
             key: "config-1",
             payload: {
@@ -1499,7 +1499,7 @@ describe("ReflagClient", () => {
           track: expect.any(Function),
         },
         feature2: {
-          key: "feature2",
+          key: "flag2",
           isEnabled: false,
           config: { key: undefined, payload: undefined },
           track: expect.any(Function),
@@ -1513,13 +1513,13 @@ describe("ReflagClient", () => {
 
     it("should not send flag events when `enableTracking` is `false`", async () => {
       await client.initialize();
-      const features = client.getFeatures({ company, enableTracking: false });
+      const features = client.getFlags({ company, enableTracking: false });
 
       // expect will trigger the `isEnabled` getter and send a `check` event
       expect(features).toStrictEqual({
         feature1: {
           isEnabled: true,
-          key: "feature1",
+          key: "flag1",
           config: {
             key: "config-1",
             payload: {
@@ -1529,7 +1529,7 @@ describe("ReflagClient", () => {
           track: expect.any(Function),
         },
         feature2: {
-          key: "feature2",
+          key: "flag2",
           isEnabled: false,
           config: { key: undefined, payload: undefined },
           track: expect.any(Function),
@@ -1543,12 +1543,12 @@ describe("ReflagClient", () => {
 
     it("should return evaluated features when only other context is defined", async () => {
       await client.initialize();
-      const features = client.getFeatures({ other: otherContext });
+      const features = client.getFlags({ other: otherContext });
 
       expect(features).toStrictEqual({
         feature1: {
           isEnabled: false,
-          key: "feature1",
+          key: "flag
           config: {
             key: undefined,
             payload: undefined,
@@ -1556,7 +1556,7 @@ describe("ReflagClient", () => {
           track: expect.any(Function),
         },
         feature2: {
-          key: "feature2",
+          key: "flag2",
           isEnabled: false,
           config: { key: undefined, payload: undefined },
           track: expect.any(Function),
@@ -1570,7 +1570,7 @@ describe("ReflagClient", () => {
 
     it("should send `track` with user and company if provided", async () => {
       await client.initialize();
-      const features = client.getFeatures({ company, user });
+      const features = client.getFlags({ company, user });
       await client.flush();
 
       await features.feature1.track();
@@ -1584,7 +1584,7 @@ describe("ReflagClient", () => {
 
       expect(events).toStrictEqual([
         {
-          event: "feature1",
+          event: "flag1",
           type: "event",
           userId: "user123",
           companyId: "company123",
@@ -1596,7 +1596,7 @@ describe("ReflagClient", () => {
 
     it("should send `track` with user if provided", async () => {
       await client.initialize();
-      const features = client.getFeatures({ user });
+      const features = client.getFlags({ user });
 
       await client.flush();
       await features.feature1.track();
@@ -1617,7 +1617,7 @@ describe("ReflagClient", () => {
 
       expect(events).toStrictEqual([
         {
-          event: "feature1",
+          event: "flag1",
           type: "event",
           userId: "user123",
           companyId: undefined,
@@ -1630,7 +1630,7 @@ describe("ReflagClient", () => {
     it("should not send `track` with only company if no user is provided", async () => {
       // we do not accept track events without a userId
       await client.initialize();
-      const feature = client.getFeatures({ company });
+      const feature = client.getFlags({ company });
 
       await feature.feature1.track();
       await client.flush();
@@ -1652,7 +1652,7 @@ describe("ReflagClient", () => {
 
       // test that the feature is returned
       await client.initialize();
-      const feature = client.getFeatures(context);
+      const feature = client.getFlags(context);
 
       // trigger `check` event
       expect(feature.feature1.isEnabled).toBe(true);
@@ -1674,7 +1674,7 @@ describe("ReflagClient", () => {
 
       // test that the feature is returned
       await client.initialize();
-      const feature = client.getFeatures(context);
+      const feature = client.getFlags(context);
 
       // attempt to trigger `check` event
       expect(feature.feature1.config).toBeDefined();
@@ -1697,7 +1697,7 @@ describe("ReflagClient", () => {
 
       // test that the feature is returned
       await client.initialize();
-      client.getFeatures(context);
+      client.getFlags(context);
 
       // trigger `check` event
       await client.flush();
@@ -1732,13 +1732,13 @@ describe("ReflagClient", () => {
       ]);
     });
 
-    it("should use fallback features when `getFeatureDefinitions` returns `undefined`", async () => {
+    it("should use fallback features when `getFlagDefinitions` returns `undefined`", async () => {
       httpClient.get.mockResolvedValue({
         success: false,
       });
 
       await client.initialize();
-      const result = client.getFeature(
+      const result = client.getFlag(
         { user: { id: "user123" }, enableTracking: true },
         "key",
       );
@@ -1765,7 +1765,7 @@ describe("ReflagClient", () => {
         [
           expect.objectContaining({ type: "user" }),
           expect.objectContaining({
-            type: "feature-flag-event",
+            type: "flag-flag-event",
             action: "check-config",
             key: "key",
           }),
@@ -1779,12 +1779,12 @@ describe("ReflagClient", () => {
       );
     });
 
-    it("should not fail if sendFeatureEvent fails to send evaluate event", async () => {
+    it("should not fail if sendFlagEvent fails to send evaluate event", async () => {
       httpClient.post.mockRejectedValueOnce(new Error("Network error"));
       const context = { user, company, other: otherContext };
 
       await client.initialize();
-      const features = client.getFeatures(context);
+      const features = client.getFlags(context);
 
       await client.flush();
 
@@ -1795,7 +1795,7 @@ describe("ReflagClient", () => {
 
       expect(features).toStrictEqual({
         feature1: {
-          key: "feature1",
+          key: "flag1",
           isEnabled: true,
           config: {
             key: "config-1",
@@ -1806,7 +1806,7 @@ describe("ReflagClient", () => {
           track: expect.any(Function),
         },
         feature2: {
-          key: "feature2",
+          key: "flag2",
           isEnabled: false,
           config: { key: undefined, payload: undefined },
           track: expect.any(Function),
@@ -1814,7 +1814,7 @@ describe("ReflagClient", () => {
       });
     });
 
-    it("should not fail if sendFeatureEvent fails to send check event", async () => {
+    it("should not fail if sendFlagEvent fails to send check event", async () => {
       httpClient.post.mockResolvedValue({
         status: 200,
         body: { success: true },
@@ -1824,11 +1824,11 @@ describe("ReflagClient", () => {
       httpClient.post.mockRejectedValue(new Error("Network error"));
       const context = { user, company, other: otherContext };
 
-      const result = client.getFeatures(context);
+      const result = client.getFlags(context);
 
       // Trigger a feature check
       expect(result.feature1).toStrictEqual({
-        key: "feature1",
+        key: "flag1",
         isEnabled: true,
         track: expect.any(Function),
         config: {
@@ -1851,10 +1851,10 @@ describe("ReflagClient", () => {
       await client.initialize();
       const context = { user, company, other: otherContext };
 
-      const pristineResults = client.getFeatures(context);
+      const pristineResults = client.getFlags(context);
       expect(pristineResults).toStrictEqual({
         feature1: {
-          key: "feature1",
+          key: "flag1",
           isEnabled: true,
           config: {
             key: "config-1",
@@ -1865,7 +1865,7 @@ describe("ReflagClient", () => {
           track: expect.any(Function),
         },
         feature2: {
-          key: "feature2",
+          key: "flag2",
           isEnabled: false,
           config: { key: undefined, payload: undefined },
           track: expect.any(Function),
@@ -1875,25 +1875,25 @@ describe("ReflagClient", () => {
       client.featureOverrides = {
         feature1: false,
       };
-      const features = client.getFeatures(context);
+      const features = client.getFlags(context);
 
       expect(features).toStrictEqual({
         feature1: {
-          key: "feature1",
+          key: "flag1",
           isEnabled: false,
           config: { key: undefined, payload: undefined },
           track: expect.any(Function),
         },
         feature2: {
-          key: "feature2",
+          key: "flag2",
           isEnabled: false,
           config: { key: undefined, payload: undefined },
           track: expect.any(Function),
         },
       });
 
-      client.clearFeatureOverrides();
-      const features2 = client.getFeatures(context);
+      client.clearFlagOverrides();
+      const features2 = client.getFlags(context);
 
       expect(features2).toStrictEqual({
         ...pristineResults,
@@ -1912,10 +1912,10 @@ describe("ReflagClient", () => {
       await client.initialize();
       const context = { user, company, other: otherContext };
 
-      const pristineResults = client.getFeatures(context);
+      const pristineResults = client.getFlags(context);
       expect(pristineResults).toStrictEqual({
         feature1: {
-          key: "feature1",
+          key: "flag1",
           isEnabled: true,
           config: {
             key: "config-1",
@@ -1926,7 +1926,7 @@ describe("ReflagClient", () => {
           track: expect.any(Function),
         },
         feature2: {
-          key: "feature2",
+          key: "flag2",
           isEnabled: false,
           config: { key: undefined, payload: undefined },
           track: expect.any(Function),
@@ -1947,23 +1947,23 @@ describe("ReflagClient", () => {
           },
         };
       };
-      const features = client.getFeatures(context);
+      const features = client.getFlags(context);
 
       expect(features).toStrictEqual({
         feature1: {
-          key: "feature1",
+          key: "flag1",
           isEnabled: false,
           config: { key: undefined, payload: undefined },
           track: expect.any(Function),
         },
         feature2: {
-          key: "feature2",
+          key: "flag2",
           isEnabled: true,
           config: { key: undefined, payload: undefined },
           track: expect.any(Function),
         },
         feature3: {
-          key: "feature3",
+          key: "flag
           isEnabled: true,
           config: {
             key: "config-1",
@@ -1975,7 +1975,7 @@ describe("ReflagClient", () => {
     });
   });
 
-  describe("getFeaturesRemote", () => {
+  describe("getFlagsRemote", () => {
     let client: ReflagClient;
 
     beforeEach(async () => {
@@ -1987,7 +1987,7 @@ describe("ReflagClient", () => {
           remoteContextUsed: true,
           features: {
             feature1: {
-              key: "feature1",
+              key: "flag1",
               targetingVersion: 1,
               isEnabled: true,
               config: {
@@ -2000,13 +2000,13 @@ describe("ReflagClient", () => {
               missingContextFields: ["something", "funny"],
             },
             feature2: {
-              key: "feature2",
+              key: "flag2",
               targetingVersion: 2,
               isEnabled: false,
               missingContextFields: ["another"],
             },
             feature3: {
-              key: "feature3",
+              key: "flag3",
               targetingVersion: 5,
               isEnabled: true,
             },
@@ -2022,13 +2022,13 @@ describe("ReflagClient", () => {
     });
 
     it("should return evaluated features", async () => {
-      const result = await client.getFeaturesRemote("c1", "u1", {
+      const result = await client.getFlagsRemote("c1", "u1", {
         other: otherContext,
       });
 
       expect(result).toStrictEqual({
         feature1: {
-          key: "feature1",
+          key: "flag1",
           isEnabled: true,
           config: {
             key: "config-1",
@@ -2037,13 +2037,13 @@ describe("ReflagClient", () => {
           track: expect.any(Function),
         },
         feature2: {
-          key: "feature2",
+          key: "flag2",
           isEnabled: false,
           config: { key: undefined, payload: undefined },
           track: expect.any(Function),
         },
         feature3: {
-          key: "feature3",
+          key: "flag3",
           isEnabled: true,
           config: { key: undefined, payload: undefined },
           track: expect.any(Function),
@@ -2060,7 +2060,7 @@ describe("ReflagClient", () => {
     });
 
     it("should not try to append the context if it's empty", async () => {
-      await client.getFeaturesRemote();
+      await client.getFlagsRemote();
 
       expect(httpClient.get).toHaveBeenCalledTimes(1);
 
@@ -2072,7 +2072,7 @@ describe("ReflagClient", () => {
     });
   });
 
-  describe("getFeatureRemote", () => {
+  describe("getFlagRemote", () => {
     let client: ReflagClient;
 
     beforeEach(async () => {
@@ -2084,7 +2084,7 @@ describe("ReflagClient", () => {
           remoteContextUsed: true,
           features: {
             feature1: {
-              key: "feature1",
+              key: "flag1",
               targetingVersion: 1,
               isEnabled: true,
               config: {
@@ -2108,12 +2108,12 @@ describe("ReflagClient", () => {
     });
 
     it("should return evaluated feature", async () => {
-      const result = await client.getFeatureRemote("feature1", "c1", "u1", {
+      const result = await client.getFlagRemote("flag1", "c1", "u1", {
         other: otherContext,
       });
 
       expect(result).toStrictEqual({
-        key: "feature1",
+        key: "flag1",
         isEnabled: true,
         track: expect.any(Function),
         config: {
@@ -2132,7 +2132,7 @@ describe("ReflagClient", () => {
     });
 
     it("should not try to append the context if it's empty", async () => {
-      await client.getFeatureRemote("feature1");
+      await client.getFlagRemote("flag1");
 
       expect(httpClient.get).toHaveBeenCalledWith(
         "https://api.example.com/features/evaluated?key=feature1",
@@ -2154,7 +2154,7 @@ describe("ReflagClient", () => {
     });
 
     it("should send not send or fetch anything", async () => {
-      client.getFeatures({});
+      client.getFlags({});
 
       expect(httpClient.get).toHaveBeenCalledTimes(0);
       expect(httpClient.post).toHaveBeenCalledTimes(0);
@@ -2227,9 +2227,9 @@ describe("BoundReflagClient", () => {
       boundClient.bindClient({ other: otherContext }).otherContext,
     ).toEqual(otherContext);
 
-    boundClient.getFeatures();
+    boundClient.getFlags();
 
-    await boundClient.track("feature");
+    await boundClient.track("flag");
     await client.flush();
 
     expect(httpClient.post).toHaveBeenCalledWith(
@@ -2238,7 +2238,7 @@ describe("BoundReflagClient", () => {
       [
         expect.objectContaining({ type: "user" }),
         {
-          event: "feature",
+          event: "flag",
           type: "event",
           userId: "user123",
         },
@@ -2249,8 +2249,8 @@ describe("BoundReflagClient", () => {
   it("should add company ID from the context if not explicitly supplied", async () => {
     const boundClient = client.bindClient({ user, company });
 
-    boundClient.getFeatures();
-    await boundClient.track("feature");
+    boundClient.getFlags();
+    await boundClient.track("flag");
 
     await client.flush();
 
@@ -2262,7 +2262,7 @@ describe("BoundReflagClient", () => {
         expect.objectContaining({ type: "user" }),
         {
           companyId: "company123",
-          event: "feature",
+          event: "flag",
           type: "event",
           userId: "user123",
         },
@@ -2277,9 +2277,9 @@ describe("BoundReflagClient", () => {
       enableTracking: false,
     });
 
-    const { track } = boundClient.getFeature("feature2");
+    const { track } = boundClient.getFlag("flag2");
     await track();
-    await boundClient.track("feature1");
+    await boundClient.track("flag1");
 
     await client.flush();
 
@@ -2294,13 +2294,13 @@ describe("BoundReflagClient", () => {
 
     await client.initialize();
 
-    boundClient.getFeatures();
-    boundClient.getFeature("feature1");
+    boundClient.getFlags();
+    boundClient.getFlag("flag1");
 
     await boundClient.flush();
   });
 
-  describe("getFeatureRemote/getFeaturesRemote", () => {
+  describe("getFlagRemote/getFlagsRemote", () => {
     beforeEach(async () => {
       httpClient.get.mockClear();
       httpClient.get.mockResolvedValue({
@@ -2311,7 +2311,7 @@ describe("BoundReflagClient", () => {
           remoteContextUsed: true,
           features: {
             feature1: {
-              key: "feature1",
+              key: "flag1",
               targetingVersion: 1,
               isEnabled: true,
               config: {
@@ -2323,7 +2323,7 @@ describe("BoundReflagClient", () => {
               },
             },
             feature2: {
-              key: "feature2",
+              key: "flag2",
               targetingVersion: 2,
               isEnabled: false,
               missingContextFields: ["something"],
@@ -2340,17 +2340,17 @@ describe("BoundReflagClient", () => {
         other: otherContext,
       });
 
-      const result = await boundClient.getFeaturesRemote();
+      const result = await boundClient.getFlagsRemote();
 
       expect(result).toStrictEqual({
         feature1: {
-          key: "feature1",
+          key: "flag1",
           isEnabled: true,
           config: { key: "config-1", payload: { something: "else" } },
           track: expect.any(Function),
         },
         feature2: {
-          key: "feature2",
+          key: "flag2",
           isEnabled: false,
           config: { key: undefined, payload: undefined },
           track: expect.any(Function),
@@ -2373,10 +2373,10 @@ describe("BoundReflagClient", () => {
         other: otherContext,
       });
 
-      const result = await boundClient.getFeatureRemote("feature1");
+      const result = await boundClient.getFlagRemote("flag1");
 
       expect(result).toStrictEqual({
-        key: "feature1",
+        key: "flag1",
         isEnabled: true,
         config: { key: "config-1", payload: { something: "else" } },
         track: expect.any(Function),

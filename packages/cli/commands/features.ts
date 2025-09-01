@@ -5,7 +5,7 @@ import { relative } from "node:path";
 import ora, { Ora } from "ora";
 
 import { App, getApp, getOrg } from "../services/bootstrap.js";
-import { createFeature, Feature, listFeatures } from "../services/features.js";
+import { createFlag, Flag, listFlags } from "../services/features.js";
 import { configStore } from "../stores/config.js";
 import {
   handleError,
@@ -13,7 +13,7 @@ import {
   MissingEnvIdError,
 } from "../utils/errors.js";
 import {
-  genFeatureKey,
+  genFlagKey,
   genTypes,
   indentLines,
   KeyFormatPatterns,
@@ -28,26 +28,26 @@ import {
 } from "../utils/options.js";
 import { baseUrlSuffix, featureUrl } from "../utils/urls.js";
 
-type CreateFeatureOptions = {
+type CreateFlagOptions = {
   key?: string;
 };
 
-export const createFeatureAction = async (
+export const createFlagAction = async (
   name: string | undefined,
-  { key }: CreateFeatureOptions,
+  { key }: CreateFlagOptions,
 ) => {
   const { baseUrl, appId } = configStore.getConfig();
   let spinner: Ora | undefined;
 
   if (!appId) {
-    handleError(new MissingAppIdError(), "Features Create");
+    handleError(new MissingAppIdError(), "Flags Create");
   }
 
   let app: App;
   try {
     app = getApp(appId);
   } catch (error) {
-    handleError(error, "Features Create");
+    handleError(error, "Flags Create");
   }
 
   const production = app.environments.find((e) => e.isProduction);
@@ -70,13 +70,13 @@ export const createFeatureAction = async (
       const keyValidator = KeyFormatPatterns[keyFormat];
       key = await input({
         message: "New feature key:",
-        default: genFeatureKey(name, keyFormat),
+        default: genFlagKey(name, keyFormat),
         validate: (str) => keyValidator.regex.test(str) || keyValidator.message,
       });
     }
 
     spinner = ora(`Creating feature...`).start();
-    const feature = await createFeature(appId, { name, key });
+    const feature = await createFlag(appId, { name, key });
 
     spinner.succeed(
       `Created feature ${chalk.cyan(feature.name)} with key ${chalk.cyan(feature.key)}:`,
@@ -87,31 +87,31 @@ export const createFeatureAction = async (
       );
     }
   } catch (error) {
-    spinner?.fail("Feature creation failed.");
-    handleError(error, "Features Create");
+    spinner?.fail("Flag creation failed.");
+    handleError(error, "Flags Create");
   }
 };
 
-export const listFeaturesAction = async () => {
+export const listFlagsAction = async () => {
   const { baseUrl, appId } = configStore.getConfig();
   let spinner: Ora | undefined;
 
   if (!appId) {
-    handleError(new MissingAppIdError(), "Features Create");
+    handleError(new MissingAppIdError(), "Flags Create");
   }
 
   try {
     const app = getApp(appId);
     const production = app.environments.find((e) => e.isProduction);
     if (!production) {
-      handleError(new MissingEnvIdError(), "Features Types");
+      handleError(new MissingEnvIdError(), "Flags Types");
     }
 
     spinner = ora(
       `Loading features of app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}...`,
     ).start();
 
-    const featuresResponse = await listFeatures(appId, {
+    const featuresResponse = await listFlags(appId, {
       envId: production.id,
     });
 
@@ -128,7 +128,7 @@ export const listFeaturesAction = async () => {
     );
   } catch (error) {
     spinner?.fail("Loading features failed.");
-    handleError(error, "Features List");
+    handleError(error, "Flags List");
   }
 };
 
@@ -137,22 +137,22 @@ export const generateTypesAction = async () => {
   const typesOutput = configStore.getConfig("typesOutput");
 
   let spinner: Ora | undefined;
-  let features: Feature[] = [];
+  let features: Flag[] = [];
 
   if (!appId) {
-    handleError(new MissingAppIdError(), "Features Types");
+    handleError(new MissingAppIdError(), "Flags Types");
   }
 
   let app: App;
   try {
     app = getApp(appId);
   } catch (error) {
-    handleError(error, "Features Types");
+    handleError(error, "Flags Types");
   }
 
   const production = app.environments.find((e) => e.isProduction);
   if (!production) {
-    handleError(new MissingEnvIdError(), "Features Types");
+    handleError(new MissingEnvIdError(), "Flags Types");
   }
 
   try {
@@ -160,7 +160,7 @@ export const generateTypesAction = async () => {
       `Loading features of app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}...`,
     ).start();
 
-    features = await listFeatures(appId, {
+    features = await listFlags(appId, {
       envId: production.id,
       includeRemoteConfigs: true,
     }).then((res) => res.data);
@@ -170,7 +170,7 @@ export const generateTypesAction = async () => {
     );
   } catch (error) {
     spinner?.fail("Loading features failed.");
-    handleError(error, "Features Types");
+    handleError(error, "Flags Types");
   }
 
   try {
@@ -188,12 +188,12 @@ export const generateTypesAction = async () => {
     }
   } catch (error) {
     spinner?.fail("Type generation failed.");
-    handleError(error, "Features Types");
+    handleError(error, "Flags Types");
   }
 };
 
-export function registerFeatureCommands(cli: Command) {
-  const featuresCommand = new Command("features").description(
+export function registerFlagCommands(cli: Command) {
+  const featuresCommand = new Command("flags").description(
     "Manage features.",
   );
 
@@ -203,14 +203,14 @@ export function registerFeatureCommands(cli: Command) {
     .addOption(appIdOption)
     .addOption(flagKeyOption)
     .addArgument(featureNameArgument)
-    .action(createFeatureAction);
+    .action(createFlagAction);
 
   featuresCommand
     .command("list")
     .alias("ls")
     .description("List all features.")
     .addOption(appIdOption)
-    .action(listFeaturesAction);
+    .action(listFlagsAction);
 
   featuresCommand
     .command("types")

@@ -26,7 +26,7 @@ export default {
     const userId = url.searchParams.get("user.id");
     const companyId = url.searchParams.get("company.id");
 
-    const f = reflag.getFeatures({
+    const f = reflag.getFlags({
       user: { id: userId ?? undefined },
       company: { id: companyId ?? undefined },
     });
@@ -36,7 +36,7 @@ export default {
     ctx.waitUntil(reflag.flush());
 
     return new Response(
-      `Features for user ${userId} and company ${companyId}: ${JSON.stringify(f, null, 2)}`,
+      `Flags for user ${userId} and company ${companyId}: ${JSON.stringify(f, null, 2)}`,
     );
   },
 } satisfies ExportedHandler<Env>;

@@ -477,7 +477,7 @@ export interface EvaluationResult<T extends RuleValue> {
   missingContextFields?: string[];
 }
 
-export function evaluateFeatureRules<T extends RuleValue>({
+export function evaluateFlagRules<T extends RuleValue>({
   context,
   flagKey,
   rules,
@@ -543,7 +543,7 @@ export function newEvaluator<T extends RuleValue>(rules: Rule<T>[]) {
     context: Record<string, unknown>,
     flagKey: string,
   ) {
-    return evaluateFeatureRules({
+    return evaluateFlagRules({
       context,
       flagKey,
       rules: translatedRules,

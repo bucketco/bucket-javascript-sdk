@@ -3,7 +3,6 @@ import { App } from "vue";
 import {
   CheckEvent,
   CompanyContext,
-  RawFeatures,
   TrackEvent,
   UserContext,
 } from "@reflag/browser-sdk";
@@ -11,14 +10,11 @@ import {
 import ReflagProvider from "./ReflagProvider.vue";
 import {
   ReflagProps,
-  EmptyFeatureRemoteConfig,
-  Feature,
-  FeatureType,
 } from "./types";
 
 export {
   useClient,
-  useFeature,
+  useFlag,
   useIsLoading,
   useRequestFeedback,
   useSendFeedback,
@@ -27,17 +23,17 @@ export {
   useUpdateOtherContext,
   useUpdateUser,
 } from "./hooks";
-export type { ReflagProps, RequestFeatureFeedbackOptions } from "./types";
+export type { ReflagProps, RequestFlagFeedbackOptions } from "./types";
 
 export { ReflagProvider };
 
 export type {
   CheckEvent,
   CompanyContext,
-  EmptyFeatureRemoteConfig,
-  Feature,
-  FeatureType,
-  RawFeatures,
+  EmptyFlagRemoteConfig,
+  Flag,
+  Flags,
+  FlagType,
   TrackEvent,
   UserContext,
 };

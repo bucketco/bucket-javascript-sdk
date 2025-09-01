@@ -80,7 +80,7 @@ import { ReflagClient } from "@reflag/node-sdk";
 export const reflagClient = new ReflagClient();
 
 // Initialize the client and begin fetching feature targeting definitions.
-// You must call this method prior to any calls to `getFeatures()`,
+// You must call this method prior to any calls to `getFlags()`,
 // otherwise an empty object will be returned.
 reflagClient.initialize().then({
   console.log("Reflag initialized!")
@@ -111,7 +111,7 @@ const boundClient = reflagClient.bindClient({
 
 // get the huddle feature using company, user and custom context to
 // evaluate the targeting.
-const { isEnabled, track, config } = boundClient.getFeature("huddle");
+const { isEnabled, track, config } = boundClient.getFlag("huddle");
 
 if (isEnabled) {
   // this is your feature gated code ...
@@ -130,12 +130,12 @@ if (isEnabled) {
 }
 ```
 
-You can also use the `getFeatures()` method which returns a map of all features:
+You can also use the `getFlags()` method which returns a map of all features:
 
 ```typescript
 // get the current features (uses company, user and custom context to
 // evaluate the features).
-const features = boundClient.getFeatures();
+const features = boundClient.getFlags();
 const bothEnabled =
   features.huddle?.isEnabled && features.voiceHuddle?.isEnabled;
 ```
@@ -145,8 +145,8 @@ const bothEnabled =
 The SDK contacts the Reflag servers when you call `initialize()`
 and downloads the features with their targeting rules.
 These rules are then matched against the user/company information you provide
-to `getFeatures()` (or through `bindClient(..).getFeatures()`). That means the
-`getFeatures()` call does not need to contact the Reflag servers once
+to `getFlags()` (or through `bindClient(..).getFlags()`). That means the
+`getFlags()` call does not need to contact the Reflag servers once
 `initialize()` has completed. `ReflagClient` will continue to periodically
 download the targeting rules from the Reflag servers in the background.
 
@@ -186,10 +186,10 @@ const client = new ReflagClient({
 });
 ```
 
-### Feature definitions
+### Flag definitions
 
-Feature definitions include the rules needed to determine which features should be enabled and which config values should be applied to any given user/company.
-Feature definitions are automatically fetched when calling `initialize()`.
+Flag definitions include the rules needed to determine which features should be enabled and which config values should be applied to any given user/company.
+Flag definitions are automatically fetched when calling `initialize()`.
 They are then cached and refreshed in the background.
 It's also possible to get the currently in use feature definitions:
 
@@ -198,7 +198,7 @@ import fs from "fs";
 
 const client = new ReflagClient();
 
-const featureDefs = await client.getFeatureDefinitions();
+const featureDefs = await client.getFlagDefinitions();
 // [{
 //   key: "huddle",
 //   description: "Live voice conversations with colleagues."
@@ -224,7 +224,7 @@ export default {
     // initialize the client and wait for it to complete
     // if the client was initialized on a previous invocation, this is a no-op.
     await reflag.initialize();
-    const features = reflag.getFeatures({
+    const features = reflag.getFlags({
       user: { id: "userId" },
       company: { id: "companyId" },
     });
@@ -234,7 +234,7 @@ export default {
     ctx.waitUntil(reflag.flush());
 
     return new Response(
-      `Features for user ${userId} and company ${companyId}: ${JSON.stringify(features, null, 2)}`,
+      `Flags for user ${userId} and company ${companyId}: ${JSON.stringify(features, null, 2)}`,
     );
   },
 };
@@ -251,10 +251,10 @@ The SDK caches feature definitions in memory for fast performance. The first req
 The SDK is designed to fail gracefully and never throw exceptions to the caller. Instead, it logs errors and provides
 fallback behavior:
 
-1. **Feature Evaluation Failures**:
+1. **Flag Evaluation Failures**:
 
    ```typescript
-   const { isEnabled } = client.getFeature("my-feature");
+   const { isEnabled } = client.getFlag("my-feature");
    // If feature evaluation fails, isEnabled will be false
    ```
 
@@ -262,7 +262,7 @@ fallback behavior:
 
    ```typescript
    // Network errors during tracking are logged but don't affect your application
-   const { track } = client.getFeature("my-feature");
+   const { track } = client.getFlag("my-feature");
    if (isEnabled) {
      try {
        await track();
@@ -277,7 +277,7 @@ fallback behavior:
 
    ```typescript
    // The SDK tracks missing context fields but continues operation
-   const features = client.getFeatures({
+   const features = client.getFlags({
      user: { id: "user123" },
      // Missing company context will be logged but won't cause errors
    });
@@ -321,7 +321,7 @@ It is managed similar to the way access to features is managed, but instead of t
 multiple configuration values which are given to different user/companies.
 
 ```ts
-const features = reflagClient.getFeatures();
+const features = reflagClient.getFlags();
 // {
 //   huddle: {
 //     isEnabled: true,
@@ -336,8 +336,8 @@ const features = reflagClient.getFeatures();
 
 `key` is mandatory for a config, but if a feature has no config or no config value was matched against the context, the `key` will be `undefined`. Make sure to check against this case when trying to use the configuration in your application. `payload` is an optional JSON value for arbitrary configuration needs.
 
-Just as `isEnabled`, accessing `config` on the object returned by `getFeatures` does not automatically
-generate a `check` event, contrary to the `config` property on the object returned by `getFeature`.
+Just as `isEnabled`, accessing `config` on the object returned by `getFlags` does not automatically
+generate a `check` event, contrary to the `config` property on the object returned by `getFlag`.
 
 ## Configuring
 
@@ -365,7 +365,7 @@ current working directory.
   "logLevel": "warn",
   "offline": true,
   "apiBaseUrl": "https://proxy.slick-demo.com",
-  "featureOverrides": {
+  "flagOverrides": {
     "huddles": true,
     "voiceChat": { "isEnabled": false },
     "aiAssist": {
@@ -418,12 +418,12 @@ reflagClient.initialize().then(() => {
   console.log("Reflag initialized!");
 
   // TypeScript will catch this error: "invalid-feature" doesn't exist
-  reflagClient.getFeature("invalid-feature");
+  reflagClient.getFlag("invalid-feature");
 
   const {
     isEnabled,
     config: { payload },
-  } = reflagClient.getFeature("create-todos");
+  } = reflagClient.getFlag("create-todos");
 });
 ```
 
@@ -461,7 +461,7 @@ import { reflag } from "./reflag.ts";
 
 beforeAll(async () => await reflag.initialize());
 afterEach(() => {
-  reflag.clearFeatureOverrides();
+  reflag.clearFlagOverrides();
 });
 
 describe("API Tests", () => {
@@ -479,9 +479,9 @@ describe("API Tests", () => {
 
 See more on feature overrides in the section below.
 
-## Feature Overrides
+## Flag Overrides
 
-Feature overrides allow you to override flags and their configurations locally. This is particularly useful for development and testing. You can specify overrides in three ways:
+Flag overrides allow you to override flags and their configurations locally. This is particularly useful for development and testing. You can specify overrides in three ways:
 
 1. Through environment variables:
 
@@ -494,7 +494,7 @@ BUCKET_FEATURES_DISABLED=feature3,feature4
 
 ```json
 {
-  "featureOverrides": {
+  "flagOverrides": {
     "delete-todos": {
       "isEnabled": true,
       "config": {
@@ -515,12 +515,12 @@ You can use a simple `Record<string, boolean>` and pass it either in the constru
 
 ```typescript
 // pass directly in the constructor
-const client = new ReflagClient({ featureOverrides: { myFeature: true } });
+const client = new ReflagClient({ featureOverrides: { myFlag: true } });
 // or set on the client at a later time
-client.featureOverrides = { myFeature: false };
+client.featureOverrides = { myFlag: false };
 
 // clear feature overrides. Same as setting to {}.
-client.clearFeatureOverrides();
+client.clearFlagOverrides();
 ```
 
 To get dynamic overrides, use a function which takes a context and returns a boolean or an object with the shape of `{isEnabled, config}`:
@@ -546,7 +546,7 @@ const client = new ReflagClient({
 });
 ```
 
-## Remote Feature Evaluation
+## Remote Flag Evaluation
 
 In addition to local feature evaluation, Reflag supports remote evaluation using stored context. This is useful when you want to evaluate features using user/company attributes that were previously sent to Reflag:
 
@@ -567,16 +567,16 @@ await client.updateCompany("company456", {
 });
 
 // Later, evaluate features remotely using stored context
-const features = await client.getFeaturesRemote("company456", "user123");
+const features = await client.getFlagsRemote("company456", "user123");
 // Or evaluate a single feature
-const feature = await client.getFeatureRemote(
+const feature = await client.getFlagRemote(
   "create-todos",
   "company456",
   "user123",
 );
 
 // You can also provide additional context
-const featuresWithContext = await client.getFeaturesRemote(
+const featuresWithContext = await client.getFlagsRemote(
   "company456",
   "user123",
   {
@@ -644,10 +644,10 @@ app.use((req, res, next) => {
 
 // Now use res.locals.boundReflagClient in your handlers
 app.get("/todos", async (_req, res) => {
-  const { track, isEnabled } = res.locals.reflagUser.getFeature("show-todos");
+  const { track, isEnabled } = res.locals.reflagUser.getFlag("show-todos");
 
   if (!isEnabled) {
-    res.status(403).send({"error": "feature inaccessible"})
+    res.status(403).send({"error": "flag inaccessible"})
     return
   }
 
@@ -661,8 +661,8 @@ See [examples/express/app.ts](https://github.com/reflagcom/javascript/tree/main/
 
 If you don't want to provide context each time when evaluating flags but
 rather you would like to utilize the attributes you sent to Reflag previously
-(by calling `updateCompany` and `updateUser`) you can do so by calling `getFeaturesRemote`
-(or `getFeatureRemote` for a specific feature) with providing just `userId` and `companyId`.
+(by calling `updateCompany` and `updateUser`) you can do so by calling `getFlagsRemote`
+(or `getFlagRemote` for a specific feature) with providing just `userId` and `companyId`.
 These methods will call Reflag's servers and flags will be evaluated remotely
 using the stored attributes.
 
@@ -684,7 +684,7 @@ client.updateCompany("acme_inc", {
 ...
 
 // This will evaluate flags with respecting the attributes sent previously
-const features = await client.getFeaturesRemote("acme_inc", "john_doe");
+const features = await client.getFlagsRemote("acme_inc", "john_doe");
 ```
 
 > [!IMPORTANT]
@@ -709,14 +709,14 @@ boundClient.track("some event"); // this will not actually send the event to Ref
 
 // the following code will not update the `user` nor `company` in Reflag and will
 // not send `track` events either.
-const { isEnabled, track } = boundClient.getFeature("user-menu");
+const { isEnabled, track } = boundClient.getFlag("user-menu");
 if (isEnabled) {
   track();
 }
 ```
 
-Another way way to disable tracking without employing a bound client is to call `getFeature()`
-or `getFeatures()` by supplying `enableTracking: false` in the arguments passed to
+Another way way to disable tracking without employing a bound client is to call `getFlag()`
+or `getFlags()` by supplying `enableTracking: false` in the arguments passed to
 these functions.
 
 > [!IMPORTANT]

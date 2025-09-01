@@ -40,10 +40,10 @@ app.get("/", (_req, res) => {
 
 // Return todos if the feature is enabled for the user
 app.get("/todos", async (_req, res) => {
-  // We use the `getFeature` method to check if the user has the "show-todos" feature enabled.
-  // Note that "show-todos" is a feature that we defined in the `Features` interface in the `reflag.ts` file.
+  // We use the `getFlag` method to check if the user has the "show-todos" feature enabled.
+  // Note that "show-todos" is a feature that we defined in the `Flags` interface in the `reflag.ts` file.
   // and that the indexing for feature name below is type-checked at compile time.
-  const { isEnabled, track } = res.locals.reflagUser.getFeature("show-todos");
+  const { isEnabled, track } = res.locals.reflagUser.getFlag("show-todos");
 
   if (isEnabled) {
     track();
@@ -66,7 +66,7 @@ app.post("/todos", (req, res) => {
   }
 
   const { track, isEnabled, config } =
-    res.locals.reflagUser.getFeature("create-todos");
+    res.locals.reflagUser.getFlag("create-todos");
 
   // Check if the user has the "create-todos" feature enabled
   if (isEnabled) {
@@ -96,7 +96,7 @@ app.delete("/todos/:idx", (req, res) => {
     return res.status(400).json({ error: "Invalid index" });
   }
 
-  const { track, isEnabled } = res.locals.reflagUser.getFeature("delete-todos");
+  const { track, isEnabled } = res.locals.reflagUser.getFlag("delete-todos");
 
   if (isEnabled) {
     todos.splice(idx, 1);
@@ -111,7 +111,7 @@ app.delete("/todos/:idx", (req, res) => {
 });
 
 app.get("/features", async (_req, res) => {
-  const features = await res.locals.reflagUser.getFeaturesRemote();
+  const features = await res.locals.reflagUser.getFlagsRemote();
   res.json(features);
 });
 

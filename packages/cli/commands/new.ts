@@ -11,7 +11,7 @@ import {
   typesOutOption,
 } from "../utils/options.js";
 
-import { createFeatureAction, generateTypesAction } from "./features.js";
+import { createFlagAction, generateTypesAction } from "./features.js";
 import { initAction } from "./init.js";
 
 type NewArgs = {
@@ -24,7 +24,7 @@ export const newAction = async (name: string | undefined, { key }: NewArgs) => {
   if (!(await findUp(CONFIG_FILE_NAME))) {
     await initAction();
   }
-  await createFeatureAction(name, {
+  await createFlagAction(name, {
     key,
   });
   await generateTypesAction();

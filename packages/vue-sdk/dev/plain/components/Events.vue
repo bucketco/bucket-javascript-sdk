@@ -17,7 +17,7 @@ function checkEvent(evt: CheckEvent) {
 }
 
 function featuresUpdatedEvent() {
-  events.value = [...events.value, `Features Updated!`];
+  events.value = [...events.value, `Flags Updated!`];
 }
 
 function trackEvent(evt: TrackEvent) {

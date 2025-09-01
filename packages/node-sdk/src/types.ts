@@ -20,7 +20,7 @@ export type Attributes = Record<string, any>;
 /**
  * Describes a feature event. Can be "check" or "evaluate".
  **/
-export type FeatureEvent = {
+export type FlagEvent = {
   /**
    * The action that was performed.
    **/
@@ -63,7 +63,7 @@ export type FeatureEvent = {
 /**
  * A remotely managed configuration value for a feature.
  */
-export type RawFeatureRemoteConfig = {
+export type RawFlagRemoteConfig = {
   /**
    * The key of the matched configuration value.
    */
@@ -93,7 +93,7 @@ export type RawFeatureRemoteConfig = {
 /**
  * Describes a feature.
  */
-export interface RawFeature {
+export interface RawFlag {
   /**
    * The key of the feature.
    */
@@ -112,7 +112,7 @@ export interface RawFeature {
   /**
    * The remote configuration value for the feature.
    */
-  config?: RawFeatureRemoteConfig;
+  config?: RawFlagRemoteConfig;
 
   /**
    * The rule results of the evaluation (optional).
@@ -125,12 +125,12 @@ export interface RawFeature {
   missingContextFields?: string[];
 }
 
-export type EmptyFeatureRemoteConfig = { key: undefined; payload: undefined };
+export type EmptyFlagRemoteConfig = { key: undefined; payload: undefined };
 
 /**
  * A remotely managed configuration value for a feature.
  */
-export type FeatureRemoteConfig =
+export type FlagRemoteConfig =
   | {
       /**
        * The key of the matched configuration value.
@@ -142,13 +142,13 @@ export type FeatureRemoteConfig =
        */
       payload: any;
     }
-  | EmptyFeatureRemoteConfig;
+  | EmptyFlagRemoteConfig;
 
 /**
  * Describes a feature
  */
-export interface Feature<
-  TConfig extends FeatureType["config"] = EmptyFeatureRemoteConfig,
+export interface Flag<
+  TConfig extends FlagType["config"] = EmptyFlagRemoteConfig,
 > {
   /**
    * The key of the feature.
@@ -167,7 +167,7 @@ export interface Feature<
     | ({
         key: string;
       } & TConfig)
-    | EmptyFeatureRemoteConfig;
+    | EmptyFlagRemoteConfig;
 
   /**
    * Track feature usage in Reflag.
@@ -175,14 +175,14 @@ export interface Feature<
   track(): Promise<void>;
 }
 
-export type FeatureType = {
+export type FlagType = {
   config?: {
     payload: any;
   };
 };
 
-export type FeatureOverride =
-  | (FeatureType & {
+export type FlagOverride =
+  | (FlagType & {
       isEnabled: boolean;
       config?: {
         key: string;
@@ -193,7 +193,7 @@ export type FeatureOverride =
 /**
  * Describes a feature definition.
  */
-export type FeatureDefinition = {
+export type FlagDefinition = {
   /**
    * The key of the feature.
    */
@@ -236,7 +236,7 @@ export type FeatureDefinition = {
     /**
      * The variants of the remote configuration.
      */
-    variants: FeatureConfigVariant[];
+    variants: FlagConfigVariant[];
   };
 };
 
@@ -244,47 +244,47 @@ export type FeatureDefinition = {
  * Describes a collection of evaluated features.
  *
  * @remarks
- * You should extend the Features interface to define the available features.
+ * You should extend the Flags interface to define the available features.
  */
-export interface Features {}
+export interface Flags {}
 
 /**
  * Describes a collection of evaluated feature.
  *
  * @remarks
- * This types falls back to a generic Record<string, Feature> if the Features interface
+ * This types falls back to a generic Record<string, Flag> if the Flags interface
  * has not been extended.
  *
  */
-export type TypedFeatures = keyof Features extends never
-  ? Record<string, Feature>
+export type TypedFlags = keyof Flags extends never
+  ? Record<string, Flag>
   : {
-      [FeatureKey in keyof Features]: Features[FeatureKey] extends FeatureType
-        ? Feature<Features[FeatureKey]["config"]>
-        : Feature;
+      [FlagKey in keyof Flags]: Flags[FlagKey] extends FlagType
+        ? Flag<Flags[FlagKey]["config"]>
+        : Flag;
     };
 
-export type TypedFeatureKey = keyof TypedFeatures;
+export type TypedFlagKey = keyof TypedFlags;
 
 /**
  * Describes the feature overrides.
  */
-export type FeatureOverrides = Partial<
-  keyof Features extends never
-    ? Record<string, FeatureOverride>
+export type FlagOverrides = Partial<
+  keyof Flags extends never
+    ? Record<string, FlagOverride>
     : {
-        [FeatureKey in keyof Features]: Features[FeatureKey] extends FeatureOverride
-          ? Features[FeatureKey]
-          : Exclude<FeatureOverride, "config">;
+        [FlagKey in keyof Flags]: Flags[FlagKey] extends FlagOverride
+          ? Flags[FlagKey]
+          : Exclude<FlagOverride, "config">;
       }
 >;
 
-export type FeatureOverridesFn = (context: Context) => FeatureOverrides;
+export type FlagOverridesFn = (context: Context) => FlagOverrides;
 
 /**
  * Describes a remote feature config variant.
  */
-export type FeatureConfigVariant = {
+export type FlagConfigVariant = {
   /**
    * The filter for the variant.
    */
@@ -306,7 +306,7 @@ export type FeatureConfigVariant = {
  *
  * @internal
  */
-export type FeatureAPIResponse = {
+export type FlagAPIResponse = {
   /**
    * The key of the feature.
    */
@@ -349,7 +349,7 @@ export type FeatureAPIResponse = {
     /**
      * The variants of the remote configuration.
      */
-    variants: FeatureConfigVariant[];
+    variants: FlagConfigVariant[];
   };
 };
 
@@ -358,20 +358,20 @@ export type FeatureAPIResponse = {
  *
  * @internal
  */
-export type FeaturesAPIResponse = {
+export type FlagsAPIResponse = {
   /**
    * The feature definitions.
    */
-  features: FeatureAPIResponse[];
+  features: FlagAPIResponse[];
 };
 
 /**
- * (Internal) Feature definitions with the addition of a pre-prepared
+ * (Internal) Flag definitions with the addition of a pre-prepared
  * evaluators functions for the rules.
  *
  * @internal
  */
-export type CachedFeatureDefinition = FeatureAPIResponse & {
+export type CachedFlagDefinition = FlagAPIResponse & {
   enabledEvaluator: ReturnType<typeof newEvaluator<boolean>>;
   configEvaluator: ReturnType<typeof newEvaluator<any>> | undefined;
 };
@@ -381,7 +381,7 @@ export type CachedFeatureDefinition = FeatureAPIResponse & {
  *
  * @internal
  */
-export type EvaluatedFeaturesAPIResponse = {
+export type EvaluatedFlagsAPIResponse = {
   /**
    * True if request successful.
    */
@@ -395,7 +395,7 @@ export type EvaluatedFeaturesAPIResponse = {
   /**
    * The feature definitions.
    */
-  features: Record<string, RawFeature>;
+  features: Record<string, RawFlag>;
 };
 
 /**
@@ -600,8 +600,8 @@ export type ClientOptions = {
    * configuration values or the boolean value `true`.
    **/
   fallbackFlags?:
-    | TypedFeatureKey[]
-    | Record<TypedFeatureKey, Exclude<FeatureOverride, false>>;
+    | TypedFlagKey[]
+    | Record<TypedFlagKey, Exclude<FlagOverride, false>>;
 
   /**
    * The HTTP client to use for sending requests (optional). Default is the built-in fetch client.
@@ -634,9 +634,9 @@ export type ClientOptions = {
    * If a function is specified, the function will be called with the context
    * and should return a record of feature keys and boolean or object values.
    *
-   * Defaults to "reflagFeatures.json".
+   * Defaults to "reflagFlags.json".
    **/
-  featureOverrides?: string | ((context: Context) => FeatureOverrides);
+  featureOverrides?: string | ((context: Context) => FlagOverrides);
 
   /**
    * In offline mode, no data is sent or fetched from the the Reflag API.

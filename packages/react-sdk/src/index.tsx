@@ -16,7 +16,7 @@ import {
   CheckEvent,
   CompanyContext,
   InitOptions,
-  RawFeatures,
+  RawFlags,
   RequestFeedbackData,
   TrackEvent,
   UnassignedFeedback,
@@ -28,14 +28,14 @@ import { version } from "../package.json";
 export type {
   CheckEvent,
   CompanyContext,
-  RawFeatures,
+  RawFlags,
   TrackEvent,
   UserContext,
 };
 
-export type EmptyFeatureRemoteConfig = { key: undefined; payload: undefined };
+export type EmptyFlagRemoteConfig = { key: undefined; payload: undefined };
 
-export type FeatureType = {
+export type FlagType = {
   config?: {
     payload: any;
   };
@@ -44,7 +44,7 @@ export type FeatureType = {
 /**
  * A remotely managed configuration value for a feature.
  */
-export type FeatureRemoteConfig =
+export type FlagRemoteConfig =
   | {
       /**
        * The key of the matched configuration value.
@@ -56,13 +56,13 @@ export type FeatureRemoteConfig =
        */
       payload: any;
     }
-  | EmptyFeatureRemoteConfig;
+  | EmptyFlagRemoteConfig;
 
 /**
  * Describes a feature
  */
-export interface Feature<
-  TConfig extends FeatureType["config"] = EmptyFeatureRemoteConfig,
+export interface Flag<
+  TConfig extends FlagType["config"] = EmptyFlagRemoteConfig,
 > {
   /**
    * The key of the feature.
@@ -86,7 +86,7 @@ export interface Feature<
     | ({
         key: string;
       } & TConfig)
-    | EmptyFeatureRemoteConfig;
+    | EmptyFlagRemoteConfig;
 
   /**
    * Track feature usage in Reflag.
@@ -99,32 +99,32 @@ export interface Feature<
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface Features {}
+export interface Flags {}
 
 /**
  * Describes a collection of evaluated feature.
  *
  * @remarks
- * This types falls back to a generic Record<string, Feature> if the Features interface
+ * This types falls back to a generic Record<string, Flag> if the Flags interface
  * has not been extended.
  *
  */
-export type TypedFeatures = keyof Features extends never
-  ? Record<string, Feature>
+export type TypedFlags = keyof Flags extends never
+  ? Record<string, Flag>
   : {
-      [TypedFeatureKey in keyof Features]: Features[TypedFeatureKey] extends FeatureType
-        ? Feature<Features[TypedFeatureKey]["config"]>
-        : Feature;
+      [TypedFlagKey in keyof Flags]: Flags[TypedFlagKey] extends FlagType
+        ? Flag<Flags[TypedFlagKey]["config"]>
+        : Flag;
     };
 
-export type FeatureKey = keyof TypedFeatures;
+export type FlagKey = keyof TypedFlags;
 
 const SDK_VERSION = `react-sdk/${version}`;
 
 type ProviderContextType = {
   client?: ReflagClient;
   features: {
-    features: RawFeatures;
+    features: RawFlags;
     isLoading: boolean;
   };
   provider: boolean;
@@ -180,8 +180,8 @@ export function ReflagProvider({
   newReflagClient = (...args) => new ReflagClient(...args),
   ...config
 }: ReflagProps) {
-  const [featuresLoading, setFeaturesLoading] = useState(true);
-  const [rawFeatures, setRawFeatures] = useState<RawFeatures>({});
+  const [featuresLoading, setFlagsLoading] = useState(true);
+  const [rawFlags, setRawFlags] = useState<RawFlags>({});
 
   const clientRef = useRef<ReflagClient>();
   const contextKeyRef = useRef<string>();
@@ -202,7 +202,7 @@ export function ReflagProvider({
       void clientRef.current.stop();
     }
 
-    setFeaturesLoading(true);
+    setFlagsLoading(true);
 
     const client = newReflagClient({
       ...config,
@@ -216,7 +216,7 @@ export function ReflagProvider({
 
     clientRef.current = client;
 
-    client.on("flagsUpdated", setRawFeatures);
+    client.on("flagsUpdated", setRawFlags);
 
     client
       .initialize()
@@ -224,14 +224,14 @@ export function ReflagProvider({
         client.logger.error("failed to initialize client", e);
       })
       .finally(() => {
-        setFeaturesLoading(false);
+        setFlagsLoading(false);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- should only run once
   }, [contextKey]);
 
   const context: ProviderContextType = {
     features: {
-      features: rawFeatures,
+      features: rawFlags,
       isLoading: featuresLoading,
     },
     client: clientRef.current,
@@ -256,15 +256,15 @@ export type RequestFeedbackOptions = Omit<
  *
  * ```ts
  * function HuddleButton() {
- *   const {isEnabled, config: { payload }, track} = useFeature("huddle");
+ *   const {isEnabled, config: { payload }, track} = useFlag("huddle");
  *   if (isEnabled) {
  *    return <button onClick={() => track()}>{payload?.buttonTitle ?? "Start Huddle"}</button>;
  * }
  * ```
  */
-export function useFeature<TKey extends FeatureKey>(
+export function useFlag<TKey extends FlagKey>(
   key: TKey,
-): TypedFeatures[TKey] {
+): TypedFlags[TKey] {
   const client = useClient();
   const {
     features: { isLoading },
@@ -282,13 +282,13 @@ export function useFeature<TKey extends FeatureKey>(
       config: {
         key: undefined,
         payload: undefined,
-      } as TypedFeatures[TKey]["config"],
+      } as TypedFlags[TKey]["config"],
       track,
       requestFeedback,
     };
   }
 
-  const feature = client.getFeature(key);
+  const feature = client.getFlag(key);
 
   return {
     key,
@@ -299,7 +299,7 @@ export function useFeature<TKey extends FeatureKey>(
       return feature.isEnabled ?? false;
     },
     get config() {
-      return feature.config as TypedFeatures[TKey]["config"];
+      return feature.config as TypedFlags[TKey]["config"];
     },
   };
 }
@@ -369,7 +369,7 @@ export function useSendFeedback() {
  *
  * ```ts
  * const updateUser = useUpdateUser();
- * updateUser({ optInHuddles: "true" }).then(() => console.log("Features updated"));
+ * updateUser({ optInHuddles: "true" }).then(() => console.log("Flags updated"));
  * ```
  */
 export function useUpdateUser() {
@@ -388,7 +388,7 @@ export function useUpdateUser() {
  *
  * ```ts
  * const updateCompany = useUpdateCompany();
- * updateCompany({ plan: "enterprise" }).then(() => console.log("Features updated"));
+ * updateCompany({ plan: "enterprise" }).then(() => console.log("Flags updated"));
  * ```
  */
 export function useUpdateCompany() {
@@ -409,7 +409,7 @@ export function useUpdateCompany() {
  * ```ts
  * const updateOtherContext = useUpdateOtherContext();
  * updateOtherContext({ workspaceId: newWorkspaceId })
- *   .then(() => console.log("Features updated"));
+ *   .then(() => console.log("Flags updated"));
  * ```
  */
 export function useUpdateOtherContext() {

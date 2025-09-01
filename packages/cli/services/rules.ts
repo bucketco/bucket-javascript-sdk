@@ -14,9 +14,9 @@ export function getCopilotInstructions() {
 }
 
 const rules = /* markdown */ `
-# Reflag Feature Management Service for LLMs
+# Reflag Flag Management Service for LLMs
 
-Reflag is a comprehensive feature management service offering flags, user feedback collection, adoption tracking, and remote configuration for your applications across various JavaScript frameworks, particularly React, Next.js, Node.js, vanilla browser, CLI, and OpenFeature environments. Follow these best practices for flagging.
+Reflag is a comprehensive feature management service offering flags, user feedback collection, adoption tracking, and remote configuration for your applications across various JavaScript frameworks, particularly React, Next.js, Node.js, vanilla browser, CLI, and OpenFlag environments. Follow these best practices for flagging.
 
 ## Follow Official Documentation
 
@@ -30,20 +30,20 @@ Reflag is a comprehensive feature management service offering flags, user feedba
 - Write clean, type-safe code when applying Reflag flags.
 - Follow established patterns in the project.
 
-## Feature Flag Implementation
+## Flag Implementation
 
 - Create reusable hooks and utilities for consistent feature management.
 - Write clear comments for usage and checks of a flag.
 - Properly handle feature loading states to prevent UI flashing.
 - Implement proper error fallbacks when flag services are unavailable.
 
-## Feature Targeting
+## Flag Targeting
 
 - Use release stages to manage feature rollout (for example, development, staging, production).
 - Use targeting modes effectively:
-  - \`none\`: Feature is disabled for all targets.
-  - \`some\`: Feature is enabled only for specified targets.
-  - \`everyone\`: Feature is enabled for all targets.
+  - \`none\`: Flag is disabled for all targets.
+  - \`some\`: Flag is enabled only for specified targets.
+  - \`everyone\`: Flag is enabled for all targets.
 - Target features to specific users, companies, or segments.
 
 ## Analytics and Feedback
@@ -58,7 +58,7 @@ Reflag is a comprehensive feature management service offering flags, user feedba
 
 Targeting rules are entities used in Reflag to describe the target audience of a given feature. The target audience refers to the users who can interact with the feature within your application. Additionally, each targeting rule contains a value that is used for the target audience.
 
-### Feature Stages
+### Flag Stages
 
 Release stages in Reflag allow setting up app-wide feature access targeting rules. Each release stage defines targeting rules for each available environment. Later, during the development of new features, you can apply all those rules automatically by selecting an available release stage.
 
@@ -105,9 +105,9 @@ npm i @reflag/react-sdk
 
 ### Key Features
 
-- Feature toggling with fine-grained targeting
+- Flag toggling with fine-grained targeting
 - User feedback collection
-- Feature usage tracking
+- Flag usage tracking
 - Remote configuration
 - Type-safe feature management
 
@@ -131,7 +131,7 @@ import { ReflagProvider } from "@reflag/react-sdk";
 
 \`\`\`bash
 npm i --save-dev @reflag/cli
-npx reflag new "Feature name"
+npx reflag new "Flag name"
 \`\`\`
 
 \`\`\`typescript
@@ -141,8 +141,8 @@ npx reflag new "Feature name"
 import "@reflag/react-sdk";
 
 declare module "@reflag/react-sdk" {
-  export interface Features {
-    "feature-key": {
+  export interface Flags {
+    "flag-key": {
       config: {
         payload: {
           tokens: number;
@@ -156,7 +156,7 @@ declare module "@reflag/react-sdk" {
 1. Use features in your components:
 
 \`\`\`jsx
-import { useFeature } from "@reflag/react-sdk";
+import { useFlag } from "@reflag/react-sdk";
 
 function StartHuddleButton() {
   const {
@@ -169,7 +169,7 @@ function StartHuddleButton() {
     },
     track, // function to track feature usage
     requestFeedback, // function to request feedback for this feature
-  } = useFeature("huddle");
+  } = useFlag("huddle");
 
   if (isLoading) {
     return <Loading />;
@@ -202,7 +202,7 @@ function StartHuddleButton() {
 
 ### Core React Hooks
 
-- \`useFeature()\` - Access feature status, config, and tracking
+- \`useFlag()\` - Access feature status, config, and tracking
 - \`useTrack()\` - Send custom events to Reflag
 - \`useRequestFeedback()\` - Open feedback dialog for a feature
 - \`useSendFeedback()\` - Programmatically send feedback
@@ -235,7 +235,7 @@ const client = new ReflagClient({
 });
 
 // Check if a feature is enabled
-const isEnabled = await client.isEnabled("feature-key", {
+const isEnabled = await client.isEnabled("flag-key", {
   user: { id: "user_123", role: "admin" },
   company: { id: "company_456", plan: "enterprise" },
 });
@@ -259,14 +259,14 @@ await client.setContext({
 });
 
 // Check feature after setting context
-const isEnabled = await client.isEnabled("feature-key");
+const isEnabled = await client.isEnabled("flag-key");
 \`\`\`
 
-### Feature Configuration
+### Flag Configuration
 
 \`\`\`javascript
 // Get feature configuration
-const config = await client.getConfig("feature-key", {
+const config = await client.getConfig("flag-key", {
   user: { id: "user_123" },
   company: { id: "company_456" },
 });
@@ -279,7 +279,7 @@ console.log(config.payload.maxDuration);
 
 \`\`\`javascript
 // Track feature usage
-await client.track("feature-key", {
+await client.track("flag-key", {
   user: { id: "user_123" },
   company: { id: "company_456" },
   metadata: { action: "completed" },

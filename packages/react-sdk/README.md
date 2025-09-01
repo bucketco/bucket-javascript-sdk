@@ -67,9 +67,9 @@ Creating feature for app Slick app.
 > By default, types will be generated in `gen/features.d.ts`.
 > The default `tsconfig.json` file `include`s this file by default, but if your `tsconfig.json` is different, make sure the file is covered in the `include` property.
 
-### 3. Use `useFeature(<flagKey>)` to get feature status
+### 3. Use `useFlag(<flagKey>)` to get feature status
 
-Using the `useFeature` hook from your components lets you toggle features on/off and track feature usage:
+Using the `useFlag` hook from your components lets you toggle features on/off and track feature usage:
 
 **Example:**
 
@@ -78,7 +78,7 @@ function StartHuddleButton() {
   const {
     isEnabled, // boolean indicating if the feature is enabled
     track, // track usage of the feature
-  } = useFeature("huddle");
+  } = useFlag("huddle");
 
   if (!isEnabled) {
     return null;
@@ -88,7 +88,7 @@ function StartHuddleButton() {
 }
 ```
 
-`useFeature` can help you do much more. See a full example for `useFeature` [see below](#usefeature).
+`useFlag` can help you do much more. See a full example for `useFlag` [see below](#usefeature).
 
 ## Setting `user` and `company`
 
@@ -119,16 +119,16 @@ A number of special attributes exist:
   <ReflagProvider>
 ```
 
-To retrieve features along with their targeting information, use `useFeature(key: string)` hook (described in a section below).
+To retrieve features along with their targeting information, use `useFlag(key: string)` hook (described in a section below).
 
-Note that accessing `isEnabled` on the object returned by `useFeature()` automatically
+Note that accessing `isEnabled` on the object returned by `useFlag()` automatically
 generates a `check` event.
 
 ## Remote config
 
 Remote config is a dynamic and flexible approach to configuring feature behavior outside of your app – without needing to re-deploy it.
 
-Similar to `isEnabled`, each feature accessed using the `useFeature()` hook, has a `config` property. This configuration is managed from within Reflag. It is managed similar to the way access to features is managed, but instead of the
+Similar to `isEnabled`, each feature accessed using the `useFlag()` hook, has a `config` property. This configuration is managed from within Reflag. It is managed similar to the way access to features is managed, but instead of the
 binary `isEnabled` you can have multiple configuration values which are given to different user/companies.
 
 ### Get started with Remote config
@@ -138,9 +138,9 @@ binary `isEnabled` you can have multiple configuration values which are given to
 ```typescript
 import "@reflag/react-sdk";
 
-// Define your features by extending the `Features` interface in @reflag/react-sdk
+// Define your features by extending the `Flags` interface in @reflag/react-sdk
 declare module "@reflag/react-sdk" {
-  interface Features {
+  interface Flags {
     huddle: {
       // change from `boolean` to an object which sets
       // a type for the remote config for `questionnaire`
@@ -155,7 +155,7 @@ declare module "@reflag/react-sdk" {
 const {
   isEnabled,
   config: { key, payload },
-} = useFeature("huddles");
+} = useFlag("huddles");
 
 // isEnabled: true,
 // key: "gpt-3.5",
@@ -164,7 +164,7 @@ const {
 
 `key` is mandatory for a config, but if a feature has no config or no config value was matched against the context, the `key` will be `undefined`. Make sure to check against this case when trying to use the configuration in your application. `payload` is an optional JSON value for arbitrary configuration needs.
 
-Note that, similar to `isEnabled`, accessing `config` on the object returned by `useFeature()` automatically
+Note that, similar to `isEnabled`, accessing `config` on the object returned by `useFlag()` automatically
 generates a `check` event.
 
 ## `<ReflagProvider>` component
@@ -179,12 +179,12 @@ The `<ReflagProvider>` initializes the Reflag SDK, fetches features and starts l
 
   ```ts
   // Simple array of feature keys
-  fallbackFlags={["feature1", "feature2"]}
+  fallbackFlags={["flag1", "flag2"]}
 
   // Or with configuration overrides
   fallbackFlags: {
-      "feature1": true,  // just enable the feature
-      "feature2": {      // enable with configuration
+      "flag1": true,  // just enable the feature
+      "flag2": {      // enable with configuration
         key: "variant-a",
         payload: {
           limit: 100,
@@ -199,11 +199,11 @@ The `<ReflagProvider>` initializes the Reflag SDK, fetches features and starts l
 - `expireTimeMs`: If set, features will be cached between page loads for this duration (in milliseconds).
 - `staleTimeMs`: Maximum time (in milliseconds) that stale features will be returned if `staleWhileRevalidate` is true and new features cannot be fetched.
 - `offline`: Provide this option when testing or in local development environments to avoid contacting Reflag servers.
-- `loadingComponent` lets you specify an React component to be rendered instead of the children while the Reflag provider is initializing. If you want more control over loading screens, `useFeature()` returns `isLoading` which you can use to customize the loading experience:
+- `loadingComponent` lets you specify an React component to be rendered instead of the children while the Reflag provider is initializing. If you want more control over loading screens, `useFlag()` returns `isLoading` which you can use to customize the loading experience:
 
   ```tsx
   function LoadingReflag({ children }) {
-    const { isLoading } = useFeature("myFeature")
+    const { isLoading } = useFlag("myFlag")
     if (isLoading) {
       return <Spinner />
     }
@@ -229,12 +229,12 @@ The `<ReflagProvider>` initializes the Reflag SDK, fetches features and starts l
 
 ## Hooks
 
-### `useFeature()`
+### `useFlag()`
 
 Returns the state of a given feature for the current context. The hook provides type-safe access to flags and their configurations.
 
 ```tsx
-import { useFeature } from "@reflag/react-sdk";
+import { useFlag } from "@reflag/react-sdk";
 
 function StartHuddleButton() {
   const {
@@ -247,7 +247,7 @@ function StartHuddleButton() {
     },
     track, // function to track feature usage
     requestFeedback, // function to request feedback for this feature
-  } = useFeature("huddle");
+  } = useFlag("huddle");
 
   if (isLoading) {
     return <Loading />;
@@ -369,7 +369,7 @@ import {
   useUpdateOtherContext,
 } from "@reflag/react-sdk";
 
-function FeatureOptIn() {
+function FlagOptIn() {
   const updateUser = useUpdateUser();
   const updateCompany = useUpdateCompany();
   const updateOtherContext = useUpdateOtherContext();
@@ -377,7 +377,7 @@ function FeatureOptIn() {
   const handleUserUpdate = async () => {
     await updateUser({
       role: "admin",
-      betaFeatures: "enabled",
+      betaFlags: "enabled",
     });
   };
 

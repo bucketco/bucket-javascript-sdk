@@ -20,7 +20,7 @@ import {
   ReflagProps,
   ReflagProvider,
   useClient,
-  useFeature,
+  useFlag,
   useRequestFeedback,
   useSendFeedback,
   useTrack,
@@ -174,7 +174,7 @@ describe("<ReflagProvider />", () => {
       timeoutMs: 1002,
       expireTimeMs: 1003,
       staleWhileRevalidate: true,
-      fallbackFlags: ["feature2"],
+      fallbackFlags: ["flag2"],
       feedback: { enableAutoFeedback: true },
       toolbar: { show: true },
       newReflagClient,
@@ -202,7 +202,7 @@ describe("<ReflagProvider />", () => {
         logger: undefined,
         enableTracking: false,
         expireTimeMs: 1003,
-        fallbackFlags: ["feature2"],
+        fallbackFlags: ["flag2"],
         feedback: {
           enableAutoFeedback: true,
         },
@@ -281,9 +281,9 @@ describe("<ReflagProvider />", () => {
   });
 });
 
-describe("useFeature", () => {
+describe("useFlag", () => {
   test("returns a loading state initially", async () => {
-    const { result, unmount } = renderHook(() => useFeature("huddle"), {
+    const { result, unmount } = renderHook(() => useFlag("huddle"), {
       wrapper: ({ children }) => getProvider({ children }),
     });
 
@@ -300,7 +300,7 @@ describe("useFeature", () => {
   });
 
   test("finishes loading", async () => {
-    const { result, unmount } = renderHook(() => useFeature("huddle"), {
+    const { result, unmount } = renderHook(() => useFlag("huddle"), {
       wrapper: ({ children }) => getProvider({ children }),
     });
 
@@ -319,7 +319,7 @@ describe("useFeature", () => {
   });
 
   test("provides the expected values if feature is enabled", async () => {
-    const { result, unmount } = renderHook(() => useFeature("abc"), {
+    const { result, unmount } = renderHook(() => useFlag("abc"), {
       wrapper: ({ children }) => getProvider({ children }),
     });
 

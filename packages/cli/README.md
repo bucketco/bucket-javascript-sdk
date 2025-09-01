@@ -36,7 +36,7 @@ Instead of running `new` you can call each step individually.
 npx reflag init
 
 # Create a new feature
-npx reflag features create "My Feature"
+npx reflag features create "My Flag"
 
 # Generate TypeScript types for your features
 npx reflag features types
@@ -99,7 +99,7 @@ All-in-one command to get started quickly. This command combines `init`, feature
 and type generation in a single step. Use this for the fastest way to get up and running with Reflag.
 
 ```bash
-npx reflag new "My Feature" [--app-id ap123456789] [--key my-feature]  [--key-format custom] [--out gen/features.ts] [--format react]
+npx reflag new "My Flag" [--app-id ap123456789] [--key my-feature]  [--key-format custom] [--out gen/features.ts] [--format react]
 ```
 
 Options:
@@ -138,7 +138,7 @@ Create a new feature in your Reflag app.
 The command guides you through the feature creation process with interactive prompts if options are not provided.
 
 ```bash
-npx reflag features create "My Feature" [--app-id ap123456789] [--key my-feature] [--key-format custom]
+npx reflag features create "My Flag" [--app-id ap123456789] [--key my-feature] [--key-format custom]
 ```
 
 Options:

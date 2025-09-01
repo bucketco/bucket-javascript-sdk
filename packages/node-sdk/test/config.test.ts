@@ -8,11 +8,11 @@ describe("config tests", () => {
 
     expect(config).toEqual({
       featureOverrides: {
-        myFeature: {
+        myFlag: {
           isEnabled: true,
         },
-        myFeatureFalse: false,
-        myFeatureWithConfig: {
+        myFlagFalse: false,
+        myFlagWithConfig: {
           isEnabled: true,
           config: {
             key: "config-1",
@@ -30,19 +30,19 @@ describe("config tests", () => {
     process.env.BUCKET_SECRET_KEY = "mySecretKeyFromEnv";
     process.env.BUCKET_OFFLINE = "true";
     process.env.BUCKET_HOST = "http://localhost:4999";
-    process.env.BUCKET_FEATURES_ENABLED = "myNewFeature";
-    process.env.BUCKET_FEATURES_DISABLED = "myNewFeatureFalse";
+    process.env.BUCKET_FEATURES_ENABLED = "myNewFlag";
+    process.env.BUCKET_FEATURES_DISABLED = "myNewFlagFalse";
 
     const config = loadConfig("test/testConfig.json");
     expect(config).toEqual({
       featureOverrides: {
-        myFeature: {
+        myFlag: {
           isEnabled: true,
         },
-        myFeatureFalse: false,
-        myNewFeature: true,
-        myNewFeatureFalse: false,
-        myFeatureWithConfig: {
+        myFlagFalse: false,
+        myNewFlag: true,
+        myNewFlagFalse: false,
+        myFlagWithConfig: {
           isEnabled: true,
           config: {
             key: "config-1",

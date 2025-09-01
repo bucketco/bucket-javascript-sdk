@@ -14,8 +14,6 @@ export type Stage = {
   order: number;
 };
 
-export type FeatureSourceType = "event" | "attribute";
-
 export type RemoteConfigVariant = {
   key?: string;
   payload?: any;
@@ -29,58 +27,39 @@ export type RemoteConfig = {
   ];
 };
 
-export type FeatureName = {
+export type FlagName = {
   id: string;
   name: string;
   key: string;
-  source: FeatureSourceType;
-  parentFeatureId: string | null;
 };
 
-export type Feature = FeatureName & {
+export type Flag = FlagName & {
   description: string | null;
   remoteConfigs: RemoteConfig[];
   stage: Stage | null;
 };
 
-export type FeaturesResponse = PaginatedResponse<Feature>;
+export type FlagsResponse = PaginatedResponse<Flag>;
 
-export const FeaturesQuerySchema = EnvironmentQuerySchema.extend({
+export const FlagsQuerySchema = EnvironmentQuerySchema.extend({
   sortBy: z.string().default("key").describe("Field to sort features by"),
   sortOrder: z
     .enum(["asc", "desc"])
     .default("asc")
     .describe("Sort direction (ascending or descending)"),
-  sortType: sortTypeSchema
-    .default("flat")
-    .describe("Type of sorting to apply (flat or hierarchical)"),
-  includeFeatureMetrics: booleanish
-    .default(false)
-    .describe("Include metrics data with features"),
-  includeRolloutStatus: booleanish
-    .default(false)
-    .describe("Include rollout status information"),
-  includeGoals: booleanish.default(false).describe("Include associated goals"),
-  includeProductionEstimatedTargetAudience: booleanish
-    .default(false)
-    .describe("Include estimated production target audience data"),
-  includeRemoteConfigs: booleanish
-    .default(false)
-    .describe("Include remote configuration data"),
-  useTargetingRules: booleanish.default(true).describe("Apply targeting rules"),
 }).strict();
 
-export type FeaturesQuery = z.input<typeof FeaturesQuerySchema>;
+export type FlagsQuery = z.input<typeof FlagsQuerySchema>;
 
-export const FeatureCreateSchema = z
+export const FlagCreateSchema = z
   .object({
     name: z
       .string()
-      .min(1, "Feature name is required")
+      .min(1, "Flag name is required")
       .describe("Name of the feature"),
     key: z
       .string()
-      .min(1, "Feature key is required")
+      .min(1, "Flag key is required")
       .describe("Unique identifier key for the feature"),
     description: z
       .string()
@@ -89,29 +68,29 @@ export const FeatureCreateSchema = z
   })
   .strict();
 
-export type FeatureCreate = z.input<typeof FeatureCreateSchema>;
+export type FlagCreate = z.input<typeof FlagCreateSchema>;
 
-export async function listFeatures(appId: string, query: FeaturesQuery) {
-  return authRequest<FeaturesResponse>(`/apps/${appId}/features`, {
-    params: FeaturesQuerySchema.parse(query),
+export async function listFlags(appId: string, query: FlagsQuery) {
+  return authRequest<FlagsResponse>(`/apps/${appId}/features`, {
+    params: FlagsQuerySchema.parse(query),
   });
 }
 
-type CreateFeatureResponse = {
-  feature: FeatureName & {
+type CreateFlagResponse = {
+  feature: FlagName & {
     description: string | null;
   };
 };
 
-export async function createFeature(appId: string, featureData: FeatureCreate) {
-  return authRequest<CreateFeatureResponse>(`/apps/${appId}/features`, {
+export async function createFlag(appId: string, featureData: FlagCreate) {
+  return authRequest<CreateFlagResponse>(`/apps/${appId}/features`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
       source: "event",
-      ...FeatureCreateSchema.parse(featureData),
+      ...FlagCreateSchema.parse(featureData),
     }),
   }).then(({ feature }) => feature);
 }

@@ -16,8 +16,8 @@ vi.mock("@reflag/node-sdk", () => {
 });
 
 const reflagClientMock = {
-  getFeature: vi.fn(),
-  getFeatureDefinitions: vi.fn().mockReturnValue([]),
+  getFlag: vi.fn(),
+  getFlagDefinitions: vi.fn().mockReturnValue([]),
   initialize: vi.fn().mockResolvedValue({}),
   flush: vi.fn(),
   track: vi.fn(),
@@ -50,7 +50,7 @@ describe("ReflagNodeProvider", () => {
 
   let mockTranslatorFn: Mock;
 
-  function mockFeature(
+  function mockFlag(
     enabled: boolean,
     configKey?: string | null,
     configPayload?: any,
@@ -61,13 +61,13 @@ describe("ReflagNodeProvider", () => {
       payload: configPayload,
     };
 
-    reflagClientMock.getFeature = vi.fn().mockReturnValue({
+    reflagClientMock.getFlag = vi.fn().mockReturnValue({
       isEnabled: enabled,
       config,
     });
 
-    // Mock getFeatureDefinitions to return feature definitions that include the specified flag
-    reflagClientMock.getFeatureDefinitions = vi.fn().mockReturnValue([
+    // Mock getFlagDefinitions to return feature definitions that include the specified flag
+    reflagClientMock.getFlagDefinitions = vi.fn().mockReturnValue([
       {
         key: flagKey,
         description: "Test flag",
@@ -175,15 +175,15 @@ describe("ReflagNodeProvider", () => {
     });
 
     it("uses the contextTranslator function", async () => {
-      mockFeature(true);
+      mockFlag(true);
 
       await provider.resolveBooleanEvaluation(testFlagKey, false, context);
 
       expect(mockTranslatorFn).toHaveBeenCalledTimes(1);
       expect(mockTranslatorFn).toHaveBeenCalledWith(context);
 
-      expect(reflagClientMock.getFeatureDefinitions).toHaveBeenCalledTimes(1);
-      expect(reflagClientMock.getFeature).toHaveBeenCalledWith(
+      expect(reflagClientMock.getFlagDefinitions).toHaveBeenCalledTimes(1);
+      expect(reflagClientMock.getFlag).toHaveBeenCalledWith(
         reflagContext,
         testFlagKey,
       );
@@ -215,7 +215,7 @@ describe("ReflagNodeProvider", () => {
     });
 
     it("returns error if flag is not found", async () => {
-      mockFeature(true, "key", true);
+      mockFlag(true, "key", true);
       const val = await provider.resolveBooleanEvaluation(
         "missing-key",
         true,
@@ -230,7 +230,7 @@ describe("ReflagNodeProvider", () => {
     });
 
     it("calls the client correctly when evaluating", async () => {
-      mockFeature(true, "key", true);
+      mockFlag(true, "key", true);
 
       const val = await provider.resolveBooleanEvaluation(
         testFlagKey,
@@ -243,8 +243,8 @@ describe("ReflagNodeProvider", () => {
         value: true,
       });
 
-      expect(reflagClientMock.getFeatureDefinitions).toHaveBeenCalled();
-      expect(reflagClientMock.getFeature).toHaveBeenCalledWith(
+      expect(reflagClientMock.getFlagDefinitions).toHaveBeenCalled();
+      expect(reflagClientMock.getFlag).toHaveBeenCalledWith(
         reflagContext,
         testFlagKey,
       );
@@ -259,7 +259,7 @@ describe("ReflagNodeProvider", () => {
       async (enabled, def, expected, reason, errorCode) => {
         const configKey = enabled !== undefined ? "variant-1" : undefined;
 
-        mockFeature(enabled ?? false, configKey);
+        mockFlag(enabled ?? false, configKey);
         const flagKey = enabled ? testFlagKey : "missing-key";
 
         expect(
@@ -302,7 +302,7 @@ describe("ReflagNodeProvider", () => {
     ])(
       "should return the correct result when evaluating string. variant: %s, def: %s, expected: %s, reason: %s, errorCode: %s`",
       async (variant, def, expected, reason) => {
-        mockFeature(true, variant, {});
+        mockFlag(true, variant, {});
         expect(
           await provider.resolveStringEvaluation(testFlagKey, def, context),
         ).toMatchObject({
@@ -327,7 +327,7 @@ describe("ReflagNodeProvider", () => {
       "should return the correct result when evaluating object. payload: %s, default: %s, expected: %s, reason: %s, errorCode: %s`",
       async (value, def, expected, reason, errorCode) => {
         const configKey = value === undefined ? undefined : "config-key";
-        mockFeature(true, configKey, value);
+        mockFlag(true, configKey, value);
         expect(
           await provider.resolveObjectEvaluation(testFlagKey, def, context),
         ).toMatchObject({

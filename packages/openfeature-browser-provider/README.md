@@ -1,4 +1,4 @@
-# Reflag Browser OpenFeature Provider
+# Reflag Browser OpenFlag Provider
 
 The official OpenFeature Browser provider for [Reflag](https://reflag.com) feature management service.
 

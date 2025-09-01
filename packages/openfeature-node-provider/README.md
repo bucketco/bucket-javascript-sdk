@@ -47,7 +47,7 @@ const requestContext = {
 const client = OpenFeature.getClient();
 
 const enterpriseFeatureEnabled = await client.getBooleanValue(
-  "enterpriseFeature",
+  "enterpriseFlag",
   false,
   requestContext,
 );
@@ -187,7 +187,7 @@ await OpenFeature.setProviderAndWait(provider);
 const client = OpenFeature.getClient();
 
 // `evaluationContext` is whatever you use to evaluate features based off
-const enterpriseFeatureEnabled = await client.track(
+const enterpriseFlagEnabled = await client.track(
   "huddles",
   evaluationContext,
 );

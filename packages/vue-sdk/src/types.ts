@@ -1,50 +1,50 @@
 import type { Ref } from "vue";
 
 import type {
+  InitOptions,
   ReflagClient,
   ReflagContext,
-  InitOptions,
   RequestFeedbackData,
 } from "@reflag/browser-sdk";
 
-export type EmptyFeatureRemoteConfig = { key: undefined; payload: undefined };
+export type EmptyFlagRemoteConfig = { key: undefined; payload: undefined };
 
-export type FeatureType = {
+export type FlagType = {
   config?: {
     payload: any;
   };
 };
 
-export type FeatureRemoteConfig =
+export type FlagRemoteConfig =
   | {
       key: string;
       payload: any;
     }
-  | EmptyFeatureRemoteConfig;
+  | EmptyFlagRemoteConfig;
 
-export interface Feature<
-  TConfig extends FeatureType["config"] = EmptyFeatureRemoteConfig,
+export interface Flag<
+  TConfig extends FlagType["config"] = EmptyFlagRemoteConfig,
 > {
   key: string;
   isEnabled: Ref<boolean>;
   isLoading: Ref<boolean>;
-  config: Ref<({ key: string } & TConfig) | EmptyFeatureRemoteConfig>;
+  config: Ref<({ key: string } & TConfig) | EmptyFlagRemoteConfig>;
   track(): Promise<Response | undefined> | undefined;
-  requestFeedback: (opts: RequestFeatureFeedbackOptions) => void;
+  requestFeedback: (opts: RequestFlagFeedbackOptions) => void;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface Features {}
+export interface Flags {}
 
-export type TypedFeatures = keyof Features extends never
-  ? Record<string, Feature>
+export type TypedFlags = keyof Flags extends never
+  ? Record<string, Flag>
   : {
-      [TypedFeatureKey in keyof Features]: Features[TypedFeatureKey] extends FeatureType
-        ? Feature<Features[TypedFeatureKey]["config"]>
-        : Feature;
+      [TypedFlagKey in keyof Flags]: Flags[TypedFlagKey] extends FlagType
+        ? Flag<Flags[TypedFlagKey]["config"]>
+        : Flag;
     };
 
-export type FeatureKey = keyof TypedFeatures;
+export type FlagKey = keyof TypedFlags;
 
 export interface ProviderContextType {
   client: Ref<ReflagClient>;
@@ -61,7 +61,7 @@ export type ReflagProps = ReflagContext &
     ) => ReflagClient;
   };
 
-export type RequestFeatureFeedbackOptions = Omit<
+export type RequestFlagFeedbackOptions = Omit<
   RequestFeedbackData,
-  "featureKey" | "featureId"
+  "flagKey" | "featureId"
 >;

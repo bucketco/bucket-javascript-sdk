@@ -34,13 +34,13 @@ import { ReflagProvider } from "@reflag/vue-sdk";
 
 If using Nuxt, wrap `<ReflagProvider>` in `<ClientOnly>`. `<ReflagProvider>` only renders client-side currently.
 
-### 2. Use `useFeature(key)` to get feature status
+### 2. Use `useFlag get feature status
 
 ```vue
 <script setup lang="ts">
-import { useFeature } from "@reflag/vue-sdk";
+import { useFlag } from "@reflag/vue-sdk";
 
-const { isEnabled } = useFeature("huddle");
+const { isEnabled } = useFlag("huddle");
 </script>
 
 <template>
@@ -50,7 +50,7 @@ const { isEnabled } = useFeature("huddle");
 </template>
 ```
 
-See [useFeature()](#usefeature) for a full example
+See [useFlag()](#usefeature) for a full example
 
 ## Setting `user` and `company`
 
@@ -78,16 +78,16 @@ A number of special attributes exist:
 </ReflagProvider>
 ```
 
-To retrieve features along with their targeting information, use `useFeature(key: string)` hook (described in a section below).
+To retrieve features along with their targeting information, use `useFlag(key: string)` hook (described in a section below).
 
-Note that accessing `isEnabled` on the object returned by `useFeature()` automatically
+Note that accessing `isEnabled` on the object returned by `useFlag()` automatically
 generates a `check` event.
 
 ## Remote config
 
 Remote config is a dynamic and flexible approach to configuring feature behavior outside of your app – without needing to re-deploy it.
 
-Similar to `isEnabled`, each feature accessed using the `useFeature()` hook, has a `config` property. This configuration is managed from within Reflag. It is managed similar to the way access to features is managed, but instead of the
+Similar to `isEnabled`, each feature accessed using the `useFlag()` hook, has a `config` property. This configuration is managed from within Reflag. It is managed similar to the way access to features is managed, but instead of the
 binary `isEnabled` you can have multiple configuration values which are given to different user/companies.
 
 ### Get started with Remote config
@@ -96,7 +96,7 @@ binary `isEnabled` you can have multiple configuration values which are given to
 const {
   isEnabled,
   config: { key, payload },
-} = useFeature("huddles");
+} = useFlag("huddles");
 
 // isEnabled: true,
 // key: "gpt-3.5",
@@ -105,7 +105,7 @@ const {
 
 `key` is mandatory for a config, but if a feature has no config or no config value was matched against the context, the `key` will be `undefined`. Make sure to check against this case when trying to use the configuration in your application. `payload` is an optional JSON value for arbitrary configuration needs.
 
-Note that, similar to `isEnabled`, accessing `config` on the object returned by `useFeature()` automatically
+Note that, similar to `isEnabled`, accessing `config` on the object returned by `useFlag()` automatically
 generates a `check` event.
 
 ## `<ReflagProvider>` component
@@ -152,11 +152,11 @@ If you want more control over loading screens, `useIsLoading()` returns a Ref<bo
 
 ## Hooks
 
-### `useFeature()`
+### `useFlag()`
 
 Returns the state of a given feature for the current context. The composable provides access to flags and their configurations.
 
-`useFeature()` returns an object with this shape:
+`useFlag()` returns an object with this shape:
 
 ```ts
 {
@@ -172,14 +172,14 @@ Example:
 
 ```vue
 <script setup lang="ts">
-import { useFeature } from "@reflag/vue-sdk";
+import { useFlag } from "@reflag/vue-sdk";
 
-const { isEnabled, track, requestFeedback, config } = useFeature("huddle");
+const { isEnabled, track, requestFeedback, config } = useFlag("huddle");
 </script>
 
 <template>
   <div v-if="isLoading">Loading...</div>
-  <div v-else-if="!isEnabled">Feature not available</div>
+  <div v-else-if="!isEnabled">Flag not available</div>
   <div v-else>
     <button @click="track()">Start huddle!</button>
     <button
@@ -208,7 +208,7 @@ See the reference docs for details.
 
 `useTrack()` returns a function which lets you send custom events to Reflag. It takes a string argument with the event name and optionally an object with properties to attach the event.
 
-Using `track` returned from `useFeature()` calles this track function with the feature key as the event name.
+Using `track` returned from `useFlag()` calles this track function with the feature key as the event name.
 
 ```vue
 <script setup lang="ts">
@@ -313,7 +313,7 @@ const updateOtherContext = useUpdateOtherContext();
 const handleUserUpdate = async () => {
   await updateUser({
     role: "admin",
-    betaFeatures: "enabled",
+    betaFlags: "enabled",
   });
 };
 

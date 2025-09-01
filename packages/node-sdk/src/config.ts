@@ -22,7 +22,7 @@ export const BATCH_INTERVAL_MS = 10 * 1000;
 
 function parseOverrides(config: object | undefined) {
   if (!config) return {};
-  if ("featureOverrides" in config && isObject(config.featureOverrides)) {
+  if ("flagOverrides" in config && isObject(config.featureOverrides)) {
     Object.entries(config.featureOverrides).forEach(([key, value]) => {
       ok(
         typeof value === "boolean" || isObject(value),
@@ -88,8 +88,8 @@ function loadConfigFile(file: string) {
 
 function loadEnvVars() {
   const secretKey = process.env.BUCKET_SECRET_KEY;
-  const enabledFeatures = process.env.BUCKET_FEATURES_ENABLED;
-  const disabledFeatures = process.env.BUCKET_FEATURES_DISABLED;
+  const enabledFlags = process.env.BUCKET_FEATURES_ENABLED;
+  const disabledFlags = process.env.BUCKET_FEATURES_DISABLED;
   const logLevel = process.env.BUCKET_LOG_LEVEL;
   const apiBaseUrl = process.env.BUCKET_API_BASE_URL ?? process.env.BUCKET_HOST;
   const offline =
@@ -98,8 +98,8 @@ function loadEnvVars() {
       : undefined;
 
   let featureOverrides: Record<string, boolean> = {};
-  if (enabledFeatures) {
-    featureOverrides = enabledFeatures.split(",").reduce(
+  if (enabledFlags) {
+    featureOverrides = enabledFlags.split(",").reduce(
       (acc, f) => {
         const key = f.trim();
         if (key) acc[key] = true;
@@ -109,10 +109,10 @@ function loadEnvVars() {
     );
   }
 
-  if (disabledFeatures) {
+  if (disabledFlags) {
     featureOverrides = {
       ...featureOverrides,
-      ...disabledFeatures.split(",").reduce(
+      ...disabledFlags.split(",").reduce(
         (acc, f) => {
           const key = f.trim();
           if (key) acc[key] = false;

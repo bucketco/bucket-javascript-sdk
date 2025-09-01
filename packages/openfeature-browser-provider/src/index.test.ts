@@ -23,8 +23,8 @@ describe("ReflagBrowserSDKProvider", () => {
   let provider: ReflagBrowserSDKProvider;
   let ofClient: Client;
   const reflagClientMock = {
-    getFeatures: vi.fn(),
-    getFeature: vi.fn(),
+    getFlags: vi.fn(),
+    getFlag: vi.fn(),
     initialize: vi.fn().mockResolvedValue({}),
     track: vi.fn(),
     stop: vi.fn(),
@@ -171,7 +171,7 @@ describe("ReflagBrowserSDKProvider", () => {
       await provider.initialize();
     });
 
-    function mockFeature(
+    function mockFlag(
       enabled: boolean,
       configKey?: string | null,
       configPayload?: any,
@@ -181,12 +181,12 @@ describe("ReflagBrowserSDKProvider", () => {
         payload: configPayload,
       };
 
-      reflagClientMock.getFeature = vi.fn().mockReturnValue({
+      reflagClientMock.getFlag = vi.fn().mockReturnValue({
         isEnabled: enabled,
         config,
       });
 
-      reflagClientMock.getFeatures = vi.fn().mockReturnValue({
+      reflagClientMock.getFlags = vi.fn().mockReturnValue({
         [testFlagKey]: {
           isEnabled: enabled,
           config: {
@@ -212,7 +212,7 @@ describe("ReflagBrowserSDKProvider", () => {
     });
 
     it("returns error if flag is not found", async () => {
-      mockFeature(true, "key", true);
+      mockFlag(true, "key", true);
       const val = ofClient.getBooleanDetails("missing-key", true);
 
       expect(val).toMatchObject({
@@ -225,7 +225,7 @@ describe("ReflagBrowserSDKProvider", () => {
     });
 
     it("calls the client correctly when evaluating", async () => {
-      mockFeature(true, "key", true);
+      mockFlag(true, "key", true);
 
       const val = ofClient.getBooleanDetails(testFlagKey, false);
 
@@ -237,8 +237,8 @@ describe("ReflagBrowserSDKProvider", () => {
         value: true,
       });
 
-      expect(reflagClientMock.getFeatures).toHaveBeenCalled();
-      expect(reflagClientMock.getFeature).toHaveBeenCalledWith(testFlagKey);
+      expect(reflagClientMock.getFlags).toHaveBeenCalled();
+      expect(reflagClientMock.getFlag).toHaveBeenCalledWith(testFlagKey);
     });
 
     it.each([
@@ -251,7 +251,7 @@ describe("ReflagBrowserSDKProvider", () => {
         const configKey = enabled !== undefined ? "variant-1" : undefined;
         const flagKey = enabled ? testFlagKey : "missing-key";
 
-        mockFeature(enabled ?? false, configKey);
+        mockFlag(enabled ?? false, configKey);
 
         expect(ofClient.getBooleanDetails(flagKey, def)).toMatchObject({
           flagKey,
@@ -281,7 +281,7 @@ describe("ReflagBrowserSDKProvider", () => {
     ])(
       "should return the correct result when evaluating string. variant: %s, def: %s, expected: %s, reason: %s, errorCode: %s`",
       (variant, def, expected, reason) => {
-        mockFeature(true, variant, {});
+        mockFlag(true, variant, {});
         expect(ofClient.getStringDetails(testFlagKey, def)).toMatchObject({
           flagKey: testFlagKey,
           flagMetadata: {},
@@ -305,7 +305,7 @@ describe("ReflagBrowserSDKProvider", () => {
     ])(
       "should return the correct result when evaluating object. variant: %s, value: %s, default: %s, expected: %s, reason: %s, errorCode: %s`",
       (variant, value, def, expected, reason, errorCode) => {
-        mockFeature(true, variant, value);
+        mockFlag(true, variant, value);
 
         expect(ofClient.getObjectDetails(testFlagKey, def)).toMatchObject({
           flagKey: testFlagKey,

@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 
 import {
-  FeatureKey,
+  FlagKey,
   ReflagProvider,
-  useFeature,
+  useFlag,
   useRequestFeedback,
   useTrack,
   useUpdateCompany,
@@ -12,9 +12,9 @@ import {
   useClient,
 } from "../../src";
 
-// Extending the Features interface to define the available features
+// Extending the Flags interface to define the available features
 declare module "../../src" {
-  interface Features {
+  interface Flags {
     huddles: {
       config: {
         payload: {
@@ -30,7 +30,7 @@ const apiBaseUrl = import.meta.env.VITE_BUCKET_API_BASE_URL;
 
 function HuddleFeature() {
   // Type safe feature
-  const feature = useFeature("huddles");
+  const feature = useFlag("huddles");
   return (
     <div>
       <h2>Huddle feature</h2>
@@ -197,12 +197,12 @@ function FeatureOptIn({
   flagKey,
   featureName,
 }: {
-  flagKey: FeatureKey;
+  flagKey: FlagKey;
   featureName: string;
 }) {
   const updateUser = useUpdateUser();
   const [sendingUpdate, setSendingUpdate] = useState(false);
-  const { isEnabled } = useFeature(flagKey);
+  const { isEnabled } = useFlag(flagKey);
 
   return (
     <div>
@@ -236,7 +236,7 @@ function CustomToolbar() {
     <div>
       <h2>Custom toolbar</h2>
       <ul>
-        {Object.entries(client.getFeatures()).map(([flagKey, feature]) => (
+        {Object.entries(client.getFlags()).map(([flagKey, feature]) => (
           <li key={flagKey}>
             {flagKey} -
             {(feature.isEnabledOverride ?? feature.isEnabled)
@@ -245,7 +245,7 @@ function CustomToolbar() {
             {feature.isEnabledOverride !== null && (
               <button
                 onClick={() => {
-                  client.getFeature(flagKey).setIsEnabledOverride(null);
+                  client.getFlag(flagKey).setIsEnabledOverride(null);
                 }}
               >
                 Reset
@@ -257,7 +257,7 @@ function CustomToolbar() {
               onChange={(e) => {
                 // this uses slightly simplified logic compared to the Reflag Toolbar
                 client
-                  .getFeature(flagKey)
+                  .getFlag(flagKey)
                   .setIsEnabledOverride(e.target.checked ?? false);
               }}
             />

@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import {
   evaluate,
-  evaluateFeatureRules,
+  evaluateFlagRules,
   EvaluationParams,
   flattenJSON,
   hashInt,
@@ -11,7 +11,7 @@ import {
 } from "../src";
 
 const feature = {
-  flagKey: "feature",
+  flagKey: "flag",
   rules: [
     {
       value: true,
@@ -39,8 +39,8 @@ const feature = {
 
 describe("evaluate feature targeting integration ", () => {
   it("evaluates all kinds of filters", async () => {
-    const res = evaluateFeatureRules({
-      flagKey: "feature",
+    const res = evaluateFlagRules({
+      flagKey: "flag",
       rules: [
         {
           value: true,
@@ -102,7 +102,7 @@ describe("evaluate feature targeting integration ", () => {
       context: {
         "company.id": "company1",
       },
-      flagKey: "feature",
+      flagKey: "flag",
       missingContextFields: [],
       reason: "rule #0 matched",
       ruleEvaluationResults: [true],
@@ -110,7 +110,7 @@ describe("evaluate feature targeting integration ", () => {
   });
 
   it("evaluates flag when there's no matching rule", async () => {
-    const res = evaluateFeatureRules({
+    const res = evaluateFlagRules({
       ...feature,
       context: {
         company: {
@@ -124,7 +124,7 @@ describe("evaluate feature targeting integration ", () => {
       context: {
         "company.id": "wrong value",
       },
-      flagKey: "feature",
+      flagKey: "flag",
       missingContextFields: [],
       reason: "no matched rules",
       ruleEvaluationResults: [false],
@@ -138,7 +138,7 @@ describe("evaluate feature targeting integration ", () => {
       },
     };
 
-    const res = evaluateFeatureRules({
+    const res = evaluateFlagRules({
       ...feature,
       context,
     });
@@ -148,7 +148,7 @@ describe("evaluate feature targeting integration ", () => {
       context: {
         "company.id": "company1",
       },
-      flagKey: "feature",
+      flagKey: "flag",
       missingContextFields: [],
       reason: "rule #0 matched",
       ruleEvaluationResults: [true],
@@ -156,8 +156,8 @@ describe("evaluate feature targeting integration ", () => {
   });
 
   it("evaluates flag with missing values", async () => {
-    const res = evaluateFeatureRules({
-      flagKey: "feature",
+    const res = evaluateFlagRules({
+      flagKey: "flag",
       rules: [
         {
           value: { custom: "value" },
@@ -191,7 +191,7 @@ describe("evaluate feature targeting integration ", () => {
         some_field: "",
       },
       value: { custom: "value" },
-      flagKey: "feature",
+      flagKey: "flag",
       missingContextFields: [],
       reason: "rule #0 matched",
       ruleEvaluationResults: [true],
@@ -199,7 +199,7 @@ describe("evaluate feature targeting integration ", () => {
   });
 
   it("returns list of missing context keys ", async () => {
-    const res = evaluateFeatureRules({
+    const res = evaluateFlagRules({
       ...feature,
       context: {},
     });
@@ -208,14 +208,14 @@ describe("evaluate feature targeting integration ", () => {
       context: {},
       value: undefined,
       reason: "no matched rules",
-      flagKey: "feature",
+      flagKey: "flag",
       missingContextFields: ["company.id"],
       ruleEvaluationResults: [false],
     });
   });
 
   it("fails evaluation and includes key in missing keys when rollout attribute is missing from context", async () => {
-    const res = evaluateFeatureRules({
+    const res = evaluateFlagRules({
       flagKey: "myfeature",
       rules: [
         {
@@ -296,7 +296,7 @@ describe("evaluate feature targeting integration ", () => {
       {
         "company.id": "company1",
       },
-      "feature",
+      "flag",
     );
 
     expect(res).toEqual({
@@ -304,7 +304,7 @@ describe("evaluate feature targeting integration ", () => {
       context: {
         "company.id": "company1",
       },
-      flagKey: "feature",
+      flagKey: "flag",
       missingContextFields: [],
       reason: "rule #0 matched",
       ruleEvaluationResults: [true],
@@ -313,7 +313,7 @@ describe("evaluate feature targeting integration ", () => {
 
   describe("SET and NOT_SET operators", () => {
     it("should handle `SET` operator with missing field value", () => {
-      const res = evaluateFeatureRules({
+      const res = evaluateFlagRules({
         flagKey: "test_feature",
         rules: [
           {
@@ -340,7 +340,7 @@ describe("evaluate feature targeting integration ", () => {
     });
 
     it("should handle `NOT_SET` operator with missing field value", () => {
-      const res = evaluateFeatureRules({
+      const res = evaluateFlagRules({
         flagKey: "test_feature",
         rules: [
           {
@@ -367,7 +367,7 @@ describe("evaluate feature targeting integration ", () => {
     });
 
     it("should handle `SET` operator with empty string field value", () => {
-      const res = evaluateFeatureRules({
+      const res = evaluateFlagRules({
         flagKey: "test_feature",
         rules: [
           {
@@ -400,7 +400,7 @@ describe("evaluate feature targeting integration ", () => {
     });
 
     it("should handle `NOT_SET` operator with empty string field value", () => {
-      const res = evaluateFeatureRules({
+      const res = evaluateFlags({
         flagKey: "test_feature",
         rules: [
           {
@@ -467,14 +467,14 @@ describe("evaluate feature targeting integration ", () => {
         },
       ]);
 
-      const res = evaluator(context, "feature");
+      const res = evaluator(context, "flag");
       expect(res.value ?? false).toEqual(expected);
     },
   );
 
   describe("DATE_AFTER and DATE_BEFORE in feature rules", () => {
     it("should evaluate DATE_AFTER operator in feature rules", () => {
-      const res = evaluateFeatureRules({
+      const res = evaluateFlagRules({
         flagKey: "time_based_feature",
         rules: [
           {
@@ -507,7 +507,7 @@ describe("evaluate feature targeting integration ", () => {
     });
 
     it("should evaluate DATE_BEFORE operator in feature rules", () => {
-      const res = evaluateFeatureRules({
+      const res = evaluateFlagRules({
         flagKey: "legacy_feature",
         rules: [
           {
@@ -540,7 +540,7 @@ describe("evaluate feature targeting integration ", () => {
     });
 
     it("should handle complex rules with DATE_AFTER and DATE_BEFORE in groups", () => {
-      const res = evaluateFeatureRules({
+      const res = evaluateFlagRules({
         flagKey: "time_window_feature",
         rules: [
           {
@@ -587,7 +587,7 @@ describe("evaluate feature targeting integration ", () => {
     });
 
     it("should fail when DATE_AFTER condition is not met", () => {
-      const res = evaluateFeatureRules({
+      const res = evaluateFlagRules({
         flagKey: "future_feature",
         rules: [
           {
@@ -620,7 +620,7 @@ describe("evaluate feature targeting integration ", () => {
     });
 
     it("should fail when DATE_BEFORE condition is not met", () => {
-      const res = evaluateFeatureRules({
+      const res = evaluateFlagRules({
         flagKey: "past_feature",
         rules: [
           {

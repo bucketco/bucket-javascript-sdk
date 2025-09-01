@@ -74,12 +74,12 @@ export class ReflagNodeProvider implements Provider {
     this.status = ServerProviderStatus.READY;
   }
 
-  private resolveFeature<T extends JsonValue>(
+  private resolveFlag<T extends JsonValue>(
     flagKey: string,
     defaultValue: T,
     context: ReflagContext,
     resolveFn: (
-      feature: ReturnType<typeof this._client.getFeature>,
+      feature: ReturnType<typeof this._client.getFlag>,
     ) => Promise<ResolutionDetails<T>>,
   ): Promise<ResolutionDetails<T>> {
     if (this.status !== ServerProviderStatus.READY) {
@@ -100,9 +100,9 @@ export class ReflagNodeProvider implements Provider {
       });
     }
 
-    const featureDefs = this._client.getFeatureDefinitions();
+    const featureDefs = this._client.getFlagDefinitions();
     if (featureDefs.some(({ key }) => key === flagKey)) {
-      return resolveFn(this._client.getFeature(context, flagKey));
+      return resolveFn(this._client.getFlag(context, flagKey));
     }
 
     return Promise.resolve({
@@ -118,7 +118,7 @@ export class ReflagNodeProvider implements Provider {
     defaultValue: boolean,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<boolean>> {
-    return this.resolveFeature(
+    return this.resolveFlag(
       flagKey,
       defaultValue,
       this.contextTranslator(context),
@@ -137,7 +137,7 @@ export class ReflagNodeProvider implements Provider {
     defaultValue: string,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<string>> {
-    return this.resolveFeature(
+    return this.resolveFlag(
       flagKey,
       defaultValue,
       this.contextTranslator(context),
@@ -176,7 +176,7 @@ export class ReflagNodeProvider implements Provider {
     defaultValue: T,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<T>> {
-    return this.resolveFeature(
+    return this.resolveFlag(
       flagKey,
       defaultValue,
       this.contextTranslator(context),

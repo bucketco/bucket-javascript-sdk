@@ -3,33 +3,31 @@ import { computed, inject, InjectionKey, onBeforeUnmount, ref } from "vue";
 import { RequestFeedbackData, UnassignedFeedback } from "@reflag/browser-sdk";
 
 import {
-  Feature,
   ProviderContextType,
-  RequestFeatureFeedbackOptions,
 } from "./types";
 
 export const ProviderSymbol: InjectionKey<ProviderContextType> =
   Symbol("ReflagProvider");
 
-export function useFeature(key: string): Feature<any> {
+export function useFlag(key: string): Flag<any> {
   const client = useClient();
   const ctx = injectSafe();
 
   const track = () => client?.value.track(key);
-  const requestFeedback = (opts: RequestFeatureFeedbackOptions) =>
+  const requestFeedback = (opts: RequestFlagFeedbackOptions) =>
     client.value.requestFeedback({ ...opts, flagKey: key });
 
-  const feature = ref(client.value.getFeature(key));
+  const feature = ref(client.value.getFlag(key));
 
-  updateFeature();
+  updateFlag();
 
-  function updateFeature() {
-    feature.value = client.value.getFeature(key);
+  function updateFlag() {
+    feature.value = client.value.getFlag(key);
   }
 
-  client.value.on("flagsUpdated", updateFeature);
+  client.value.on("flagsUpdated", updateFlag);
   onBeforeUnmount(() => {
-    client.value.off("flagsUpdated", updateFeature);
+    client.value.off("flagsUpdated", updateFlag);
   });
 
   return {
