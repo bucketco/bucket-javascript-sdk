@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 
-import { newEvaluator, RuleFilter } from "@bucketco/flag-evaluation";
+import { newEvaluator, RuleFilter } from "@reflag/flag-evaluation";
 
 /**
  * Describes the meta context associated with tracking.
@@ -18,21 +18,21 @@ export type TrackingMeta = {
 export type Attributes = Record<string, any>;
 
 /**
- * Describes a feature event. Can be "check" or "evaluate".
+ * Describes a flag event. Can be "check" or "evaluate".
  **/
-export type FeatureEvent = {
+export type FlagEvent = {
   /**
    * The action that was performed.
    **/
-  action: "evaluate" | "evaluate-config" | "check" | "check-config";
+  action: "check" | "check-config";
 
   /**
-   * The feature key.
+   * The key of the flag.
    **/
-  key: string;
+  flagKey: string;
 
   /**
-   * The feature targeting version (optional).
+   * The flag targeting version (optional).
    **/
   targetingVersion: number | undefined;
 
@@ -45,39 +45,72 @@ export type FeatureEvent = {
     | { key: undefined; payload: undefined };
 
   /**
-   * The context that was used for evaluation.
+   * The context that was used for evaluation of the flag.
    **/
   evalContext?: Record<string, any>;
 
   /**
-   * The result of evaluation of each rule (optional).
+   * The result of evaluation of each rule of the flag (optional).
    **/
   evalRuleResults?: boolean[];
 
   /**
-   * The missing fields in the evaluation context (optional).
+   * The missing fields in the evaluation context of the flag (optional).
    **/
   evalMissingFields?: string[];
 };
 
 /**
- * A remotely managed configuration value for a feature.
+ * @internal
+ *
+ * Describes a flag.
+ * WARNING: This matches the API response exactly.
  */
-export type RawFeatureRemoteConfig = {
+export type RawFlag = {
   /**
-   * The key of the matched configuration value.
+   * The key of the flag.
    */
   key: string;
 
   /**
-   * The version of the targeting rules used to select the config value.
+   * If the flag is enabled.
+   */
+  isEnabled: boolean;
+
+  /**
+   * The version of the targeting used to evaluate if the flag is enabled (optional).
    */
   targetingVersion?: number;
 
   /**
-   * The optional user-supplied payload data.
+   * The remote configuration value for the flag.
    */
-  payload: any;
+  config?: {
+    /**
+     * The key of the matched configuration value.
+     */
+    key: string;
+
+    /**
+     * The version of the targeting rules used to select the config value.
+     */
+    targetingVersion?: number;
+
+    /**
+     * The optional user-supplied payload data.
+     */
+    payload: any;
+
+    /**
+     * The rule results of the evaluation (optional).
+     */
+    ruleEvaluationResults?: boolean[];
+
+    /**
+     * The missing fields in the evaluation context (optional).
+     */
+    missingContextFields?: string[];
+  };
 
   /**
    * The rule results of the evaluation (optional).
@@ -90,235 +123,150 @@ export type RawFeatureRemoteConfig = {
   missingContextFields?: string[];
 };
 
-/**
- * Describes a feature.
- */
-export interface RawFeature {
-  /**
-   * The key of the feature.
-   */
-  key: string;
-
-  /**
-   * If the feature is enabled.
-   */
-  isEnabled: boolean;
-
-  /**
-   * The version of the targeting used to evaluate if the feature is enabled (optional).
-   */
-  targetingVersion?: number;
-
-  /**
-   * The remote configuration value for the feature.
-   */
-  config?: RawFeatureRemoteConfig;
-
-  /**
-   * The rule results of the evaluation (optional).
-   */
-  ruleEvaluationResults?: boolean[];
-
-  /**
-   * The missing fields in the evaluation context (optional).
-   */
-  missingContextFields?: string[];
-}
-
-export type EmptyFeatureRemoteConfig = { key: undefined; payload: undefined };
+type MultiVariateFlagSignature = {
+  payload: any;
+};
 
 /**
- * A remotely managed configuration value for a feature.
+ * A flag without a known type.
  */
-export type FeatureRemoteConfig =
+export type UntypedFlag =
   | {
-      /**
-       * The key of the matched configuration value.
-       */
       key: string;
-
-      /**
-       * The optional user-supplied payload data.
-       */
       payload: any;
     }
-  | EmptyFeatureRemoteConfig;
-
-/**
- * Describes a feature
- */
-export interface Feature<
-  TConfig extends FeatureType["config"] = EmptyFeatureRemoteConfig,
-> {
-  /**
-   * The key of the feature.
-   */
-  key: string;
-
-  /**
-   * If the feature is enabled.
-   */
-  isEnabled: boolean;
-
-  /*
-   * Optional user-defined configuration.
-   */
-  config:
-    | ({
-        key: string;
-      } & TConfig)
-    | EmptyFeatureRemoteConfig;
-
-  /**
-   * Track feature usage in Bucket.
-   */
-  track(): Promise<void>;
-}
-
-export type FeatureType = {
-  config?: {
-    payload: any;
-  };
-};
-
-export type FeatureOverride =
-  | (FeatureType & {
-      isEnabled: boolean;
-      config?: {
-        key: string;
-      };
-    })
   | boolean;
 
 /**
- * Describes a feature definition.
- */
-export type FeatureDefinition = {
-  /**
-   * The key of the feature.
-   */
-  key: string;
-
-  /**
-   * Description of the feature.
-   */
-  description: string | null;
-
-  /**
-   * The targeting rules for the feature.
-   */
-  flag: {
-    /**
-     * The version of the targeting rules.
-     */
-    version: number;
-
-    /**
-     * The targeting rules.
-     */
-    rules: {
-      /**
-       * The filter for the rule.
-       */
-      filter: RuleFilter;
-    }[];
-  };
-
-  /**
-   * The remote configuration for the feature.
-   */
-  config?: {
-    /**
-     * The version of the remote configuration.
-     */
-    version: number;
-
-    /**
-     * The variants of the remote configuration.
-     */
-    variants: FeatureConfigVariant[];
-  };
-};
-
-/**
- * Describes a collection of evaluated features.
+ * Describes a flag value with a known type.
  *
- * @remarks
- * You should extend the Features interface to define the available features.
+ * @typeParam TValue - The type of the flag value. Defaults to `boolean`.
  */
-export interface Features {}
-
-/**
- * Describes a collection of evaluated feature.
- *
- * @remarks
- * This types falls back to a generic Record<string, Feature> if the Features interface
- * has not been extended.
- *
- */
-export type TypedFeatures = keyof Features extends never
-  ? Record<string, Feature>
+export type Flag<TValue extends {} = boolean> = TValue extends boolean
+  ? boolean
   : {
-      [FeatureKey in keyof Features]: Features[FeatureKey] extends FeatureType
-        ? Feature<Features[FeatureKey]["config"]>
-        : Feature;
+      key: string;
+      payload: TValue;
     };
 
-export type TypedFeatureKey = keyof TypedFeatures;
-
 /**
- * Describes the feature overrides.
+ * Describes a flag definition.
  */
-export type FeatureOverrides = Partial<
-  keyof Features extends never
-    ? Record<string, FeatureOverride>
-    : {
-        [FeatureKey in keyof Features]: Features[FeatureKey] extends FeatureOverride
-          ? Features[FeatureKey]
-          : Exclude<FeatureOverride, "config">;
-      }
->;
-
-export type FeatureOverridesFn = (context: Context) => FeatureOverrides;
-
-/**
- * Describes a remote feature config variant.
- */
-export type FeatureConfigVariant = {
+export type FlagDefinition = {
   /**
-   * The filter for the variant.
+   * The key of the flag.
    */
-  filter: RuleFilter;
+  flagKey: string;
 
   /**
-   * The optional user-supplied payload data.
-   */
-  payload: any;
-
-  /**
-   * The key of the variant.
-   */
-  key: string;
-};
-
-/**
- * (Internal) Describes a specific feature in the API response.
- *
- * @internal
- */
-export type FeatureAPIResponse = {
-  /**
-   * The key of the feature.
-   */
-  key: string;
-
-  /**
-   * Description of the feature.
+   * Description of the flag.
    */
   description: string | null;
 
   /**
-   * The targeting rules for the feature.
+   * The version of the targeting rules.
+   */
+  version: number;
+} & (
+  | {
+      /**
+       * The type of the flag.
+       */
+      type: "toggle";
+
+      /**
+       * The targeting rules.
+       */
+      rules: {
+        /**
+         * The filter for the rule.
+         */
+        filter: RuleFilter;
+
+        /**
+         * The value of the rule.
+         */
+        value: true;
+      }[];
+    }
+  | {
+      /**
+       * The type of the flag.
+       */
+      type: "multi-variate";
+
+      /**
+       * The targeting rules.
+       */
+      rules: {
+        /**
+         * The filter for the rule.
+         */
+        filter: RuleFilter;
+
+        /**
+         * The value of the rule.
+         */
+        value: { key: string; payload: any };
+      }[];
+    }
+);
+
+/**
+ * Describes a collection of evaluated flags.
+ *
+ * @remarks
+ * You should extend the Flags interface to define the available flags.
+ */
+export interface Flags {}
+
+/**
+ * Describes a collection of typed flags.
+ *
+ * @remarks
+ * This types falls back to a generic `Record<string, Flag>` if the `Flags` interface
+ * has not been extended.
+ */
+export type TypedFlags = keyof Flags extends never
+  ? Record<string, UntypedFlag>
+  : {
+      [TKey in keyof Flags]: Flags[TKey] extends MultiVariateFlagSignature
+        ? {
+            key: string;
+            payload: Flags[TKey]["payload"];
+          }
+        : UntypedFlag;
+    };
+
+/**
+ * Describes the key of a flag (typed).
+ */
+export type FlagKey = keyof TypedFlags;
+
+/**
+ * Describes a function that returns the flag overrides.
+ */
+export type FlagOverridesFn = (context: Context) => TypedFlags;
+
+/**
+ * @internal
+ *
+ * Describes a specific flag in the API response.
+ * WARNING: This matches the API response exactly.
+ */
+type FlagAPIResponse = {
+  /**
+   * The key of the flag.
+   */
+  key: string;
+
+  /**
+   * Description of the flag.
+   */
+  description: string | null;
+
+  /**
+   * The targeting rules for the flag.
    */
   targeting: {
     /**
@@ -338,7 +286,7 @@ export type FeatureAPIResponse = {
   };
 
   /**
-   * The remote configuration for the feature.
+   * The remote configuration for the flag.
    */
   config?: {
     /**
@@ -349,39 +297,55 @@ export type FeatureAPIResponse = {
     /**
      * The variants of the remote configuration.
      */
-    variants: FeatureConfigVariant[];
+    variants: {
+      /**
+       * The filter for the variant.
+       */
+      filter: RuleFilter;
+
+      /**
+       * The optional user-supplied payload data.
+       */
+      payload: any;
+
+      /**
+       * The key of the variant.
+       */
+      key: string;
+    }[];
   };
 };
 
 /**
- * (Internal) Describes the response of the features endpoint.
- *
  * @internal
+ *
+ * Describes the response of the features endpoint.
  */
-export type FeaturesAPIResponse = {
+export type FlagsAPIResponse = {
   /**
-   * The feature definitions.
+   * The flag definitions.
+   * WARNING: This matches the API response exactly.
    */
-  features: FeatureAPIResponse[];
+  features: FlagAPIResponse[];
 };
 
 /**
- * (Internal) Feature definitions with the addition of a pre-prepared
- * evaluators functions for the rules.
- *
  * @internal
+ *
+ * Flag definitions with the addition of a pre-prepared
+ * evaluators functions for the rules.
  */
-export type CachedFeatureDefinition = FeatureAPIResponse & {
+export type CachedFlagDefinition = FlagAPIResponse & {
   enabledEvaluator: ReturnType<typeof newEvaluator<boolean>>;
   configEvaluator: ReturnType<typeof newEvaluator<any>> | undefined;
 };
 
 /**
- * (Internal) Describes the response of the evaluated features endpoint.
- *
  * @internal
+ *
+ * Describes the response of the evaluated flags endpoint.
  */
-export type EvaluatedFeaturesAPIResponse = {
+export type EvaluatedFlagsAPIResponse = {
   /**
    * True if request successful.
    */
@@ -393,9 +357,10 @@ export type EvaluatedFeaturesAPIResponse = {
   remoteContextUsed: boolean;
 
   /**
-   * The feature definitions.
+   * The flag definitions.
+   * WARNING: This matches the API response exactly.
    */
-  features: Record<string, RawFeature>;
+  features: Record<string, RawFlag>;
 };
 
 /**
@@ -567,15 +532,9 @@ export type CacheStrategy = "periodically-update" | "in-request";
  **/
 export type ClientOptions = {
   /**
-   * The secret key used to authenticate with the Bucket API.
+   * The secret key used to authenticate with the Reflag API.
    **/
   secretKey?: string;
-
-  /**
-   * @deprecated
-   * Use `apiBaseUrl` instead.
-   **/
-  host?: string;
 
   /**
    * The host to send requests to (optional).
@@ -593,15 +552,9 @@ export type ClientOptions = {
   logLevel?: LogLevel;
 
   /**
-   * The features to "enable" as fallbacks when the API is unavailable (optional).
-   * Can be an array of feature keys, or a record of feature keys and boolean or object values.
-   *
-   * If a record is supplied instead of array, the values of each key are either the
-   * configuration values or the boolean value `true`.
+   * The flags to "enable" as fallbacks when the API is unavailable (optional).
    **/
-  fallbackFeatures?:
-    | TypedFeatureKey[]
-    | Record<TypedFeatureKey, Exclude<FeatureOverride, false>>;
+  fallbackFlags?: TypedFlags;
 
   /**
    * The HTTP client to use for sending requests (optional). Default is the built-in fetch client.
@@ -609,16 +562,16 @@ export type ClientOptions = {
   httpClient?: HttpClient;
 
   /**
-   * The timeout in milliseconds for fetching feature targeting data (optional).
+   * The timeout in milliseconds for fetching flag targeting data (optional).
    * Default is 10000 ms.
    **/
   fetchTimeoutMs?: number;
 
   /**
-   * Number of times to retry fetching feature definitions (optional).
+   * Number of times to retry fetching flag definitions (optional).
    * Default is 3 times.
    **/
-  featuresFetchRetries?: number;
+  flagsFetchRetries?: number;
 
   /**
    * The options for the batch buffer (optional).
@@ -627,32 +580,26 @@ export type ClientOptions = {
   batchOptions?: Omit<BatchBufferOptions<any>, "flushHandler" | "logger">;
 
   /**
-   * If a filename is specified, feature targeting results be overridden with
-   * the values from this file. The file should be a JSON object with feature
+   * If a filename is specified, flag will be overridden with
+   * the values from this file. The file should be a JSON object with flag
    * keys as keys, and boolean or object as values.
    *
    * If a function is specified, the function will be called with the context
-   * and should return a record of feature keys and boolean or object values.
+   * and should return a record of flag keys and boolean or object values.
    *
-   * Defaults to "bucketFeatures.json".
    **/
-  featureOverrides?: string | ((context: Context) => FeatureOverrides);
+  flagOverrides?: string | ((context: Context) => TypedFlags);
 
   /**
-   * In offline mode, no data is sent or fetched from the the Bucket API.
+   * In offline mode, no data is sent or fetched from the the Reflag API.
    * This is useful for testing or development.
    */
   offline?: boolean;
 
   /**
-   * If set to `false`, no evaluation events will be emitted.
-   */
-  emitEvaluationEvents?: boolean;
-
-  /**
    * The path to the config file. If supplied, the config file will be loaded.
-   * Defaults to `bucket.json` when NODE_ENV is not production. Can also be
-   * set through the environment variable BUCKET_CONFIG_FILE.
+   * Defaults to `reflag.json` when NODE_ENV is not production. Can also be
+   * set through the environment variable REFLAG_CONFIG_FILE.
    */
   configFile?: string;
 
@@ -680,7 +627,7 @@ export type TrackOptions = {
 
 /**
  * Describes the current user context, company context, and other context.
- * This is used to determine if feature targeting matches and to track events.
+ * This is used to determine if flag targeting matches and to track events.
  **/
 export type Context = {
   /**
@@ -755,7 +702,7 @@ export interface ContextWithTracking extends Context {
 
   /**
    * The meta context used to update the user or company when syncing is required during
-   * feature retrieval.
+   * flag retrieval.
    */
   meta?: TrackingMeta;
 }

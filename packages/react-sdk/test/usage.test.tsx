@@ -13,17 +13,19 @@ import {
   vi,
 } from "vitest";
 
-import { BucketClient } from "@bucketco/browser-sdk";
+import { ReflagClient } from "@reflag/browser-sdk";
 
 import { version } from "../package.json";
 import {
-  BucketProps,
-  BucketProvider,
+  ReflagProps,
+  ReflagProvider,
   useClient,
-  useFeature,
+  useFlag,
+  useIsLoading,
   useRequestFeedback,
   useSendFeedback,
   useTrack,
+  useTrackCustom,
   useUpdateCompany,
   useUpdateOtherContext,
   useUpdateUser,
@@ -42,9 +44,9 @@ const company = { id: "123", name: "test" };
 const user = { id: "456", name: "test" };
 const otherContext = { test: "test" };
 
-function getProvider(props: Partial<BucketProps> = {}) {
+function getProvider(props: Partial<ReflagProps> = {}) {
   return (
-    <BucketProvider
+    <ReflagProvider
       company={company}
       otherContext={otherContext}
       publishableKey={publishableKey}
@@ -144,19 +146,19 @@ afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
 beforeAll(() => {
-  vi.spyOn(BucketClient.prototype, "initialize");
-  vi.spyOn(BucketClient.prototype, "stop");
+  vi.spyOn(ReflagClient.prototype, "initialize");
+  vi.spyOn(ReflagClient.prototype, "stop");
 });
 
 beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe("<BucketProvider />", () => {
+describe("<ReflagProvider />", () => {
   test("calls initialize", () => {
     const on = vi.fn();
 
-    const newBucketClient = vi.fn().mockReturnValue({
+    const newReflagClient = vi.fn().mockReturnValue({
       initialize: vi.fn().mockResolvedValue(undefined),
       on,
     });
@@ -174,15 +176,15 @@ describe("<BucketProvider />", () => {
       timeoutMs: 1002,
       expireTimeMs: 1003,
       staleWhileRevalidate: true,
-      fallbackFeatures: ["feature2"],
+      fallbackFlags: ["flag2"],
       feedback: { enableAutoFeedback: true },
       toolbar: { show: true },
-      newBucketClient,
+      newReflagClient,
     });
 
     render(provider);
 
-    expect(newBucketClient.mock.calls.at(0)).toStrictEqual([
+    expect(newReflagClient.mock.calls.at(0)).toStrictEqual([
       {
         publishableKey: "KEY",
         user: {
@@ -202,7 +204,7 @@ describe("<BucketProvider />", () => {
         logger: undefined,
         enableTracking: false,
         expireTimeMs: 1003,
-        fallbackFeatures: ["feature2"],
+        fallbackFlags: ["flag2"],
         feedback: {
           enableAutoFeedback: true,
         },
@@ -221,7 +223,7 @@ describe("<BucketProvider />", () => {
 
   test("only calls init once with the same args", () => {
     const node = getProvider();
-    const initialize = vi.spyOn(BucketClient.prototype, "initialize");
+    const initialize = vi.spyOn(ReflagClient.prototype, "initialize");
 
     const x = render(node);
     x.rerender(node);
@@ -229,7 +231,7 @@ describe("<BucketProvider />", () => {
     x.rerender(node);
 
     expect(initialize).toHaveBeenCalledOnce();
-    expect(BucketClient.prototype.stop).not.toHaveBeenCalledOnce();
+    expect(ReflagClient.prototype.stop).not.toHaveBeenCalledOnce();
   });
 
   test("resets loading state when context changes", async () => {
@@ -281,59 +283,61 @@ describe("<BucketProvider />", () => {
   });
 });
 
-describe("useFeature", () => {
-  test("returns a loading state initially", async () => {
-    const { result, unmount } = renderHook(() => useFeature("huddle"), {
+describe("useIsLoading", () => {
+  test("returns `true` initially", async () => {
+    const { result, unmount } = renderHook(() => useIsLoading(), {
       wrapper: ({ children }) => getProvider({ children }),
     });
 
-    expect(result.current).toStrictEqual({
-      key: "huddle",
-      isEnabled: false,
-      isLoading: true,
-      config: { key: undefined, payload: undefined },
-      track: expect.any(Function),
-      requestFeedback: expect.any(Function),
+    expect(result.current).toBe(true);
+    unmount();
+  });
+
+  test("finishes loading", async () => {
+    const { result, unmount } = renderHook(() => useIsLoading(), {
+      wrapper: ({ children }) => getProvider({ children }),
     });
+
+    await waitFor(() => {
+      expect(result.current).toBe(false);
+    });
+
+    unmount();
+  });
+});
+
+describe("useFlag", () => {
+  test("returns `undefined` initially", async () => {
+    const { result, unmount } = renderHook(() => useFlag("huddle"), {
+      wrapper: ({ children }) => getProvider({ children }),
+    });
+
+    expect(result.current).toBeUndefined();
 
     unmount();
   });
 
   test("finishes loading", async () => {
-    const { result, unmount } = renderHook(() => useFeature("huddle"), {
+    const { result, unmount } = renderHook(() => useFlag("huddle"), {
       wrapper: ({ children }) => getProvider({ children }),
     });
 
     await waitFor(() => {
-      expect(result.current).toStrictEqual({
-        key: "huddle",
-        config: { key: undefined, payload: undefined },
-        isEnabled: false,
-        isLoading: false,
-        track: expect.any(Function),
-        requestFeedback: expect.any(Function),
-      });
+      expect(result.current).toBe(false);
     });
 
     unmount();
   });
 
-  test("provides the expected values if feature is enabled", async () => {
-    const { result, unmount } = renderHook(() => useFeature("abc"), {
+  test("provides the expected values if flag is enabled", async () => {
+    const { result, unmount } = renderHook(() => useFlag("abc"), {
       wrapper: ({ children }) => getProvider({ children }),
     });
 
     await waitFor(() => {
       expect(result.current).toStrictEqual({
-        key: "abc",
-        isEnabled: true,
-        isLoading: false,
-        config: {
-          key: "gpt3",
-          payload: { model: "gpt-something", temperature: 0.5 },
-        },
-        track: expect.any(Function),
-        requestFeedback: expect.any(Function),
+        key: "gpt3",
+        payload: { model: "gpt-something", temperature: 0.5 },
       });
     });
 
@@ -343,12 +347,30 @@ describe("useFeature", () => {
 
 describe("useTrack", () => {
   test("sends track request", async () => {
-    const { result, unmount } = renderHook(() => useTrack(), {
+    const { result, unmount } = renderHook(() => useTrack("event"), {
       wrapper: ({ children }) => getProvider({ children }),
     });
 
     await waitFor(async () => {
-      await result.current("event", { test: "test" });
+      await result.current({ test: "test" });
+      expect(events).toStrictEqual(["EVENT"]);
+    });
+
+    unmount();
+  });
+});
+
+describe("useTrackCustom", () => {
+  test("sends track request", async () => {
+    const { result, unmount } = renderHook(
+      () => useTrackCustom("Custom Event"),
+      {
+        wrapper: ({ children }) => getProvider({ children }),
+      },
+    );
+
+    await waitFor(async () => {
+      await result.current({ test: "test" });
       expect(events).toStrictEqual(["EVENT"]);
     });
 
@@ -358,13 +380,12 @@ describe("useTrack", () => {
 
 describe("useSendFeedback", () => {
   test("sends feedback", async () => {
-    const { result, unmount } = renderHook(() => useSendFeedback(), {
+    const { result, unmount } = renderHook(() => useSendFeedback("huddles"), {
       wrapper: ({ children }) => getProvider({ children }),
     });
 
     await waitFor(async () => {
       await result.current({
-        featureKey: "huddles",
         score: 5,
       });
       expect(events).toStrictEqual(["FEEDBACK"]);
@@ -377,23 +398,25 @@ describe("useSendFeedback", () => {
 describe("useRequestFeedback", () => {
   test("sends feedback", async () => {
     const requestFeedback = vi
-      .spyOn(BucketClient.prototype, "requestFeedback")
+      .spyOn(ReflagClient.prototype, "requestFeedback")
       .mockReturnValue(undefined);
 
-    const { result, unmount } = renderHook(() => useRequestFeedback(), {
-      wrapper: ({ children }) => getProvider({ children }),
-    });
+    const { result, unmount } = renderHook(
+      () => useRequestFeedback("huddles"),
+      {
+        wrapper: ({ children }) => getProvider({ children }),
+      },
+    );
 
     await waitFor(async () => {
       result.current({
-        featureKey: "huddles",
         title: "Test question",
         companyId: "456",
       });
 
       expect(requestFeedback).toHaveBeenCalledOnce();
       expect(requestFeedback).toHaveBeenCalledWith({
-        featureKey: "huddles",
+        flagKey: "huddles",
         companyId: "456",
         title: "Test question",
       });
@@ -406,7 +429,7 @@ describe("useRequestFeedback", () => {
 describe("useUpdateUser", () => {
   test("updates user", async () => {
     const updateUser = vi
-      .spyOn(BucketClient.prototype, "updateUser")
+      .spyOn(ReflagClient.prototype, "updateUser")
       .mockResolvedValue(undefined);
 
     const { result: updateUserFn, unmount } = renderHook(
@@ -434,7 +457,7 @@ describe("useUpdateUser", () => {
 describe("useUpdateCompany", () => {
   test("updates company", async () => {
     const updateCompany = vi
-      .spyOn(BucketClient.prototype, "updateCompany")
+      .spyOn(ReflagClient.prototype, "updateCompany")
       .mockResolvedValue(undefined);
 
     const { result: updateCompanyFn, unmount } = renderHook(
@@ -461,7 +484,7 @@ describe("useUpdateCompany", () => {
 describe("useUpdateOtherContext", () => {
   test("updates other context", async () => {
     const updateOtherContext = vi
-      .spyOn(BucketClient.prototype, "updateOtherContext")
+      .spyOn(ReflagClient.prototype, "updateOtherContext")
       .mockResolvedValue(undefined);
 
     const { result: updateOtherContextFn, unmount } = renderHook(

@@ -1,4 +1,4 @@
-const base = require("@bucketco/eslint-config");
+const base = require("@reflag/eslint-config");
 const importsPlugin = require("eslint-plugin-import");
 const vuePlugin = require("eslint-plugin-vue");
 const vueParser = require("vue-eslint-parser");

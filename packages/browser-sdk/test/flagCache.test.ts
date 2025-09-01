@@ -8,7 +8,7 @@ import {
   vitest,
 } from "vitest";
 
-import { CacheResult, FeatureCache } from "../src/feature/featureCache";
+import { CacheResult, FlagCache } from "../src/flag/flagCache";
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -23,12 +23,12 @@ export const TEST_STALE_MS = 1000;
 export const TEST_EXPIRE_MS = 2000;
 
 export function newCache(): {
-  cache: FeatureCache;
+  cache: FlagCache;
   cacheItem: (string | null)[];
 } {
   const cacheItem: (string | null)[] = [null];
   return {
-    cache: new FeatureCache({
+    cache: new FlagCache({
       storage: {
         get: () => cacheItem[0],
         set: (value) => (cacheItem[0] = value),
@@ -41,24 +41,24 @@ export function newCache(): {
 }
 
 describe("cache", () => {
-  const features = {
-    featureA: { isEnabled: true, key: "featureA", targetingVersion: 1 },
+  const flags = {
+    flagA: { isEnabled: true, key: "flagA", targetingVersion: 1 },
   };
 
   test("caches items", async () => {
     const { cache } = newCache();
 
-    cache.set("key", { features });
+    cache.set("key", { flags });
     expect(cache.get("key")).toEqual({
       stale: false,
-      features,
+      flags,
     } satisfies CacheResult);
   });
 
   test("sets stale", async () => {
     const { cache } = newCache();
 
-    cache.set("key", { features });
+    cache.set("key", { flags });
 
     vitest.advanceTimersByTime(TEST_STALE_MS + 1);
 
@@ -70,13 +70,13 @@ describe("cache", () => {
     const { cache, cacheItem } = newCache();
 
     cache.set("first key", {
-      features,
+      flags,
     });
     expect(cacheItem[0]).not.toBeNull();
     vitest.advanceTimersByTime(TEST_EXPIRE_MS + 1);
 
     cache.set("other key", {
-      features,
+      flags,
     });
 
     const item = cache.get("key");

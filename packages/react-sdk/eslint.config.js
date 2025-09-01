@@ -1,4 +1,4 @@
-const base = require("@bucketco/eslint-config");
+const base = require("@reflag/eslint-config");
 const reactPlugin = require("eslint-plugin-react");
 const hooksPlugin = require("eslint-plugin-react-hooks");
 

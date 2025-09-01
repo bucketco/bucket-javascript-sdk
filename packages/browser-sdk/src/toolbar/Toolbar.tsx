@@ -7,63 +7,56 @@ import {
   useState,
 } from "preact/hooks";
 
-import { BucketClient } from "../client";
+import { ReflagClient } from "../client";
+import { Flag } from "../flag/flags";
 import { toolbarContainerId } from "../ui/constants";
 import { Dialog, DialogContent, DialogHeader, useDialog } from "../ui/Dialog";
 import { Logo } from "../ui/icons/Logo";
 import { ToolbarPosition } from "../ui/types";
 import { parseUnanchoredPosition } from "../ui/utils";
 
-import { FeatureSearch, FeaturesTable } from "./Features";
+import { FlagSearch, FlagsTable } from "./Flags";
 import styles from "./index.css?inline";
 
-export type FeatureItem = {
-  key: string;
-  localOverride: boolean | null;
-  isEnabled: boolean;
-};
-
-type Feature = {
-  key: string;
-  isEnabled: boolean;
-  localOverride: boolean | null;
+export type FlagItem = {
+  flagKey: string;
+  value: Flag;
+  override: Flag | null;
 };
 
 export default function Toolbar({
-  bucketClient,
+  reflagClient,
   position,
 }: {
-  bucketClient: BucketClient;
+  reflagClient: ReflagClient;
   position: ToolbarPosition;
 }) {
   const toggleToolbarRef = useRef<HTMLDivElement>(null);
   const dialogContentRef = useRef<HTMLDivElement>(null);
-  const [features, setFeatures] = useState<Feature[]>([]);
+  const [flags, setFlags] = useState<FlagItem[]>([]);
 
-  const updateFeatures = useCallback(() => {
-    const rawFeatures = bucketClient.getFeatures();
-    setFeatures(
-      Object.values(rawFeatures)
-        .filter((f) => f !== undefined)
-        .map(
-          (feature) =>
-            ({
-              key: feature.key,
-              localOverride: feature.isEnabledOverride,
-              isEnabled: feature.isEnabled,
-            }) satisfies FeatureItem,
-        ),
+  const updateFlags = useCallback(() => {
+    const rawFlags = reflagClient.getFlags();
+    setFlags(
+      Object.entries(rawFlags).map(
+        ([key, value]) =>
+          ({
+            flagKey: key,
+            override: reflagClient.getFlagOverride(key),
+            value,
+          }) satisfies FlagItem,
+      ),
     );
-  }, [bucketClient]);
+  }, [reflagClient]);
 
   const hasAnyOverrides = useMemo(() => {
-    return features.some((f) => f.localOverride !== null);
-  }, [features]);
+    return flags.some((f) => f.override !== null);
+  }, [flags]);
 
   useEffect(() => {
-    updateFeatures();
-    bucketClient.on("featuresUpdated", updateFeatures);
-  }, [bucketClient, updateFeatures]);
+    updateFlags();
+    reflagClient.on("flagsUpdated", updateFlags);
+  }, [reflagClient, updateFlags]);
 
   const [search, setSearch] = useState<string | null>(null);
   const onSearch = (val: string) => {
@@ -71,11 +64,11 @@ export default function Toolbar({
     dialogContentRef.current?.scrollTo({ top: 0 });
   };
 
-  const sortedFeatures = [...features].sort((a, b) =>
-    a.key.localeCompare(b.key),
+  const sortedFlags = [...flags].sort((a, b) =>
+    a.flagKey.localeCompare(b.flagKey),
   );
 
-  const appBaseUrl = bucketClient.getConfig().appBaseUrl;
+  const appBaseUrl = reflagClient.getConfig().appBaseUrl;
 
   const { isOpen, close, toggle } = useDialog();
 
@@ -102,16 +95,16 @@ export default function Toolbar({
         strategy="fixed"
       >
         <DialogHeader>
-          <FeatureSearch onSearch={onSearch} />
+          <FlagSearch onSearch={onSearch} />
         </DialogHeader>
         <DialogContent innerRef={dialogContentRef}>
-          <FeaturesTable
+          <FlagsTable
             appBaseUrl={appBaseUrl}
-            features={sortedFeatures}
+            flags={sortedFlags}
             isOpen={isOpen}
             searchQuery={search}
-            setIsEnabledOverride={(key, isEnabled) =>
-              bucketClient.getFeature(key).setIsEnabledOverride(isEnabled)
+            setOverride={(key, value) =>
+              reflagClient.setFlagOverride(key, value)
             }
           />
         </DialogContent>

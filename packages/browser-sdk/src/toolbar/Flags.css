@@ -38,12 +38,12 @@
   }
 }
 
-.features-table {
+.flags-table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.feature-row {
+.flag-row {
   opacity: 0;
   transform: translateY(-7px);
   transition-property: opacity, transform;
@@ -63,13 +63,13 @@
   }
 }
 
-.feature-empty-cell {
+.flag-empty-cell {
   width: 100%;
   color: var(--gray500);
   padding: 6px 0;
 }
 
-.feature-name-cell {
+.flag-name-cell {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -79,14 +79,14 @@
   align-items: center;
   gap: 8px;
 
-  .feature-icon {
+  .flag-icon {
     height: 15px;
     width: 15px;
     color: var(--dimmed-color);
   }
 }
 
-.feature-link {
+.flag-link {
   color: var(--text-color);
   text-decoration: none;
 
@@ -96,7 +96,7 @@
   }
 }
 
-.feature-reset-cell {
+.flag-reset-cell {
   width: 32px;
   padding: 6px 0;
   text-align: right;
@@ -112,7 +112,7 @@
   }
 }
 
-.feature-switch-cell {
+.flag-switch-cell {
   padding: 6px 0 6px 6px;
   width: 0;
 }

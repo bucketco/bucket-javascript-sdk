@@ -7,18 +7,10 @@ describe("config tests", () => {
     const config = loadConfig("test/testConfig.json");
 
     expect(config).toEqual({
-      featureOverrides: {
-        myFeature: {
-          isEnabled: true,
-        },
-        myFeatureFalse: false,
-        myFeatureWithConfig: {
-          isEnabled: true,
-          config: {
-            key: "config-1",
-            payload: { something: "else" },
-          },
-        },
+      flagOverrides: {
+        "flag-4": true,
+        "flag-5": false,
+        "flag-6": { key: "config-2", payload: { something: "else entirely" } },
       },
       secretKey: "mySecretKey",
       offline: true,
@@ -26,29 +18,21 @@ describe("config tests", () => {
     });
   });
 
-  it("should load ENV VARS", () => {
-    process.env.BUCKET_SECRET_KEY = "mySecretKeyFromEnv";
-    process.env.BUCKET_OFFLINE = "true";
-    process.env.BUCKET_HOST = "http://localhost:4999";
-    process.env.BUCKET_FEATURES_ENABLED = "myNewFeature";
-    process.env.BUCKET_FEATURES_DISABLED = "myNewFeatureFalse";
+  it("should load ENV variables", () => {
+    process.env.REFLAG_SECRET_KEY = "mySecretKeyFromEnv";
+    process.env.REFLAG_OFFLINE = "true";
+    process.env.REFLAG_API_BASE_URL = "http://localhost:4999";
+    process.env.REFLAG_FLAGS_ENABLED = "flag-5,flag-7";
+    process.env.REFLAG_FLAGS_DISABLED = "flag-4,flag-8";
 
     const config = loadConfig("test/testConfig.json");
     expect(config).toEqual({
-      featureOverrides: {
-        myFeature: {
-          isEnabled: true,
-        },
-        myFeatureFalse: false,
-        myNewFeature: true,
-        myNewFeatureFalse: false,
-        myFeatureWithConfig: {
-          isEnabled: true,
-          config: {
-            key: "config-1",
-            payload: { something: "else" },
-          },
-        },
+      flagOverrides: {
+        "flag-4": false,
+        "flag-5": true,
+        "flag-6": { key: "config-2", payload: { something: "else entirely" } },
+        "flag-7": true,
+        "flag-8": false,
       },
       secretKey: "mySecretKeyFromEnv",
       offline: true,

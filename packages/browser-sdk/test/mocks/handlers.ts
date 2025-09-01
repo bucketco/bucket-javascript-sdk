@@ -1,24 +1,24 @@
 import { DefaultBodyType, http, HttpResponse, StrictRequest } from "msw";
 
-import { RawFeatures } from "../../src/feature/features";
+import { RawFlags } from "../../src/flag/flags";
 
 export const testChannel = "testChannel";
 
-export const featureResponse = {
+export const flagsResponse = {
   success: true,
   features: {
-    featureA: {
+    flagA: {
       isEnabled: true,
-      key: "featureA",
+      key: "flagA",
       targetingVersion: 1,
       config: undefined,
       ruleEvaluationResults: [false, true],
       missingContextFields: ["field1", "field2"],
     },
-    featureB: {
+    flagB: {
       isEnabled: true,
       targetingVersion: 11,
-      key: "featureB",
+      key: "flagB",
       config: {
         version: 12,
         key: "gpt3",
@@ -30,16 +30,16 @@ export const featureResponse = {
   },
 };
 
-export const featuresResult = Object.entries(featureResponse.features).reduce(
-  (acc, [key, feature]) => {
+export const flagsResult = Object.entries(flagsResponse.features).reduce(
+  (acc, [key, flag]) => {
     acc[key] = {
-      ...feature!,
-      config: feature.config,
-      isEnabledOverride: null,
+      ...flag!,
+      config: flag.config,
+      valueOverride: null,
     };
     return acc;
   },
-  {} as RawFeatures,
+  {} as RawFlags,
 );
 
 function checkRequest(request: StrictRequest<DefaultBodyType>) {
@@ -49,8 +49,8 @@ function checkRequest(request: StrictRequest<DefaultBodyType>) {
     request.headers.get("Authorization");
 
   const hasSdkVersion =
-    url.searchParams.get("bucket-sdk-version") ||
-    request.headers.get("bucket-sdk-version");
+    url.searchParams.get("reflag-sdk-version") ||
+    request.headers.get("reflag-sdk-version");
 
   const valid = hasKey && hasSdkVersion;
   if (!valid) {
@@ -68,18 +68,18 @@ const invalidReqResponse = new HttpResponse("missing token or sdk", {
   status: 400,
 });
 
-export function getFeatures({
+export function getFlags({
   request,
 }: {
   request: StrictRequest<DefaultBodyType>;
 }) {
   if (!checkRequest(request)) return invalidReqResponse;
 
-  return HttpResponse.json(featureResponse);
+  return HttpResponse.json(flagsResponse);
 }
 
 export const handlers = [
-  http.post("https://front.bucket.co/user", async ({ request }) => {
+  http.post("https://front.reflag.co/user", async ({ request }) => {
     if (!checkRequest(request)) return invalidReqResponse;
 
     const data = await request.json();
@@ -154,8 +154,8 @@ export const handlers = [
       success: true,
     });
   }),
-  http.get("https://front.bucket.co/features/enabled", getFeatures),
-  http.get("https://front.bucket.co/features/evaluated", getFeatures),
+  http.get("https://front.bucket.co/features/enabled", getFlags),
+  http.get("https://front.bucket.co/features/evaluated", getFlags),
   http.post(
     "https://front.bucket.co/feedback/prompting-init",
     ({ request }) => {

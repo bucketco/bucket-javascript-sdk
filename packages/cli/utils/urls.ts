@@ -25,10 +25,6 @@ export function environmentUrl(baseUrl: string, environment: UrlArgs): string {
   return `${baseUrl}/envs/${slug(environment)}`;
 }
 
-export function featureUrl(
-  baseUrl: string,
-  env: UrlArgs,
-  feature: UrlArgs,
-): string {
-  return `${environmentUrl(baseUrl, env)}/features/${slug(feature)}`;
+export function flagUrl(baseUrl: string, env: UrlArgs, flag: UrlArgs): string {
+  return `${environmentUrl(baseUrl, env)}/features/${slug(flag)}`;
 }

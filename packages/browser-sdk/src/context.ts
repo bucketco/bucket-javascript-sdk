@@ -41,7 +41,7 @@ export interface UserContext {
   [key: string]: string | number | undefined;
 }
 
-export interface BucketContext {
+export interface ReflagContext {
   /**
    * Company related context
    */
@@ -57,3 +57,10 @@ export interface BucketContext {
    */
   otherContext?: Record<string, string | number | undefined>;
 }
+
+/**
+ * @deprecated
+ *
+ * Use ReflagContext instead.
+ */
+export type BucketContext = ReflagContext;

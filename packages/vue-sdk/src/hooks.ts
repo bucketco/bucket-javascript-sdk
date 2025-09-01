@@ -1,85 +1,102 @@
-import { computed, inject, InjectionKey, onBeforeUnmount, ref } from "vue";
+import { inject, InjectionKey } from "vue";
 
-import { RequestFeedbackData, UnassignedFeedback } from "@bucketco/browser-sdk";
+import { RequestFeedbackData, UnassignedFeedback } from "@reflag/browser-sdk";
 
-import {
-  Feature,
-  ProviderContextType,
-  RequestFeatureFeedbackOptions,
-} from "./types";
+import { FlagKey, ProviderContextType, TypedFlags } from "./types";
 
 export const ProviderSymbol: InjectionKey<ProviderContextType> =
-  Symbol("BucketProvider");
+  Symbol("ReflagProvider");
 
-export function useFeature(key: string): Feature<any> {
+/**
+ * Vue composable for getting a flag value.
+ *
+ * @example
+ * ```ts
+ * import { useFlag } from '@reflag/vue-sdk';
+ *
+ * const flag = useFlag('my-flag');
+ *
+ * // Use the flag
+ * console.log(flag);
+ * ```
+ *
+ * @param flagKey The key of the flag to get.
+ * @returns The value of the flag.
+ */
+export function useFlag<TKey extends FlagKey>(
+  flagKey: TKey,
+): TypedFlags[TKey] | undefined {
   const client = useClient();
-  const ctx = injectSafe();
 
-  const track = () => client?.value.track(key);
-  const requestFeedback = (opts: RequestFeatureFeedbackOptions) =>
-    client.value.requestFeedback({ ...opts, featureKey: key });
-
-  const feature = ref(client.value.getFeature(key));
-
-  updateFeature();
-
-  function updateFeature() {
-    feature.value = client.value.getFeature(key);
-  }
-
-  client.value.on("featuresUpdated", updateFeature);
-  onBeforeUnmount(() => {
-    client.value.off("featuresUpdated", updateFeature);
-  });
-
-  return {
-    key,
-    isEnabled: computed(() => feature.value.isEnabled),
-    config: computed(() => feature.value.config),
-    track,
-    requestFeedback,
-    isLoading: computed(() => ctx.isLoading.value),
-  };
+  return client.value.getFlag(flagKey);
 }
 
 /**
  * Vue composable for tracking custom events.
  *
- * This composable returns a function that can be used to track custom events
- * with the Bucket SDK.
+ * This composable returns a function that can be used to track flag events
+ * with the Reflag SDK.
  *
  * @example
  * ```ts
- * import { useTrack } from '@bucketco/vue-sdk';
+ * import { useTrack } from '@reflag/vue-sdk';
  *
- * const track = useTrack();
+ * const track = useTrack('button_clicked');
  *
  * // Track a custom event
- * track('button_clicked', { buttonName: 'Start Huddle' });
+ * track({ buttonName: 'Start Huddle' });
  * ```
  *
  * @returns A function that tracks an event. The function accepts:
  *   - `eventName`: The name of the event to track.
  *   - `attributes`: (Optional) Additional attributes to associate with the event.
  */
-export function useTrack() {
+export function useTrack<TKey extends FlagKey>(flagKey: TKey) {
   const client = useClient();
-  return (eventName: string, attributes?: Record<string, any> | null) =>
-    client?.value.track(eventName, attributes);
+
+  return (attributes?: Record<string, any> | null) =>
+    client.value.track(flagKey, attributes);
+}
+
+/**
+ * Vue composable for tracking custom events.
+ *
+ * This composable returns a function that can be used to track custom events
+ * with the Reflag SDK.
+ *
+ * @example
+ * ```ts
+ * import { useTrackCustom } from '@reflag/vue-sdk';
+ *
+ * const track = useTrackCustom('button_clicked');
+ *
+ * // Track a custom event
+ * track({ buttonName: 'Start Huddle' });
+ * ```
+ *
+ * @returns A function that tracks an event. The function accepts:
+ *   - `eventName`: The name of the event to track.
+ *   - `attributes`: (Optional) Additional attributes to associate with the event.
+ */
+export function useTrackCustom(event: string) {
+  const client = useClient();
+
+  return (attributes?: Record<string, any> | null) =>
+    client.value.track(event, attributes);
 }
 
 /**
  * Vue composable for requesting user feedback.
  *
  * This composable returns a function that can be used to trigger the feedback
- * collection flow with the Bucket SDK. You can use this to prompt users for
+ * collection flow with the Reflag SDK. You can use this to prompt users for
  * feedback at any point in your application.
  *
  * @example
  * ```ts
- * import { useRequestFeedback } from '@bucketco/vue-sdk';
+ * import { useRequestFeedback } from '@reflag/vue-sdk';
  *
- * const requestFeedback = useRequestFeedback();
+ * const requestFeedback = useRequestFeedback('my-flag');
  *
  * // Request feedback from the user
  * requestFeedback({
@@ -91,23 +108,23 @@ export function useTrack() {
  * @returns A function that requests feedback from the user. The function accepts:
  *   - `options`: An object containing feedback request options.
  */
-export function useRequestFeedback() {
+export function useRequestFeedback<TKey extends FlagKey>(flagKey: TKey) {
   const client = useClient();
-  return (options: RequestFeedbackData) =>
-    client?.value.requestFeedback(options);
+  return (options: Omit<RequestFeedbackData, "flagKey">) =>
+    client.value.requestFeedback({ ...options, flagKey });
 }
 
 /**
  * Vue composable for sending feedback.
  *
  * This composable returns a function that can be used to send feedback to the
- * Bucket SDK. You can use this to send feedback from your application.
+ * Reflag SDK. You can use this to send feedback from your application.
  *
  * @example
  * ```ts
- * import { useSendFeedback } from '@bucketco/vue-sdk';
+ * import { useSendFeedback } from '@reflag/vue-sdk';
  *
- * const sendFeedback = useSendFeedback();
+ * const sendFeedback = useSendFeedback('my-flag');
  *
  * // Send feedback from the user
  * sendFeedback({
@@ -116,24 +133,26 @@ export function useRequestFeedback() {
  * });
  * ```
  *
- * @returns A function that sends feedback to the Bucket SDK. The function accepts:
+ * @returns A function that sends feedback to the Reflag SDK. The function accepts:
  *   - `options`: An object containing feedback options.
  */
-export function useSendFeedback() {
+export function useSendFeedback<TKey extends FlagKey>(flagKey: TKey) {
   const client = useClient();
-  return (opts: UnassignedFeedback) => client?.value.feedback(opts);
+
+  return (opts: Omit<UnassignedFeedback, "flagKey" | "feedbackId">) =>
+    client.value.feedback({ ...opts, flagKey });
 }
 
 /**
  * Vue composable for updating the user context.
  *
  * This composable returns a function that can be used to update the user context
- * with the Bucket SDK. You can use this to update the user context at any point
+ * with the Reflag SDK. You can use this to update the user context at any point
  * in your application.
  *
  * @example
  * ```ts
- * import { useUpdateUser } from '@bucketco/vue-sdk';
+ * import { useUpdateUser } from '@reflag/vue-sdk';
  *
  * const updateUser = useUpdateUser();
  *
@@ -147,19 +166,19 @@ export function useSendFeedback() {
 export function useUpdateUser() {
   const client = useClient();
   return (opts: { [key: string]: string | number | undefined }) =>
-    client?.value.updateUser(opts);
+    client.value.updateUser(opts);
 }
 
 /**
  * Vue composable for updating the company context.
  *
  * This composable returns a function that can be used to update the company
- * context with the Bucket SDK. You can use this to update the company context
+ * context with the Reflag SDK. You can use this to update the company context
  * at any point in your application.
  *
  * @example
  * ```ts
- * import { useUpdateCompany } from '@bucketco/vue-sdk';
+ * import { useUpdateCompany } from '@reflag/vue-sdk';
  *
  * const updateCompany = useUpdateCompany();
  *
@@ -173,19 +192,19 @@ export function useUpdateUser() {
 export function useUpdateCompany() {
   const client = useClient();
   return (opts: { [key: string]: string | number | undefined }) =>
-    client?.value.updateCompany(opts);
+    client.value.updateCompany(opts);
 }
 
 /**
  * Vue composable for updating the other context.
  *
  * This composable returns a function that can be used to update the other
- * context with the Bucket SDK. You can use this to update the other context
+ * context with the Reflag SDK. You can use this to update the other context
  * at any point in your application.
  *
  * @example
  * ```ts
- * import { useUpdateOtherContext } from '@bucketco/vue-sdk';
+ * import { useUpdateOtherContext } from '@reflag/vue-sdk';
  *
  * const updateOtherContext = useUpdateOtherContext();
  *
@@ -203,12 +222,12 @@ export function useUpdateOtherContext() {
 }
 
 /**
- * Vue composable for getting the Bucket client.
+ * Vue composable for getting the Reflag client.
  *
- * This composable returns the Bucket client. You can use this to get the Bucket
+ * This composable returns the Reflag client. You can use this to get the Reflag
  * client at any point in your application.
  *
- * @returns The Bucket client.
+ * @returns The Reflag client.
  */
 export function useClient() {
   const ctx = injectSafe();
@@ -216,10 +235,10 @@ export function useClient() {
 }
 
 /**
- * Vue composable for checking if the Bucket client is loading.
+ * Vue composable for checking if the Reflag client is loading.
  *
- * This composable returns a boolean value that indicates whether the Bucket client is loading.
- * You can use this to check if the Bucket client is loading at any point in your application.
+ * This composable returns a boolean value that indicates whether the Reflag client is loading.
+ * You can use this to check if the Reflag client is loading at any point in your application.
  */
 export function useIsLoading() {
   const ctx = injectSafe();
@@ -230,7 +249,7 @@ function injectSafe() {
   const ctx = inject(ProviderSymbol);
   if (!ctx?.provider) {
     throw new Error(
-      `BucketProvider is missing. Please ensure your component is wrapped with a BucketProvider.`,
+      `ReflagProvider is missing. Please ensure your component is wrapped with a ReflagProvider.`,
     );
   }
   return ctx;

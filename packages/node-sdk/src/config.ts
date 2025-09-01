@@ -2,51 +2,53 @@ import { readFileSync } from "fs";
 
 import { version } from "../package.json";
 
-import { LOG_LEVELS } from "./types";
+import { LOG_LEVELS, TypedFlags } from "./types";
 import { isObject, ok } from "./utils";
 
 export const API_BASE_URL = "https://front.bucket.co";
-export const SDK_VERSION_HEADER_NAME = "bucket-sdk-version";
+export const SDK_VERSION_HEADER_NAME = "reflag-sdk-version";
 export const SDK_VERSION = `node-sdk/${version}`;
 export const API_TIMEOUT_MS = 10000;
 export const END_FLUSH_TIMEOUT_MS = 5000;
 
-export const BUCKET_LOG_PREFIX = "[Bucket]";
+export const REFLAG_LOG_PREFIX = "[Reflag]";
 
-export const FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS = 60 * 1000;
+export const FLAG_FETCH_RETRIES = 3;
 
-export const FEATURES_REFETCH_MS = 60 * 1000; // re-fetch every 60 seconds
+export const FLAG_EVENT_RATE_LIMITER_WINDOW_SIZE_MS = 60 * 1000;
+
+export const FLAGS_REFETCH_MS = 60 * 1000; // re-fetch every 60 seconds
 
 export const BATCH_MAX_SIZE = 100;
 export const BATCH_INTERVAL_MS = 10 * 1000;
 
-function parseOverrides(config: object | undefined) {
-  if (!config) return {};
-  if ("featureOverrides" in config && isObject(config.featureOverrides)) {
-    Object.entries(config.featureOverrides).forEach(([key, value]) => {
+function parseFlagOverrides(config: object | undefined): TypedFlags {
+  if (!config) {
+    return {};
+  }
+
+  if ("flagOverrides" in config && isObject(config.flagOverrides)) {
+    Object.entries(config.flagOverrides).forEach(([key, value]) => {
       ok(
         typeof value === "boolean" || isObject(value),
         `invalid type "${typeof value}" for key ${key}, expected boolean or object`,
       );
       if (isObject(value)) {
         ok(
-          "isEnabled" in value && typeof value.isEnabled === "boolean",
-          `invalid type "${typeof value.isEnabled}" for key ${key}.isEnabled, expected boolean`,
+          typeof value.key === "string",
+          `invalid type "${typeof value.key}" for key ${key}.key, expected string`,
         );
         ok(
-          value.config === undefined || isObject(value.config),
-          `invalid type "${typeof value.config}" for key ${key}.config, expected object or undefined`,
+          typeof value.payload === "boolean" ||
+            typeof value.payload === "object" ||
+            typeof value.payload === "string" ||
+            typeof value.payload === "number",
+          `invalid type "${typeof value.payload}" for key ${key}.payload, expected boolean, object, string or number`,
         );
-        if (isObject(value.config)) {
-          ok(
-            "key" in value.config && typeof value.config.key === "string",
-            `invalid type "${typeof value.config.key}" for key ${key}.config.key, expected string`,
-          );
-        }
       }
     });
 
-    return config.featureOverrides;
+    return config.flagOverrides;
   }
 
   return {};
@@ -78,7 +80,7 @@ function loadConfigFile(file: string) {
   );
 
   return {
-    featureOverrides: parseOverrides(config),
+    flagOverrides: parseFlagOverrides(config),
     secretKey,
     logLevel,
     offline,
@@ -87,19 +89,19 @@ function loadConfigFile(file: string) {
 }
 
 function loadEnvVars() {
-  const secretKey = process.env.BUCKET_SECRET_KEY;
-  const enabledFeatures = process.env.BUCKET_FEATURES_ENABLED;
-  const disabledFeatures = process.env.BUCKET_FEATURES_DISABLED;
-  const logLevel = process.env.BUCKET_LOG_LEVEL;
-  const apiBaseUrl = process.env.BUCKET_API_BASE_URL ?? process.env.BUCKET_HOST;
+  const secretKey = process.env.REFLAG_SECRET_KEY;
+  const enabledFlags = process.env.REFLAG_FLAGS_ENABLED;
+  const disabledFlags = process.env.REFLAG_FLAGS_DISABLED;
+  const logLevel = process.env.REFLAG_LOG_LEVEL;
+  const apiBaseUrl = process.env.REFLAG_API_BASE_URL;
   const offline =
-    process.env.BUCKET_OFFLINE !== undefined
-      ? ["true", "on"].includes(process.env.BUCKET_OFFLINE)
+    process.env.REFLAG_OFFLINE !== undefined
+      ? ["true", "on"].includes(process.env.REFLAG_OFFLINE)
       : undefined;
 
-  let featureOverrides: Record<string, boolean> = {};
-  if (enabledFeatures) {
-    featureOverrides = enabledFeatures.split(",").reduce(
+  let flagOverrides: Record<string, boolean> = {};
+  if (enabledFlags) {
+    flagOverrides = enabledFlags.split(",").reduce(
       (acc, f) => {
         const key = f.trim();
         if (key) acc[key] = true;
@@ -109,10 +111,10 @@ function loadEnvVars() {
     );
   }
 
-  if (disabledFeatures) {
-    featureOverrides = {
-      ...featureOverrides,
-      ...disabledFeatures.split(",").reduce(
+  if (disabledFlags) {
+    flagOverrides = {
+      ...flagOverrides,
+      ...disabledFlags.split(",").reduce(
         (acc, f) => {
           const key = f.trim();
           if (key) acc[key] = false;
@@ -123,7 +125,7 @@ function loadEnvVars() {
     };
   }
 
-  return { secretKey, featureOverrides, logLevel, offline, apiBaseUrl };
+  return { secretKey, flagOverrides, logLevel, offline, apiBaseUrl };
 }
 
 export function loadConfig(file?: string) {
@@ -139,9 +141,9 @@ export function loadConfig(file?: string) {
     logLevel: envConfig.logLevel || fileConfig?.logLevel,
     offline: envConfig.offline ?? fileConfig?.offline,
     apiBaseUrl: envConfig.apiBaseUrl ?? fileConfig?.apiBaseUrl,
-    featureOverrides: {
-      ...fileConfig?.featureOverrides,
-      ...envConfig.featureOverrides,
+    flagOverrides: {
+      ...fileConfig?.flagOverrides,
+      ...envConfig.flagOverrides,
     },
   };
 }

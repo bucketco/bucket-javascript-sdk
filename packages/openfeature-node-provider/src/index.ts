@@ -12,18 +12,18 @@ import {
 } from "@openfeature/server-sdk";
 
 import {
-  BucketClient,
   ClientOptions,
-  Context as BucketContext,
-} from "@bucketco/node-sdk";
+  Context as ReflagContext,
+  ReflagClient,
+} from "@reflag/node-sdk";
 
 type ProviderOptions = ClientOptions & {
-  contextTranslator?: (context: EvaluationContext) => BucketContext;
+  contextTranslator?: (context: EvaluationContext) => ReflagContext;
 };
 
 export const defaultContextTranslator = (
   context: EvaluationContext,
-): BucketContext => {
+): ReflagContext => {
   const user = {
     id: context.targetingKey ?? context["userId"]?.toString(),
     name: context["name"]?.toString(),
@@ -45,19 +45,19 @@ export const defaultContextTranslator = (
   };
 };
 
-export class BucketNodeProvider implements Provider {
+export class ReflagNodeProvider implements Provider {
   public readonly events = new OpenFeatureEventEmitter();
 
-  private _client: BucketClient;
+  private _client: ReflagClient;
 
-  private contextTranslator: (context: EvaluationContext) => BucketContext;
+  private contextTranslator: (context: EvaluationContext) => ReflagContext;
 
   public runsOn: Paradigm = "server";
 
   public status: ServerProviderStatus = ServerProviderStatus.NOT_READY;
 
   public metadata = {
-    name: "bucket-node",
+    name: "reflag-node",
   };
 
   get client() {
@@ -65,7 +65,7 @@ export class BucketNodeProvider implements Provider {
   }
 
   constructor({ contextTranslator, ...opts }: ProviderOptions) {
-    this._client = new BucketClient(opts);
+    this._client = new ReflagClient(opts);
     this.contextTranslator = contextTranslator ?? defaultContextTranslator;
   }
 
@@ -77,9 +77,9 @@ export class BucketNodeProvider implements Provider {
   private resolveFeature<T extends JsonValue>(
     flagKey: string,
     defaultValue: T,
-    context: BucketContext,
+    context: ReflagContext,
     resolveFn: (
-      feature: ReturnType<typeof this._client.getFeature>,
+      feature: ReturnType<typeof this._client.getFlag>,
     ) => Promise<ResolutionDetails<T>>,
   ): Promise<ResolutionDetails<T>> {
     if (this.status !== ServerProviderStatus.READY) {
@@ -87,7 +87,7 @@ export class BucketNodeProvider implements Provider {
         value: defaultValue,
         reason: StandardResolutionReasons.ERROR,
         errorCode: ErrorCode.PROVIDER_NOT_READY,
-        errorMessage: "Bucket client not initialized",
+        errorMessage: "Reflag client not initialized",
       });
     }
 
@@ -100,9 +100,9 @@ export class BucketNodeProvider implements Provider {
       });
     }
 
-    const featureDefs = this._client.getFeatureDefinitions();
-    if (featureDefs.some(({ key }) => key === flagKey)) {
-      return resolveFn(this._client.getFeature(context, flagKey));
+    const flagDefs = this._client.getFlagDefinitions();
+    if (flagDefs.some(({ flagKey: key }) => key === flagKey)) {
+      return resolveFn(this._client.getFlag(context, flagKey));
     }
 
     return Promise.resolve({
@@ -122,12 +122,20 @@ export class BucketNodeProvider implements Provider {
       flagKey,
       defaultValue,
       this.contextTranslator(context),
-      (feature) => {
-        return Promise.resolve({
-          value: feature.isEnabled,
-          variant: feature.config?.key,
-          reason: StandardResolutionReasons.TARGETING_MATCH,
-        });
+      async (flag) => {
+        if (typeof flag === "boolean") {
+          return {
+            value: flag,
+            reason: StandardResolutionReasons.TARGETING_MATCH,
+          };
+        }
+
+        return {
+          value: defaultValue,
+          reason: StandardResolutionReasons.ERROR,
+          errorCode: ErrorCode.TYPE_MISMATCH,
+          errorMessage: `Expected flag ${flagKey} to be a boolean, but got ${typeof flag}`,
+        };
       },
     );
   }
@@ -141,19 +149,21 @@ export class BucketNodeProvider implements Provider {
       flagKey,
       defaultValue,
       this.contextTranslator(context),
-      (feature) => {
-        if (!feature.config.key) {
-          return Promise.resolve({
-            value: defaultValue,
-            reason: StandardResolutionReasons.DEFAULT,
-          });
+      async (flag) => {
+        if (typeof flag === "object" && "key" in flag) {
+          return {
+            value: flag.key,
+            variant: flag.key,
+            reason: StandardResolutionReasons.TARGETING_MATCH,
+          };
         }
 
-        return Promise.resolve({
-          value: feature.config.key as string,
-          variant: feature.config.key,
-          reason: StandardResolutionReasons.TARGETING_MATCH,
-        });
+        return {
+          value: defaultValue,
+          reason: StandardResolutionReasons.ERROR,
+          errorCode: ErrorCode.TYPE_MISMATCH,
+          errorMessage: `Expected flag ${flagKey} to be a multi-variant, but got ${typeof flag}`,
+        };
       },
     );
   }
@@ -167,7 +177,7 @@ export class BucketNodeProvider implements Provider {
       reason: StandardResolutionReasons.ERROR,
       errorCode: ErrorCode.GENERAL,
       errorMessage:
-        "Bucket doesn't support this method. Use `resolveObjectEvaluation` instead.",
+        "Reflag doesn't support this method. Use `resolveObjectEvaluation` instead.",
     });
   }
 
@@ -180,29 +190,38 @@ export class BucketNodeProvider implements Provider {
       flagKey,
       defaultValue,
       this.contextTranslator(context),
-      (feature) => {
-        const expType = typeof defaultValue;
-        const payloadType = typeof feature.config.payload;
+      async (flag) => {
+        if (typeof flag === "object" && "key" in flag) {
+          const expType = typeof defaultValue;
+          const payloadType = typeof flag.payload;
 
-        if (
-          feature.config.payload === undefined ||
-          feature.config.payload === null ||
-          payloadType !== expType
-        ) {
-          return Promise.resolve({
-            value: defaultValue,
-            variant: feature.config.key,
-            reason: StandardResolutionReasons.ERROR,
-            errorCode: ErrorCode.TYPE_MISMATCH,
-            errorMessage: `Expected remote config payload of type \`${expType}\` but got \`${payloadType}\`.`,
-          });
+          if (
+            flag.payload === undefined ||
+            flag.payload === null ||
+            payloadType !== expType
+          ) {
+            return {
+              value: defaultValue,
+              reason: StandardResolutionReasons.ERROR,
+              variant: flag.key,
+              errorCode: ErrorCode.TYPE_MISMATCH,
+              errorMessage: `Expected flag ${flagKey} to be a multi-variant with payload of type \`${expType}\` but got \`${payloadType}\`.`,
+            };
+          }
+
+          return {
+            value: flag.payload,
+            variant: flag.key,
+            reason: StandardResolutionReasons.TARGETING_MATCH,
+          };
         }
 
-        return Promise.resolve({
-          value: feature.config.payload,
-          variant: feature.config.key,
-          reason: StandardResolutionReasons.TARGETING_MATCH,
-        });
+        return {
+          value: defaultValue,
+          reason: StandardResolutionReasons.ERROR,
+          errorCode: ErrorCode.TYPE_MISMATCH,
+          errorMessage: `Expected flag ${flagKey} to be a multi-variant, but got ${typeof flag}`,
+        };
       },
     );
   }
@@ -232,3 +251,9 @@ export class BucketNodeProvider implements Provider {
     await this._client.flush();
   }
 }
+
+/**
+ * @deprecated
+ * Use ReflagNodeProvider instead
+ */
+export const BucketNodeProvider = ReflagNodeProvider;

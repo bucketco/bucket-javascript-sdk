@@ -4,16 +4,17 @@ import {
   EvaluationResult,
   flattenJSON,
   newEvaluator,
-} from "@bucketco/flag-evaluation";
+} from "@reflag/flag-evaluation";
 
 import BatchBuffer from "./batch-buffer";
 import {
   API_BASE_URL,
   API_TIMEOUT_MS,
-  BUCKET_LOG_PREFIX,
-  FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
-  FEATURES_REFETCH_MS,
+  FLAG_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
+  FLAG_FETCH_RETRIES,
+  FLAGS_REFETCH_MS,
   loadConfig,
+  REFLAG_LOG_PREFIX,
   SDK_VERSION,
   SDK_VERSION_HEADER_NAME,
 } from "./config";
@@ -23,15 +24,16 @@ import inRequestCache from "./inRequestCache";
 import periodicallyUpdatingCache from "./periodicallyUpdatingCache";
 import { newRateLimiter } from "./rate-limiter";
 import type {
-  CachedFeatureDefinition,
+  CachedFlagDefinition,
   CacheStrategy,
-  EvaluatedFeaturesAPIResponse,
-  FeatureDefinition,
-  FeatureOverrides,
-  FeatureOverridesFn,
+  EvaluatedFlagsAPIResponse,
+  FlagDefinition,
+  FlagKey,
+  FlagOverridesFn,
   IdType,
-  RawFeature,
-  TypedFeatureKey,
+  RawFlag,
+  TypedFlags,
+  UntypedFlag,
 } from "./types";
 import {
   Attributes,
@@ -39,13 +41,12 @@ import {
   ClientOptions,
   Context,
   ContextWithTracking,
-  FeatureEvent,
-  FeaturesAPIResponse,
+  FlagEvent,
+  FlagsAPIResponse,
   HttpClient,
   Logger,
   TrackingMeta,
   TrackOptions,
-  TypedFeatures,
 } from "./types";
 import {
   applyLogLevel,
@@ -58,9 +59,7 @@ import {
   once,
 } from "./utils";
 
-const bucketConfigDefaultFile = "bucketConfig.json";
-
-type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+const CONFIG_FILE = "reflag.config.json";
 
 type BulkEvent =
   | {
@@ -102,39 +101,38 @@ type BulkEvent =
  * The SDK client.
  *
  * @remarks
- * This is the main class for interacting with Bucket.
- * It is used to evaluate feature flags, update user and company contexts, and track events.
+ * This is the main class for interacting with Reflag.
+ * It is used to evaluate flags, update user and company contexts, and track events.
  *
  * @example
  * ```ts
- * // set the BUCKET_SECRET_KEY environment variable or pass the secret key to the constructor
- * const client = new BucketClient();
+ * // set the REFLAG_SECRET_KEY environment variable or pass the secret key to the constructor
+ * const client = new ReflagClient();
  *
- * // evaluate a feature flag
- * const isFeatureEnabled = client.getFeature("feature-flag-key", {
+ * // evaluate a flag
+ * const isEnabled = client.getFlag("flag-key", {
  *   user: { id: "user-id" },
  *   company: { id: "company-id" },
  * });
  * ```
  **/
-export class BucketClient {
+export class ReflagClient {
   private _config: {
     apiBaseUrl: string;
     refetchInterval: number;
     staleWarningInterval: number;
     headers: Record<string, string>;
-    fallbackFeatures?: Record<TypedFeatureKey, RawFeature>;
-    featureOverrides: FeatureOverridesFn;
+    fallbackFlags?: TypedFlags;
+    flagOverrides: (context: Context) => TypedFlags;
     offline: boolean;
-    emitEvaluationEvents: boolean;
     configFile?: string;
-    featuresFetchRetries: number;
+    fetchRetries: number;
     fetchTimeoutMs: number;
     cacheStrategy: CacheStrategy;
   };
   httpClient: HttpClient;
 
-  private featuresCache: Cache<CachedFeatureDefinition[]>;
+  private flagsCache: Cache<CachedFlagDefinition[]>;
   private batchBuffer: BatchBuffer<BulkEvent>;
   private rateLimiter: ReturnType<typeof newRateLimiter>;
 
@@ -147,10 +145,10 @@ export class BucketClient {
   private _initialize = once(async () => {
     const start = Date.now();
     if (!this._config.offline) {
-      await this.featuresCache.refresh();
+      await this.flagsCache.refresh();
     }
     this.logger.info(
-      "Bucket initialized in " +
+      "Reflag initialized in " +
         Math.round(Date.now() - start) +
         "ms" +
         (this._config.offline ? " (offline mode)" : ""),
@@ -169,12 +167,12 @@ export class BucketClient {
    * @param options.httpClient - The HTTP client to use for sending requests (optional).
    * @param options.logLevel - The log level to use for logging (optional).
    * @param options.offline - Whether to run in offline mode (optional).
-   * @param options.fallbackFeatures - The fallback features to use if the feature is not found (optional).
+   * @param options.fallbackFlags - The fallback flags to use if the flag is not found (optional).
    * @param options.batchOptions - The options for the batch buffer (optional).
-   * @param options.featureOverrides - The feature overrides to use for the client (optional).
+   * @param options.flagOverrides - The flag overrides to use for the client (optional).
    * @param options.configFile - The path to the config file (optional).
-   * @param options.featuresFetchRetries - Number of retries for fetching features (optional, defaults to 3).
-   * @param options.fetchTimeoutMs - Timeout for fetching features (optional, defaults to 10000ms).
+   * @param options.flagsFetchRetries - Number of retries for fetching flags (optional, defaults to 3).
+   * @param options.fetchTimeoutMs - Timeout for fetching flags (optional, defaults to 10000ms).
    * @param options.cacheStrategy - The cache strategy to use for the client (optional, defaults to "periodically-update").
    *
    * @throws An error if the options are invalid.
@@ -182,11 +180,6 @@ export class BucketClient {
   constructor(options: ClientOptions = {}) {
     ok(isObject(options), "options must be an object");
 
-    ok(
-      options.host === undefined ||
-        (typeof options.host === "string" && options.host.length > 0),
-      "host must be a string",
-    );
     ok(
       options.apiBaseUrl === undefined ||
         (typeof options.apiBaseUrl === "string" &&
@@ -201,11 +194,10 @@ export class BucketClient {
       options.httpClient === undefined || isObject(options.httpClient),
       "httpClient must be an object",
     );
+
     ok(
-      options.fallbackFeatures === undefined ||
-        Array.isArray(options.fallbackFeatures) ||
-        isObject(options.fallbackFeatures),
-      "fallbackFeatures must be an array or object",
+      options.fallbackFlags === undefined || isObject(options.fallbackFlags),
+      "fallbackFlags must be an object",
     );
     ok(
       options.batchOptions === undefined || isObject(options.batchOptions),
@@ -218,10 +210,10 @@ export class BucketClient {
     );
 
     ok(
-      options.featuresFetchRetries === undefined ||
-        (Number.isInteger(options.featuresFetchRetries) &&
-          options.featuresFetchRetries >= 0),
-      "featuresFetchRetries must be a non-negative integer",
+      options.flagsFetchRetries === undefined ||
+        (Number.isInteger(options.flagsFetchRetries) &&
+          options.flagsFetchRetries >= 0),
+      "flagsFetchRetries must be a non-negative integer",
     );
 
     ok(
@@ -232,11 +224,8 @@ export class BucketClient {
     );
 
     if (!options.configFile) {
-      options.configFile =
-        (process.env.BUCKET_CONFIG_FILE ??
-        fs.existsSync(bucketConfigDefaultFile))
-          ? bucketConfigDefaultFile
-          : undefined;
+      const files = [process.env.REFLAG_CONFIG_FILE, CONFIG_FILE];
+      options.configFile = files.find((file) => file && fs.existsSync(file));
     }
 
     const externalConfig = loadConfig(options.configFile);
@@ -256,47 +245,23 @@ export class BucketClient {
 
     this.logger = options.logger
       ? options.logger
-      : applyLogLevel(decorateLogger(BUCKET_LOG_PREFIX, console), logLevel);
+      : applyLogLevel(decorateLogger(REFLAG_LOG_PREFIX, console), logLevel);
 
-    // todo: deprecate fallback features in favour of a more operationally
-    //  friendly way of setting fall backs.
-    const fallbackFeatures = Array.isArray(options.fallbackFeatures)
-      ? options.fallbackFeatures.reduce(
-          (acc, key) => {
-            acc[key as TypedFeatureKey] = {
-              isEnabled: true,
-              key,
-            };
-            return acc;
-          },
-          {} as Record<TypedFeatureKey, RawFeature>,
-        )
-      : isObject(options.fallbackFeatures)
-        ? Object.entries(options.fallbackFeatures).reduce(
-            (acc, [key, fallback]) => {
-              acc[key as TypedFeatureKey] = {
-                isEnabled:
-                  typeof fallback === "object"
-                    ? fallback.isEnabled
-                    : !!fallback,
-                key,
-                config:
-                  typeof fallback === "object" && fallback.config
-                    ? {
-                        key: fallback.config.key,
-                        payload: fallback.config.payload,
-                      }
-                    : undefined,
-              };
-              return acc;
-            },
-            {} as Record<TypedFeatureKey, RawFeature>,
-          )
-        : undefined;
+    const fallbackFlags =
+      options.fallbackFlags &&
+      Object.entries(options.fallbackFlags).reduce(
+        (acc, [key, fallback]) => {
+          if (typeof fallback === "object" && fallback) {
+            acc[key as FlagKey] = fallback;
+          } else {
+            acc[key as FlagKey] = !!fallback;
+          }
+          return acc;
+        },
+        {} as Record<FlagKey, UntypedFlag>,
+      );
 
-    this.rateLimiter = newRateLimiter(
-      FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
-    );
+    this.rateLimiter = newRateLimiter(FLAG_EVENT_RATE_LIMITER_WINDOW_SIZE_MS);
     this.httpClient = options.httpClient || fetchClient;
     this.batchBuffer = new BatchBuffer<BulkEvent>({
       ...options?.batchOptions,
@@ -306,24 +271,24 @@ export class BucketClient {
 
     this._config = {
       offline,
-      emitEvaluationEvents: config.emitEvaluationEvents ?? true,
-      apiBaseUrl: (config.apiBaseUrl ?? config.host) || API_BASE_URL,
+      apiBaseUrl: config.apiBaseUrl || API_BASE_URL,
       headers: {
         "Content-Type": "application/json",
         [SDK_VERSION_HEADER_NAME]: SDK_VERSION,
         ["Authorization"]: `Bearer ${config.secretKey}`,
       },
-      refetchInterval: FEATURES_REFETCH_MS,
-      staleWarningInterval: FEATURES_REFETCH_MS * 5,
-      fallbackFeatures: fallbackFeatures,
-      featureOverrides:
-        typeof config.featureOverrides === "function"
-          ? config.featureOverrides
-          : () => config.featureOverrides,
-      featuresFetchRetries: options.featuresFetchRetries ?? 3,
+      refetchInterval: FLAGS_REFETCH_MS,
+      staleWarningInterval: FLAGS_REFETCH_MS * 5,
+      fallbackFlags: fallbackFlags,
+      flagOverrides: () => ({}),
+      fetchRetries: options.flagsFetchRetries ?? FLAG_FETCH_RETRIES,
       fetchTimeoutMs: options.fetchTimeoutMs ?? API_TIMEOUT_MS,
       cacheStrategy: options.cacheStrategy ?? "periodically-update",
     };
+
+    if (config.flagOverrides) {
+      this.flagOverrides = config.flagOverrides;
+    }
 
     if ((config.batchOptions?.flushOnExit ?? true) && !this._config.offline) {
       triggerOnExit(() => this.flush());
@@ -333,28 +298,29 @@ export class BucketClient {
       this._config.apiBaseUrl += "/";
     }
 
-    const fetchFeatures = async () => {
-      const res = await this.get<FeaturesAPIResponse>(
+    const fetchFlags = async () => {
+      const res = await this.get<FlagsAPIResponse>(
         "features",
-        this._config.featuresFetchRetries,
+        this._config.fetchRetries,
       );
+
       if (!isObject(res) || !Array.isArray(res?.features)) {
-        this.logger.warn("features cache: invalid response", res);
+        this.logger.warn("flags cache: invalid response", res);
         return undefined;
       }
 
-      return res.features.map((featureDef) => {
+      return res.features.map((flagDef) => {
         return {
-          ...featureDef,
+          ...flagDef,
           enabledEvaluator: newEvaluator(
-            featureDef.targeting.rules.map((rule) => ({
+            flagDef.targeting.rules.map((rule) => ({
               filter: rule.filter,
               value: true,
             })),
           ),
-          configEvaluator: featureDef.config
+          configEvaluator: flagDef.config
             ? newEvaluator(
-                featureDef.config?.variants.map((variant) => ({
+                flagDef.config?.variants.map((variant) => ({
                   filter: variant.filter,
                   value: {
                     key: variant.key,
@@ -363,53 +329,53 @@ export class BucketClient {
                 })),
               )
             : undefined,
-        } satisfies CachedFeatureDefinition;
+        } satisfies CachedFlagDefinition;
       });
     };
 
     if (this._config.cacheStrategy === "periodically-update") {
-      this.featuresCache = periodicallyUpdatingCache<CachedFeatureDefinition[]>(
+      this.flagsCache = periodicallyUpdatingCache<CachedFlagDefinition[]>(
         this._config.refetchInterval,
         this._config.staleWarningInterval,
         this.logger,
-        fetchFeatures,
+        fetchFlags,
       );
     } else {
-      this.featuresCache = inRequestCache<CachedFeatureDefinition[]>(
+      this.flagsCache = inRequestCache<CachedFlagDefinition[]>(
         this._config.refetchInterval,
         this.logger,
-        fetchFeatures,
+        fetchFlags,
       );
     }
   }
 
   /**
-   * Sets the feature overrides.
+   * Sets the flag overrides.
    *
-   * @param overrides - The feature overrides.
+   * @param overrides - The flag overrides.
    *
    * @remarks
-   * The feature overrides are used to override the feature definitions.
+   * The flag overrides are used to override the flag definitions.
    * This is useful for testing or development.
    *
    * @example
    * ```ts
-   * client.featureOverrides = {
-   *   "feature-1": true,
-   *   "feature-2": false,
+   * client.flagOverrides = {
+   *   "flag-1": true,
+   *   "flag-2": false,
    * };
    * ```
    **/
-  set featureOverrides(overrides: FeatureOverridesFn | FeatureOverrides) {
+  set flagOverrides(overrides: FlagOverridesFn | TypedFlags) {
     if (typeof overrides === "object") {
-      this._config.featureOverrides = () => overrides;
+      this._config.flagOverrides = () => overrides;
     } else {
-      this._config.featureOverrides = overrides;
+      this._config.flagOverrides = overrides;
     }
   }
 
   /**
-   * Clears the feature overrides.
+   * Clears the flag overrides.
    *
    * @remarks
    * This is useful for testing or development.
@@ -417,18 +383,18 @@ export class BucketClient {
    * @example
    * ```ts
    * afterAll(() => {
-   *   client.clearFeatureOverrides();
+   *   client.clearFlagOverrides();
    * });
    * ```
    **/
-  clearFeatureOverrides() {
-    this._config.featureOverrides = () => ({});
+  clearFlagOverrides() {
+    this._config.flagOverrides = () => ({});
   }
 
   /**
-   * Returns a new BoundBucketClient with the user/company/otherContext
+   * Returns a new BoundReflagClient with the user/company/otherContext
    * set to be used in subsequent calls.
-   * For example, for evaluating feature targeting or tracking events.
+   * For example, for evaluating flags targeting or tracking events.
    *
    * @param context - The context to bind the client to.
    * @param context.enableTracking - Whether to enable tracking for the context.
@@ -448,11 +414,11 @@ export class BucketClient {
     enableTracking = true,
     ...context
   }: ContextWithTracking) {
-    return new BoundBucketClient(this, { enableTracking, ...context });
+    return new BoundReflagClient(this, { enableTracking, ...context });
   }
 
   /**
-   * Updates the associated user in Bucket.
+   * Updates the associated user in Reflag.
    *
    * @param userId - The userId of the user to update.
    * @param options - The options for the user.
@@ -488,7 +454,7 @@ export class BucketClient {
   }
 
   /**
-   * Updates the associated company in Bucket.
+   * Updates the associated company in Reflag.
    *
    * @param companyId - The companyId of the company to update.
    * @param options - The options for the company.
@@ -533,7 +499,7 @@ export class BucketClient {
   }
 
   /**
-   * Tracks an event in Bucket.
+   * Tracks an event in Reflag.
 
    * @param options.companyId - Optional company ID for the event (optional).
    *
@@ -576,10 +542,10 @@ export class BucketClient {
   }
 
   /**
-   * Initializes the client by caching the features definitions.
+   * Initializes the client by caching the flags definitions.
    *
    * @remarks
-   * Call this method before calling `getFeatures` to ensure the feature definitions are cached.
+   * Call this method before calling `getFlags` to ensure the flag definitions are cached.
    * The client will ignore subsequent calls to this method.
    **/
   public async initialize() {
@@ -588,7 +554,7 @@ export class BucketClient {
   }
 
   /**
-   * Flushes and completes any in-flight fetches in the feature cache.
+   * Flushes and completes any in-flight fetches in the flag cache.
    *
    * @remarks
    * It is recommended to call this method when the application is shutting down to ensure all events are sent
@@ -602,108 +568,215 @@ export class BucketClient {
     }
 
     await this.batchBuffer.flush();
-    await this.featuresCache.waitRefresh();
+    await this.flagsCache.waitRefresh();
   }
 
   /**
-   * Gets the feature definitions, including all config values.
-   * To evaluate which features are enabled for a given user/company, use `getFeatures`.
+   * Gets the flag definitions, including all config values.
+   * To evaluate which flags are enabled for a given user/company, use `getFlags`.
    *
-   * @returns The features definitions.
+   * @returns The flags definitions.
    */
-  public getFeatureDefinitions(): FeatureDefinition[] {
-    const features = this.featuresCache.get() || [];
-    return features.map((f) => ({
-      key: f.key,
-      description: f.description,
-      flag: f.targeting,
-      config: f.config,
-    }));
+  public getFlagDefinitions(): FlagDefinition[] {
+    const flags = this.flagsCache.get() || [];
+
+    return flags.map((f) => {
+      if (!f.config) {
+        return {
+          flagKey: f.key,
+          description: f.description,
+          version: f.targeting.version,
+          type: "toggle",
+          rules: f.targeting.rules.map((r) => ({
+            filter: r.filter,
+            value: true,
+          })),
+        };
+      } else {
+        return {
+          flagKey: f.key,
+          description: f.description,
+          version: f.config.version,
+          type: "multi-variate",
+          rules: f.config!.variants.map((v) => ({
+            filter: v.filter,
+            value: { key: v.key, payload: v.payload },
+          })),
+        };
+      }
+    });
+  }
+
+  private _expandRawFlag<TKey extends FlagKey>(
+    context: Context,
+    rawFlag: RawFlag,
+    enableTracking: boolean,
+    enableChecks: boolean,
+  ): TypedFlags[TKey] {
+    if (rawFlag.config?.key) {
+      const value = {
+        key: rawFlag.config.key,
+        payload: rawFlag.config.payload,
+      };
+
+      if (enableTracking && enableChecks) {
+        this._warnMissingFlagContextFields(context, rawFlag);
+        void this.sendFlagEvent({
+          action: "check-config",
+          flagKey: rawFlag.key,
+          targetingVersion: rawFlag.config?.targetingVersion,
+          evalResult: value,
+          evalContext: context,
+          evalRuleResults: rawFlag.config?.ruleEvaluationResults,
+          evalMissingFields: rawFlag.config?.missingContextFields,
+        }).catch((err) => {
+          this.logger?.error(
+            `failed to send check event for flag "${rawFlag.key}": ${err}`,
+            err,
+          );
+        });
+      }
+
+      return value;
+    } else {
+      if (enableTracking && enableChecks) {
+        this._warnMissingFlagContextFields(context, rawFlag);
+        void this.sendFlagEvent({
+          action: "check",
+          flagKey: rawFlag.key,
+          targetingVersion: rawFlag.targetingVersion,
+          evalResult: rawFlag.isEnabled ?? false,
+          evalContext: context,
+          evalRuleResults: rawFlag.ruleEvaluationResults,
+          evalMissingFields: rawFlag.missingContextFields,
+        }).catch((err) => {
+          this.logger?.error(
+            `failed to send check event for flag "${rawFlag.key}": ${err}`,
+            err,
+          );
+        });
+      }
+      return rawFlag.isEnabled ?? false;
+    }
   }
 
   /**
-   * Gets the evaluated features for the current context which includes the user, company, and custom context.
+   * Gets the evaluated flags for the current context which includes the user, company, and custom context.
    *
-   * @param options - The options for the context.
-   * @param options.enableTracking - Whether to enable tracking for the context.
-   * @param options.meta - The meta context associated with the context.
-   * @param options.user - The user context.
-   * @param options.company - The company context.
-   * @param options.other - The other context.
+   * @param enableTracking - Whether to enable tracking for the context.
+   * @param context.meta - The meta context associated with the context.
+   * @param context.user - The user context.
+   * @param context.company - The company context.
+   * @param context.other - The other context.
    *
-   * @returns The evaluated features.
+   * @returns The evaluated flags.
    *
    * @remarks
-   * Call `initialize` before calling this method to ensure the feature definitions are cached, no features will be returned otherwise.
+   * Call `initialize` before calling this method to ensure the flag definitions are cached, no flags will be returned otherwise.
    **/
-  public getFeatures({
+  public getFlags({
     enableTracking = true,
+    meta,
     ...context
-  }: ContextWithTracking): TypedFeatures {
-    return this._getFeatures({ enableTracking, ...context });
-  }
+  }: ContextWithTracking): TypedFlags {
+    const flags = this._getRawFlags({ enableTracking, meta, ...context });
 
-  /**
-   * Gets the evaluated feature for the current context which includes the user, company, and custom context.
-   * Using the `isEnabled` property sends a `check` event to Bucket.
-   *
-   * @param key - The key of the feature to get.
-   * @returns The evaluated feature.
-   *
-   * @remarks
-   * Call `initialize` before calling this method to ensure the feature definitions are cached, no features will be returned otherwise.
-   **/
-  public getFeature<TKey extends TypedFeatureKey>(
-    { enableTracking = true, ...context }: ContextWithTracking,
-    key: TKey,
-  ): TypedFeatures[TKey] {
-    return this._getFeatures({ enableTracking, ...context }, key);
-  }
-
-  /**
-   * Gets evaluated features with the usage of remote context.
-   * This method triggers a network request every time it's called.
-   *
-   * @param userId - The userId of the user to get the features for.
-   * @param companyId - The companyId of the company to get the features for.
-   * @param additionalContext - The additional context to get the features for.
-   *
-   * @returns evaluated features
-   */
-  public async getFeaturesRemote(
-    userId?: IdType,
-    companyId?: IdType,
-    additionalContext?: Context,
-  ): Promise<TypedFeatures> {
-    return this._getFeaturesRemote(
-      undefined,
-      userId,
-      companyId,
-      additionalContext,
+    return Object.fromEntries(
+      Object.entries(flags).map(([k, flag]) => [
+        k,
+        this._expandRawFlag(context, flag, enableTracking, false),
+      ]),
     );
   }
 
   /**
-   * Gets evaluated feature with the usage of remote context.
+   * Gets the evaluated flag for the current context which includes the user, company, and custom context.
+   * This method generates a `check` event to Reflag.
+   *
+   * @param flagKey - The key of the flag to get.
+   * @returns The evaluated flag value.
+   *
+   * @remarks
+   * Call `initialize` before calling this method to ensure the flag definitions are cached, no flags will be returned otherwise.
+   **/
+  public getFlag<TKey extends FlagKey>(
+    { enableTracking = true, meta, ...context }: ContextWithTracking,
+    flagKey: TKey,
+  ): TypedFlags[TKey] {
+    const flag = this._getRawFlags(
+      { enableTracking, meta, ...context },
+      flagKey,
+    ) ?? {
+      key: flagKey,
+      isEnabled: false,
+    };
+
+    return this._expandRawFlag(context, flag, enableTracking, true);
+  }
+
+  /**
+   * Evaluates a flag remotely with the usage of remote context.
    * This method triggers a network request every time it's called.
    *
-   * @param key - The key of the feature to get.
-   * @param userId - The userId of the user to get the feature for.
-   * @param companyId - The companyId of the company to get the feature for.
-   * @param additionalContext - The additional context to get the feature for.
+   * @param flagKey - The key of the flag to evaluate.
+   * @param userId - The userId of the user to evaluate the flag for.
+   * @param companyId - The companyId of the company to evaluate the flag for.
+   * @param additionalContext - The additional context to evaluate the flag for.
    *
-   * @returns evaluated feature
+   * @returns evaluated flag value
    */
-  public async getFeatureRemote<TKey extends TypedFeatureKey>(
-    key: TKey,
+  public async getFlagRemote<TKey extends FlagKey>(
+    flagKey: TKey,
     userId?: IdType,
     companyId?: IdType,
     additionalContext?: Context,
-  ): Promise<TypedFeatures[TKey]> {
-    return this._getFeaturesRemote(key, userId, companyId, additionalContext);
+  ): Promise<TypedFlags[TKey]> {
+    const context = this._expandRemoteContext(
+      userId,
+      companyId,
+      additionalContext,
+    );
+
+    const flag = (await this._evaluateFlagsRemote(flagKey, context)) ?? {
+      key: flagKey,
+      isEnabled: false,
+    };
+
+    return this._expandRawFlag(context, flag, true, true);
   }
 
-  private buildUrl(path: string) {
+  /**
+   * Gets evaluated flags with the usage of remote context.
+   * This method triggers a network request every time it's called.
+   *
+   * @param userId - The userId of the user to get the flags for.
+   * @param companyId - The companyId of the company to get the flags for.
+   * @param additionalContext - The additional context to get the flags for.
+   *
+   * @returns evaluated flags
+   */
+  public async getFlagsRemote(
+    userId?: IdType,
+    companyId?: IdType,
+    additionalContext?: Context,
+  ): Promise<TypedFlags> {
+    const context = this._expandRemoteContext(
+      userId,
+      companyId,
+      additionalContext,
+    );
+
+    const flags = await this._evaluateFlagsRemote(undefined, context);
+
+    return Object.fromEntries(
+      Object.entries(flags).map(([k, v]) => [
+        k,
+        this._expandRawFlag(context, v, true, false),
+      ]),
+    );
+  }
+
+  private _buildUrl(path: string) {
     if (path.startsWith("/")) {
       path = path.slice(1);
     }
@@ -726,7 +799,7 @@ export class BucketClient {
     ok(typeof path === "string" && path.length > 0, "path must be a string");
     ok(typeof body === "object", "body must be an object");
 
-    const url = this.buildUrl(path);
+    const url = this._buildUrl(path);
     try {
       const response = await this.httpClient.post<TBody, { success: boolean }>(
         url,
@@ -763,7 +836,7 @@ export class BucketClient {
     ok(typeof path === "string" && path.length > 0, "path must be a string");
 
     try {
-      const url = this.buildUrl(path);
+      const url = this._buildUrl(path);
       return await withRetry(
         async () => {
           const response = await this.httpClient.get<
@@ -785,7 +858,7 @@ export class BucketClient {
           return result as TResponse;
         },
         () => {
-          this.logger.warn("failed to fetch features, will retry");
+          this.logger.warn("failed to fetch flags, will retry");
         },
         retries,
         1000,
@@ -801,7 +874,7 @@ export class BucketClient {
   }
 
   /**
-   * Sends a batch of events to the Bucket API.
+   * Sends a batch of events to the Reflag API.
    *
    * @param events - The events to send.
    *
@@ -820,40 +893,37 @@ export class BucketClient {
   }
 
   /**
-   * Sends a feature event to the Bucket API.
+   * Sends a flag event to the Reflag API.
    *
-   * Feature events are used to track the evaluation of feature targeting rules.
-   * "check" events are sent when a feature's `isEnabled` property is checked.
-   * "evaluate" events are sent when a feature's targeting rules are matched against
+   * Flag events are used to track the evaluation of flag targeting rules.
+   * "check" events are sent when a flag's `isEnabled` property is checked.
+   * "evaluate" events are sent when a flag's targeting rules are matched against
    * the current context.
    *
    * @param event - The event to send.
    * @param event.action - The action to send.
-   * @param event.key - The key of the feature to send.
-   * @param event.targetingVersion - The targeting version of the feature to send.
-   * @param event.evalResult - The evaluation result of the feature to send.
-   * @param event.evalContext - The evaluation context of the feature to send.
-   * @param event.evalRuleResults - The evaluation rule results of the feature to send.
-   * @param event.evalMissingFields - The evaluation missing fields of the feature to send.
+   * @param event.flagKey - The key of the flag to send.
+   * @param event.targetingVersion - The targeting version of the flag to send.
+   * @param event.evalResult - The evaluation result of the flag to send.
+   * @param event.evalContext - The evaluation context of the flag to send.
+   * @param event.evalRuleResults - The evaluation rule results of the flag to send.
+   * @param event.evalMissingFields - The evaluation missing fields of the flag to send.
    *
    * @throws An error if the event is invalid.
    *
    * @remarks
    * This method is rate-limited to prevent too many events from being sent.
    **/
-  private async sendFeatureEvent(event: FeatureEvent) {
+  private async sendFlagEvent(event: FlagEvent) {
     ok(typeof event === "object", "event must be an object");
     ok(
       typeof event.action === "string" &&
-        (event.action === "evaluate" ||
-          event.action === "evaluate-config" ||
-          event.action === "check" ||
-          event.action === "check-config"),
+        (event.action === "check" || event.action === "check-config"),
       "event must have an action",
     );
     ok(
-      typeof event.key === "string" && event.key.length > 0,
-      "event must have a feature key",
+      typeof event.flagKey === "string" && event.flagKey.length > 0,
+      "event must have a flag key",
     );
     ok(
       typeof event.targetingVersion === "number" ||
@@ -888,17 +958,10 @@ export class BucketClient {
     }
 
     if (
-      !this._config.emitEvaluationEvents &&
-      (event.action === "evaluate" || event.action === "evaluate-config")
-    ) {
-      return;
-    }
-
-    if (
       !this.rateLimiter.isAllowed(
         hashObject({
           action: event.action,
-          key: event.key,
+          flagKey: event.flagKey,
           targetingVersion: event.targetingVersion,
           evalResult: event.evalResult,
           contextKey,
@@ -911,7 +974,7 @@ export class BucketClient {
     await this.batchBuffer.add({
       type: "feature-flag-event",
       action: event.action,
-      key: event.key,
+      key: event.flagKey,
       targetingVersion: event.targetingVersion,
       evalContext: event.evalContext,
       evalResult: event.evalResult,
@@ -921,8 +984,8 @@ export class BucketClient {
   }
 
   /**
-   * Updates the context in Bucket (if needed).
-   * This method should be used before requesting feature flags or binding a client.
+   * Updates the context in Reflag (if needed).
+   * This method should be used before requesting flags or binding a client.
    *
    * @param options - The options for the context.
    * @param options.enableTracking - Whether to enable tracking for the context.
@@ -965,114 +1028,106 @@ export class BucketClient {
   }
 
   /**
-   * Warns if a feature has targeting rules that require context fields that are missing.
+   * Warns if a flag has targeting rules that require context fields that are missing.
    *
    * @param context - The context.
-   * @param feature - The feature to check.
+   * @param rawFlag - The raw flag.
    */
-  private _warnMissingFeatureContextFields(
-    context: Context,
-    feature: {
-      key: string;
-      missingContextFields?: string[];
-      config?: {
-        key: string;
-        missingContextFields?: string[];
-      };
-    },
-  ) {
+  private _warnMissingFlagContextFields(context: Context, rawFlag: RawFlag) {
     const report: Record<string, string[]> = {};
-    const { config, ...featureData } = feature;
+
+    const missingFields = [
+      ...(rawFlag.missingContextFields || []),
+      ...(rawFlag.config?.missingContextFields || []),
+    ];
 
     if (
-      featureData.missingContextFields?.length &&
+      missingFields.length &&
       this.rateLimiter.isAllowed(
         hashObject({
-          featureKey: featureData.key,
-          missingContextFields: featureData.missingContextFields,
+          flagKey: rawFlag.key,
+          missingContextFields: rawFlag.missingContextFields,
           context,
         }),
       )
     ) {
-      report[featureData.key] = featureData.missingContextFields;
-    }
-
-    if (
-      config?.missingContextFields?.length &&
-      this.rateLimiter.isAllowed(
-        hashObject({
-          featureKey: featureData.key,
-          configKey: config.key,
-          missingContextFields: config.missingContextFields,
-          context,
-        }),
-      )
-    ) {
-      report[`${featureData.key}.config`] = config.missingContextFields;
+      report[rawFlag.key] = missingFields;
     }
 
     if (Object.keys(report).length > 0) {
       this.logger.warn(
-        `feature/remote config targeting rules might not be correctly evaluated due to missing context fields.`,
+        `flag targeting rules might not be correctly evaluated due to missing context fields.`,
         report,
       );
     }
   }
 
-  private _getFeatures(options: ContextWithTracking): TypedFeatures;
-  private _getFeatures<TKey extends TypedFeatureKey>(
+  private _getRawFlags(options: ContextWithTracking): Record<FlagKey, RawFlag>;
+  private _getRawFlags<TKey extends FlagKey>(
     options: ContextWithTracking,
-    key: TKey,
-  ): TypedFeatures[TKey];
-  private _getFeatures<TKey extends TypedFeatureKey>(
+    flagKey: TKey,
+  ): RawFlag | undefined;
+  private _getRawFlags<TKey extends FlagKey>(
     options: ContextWithTracking,
-    key?: TKey,
-  ): TypedFeatures | TypedFeatures[TKey] {
+    flagKey?: TKey,
+  ): RawFlag | Record<FlagKey, RawFlag> | undefined {
     checkContextWithTracking(options);
 
     if (!this.initializationFinished) {
-      this.logger.error("getFeature(s): BucketClient is not initialized yet.");
+      this.logger.error("getFlag(s): ReflagClient is not initialized yet.");
     }
 
     void this.syncContext(options);
-    let featureDefinitions: CachedFeatureDefinition[] = [];
+    let flagDefinitions: CachedFlagDefinition[] = [];
 
     if (!this._config.offline) {
-      const featureDefs = this.featuresCache.get();
-      if (!featureDefs) {
+      const onlineFlagDefinitions = this.flagsCache.get();
+      if (!onlineFlagDefinitions) {
         this.logger.warn(
-          "no feature definitions available, using fallback features.",
+          "no flag definitions available, using fallback flags.",
         );
-        const fallbackFeatures = this._config.fallbackFeatures || {};
-        if (key) {
-          return this._wrapRawFeature(
-            { ...options, enableChecks: true },
-            { key, ...fallbackFeatures[key] },
-          );
+
+        const fallbackFlags = this._config.fallbackFlags || {};
+
+        if (flagKey) {
+          const flag = fallbackFlags[flagKey];
+          return flag !== undefined
+            ? {
+                key: flagKey,
+                isEnabled: !!flag,
+                config: isObject(flag) ? flag : undefined,
+              }
+            : undefined;
         }
+
         return Object.fromEntries(
-          Object.entries(fallbackFeatures).map(([k, v]) => [
-            k as TypedFeatureKey,
-            this._wrapRawFeature(options, v),
+          Object.entries(fallbackFlags).map(([key, flag]) => [
+            key,
+            {
+              key,
+              isEnabled: !!flag,
+              config: isObject(flag) ? flag : undefined,
+            },
           ]),
         );
       }
-      featureDefinitions = featureDefs;
+
+      flagDefinitions = onlineFlagDefinitions;
     }
 
-    const { enableTracking = true, meta: _, ...context } = options;
+    const { meta: _, ...context } = options;
 
-    const evaluated = featureDefinitions
-      .filter(({ key: featureKey }) => (key ? key === featureKey : true))
-      .map((feature) => ({
-        featureKey: feature.key,
-        targetingVersion: feature.targeting.version,
-        configVersion: feature.config?.version,
-        enabledResult: feature.enabledEvaluator(context, feature.key),
+    const evaluated = flagDefinitions
+      .filter(({ key }) => (flagKey ? flagKey === key : true))
+      .map((flag) => ({
+        flagKey: flag.key,
+        targetingVersion: flag.targeting.version,
+        configVersion: flag.config?.version,
+        enabledResult: flag.enabledEvaluator(context, flag.key),
         configResult:
-          feature.configEvaluator?.(context, feature.key) ??
+          flag.configEvaluator?.(context, flag.key) ??
           ({
-            featureKey: feature.key,
+            flagKey: flag.key,
             context,
             value: undefined,
             ruleEvaluationResults: [],
@@ -1080,215 +1135,65 @@ export class BucketClient {
           } satisfies EvaluationResult<any>),
       }));
 
-    if (enableTracking) {
-      const promises = evaluated
-        .map((res) => {
-          const outPromises: Promise<void>[] = [];
-          outPromises.push(
-            this.sendFeatureEvent({
-              action: "evaluate",
-              key: res.featureKey,
-              targetingVersion: res.targetingVersion,
-              evalResult: res.enabledResult.value ?? false,
-              evalContext: res.enabledResult.context,
-              evalRuleResults: res.enabledResult.ruleEvaluationResults,
-              evalMissingFields: res.enabledResult.missingContextFields,
-            }),
-          );
-
-          const config = res.configResult;
-          if (config.value) {
-            outPromises.push(
-              this.sendFeatureEvent({
-                action: "evaluate-config",
-                key: res.featureKey,
-                targetingVersion: res.configVersion,
-                evalResult: config.value,
-                evalContext: config.context,
-                evalRuleResults: config.ruleEvaluationResults,
-                evalMissingFields: config.missingContextFields,
-              }),
-            );
-          }
-
-          return outPromises;
-        })
-        .flat();
-
-      void Promise.allSettled(promises).then((results) => {
-        const failed = results
-          .map((result) =>
-            result.status === "rejected" ? result.reason : undefined,
-          )
-          .filter(Boolean);
-        if (failed.length > 0) {
-          this.logger.error(`failed to queue some evaluate events.`, {
-            errors: failed,
-          });
-        }
-      });
-    }
-
-    let evaluatedFeatures = evaluated.reduce(
+    let evaluatedFlags = evaluated.reduce(
       (acc, res) => {
-        acc[res.featureKey as TypedFeatureKey] = {
-          key: res.featureKey,
+        acc[res.flagKey as FlagKey] = {
+          key: res.flagKey,
           isEnabled: res.enabledResult.value ?? false,
           ruleEvaluationResults: res.enabledResult.ruleEvaluationResults,
           missingContextFields: res.enabledResult.missingContextFields,
           targetingVersion: res.targetingVersion,
-          config: {
-            key: res.configResult?.value?.key,
-            payload: res.configResult?.value?.payload,
+          config: res.configResult && {
+            key: res.configResult.value?.key,
+            payload: res.configResult.value?.payload,
             targetingVersion: res.configVersion,
-            ruleEvaluationResults: res.configResult?.ruleEvaluationResults,
-            missingContextFields: res.configResult?.missingContextFields,
+            ruleEvaluationResults: res.configResult.ruleEvaluationResults,
+            missingContextFields: res.configResult.missingContextFields,
           },
         };
         return acc;
       },
-      {} as Record<TypedFeatureKey, RawFeature>,
+      {} as Record<FlagKey, RawFlag>,
     );
 
-    // apply feature overrides
-    const overrides = Object.entries(this._config.featureOverrides(context))
-      .filter(([featureKey]) => (key ? key === featureKey : true))
-      .map(([featureKey, override]) => [
-        featureKey,
+    // apply flag overrides
+    const overrides = Object.entries(this._config.flagOverrides(context))
+      .filter(([key]) => (flagKey ? flagKey === key : true))
+      .map(([key, override]) => [
+        key,
         isObject(override)
           ? {
-              key: featureKey,
-              isEnabled: override.isEnabled,
-              config: override.config,
+              key,
+              isEnabled: true,
+              config: override,
             }
           : {
-              key: featureKey,
+              key,
               isEnabled: !!override,
               config: undefined,
             },
       ]);
 
     if (overrides.length > 0) {
-      // merge overrides into evaluated features
-      evaluatedFeatures = {
-        ...evaluatedFeatures,
+      // merge overrides into evaluated flags
+      evaluatedFlags = {
+        ...evaluatedFlags,
         ...Object.fromEntries(overrides),
       };
     }
 
-    if (key) {
-      return this._wrapRawFeature(
-        { ...options, enableChecks: true },
-        { key, ...evaluatedFeatures[key] },
-      );
+    if (flagKey) {
+      return evaluatedFlags[flagKey];
     }
 
-    return Object.fromEntries(
-      Object.entries(evaluatedFeatures).map(([k, v]) => [
-        k as TypedFeatureKey,
-        this._wrapRawFeature(options, v),
-      ]),
-    );
+    return evaluatedFlags;
   }
 
-  private _wrapRawFeature<TKey extends TypedFeatureKey>(
-    {
-      enableTracking,
-      enableChecks = false,
-      ...context
-    }: { enableTracking: boolean; enableChecks?: boolean } & Context,
-    { config, ...feature }: PartialBy<RawFeature, "isEnabled">,
-  ): TypedFeatures[TKey] {
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    const client = this;
-
-    const simplifiedConfig = config
-      ? { key: config.key, payload: config.payload }
-      : { key: undefined, payload: undefined };
-
-    return {
-      get isEnabled() {
-        if (enableTracking && enableChecks) {
-          client._warnMissingFeatureContextFields(context, feature);
-
-          void client
-            .sendFeatureEvent({
-              action: "check",
-              key: feature.key,
-              targetingVersion: feature.targetingVersion,
-              evalResult: feature.isEnabled ?? false,
-              evalContext: context,
-              evalRuleResults: feature.ruleEvaluationResults,
-              evalMissingFields: feature.missingContextFields,
-            })
-            .catch((err) => {
-              client.logger?.error(
-                `failed to send check event for "${feature.key}": ${err}`,
-                err,
-              );
-            });
-        }
-        return feature.isEnabled ?? false;
-      },
-      get config() {
-        if (enableTracking && enableChecks) {
-          client._warnMissingFeatureContextFields(context, feature);
-
-          void client
-            .sendFeatureEvent({
-              action: "check-config",
-              key: feature.key,
-              targetingVersion: config?.targetingVersion,
-              evalResult: simplifiedConfig,
-              evalContext: context,
-              evalRuleResults: config?.ruleEvaluationResults,
-              evalMissingFields: config?.missingContextFields,
-            })
-            .catch((err) => {
-              client.logger?.error(
-                `failed to send check event for "${feature.key}": ${err}`,
-                err,
-              );
-            });
-        }
-        return simplifiedConfig as TypedFeatures[TKey]["config"];
-      },
-      key: feature.key,
-      track: async () => {
-        if (typeof context.user?.id === "undefined") {
-          this.logger.warn("no user set, cannot track event");
-          return;
-        }
-
-        if (enableTracking) {
-          await this.track(context.user.id, feature.key, {
-            companyId: context.company?.id,
-          });
-        } else {
-          this.logger.debug("tracking disabled, not tracking event");
-        }
-      },
-    };
-  }
-
-  private async _getFeaturesRemote(
-    key: undefined,
-    userId?: IdType,
-    companyId?: IdType,
-    additionalContext?: Context,
-  ): Promise<TypedFeatures>;
-  private async _getFeaturesRemote<TKey extends TypedFeatureKey>(
-    key: TKey,
-    userId?: IdType,
-    companyId?: IdType,
-    additionalContext?: Context,
-  ): Promise<TypedFeatures[TKey]>;
-  private async _getFeaturesRemote<TKey extends TypedFeatureKey>(
-    key?: string,
-    userId?: IdType,
-    companyId?: IdType,
-    additionalContext?: Context,
-  ): Promise<TypedFeatures | TypedFeatures[TKey]> {
+  private _expandRemoteContext(
+    userId: IdType | undefined,
+    companyId: IdType | undefined,
+    additionalContext: Context | undefined,
+  ): Context {
     const context = additionalContext || {};
     if (userId) {
       context.user = { id: userId };
@@ -1297,40 +1202,44 @@ export class BucketClient {
       context.company = { id: companyId };
     }
 
-    const contextWithTracking = {
-      ...context,
-      enableTracking: true,
-    };
+    return context;
+  }
 
-    checkContextWithTracking(contextWithTracking);
+  private async _evaluateFlagsRemote(
+    flagKey: undefined,
+    context: Context,
+  ): Promise<Record<FlagKey, RawFlag>>;
+  private async _evaluateFlagsRemote<TKey extends FlagKey>(
+    flagKey: TKey,
+    context: Context,
+  ): Promise<RawFlag | undefined>;
+  private async _evaluateFlagsRemote<TKey extends FlagKey>(
+    flagKey: TKey | undefined,
+    context: Context,
+  ): Promise<Record<FlagKey, RawFlag> | RawFlag | undefined> {
+    checkContext(context);
 
     const params = new URLSearchParams(
       Object.keys(context).length ? flattenJSON({ context }) : undefined,
     );
 
-    if (key) {
-      params.append("key", key);
+    if (flagKey) {
+      params.append("key", flagKey);
     }
 
-    const res = await this.get<EvaluatedFeaturesAPIResponse>(
+    const res = await this.get<EvaluatedFlagsAPIResponse>(
       `features/evaluated?${params}`,
     );
 
-    if (key) {
-      const feature = res?.features[key];
-      if (!feature) {
-        this.logger.error(`feature ${key} not found`);
+    if (flagKey) {
+      const flag = res?.features[flagKey];
+      if (!flag) {
+        this.logger.error(`flag ${flagKey} not found on remote`);
       }
-      return this._wrapRawFeature(contextWithTracking, { key, ...feature });
+
+      return flag;
     } else {
-      return res?.features
-        ? Object.fromEntries(
-            Object.entries(res?.features).map(([featureKey, feature]) => [
-              featureKey,
-              this._wrapRawFeature(contextWithTracking, feature),
-            ]),
-          )
-        : {};
+      return res?.features ?? {};
     }
   }
 }
@@ -1338,21 +1247,21 @@ export class BucketClient {
 /**
  * A client bound with a specific user, company, and other context.
  */
-export class BoundBucketClient {
-  private readonly _client: BucketClient;
+export class BoundReflagClient {
+  private readonly _client: ReflagClient;
   private readonly _options: ContextWithTracking;
 
   /**
-   * (Internal) Creates a new BoundBucketClient. Use `bindClient` to create a new client bound with a specific context.
+   * (Internal) Creates a new BoundReflagClient. Use `bindClient` to create a new client bound with a specific context.
    *
-   * @param client - The `BucketClient` to use.
+   * @param client - The `ReflagClient` to use.
    * @param options - The options for the client.
    * @param options.enableTracking - Whether to enable tracking for the client.
    *
    * @internal
    */
   constructor(
-    client: BucketClient,
+    client: ReflagClient,
     { enableTracking = true, ...context }: ContextWithTracking,
   ) {
     this._client = client;
@@ -1391,50 +1300,48 @@ export class BoundBucketClient {
   }
 
   /**
-   * Get features for the user/company/other context bound to this client.
-   * Meant for use in serialization of features for transferring to the client-side/browser.
+   * Get flags for the user/company/other context bound to this client.
+   * Meant for use in serialization of flags for transferring to the client-side/browser.
    *
-   * @returns Features for the given user/company and whether each one is enabled or not
+   * @returns Flags for the given user/company and whether each one is enabled or not.
    */
-  public getFeatures(): TypedFeatures {
-    return this._client.getFeatures(this._options);
+  public getFlags(): TypedFlags {
+    return this._client.getFlags(this._options);
   }
 
   /**
-   * Get a specific feature for the user/company/other context bound to this client.
-   * Using the `isEnabled` property sends a `check` event to Bucket.
+   * Get a specific flag for the user/company/other context bound to this client.
+   * Using the `isEnabled` property sends a `check` event to Reflag.
    *
-   * @param key - The key of the feature to get.
+   * @param flagKey - The key of the flag to get.
    *
-   * @returns Features for the given user/company and whether each one is enabled or not
+   * @returns Flag for the given user/company and whether it's enabled or not
    */
-  public getFeature<TKey extends TypedFeatureKey>(
-    key: TKey,
-  ): TypedFeatures[TKey] {
-    return this._client.getFeature(this._options, key);
+  public getFlag<TKey extends FlagKey>(flagKey: TKey): TypedFlags[TKey] {
+    return this._client.getFlag(this._options, flagKey);
   }
 
   /**
-   * Get remotely evaluated feature for the user/company/other context bound to this client.
+   * Evaluate flags remotely for the user/company/other context bound to this client.
    *
-   * @returns Features for the given user/company and whether each one is enabled or not
+   * @returns Flags for the given user/company and whether each one is enabled or not.
    */
-  public async getFeaturesRemote() {
+  public async getFlagsRemote() {
     const { enableTracking: _, meta: __, ...context } = this._options;
-    return await this._client.getFeaturesRemote(undefined, undefined, context);
+    return await this._client.getFlagsRemote(undefined, undefined, context);
   }
 
   /**
-   * Get remotely evaluated feature for the user/company/other context bound to this client.
+   * Evaluate a specific flag remotely for the user/company/other context bound to this client.
    *
-   * @param key - The key of the feature to get.
+   * @param flagKey - The key of the flag to get.
    *
-   * @returns Feature for the given user/company and key and whether it's enabled or not
+   * @returns Flag for the given user/company and key and whether it's enabled or not.
    */
-  public async getFeatureRemote(key: string) {
+  public async getFlagRemote(flagKey: string) {
     const { enableTracking: _, meta: __, ...context } = this._options;
-    return await this._client.getFeatureRemote(
-      key,
+    return await this._client.getFlagRemote(
+      flagKey,
       undefined,
       undefined,
       context,
@@ -1442,7 +1349,7 @@ export class BoundBucketClient {
   }
 
   /**
-   * Track an event in Bucket.
+   * Track an event in Reflag.
    *
    * @param event - The event to track.
    * @param options - The options for the event.
@@ -1512,7 +1419,7 @@ export class BoundBucketClient {
       meta: meta ?? this._options.meta,
     };
 
-    return new BoundBucketClient(this._client, boundConfig);
+    return new BoundReflagClient(this._client, boundConfig);
   }
 
   /**
@@ -1536,9 +1443,7 @@ function checkMeta(
   );
 }
 
-function checkContextWithTracking(
-  context: ContextWithTracking,
-): asserts context is ContextWithTracking & { enableTracking: boolean } {
+function checkContext(context: Context): asserts context is Context {
   ok(isObject(context), "context must be an object");
   ok(
     typeof context.user === "undefined" || isObject(context.user),
@@ -1560,6 +1465,13 @@ function checkContextWithTracking(
     context.other === undefined || isObject(context.other),
     "other must be an object if given",
   );
+}
+
+function checkContextWithTracking(
+  context: ContextWithTracking,
+): asserts context is ContextWithTracking & { enableTracking: boolean } {
+  checkContext(context);
+
   ok(
     typeof context.enableTracking === "boolean",
     "enableTracking must be a boolean",

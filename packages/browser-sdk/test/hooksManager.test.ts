@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CompanyContext, UserContext } from "../src";
-import { CheckEvent, RawFeatures } from "../src/feature/features";
+import { CheckEvent, RawFlags } from "../src/flag/flags";
 import { HooksManager } from "../src/hooksManager";
 
 describe("HookManager", () => {
@@ -25,44 +25,16 @@ describe("HookManager", () => {
     expect(callback).toHaveBeenCalledWith(checkEvent);
   });
 
-  it("should add and trigger `enabledCheck` hooks", () => {
+  it("should add and trigger `flagsUpdated` hooks", () => {
     const callback = vi.fn();
-    hookManager.addHook("enabledCheck", callback);
+    hookManager.addHook("flagsUpdated", callback);
 
-    const checkEvent: CheckEvent = {
-      action: "check-is-enabled",
-      key: "test-key",
-      value: true,
+    const flags: RawFlags = {
+      /* mock RawFlags data */
     };
-    hookManager.trigger("enabledCheck", checkEvent);
+    hookManager.trigger("flagsUpdated", flags);
 
-    expect(callback).toHaveBeenCalledWith(checkEvent);
-  });
-
-  it("should add and trigger `configCheck` hooks", () => {
-    const callback = vi.fn();
-    hookManager.addHook("configCheck", callback);
-
-    const checkEvent: CheckEvent = {
-      action: "check-config",
-      key: "test-key",
-      value: { key: "key", payload: "payload" },
-    };
-    hookManager.trigger("configCheck", checkEvent);
-
-    expect(callback).toHaveBeenCalledWith(checkEvent);
-  });
-
-  it("should add and trigger `featuresUpdated` hooks", () => {
-    const callback = vi.fn();
-    hookManager.addHook("featuresUpdated", callback);
-
-    const features: RawFeatures = {
-      /* mock RawFeatures data */
-    };
-    hookManager.trigger("featuresUpdated", features);
-
-    expect(callback).toHaveBeenCalledWith(features);
+    expect(callback).toHaveBeenCalledWith(flags);
   });
 
   it("should add and trigger `track` hooks", () => {

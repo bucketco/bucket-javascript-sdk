@@ -23,11 +23,11 @@ export const initAction = async (args: InitArgs = {}) => {
     const configPath = configStore.getConfigPath();
     if (configPath && !args.overwrite) {
       throw new Error(
-        "Bucket is already initialized. Use --overwrite to overwrite.",
+        "Reflag is already initialized. Use --overwrite to overwrite.",
       );
     }
 
-    console.log("\nWelcome to Bucket!\n");
+    console.log("\nWelcome to Reflag!\n");
     const baseUrl = configStore.getConfig("baseUrl");
 
     // Load apps
@@ -95,7 +95,7 @@ export const initAction = async (args: InitArgs = {}) => {
 export function registerInitCommand(cli: Command) {
   cli
     .command("init")
-    .description("Initialize a new Bucket configuration.")
+    .description("Initialize a new Reflag configuration.")
     .addOption(overwriteOption)
     .action(initAction);
 }

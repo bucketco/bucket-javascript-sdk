@@ -11,137 +11,76 @@ import React, {
 import canonicalJSON from "canonical-json";
 
 import {
-  BucketClient,
-  BucketContext,
   CheckEvent,
   CompanyContext,
+  Flag,
   InitOptions,
-  RawFeatures,
+  RawFlags,
+  ReflagClient,
+  ReflagContext,
   RequestFeedbackData,
   TrackEvent,
   UnassignedFeedback,
   UserContext,
-} from "@bucketco/browser-sdk";
+} from "@reflag/browser-sdk";
 
 import { version } from "../package.json";
 
-export type {
-  CheckEvent,
-  CompanyContext,
-  RawFeatures,
-  TrackEvent,
-  UserContext,
-};
-
-export type EmptyFeatureRemoteConfig = { key: undefined; payload: undefined };
-
-export type FeatureType = {
-  config?: {
-    payload: any;
-  };
-};
-
-/**
- * A remotely managed configuration value for a feature.
- */
-export type FeatureRemoteConfig =
-  | {
-      /**
-       * The key of the matched configuration value.
-       */
-      key: string;
-
-      /**
-       * The optional user-supplied payload data.
-       */
-      payload: any;
-    }
-  | EmptyFeatureRemoteConfig;
-
-/**
- * Describes a feature
- */
-export interface Feature<
-  TConfig extends FeatureType["config"] = EmptyFeatureRemoteConfig,
-> {
-  /**
-   * The key of the feature.
-   */
-  key: string;
-
-  /**
-   * If the feature is enabled.
-   */
-  isEnabled: boolean;
-
-  /**
-   * If the feature is loading.
-   */
-  isLoading: boolean;
-
-  /*
-   * Optional user-defined configuration.
-   */
-  config:
-    | ({
-        key: string;
-      } & TConfig)
-    | EmptyFeatureRemoteConfig;
-
-  /**
-   * Track feature usage in Bucket.
-   */
-  track(): Promise<Response | undefined> | undefined;
-  /**
-   * Request feedback from the user.
-   */
-  requestFeedback: (opts: RequestFeedbackOptions) => void;
-}
+export type { CheckEvent, CompanyContext, RawFlags, TrackEvent, UserContext };
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface Features {}
+export interface Flags {}
+
+type MultiVariateFlagSignature = {
+  payload: any;
+};
 
 /**
- * Describes a collection of evaluated feature.
+ * Describes a collection of evaluated flags.
  *
  * @remarks
- * This types falls back to a generic Record<string, Feature> if the Features interface
+ * This types falls back to a generic Record<string, Flag> if the Flags interface
  * has not been extended.
- *
  */
-export type TypedFeatures = keyof Features extends never
-  ? Record<string, Feature>
+export type TypedFlags = keyof Flags extends never
+  ? Record<string, Flag>
   : {
-      [TypedFeatureKey in keyof Features]: Features[TypedFeatureKey] extends FeatureType
-        ? Feature<Features[TypedFeatureKey]["config"]>
-        : Feature;
+      [TKey in keyof Flags]: Flags[TKey] extends MultiVariateFlagSignature
+        ? {
+            key: string;
+            payload: Flags[TKey]["payload"];
+          }
+        : boolean;
     };
 
-export type FeatureKey = keyof TypedFeatures;
+/**
+ * The key of a flag.
+ */
+export type FlagKey = keyof TypedFlags;
 
 const SDK_VERSION = `react-sdk/${version}`;
 
 type ProviderContextType = {
-  client?: BucketClient;
-  features: {
-    features: RawFeatures;
+  client?: ReflagClient;
+  flags: {
+    flags: RawFlags;
     isLoading: boolean;
   };
   provider: boolean;
 };
 
 const ProviderContext = createContext<ProviderContextType>({
-  features: {
-    features: {},
+  flags: {
+    flags: {},
     isLoading: false,
   },
   provider: false,
 });
 
 /**
- * Props for the BucketProvider.
+ * Props for the ReflagProvider.
  */
-export type BucketProps = BucketContext &
+export type ReflagProps = ReflagContext &
   InitOptions & {
     /**
      * Children to be rendered.
@@ -159,31 +98,31 @@ export type BucketProps = BucketContext &
     debug?: boolean;
 
     /**
-     * New BucketClient constructor.
+     * New `ReflagClient` constructor.
      *
      * @internal
      */
-    newBucketClient?: (
-      ...args: ConstructorParameters<typeof BucketClient>
-    ) => BucketClient;
+    newReflagClient?: (
+      ...args: ConstructorParameters<typeof ReflagClient>
+    ) => ReflagClient;
   };
 
 /**
- * Provider for the BucketClient.
+ * Provider for the ReflagClient.
  */
-export function BucketProvider({
+export function ReflagProvider({
   children,
   user,
   company,
   otherContext,
   loadingComponent,
-  newBucketClient = (...args) => new BucketClient(...args),
+  newReflagClient = (...args) => new ReflagClient(...args),
   ...config
-}: BucketProps) {
-  const [featuresLoading, setFeaturesLoading] = useState(true);
-  const [rawFeatures, setRawFeatures] = useState<RawFeatures>({});
+}: ReflagProps) {
+  const [flagsLoading, setFlagsLoading] = useState(true);
+  const [rawFlags, setRawFlags] = useState<RawFlags>({});
 
-  const clientRef = useRef<BucketClient>();
+  const clientRef = useRef<ReflagClient>();
   const contextKeyRef = useRef<string>();
 
   const featureContext = { user, company, otherContext };
@@ -202,9 +141,9 @@ export function BucketProvider({
       void clientRef.current.stop();
     }
 
-    setFeaturesLoading(true);
+    setFlagsLoading(true);
 
-    const client = newBucketClient({
+    const client = newReflagClient({
       ...config,
       user,
       company,
@@ -216,7 +155,7 @@ export function BucketProvider({
 
     clientRef.current = client;
 
-    client.on("featuresUpdated", setRawFeatures);
+    client.on("flagsUpdated", setRawFlags);
 
     client
       .initialize()
@@ -224,118 +163,134 @@ export function BucketProvider({
         client.logger.error("failed to initialize client", e);
       })
       .finally(() => {
-        setFeaturesLoading(false);
+        setFlagsLoading(false);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- should only run once
   }, [contextKey]);
 
   const context: ProviderContextType = {
-    features: {
-      features: rawFeatures,
-      isLoading: featuresLoading,
+    flags: {
+      flags: rawFlags,
+      isLoading: flagsLoading,
     },
     client: clientRef.current,
     provider: true,
   };
   return (
     <ProviderContext.Provider value={context}>
-      {featuresLoading && typeof loadingComponent !== "undefined"
+      {flagsLoading && typeof loadingComponent !== "undefined"
         ? loadingComponent
         : children}
     </ProviderContext.Provider>
   );
 }
 
-export type RequestFeedbackOptions = Omit<
-  RequestFeedbackData,
-  "featureKey" | "featureId"
->;
-
 /**
- * Returns the state of a given feature for the current context, e.g.
+ * Returns the value of a given flag for the current context, e.g.:
  *
  * ```ts
+ * // For "toggle" flags
  * function HuddleButton() {
- *   const {isEnabled, config: { payload }, track} = useFeature("huddle");
- *   if (isEnabled) {
- *    return <button onClick={() => track()}>{payload?.buttonTitle ?? "Start Huddle"}</button>;
+ *   const enabled = useFlag("huddle");
+ *
+ *   if (enabled) {
+ *    return <button onClick={() => alert("Huddle started")}>Start Huddle</button>;
+ * }
+ *
+ * // For "multi-variate" flags
+ * function HuddleButton() {
+ *   const { key, payload } = useFlag("huddle");
+ *
+ *   if (key === "full-mode") {
+ *    return <button onClick={() => alert("Huddle started")}>Start Huddle</button>;
+ *   }
+ *
+ *   return null;
  * }
  * ```
  */
-export function useFeature<TKey extends FeatureKey>(
-  key: TKey,
-): TypedFeatures[TKey] {
+export function useFlag<TKey extends FlagKey>(
+  flagKey: TKey,
+): TypedFlags[TKey] | undefined {
   const client = useClient();
-  const {
-    features: { isLoading },
-  } = useContext<ProviderContextType>(ProviderContext);
 
-  const track = () => client?.track(key);
-  const requestFeedback = (opts: RequestFeedbackOptions) =>
-    client?.requestFeedback({ ...opts, featureKey: key });
-
-  if (isLoading || !client) {
-    return {
-      key,
-      isLoading,
-      isEnabled: false,
-      config: {
-        key: undefined,
-        payload: undefined,
-      } as TypedFeatures[TKey]["config"],
-      track,
-      requestFeedback,
-    };
+  if (!client) {
+    return undefined;
   }
 
-  const feature = client.getFeature(key);
-
-  return {
-    key,
-    isLoading,
-    track,
-    requestFeedback,
-    get isEnabled() {
-      return feature.isEnabled ?? false;
-    },
-    get config() {
-      return feature.config as TypedFeatures[TKey]["config"];
-    },
-  };
+  return client.getFlag(flagKey) as TypedFlags[TKey];
 }
 
 /**
- * Returns a function to send an event when a user performs an action
+ * Returns a boolean indicating whether the flags are loading.
+ *
+ * ```ts
+ * const isLoading = useIsLoading();
+ * if (isLoading) {
+ *   return <div>Loading...</div>;
+ * }
+ * ```
+ */
+export function useIsLoading() {
+  const {
+    flags: { isLoading },
+    client,
+  } = useContext<ProviderContextType>(ProviderContext);
+
+  return isLoading || !client;
+}
+
+/**
+ * Returns a function to send a track event when a user performs an action.
  * Note: When calling `useTrack`, user/company must already be set.
  *
  * ```ts
- * const track = useTrack();
- * track("Started Huddle", { button: "cta" });
+ * const track = useTrack("huddle");
+ * track({ button: "cta" });
  * ```
  */
-export function useTrack() {
+export function useTrack<TKey extends FlagKey>(flagKey: TKey) {
   const client = useClient();
-  return (eventName: string, attributes?: Record<string, any> | null) =>
-    client?.track(eventName, attributes);
+
+  return (attributes?: Record<string, any> | null) =>
+    client?.track(flagKey, attributes);
 }
 
 /**
- * Returns a function to open up the feedback form
- * Note: When calling `useRequestFeedback`, user/company must already be set.
- *
- * See [link](../../browser-sdk/FEEDBACK.md#bucketclientrequestfeedback-options) for more information
+ * Returns a function to send a custom track event when a user performs an action.
+ * Note: When calling `useTrackCustom`, user/company must already be set.
  *
  * ```ts
- * const requestFeedback = useRequestFeedback();
- * bucket.requestFeedback({
- *   featureKey: "file-uploads",
+ * const track = useTrackCustom("Custom Event");
+ * track({ button: "cta" });
+ * ```
+ */
+export function useTrackCustom(event: string) {
+  const client = useClient();
+
+  return (attributes?: Record<string, any> | null) =>
+    client?.track(event, attributes);
+}
+
+/**
+ * Returns a function to open up the feedback form.
+ *
+ * Note: When calling `useRequestFeedback`, user/company must already be set.
+ *
+ * See [link](../../browser-sdk/FEEDBACK.md#reflagclientrequestfeedback-options) for more information.
+ *
+ * ```ts
+ * const requestFeedback = useRequestFeedback("huddle");
+ * reflag.requestFeedback({
  *   title: "How satisfied are you with file uploads?",
  * });
  * ```
  */
-export function useRequestFeedback() {
+export function useRequestFeedback<TKey extends FlagKey>(flagKey: TKey) {
   const client = useClient();
-  return (options: RequestFeedbackData) => client?.requestFeedback(options);
+
+  return (options: Omit<RequestFeedbackData, "flagKey">) =>
+    client?.requestFeedback({ ...options, flagKey });
 }
 
 /**
@@ -345,18 +300,19 @@ export function useRequestFeedback() {
  * See [link](./../../browser-sdk/FEEDBACK.md#using-your-own-ui-to-collect-feedback) for more information
  *
  * ```ts
- * const sendFeedback = useSendFeedback();
+ * const sendFeedback = useSendFeedback("huddle");
  * sendFeedback({
- *   featureKey: "huddle";
  *   question: "How did you like the new huddle feature?";
  *   score: 5;
  *   comment: "I loved it!";
  * });
  * ```
  */
-export function useSendFeedback() {
+export function useSendFeedback<TKey extends FlagKey>(flagKey: TKey) {
   const client = useClient();
-  return (opts: UnassignedFeedback) => client?.feedback(opts);
+
+  return (opts: Omit<UnassignedFeedback, "flagKey" | "feedbackId">) =>
+    client?.feedback({ ...opts, flagKey });
 }
 
 /**
@@ -369,7 +325,7 @@ export function useSendFeedback() {
  *
  * ```ts
  * const updateUser = useUpdateUser();
- * updateUser({ optInHuddles: "true" }).then(() => console.log("Features updated"));
+ * updateUser({ optInHuddles: "true" }).then(() => console.log("Flags updated"));
  * ```
  */
 export function useUpdateUser() {
@@ -388,7 +344,7 @@ export function useUpdateUser() {
  *
  * ```ts
  * const updateCompany = useUpdateCompany();
- * updateCompany({ plan: "enterprise" }).then(() => console.log("Features updated"));
+ * updateCompany({ plan: "enterprise" }).then(() => console.log("Flags updated"));
  * ```
  */
 export function useUpdateCompany() {
@@ -409,7 +365,7 @@ export function useUpdateCompany() {
  * ```ts
  * const updateOtherContext = useUpdateOtherContext();
  * updateOtherContext({ workspaceId: newWorkspaceId })
- *   .then(() => console.log("Features updated"));
+ *   .then(() => console.log("Flags updated"));
  * ```
  */
 export function useUpdateOtherContext() {
@@ -419,9 +375,9 @@ export function useUpdateOtherContext() {
 }
 
 /**
- * Returns the current `BucketClient` used by the `BucketProvider`.
+ * Returns the current `ReflagClient` used by the `ReflagProvider`.
  *
- * This is useful if you need to access the `BucketClient` outside of the `BucketProvider`.
+ * This is useful if you need to access the `ReflagClient` outside of the `ReflagProvider`.
  *
  * ```ts
  * const client = useClient();
@@ -436,7 +392,7 @@ export function useClient() {
   const { client, provider } = useContext<ProviderContextType>(ProviderContext);
   if (!provider) {
     throw new Error(
-      "BucketProvider is missing. Please ensure your component is wrapped with a BucketProvider.",
+      "ReflagProvider is missing. Please ensure your component is wrapped with a ReflagProvider.",
     );
   }
 

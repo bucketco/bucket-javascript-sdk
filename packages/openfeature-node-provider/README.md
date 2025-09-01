@@ -1,35 +1,35 @@
-# Bucket Node.js OpenFeature Provider
+# Reflag Node.js OpenFeature Provider
 
-The official OpenFeature Node.js provider for [Bucket](https://bucket.co) feature management service.
+The official OpenFeature Node.js provider for [Reflag](https://bucket.co) feature management service.
 
 ## Installation
 
 ```shell
-npm install @bucketco/openfeature-node-provider
+npm install @reflag/openfeature-node-provider
 ```
 
 ### Required peer dependencies
 
 The OpenFeature SDK is required as peer dependency.
 The minimum required version of `@openfeature/server-sdk` currently is `1.13.5`.
-The minimum required version of `@bucketco/node-sdk` currently is `2.0.0`.
+The minimum required version of `@reflag/node-sdk` currently is `2.0.0`.
 
 ```shell
-npm install @openfeature/server-sdk @bucketco/node-sdk
+npm install @openfeature/server-sdk @reflag/node-sdk
 ```
 
 ## Usage
 
-The provider uses the [Bucket Node.js SDK](https://docs.bucket.co/quickstart/supported-languages-frameworks/node.js-sdk).
-The available options can be found in the [Bucket Node.js SDK](https://github.com/bucketco/bucket-javascript-sdk/tree/main/packages/node-sdk#initialization-options).
+The provider uses the [Reflag Node.js SDK](https://docs.bucket.co/quickstart/supported-languages-frameworks/node.js-sdk).
+The available options can be found in the [Reflag Node.js SDK](https://github.com/bucketco/bucket-javascript-sdk/tree/main/packages/node-sdk#initialization-options).
 
 ### Example using the default configuration
 
 ```typescript
-import { BucketNodeProvider } from "@bucketco/openfeature-node-provider";
+import { ReflagNodeProvider } from "@reflag/openfeature-node-provider";
 import { OpenFeature } from "@openfeature/server-sdk";
 
-const provider = new BucketNodeProvider({ secretKey });
+const provider = new ReflagNodeProvider({ secretKey });
 
 await OpenFeature.setProviderAndWait(provider);
 
@@ -55,7 +55,7 @@ const enterpriseFeatureEnabled = await client.getBooleanValue(
 
 ## Feature resolution methods
 
-The Bucket OpenFeature Provider implements the OpenFeature evaluation interface for different value types. Each method handles the resolution of feature flags according to the OpenFeature specification.
+The Reflag OpenFeature Provider implements the OpenFeature evaluation interface for different value types. Each method handles the resolution of feature flags according to the OpenFeature specification.
 
 ### Common behavior
 
@@ -90,7 +90,7 @@ Returns the feature's remote config key (also known as "variant"). Useful for mu
 client.getNumberValue("my-flag", 0);
 ```
 
-Not directly supported by Bucket. Use `getObjectValue` instead for numeric configurations.
+Not directly supported by Reflag. Use `getObjectValue` instead for numeric configurations.
 
 #### Object Resolution
 
@@ -108,14 +108,14 @@ The object resolution performs runtime type checking between the default value a
 
 ## Translating Evaluation Context
 
-Bucket uses a context object of the following shape:
+Reflag uses a context object of the following shape:
 
 ```ts
 /**
  * Describes the current user context, company context, and other context.
  * This is used to determine if feature targeting matches and to track events.
  **/
-export type BucketContext = {
+export type ReflagContext = {
   /**
    * The user context. If the user is set, the user ID is required.
    */
@@ -139,14 +139,14 @@ export type BucketContext = {
 };
 ```
 
-To use the Bucket Node.js OpenFeature provider, you must convert your OpenFeature contexts to Bucket contexts.
+To use the Reflag Node.js OpenFeature provider, you must convert your OpenFeature contexts to Reflag contexts.
 You can achieve this by supplying a context translation function which takes the Open Feature context and returns
-a corresponding Bucket Context:
+a corresponding Reflag Context:
 
 ```ts
-import { BucketNodeProvider } from "@openfeature/bucket-node-provider";
+import { ReflagNodeProvider } from "@reflag/openfeature-node-provider";
 
-const contextTranslator = (context: EvaluationContext): BucketContext => {
+const contextTranslator = (context: EvaluationContext): ReflagContext => {
   return {
     user: {
       id: context.targetingKey ?? context["userId"]?.toString(),
@@ -164,23 +164,23 @@ const contextTranslator = (context: EvaluationContext): BucketContext => {
   };
 };
 
-const provider = new BucketNodeProvider({ secretKey, contextTranslator });
+const provider = new ReflagNodeProvider({ secretKey, contextTranslator });
 
 OpenFeature.setProvider(provider);
 ```
 
 ## Tracking feature adoption
 
-The Bucket OpenFeature provider supports the OpenFeature Tracking API.
+The Reflag OpenFeature provider supports the OpenFeature Tracking API.
 It's straight forward to start sending tracking events through OpenFeature.
 
 Simply call the "track" method on the OpenFeature client:
 
 ```typescript
-import { BucketNodeProvider } from "@bucketco/openfeature-node-provider";
+import { ReflagNodeProvider } from "@reflag/openfeature-node-provider";
 import { OpenFeature } from "@openfeature/server-sdk";
 
-const provider = new BucketNodeProvider({ secretKey });
+const provider = new ReflagNodeProvider({ secretKey });
 
 await OpenFeature.setProviderAndWait(provider);
 

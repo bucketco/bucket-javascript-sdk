@@ -3,7 +3,7 @@ import { useRequestFeedback } from "../../../src";
 
 import Section from "./Section.vue";
 
-const requestFeedback = useRequestFeedback();
+const requestFeedback = useRequestFeedback("demo-feature");
 </script>
 
 <template>
@@ -13,7 +13,6 @@ const requestFeedback = useRequestFeedback();
         @click="
           (e) =>
             requestFeedback({
-              featureKey: 'demo-feature',
               title: 'How satisfied are you with this feature?',
               position: {
                 type: 'POPOVER',
@@ -28,7 +27,6 @@ const requestFeedback = useRequestFeedback();
       <button
         @click="
           requestFeedback({
-            featureKey: 'demo-feature',
             title: 'How was your experience?',
             position: {
               type: 'MODAL',
@@ -42,7 +40,6 @@ const requestFeedback = useRequestFeedback();
       <button
         @click="
           requestFeedback({
-            featureKey: 'demo-feature',
             title: 'What do you think about our product?',
             position: {
               type: 'MODAL',

@@ -12,12 +12,12 @@ const events = ref<string[]>([]);
 function checkEvent(evt: CheckEvent) {
   events.value = [
     ...events.value,
-    `Check event: The feature ${evt.key} is ${evt.value} for user.`,
+    `Check event: The flag ${evt.flagKey} is ${evt.value} for user.`,
   ];
 }
 
-function featuresUpdatedEvent() {
-  events.value = [...events.value, `Features Updated!`];
+function flagsUpdatedEvent() {
+  events.value = [...events.value, `Flags Updated!`];
 }
 
 function trackEvent(evt: TrackEvent) {
@@ -26,12 +26,12 @@ function trackEvent(evt: TrackEvent) {
 
 onMounted(() => {
   client.value.on("check", checkEvent);
-  client.value.on("featuresUpdated", featuresUpdatedEvent);
+  client.value.on("flagsUpdated", flagsUpdatedEvent);
   client.value.on("track", trackEvent);
 });
 onUnmounted(() => {
   client.value.off("check", checkEvent);
-  client.value.off("featuresUpdated", featuresUpdatedEvent);
+  client.value.off("flagsUpdated", flagsUpdatedEvent);
   client.value.off("track", trackEvent);
 });
 </script>
