@@ -4,8 +4,6 @@ import { ReflagClient } from "../src/client";
 import { FlagsClient } from "../src/flag/flags";
 import { HttpClient } from "../src/httpClient";
 
-import { flagsResult } from "./mocks/handlers";
-
 describe("ReflagClient", () => {
   let client: ReflagClient;
   const httpClientPost = vi.spyOn(HttpClient.prototype as any, "post");
@@ -62,18 +60,6 @@ describe("ReflagClient", () => {
         },
       });
       expect(flagsClientSetContext).toHaveBeenCalledWith(client["context"]);
-    });
-  });
-
-  describe("getFeature (deprecated)", () => {
-    it("takes overrides into account", async () => {
-      await client.initialize();
-
-      expect(flagsResult["flagA"].isEnabled).toBe(true);
-      expect(client.getFeature("flagA").isEnabled).toBe(true);
-
-      client.getFeature("flagA").setIsEnabledOverride(false);
-      expect(client.getFeature("flagA").isEnabled).toBe(false);
     });
   });
 
@@ -143,8 +129,6 @@ describe("ReflagClient", () => {
     const userHook = vi.fn();
     const companyHook = vi.fn();
     const checkHook = vi.fn();
-    const checkHookIsEnabled = vi.fn();
-    const checkHookConfig = vi.fn();
     const flagsUpdated = vi.fn();
 
     beforeEach(async () => {
@@ -154,16 +138,12 @@ describe("ReflagClient", () => {
       client.on("user", userHook);
       client.on("company", companyHook);
       client.on("check", checkHook);
-      client.on("configCheck", checkHookConfig);
-      client.on("enabledCheck", checkHookIsEnabled);
       client.on("flagsUpdated", flagsUpdated);
 
       trackHook.mockReset();
       userHook.mockReset();
       companyHook.mockReset();
       checkHook.mockReset();
-      checkHookIsEnabled.mockReset();
-      checkHookConfig.mockReset();
       flagsUpdated.mockReset();
     });
 
@@ -172,8 +152,6 @@ describe("ReflagClient", () => {
       client.off("user", userHook);
       client.off("company", companyHook);
       client.off("check", checkHook);
-      client.off("configCheck", checkHookConfig);
-      client.off("enabledCheck", checkHookIsEnabled);
       client.off("flagsUpdated", flagsUpdated);
     });
 
@@ -246,23 +224,19 @@ describe("ReflagClient", () => {
         version: 1,
       };
 
-      expect(checkHookIsEnabled).toHaveBeenCalledWith(checkEvent);
       expect(checkHook).toHaveBeenCalledWith(checkEvent);
 
       // Remove hooks
       client.off("check", checkHook);
-      client.off("enabledCheck", checkHookIsEnabled);
 
       // Reset mocks
       checkHook.mockReset();
-      checkHookIsEnabled.mockReset();
 
       // Trigger events again
       client.getFlag("flagA");
 
       // Ensure hooks are not called
       expect(checkHook).not.toHaveBeenCalled();
-      expect(checkHookIsEnabled).not.toHaveBeenCalled();
     });
 
     it("check (config)", async () => {
@@ -284,20 +258,16 @@ describe("ReflagClient", () => {
       };
 
       expect(checkHook).toHaveBeenCalledWith(checkEvent);
-      expect(checkHookConfig).toHaveBeenCalledWith(checkEvent);
 
       client.off("check", checkHook);
-      client.off("configCheck", checkHookConfig);
 
       // Reset mocks
       checkHook.mockReset();
-      checkHookConfig.mockReset();
 
       client.getFlag("flagB");
 
       // Ensure hooks are not called
       expect(checkHook).not.toHaveBeenCalled();
-      expect(checkHookConfig).not.toHaveBeenCalled();
     });
 
     it("flagsUpdated", async () => {

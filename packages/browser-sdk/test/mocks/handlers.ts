@@ -79,7 +79,7 @@ export function getFlags({
 }
 
 export const handlers = [
-  http.post("https://front.bucket.co/user", async ({ request }) => {
+  http.post("https://front.reflag.co/user", async ({ request }) => {
     if (!checkRequest(request)) return invalidReqResponse;
 
     const data = await request.json();

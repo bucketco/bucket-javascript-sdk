@@ -25,46 +25,6 @@ describe("HookManager", () => {
     expect(callback).toHaveBeenCalledWith(checkEvent);
   });
 
-  it("should add and trigger `enabledCheck` hooks", () => {
-    const callback = vi.fn();
-    hookManager.addHook("enabledCheck", callback);
-
-    const checkEvent: CheckEvent = {
-      action: "check-is-enabled",
-      key: "test-key",
-      value: true,
-    };
-    hookManager.trigger("enabledCheck", checkEvent);
-
-    expect(callback).toHaveBeenCalledWith(checkEvent);
-  });
-
-  it("should add and trigger `configCheck` hooks", () => {
-    const callback = vi.fn();
-    hookManager.addHook("configCheck", callback);
-
-    const checkEvent: CheckEvent = {
-      action: "check-config",
-      key: "test-key",
-      value: { key: "key", payload: "payload" },
-    };
-    hookManager.trigger("configCheck", checkEvent);
-
-    expect(callback).toHaveBeenCalledWith(checkEvent);
-  });
-
-  it("should add and trigger `featuresUpdated` hooks (deprecated)", () => {
-    const callback = vi.fn();
-    hookManager.addHook("featuresUpdated", callback);
-
-    const flags: RawFlags = {
-      /* mock RawFlags data */
-    };
-    hookManager.trigger("flagsUpdated", flags);
-
-    expect(callback).toHaveBeenCalledWith(flags);
-  });
-
   it("should add and trigger `flagsUpdated` hooks", () => {
     const callback = vi.fn();
     hookManager.addHook("flagsUpdated", callback);

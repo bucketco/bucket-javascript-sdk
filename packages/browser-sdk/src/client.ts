@@ -665,7 +665,7 @@ export class ReflagClient {
     // to prevent the same click from closing it.
     setTimeout(() => {
       feedbackLib.openFeedbackForm({
-        flagKey: options.flagKey,
+        key: options.flagKey,
         title: options.title,
         position: options.position || this.requestFeedbackOptions.position,
         translations:

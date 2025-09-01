@@ -38,17 +38,12 @@ export default function Toolbar({
   const updateFlags = useCallback(() => {
     const rawFlags = reflagClient.getFlags();
     setFlags(
-      Object.values(rawFlags).map(
-        (flag) =>
+      Object.entries(rawFlags).map(
+        ([key, value]) =>
           ({
-            flagKey: flag.key,
-            override: flag.valueOverride,
-            value: flag.config
-              ? {
-                  key: flag.config.key,
-                  payload: flag.config.payload,
-                }
-              : flag.isEnabled,
+            flagKey: key,
+            override: reflagClient.getFlagOverride(key),
+            value,
           }) satisfies FlagItem,
       ),
     );
