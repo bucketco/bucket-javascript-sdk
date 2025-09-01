@@ -22,7 +22,7 @@ export type {
   OnScoreSubmitResult,
   OpenFeedbackFormOptions,
 } from "./feedback/ui/types";
-export type { FallbackFlagOverride } from "./flag/flags";
+export type { CheckEvent, FallbackFlagOverride, RawFlags } from "./flag/flags";
 export type { HookArgs, TrackEvent } from "./hooksManager";
 export type { Logger } from "./logger";
 export { feedbackContainerId, propagatedEvents } from "./ui/constants";

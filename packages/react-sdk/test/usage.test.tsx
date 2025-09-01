@@ -318,7 +318,7 @@ describe("useFlag", () => {
     unmount();
   });
 
-  test("provides the expected values if feature is enabled", async () => {
+  test("provides the expected values if flag is enabled", async () => {
     const { result, unmount } = renderHook(() => useFlag("abc"), {
       wrapper: ({ children }) => getProvider({ children }),
     });

@@ -8,9 +8,7 @@ import {
 } from "@reflag/browser-sdk";
 
 import ReflagProvider from "./ReflagProvider.vue";
-import {
-  ReflagProps,
-} from "./types";
+import { ReflagProps } from "./types";
 
 export {
   useClient,

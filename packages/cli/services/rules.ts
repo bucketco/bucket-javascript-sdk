@@ -16,7 +16,7 @@ export function getCopilotInstructions() {
 const rules = /* markdown */ `
 # Reflag Flag Management Service for LLMs
 
-Reflag is a comprehensive feature management service offering flags, user feedback collection, adoption tracking, and remote configuration for your applications across various JavaScript frameworks, particularly React, Next.js, Node.js, vanilla browser, CLI, and OpenFlag environments. Follow these best practices for flagging.
+Reflag is a comprehensive feature management service offering flags, user feedback collection, adoption tracking, and remote configuration for your applications across various JavaScript frameworks, particularly React, Next.js, Node.js, vanilla browser, CLI, and OpenFeature environments. Follow these best practices for flagging.
 
 ## Follow Official Documentation
 

@@ -2,7 +2,7 @@ import {
   ErrorCode,
   EvaluationContext,
   JsonValue,
-  OpenFlagEventEmitter,
+  OpenFeatureEventEmitter,
   Provider,
   ProviderMetadata,
   ProviderStatus,
@@ -11,7 +11,7 @@ import {
   TrackingEventDetails,
 } from "@openfeature/web-sdk";
 
-import { ReflagClient, Flag, InitOptions } from "@reflag/browser-sdk";
+import { Flag, InitOptions, ReflagClient } from "@reflag/browser-sdk";
 
 export type ContextTranslationFn = (
   context?: EvaluationContext,
@@ -48,7 +48,7 @@ export class ReflagBrowserSDKProvider implements Provider {
   private readonly _clientOptions: InitOptions;
   private readonly _contextTranslator: ContextTranslationFn;
 
-  public events = new OpenFlagEventEmitter();
+  public events = new OpenFeatureEventEmitter();
 
   private _status: ProviderStatus = ProviderStatus.NOT_READY;
 

@@ -45,7 +45,7 @@ app.get("/todos", async (req, res) => {
   // We use the `getFeatures` method to check if the user has the "show-todo" feature enabled.
   // Note that "show-todo" is a feature that we defined in the `Flags` interface in the `reflag.ts` file.
   // and that the indexing for feature name below is type-checked at compile time.
-  const ofClient = OpenFlag.getClient();
+  const ofClient = OpenFeature.getClient();
   const isEnabled = await ofClient.getBooleanValue(
     "show-todos",
     false,

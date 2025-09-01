@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, Mock, vi } from "vitest";
 
 import { ReflagClient } from "@reflag/browser-sdk";
 
-import { ReflagBrowserSDKProvider, defaultContextTranslator } from ".";
+import { defaultContextTranslator, ReflagBrowserSDKProvider } from ".";
 
 vi.mock("@reflag/browser-sdk", () => {
   const actualModule = vi.importActual("@reflag/browser-sdk");

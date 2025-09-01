@@ -5,7 +5,7 @@ import { provide, ref, shallowRef, watch } from "vue";
 import { ReflagClient } from "@reflag/browser-sdk";
 
 import { ProviderSymbol } from "./hooks";
-import { ReflagProps, ProviderContextType } from "./types";
+import { ProviderContextType, ReflagProps } from "./types";
 import { SDK_VERSION } from "./version";
 
 const featuresLoading = ref(true);

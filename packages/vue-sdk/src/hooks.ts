@@ -2,9 +2,7 @@ import { computed, inject, InjectionKey, onBeforeUnmount, ref } from "vue";
 
 import { RequestFeedbackData, UnassignedFeedback } from "@reflag/browser-sdk";
 
-import {
-  ProviderContextType,
-} from "./types";
+import { ProviderContextType } from "./types";
 
 export const ProviderSymbol: InjectionKey<ProviderContextType> =
   Symbol("ReflagProvider");

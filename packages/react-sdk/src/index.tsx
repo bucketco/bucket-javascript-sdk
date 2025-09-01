@@ -11,12 +11,12 @@ import React, {
 import canonicalJSON from "canonical-json";
 
 import {
-  ReflagClient,
-  ReflagContext,
   CheckEvent,
   CompanyContext,
   InitOptions,
   RawFlags,
+  ReflagClient,
+  ReflagContext,
   RequestFeedbackData,
   TrackEvent,
   UnassignedFeedback,
@@ -25,13 +25,7 @@ import {
 
 import { version } from "../package.json";
 
-export type {
-  CheckEvent,
-  CompanyContext,
-  RawFlags,
-  TrackEvent,
-  UserContext,
-};
+export type { CheckEvent, CompanyContext, RawFlags, TrackEvent, UserContext };
 
 export type EmptyFlagRemoteConfig = { key: undefined; payload: undefined };
 
@@ -262,9 +256,7 @@ export type RequestFeedbackOptions = Omit<
  * }
  * ```
  */
-export function useFlag<TKey extends FlagKey>(
-  key: TKey,
-): TypedFlags[TKey] {
+export function useFlag<TKey extends FlagKey>(key: TKey): TypedFlags[TKey] {
   const client = useClient();
   const {
     features: { isLoading },

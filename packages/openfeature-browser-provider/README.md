@@ -1,9 +1,9 @@
-# Reflag Browser OpenFlag Provider
+# Reflag Browser OpenFeature Provider
 
-The official OpenFeature Browser provider for [Reflag](https://reflag.com) feature management service.
+The official OpenFeature Browser provider for [Reflag](https://reflag.com) flag management service.
 
 It uses the Reflag Browser SDK internally and thus allow you to collect [automated feedback surveys](https://github.com/reflagcom/javascript/tree/main/packages/browser-sdk#qualitative-feedback)
-when people use your features as well as tracking which customers use which features.
+when people use your flag as well as tracking which customers use which features.
 
 If you're using React, you'll be better off with the [Reflag React SDK](https://github.com/reflagcom/javascript/blob/main/packages/react-sdk/README.md) or the [OpenFeature React SDK](https://openfeature.dev/docs/reference/technologies/client/web/react/).
 
@@ -67,7 +67,7 @@ All resolution methods share these behaviors:
 client.getBooleanValue("my-flag", false);
 ```
 
-Returns the feature's enabled state. This is the most common use case for flags.
+Returns the flag's enabled state. This is the most common use case for flags.
 
 #### String Resolution
 
@@ -75,7 +75,7 @@ Returns the feature's enabled state. This is the most common use case for flags.
 client.getStringValue("my-flag", "default");
 ```
 
-Returns the feature's remote config key (also known as "variant"). Useful for multi-variate use cases.
+Returns the flag's remote config key (also known as "variant"). Useful for multi-variate use cases.
 
 #### Number Resolution
 
@@ -94,10 +94,10 @@ client.getObjectValue("my-flag", "string-value");
 client.getObjectValue("my-flag", 199);
 ```
 
-Returns the feature's remote config payload with type validation. This is the most flexible method,
+Returns the flag's remote config payload with type validation. This is the most flexible method,
 allowing for complex configuration objects or simple types.
 
-The object resolution performs runtime type checking between the default value and the feature payload to ensure type safety.
+The object resolution performs runtime type checking between the default value and the flag payload to ensure type safety.
 
 ## Context
 
@@ -144,7 +144,7 @@ To update the context, call `OpenFeature.setContext(myNewContext);`
 await OpenFeature.setContext({ userId: "my-key" });
 ```
 
-## Tracking feature usage
+## Tracking flag usage
 
 The Reflag OpenFeature Provider supports the OpenFeature tracking API
 natively.
@@ -162,7 +162,7 @@ const reflagProvider = new ReflagBrowserProvider({ publishableKey });
 await OpenFeature.setProviderAndWait(reflagProvider);
 const client = OpenFeature.getClient();
 
-// use client to send an event when user uses a feature
+// use client to send an event when user uses a flag
 client.track("huddles");
 ```
 
