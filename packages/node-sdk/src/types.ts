@@ -618,7 +618,7 @@ export type ClientOptions = {
    * Number of times to retry fetching feature definitions (optional).
    * Default is 3 times.
    **/
-  featuresFetchRetries?: number;
+  flagsFetchRetries?: number;
 
   /**
    * The options for the batch buffer (optional).
@@ -628,15 +628,15 @@ export type ClientOptions = {
 
   /**
    * If a filename is specified, feature targeting results be overridden with
-   * the values from this file. The file should be a JSON object with feature
+   * the values from this file. The file should be a JSON object with flag
    * keys as keys, and boolean or object as values.
    *
    * If a function is specified, the function will be called with the context
-   * and should return a record of feature keys and boolean or object values.
+   * and should return a record of flag keys and boolean or object values.
    *
    * Defaults to "reflagFlags.json".
    **/
-  featureOverrides?: string | ((context: Context) => FlagOverrides);
+  flagOverrides?: string | ((context: Context) => FlagOverrides);
 
   /**
    * In offline mode, no data is sent or fetched from the the Reflag API.
@@ -651,8 +651,8 @@ export type ClientOptions = {
 
   /**
    * The path to the config file. If supplied, the config file will be loaded.
-   * Defaults to `reflag.json` when NODE_ENV is not production. Can also be
-   * set through the environment variable BUCKET_CONFIG_FILE.
+   * Defaults to `reflag.config.json` when NODE_ENV is not production. Can also be
+   * set through the environment variable REFLAG_CONFIG_FILE.
    */
   configFile?: string;
 

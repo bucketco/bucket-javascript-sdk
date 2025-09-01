@@ -1,11 +1,7 @@
 import { z } from "zod";
 
 import { authRequest } from "../utils/auth.js";
-import {
-  booleanish,
-  EnvironmentQuerySchema,
-  sortTypeSchema,
-} from "../utils/schemas.js";
+import { booleanish, EnvironmentQuerySchema } from "../utils/schemas.js";
 import { PaginatedResponse } from "../utils/types.js";
 
 export type Stage = {
@@ -47,27 +43,29 @@ export const FlagsQuerySchema = EnvironmentQuerySchema.extend({
     .enum(["asc", "desc"])
     .default("asc")
     .describe("Sort direction (ascending or descending)"),
+  includeRemoteConfigs: booleanish
+    .default(false)
+    .describe("Include remote configuration data"),
 }).strict();
-
-export type FlagsQuery = z.input<typeof FlagsQuerySchema>;
 
 export const FlagCreateSchema = z
   .object({
     name: z
       .string()
       .min(1, "Flag name is required")
-      .describe("Name of the feature"),
+      .describe("Name of the flag"),
     key: z
       .string()
       .min(1, "Flag key is required")
-      .describe("Unique identifier key for the feature"),
+      .describe("Unique identifier key for the flag"),
     description: z
       .string()
       .optional()
-      .describe("Optional description of the feature"),
+      .describe("Optional description of the flag"),
   })
   .strict();
 
+export type FlagsQuery = z.input<typeof FlagsQuerySchema>;
 export type FlagCreate = z.input<typeof FlagCreateSchema>;
 
 export async function listFlags(appId: string, query: FlagsQuery) {

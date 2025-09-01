@@ -5,7 +5,7 @@ import ora from "ora";
 
 import { registerAppCommands } from "./commands/apps.js";
 import { registerAuthCommands } from "./commands/auth.js";
-import { registerFlagCommands } from "./commands/features.js";
+import { registerFlagCommands } from "./commands/flags.js";
 import { registerInitCommand } from "./commands/init.js";
 import { registerMcpCommand } from "./commands/mcp.js";
 import { registerNewCommand } from "./commands/new.js";
@@ -58,7 +58,7 @@ async function main() {
     const cleanedBaseUrl = stripTrailingSlash(baseUrl?.trim());
     const cleanedApiUrl = stripTrailingSlash(apiUrl?.trim());
 
-    const apiKey = explicitApiKey ?? process.env.BUCKET_API_KEY;
+    const apiKey = explicitApiKey ?? process.env.REFLAG_API_KEY;
 
     if (typeof apiKey === "string" && apiKey.length > 0) {
       console.info(

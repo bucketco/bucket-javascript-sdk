@@ -34,8 +34,8 @@ let featureOverrides = (_: Context): FlagOverrides => {
 
 // Create a new ReflagClient instance with the secret key and default features
 // The default features will be used if the user does not have any features set
-// Create a reflagConfig.json file to configure the client or set environment variables
-// like BUCKET_SECRET_KEY, BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED, etc.
+// Create a reflag.config.json file to configure the client or set environment variables
+// like REFLAG_SECRET_KEY, REFLAG_FLAGS_ENABLED, REFLAG_FLAGS_DISABLED, etc.
 export default new ReflagClient({
   // Optional: Set a logger to log debug information, errors, etc.
   logger: console,

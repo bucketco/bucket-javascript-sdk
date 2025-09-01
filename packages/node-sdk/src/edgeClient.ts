@@ -12,7 +12,7 @@ export type EdgeClientOptions = Omit<
  *
  * @example
  * ```ts
- * // set the BUCKET_SECRET_KEY environment variable or pass the secret key in the constructor
+ * // set the REFLAG_SECRET_KEY environment variable or pass the secret key in the constructor
  * const client = new EdgeClient();
  *
  * // evaluate a flag

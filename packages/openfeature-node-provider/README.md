@@ -187,10 +187,7 @@ await OpenFeature.setProviderAndWait(provider);
 const client = OpenFeature.getClient();
 
 // `evaluationContext` is whatever you use to evaluate features based off
-const enterpriseFlagEnabled = await client.track(
-  "huddles",
-  evaluationContext,
-);
+const enterpriseFlagEnabled = await client.track("huddles", evaluationContext);
 ```
 
 ## License

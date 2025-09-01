@@ -231,7 +231,7 @@ npm i @reflag/node-sdk
 import { ReflagClient } from "@reflag/node-sdk";
 
 const client = new ReflagClient({
-  secretKey: process.env.BUCKET_SECRET_KEY,
+  secretKey: process.env.REFLAG_SECRET_KEY,
 });
 
 // Check if a feature is enabled

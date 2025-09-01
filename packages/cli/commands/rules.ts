@@ -16,8 +16,8 @@ type RulesArgs = {
   yes?: boolean;
 };
 
-const BUCKET_SECTION_START = "<!-- BUCKET_START -->";
-const BUCKET_SECTION_END = "<!-- BUCKET_END -->";
+const REFLAG_SECTION_START = "<!-- REFLAG_START -->";
+const REFLAG_SECTION_END = "<!-- REFLAG_END -->";
 
 async function confirmOverwrite(
   filePath: string,
@@ -42,7 +42,7 @@ async function confirmOverwrite(
 }
 
 function wrapInMarkers(content: string): string {
-  return `${BUCKET_SECTION_START}\n\n${content}\n\n${BUCKET_SECTION_END}`;
+  return `${REFLAG_SECTION_START}\n\n${content}\n\n${REFLAG_SECTION_END}`;
 }
 
 function replaceOrAppendSection(
@@ -51,7 +51,7 @@ function replaceOrAppendSection(
 ): string {
   const wrappedContent = wrapInMarkers(newContent);
   const sectionRegex = new RegExp(
-    `${BUCKET_SECTION_START}[\\s\\S]*?${BUCKET_SECTION_END}`,
+    `${REFLAG_SECTION_START}[\\s\\S]*?${REFLAG_SECTION_END}`,
     "g",
   );
 

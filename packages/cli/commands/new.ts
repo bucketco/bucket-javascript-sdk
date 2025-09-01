@@ -6,12 +6,12 @@ import { CONFIG_FILE_NAME } from "../utils/constants.js";
 import {
   appIdOption,
   flagKeyOption,
-  featureNameArgument,
+  flagNameArgument,
   typesFormatOption,
   typesOutOption,
 } from "../utils/options.js";
 
-import { createFlagAction, generateTypesAction } from "./features.js";
+import { createFlagAction, generateTypesAction } from "./flags.js";
 import { initAction } from "./init.js";
 
 type NewArgs = {
@@ -34,13 +34,13 @@ export function registerNewCommand(cli: Command) {
   cli
     .command("new")
     .description(
-      "Initialize the Reflag CLI, authenticates, and creates a new feature.",
+      "Initialize the Reflag CLI, authenticates, and creates a new flag.",
     )
     .addOption(appIdOption)
     .addOption(typesOutOption)
     .addOption(typesFormatOption)
     .addOption(flagKeyOption)
-    .addArgument(featureNameArgument)
+    .addArgument(flagNameArgument)
     .action(newAction);
 
   // Update the config with the cli override values

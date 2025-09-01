@@ -66,7 +66,7 @@ in Reflag.
 Reflag will load settings through the various environment variables automatically (see [Configuring](#configuring) below).
 
 1. Find the Reflag secret key for your development environment under [environment settings](https://app.reflag.com/env-current/settings/app-environments) in Reflag.
-2. Set `BUCKET_SECRET_KEY` in your `.env` file
+2. Set `REFLAG_SECRET_KEY` in your `.env` file
 3. Create a `reflag.ts` file containing the following:
 
 ```typescript
@@ -216,7 +216,7 @@ Instead of using `ReflagClient`, use `EdgeClient` and make sure you call `ctx.wa
 ```typescript
 import { EdgeClient } from "@reflag/node-sdk";
 
-// set the BUCKET_SECRET_KEY environment variable or pass the secret key in the constructor
+// set the REFLAG_SECRET_KEY environment variable or pass the secret key in the constructor
 const reflag = new EdgeClient();
 
 export default {
@@ -343,21 +343,21 @@ generate a `check` event, contrary to the `config` property on the object return
 
 The Reflag `Node.js` SDK can be configured through environment variables,
 a configuration file on disk or by passing options to the `ReflagClient`
-constructor. By default, the SDK searches for `reflagConfig.json` in the
+constructor. By default, the SDK searches for `reflag.config.json` in the
 current working directory.
 
-| Option             | Type                    | Description                                                                                                                                                                                                                                                         | Env Var                                           |
-| ------------------ | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| `secretKey`        | string                  | The secret key used for authentication with Reflag's servers.                                                                                                                                                                                                       | BUCKET_SECRET_KEY                                 |
-| `logLevel`         | string                  | The log level for the SDK (e.g., `"DEBUG"`, `"INFO"`, `"WARN"`, `"ERROR"`). Default: `INFO`                                                                                                                                                                         | BUCKET_LOG_LEVEL                                  |
-| `offline`          | boolean                 | Operate in offline mode. Default: `false`, except in tests it will default to `true` based off of the `TEST` env. var.                                                                                                                                              | BUCKET_OFFLINE                                    |
-| `apiBaseUrl`       | string                  | The base API URL for the Reflag servers.                                                                                                                                                                                                                            | BUCKET_API_BASE_URL                               |
-| `featureOverrides` | Record<string, boolean> | An object specifying feature overrides for testing or local development. See [examples/express/app.test.ts](https://github.com/reflagcom/javascript/tree/main/packages/node-sdk/examples/express/app.test.ts) for how to use `featureOverrides` in tests. | BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED |
-| `configFile`       | string                  | Load this config file from disk. Default: `reflagConfig.json`                                                                                                                                                                                                       | BUCKET_CONFIG_FILE                                |
+| Option             | Type                    | Description                                                                                                                                                                                                                                               | Env Var                                     |
+| ------------------ | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `secretKey`        | string                  | The secret key used for authentication with Reflag's servers.                                                                                                                                                                                             | REFLAG_SECRET_KEY                           |
+| `logLevel`         | string                  | The log level for the SDK (e.g., `"DEBUG"`, `"INFO"`, `"WARN"`, `"ERROR"`). Default: `INFO`                                                                                                                                                               | REFLAG_LOG_LEVEL                            |
+| `offline`          | boolean                 | Operate in offline mode. Default: `false`, except in tests it will default to `true` based off of the `TEST` env. var.                                                                                                                                    | REFLAG_OFFLINE                              |
+| `apiBaseUrl`       | string                  | The base API URL for the Reflag servers.                                                                                                                                                                                                                  | REFLAG_API_BASE_URL                         |
+| `featureOverrides` | Record<string, boolean> | An object specifying feature overrides for testing or local development. See [examples/express/app.test.ts](https://github.com/reflagcom/javascript/tree/main/packages/node-sdk/examples/express/app.test.ts) for how to use `featureOverrides` in tests. | REFLAG_FLAGS_ENABLED, REFLAG_FLAGS_DISABLED |
+| `configFile`       | string                  | Load this config file from disk. Default: `reflag.config.json`                                                                                                                                                                                            | REFLAG_CONFIG_FILE                          |
 
-> [!NOTE] > `BUCKET_FEATURES_ENABLED` and `BUCKET_FEATURES_DISABLED` are comma separated lists of features which will be enabled or disabled respectively.
+> [!NOTE] > `REFLAG_FLAGS_ENABLED` and `REFLAG_FLAGS_DISABLED` are comma separated lists of features which will be enabled or disabled respectively.
 
-`reflagConfig.json` example:
+`reflag.config.json` example:
 
 ```json
 {
@@ -381,7 +381,7 @@ current working directory.
 }
 ```
 
-When using a `reflagConfig.json` for local development, make sure you add it to your
+When using a `reflag.config.json` for local development, make sure you add it to your
 `.gitignore` file. You can also set these options directly in the `ReflagClient`
 constructor. The precedence for configuration options is as follows, listed in the
 order of importance:
@@ -486,11 +486,11 @@ Flag overrides allow you to override flags and their configurations locally. Thi
 1. Through environment variables:
 
 ```bash
-BUCKET_FEATURES_ENABLED=feature1,feature2
-BUCKET_FEATURES_DISABLED=feature3,feature4
+REFLAG_FLAGS_ENABLED=feature1,feature2
+REFLAG_FLAGS_DISABLED=feature3,feature4
 ```
 
-2. Through `reflagConfig.json`:
+2. Through `reflag.config.json`:
 
 ```json
 {

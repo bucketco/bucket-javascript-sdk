@@ -27,5 +27,5 @@ of the SDK:
 ```sh
 yarn install
 
-BUCKET_SECRET_KEY=<secretKey> yarn start
+REFLAG_SECRET_KEY=<secretKey> yarn start
 ```

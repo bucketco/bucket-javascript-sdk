@@ -3,7 +3,7 @@
 import { ReflagBrowserSDKProvider } from "@reflag/openfeature-browser-provider";
 import { OpenFeature } from "@openfeature/react-sdk";
 
-const publishableKey = process.env.NEXT_PUBLIC_BUCKET_PUBLISHABLE_KEY;
+const publishableKey = process.env.NEXT_PUBLIC_REFLAG_PUBLISHABLE_KEY;
 
 let reflagProvider: ReflagBrowserSDKProvider | null = null;
 let initialized = false;

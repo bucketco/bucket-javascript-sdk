@@ -12,7 +12,7 @@ test("Acceptance", async ({ page }) => {
 
   // Mock API calls with assertions
   await page.route(`${API_BASE_URL}/features/evaluated*`, async (route) => {
-    successfulRequests.push("FEATURES");
+    successfulRequests.push("FLAGS");
     await route.fulfill({
       status: 200,
       body: JSON.stringify({
@@ -121,7 +121,7 @@ test("Acceptance", async ({ page }) => {
 
   // Assert all API requests were made
   expect(successfulRequests).toEqual([
-    "FEATURES",
+    "FLAGS",
     "USER",
     "COMPANY",
     "EVENT",

@@ -10,10 +10,10 @@ import BatchBuffer from "./batch-buffer";
 import {
   API_BASE_URL,
   API_TIMEOUT_MS,
-  BUCKET_LOG_PREFIX,
-  FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
-  FEATURES_REFETCH_MS,
+  FLAG_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
+  FLAGS_REFETCH_MS,
   loadConfig,
+  REFLAG_LOG_PREFIX,
   SDK_VERSION,
   SDK_VERSION_HEADER_NAME,
 } from "./config";
@@ -58,7 +58,7 @@ import {
   once,
 } from "./utils";
 
-const reflagConfigDefaultFile = "reflagConfig.json";
+const reflagConfigDefaultFile = "reflag.config.json";
 
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
@@ -107,7 +107,7 @@ type BulkEvent =
  *
  * @example
  * ```ts
- * // set the BUCKET_SECRET_KEY environment variable or pass the secret key to the constructor
+ * // set the REFLAG_SECRET_KEY environment variable or pass the secret key to the constructor
  * const client = new ReflagClient();
  *
  * // evaluate a flag
@@ -124,17 +124,17 @@ export class ReflagClient {
     staleWarningInterval: number;
     headers: Record<string, string>;
     fallbackFlags?: Record<TypedFlagKey, RawFlag>;
-    featureOverrides: FlagOverridesFn;
+    flagOverrides: FlagOverridesFn;
     offline: boolean;
     emitEvaluationEvents: boolean;
     configFile?: string;
-    featuresFetchRetries: number;
+    flagsFetchRetries: number;
     fetchTimeoutMs: number;
     cacheStrategy: CacheStrategy;
   };
   httpClient: HttpClient;
 
-  private featuresCache: Cache<CachedFlagDefinition[]>;
+  private flagsCache: Cache<CachedFlagDefinition[]>;
   private batchBuffer: BatchBuffer<BulkEvent>;
   private rateLimiter: ReturnType<typeof newRateLimiter>;
 
@@ -147,7 +147,7 @@ export class ReflagClient {
   private _initialize = once(async () => {
     const start = Date.now();
     if (!this._config.offline) {
-      await this.featuresCache.refresh();
+      await this.flagsCache.refresh();
     }
     this.logger.info(
       "Reflag initialized in " +
@@ -169,12 +169,12 @@ export class ReflagClient {
    * @param options.httpClient - The HTTP client to use for sending requests (optional).
    * @param options.logLevel - The log level to use for logging (optional).
    * @param options.offline - Whether to run in offline mode (optional).
-   * @param options.fallbackFlags - The fallback features to use if the feature is not found (optional).
+   * @param options.fallbackFlags - The fallback flags to use if the flag is not found (optional).
    * @param options.batchOptions - The options for the batch buffer (optional).
-   * @param options.featureOverrides - The feature overrides to use for the client (optional).
+   * @param options.flagOverrides - The flag overrides to use for the client (optional).
    * @param options.configFile - The path to the config file (optional).
-   * @param options.featuresFetchRetries - Number of retries for fetching features (optional, defaults to 3).
-   * @param options.fetchTimeoutMs - Timeout for fetching features (optional, defaults to 10000ms).
+   * @param options.flagsFetchRetries - Number of retries for fetching flags (optional, defaults to 3).
+   * @param options.fetchTimeoutMs - Timeout for fetching flags (optional, defaults to 10000ms).
    * @param options.cacheStrategy - The cache strategy to use for the client (optional, defaults to "periodically-update").
    *
    * @throws An error if the options are invalid.
@@ -218,9 +218,9 @@ export class ReflagClient {
     );
 
     ok(
-      options.featuresFetchRetries === undefined ||
-        (Number.isInteger(options.featuresFetchRetries) &&
-          options.featuresFetchRetries >= 0),
+      options.flagsFetchRetries === undefined ||
+        (Number.isInteger(options.flagsFetchRetries) &&
+          options.flagsFetchRetries >= 0),
       "flagsFetchRetries must be a non-negative integer",
     );
 
@@ -233,7 +233,7 @@ export class ReflagClient {
 
     if (!options.configFile) {
       options.configFile =
-        (process.env.BUCKET_CONFIG_FILE ??
+        (process.env.REFLAG_CONFIG_FILE ??
         fs.existsSync(reflagConfigDefaultFile))
           ? reflagConfigDefaultFile
           : undefined;
@@ -256,10 +256,8 @@ export class ReflagClient {
 
     this.logger = options.logger
       ? options.logger
-      : applyLogLevel(decorateLogger(BUCKET_LOG_PREFIX, console), logLevel);
+      : applyLogLevel(decorateLogger(REFLAG_LOG_PREFIX, console), logLevel);
 
-    // todo: deprecate fallback features in favour of a more operationally
-    //  friendly way of setting fall backs.
     const fallbackFlags = Array.isArray(options.fallbackFlags)
       ? options.fallbackFlags.reduce(
           (acc, key) => {
@@ -294,9 +292,7 @@ export class ReflagClient {
           )
         : undefined;
 
-    this.rateLimiter = newRateLimiter(
-      FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
-    );
+    this.rateLimiter = newRateLimiter(FLAG_EVENT_RATE_LIMITER_WINDOW_SIZE_MS);
     this.httpClient = options.httpClient || fetchClient;
     this.batchBuffer = new BatchBuffer<BulkEvent>({
       ...options?.batchOptions,
@@ -313,14 +309,14 @@ export class ReflagClient {
         [SDK_VERSION_HEADER_NAME]: SDK_VERSION,
         ["Authorization"]: `Bearer ${config.secretKey}`,
       },
-      refetchInterval: FEATURES_REFETCH_MS,
-      staleWarningInterval: FEATURES_REFETCH_MS * 5,
+      refetchInterval: FLAGS_REFETCH_MS,
+      staleWarningInterval: FLAGS_REFETCH_MS * 5,
       fallbackFlags: fallbackFlags,
-      featureOverrides:
-        typeof config.featureOverrides === "function"
-          ? config.featureOverrides
-          : () => config.featureOverrides,
-      featuresFetchRetries: options.featuresFetchRetries ?? 3,
+      flagOverrides:
+        typeof config.flagOverrides === "function"
+          ? config.flagOverrides
+          : () => config.flagOverrides,
+      flagsFetchRetries: options.flagsFetchRetries ?? 3,
       fetchTimeoutMs: options.fetchTimeoutMs ?? API_TIMEOUT_MS,
       cacheStrategy: options.cacheStrategy ?? "periodically-update",
     };
@@ -335,26 +331,26 @@ export class ReflagClient {
 
     const fetchFlags = async () => {
       const res = await this.get<FlagsAPIResponse>(
-        "flags",
-        this._config.featuresFetchRetries,
+        "features",
+        this._config.flagsFetchRetries,
       );
       if (!isObject(res) || !Array.isArray(res?.features)) {
         this.logger.warn("flags cache: invalid response", res);
         return undefined;
       }
 
-      return res.features.map((featureDef) => {
+      return res.features.map((flagDef) => {
         return {
-          ...featureDef,
+          ...flagDef,
           enabledEvaluator: newEvaluator(
-            featureDef.targeting.rules.map((rule) => ({
+            flagDef.targeting.rules.map((rule) => ({
               filter: rule.filter,
               value: true,
             })),
           ),
-          configEvaluator: featureDef.config
+          configEvaluator: flagDef.config
             ? newEvaluator(
-                featureDef.config?.variants.map((variant) => ({
+                flagDef.config?.variants.map((variant) => ({
                   filter: variant.filter,
                   value: {
                     key: variant.key,
@@ -368,14 +364,14 @@ export class ReflagClient {
     };
 
     if (this._config.cacheStrategy === "periodically-update") {
-      this.featuresCache = periodicallyUpdatingCache<CachedFlagDefinition[]>(
+      this.flagsCache = periodicallyUpdatingCache<CachedFlagDefinition[]>(
         this._config.refetchInterval,
         this._config.staleWarningInterval,
         this.logger,
         fetchFlags,
       );
     } else {
-      this.featuresCache = inRequestCache<CachedFlagDefinition[]>(
+      this.flagsCache = inRequestCache<CachedFlagDefinition[]>(
         this._config.refetchInterval,
         this.logger,
         fetchFlags,
@@ -384,32 +380,32 @@ export class ReflagClient {
   }
 
   /**
-   * Sets the feature overrides.
+   * Sets the flag overrides.
    *
-   * @param overrides - The feature overrides.
+   * @param overrides - The flag overrides.
    *
    * @remarks
-   * The feature overrides are used to override the feature definitions.
+   * The flag overrides are used to override the flag definitions.
    * This is useful for testing or development.
    *
    * @example
    * ```ts
-   * client.featureOverrides = {
+   * client.flagOverrides = {
    *   "flag-1": true,
    *   "flag-2": false,
    * };
    * ```
    **/
-  set featureOverrides(overrides: FlagOverridesFn | FlagOverrides) {
+  set flagOverrides(overrides: FlagOverridesFn | FlagOverrides) {
     if (typeof overrides === "object") {
-      this._config.featureOverrides = () => overrides;
+      this._config.flagOverrides = () => overrides;
     } else {
-      this._config.featureOverrides = overrides;
+      this._config.flagOverrides = overrides;
     }
   }
 
   /**
-   * Clears the feature overrides.
+   * Clears the flag overrides.
    *
    * @remarks
    * This is useful for testing or development.
@@ -422,13 +418,13 @@ export class ReflagClient {
    * ```
    **/
   clearFlagOverrides() {
-    this._config.featureOverrides = () => ({});
+    this._config.flagOverrides = () => ({});
   }
 
   /**
    * Returns a new BoundReflagClient with the user/company/otherContext
    * set to be used in subsequent calls.
-   * For example, for evaluating feature targeting or tracking events.
+   * For example, for evaluating flag targeting or tracking events.
    *
    * @param context - The context to bind the client to.
    * @param context.enableTracking - Whether to enable tracking for the context.
@@ -576,10 +572,10 @@ export class ReflagClient {
   }
 
   /**
-   * Initializes the client by caching the features definitions.
+   * Initializes the client by caching the flags definitions.
    *
    * @remarks
-   * Call this method before calling `getFlags` to ensure the feature definitions are cached.
+   * Call this method before calling `getFlags` to ensure the flag definitions are cached.
    * The client will ignore subsequent calls to this method.
    **/
   public async initialize() {
@@ -588,7 +584,7 @@ export class ReflagClient {
   }
 
   /**
-   * Flushes and completes any in-flight fetches in the feature cache.
+   * Flushes and completes any in-flight fetches in the flag cache.
    *
    * @remarks
    * It is recommended to call this method when the application is shutting down to ensure all events are sent
@@ -602,18 +598,18 @@ export class ReflagClient {
     }
 
     await this.batchBuffer.flush();
-    await this.featuresCache.waitRefresh();
+    await this.flagsCache.waitRefresh();
   }
 
   /**
-   * Gets the feature definitions, including all config values.
-   * To evaluate which features are enabled for a given user/company, use `getFlags`.
+   * Gets the flag definitions, including all config values.
+   * To evaluate which flags are enabled for a given user/company, use `getFlags`.
    *
-   * @returns The features definitions.
+   * @returns The flags definitions.
    */
   public getFlagDefinitions(): FlagDefinition[] {
-    const features = this.featuresCache.get() || [];
-    return features.map((f) => ({
+    const flags = this.flagsCache.get() || [];
+    return flags.map((f) => ({
       key: f.key,
       description: f.description,
       flag: f.targeting,
@@ -622,7 +618,7 @@ export class ReflagClient {
   }
 
   /**
-   * Gets the evaluated features for the current context which includes the user, company, and custom context.
+   * Gets the evaluated flags for the current context which includes the user, company, and custom context.
    *
    * @param options - The options for the context.
    * @param options.enableTracking - Whether to enable tracking for the context.
@@ -631,10 +627,10 @@ export class ReflagClient {
    * @param options.company - The company context.
    * @param options.other - The other context.
    *
-   * @returns The evaluated features.
+   * @returns The evaluated flags.
    *
    * @remarks
-   * Call `initialize` before calling this method to ensure the feature definitions are cached, no features will be returned otherwise.
+   * Call `initialize` before calling this method to ensure the flag definitions are cached, no flags will be returned otherwise.
    **/
   public getFlags({
     enableTracking = true,
@@ -644,14 +640,14 @@ export class ReflagClient {
   }
 
   /**
-   * Gets the evaluated feature for the current context which includes the user, company, and custom context.
+   * Gets the evaluated flag for the current context which includes the user, company, and custom context.
    * Using the `isEnabled` property sends a `check` event to Reflag.
    *
-   * @param key - The key of the feature to get.
-   * @returns The evaluated feature.
+   * @param key - The key of the flag to get.
+   * @returns The evaluated flag.
    *
    * @remarks
-   * Call `initialize` before calling this method to ensure the feature definitions are cached, no features will be returned otherwise.
+   * Call `initialize` before calling this method to ensure the flag definitions are cached, no flags will be returned otherwise.
    **/
   public getFlag<TKey extends TypedFlagKey>(
     { enableTracking = true, ...context }: ContextWithTracking,
@@ -661,14 +657,14 @@ export class ReflagClient {
   }
 
   /**
-   * Gets evaluated features with the usage of remote context.
+   * Gets evaluated flags with the usage of remote context.
    * This method triggers a network request every time it's called.
    *
-   * @param userId - The userId of the user to get the features for.
-   * @param companyId - The companyId of the company to get the features for.
-   * @param additionalContext - The additional context to get the features for.
+   * @param userId - The userId of the user to get the flags for.
+   * @param companyId - The companyId of the company to get the flags for.
+   * @param additionalContext - The additional context to get the flags for.
    *
-   * @returns evaluated features
+   * @returns evaluated flags
    */
   public async getFlagsRemote(
     userId?: IdType,
@@ -684,15 +680,15 @@ export class ReflagClient {
   }
 
   /**
-   * Gets evaluated feature with the usage of remote context.
+   * Gets evaluated flag with the usage of remote context.
    * This method triggers a network request every time it's called.
    *
-   * @param key - The key of the feature to get.
-   * @param userId - The userId of the user to get the feature for.
-   * @param companyId - The companyId of the company to get the feature for.
-   * @param additionalContext - The additional context to get the feature for.
+   * @param key - The key of the flag to get.
+   * @param userId - The userId of the user to get the flag for.
+   * @param companyId - The companyId of the company to get the flag for.
+   * @param additionalContext - The additional context to get the flag for.
    *
-   * @returns evaluated feature
+   * @returns evaluated flag
    */
   public async getFlagRemote<TKey extends TypedFlagKey>(
     key: TKey,
@@ -785,7 +781,7 @@ export class ReflagClient {
           return result as TResponse;
         },
         () => {
-          this.logger.warn("failed to fetch features, will retry");
+          this.logger.warn("failed to fetch flags, will retry");
         },
         retries,
         1000,
@@ -820,21 +816,21 @@ export class ReflagClient {
   }
 
   /**
-   * Sends a feature event to the Reflag API.
+   * Sends a flag event to the Reflag API.
    *
-   * Flag events are used to track the evaluation of feature targeting rules.
-   * "check" events are sent when a feature's `isEnabled` property is checked.
-   * "evaluate" events are sent when a feature's targeting rules are matched against
+   * Flag events are used to track the evaluation of flag targeting rules.
+   * "check" events are sent when a flag's `isEnabled` property is checked.
+   * "evaluate" events are sent when a flag's targeting rules are matched against
    * the current context.
    *
    * @param event - The event to send.
    * @param event.action - The action to send.
-   * @param event.key - The key of the feature to send.
-   * @param event.targetingVersion - The targeting version of the feature to send.
-   * @param event.evalResult - The evaluation result of the feature to send.
-   * @param event.evalContext - The evaluation context of the feature to send.
-   * @param event.evalRuleResults - The evaluation rule results of the feature to send.
-   * @param event.evalMissingFields - The evaluation missing fields of the feature to send.
+   * @param event.key - The key of the flag to send.
+   * @param event.targetingVersion - The targeting version of the flag to send.
+   * @param event.evalResult - The evaluation result of the flag to send.
+   * @param event.evalContext - The evaluation context of the flag to send.
+   * @param event.evalRuleResults - The evaluation rule results of the flag to send.
+   * @param event.evalMissingFields - The evaluation missing fields of the flag to send.
    *
    * @throws An error if the event is invalid.
    *
@@ -853,7 +849,7 @@ export class ReflagClient {
     );
     ok(
       typeof event.key === "string" && event.key.length > 0,
-      "event must have a feature key",
+      "event must have a flag key",
     );
     ok(
       typeof event.targetingVersion === "number" ||
@@ -909,7 +905,7 @@ export class ReflagClient {
     }
 
     await this.batchBuffer.add({
-      type: "flag-flag-event",
+      type: "feature-flag-event",
       action: event.action,
       key: event.key,
       targetingVersion: event.targetingVersion,
@@ -965,10 +961,10 @@ export class ReflagClient {
   }
 
   /**
-   * Warns if a feature has targeting rules that require context fields that are missing.
+   * Warns if a flag has targeting rules that require context fields that are missing.
    *
    * @param context - The context.
-   * @param feature - The feature to check.
+   * @param flag - The flag to check.
    */
   private _warnMissingFlagContextFields(
     context: Context,
@@ -982,38 +978,38 @@ export class ReflagClient {
     },
   ) {
     const report: Record<string, string[]> = {};
-    const { config, ...featureData } = feature;
+    const { config, ...flagData } = flag;
 
     if (
-      featureData.missingContextFields?.length &&
+      flagData.missingContextFields?.length &&
       this.rateLimiter.isAllowed(
         hashObject({
-          flagKey: featureData.key,
-          missingContextFields: featureData.missingContextFields,
+          flagKey: flagData.key,
+          missingContextFields: flagData.missingContextFields,
           context,
         }),
       )
     ) {
-      report[featureData.key] = featureData.missingContextFields;
+      report[flagData.key] = flagData.missingContextFields;
     }
 
     if (
       config?.missingContextFields?.length &&
       this.rateLimiter.isAllowed(
         hashObject({
-          flagKey: featureData.key,
+          flagKey: flagData.key,
           configKey: config.key,
           missingContextFields: config.missingContextFields,
           context,
         }),
       )
     ) {
-      report[`${featureData.key}.config`] = config.missingContextFields;
+      report[`${flagData.key}.config`] = config.missingContextFields;
     }
 
     if (Object.keys(report).length > 0) {
       this.logger.warn(
-        `feature/remote config targeting rules might not be correctly evaluated due to missing context fields.`,
+        `flag targeting rules might not be correctly evaluated due to missing context fields.`,
         report,
       );
     }
@@ -1024,7 +1020,7 @@ export class ReflagClient {
     options: ContextWithTracking,
     key: TKey,
   ): TypedFlags[TKey];
-  private _getFlags<TKey extends TypedFlag>(
+  private _getFlags<TKey extends TypedFlagKey>(
     options: ContextWithTracking,
     key?: TKey,
   ): TypedFlags | TypedFlags[TKey] {
@@ -1035,13 +1031,13 @@ export class ReflagClient {
     }
 
     void this.syncContext(options);
-    let featureDefinitions: CachedFlagDefinition[] = [];
+    let flagDefinitions: CachedFlagDefinition[] = [];
 
     if (!this._config.offline) {
-      const featureDefs = this.featuresCache.get();
-      if (!featureDefs) {
+      const flagDefs = this.flagsCache.get();
+      if (!flagDefs) {
         this.logger.warn(
-          "no feature definitions available, using fallback features.",
+          "no flag definitions available, using fallback flags.",
         );
         const fallbackFlags = this._config.fallbackFlags || {};
         if (key) {
@@ -1057,22 +1053,22 @@ export class ReflagClient {
           ]),
         );
       }
-      featureDefinitions = featureDefs;
+      flagDefinitions = flagDefs;
     }
 
     const { enableTracking = true, meta: _, ...context } = options;
 
-    const evaluated = featureDefinitions
+    const evaluated = flagDefinitions
       .filter(({ key: flagKey }) => (key ? key === flagKey : true))
-      .map((feature) => ({
-        flagKey: feature.key,
-        targetingVersion: feature.targeting.version,
-        configVersion: feature.config?.version,
-        enabledResult: feature.enabledEvaluator(context, feature.key),
+      .map((flag) => ({
+        flagKey: flag.key,
+        targetingVersion: flag.targeting.version,
+        configVersion: flag.config?.version,
+        enabledResult: flag.enabledEvaluator(context, flag.key),
         configResult:
-          feature.configEvaluator?.(context, feature.key) ??
+          flag.configEvaluator?.(context, flag.key) ??
           ({
-            flagKey: feature.key,
+            flagKey: flag.key,
             context,
             value: undefined,
             ruleEvaluationResults: [],
@@ -1150,8 +1146,8 @@ export class ReflagClient {
       {} as Record<TypedFlagKey, RawFlag>,
     );
 
-    // apply feature overrides
-    const overrides = Object.entries(this._config.featureOverrides(context))
+    // apply flag overrides
+    const overrides = Object.entries(this._config.flagOverrides(context))
       .filter(([flagKey]) => (key ? key === flagKey : true))
       .map(([flagKey, override]) => [
         flagKey,
@@ -1169,7 +1165,7 @@ export class ReflagClient {
       ]);
 
     if (overrides.length > 0) {
-      // merge overrides into evaluated features
+      // merge overrides into evaluated flags
       evaluatedFlags = {
         ...evaluatedFlags,
         ...Object.fromEntries(overrides),
@@ -1197,7 +1193,7 @@ export class ReflagClient {
       enableChecks = false,
       ...context
     }: { enableTracking: boolean; enableChecks?: boolean } & Context,
-    { config, ...feature }: PartialBy<RawFlag, "isEnabled">,
+    { config, ...flag }: PartialBy<RawFlag, "isEnabled">,
   ): TypedFlags[TKey] {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const client = this;
@@ -1209,35 +1205,35 @@ export class ReflagClient {
     return {
       get isEnabled() {
         if (enableTracking && enableChecks) {
-          client._warnMissingFlagContextFields(context, feature);
+          client._warnMissingFlagContextFields(context, flag);
 
           void client
             .sendFlagEvent({
               action: "check",
-              key: feature.key,
-              targetingVersion: feature.targetingVersion,
-              evalResult: feature.isEnabled ?? false,
+              key: flag.key,
+              targetingVersion: flag.targetingVersion,
+              evalResult: flag.isEnabled ?? false,
               evalContext: context,
-              evalRuleResults: feature.ruleEvaluationResults,
-              evalMissingFields: feature.missingContextFields,
+              evalRuleResults: flag.ruleEvaluationResults,
+              evalMissingFields: flag.missingContextFields,
             })
             .catch((err) => {
               client.logger?.error(
-                `failed to send check event for "${feature.key}": ${err}`,
+                `failed to send check event for "${flag.key}": ${err}`,
                 err,
               );
             });
         }
-        return feature.isEnabled ?? false;
+        return flag.isEnabled ?? false;
       },
       get config() {
         if (enableTracking && enableChecks) {
-          client._warnMissingFlagContextFields(context, feature);
+          client._warnMissingFlagContextFields(context, flag);
 
           void client
             .sendFlagEvent({
               action: "check-config",
-              key: feature.key,
+              key: flag.key,
               targetingVersion: config?.targetingVersion,
               evalResult: simplifiedConfig,
               evalContext: context,
@@ -1246,14 +1242,14 @@ export class ReflagClient {
             })
             .catch((err) => {
               client.logger?.error(
-                `failed to send check event for "${feature.key}": ${err}`,
+                `failed to send check event for "${flag.key}": ${err}`,
                 err,
               );
             });
         }
         return simplifiedConfig as TypedFlags[TKey]["config"];
       },
-      key: feature.key,
+      key: flag.key,
       track: async () => {
         if (typeof context.user?.id === "undefined") {
           this.logger.warn("no user set, cannot track event");
@@ -1261,7 +1257,7 @@ export class ReflagClient {
         }
 
         if (enableTracking) {
-          await this.track(context.user.id, feature.key, {
+          await this.track(context.user.id, flag.key, {
             companyId: context.company?.id,
           });
         } else {
@@ -1317,17 +1313,17 @@ export class ReflagClient {
     );
 
     if (key) {
-      const feature = res?.features[key];
-      if (!feature) {
-        this.logger.error(`feature ${key} not found`);
+      const flag = res?.features[key];
+      if (!flag) {
+        this.logger.error(`flag ${key} not found`);
       }
-      return this._wrapRawFlag(contextWithTracking, { key, ...feature });
+      return this._wrapRawFlag(contextWithTracking, { key, ...flag });
     } else {
       return res?.features
         ? Object.fromEntries(
-            Object.entries(res?.features).map(([flagKey, feature]) => [
+            Object.entries(res?.features).map(([flagKey, flag]) => [
               flagKey,
-              this._wrapRawFlag(contextWithTracking, feature),
+              this._wrapRawFlag(contextWithTracking, flag),
             ]),
           )
         : {};
@@ -1391,8 +1387,8 @@ export class BoundReflagClient {
   }
 
   /**
-   * Get features for the user/company/other context bound to this client.
-   * Meant for use in serialization of features for transferring to the client-side/browser.
+   * Get flags for the user/company/other context bound to this client.
+   * Meant for use in serialization of flags for transferring to the client-side/browser.
    *
    * @returns Flags for the given user/company and whether each one is enabled or not
    */
@@ -1401,21 +1397,19 @@ export class BoundReflagClient {
   }
 
   /**
-   * Get a specific feature for the user/company/other context bound to this client.
+   * Get a specific flag for the user/company/other context bound to this client.
    * Using the `isEnabled` property sends a `check` event to Reflag.
    *
-   * @param key - The key of the feature to get.
+   * @param key - The key of the flag to get.
    *
    * @returns Flags for the given user/company and whether each one is enabled or not
    */
-  public getFlag<TKey extends TypedFlagKey>(
-    key: TKey,
-  ): TypedFlags[TKey] {
+  public getFlag<TKey extends TypedFlagKey>(key: TKey): TypedFlags[TKey] {
     return this._client.getFlag(this._options, key);
   }
 
   /**
-   * Get remotely evaluated feature for the user/company/other context bound to this client.
+   * Get remotely evaluated flag for the user/company/other context bound to this client.
    *
    * @returns Flags for the given user/company and whether each one is enabled or not
    */
@@ -1425,20 +1419,15 @@ export class BoundReflagClient {
   }
 
   /**
-   * Get remotely evaluated feature for the user/company/other context bound to this client.
+   * Get remotely evaluated flag for the user/company/other context bound to this client.
    *
-   * @param key - The key of the feature to get.
+   * @param key - The key of the flag to get.
    *
    * @returns Flag for the given user/company and key and whether it's enabled or not
    */
   public async getFlagRemote(key: string) {
     const { enableTracking: _, meta: __, ...context } = this._options;
-    return await this._client.getFlagRemote(
-      key,
-      undefined,
-      undefined,
-      context,
-    );
+    return await this._client.getFlagRemote(key, undefined, undefined, context);
   }
 
   /**

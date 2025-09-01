@@ -26,7 +26,7 @@ declare module "../../src" {
 }
 
 const publishableKey = import.meta.env.VITE_PUBLISHABLE_KEY || "";
-const apiBaseUrl = import.meta.env.VITE_BUCKET_API_BASE_URL;
+const apiBaseUrl = import.meta.env.VITE_REFLAG_API_BASE_URL;
 
 function HuddleFeature() {
   // Type safe feature

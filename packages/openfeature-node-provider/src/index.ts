@@ -12,9 +12,9 @@ import {
 } from "@openfeature/server-sdk";
 
 import {
-  ReflagClient,
   ClientOptions,
   Context as ReflagContext,
+  ReflagClient,
 } from "@reflag/node-sdk";
 
 type ProviderOptions = ClientOptions & {

@@ -18,8 +18,8 @@ import {
   API_TIMEOUT_MS,
   BATCH_INTERVAL_MS,
   BATCH_MAX_SIZE,
-  FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
-  FEATURES_REFETCH_MS,
+  FLAG_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
+  FLAGS_REFETCH_MS,
   SDK_VERSION,
   SDK_VERSION_HEADER_NAME,
 } from "../src/config";
@@ -77,7 +77,7 @@ const validOptions: ClientOptions = {
   logger,
   httpClient,
   fallbackFlags,
-  featuresFetchRetries: 2,
+  flagsFetchRetries: 2,
   batchOptions: {
     maxSize: 99,
     intervalMs: 10001,
@@ -92,7 +92,7 @@ const expectedHeaders = {
   Authorization: `Bearer ${validOptions.secretKey}`,
 };
 
-const featureDefinitions: FlagsAPIResponse = {
+const flagDefinitions: FlagsAPIResponse = {
   features: [
     {
       key: "flag1",
@@ -165,40 +165,40 @@ describe("ReflagClient", () => {
 
   describe("constructor", () => {
     it("should initialize with no options", async () => {
-      const secretKeyEnv = process.env.BUCKET_SECRET_KEY;
-      process.env.BUCKET_SECRET_KEY = "validSecretKeyWithMoreThan22Chars";
+      const secretKeyEnv = process.env.REFLAG_SECRET_KEY;
+      process.env.REFLAG_SECRET_KEY = "validSecretKeyWithMoreThan22Chars";
       try {
         const reflagInstance = new ReflagClient();
         expect(reflagInstance).toBeInstanceOf(ReflagClient);
       } finally {
-        process.env.BUCKET_SECRET_KEY = secretKeyEnv;
+        process.env.REFLAG_SECRET_KEY = secretKeyEnv;
       }
     });
 
-    it("should accept fallback features as an array", async () => {
+    it("should accept fallback flags as an array", async () => {
       const reflagInstance = new ReflagClient({
         secretKey: "validSecretKeyWithMoreThan22Chars",
         fallbackFlags: ["flag1", "flag2"],
       });
 
       expect(reflagInstance["_config"].fallbackFlags).toEqual({
-        feature1: {
+        flag1: {
           isEnabled: true,
           key: "flag1",
         },
-        feature2: {
+        flag2: {
           isEnabled: true,
           key: "flag2",
         },
       });
     });
 
-    it("should accept fallback features as an object", async () => {
+    it("should accept fallback flags as an object", async () => {
       const reflagInstance = new ReflagClient({
         secretKey: "validSecretKeyWithMoreThan22Chars",
         fallbackFlags: {
-          feature1: true,
-          feature2: {
+          flag1: true,
+          flag2: {
             isEnabled: true,
             config: {
               key: "config1",
@@ -209,12 +209,12 @@ describe("ReflagClient", () => {
       });
 
       expect(reflagInstance["_config"].fallbackFlags).toStrictEqual({
-        feature1: {
+        flag1: {
           key: "flag1",
           config: undefined,
           isEnabled: true,
         },
-        feature2: {
+        flag2: {
           key: "flag2",
           isEnabled: true,
           config: {
@@ -230,10 +230,8 @@ describe("ReflagClient", () => {
 
       expect(client).toBeInstanceOf(ReflagClient);
       expect(client["_config"].apiBaseUrl).toBe("https://api.example.com/");
-      expect(client["_config"].refetchInterval).toBe(FEATURES_REFETCH_MS);
-      expect(client["_config"].staleWarningInterval).toBe(
-        FEATURES_REFETCH_MS * 5,
-      );
+      expect(client["_config"].refetchInterval).toBe(FLAGS_REFETCH_MS);
+      expect(client["_config"].staleWarningInterval).toBe(FLAGS_REFETCH_MS * 5);
       expect(client.logger).toBeDefined();
       expect(client.httpClient).toBe(validOptions.httpClient);
       expect(client["_config"].headers).toEqual(expectedHeaders);
@@ -248,7 +246,7 @@ describe("ReflagClient", () => {
           isEnabled: true,
         },
       });
-      expect(client["_config"].featuresFetchRetries).toBe(2);
+      expect(client["_config"].flagsFetchRetries).toBe(2);
     });
 
     it("should route messages to the supplied logger", () => {
@@ -280,10 +278,8 @@ describe("ReflagClient", () => {
       });
 
       expect(client["_config"].apiBaseUrl).toBe(API_BASE_URL);
-      expect(client["_config"].refetchInterval).toBe(FEATURES_REFETCH_MS);
-      expect(client["_config"].staleWarningInterval).toBe(
-        FEATURES_REFETCH_MS * 5,
-      );
+      expect(client["_config"].refetchInterval).toBe(FLAGS_REFETCH_MS);
+      expect(client["_config"].staleWarningInterval).toBe(FLAGS_REFETCH_MS * 5);
       expect(client.httpClient).toBe(fetchClient);
       expect(client["_config"].headers).toEqual(expectedHeaders);
       expect(client["_config"].fallbackFlags).toBeUndefined();
@@ -342,12 +338,12 @@ describe("ReflagClient", () => {
       );
     });
 
-    it("should create a new feature events rate-limiter", () => {
+    it("should create a new flag events rate-limiter", () => {
       const client = new ReflagClient(validOptions);
 
       expect(client["rateLimiter"]).toBeDefined();
       expect(newRateLimiter).toHaveBeenCalledWith(
-        FEATURE_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
+        FLAG_EVENT_RATE_LIMITER_WINDOW_SIZE_MS,
       );
     });
 
@@ -722,7 +718,7 @@ describe("ReflagClient", () => {
     test.each([
       { id: "user123", age: 1, name: "John" },
       { id: 42, age: 1, name: "John" },
-    ])("should successfully track the feature usage", async (testUser) => {
+    ])("should successfully track the flag usage", async (testUser) => {
       const response = {
         status: 200,
         body: { success: true },
@@ -766,7 +762,7 @@ describe("ReflagClient", () => {
       );
     });
 
-    it("should successfully track the feature usage including user and company", async () => {
+    it("should successfully track the flag usage including user and company", async () => {
       httpClient.post.mockResolvedValue({
         status: 200,
         body: { success: true },
@@ -929,7 +925,7 @@ describe("ReflagClient", () => {
       expect(get).not.toHaveBeenCalled();
     });
 
-    it("should call the backend to obtain features", async () => {
+    it("should call the backend to obtain flags", async () => {
       const client = new ReflagClient(validOptions);
 
       httpClient.get.mockResolvedValue({
@@ -1002,7 +998,7 @@ describe("ReflagClient", () => {
         status: 200,
         body: {
           success: true,
-          ...featureDefinitions,
+          ...flagDefinitions,
         },
       });
 
@@ -1014,9 +1010,9 @@ describe("ReflagClient", () => {
       });
     });
 
-    it("returns a feature", async () => {
+    it("returns a flag", async () => {
       await client.initialize();
-      const feature = client.getFlag(
+      const flag = client.getFlag(
         {
           company,
           user,
@@ -1025,7 +1021,7 @@ describe("ReflagClient", () => {
         "flag1",
       );
 
-      expect(feature).toStrictEqual({
+      expect(flag).toStrictEqual({
         key: "flag1",
         isEnabled: true,
         config: {
@@ -1043,9 +1039,9 @@ describe("ReflagClient", () => {
         other: otherContext,
       };
 
-      // test that the feature is returned
+      // test that the flag is returned
       await client.initialize();
-      const feature = client.getFlag(
+      const flag = client.getFlag(
         {
           ...context,
           meta: {
@@ -1056,7 +1052,7 @@ describe("ReflagClient", () => {
         "flag1",
       );
 
-      await feature.track();
+      await flag.track();
       await client.flush();
 
       expect(httpClient.post).toHaveBeenCalledWith(
@@ -1133,9 +1129,9 @@ describe("ReflagClient", () => {
         other: otherContext,
       };
 
-      // test that the feature is returned
+      // test that the flag is returned
       await client.initialize();
-      const feature = client.getFlag(
+      const flag = client.getFlag(
         {
           ...context,
           meta: {
@@ -1146,7 +1142,7 @@ describe("ReflagClient", () => {
         "flag1",
       );
 
-      await feature.track();
+      await flag.track();
       await client.flush();
 
       expect(httpClient.post).toHaveBeenCalledWith(
@@ -1192,12 +1188,12 @@ describe("ReflagClient", () => {
         other: otherContext,
       };
 
-      // test that the feature is returned
+      // test that the flag is returned
       await client.initialize();
-      const feature = client.getFlag(context, "flag1");
+      const flag = client.getFlag(context, "flag1");
 
       // trigger `check` event
-      expect(feature.isEnabled).toBe(true);
+      expect(flag.isEnabled).toBe(true);
 
       await client.flush();
       const checkEvents = httpClient.post.mock.calls
@@ -1225,17 +1221,17 @@ describe("ReflagClient", () => {
         other: otherContext,
       };
 
-      // test that the feature is returned
+      // test that the flag is returned
       await client.initialize();
-      const feature = client.getFlag(context, "flag2");
+      const flag = client.getFlag(context, "flag2");
 
       // trigger the warning
-      expect(feature.isEnabled).toBe(false);
+      expect(flag.isEnabled).toBe(false);
 
       expect(logger.warn).toHaveBeenCalledWith(
         "flag targeting rules might not be correctly evaluated due to missing context fields.",
         {
-          feature2: ["attributeKey"],
+          flag2: ["attributeKey"],
         },
       );
     });
@@ -1247,12 +1243,12 @@ describe("ReflagClient", () => {
         other: otherContext,
       };
 
-      // test that the feature is returned
+      // test that the flag is returned
       await client.initialize();
-      const feature = client.getFlag(context, "flag1");
+      const flag = client.getFlag(context, "flag1");
 
       // should not trigger the warning
-      expect(feature.isEnabled).toBe(true);
+      expect(flag.isEnabled).toBe(true);
 
       expect(logger.warn).not.toHaveBeenCalled();
     });
@@ -1264,12 +1260,12 @@ describe("ReflagClient", () => {
         other: otherContext,
       };
 
-      // test that the feature is returned
+      // test that the flag is returned
       await client.initialize();
-      const feature = client.getFlag(context, "flag1");
+      const flag = client.getFlag(context, "flag1");
 
       // trigger `check` event
-      expect(feature.config).toBeDefined();
+      expect(flag.config).toBeDefined();
 
       await client.flush();
 
@@ -1296,20 +1292,20 @@ describe("ReflagClient", () => {
       ]);
     });
 
-    it("sends events for unknown features", async () => {
+    it("sends events for unknown flags", async () => {
       const context: Context = {
         company,
         user,
         other: otherContext,
       };
 
-      // test that the feature is returned
+      // test that the flag is returned
       await client.initialize();
-      const feature = client.getFlag(context, "unknown-feature");
+      const flag = client.getFlag(context, "unknown-flag");
 
       // trigger `check` event
-      expect(feature.isEnabled).toBe(false);
-      await feature.track();
+      expect(flag.isEnabled).toBe(false);
+      await flag.track();
       await client.flush();
 
       const checkEvents = httpClient.post.mock.calls
@@ -1320,7 +1316,7 @@ describe("ReflagClient", () => {
         {
           type: "feature-flag-event",
           action: "check",
-          key: "unknown-feature",
+          key: "unknown-flag",
           targetingVersion: undefined,
           evalContext: context,
           evalResult: false,
@@ -1337,12 +1333,12 @@ describe("ReflagClient", () => {
         other: otherContext,
       };
 
-      // test that the feature is returned
+      // test that the flag is returned
       await client.initialize();
-      const feature = client.getFlag(context, "flag1");
+      const flag = client.getFlag(context, "flag1");
 
       // trigger `check` event
-      await feature.track();
+      await flag.track();
       await client.flush();
 
       const checkEvents = httpClient.post.mock.calls
@@ -1393,7 +1389,7 @@ describe("ReflagClient", () => {
         status: 200,
         body: {
           success: true,
-          ...featureDefinitions,
+          ...flagDefinitions,
         },
       });
 
@@ -1408,7 +1404,7 @@ describe("ReflagClient", () => {
       });
     });
 
-    it("should return evaluated features", async () => {
+    it("should return evaluated flags", async () => {
       httpClient.post.mockClear(); // not interested in updates
 
       await client.initialize();
@@ -1419,7 +1415,7 @@ describe("ReflagClient", () => {
       });
 
       expect(result).toStrictEqual({
-        feature1: {
+        flag1: {
           key: "flag1",
           isEnabled: true,
           config: {
@@ -1430,7 +1426,7 @@ describe("ReflagClient", () => {
           },
           track: expect.any(Function),
         },
-        feature2: {
+        flag2: {
           key: "flag2",
           isEnabled: false,
           config: { key: undefined, payload: undefined },
@@ -1452,14 +1448,14 @@ describe("ReflagClient", () => {
       expect(isAllowedSpy).toHaveBeenCalledWith("1GHpP+QfYperQ0AtD8bWPiRE4H0=");
     });
 
-    it("should return evaluated features when only user is defined", async () => {
+    it("should return evaluated flags when only user is defined", async () => {
       httpClient.post.mockClear(); // not interested in updates
 
       await client.initialize();
-      const features = client.getFlags({ user });
+      const flags = client.getFlags({ user });
 
-      expect(features).toStrictEqual({
-        feature1: {
+      expect(flags).toStrictEqual({
+        flag1: {
           isEnabled: false,
           key: "flag1",
           config: {
@@ -1468,7 +1464,7 @@ describe("ReflagClient", () => {
           },
           track: expect.any(Function),
         },
-        feature2: {
+        flag2: {
           key: "flag2",
           isEnabled: false,
           config: { key: undefined, payload: undefined },
@@ -1481,13 +1477,13 @@ describe("ReflagClient", () => {
       expect(httpClient.post).toHaveBeenCalledTimes(1);
     });
 
-    it("should return evaluated features when only company is defined", async () => {
+    it("should return evaluated flags when only company is defined", async () => {
       await client.initialize();
-      const features = client.getFlags({ company });
+      const flags = client.getFlags({ company });
 
       // expect will trigger the `isEnabled` getter and send a `check` event
-      expect(features).toStrictEqual({
-        feature1: {
+      expect(flags).toStrictEqual({
+        flag1: {
           isEnabled: true,
           key: "flag1",
           config: {
@@ -1498,7 +1494,7 @@ describe("ReflagClient", () => {
           },
           track: expect.any(Function),
         },
-        feature2: {
+        flag2: {
           key: "flag2",
           isEnabled: false,
           config: { key: undefined, payload: undefined },
@@ -1513,11 +1509,11 @@ describe("ReflagClient", () => {
 
     it("should not send flag events when `enableTracking` is `false`", async () => {
       await client.initialize();
-      const features = client.getFlags({ company, enableTracking: false });
+      const flags = client.getFlags({ company, enableTracking: false });
 
       // expect will trigger the `isEnabled` getter and send a `check` event
-      expect(features).toStrictEqual({
-        feature1: {
+      expect(flags).toStrictEqual({
+        flag1: {
           isEnabled: true,
           key: "flag1",
           config: {
@@ -1528,7 +1524,7 @@ describe("ReflagClient", () => {
           },
           track: expect.any(Function),
         },
-        feature2: {
+        flag2: {
           key: "flag2",
           isEnabled: false,
           config: { key: undefined, payload: undefined },
@@ -1541,21 +1537,21 @@ describe("ReflagClient", () => {
       expect(httpClient.post).not.toHaveBeenCalled();
     });
 
-    it("should return evaluated features when only other context is defined", async () => {
+    it("should return evaluated flags when only other context is defined", async () => {
       await client.initialize();
-      const features = client.getFlags({ other: otherContext });
+      const flags = client.getFlags({ other: otherContext });
 
-      expect(features).toStrictEqual({
-        feature1: {
+      expect(flags).toStrictEqual({
+        flag1: {
           isEnabled: false,
-          key: "flag
+          key: "flag1",
           config: {
             key: undefined,
             payload: undefined,
           },
           track: expect.any(Function),
         },
-        feature2: {
+        flag2: {
           key: "flag2",
           isEnabled: false,
           config: { key: undefined, payload: undefined },
@@ -1570,10 +1566,10 @@ describe("ReflagClient", () => {
 
     it("should send `track` with user and company if provided", async () => {
       await client.initialize();
-      const features = client.getFlags({ company, user });
+      const flags = client.getFlags({ company, user });
       await client.flush();
 
-      await features.feature1.track();
+      await flags.flag1.track();
       await client.flush();
 
       expect(httpClient.post).toHaveBeenCalledTimes(2);
@@ -1596,10 +1592,10 @@ describe("ReflagClient", () => {
 
     it("should send `track` with user if provided", async () => {
       await client.initialize();
-      const features = client.getFlags({ user });
+      const flags = client.getFlags({ user });
 
       await client.flush();
-      await features.feature1.track();
+      await flags.flag1.track();
       await client.flush();
 
       expect(httpClient.post).toHaveBeenCalledTimes(2);
@@ -1630,9 +1626,9 @@ describe("ReflagClient", () => {
     it("should not send `track` with only company if no user is provided", async () => {
       // we do not accept track events without a userId
       await client.initialize();
-      const feature = client.getFlags({ company });
+      const flag = client.getFlags({ company });
 
-      await feature.feature1.track();
+      await flag.flag1.track();
       await client.flush();
 
       expect(httpClient.post).toHaveBeenCalledTimes(1);
@@ -1650,12 +1646,12 @@ describe("ReflagClient", () => {
         other: otherContext,
       };
 
-      // test that the feature is returned
+      // test that the flag is returned
       await client.initialize();
-      const feature = client.getFlags(context);
+      const flag = client.getFlags(context);
 
       // trigger `check` event
-      expect(feature.feature1.isEnabled).toBe(true);
+      expect(flag.flag1.isEnabled).toBe(true);
 
       await client.flush();
       const checkEvents = httpClient.post.mock.calls
@@ -1672,12 +1668,12 @@ describe("ReflagClient", () => {
         other: otherContext,
       };
 
-      // test that the feature is returned
+      // test that the flag is returned
       await client.initialize();
-      const feature = client.getFlags(context);
+      const flag = client.getFlags(context);
 
       // attempt to trigger `check` event
-      expect(feature.feature1.config).toBeDefined();
+      expect(flag.flag1.config).toBeDefined();
 
       await client.flush();
 
@@ -1695,7 +1691,7 @@ describe("ReflagClient", () => {
         other: otherContext,
       };
 
-      // test that the feature is returned
+      // test that the flag is returned
       await client.initialize();
       client.getFlags(context);
 
@@ -1732,7 +1728,7 @@ describe("ReflagClient", () => {
       ]);
     });
 
-    it("should use fallback features when `getFlagDefinitions` returns `undefined`", async () => {
+    it("should use fallback flags when `getFlagDefinitions` returns `undefined`", async () => {
       httpClient.get.mockResolvedValue({
         success: false,
       });
@@ -1752,7 +1748,7 @@ describe("ReflagClient", () => {
 
       expect(logger.warn).toHaveBeenCalledWith(
         expect.stringMatching(
-          "no feature definitions available, using fallback features",
+          "no flag definitions available, using fallback flags",
         ),
       );
 
@@ -1765,7 +1761,7 @@ describe("ReflagClient", () => {
         [
           expect.objectContaining({ type: "user" }),
           expect.objectContaining({
-            type: "flag-flag-event",
+            type: "feature-flag-event",
             action: "check-config",
             key: "key",
           }),
@@ -1784,7 +1780,7 @@ describe("ReflagClient", () => {
       const context = { user, company, other: otherContext };
 
       await client.initialize();
-      const features = client.getFlags(context);
+      const flags = client.getFlags(context);
 
       await client.flush();
 
@@ -1793,8 +1789,8 @@ describe("ReflagClient", () => {
         expect.any(Error),
       );
 
-      expect(features).toStrictEqual({
-        feature1: {
+      expect(flags).toStrictEqual({
+        flag1: {
           key: "flag1",
           isEnabled: true,
           config: {
@@ -1805,7 +1801,7 @@ describe("ReflagClient", () => {
           },
           track: expect.any(Function),
         },
-        feature2: {
+        flag2: {
           key: "flag2",
           isEnabled: false,
           config: { key: undefined, payload: undefined },
@@ -1826,8 +1822,8 @@ describe("ReflagClient", () => {
 
       const result = client.getFlags(context);
 
-      // Trigger a feature check
-      expect(result.feature1).toStrictEqual({
+      // Trigger a flag check
+      expect(result.flag1).toStrictEqual({
         key: "flag1",
         isEnabled: true,
         track: expect.any(Function),
@@ -1847,13 +1843,13 @@ describe("ReflagClient", () => {
       );
     });
 
-    it("should use feature overrides", async () => {
+    it("should use flag overrides", async () => {
       await client.initialize();
       const context = { user, company, other: otherContext };
 
       const pristineResults = client.getFlags(context);
       expect(pristineResults).toStrictEqual({
-        feature1: {
+        flag1: {
           key: "flag1",
           isEnabled: true,
           config: {
@@ -1864,7 +1860,7 @@ describe("ReflagClient", () => {
           },
           track: expect.any(Function),
         },
-        feature2: {
+        flag2: {
           key: "flag2",
           isEnabled: false,
           config: { key: undefined, payload: undefined },
@@ -1872,19 +1868,19 @@ describe("ReflagClient", () => {
         },
       });
 
-      client.featureOverrides = {
-        feature1: false,
+      client.flagOverrides = {
+        flag1: false,
       };
-      const features = client.getFlags(context);
+      const flags = client.getFlags(context);
 
-      expect(features).toStrictEqual({
-        feature1: {
+      expect(flags).toStrictEqual({
+        flag1: {
           key: "flag1",
           isEnabled: false,
           config: { key: undefined, payload: undefined },
           track: expect.any(Function),
         },
-        feature2: {
+        flag2: {
           key: "flag2",
           isEnabled: false,
           config: { key: undefined, payload: undefined },
@@ -1893,28 +1889,28 @@ describe("ReflagClient", () => {
       });
 
       client.clearFlagOverrides();
-      const features2 = client.getFlags(context);
+      const flags2 = client.getFlags(context);
 
-      expect(features2).toStrictEqual({
+      expect(flags2).toStrictEqual({
         ...pristineResults,
-        feature1: {
-          ...pristineResults.feature1,
+        flag1: {
+          ...pristineResults.flag1,
           track: expect.any(Function),
         },
-        feature2: {
-          ...pristineResults.feature2,
+        flag2: {
+          ...pristineResults.flag2,
           track: expect.any(Function),
         },
       });
     });
 
-    it("should use feature overrides from function", async () => {
+    it("should use flag overrides from function", async () => {
       await client.initialize();
       const context = { user, company, other: otherContext };
 
       const pristineResults = client.getFlags(context);
       expect(pristineResults).toStrictEqual({
-        feature1: {
+        flag1: {
           key: "flag1",
           isEnabled: true,
           config: {
@@ -1925,7 +1921,7 @@ describe("ReflagClient", () => {
           },
           track: expect.any(Function),
         },
-        feature2: {
+        flag2: {
           key: "flag2",
           isEnabled: false,
           config: { key: undefined, payload: undefined },
@@ -1933,12 +1929,12 @@ describe("ReflagClient", () => {
         },
       });
 
-      client.featureOverrides = (_context: Context) => {
+      client.flagOverrides = (_context: Context) => {
         expect(context).toStrictEqual(context);
         return {
-          feature1: { isEnabled: false },
-          feature2: true,
-          feature3: {
+          flag1: { isEnabled: false },
+          flag2: true,
+          flag3: {
             isEnabled: true,
             config: {
               key: "config-1",
@@ -1947,23 +1943,23 @@ describe("ReflagClient", () => {
           },
         };
       };
-      const features = client.getFlags(context);
+      const flags = client.getFlags(context);
 
-      expect(features).toStrictEqual({
-        feature1: {
+      expect(flags).toStrictEqual({
+        flag1: {
           key: "flag1",
           isEnabled: false,
           config: { key: undefined, payload: undefined },
           track: expect.any(Function),
         },
-        feature2: {
+        flag2: {
           key: "flag2",
           isEnabled: true,
           config: { key: undefined, payload: undefined },
           track: expect.any(Function),
         },
-        feature3: {
-          key: "flag
+        flag3: {
+          key: "flag3",
           isEnabled: true,
           config: {
             key: "config-1",
@@ -1986,7 +1982,7 @@ describe("ReflagClient", () => {
           success: true,
           remoteContextUsed: true,
           features: {
-            feature1: {
+            flag1: {
               key: "flag1",
               targetingVersion: 1,
               isEnabled: true,
@@ -1999,13 +1995,13 @@ describe("ReflagClient", () => {
               },
               missingContextFields: ["something", "funny"],
             },
-            feature2: {
+            flag2: {
               key: "flag2",
               targetingVersion: 2,
               isEnabled: false,
               missingContextFields: ["another"],
             },
-            feature3: {
+            flag3: {
               key: "flag3",
               targetingVersion: 5,
               isEnabled: true,
@@ -2021,13 +2017,13 @@ describe("ReflagClient", () => {
       httpClient.get.mockClear();
     });
 
-    it("should return evaluated features", async () => {
+    it("should return evaluated flags", async () => {
       const result = await client.getFlagsRemote("c1", "u1", {
         other: otherContext,
       });
 
       expect(result).toStrictEqual({
-        feature1: {
+        flag1: {
           key: "flag1",
           isEnabled: true,
           config: {
@@ -2036,13 +2032,13 @@ describe("ReflagClient", () => {
           },
           track: expect.any(Function),
         },
-        feature2: {
+        flag2: {
           key: "flag2",
           isEnabled: false,
           config: { key: undefined, payload: undefined },
           track: expect.any(Function),
         },
-        feature3: {
+        flag3: {
           key: "flag3",
           isEnabled: true,
           config: { key: undefined, payload: undefined },
@@ -2083,7 +2079,7 @@ describe("ReflagClient", () => {
           success: true,
           remoteContextUsed: true,
           features: {
-            feature1: {
+            flag1: {
               key: "flag1",
               targetingVersion: 1,
               isEnabled: true,
@@ -2107,7 +2103,7 @@ describe("ReflagClient", () => {
       httpClient.get.mockClear();
     });
 
-    it("should return evaluated feature", async () => {
+    it("should return evaluated flag", async () => {
       const result = await client.getFlagRemote("flag1", "c1", "u1", {
         other: otherContext,
       });
@@ -2125,7 +2121,7 @@ describe("ReflagClient", () => {
       expect(httpClient.get).toHaveBeenCalledTimes(1);
 
       expect(httpClient.get).toHaveBeenCalledWith(
-        "https://api.example.com/features/evaluated?context.other.custom=context&context.other.key=value&context.user.id=c1&context.company.id=u1&key=feature1",
+        "https://api.example.com/features/evaluated?context.other.custom=context&context.other.key=value&context.user.id=c1&context.company.id=u1&key=flag1",
         expectedHeaders,
         API_TIMEOUT_MS,
       );
@@ -2135,7 +2131,7 @@ describe("ReflagClient", () => {
       await client.getFlagRemote("flag1");
 
       expect(httpClient.get).toHaveBeenCalledWith(
-        "https://api.example.com/features/evaluated?key=feature1",
+        "https://api.example.com/features/evaluated?key=flag1",
         expectedHeaders,
         API_TIMEOUT_MS,
       );
@@ -2175,7 +2171,7 @@ describe("BoundReflagClient", () => {
       status: 200,
       body: {
         success: true,
-        ...featureDefinitions,
+        ...flagDefinitions,
       },
     });
   });
@@ -2310,7 +2306,7 @@ describe("BoundReflagClient", () => {
           success: true,
           remoteContextUsed: true,
           features: {
-            feature1: {
+            flag1: {
               key: "flag1",
               targetingVersion: 1,
               isEnabled: true,
@@ -2322,7 +2318,7 @@ describe("BoundReflagClient", () => {
                 missingContextFields: ["else"],
               },
             },
-            feature2: {
+            flag2: {
               key: "flag2",
               targetingVersion: 2,
               isEnabled: false,
@@ -2333,7 +2329,7 @@ describe("BoundReflagClient", () => {
       });
     });
 
-    it("should return evaluated features", async () => {
+    it("should return evaluated flags", async () => {
       const boundClient = client.bindClient({
         user,
         company,
@@ -2343,13 +2339,13 @@ describe("BoundReflagClient", () => {
       const result = await boundClient.getFlagsRemote();
 
       expect(result).toStrictEqual({
-        feature1: {
+        flag1: {
           key: "flag1",
           isEnabled: true,
           config: { key: "config-1", payload: { something: "else" } },
           track: expect.any(Function),
         },
-        feature2: {
+        flag2: {
           key: "flag2",
           isEnabled: false,
           config: { key: undefined, payload: undefined },
@@ -2366,7 +2362,7 @@ describe("BoundReflagClient", () => {
       );
     });
 
-    it("should return evaluated feature", async () => {
+    it("should return evaluated flag", async () => {
       const boundClient = client.bindClient({
         user,
         company,
@@ -2385,7 +2381,7 @@ describe("BoundReflagClient", () => {
       expect(httpClient.get).toHaveBeenCalledTimes(1);
 
       expect(httpClient.get).toHaveBeenCalledWith(
-        "https://api.example.com/features/evaluated?context.user.id=user123&context.user.age=1&context.user.name=John&context.company.id=company123&context.company.employees=100&context.company.name=Acme+Inc.&context.other.custom=context&context.other.key=value&key=feature1",
+        "https://api.example.com/features/evaluated?context.user.id=user123&context.user.age=1&context.user.name=John&context.company.id=company123&context.company.employees=100&context.company.name=Acme+Inc.&context.other.custom=context&context.other.key=value&key=flag1",
         expectedHeaders,
         API_TIMEOUT_MS,
       );

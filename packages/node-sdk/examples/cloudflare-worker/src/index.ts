@@ -3,7 +3,7 @@
  * It demonstrates how to initialize the client and evaluate flags.
  * It also shows how to flush the client and wait for any in-flight requests to complete.
  *
- * Set the BUCKET_SECRET_KEY environment variable in wrangler.jsonc to get started.
+ * Set the REFLAG_SECRET_KEY environment variable in wrangler.jsonc to get started.
  *
  * - Run `yarn run dev` in your terminal to start a development server
  * - Open a browser tab at http://localhost:8787/ to see your worker in action
@@ -13,7 +13,7 @@
 
 import { EdgeClient } from "../../../";
 
-// set the BUCKET_SECRET_KEY environment variable or pass the secret key in the constructor
+// set the REFLAG_SECRET_KEY environment variable or pass the secret key in the constructor
 const reflag = new EdgeClient();
 
 export default {

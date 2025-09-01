@@ -5,7 +5,7 @@ import { relative } from "node:path";
 import ora, { Ora } from "ora";
 
 import { App, getApp, getOrg } from "../services/bootstrap.js";
-import { createFlag, Flag, listFlags } from "../services/features.js";
+import { createFlag, Flag, listFlags } from "../services/flags.js";
 import { configStore } from "../stores/config.js";
 import {
   handleError,
@@ -22,7 +22,7 @@ import {
 import {
   appIdOption,
   flagKeyOption,
-  featureNameArgument,
+  flagNameArgument,
   typesFormatOption,
   typesOutOption,
 } from "../utils/options.js";
@@ -55,35 +55,35 @@ export const createFlagAction = async (
   try {
     const org = getOrg();
     console.log(
-      `Creating feature for app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}.`,
+      `Creating flag for app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}.`,
     );
 
     if (!name) {
       name = await input({
-        message: "New feature name:",
+        message: "New flag name:",
         validate: (text) => text.length > 0 || "Name is required.",
       });
     }
 
     if (!key) {
-      const keyFormat = org.flagKeyFormat;
+      const keyFormat = org.featureKeyFormat;
       const keyValidator = KeyFormatPatterns[keyFormat];
       key = await input({
-        message: "New feature key:",
+        message: "New flag key:",
         default: genFlagKey(name, keyFormat),
         validate: (str) => keyValidator.regex.test(str) || keyValidator.message,
       });
     }
 
-    spinner = ora(`Creating feature...`).start();
-    const feature = await createFlag(appId, { name, key });
+    spinner = ora(`Creating flag...`).start();
+    const flag = await createFlag(appId, { name, key });
 
     spinner.succeed(
-      `Created feature ${chalk.cyan(feature.name)} with key ${chalk.cyan(feature.key)}:`,
+      `Created flag ${chalk.cyan(flag.name)} with key ${chalk.cyan(flag.key)}:`,
     );
     if (production) {
       console.log(
-        indentLines(chalk.magenta(featureUrl(baseUrl, production, feature))),
+        indentLines(chalk.magenta(featureUrl(baseUrl, production, flag))),
       );
     }
   } catch (error) {
@@ -108,26 +108,26 @@ export const listFlagsAction = async () => {
     }
 
     spinner = ora(
-      `Loading features of app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}...`,
+      `Loading flags of app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}...`,
     ).start();
 
-    const featuresResponse = await listFlags(appId, {
+    const flagsResponse = await listFlags(appId, {
       envId: production.id,
     });
 
     spinner.succeed(
-      `Loaded features of app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}.`,
+      `Loaded flags of app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}.`,
     );
 
     console.table(
-      featuresResponse.data.map(({ key, name, stage }) => ({
+      flagsResponse.data.map(({ key, name, stage }) => ({
         name,
         key,
         stage: stage?.name,
       })),
     );
   } catch (error) {
-    spinner?.fail("Loading features failed.");
+    spinner?.fail("Loading flags failed.");
     handleError(error, "Flags List");
   }
 };
@@ -137,7 +137,7 @@ export const generateTypesAction = async () => {
   const typesOutput = configStore.getConfig("typesOutput");
 
   let spinner: Ora | undefined;
-  let features: Flag[] = [];
+  let flags: Flag[] = [];
 
   if (!appId) {
     handleError(new MissingAppIdError(), "Flags Types");
@@ -157,29 +157,29 @@ export const generateTypesAction = async () => {
 
   try {
     spinner = ora(
-      `Loading features of app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}...`,
+      `Loading flags of app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}...`,
     ).start();
 
-    features = await listFlags(appId, {
+    flags = await listFlags(appId, {
       envId: production.id,
       includeRemoteConfigs: true,
     }).then((res) => res.data);
 
     spinner.succeed(
-      `Loaded features of app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}.`,
+      `Loaded flags of app ${chalk.cyan(app.name)}${baseUrlSuffix(baseUrl)}.`,
     );
   } catch (error) {
-    spinner?.fail("Loading features failed.");
+    spinner?.fail("Loading flags failed.");
     handleError(error, "Flags Types");
   }
 
   try {
-    spinner = ora(`Generating feature types...`).start();
+    spinner = ora(`Generating flag types...`).start();
     const projectPath = configStore.getProjectPath();
 
     // Generate types for each output configuration
     for (const output of typesOutput) {
-      const types = genTypes(features, output.format);
+      const types = genTypes(flags, output.format);
 
       const outPath = await writeTypesToFile(types, output.path, projectPath);
       spinner.succeed(
@@ -193,35 +193,33 @@ export const generateTypesAction = async () => {
 };
 
 export function registerFlagCommands(cli: Command) {
-  const featuresCommand = new Command("flags").description(
-    "Manage features.",
-  );
+  const flagsCommand = new Command("flags").description("Manage flags.");
 
-  featuresCommand
+  flagsCommand
     .command("create")
-    .description("Create a new feature.")
+    .description("Create a new flag.")
     .addOption(appIdOption)
     .addOption(flagKeyOption)
-    .addArgument(featureNameArgument)
+    .addArgument(flagNameArgument)
     .action(createFlagAction);
 
-  featuresCommand
+  flagsCommand
     .command("list")
     .alias("ls")
-    .description("List all features.")
+    .description("List all flags.")
     .addOption(appIdOption)
     .action(listFlagsAction);
 
-  featuresCommand
+  flagsCommand
     .command("types")
-    .description("Generate feature types.")
+    .description("Generate flag types.")
     .addOption(appIdOption)
     .addOption(typesOutOption)
     .addOption(typesFormatOption)
     .action(generateTypesAction);
 
   // Update the config with the cli override values
-  featuresCommand.hook("preAction", (_, command) => {
+  flagsCommand.hook("preAction", (_, command) => {
     const { appId, out, format } = command.opts();
     configStore.setConfig({
       appId,
@@ -229,5 +227,5 @@ export function registerFlagCommands(cli: Command) {
     });
   });
 
-  cli.addCommand(featuresCommand);
+  cli.addCommand(flagsCommand);
 }
