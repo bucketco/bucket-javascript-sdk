@@ -364,7 +364,7 @@ describe("useSendFeedback", () => {
 
     await waitFor(async () => {
       await result.current({
-        featureKey: "huddles",
+        flagKey: "huddles",
         score: 5,
       });
       expect(events).toStrictEqual(["FEEDBACK"]);
@@ -386,14 +386,14 @@ describe("useRequestFeedback", () => {
 
     await waitFor(async () => {
       result.current({
-        featureKey: "huddles",
+        flagKey: "huddles",
         title: "Test question",
         companyId: "456",
       });
 
       expect(requestFeedback).toHaveBeenCalledOnce();
       expect(requestFeedback).toHaveBeenCalledWith({
-        featureKey: "huddles",
+        flagKey: "huddles",
         companyId: "456",
         title: "Test question",
       });

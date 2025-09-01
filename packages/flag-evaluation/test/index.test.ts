@@ -11,7 +11,7 @@ import {
 } from "../src";
 
 const feature = {
-  featureKey: "feature",
+  flagKey: "feature",
   rules: [
     {
       value: true,
@@ -40,7 +40,7 @@ const feature = {
 describe("evaluate feature targeting integration ", () => {
   it("evaluates all kinds of filters", async () => {
     const res = evaluateFeatureRules({
-      featureKey: "feature",
+      flagKey: "feature",
       rules: [
         {
           value: true,
@@ -102,7 +102,7 @@ describe("evaluate feature targeting integration ", () => {
       context: {
         "company.id": "company1",
       },
-      featureKey: "feature",
+      flagKey: "feature",
       missingContextFields: [],
       reason: "rule #0 matched",
       ruleEvaluationResults: [true],
@@ -124,7 +124,7 @@ describe("evaluate feature targeting integration ", () => {
       context: {
         "company.id": "wrong value",
       },
-      featureKey: "feature",
+      flagKey: "feature",
       missingContextFields: [],
       reason: "no matched rules",
       ruleEvaluationResults: [false],
@@ -148,7 +148,7 @@ describe("evaluate feature targeting integration ", () => {
       context: {
         "company.id": "company1",
       },
-      featureKey: "feature",
+      flagKey: "feature",
       missingContextFields: [],
       reason: "rule #0 matched",
       ruleEvaluationResults: [true],
@@ -157,7 +157,7 @@ describe("evaluate feature targeting integration ", () => {
 
   it("evaluates flag with missing values", async () => {
     const res = evaluateFeatureRules({
-      featureKey: "feature",
+      flagKey: "feature",
       rules: [
         {
           value: { custom: "value" },
@@ -191,7 +191,7 @@ describe("evaluate feature targeting integration ", () => {
         some_field: "",
       },
       value: { custom: "value" },
-      featureKey: "feature",
+      flagKey: "feature",
       missingContextFields: [],
       reason: "rule #0 matched",
       ruleEvaluationResults: [true],
@@ -208,7 +208,7 @@ describe("evaluate feature targeting integration ", () => {
       context: {},
       value: undefined,
       reason: "no matched rules",
-      featureKey: "feature",
+      flagKey: "feature",
       missingContextFields: ["company.id"],
       ruleEvaluationResults: [false],
     });
@@ -216,7 +216,7 @@ describe("evaluate feature targeting integration ", () => {
 
   it("fails evaluation and includes key in missing keys when rollout attribute is missing from context", async () => {
     const res = evaluateFeatureRules({
-      featureKey: "myfeature",
+      flagKey: "myfeature",
       rules: [
         {
           value: 123,
@@ -232,7 +232,7 @@ describe("evaluate feature targeting integration ", () => {
     });
 
     expect(res).toEqual({
-      featureKey: "myfeature",
+      flagKey: "myfeature",
       context: {},
       value: undefined,
       reason: "no matched rules",
@@ -304,7 +304,7 @@ describe("evaluate feature targeting integration ", () => {
       context: {
         "company.id": "company1",
       },
-      featureKey: "feature",
+      flagKey: "feature",
       missingContextFields: [],
       reason: "rule #0 matched",
       ruleEvaluationResults: [true],
@@ -314,7 +314,7 @@ describe("evaluate feature targeting integration ", () => {
   describe("SET and NOT_SET operators", () => {
     it("should handle `SET` operator with missing field value", () => {
       const res = evaluateFeatureRules({
-        featureKey: "test_feature",
+        flagKey: "test_feature",
         rules: [
           {
             value: true,
@@ -330,7 +330,7 @@ describe("evaluate feature targeting integration ", () => {
       });
 
       expect(res).toEqual({
-        featureKey: "test_feature",
+        flagKey: "test_feature",
         value: undefined,
         context: {},
         ruleEvaluationResults: [false],
@@ -341,7 +341,7 @@ describe("evaluate feature targeting integration ", () => {
 
     it("should handle `NOT_SET` operator with missing field value", () => {
       const res = evaluateFeatureRules({
-        featureKey: "test_feature",
+        flagKey: "test_feature",
         rules: [
           {
             value: true,
@@ -357,7 +357,7 @@ describe("evaluate feature targeting integration ", () => {
       });
 
       expect(res).toEqual({
-        featureKey: "test_feature",
+        flagKey: "test_feature",
         value: true,
         context: {},
         ruleEvaluationResults: [true],
@@ -368,7 +368,7 @@ describe("evaluate feature targeting integration ", () => {
 
     it("should handle `SET` operator with empty string field value", () => {
       const res = evaluateFeatureRules({
-        featureKey: "test_feature",
+        flagKey: "test_feature",
         rules: [
           {
             value: true,
@@ -388,7 +388,7 @@ describe("evaluate feature targeting integration ", () => {
       });
 
       expect(res).toEqual({
-        featureKey: "test_feature",
+        flagKey: "test_feature",
         value: undefined,
         context: {
           "user.name": "",
@@ -401,7 +401,7 @@ describe("evaluate feature targeting integration ", () => {
 
     it("should handle `NOT_SET` operator with empty string field value", () => {
       const res = evaluateFeatureRules({
-        featureKey: "test_feature",
+        flagKey: "test_feature",
         rules: [
           {
             value: true,
@@ -421,7 +421,7 @@ describe("evaluate feature targeting integration ", () => {
       });
 
       expect(res).toEqual({
-        featureKey: "test_feature",
+        flagKey: "test_feature",
         value: true,
         context: {
           "user.name": "",
@@ -475,7 +475,7 @@ describe("evaluate feature targeting integration ", () => {
   describe("DATE_AFTER and DATE_BEFORE in feature rules", () => {
     it("should evaluate DATE_AFTER operator in feature rules", () => {
       const res = evaluateFeatureRules({
-        featureKey: "time_based_feature",
+        flagKey: "time_based_feature",
         rules: [
           {
             value: "enabled",
@@ -495,7 +495,7 @@ describe("evaluate feature targeting integration ", () => {
       });
 
       expect(res).toEqual({
-        featureKey: "time_based_feature",
+        flagKey: "time_based_feature",
         value: "enabled",
         context: {
           "user.createdAt": "2024-06-15",
@@ -508,7 +508,7 @@ describe("evaluate feature targeting integration ", () => {
 
     it("should evaluate DATE_BEFORE operator in feature rules", () => {
       const res = evaluateFeatureRules({
-        featureKey: "legacy_feature",
+        flagKey: "legacy_feature",
         rules: [
           {
             value: "enabled",
@@ -528,7 +528,7 @@ describe("evaluate feature targeting integration ", () => {
       });
 
       expect(res).toEqual({
-        featureKey: "legacy_feature",
+        flagKey: "legacy_feature",
         value: "enabled",
         context: {
           "user.lastLogin": "2024-01-15",
@@ -541,7 +541,7 @@ describe("evaluate feature targeting integration ", () => {
 
     it("should handle complex rules with DATE_AFTER and DATE_BEFORE in groups", () => {
       const res = evaluateFeatureRules({
-        featureKey: "time_window_feature",
+        flagKey: "time_window_feature",
         rules: [
           {
             value: "active",
@@ -574,7 +574,7 @@ describe("evaluate feature targeting integration ", () => {
       });
 
       expect(res).toEqual({
-        featureKey: "time_window_feature",
+        flagKey: "time_window_feature",
         value: "active",
         context: {
           "event.startDate": "2024-06-01",
@@ -588,7 +588,7 @@ describe("evaluate feature targeting integration ", () => {
 
     it("should fail when DATE_AFTER condition is not met", () => {
       const res = evaluateFeatureRules({
-        featureKey: "future_feature",
+        flagKey: "future_feature",
         rules: [
           {
             value: "enabled",
@@ -608,7 +608,7 @@ describe("evaluate feature targeting integration ", () => {
       });
 
       expect(res).toEqual({
-        featureKey: "future_feature",
+        flagKey: "future_feature",
         value: undefined,
         context: {
           "user.signupDate": "2024-01-15",
@@ -621,7 +621,7 @@ describe("evaluate feature targeting integration ", () => {
 
     it("should fail when DATE_BEFORE condition is not met", () => {
       const res = evaluateFeatureRules({
-        featureKey: "past_feature",
+        flagKey: "past_feature",
         rules: [
           {
             value: "enabled",
@@ -641,7 +641,7 @@ describe("evaluate feature targeting integration ", () => {
       });
 
       expect(res).toEqual({
-        featureKey: "past_feature",
+        flagKey: "past_feature",
         value: undefined,
         context: {
           "user.lastActivity": "2024-06-15",
@@ -688,7 +688,7 @@ describe("evaluate feature targeting integration ", () => {
       );
 
       expect(res).toEqual({
-        featureKey: "subscription_feature",
+        flagKey: "subscription_feature",
         value: "time_sensitive",
         context: {
           "user.subscriptionDate": "2024-03-15",

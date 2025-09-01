@@ -248,7 +248,7 @@ export function ReflagProvider({
 
 export type RequestFeedbackOptions = Omit<
   RequestFeedbackData,
-  "featureKey" | "featureId"
+  "flagKey" | "featureId"
 >;
 
 /**
@@ -272,7 +272,7 @@ export function useFeature<TKey extends FeatureKey>(
 
   const track = () => client?.track(key);
   const requestFeedback = (opts: RequestFeedbackOptions) =>
-    client?.requestFeedback({ ...opts, featureKey: key });
+    client?.requestFeedback({ ...opts, flagKey: key });
 
   if (isLoading || !client) {
     return {
@@ -328,7 +328,7 @@ export function useTrack() {
  * ```ts
  * const requestFeedback = useRequestFeedback();
  * reflag.requestFeedback({
- *   featureKey: "file-uploads",
+ *   flagKey: "file-uploads",
  *   title: "How satisfied are you with file uploads?",
  * });
  * ```
@@ -347,7 +347,7 @@ export function useRequestFeedback() {
  * ```ts
  * const sendFeedback = useSendFeedback();
  * sendFeedback({
- *   featureKey: "huddle";
+ *   flagKey: "huddle";
  *   question: "How did you like the new huddle feature?";
  *   score: 5;
  *   comment: "I loved it!";

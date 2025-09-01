@@ -11,7 +11,7 @@ The provider is initialized before the API is started and then, instances
 of the client are bound to each individual user's request, to allow for fetching
 the relevant features for each request.
 
-To get started, create an app on [Reflag](https://reflag.co) and take a note of the
+To get started, create an app on [Reflag](https://reflag.com) and take a note of the
 secret key which is found under _"Settings"_ -> _"Environments"_.
 
 ## Context

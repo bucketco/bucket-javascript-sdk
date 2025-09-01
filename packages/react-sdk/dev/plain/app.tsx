@@ -155,7 +155,7 @@ function Feedback() {
         onClick={(e) =>
           requestFeedback({
             title: "How do you like Huddles?",
-            featureKey: "huddle",
+            flagKey: "huddle",
             position: {
               type: "POPOVER",
               anchor: e.currentTarget as HTMLElement,
@@ -183,7 +183,7 @@ function Demos() {
         <code>optin-huddles IS TRUE</code>. Hit the checkbox below to opt-in/out
         of the feature.
       </div>
-      <FeatureOptIn featureKey={"huddles"} featureName={"Huddles"} />
+      <FeatureOptIn flagKey={"huddles"} featureName={"Huddles"} />
 
       <UpdateContext />
       <Feedback />
@@ -194,15 +194,15 @@ function Demos() {
 }
 
 function FeatureOptIn({
-  featureKey,
+  flagKey,
   featureName,
 }: {
-  featureKey: FeatureKey;
+  flagKey: FeatureKey;
   featureName: string;
 }) {
   const updateUser = useUpdateUser();
   const [sendingUpdate, setSendingUpdate] = useState(false);
-  const { isEnabled } = useFeature(featureKey);
+  const { isEnabled } = useFeature(flagKey);
 
   return (
     <div>
@@ -215,7 +215,7 @@ function FeatureOptIn({
         onChange={() => {
           setSendingUpdate(true);
           updateUser({
-            [`optin-${featureKey}`]: isEnabled ? "false" : "true",
+            [`optin-${flagKey}`]: isEnabled ? "false" : "true",
           })?.then(() => {
             setSendingUpdate(false);
           });
@@ -236,16 +236,16 @@ function CustomToolbar() {
     <div>
       <h2>Custom toolbar</h2>
       <ul>
-        {Object.entries(client.getFeatures()).map(([featureKey, feature]) => (
-          <li key={featureKey}>
-            {featureKey} -
+        {Object.entries(client.getFeatures()).map(([flagKey, feature]) => (
+          <li key={flagKey}>
+            {flagKey} -
             {(feature.isEnabledOverride ?? feature.isEnabled)
               ? "Enabled"
               : "Disabled"}{" "}
             {feature.isEnabledOverride !== null && (
               <button
                 onClick={() => {
-                  client.getFeature(featureKey).setIsEnabledOverride(null);
+                  client.getFeature(flagKey).setIsEnabledOverride(null);
                 }}
               >
                 Reset
@@ -257,7 +257,7 @@ function CustomToolbar() {
               onChange={(e) => {
                 // this uses slightly simplified logic compared to the Reflag Toolbar
                 client
-                  .getFeature(featureKey)
+                  .getFeature(flagKey)
                   .setIsEnabledOverride(e.target.checked ?? false);
               }}
             />

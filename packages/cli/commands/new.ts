@@ -5,7 +5,7 @@ import { configStore } from "../stores/config.js";
 import { CONFIG_FILE_NAME } from "../utils/constants.js";
 import {
   appIdOption,
-  featureKeyOption,
+  flagKeyOption,
   featureNameArgument,
   typesFormatOption,
   typesOutOption,
@@ -39,7 +39,7 @@ export function registerNewCommand(cli: Command) {
     .addOption(appIdOption)
     .addOption(typesOutOption)
     .addOption(typesFormatOption)
-    .addOption(featureKeyOption)
+    .addOption(flagKeyOption)
     .addArgument(featureNameArgument)
     .action(newAction);
 

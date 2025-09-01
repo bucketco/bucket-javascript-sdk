@@ -20,7 +20,7 @@ Reflag is a comprehensive feature management service offering flags, user feedba
 
 ## Follow Official Documentation
 
-- Refer to [Reflag's official documentation](mdc:https:/docs.reflag.co) for implementation details.
+- Refer to [Reflag's official documentation](mdc:https:/docs.reflag.com) for implementation details.
 - Adhere to Reflag's recommended patterns for each framework.
 
 ## Reflag SDK Usage
@@ -295,7 +295,7 @@ await client.trackEvent("custom-event", {
 
 ## Further Resources
 
-- [Official Documentation](mdc:https:/docs.reflag.co)
+- [Official Documentation](mdc:https:/docs.reflag.com)
 - [Docs llms.txt](mdc:https:/docs.reflag.com/llms.txt)
 - [GitHub Repository](mdc:https:/github.com/reflagcom/javascript)
 - [Example React App](mdc:https:/github.com/reflagcom/javascript/tree/main/packages/react-sdk/dev)

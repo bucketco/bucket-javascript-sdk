@@ -67,7 +67,7 @@ Creating feature for app Slick app.
 > By default, types will be generated in `gen/features.d.ts`.
 > The default `tsconfig.json` file `include`s this file by default, but if your `tsconfig.json` is different, make sure the file is covered in the `include` property.
 
-### 3. Use `useFeature(<featureKey>)` to get feature status
+### 3. Use `useFeature(<flagKey>)` to get feature status
 
 Using the `useFeature` hook from your components lets you toggle features on/off and track feature usage:
 
@@ -314,7 +314,7 @@ function FeedbackButton() {
     <button
       onClick={(e) =>
         requestFeedback({
-          featureKey: "huddle-feature",
+          flagKey: "huddle-feature",
           title: "How satisfied are you with file uploads?",
           position: {
             type: "POPOVER",
@@ -348,7 +348,7 @@ function CustomFeedbackForm() {
 
   const handleSubmit = async (data: FormData) => {
     await sendFeedback({
-      featureKey: "reflag-feature-key",
+      flagKey: "reflag-feature-key",
       score: parseInt(data.get("score") as string),
       comment: data.get("comment") as string,
     });

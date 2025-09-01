@@ -17,7 +17,7 @@ export function useFeature(key: string): Feature<any> {
 
   const track = () => client?.value.track(key);
   const requestFeedback = (opts: RequestFeatureFeedbackOptions) =>
-    client.value.requestFeedback({ ...opts, featureKey: key });
+    client.value.requestFeedback({ ...opts, flagKey: key });
 
   const feature = ref(client.value.getFeature(key));
 

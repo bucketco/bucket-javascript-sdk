@@ -205,12 +205,12 @@ Grant or revoke access to specific features for companies, segments, and users.
 If no feature key is provided, you'll be prompted to select one from a list.
 
 ```bash
-npx reflag companies features access [--app-id ap123456789] [featureKey] [--enable|--disable] [--companies <id...>] [--segments <id...>] [--users <id...>]
+npx reflag companies features access [--app-id ap123456789] [flagKey] [--enable|--disable] [--companies <id...>] [--segments <id...>] [--users <id...>]
 ```
 
 Arguments:
 
-- `featureKey`: Key of the feature to grant/revoke access to (optional, interactive selection if omitted).
+- `flagKey`: Key of the feature to grant/revoke access to (optional, interactive selection if omitted).
 
 Options:
 

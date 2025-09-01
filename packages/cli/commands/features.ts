@@ -21,7 +21,7 @@ import {
 } from "../utils/gen.js";
 import {
   appIdOption,
-  featureKeyOption,
+  flagKeyOption,
   featureNameArgument,
   typesFormatOption,
   typesOutOption,
@@ -66,7 +66,7 @@ export const createFeatureAction = async (
     }
 
     if (!key) {
-      const keyFormat = org.featureKeyFormat;
+      const keyFormat = org.flagKeyFormat;
       const keyValidator = KeyFormatPatterns[keyFormat];
       key = await input({
         message: "New feature key:",
@@ -201,7 +201,7 @@ export function registerFeatureCommands(cli: Command) {
     .command("create")
     .description("Create a new feature.")
     .addOption(appIdOption)
-    .addOption(featureKeyOption)
+    .addOption(flagKeyOption)
     .addArgument(featureNameArgument)
     .action(createFeatureAction);
 

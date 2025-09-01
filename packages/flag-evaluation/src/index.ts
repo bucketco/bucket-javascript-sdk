@@ -446,12 +446,12 @@ function evaluateRecursively(
  *
  * @template T - The type of the rule value used in evaluation.
  *
- * @property {string} featureKey - The key that identifies the specific feature to be evaluated.
+ * @property {string} flagKey - The key that identifies the specific feature to be evaluated.
  * @property {Rule<T>[]} rules - An array of rules used for evaluation.
  * @property {Record<string, unknown>} context - The contextual data used during the evaluation process.
  */
 export interface EvaluationParams<T extends RuleValue> {
-  featureKey: string;
+  flagKey: string;
   rules: Rule<T>[];
   context: Record<string, unknown>;
 }
@@ -461,7 +461,7 @@ export interface EvaluationParams<T extends RuleValue> {
  *
  * @template T - The type of the rule value being evaluated.
  *
- * @property {string} featureKey - The unique key identifying the feature being evaluated.
+ * @property {string} flagKey - The unique key identifying the feature being evaluated.
  * @property {T | undefined} value - The resolved value of the feature, if the evaluation is successful.
  * @property {Record<string, any>} context - The contextual information used during the evaluation process.
  * @property {boolean[]} ruleEvaluationResults - Array indicating the success or failure of each rule evaluated.
@@ -469,7 +469,7 @@ export interface EvaluationParams<T extends RuleValue> {
  * @property {string[]} [missingContextFields] - Optional array of context fields that were required but not provided during the evaluation.
  */
 export interface EvaluationResult<T extends RuleValue> {
-  featureKey: string;
+  flagKey: string;
   value: T | undefined;
   context: Record<string, any>;
   ruleEvaluationResults: boolean[];
@@ -479,7 +479,7 @@ export interface EvaluationResult<T extends RuleValue> {
 
 export function evaluateFeatureRules<T extends RuleValue>({
   context,
-  featureKey,
+  flagKey,
   rules,
 }: EvaluationParams<T>): EvaluationResult<T> {
   const flatContext = flattenJSON(context);
@@ -496,7 +496,7 @@ export function evaluateFeatureRules<T extends RuleValue>({
     firstMatchedRuleIndex > -1 ? rules[firstMatchedRuleIndex] : undefined;
   return {
     value: firstMatchedRule?.value,
-    featureKey,
+    flagKey,
     context: flatContext,
     ruleEvaluationResults,
     reason:
@@ -541,11 +541,11 @@ export function newEvaluator<T extends RuleValue>(rules: Rule<T>[]) {
 
   return function evaluateOptimized(
     context: Record<string, unknown>,
-    featureKey: string,
+    flagKey: string,
   ) {
     return evaluateFeatureRules({
       context,
-      featureKey,
+      flagKey,
       rules: translatedRules,
     });
   };

@@ -988,7 +988,7 @@ export class ReflagClient {
       featureData.missingContextFields?.length &&
       this.rateLimiter.isAllowed(
         hashObject({
-          featureKey: featureData.key,
+          flagKey: featureData.key,
           missingContextFields: featureData.missingContextFields,
           context,
         }),
@@ -1001,7 +1001,7 @@ export class ReflagClient {
       config?.missingContextFields?.length &&
       this.rateLimiter.isAllowed(
         hashObject({
-          featureKey: featureData.key,
+          flagKey: featureData.key,
           configKey: config.key,
           missingContextFields: config.missingContextFields,
           context,
@@ -1063,16 +1063,16 @@ export class ReflagClient {
     const { enableTracking = true, meta: _, ...context } = options;
 
     const evaluated = featureDefinitions
-      .filter(({ key: featureKey }) => (key ? key === featureKey : true))
+      .filter(({ key: flagKey }) => (key ? key === flagKey : true))
       .map((feature) => ({
-        featureKey: feature.key,
+        flagKey: feature.key,
         targetingVersion: feature.targeting.version,
         configVersion: feature.config?.version,
         enabledResult: feature.enabledEvaluator(context, feature.key),
         configResult:
           feature.configEvaluator?.(context, feature.key) ??
           ({
-            featureKey: feature.key,
+            flagKey: feature.key,
             context,
             value: undefined,
             ruleEvaluationResults: [],
@@ -1087,7 +1087,7 @@ export class ReflagClient {
           outPromises.push(
             this.sendFeatureEvent({
               action: "evaluate",
-              key: res.featureKey,
+              key: res.flagKey,
               targetingVersion: res.targetingVersion,
               evalResult: res.enabledResult.value ?? false,
               evalContext: res.enabledResult.context,
@@ -1101,7 +1101,7 @@ export class ReflagClient {
             outPromises.push(
               this.sendFeatureEvent({
                 action: "evaluate-config",
-                key: res.featureKey,
+                key: res.flagKey,
                 targetingVersion: res.configVersion,
                 evalResult: config.value,
                 evalContext: config.context,
@@ -1131,8 +1131,8 @@ export class ReflagClient {
 
     let evaluatedFeatures = evaluated.reduce(
       (acc, res) => {
-        acc[res.featureKey as TypedFeatureKey] = {
-          key: res.featureKey,
+        acc[res.flagKey as TypedFeatureKey] = {
+          key: res.flagKey,
           isEnabled: res.enabledResult.value ?? false,
           ruleEvaluationResults: res.enabledResult.ruleEvaluationResults,
           missingContextFields: res.enabledResult.missingContextFields,
@@ -1152,17 +1152,17 @@ export class ReflagClient {
 
     // apply feature overrides
     const overrides = Object.entries(this._config.featureOverrides(context))
-      .filter(([featureKey]) => (key ? key === featureKey : true))
-      .map(([featureKey, override]) => [
-        featureKey,
+      .filter(([flagKey]) => (key ? key === flagKey : true))
+      .map(([flagKey, override]) => [
+        flagKey,
         isObject(override)
           ? {
-              key: featureKey,
+              key: flagKey,
               isEnabled: override.isEnabled,
               config: override.config,
             }
           : {
-              key: featureKey,
+              key: flagKey,
               isEnabled: !!override,
               config: undefined,
             },
@@ -1325,8 +1325,8 @@ export class ReflagClient {
     } else {
       return res?.features
         ? Object.fromEntries(
-            Object.entries(res?.features).map(([featureKey, feature]) => [
-              featureKey,
+            Object.entries(res?.features).map(([flagKey, feature]) => [
+              flagKey,
               this._wrapRawFeature(contextWithTracking, feature),
             ]),
           )

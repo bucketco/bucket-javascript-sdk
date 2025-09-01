@@ -1,6 +1,6 @@
 # Reflag Node.js OpenFeature Provider
 
-The official OpenFeature Node.js provider for [Reflag](https://reflag.co) feature management service.
+The official OpenFeature Node.js provider for [Reflag](https://reflag.com) feature management service.
 
 ## Installation
 

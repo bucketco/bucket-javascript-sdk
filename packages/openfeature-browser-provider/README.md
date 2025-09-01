@@ -1,6 +1,6 @@
 # Reflag Browser OpenFeature Provider
 
-The official OpenFeature Browser provider for [Reflag](https://reflag.co) feature management service.
+The official OpenFeature Browser provider for [Reflag](https://reflag.com) feature management service.
 
 It uses the Reflag Browser SDK internally and thus allow you to collect [automated feedback surveys](https://github.com/reflagcom/javascript/tree/main/packages/browser-sdk#qualitative-feedback)
 when people use your features as well as tracking which customers use which features.

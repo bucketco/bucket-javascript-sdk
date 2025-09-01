@@ -247,7 +247,7 @@ const requestFeedback = useRequestFeedback();
     @click="
       (e) =>
         requestFeedback({
-          featureKey: 'huddle-feature',
+          flagKey: 'huddle-feature',
           title: 'How satisfied are you with file uploads?',
           position: {
             type: 'POPOVER',
@@ -280,7 +280,7 @@ const sendFeedback = useSendFeedback();
 
 const handleSubmit = async (data: FormData) => {
   await sendFeedback({
-    featureKey: "reflag-feature-key",
+    flagKey: "reflag-feature-key",
     score: parseInt(data.get("score") as string),
     comment: data.get("comment") as string,
   });
