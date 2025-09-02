@@ -1,6 +1,6 @@
 {
   "name": "@reflag/react-sdk",
-  "version": "1.0.0-alpha.1",
+  "version": "1.0.0-alpha.2",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -34,7 +34,7 @@
     }
   },
   "dependencies": {
-    "@reflag/browser-sdk": "1.0.0-alpha.1",
+    "@reflag/browser-sdk": "1.0.0-alpha.2",
     "canonical-json": "^0.0.4",
     "rollup": "^4.2.0"
   },

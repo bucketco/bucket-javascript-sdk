@@ -64,7 +64,7 @@ reflagClient.requestFeedback({ flagKey: "huddle" });
 
 B. Script tag (client-side directly in html)
 
-See [example/browser.html](https://github.com/reflagco/reflag-javascript-sdk/tree/main/packages/browser-sdk/example/browser.html) for a working example:
+See [example/browser.html](https://github.com/reflagcom/javascript/tree/main/packages/browser-sdk/example/browser.html) for a working example:
 
 ```html
 <script src="https://cdn.jsdelivr.net/npm/@reflag/browser-sdk@2"></script>

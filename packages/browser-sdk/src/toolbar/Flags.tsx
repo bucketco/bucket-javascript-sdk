@@ -1,8 +1,6 @@
 import { h } from "preact";
 import { useEffect, useState } from "preact/hooks";
 
-import { Flag } from "../ui/icons/Flag";
-
 import { Switch } from "./Switch";
 import { FlagItem } from "./Toolbar";
 
@@ -107,7 +105,6 @@ function FlagRow({
       style={{ "--i": index }}
     >
       <td class="flag-name-cell">
-        <Flag class="flag-icon" />
         <a
           class="flag-link"
           href={`${appBaseUrl}/env-current/flags/by-key/${flag.flagKey}`}
