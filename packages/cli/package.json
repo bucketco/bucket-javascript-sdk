@@ -57,8 +57,8 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@reflag/eslint-config": "workspace:^",
-    "@reflag/tsconfig": "workspace:^",
+    "@reflag/eslint-config": "^0.0.2",
+    "@reflag/tsconfig": "^0.0.2",
     "@types/express": "^5.0.0",
     "@types/node": "^22.5.1",
     "@types/semver": "^7.7.0",
@@ -68,5 +68,6 @@
     "shx": "^0.3.4",
     "typescript": "^5.5.4",
     "vitest": "^3.0.8"
-  }
+  },
+  "gitHead": "06f92c3d39a81190c4117a64bd1ba73aa8007e70"
 }

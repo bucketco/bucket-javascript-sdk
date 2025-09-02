@@ -43,8 +43,8 @@
     "react-dom": "*"
   },
   "devDependencies": {
-    "@reflag/eslint-config": "workspace:^",
-    "@reflag/tsconfig": "workspace:^",
+    "@reflag/eslint-config": "^0.0.2",
+    "@reflag/tsconfig": "^0.0.2",
     "@testing-library/react": "^15.0.7",
     "@types/jsdom": "^21.1.6",
     "@types/node": "^22.12.0",
@@ -65,5 +65,6 @@
     "vitest": "^2.0.4",
     "webpack": "^5.89.0",
     "webpack-cli": "^5.1.4"
-  }
+  },
+  "gitHead": "06f92c3d39a81190c4117a64bd1ba73aa8007e70"
 }

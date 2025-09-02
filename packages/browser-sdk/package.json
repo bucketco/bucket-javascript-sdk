@@ -63,5 +63,6 @@
     "vite": "^5.3.5",
     "vite-plugin-dts": "^4.0.0-beta.1",
     "vitest": "^2.0.4"
-  }
+  },
+  "gitHead": "06f92c3d39a81190c4117a64bd1ba73aa8007e70"
 }
