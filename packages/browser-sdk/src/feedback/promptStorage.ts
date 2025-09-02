@@ -16,7 +16,9 @@ export const checkPromptMessageCompleted = (
   userId: string,
   promptId: string,
 ) => {
-  const id = Cookies.get(`reflag-prompt-${userId}`);
+  const id =
+    Cookies.get(`reflag-prompt-${userId}`) ||
+    Cookies.get(`bucket-prompt-${userId}`); // Legacy cookie name
   return id === promptId;
 };
 

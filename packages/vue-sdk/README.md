@@ -2,7 +2,7 @@
 
 Vue client side library for [Reflag.com](https://reflag.com)
 
-Reflag supports feature toggling, tracking feature usage, requesting feedback on features and remotely configuring features.
+Reflag supports flag toggling, tracking flag usage, requesting feedback on features and remotely configuring flags.
 
 The Reflag Vue SDK comes with the same built-in toolbar as the browser SDK which appears on `localhost` by default.
 
@@ -13,6 +13,33 @@ Install via npm:
 ```shell
 npm i @reflag/vue-sdk
 ```
+
+## Migrating from Bucket SDK
+
+If you have been using the Bucket SDKs, the following list will help you migrate to Reflag SDK:
+
+- `Bucket*` classes, and types have been renamed to `Reflag*` (e.g. `BucketClient` is now `ReflagClient`)
+- `Feature*` classes, and types have been renamed to `Feature*` (e.g. `Feature` is now `Flag`, `RawFeatures` is now `RawFlags`)
+- All methods that contained `feature` in the name have been renamed to use the `flag` terminology (e.g. `getFeature` is `getFlag`)
+- The `fallbackFeatures` property in client constructor and configuration files has been renamed to `fallbackFlags`
+- `featureKey` has been renamed to `flagKey` in all methods that accepts that argument
+- The SDKs will not emit `evaluate` and `evaluate-config` events anymore
+- The new cookies that are stored in the client's browser are now `reflag-*` prefixed instead og `bucket-*`
+- The `featuresUpdated` hook has been renamed to `flagsUpdated`
+- The `checkIsEnabled` and `checkConfig` hooks have been removed, use `check` from now on
+
+To ease in transition to Reflag SDK, some of the old methods have been preserved as aliases to the new methods:
+
+- `getFeature` method is an alias for `getFlag`
+- `getFeatures` method is an alias for `getFlags`
+- `featuresUpdated` hook is an alias for `flagsUpdated`
+
+If you are running with strict Content Security Policies active on your website, you will need change them as follows:
+
+- `connect-src https://front.bucket.co` to `connect-src https://front.reflag.com`
+- `connect-src https://livemessaging.bucket.co` to `connect-src https://livemessaging.reflag.com`
+
+Finally, if you have customized the look & feel of the Feedback component, update `--bucket-feedback-*` CSS classes to `--reflag-feedback-*`
 
 ## Get started
 
@@ -34,7 +61,7 @@ import { ReflagProvider } from "@reflag/vue-sdk";
 
 If using Nuxt, wrap `<ReflagProvider>` in `<ClientOnly>`. `<ReflagProvider>` only renders client-side currently.
 
-### 2. Use `useFlag get feature status
+### 2. Use `useFlag get flag status
 
 ```vue
 <script setup lang="ts">
@@ -50,15 +77,15 @@ const { isEnabled } = useFlag("huddle");
 </template>
 ```
 
-See [useFlag()](#usefeature) for a full example
+See [useFlag()](#useflag) for a full example
 
 ## Setting `user` and `company`
 
-Reflag determines which features are active for a given `user`, `company`, or `otherContext`.
+Reflag determines which flags are active for a given `user`, `company`, or `otherContext`.
 You pass these to the `ReflagProvider` as props.
 
 If you supply `user` or `company` objects, they must include at least the `id` property otherwise they will be ignored in their entirety.
-In addition to the `id`, you must also supply anything additional that you want to be able to evaluate feature targeting rules against.
+In addition to the `id`, you must also supply anything additional that you want to be able to evaluate flag targeting rules against.
 Attributes which are not properties of the `user` or `company` can be supplied using the `otherContext` prop.
 
 Attributes cannot be nested (multiple levels) and must be either strings, numbers or booleans.
@@ -78,16 +105,16 @@ A number of special attributes exist:
 </ReflagProvider>
 ```
 
-To retrieve features along with their targeting information, use `useFlag(key: string)` hook (described in a section below).
+To retrieve flags along with their targeting information, use `useFlag(key: string)` hook (described in a section below).
 
 Note that accessing `isEnabled` on the object returned by `useFlag()` automatically
 generates a `check` event.
 
 ## Remote config
 
-Remote config is a dynamic and flexible approach to configuring feature behavior outside of your app – without needing to re-deploy it.
+Remote config is a dynamic and flexible approach to configuring flag behavior outside of your app – without needing to re-deploy it.
 
-Similar to `isEnabled`, each feature accessed using the `useFlag()` hook, has a `config` property. This configuration is managed from within Reflag. It is managed similar to the way access to features is managed, but instead of the
+Similar to `isEnabled`, each flag accessed using the `useFlag()` hook, has a `config` property. This configuration is managed from within Reflag. It is managed similar to the way access to flags is managed, but instead of the
 binary `isEnabled` you can have multiple configuration values which are given to different user/companies.
 
 ### Get started with Remote config
@@ -103,25 +130,25 @@ const {
 // payload: { maxTokens: 10000, model: "gpt-3.5-beta1" }
 ```
 
-`key` is mandatory for a config, but if a feature has no config or no config value was matched against the context, the `key` will be `undefined`. Make sure to check against this case when trying to use the configuration in your application. `payload` is an optional JSON value for arbitrary configuration needs.
+`key` is mandatory for a config, but if a flag has no config or no config value was matched against the context, the `key` will be `undefined`. Make sure to check against this case when trying to use the configuration in your application. `payload` is an optional JSON value for arbitrary configuration needs.
 
 Note that, similar to `isEnabled`, accessing `config` on the object returned by `useFlag()` automatically
 generates a `check` event.
 
 ## `<ReflagProvider>` component
 
-The `<ReflagProvider>` initializes the Reflag SDK, fetches features and starts listening for automated feedback survey events. The component can be configured using a number of props:
+The `<ReflagProvider>` initializes the Reflag SDK, fetches flags and starts listening for automated feedback survey events. The component can be configured using a number of props:
 
 - `publishableKey` is used to connect the provider to an _environment_ on Reflag. Find your `publishableKey` under [environment settings](https://app.reflag.com/env-current/settings/app-environments) in Reflag,
-- `company`, `user` and `otherContext` make up the _context_ that is used to determine if a feature is enabled or not. `company` and `user` contexts are automatically transmitted to Reflag servers so the Reflag app can show you which companies have access to which features etc.
+- `company`, `user` and `otherContext` make up the _context_ that is used to determine if a flag is enabled or not. `company` and `user` contexts are automatically transmitted to Reflag servers so the Reflag app can show you which companies have access to which flags etc.
 
   > [!Note]
-  > If you specify `company` and/or `user` they must have at least the `id` property, otherwise they will be ignored in their entirety. You should also supply anything additional you want to be able to evaluate feature targeting against,
+  > If you specify `company` and/or `user` they must have at least the `id` property, otherwise they will be ignored in their entirety. You should also supply anything additional you want to be able to evaluate flag targeting against,
 
-- `timeoutMs`: Timeout in milliseconds when fetching features from the server,
-- `staleWhileRevalidate`: If set to `true`, stale features will be returned while refetching features in the background,
-- `expireTimeMs`: If set, features will be cached between page loads for this duration (in milliseconds),
-- `staleTimeMs`: Maximum time (in milliseconds) that stale features will be returned if `staleWhileRevalidate` is true and new features cannot be fetched.
+- `timeoutMs`: Timeout in milliseconds when fetching flags from the server,
+- `staleWhileRevalidate`: If set to `true`, stale flags will be returned while refetching flags in the background,
+- `expireTimeMs`: If set, flags will be cached between page loads for this duration (in milliseconds),
+- `staleTimeMs`: Maximum time (in milliseconds) that stale flags will be returned if `staleWhileRevalidate` is true and new flags cannot be fetched.
 
 - `enableTracking`: Set to `false` to stop sending tracking events and user/company updates to Reflag. Useful when you're impersonating a user (defaults to `true`),
 - `apiBaseUrl`: Optional base URL for the Reflag API. Use this to override the default API endpoint,
@@ -133,7 +160,7 @@ The `<ReflagProvider>` initializes the Reflag SDK, fetches features and starts l
 
 ### Loading states
 
-ReflagProvider lets you define a template to be shown while ReflagProvider is inititalizing:
+ReflagProvider lets you define a template to be shown while ReflagProvider is initializing:
 
 ```vue
 <template>
@@ -148,23 +175,23 @@ ReflagProvider lets you define a template to be shown while ReflagProvider is in
 </template>
 ```
 
-If you want more control over loading screens, `useIsLoading()` returns a Ref<boolean> which you can use to customize the loading experience.
+If you want more control over loading screens, `useIsLoading()` returns a `Ref<boolean>` which you can use to customize the loading experience.
 
 ## Hooks
 
 ### `useFlag()`
 
-Returns the state of a given feature for the current context. The composable provides access to flags and their configurations.
+Returns the state of a given flag for the current context. The composable provides access to flags and their configurations.
 
 `useFlag()` returns an object with this shape:
 
 ```ts
 {
-  isEnabled: boolean, // is the feature enabled
-  track: () => void, // send a track event when the feature is used
+  isEnabled: boolean, // is the flag enabled
+  track: () => void, // send a track event when the flag is used
   requestFeedback: (...) => void // open up a feedback dialog
-  config: {key: string, payload: any},  // remote configuration for this feature
-  isLoading: boolean // if you want to manage loading state at the feature level
+  config: {key: string, payload: any},  // remote configuration for this flag
+  isLoading: boolean // if you want to manage loading state at the flag level
 }
 ```
 
@@ -208,7 +235,7 @@ See the reference docs for details.
 
 `useTrack()` returns a function which lets you send custom events to Reflag. It takes a string argument with the event name and optionally an object with properties to attach the event.
 
-Using `track` returned from `useFlag()` calles this track function with the feature key as the event name.
+Using `track` returned from `useFlag()` calls this track function with the flag key as the event name.
 
 ```vue
 <script setup lang="ts">
@@ -232,7 +259,7 @@ Returns a function that lets you open up a dialog to ask for feedback on a speci
 
 See [Automated Feedback Surveys](https://docs.reflag.com/product-handbook/live-satisfaction) for how to do this automatically, without code.
 
-When using the `useRequestFeedback` you must pass the feature key to `requestFeedback`.
+When using the `useRequestFeedback` you must pass the flag key to `requestFeedback`.
 The example below shows how to use `position` to ensure the popover appears next to the "Give feedback!" button.
 
 ```vue
@@ -247,7 +274,7 @@ const requestFeedback = useRequestFeedback();
     @click="
       (e) =>
         requestFeedback({
-          flagKey: 'huddle-feature',
+          flagKey: 'huddle-flag',
           title: 'How satisfied are you with file uploads?',
           position: {
             type: 'POPOVER',
@@ -280,7 +307,7 @@ const sendFeedback = useSendFeedback();
 
 const handleSubmit = async (data: FormData) => {
   await sendFeedback({
-    flagKey: "reflag-feature-key",
+    flagKey: "reflag-flag-key",
     score: parseInt(data.get("score") as string),
     comment: data.get("comment") as string,
   });
@@ -296,7 +323,7 @@ const handleSubmit = async (data: FormData) => {
 
 ### `useUpdateUser()`, `useUpdateCompany()` and `useUpdateOtherContext()`
 
-These composables return functions that let you update the attributes for the currently set user, company, or other context. Updates to user/company are stored remotely and affect feature targeting, while "other" context updates only affect the current session.
+These composables return functions that let you update the attributes for the currently set user, company, or other context. Updates to user/company are stored remotely and affect flag targeting, while "other" context updates only affect the current session.
 
 ```vue
 <script setup lang="ts">
@@ -313,7 +340,7 @@ const updateOtherContext = useUpdateOtherContext();
 const handleUserUpdate = async () => {
   await updateUser({
     role: "admin",
-    betaFlags: "enabled",
+    betaFeatures: "enabled",
   });
 };
 
@@ -357,7 +384,7 @@ const client = useClient();
 
 onMounted(() => {
   client.value.on("check", (evt) => {
-    console.log(`The feature ${evt.key} is ${evt.value} for user.`);
+    console.log(`The flag ${evt.key} is ${evt.value} for user.`);
   });
 });
 </script>

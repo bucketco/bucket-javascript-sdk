@@ -4,6 +4,11 @@ import { CompanyContext, UserContext } from "./context";
 export interface HookArgs {
   check: CheckEvent;
   flagsUpdated: RawFlags;
+
+  /**
+   * @deprecated Use `flagsUpdated` instead.
+   */
+  featuresUpdated: RawFlags;
   user: UserContext;
   company: CompanyContext;
   track: TrackEvent;
@@ -35,11 +40,15 @@ export class HooksManager {
     track: [],
   };
 
+  private _adjustEvent(event: keyof HookArgs) {
+    return event === "featuresUpdated" ? "flagsUpdated" : event;
+  }
+
   addHook<THookType extends keyof HookArgs>(
     event: THookType,
     cb: (arg0: HookArgs[THookType]) => void,
   ): () => void {
-    (this.hooks[event] as any[]).push(cb);
+    (this.hooks[this._adjustEvent(event)] as any[]).push(cb);
     return () => {
       this.removeHook(event, cb);
     };
@@ -49,13 +58,15 @@ export class HooksManager {
     event: THookType,
     cb: (arg0: HookArgs[THookType]) => void,
   ): void {
-    this.hooks[event] = this.hooks[event].filter((hook) => hook !== cb) as any;
+    this.hooks[this._adjustEvent(event)] = this.hooks[
+      this._adjustEvent(event)
+    ].filter((hook) => hook !== cb) as any;
   }
 
   trigger<THookType extends keyof HookArgs>(
     event: THookType,
     arg: HookArgs[THookType],
   ): void {
-    this.hooks[event].forEach((hook) => hook(arg as any));
+    this.hooks[this._adjustEvent(event)].forEach((hook) => hook(arg as any));
   }
 }

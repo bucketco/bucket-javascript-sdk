@@ -749,6 +749,13 @@ export class ReflagClient {
   }
 
   /**
+   * @deprecated Use `getFlags` instead.
+   */
+  getFeatures() {
+    return this.getFlags();
+  }
+
+  /**
    * Returns a map of enabled flags.
    * Accessing a flag will *not* send a check event
    * and `isEnabled` does not take any flag overrides
@@ -758,6 +765,13 @@ export class ReflagClient {
    */
   getFlags(): RawFlags {
     return this.flagsClient.getFlags();
+  }
+
+  /**
+   * @deprecated Use `getFlag` instead.
+   */
+  getFeature(flagKey: string) {
+    return this.getFlag(flagKey);
   }
 
   /**

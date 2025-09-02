@@ -246,6 +246,13 @@ export type RequestFeedbackOptions = Omit<
 >;
 
 /**
+ * @deprecated use `useFlag` instead
+ */
+export function useFeature<TKey extends FlagKey>(key: TKey) {
+  return useFlag(key);
+}
+
+/**
  * Returns the state of a given feature for the current context, e.g.
  *
  * ```ts

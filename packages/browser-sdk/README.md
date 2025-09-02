@@ -113,6 +113,32 @@ type Configuration = {
 };
 ```
 
+## Migrating from Bucket SDK
+
+If you have been using the Bucket SDKs, the following list will help you migrate to Reflag SDK:
+
+- `Bucket*` classes, and types have been renamed to `Reflag*` (e.g. `BucketClient` is now `ReflagClient`)
+- `Feature*` classes, and types have been renamed to `Feature*` (e.g. `Feature` is now `Flag`, `RawFeatures` is now `RawFlags`)
+- All methods that contained `feature` in the name have been renamed to use the `flag` terminology (e.g. `getFeature` is `getFlag`)
+- The `fallbackFeatures` property in client constructor and configuration files has been renamed to `fallbackFlags`
+- `featureKey` has been renamed to `flagKey` in all methods that accepts that argument
+- The new cookies that are stored in the client's browser are now `reflag-*` prefixed instead og `bucket-*`
+- The `featuresUpdated` hook has been renamed to `flagsUpdated`
+- The `checkIsEnabled` and `checkConfig` hooks have been removed, use `check` from now on
+
+To ease in transition to Reflag SDK, some of the old methods have been preserved as aliases to the new methods:
+
+- `getFeature` method is an alias for `getFlag`
+- `getFeatures` method is an alias for `getFlags`
+- `featuresUpdated` hook is an alias for `flagsUpdated`
+
+If you are running with strict Content Security Policies active on your website, you will need change them as follows:
+
+- `connect-src https://front.bucket.co` to `connect-src https://front.reflag.com`
+- `connect-src https://livemessaging.bucket.co` to `connect-src https://livemessaging.reflag.com`
+
+Finally, if you have customized the look & feel of the Feedback component, update `--bucket-feedback-*` CSS classes to `--reflag-feedback-*`
+
 ## Flag toggles
 
 Reflag determines which flags are active for a given user/company. The user/company is given in the ReflagClient constructor.

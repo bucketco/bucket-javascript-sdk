@@ -4,7 +4,7 @@ Command-line interface for interacting with Reflag services. The CLI allows you 
 flags, authentication, and generate TypeScript types for your Reflag flags. With this tool,
 you can streamline your flagging workflow directly from your terminal.
 
-## Usage
+## Installation
 
 Get started by installing the CLI locally in your project:
 
@@ -26,6 +26,19 @@ npx reflag new
 # yarn
 yarn reflag new
 ```
+
+## Migrating from Bucket SDK
+
+If you have been using the Bucket CLI, the following list will help you migrate to Reflag CLI:
+
+- The command has been renamed from `bucket` to `reflag`
+- The default name of the file that contains the type definitions has been renamed to `flags.d.ts` from `features.d.ts`. You will need to manually remove `features.d.ts` if it was checked into the repository
+- The name of the file that stores personal authentication details has been changed to `.reflag-auth` from `.bucket-auth`. You will need to rename or remove `.bucket-auth`
+- The name of the file that stores CLI configuration has been changed to `reflag.config.json` from `bucket.config.json`. You will need to rename or remove `bucket.config.json`
+- The `features` command has been renamed to `flags`
+- The API key should now be supplied through `REFLAG_API_KEY` environment variable instead of `BUCKET_API_KEY`
+
+Do not forget to update your scripts, build steps and `.gitignore` patterns
 
 ### Individual commands
 

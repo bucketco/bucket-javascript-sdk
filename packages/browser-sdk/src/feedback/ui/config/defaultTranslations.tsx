@@ -3,7 +3,7 @@ import { FeedbackTranslations } from "../types";
  * {@includeCode ./defaultTranslations.tsx}
  */
 export const DEFAULT_TRANSLATIONS: FeedbackTranslations = {
-  DefaultQuestionLabel: "How satisfied are you with this flag?",
+  DefaultQuestionLabel: "How satisfied are you with this feature?",
   QuestionPlaceholder: "Write a comment",
   ScoreStatusDescription: "Pick a score and leave a comment",
   ScoreStatusLoading: "Saving score, please wait...",

@@ -18,6 +18,19 @@ The minimum required version of `@reflag/node-sdk` currently is `2.0.0`.
 npm install @openfeature/server-sdk @reflag/node-sdk
 ```
 
+## Migrating from Bucket OpenFeature SDK
+
+If you have been using the Bucket SDKs, the following list will help you migrate to Reflag SDK:
+
+- `Bucket*` classes, and types have been renamed to `Reflag*` (e.g. `BucketClient` is now `ReflagClient`)
+- All environment variables that were prefixed with `BUCKET_` are now prefixed with `REFLAG_`
+- The `BUCKET_HOST` environment variable and `host` option have been removed from `ReflagClient` constructor, use `REFLAG_API_BASE_URL` instead
+- The `BUCKET_FEATURES_ENABLED` and `BUCKET_FEATURES_DISABLED` have been renamed to `REFLAG_FLAGS_ENABLED` and `REFLAG_FLAGS_DISABLED`
+- The default configuration file has been renamed from `bucketConfig.json` to `reflag.config.json`
+- The `fallbackFeatures` property in client constructor and configuration files has been renamed to `fallbackFlags`
+- `featureKey` has been renamed to `flagKey` in all methods that accepts that argument
+- The SDKs will not emit `evaluate` and `evaluate-config` events anymore
+
 ## Usage
 
 The provider uses the [Reflag Node.js SDK](https://docs.reflag.com/quickstart/supported-languages-frameworks/node.js-sdk).
@@ -46,7 +59,7 @@ const requestContext = {
 
 const client = OpenFeature.getClient();
 
-const enterpriseFeatureEnabled = await client.getBooleanValue(
+const enterpriseFlagEnabled = await client.getBooleanValue(
   "enterpriseFlag",
   false,
   requestContext,
@@ -74,7 +87,7 @@ All resolution methods share these behaviors:
 client.getBooleanValue("my-flag", false);
 ```
 
-Returns the feature's enabled state. This is the most common use case for flags.
+Returns the flags's enabled state. This is the most common use case for flags.
 
 #### String Resolution
 
@@ -82,7 +95,7 @@ Returns the feature's enabled state. This is the most common use case for flags.
 client.getStringValue("my-flag", "default");
 ```
 
-Returns the feature's remote config key (also known as "variant"). Useful for multi-variate use cases.
+Returns the flags's remote config key (also known as "variant"). Useful for multi-variate use cases.
 
 #### Number Resolution
 
@@ -101,10 +114,10 @@ client.getObjectValue("my-flag", "string-value");
 client.getObjectValue("my-flag", 199);
 ```
 
-Returns the feature's remote config payload with type validation. This is the most flexible method,
+Returns the flag's remote config payload with type validation. This is the most flexible method,
 allowing for complex configuration objects or simple types.
 
-The object resolution performs runtime type checking between the default value and the feature payload to ensure type safety.
+The object resolution performs runtime type checking between the default value and the flag payload to ensure type safety.
 
 ## Translating Evaluation Context
 
@@ -113,7 +126,7 @@ Reflag uses a context object of the following shape:
 ```ts
 /**
  * Describes the current user context, company context, and other context.
- * This is used to determine if feature targeting matches and to track events.
+ * This is used to determine if flag targeting matches and to track events.
  **/
 export type ReflagContext = {
   /**
@@ -140,7 +153,7 @@ export type ReflagContext = {
 ```
 
 To use the Reflag Node.js OpenFeature provider, you must convert your OpenFeature contexts to Reflag contexts.
-You can achieve this by supplying a context translation function which takes the Open Feature context and returns
+You can achieve this by supplying a context translation function which takes the OpenFeature context and returns
 a corresponding Reflag Context:
 
 ```ts

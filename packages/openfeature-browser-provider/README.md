@@ -1,6 +1,6 @@
 # Reflag Browser OpenFeature Provider
 
-The official OpenFeature Browser provider for [Reflag](https://reflag.com) flag management service.
+The official OpenFeature Browser provider for [Reflag.com](https://reflag.com) flag management service.
 
 It uses the Reflag Browser SDK internally and thus allow you to collect [automated feedback surveys](https://github.com/reflagcom/javascript/tree/main/packages/browser-sdk#qualitative-feedback)
 when people use your flag as well as tracking which customers use which features.
@@ -18,6 +18,23 @@ The minimum required version of `@openfeature/web-sdk` currently is `1.0`.
 ```shell
 npm install @openfeature/web-sdk @reflag/openfeature-browser-provider
 ```
+
+## Migrating from Bucket OpenFeature SDK
+
+If you have been using the Bucket SDKs, the following list will help you migrate to Reflag SDK:
+
+- `Bucket*` classes, and types have been renamed to `Reflag*` (e.g. `BucketClient` is now `ReflagClient`)
+- The `fallbackFeatures` property in client constructor and configuration files has been renamed to `fallbackFlags`
+- `featureKey` has been renamed to `flagKey` in all methods that accepts that argument
+- The SDKs will not emit `evaluate` and `evaluate-config` events anymore
+- The new cookies that are stored in the client's browser are now `reflag-*` prefixed instead og `bucket-*`
+
+If you are running with strict Content Security Policies active on your website, you will need change them as follows:
+
+- `connect-src https://front.bucket.co` to `connect-src https://front.reflag.com`
+- `connect-src https://livemessaging.bucket.co` to `connect-src https://livemessaging.reflag.com`
+
+Finally, if you have customized the look & feel of the Feedback component, update `--bucket-feedback-*` CSS classes to `--reflag-feedback-*`
 
 ## Sample initialization
 
