@@ -37,7 +37,6 @@ To ease in transition to Reflag SDK, some of the old methods have been preserved
 If you are running with strict Content Security Policies active on your website, you will need change them as follows:
 
 - `connect-src https://front.bucket.co` to `connect-src https://front.reflag.com`
-- `connect-src https://livemessaging.bucket.co` to `connect-src https://livemessaging.reflag.com`
 
 Finally, if you have customized the look & feel of the Feedback component, update `--bucket-feedback-*` CSS classes to `--reflag-feedback-*`
 

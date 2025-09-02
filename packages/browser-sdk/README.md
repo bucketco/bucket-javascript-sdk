@@ -99,7 +99,7 @@ Supply these to the constructor call:
 type Configuration = {
   logger: console; // by default only logs warn/error, by passing `console` you'll log everything
   apiBaseUrl?: "https://front.reflag.com";
-  sseBaseUrl?: "https://livemessaging.reflag.com";
+  sseBaseUrl?: "https://livemessaging.bucket.co";
   feedback?: undefined; // See FEEDBACK.md
   enableTracking?: true; // set to `false` to stop sending track events and user/company updates to Reflag servers. Useful when you're impersonating a user
   fallbackFlags?:
@@ -135,7 +135,6 @@ To ease in transition to Reflag SDK, some of the old methods have been preserved
 If you are running with strict Content Security Policies active on your website, you will need change them as follows:
 
 - `connect-src https://front.bucket.co` to `connect-src https://front.reflag.com`
-- `connect-src https://livemessaging.bucket.co` to `connect-src https://livemessaging.reflag.com`
 
 Finally, if you have customized the look & feel of the Feedback component, update `--bucket-feedback-*` CSS classes to `--reflag-feedback-*`
 
@@ -391,7 +390,7 @@ If you are running with strict Content Security Policies active on your website,
 | Directive   | Values                                                               | Reason                                                                                                                                |
 | ----------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | connect-src | [https://front.reflag.com](https://front.reflag.com)                 | Basic functionality`                                                                                                                  |
-| connect-src | [https://livemessaging.reflag.com](https://livemessaging.reflag.com) | Server sent events for use in automated feedback surveys, which allows for automatically collecting feedback when a user used a flag. |
+| connect-src | [https://livemessaging.bucket.co](https://livemessaging.bucket.co) | Server sent events for use in automated feedback surveys, which allows for automatically collecting feedback when a user used a flag. |
 | style-src   | 'unsafe-inline'                                                      | The feedback UI is styled with inline styles. Not having this directive results unstyled HTML elements.                               |
 
 If you are including the Reflag tracking SDK with a `<script>`-tag from `jsdelivr.net` you will also need:

@@ -1,6 +1,6 @@
 {
   "name": "@reflag/openfeature-browser-provider",
-  "version": "1.0.0-alpha.3",
+  "version": "1.0.0-alpha.4",
   "packageManager": "yarn@4.1.1",
   "license": "MIT",
   "repository": {
@@ -35,7 +35,7 @@
     }
   },
   "dependencies": {
-    "@reflag/browser-sdk": "1.0.0-alpha.3"
+    "@reflag/browser-sdk": "1.0.0-alpha.4"
   },
   "devDependencies": {
     "@openfeature/core": "1.5.0",

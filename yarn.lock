@@ -2952,19 +2952,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@reflag/browser-sdk@npm:1.0.0-alpha.2":
-  version: 1.0.0-alpha.2
-  resolution: "@reflag/browser-sdk@npm:1.0.0-alpha.2"
-  dependencies:
-    "@floating-ui/dom": "npm:^1.6.8"
-    canonical-json: "npm:^0.0.4"
-    js-cookie: "npm:^3.0.5"
-    preact: "npm:^10.22.1"
-  checksum: 10c0/2b5259ad3bfc25b3d335d9fbad1c9e193a8a9cd9ed3fcf7cba9720862aa872c8c7346c783492cc181ea91b1e5b23cf12b63186e1018dd4e6685915ade093c754
-  languageName: node
-  linkType: hard
-
-"@reflag/browser-sdk@npm:1.0.0-alpha.3, @reflag/browser-sdk@workspace:packages/browser-sdk":
+"@reflag/browser-sdk@npm:1.0.0-alpha.4, @reflag/browser-sdk@workspace:packages/browser-sdk":
   version: 0.0.0-use.local
   resolution: "@reflag/browser-sdk@workspace:packages/browser-sdk"
   dependencies:
@@ -3095,7 +3083,7 @@ __metadata:
   dependencies:
     "@openfeature/core": "npm:1.5.0"
     "@openfeature/web-sdk": "npm:^1.3.0"
-    "@reflag/browser-sdk": "npm:1.0.0-alpha.3"
+    "@reflag/browser-sdk": "npm:1.0.0-alpha.4"
     "@reflag/eslint-config": "npm:0.0.2"
     "@reflag/tsconfig": "npm:0.0.2"
     "@types/node": "npm:^22.12.0"
@@ -3139,7 +3127,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@reflag/react-sdk@workspace:packages/react-sdk"
   dependencies:
-    "@reflag/browser-sdk": "npm:1.0.0-alpha.3"
+    "@reflag/browser-sdk": "npm:1.0.0-alpha.4"
     "@reflag/eslint-config": "npm:^0.0.2"
     "@reflag/tsconfig": "npm:^0.0.2"
     "@testing-library/react": "npm:^15.0.7"
@@ -3180,7 +3168,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@reflag/vue-sdk@workspace:packages/vue-sdk"
   dependencies:
-    "@reflag/browser-sdk": "npm:1.0.0-alpha.2"
+    "@reflag/browser-sdk": "npm:1.0.0-alpha.4"
     "@reflag/eslint-config": "npm:^0.0.2"
     "@reflag/tsconfig": "npm:^0.0.2"
     "@types/jsdom": "npm:^21.1.6"

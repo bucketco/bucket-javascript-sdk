@@ -172,7 +172,7 @@ export const handlers = [
     },
   ),
   http.post(
-    "https://livemessaging.reflag.com/keys/keyName/requestToken",
+    "https://livemessaging.bucket.co/keys/keyName/requestToken",
     async ({ request }) => {
       const data = await request.json();
       if (typeof data !== "object") {
