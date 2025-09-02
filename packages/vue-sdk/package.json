@@ -61,6 +61,5 @@
     "vitest": "^2.0.4",
     "vue": "^3.5.16",
     "vue-eslint-parser": "^9.4.2"
-  },
-  "gitHead": "06f92c3d39a81190c4117a64bd1ba73aa8007e70"
+  }
 }

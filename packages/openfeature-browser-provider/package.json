@@ -53,6 +53,5 @@
   },
   "peerDependencies": {
     "@openfeature/web-sdk": ">=1.3"
-  },
-  "gitHead": "06f92c3d39a81190c4117a64bd1ba73aa8007e70"
+  }
 }
