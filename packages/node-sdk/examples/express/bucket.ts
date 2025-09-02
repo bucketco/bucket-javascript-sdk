@@ -1,12 +1,12 @@
-import { BucketClient, Context, FeatureOverrides } from "../../";
+import { ReflagClient, Context, FlagOverrides } from "../../";
 
 type CreateConfigPayload = {
   minimumLength: number;
 };
 
-// Extending the Features interface to define the available features
+// Extending the Flags interface to define the available features
 declare module "../../types" {
-  interface Features {
+  interface Flags {
     "show-todos": boolean;
     "create-todos": {
       config: {
@@ -18,7 +18,7 @@ declare module "../../types" {
   }
 }
 
-let featureOverrides = (_: Context): FeatureOverrides => {
+let featureOverrides = (_: Context): FlagOverrides => {
   return {
     "create-todos": {
       isEnabled: true,
@@ -32,11 +32,11 @@ let featureOverrides = (_: Context): FeatureOverrides => {
   }; // feature keys checked at compile time
 };
 
-// Create a new BucketClient instance with the secret key and default features
+// Create a new ReflagClient instance with the secret key and default features
 // The default features will be used if the user does not have any features set
-// Create a bucketConfig.json file to configure the client or set environment variables
-// like BUCKET_SECRET_KEY, BUCKET_FEATURES_ENABLED, BUCKET_FEATURES_DISABLED, etc.
-export default new BucketClient({
+// Create a reflag.config.json file to configure the client or set environment variables
+// like REFLAG_SECRET_KEY, REFLAG_FLAGS_ENABLED, REFLAG_FLAGS_DISABLED, etc.
+export default new ReflagClient({
   // Optional: Set a logger to log debug information, errors, etc.
   logger: console,
   featureOverrides, // Optional: Set feature overrides

@@ -1,75 +1,72 @@
 import { h } from "preact";
 import { useEffect, useState } from "preact/hooks";
 
-import { Feature } from "../ui/icons/Feature";
-
 import { Switch } from "./Switch";
-import { FeatureItem } from "./Toolbar";
+import { FlagItem } from "./Toolbar";
 
-export function FeaturesTable({
-  features,
+export function FlagsTable({
+  flags,
   searchQuery,
   appBaseUrl,
   isOpen,
   setIsEnabledOverride,
 }: {
-  features: FeatureItem[];
+  flags: FlagItem[];
   searchQuery: string | null;
   appBaseUrl: string;
   isOpen: boolean;
   setIsEnabledOverride: (key: string, isEnabled: boolean | null) => void;
 }) {
-  const hasFeatures = features.length > 0;
-  const hasShownFeatures = features.some((feature) =>
-    feature.key
+  const hasFlags = flags.length > 0;
+  const hasShownFlags = flags.some((flag) =>
+    flag.flagKey
       .toLocaleLowerCase()
       .includes(searchQuery?.toLocaleLowerCase() ?? ""),
   );
 
-  // List features that match the search query first then alphabetically
-  const searchedFeatures =
+  // List flags that match the search query first then alphabetically
+  const searchedFlags =
     searchQuery === null
-      ? features
-      : [...features].sort((a, b) => {
-          const aMatches = a.key.includes(searchQuery);
-          const bMatches = b.key.includes(searchQuery);
+      ? flags
+      : [...flags].sort((a, b) => {
+          const aMatches = a.flagKey.includes(searchQuery);
+          const bMatches = b.flagKey.includes(searchQuery);
 
           // If both match or both don't match, sort alphabetically
           if (aMatches === bMatches) {
-            return a.key.localeCompare(b.key);
+            return a.flagKey.localeCompare(b.flagKey);
           }
 
-          // Otherwise, matching features come first
+          // Otherwise, matching flags come first
           return aMatches ? -1 : 1;
         });
 
   return (
-    <table class="features-table" style={{ "--n": searchedFeatures.length }}>
+    <table class="flags-table" style={{ "--n": searchedFlags.length }}>
       <tbody>
-        {(!hasFeatures || !hasShownFeatures) && (
+        {(!hasFlags || !hasShownFlags) && (
           <tr>
-            <td class="feature-empty-cell" colSpan={3}>
-              No features{" "}
-              {!hasShownFeatures ? `matching "${searchQuery} "` : ""}
+            <td class="flag-empty-cell" colSpan={3}>
+              No flags {!hasShownFlags ? `matching "${searchQuery} "` : ""}
               found
             </td>
           </tr>
         )}
-        {searchedFeatures.map((feature, index) => (
-          <FeatureRow
-            key={feature.key}
+        {searchedFlags.map((flag, index) => (
+          <FlagRow
+            key={flag.flagKey}
             appBaseUrl={appBaseUrl}
-            feature={feature}
+            flag={flag}
             index={index}
             isNotVisible={
               searchQuery !== null &&
-              !feature.key
+              !flag.flagKey
                 .toLocaleLowerCase()
                 .includes(searchQuery.toLocaleLowerCase())
             }
             isOpen={isOpen}
             setEnabledOverride={(override) =>
-              setIsEnabledOverride(feature.key, override)
+              setIsEnabledOverride(flag.flagKey, override)
             }
           />
         ))}
@@ -78,15 +75,15 @@ export function FeaturesTable({
   );
 }
 
-function FeatureRow({
+function FlagRow({
   setEnabledOverride,
   appBaseUrl,
-  feature,
+  flag,
   isOpen,
   index,
   isNotVisible,
 }: {
-  feature: FeatureItem;
+  flag: FlagItem;
   appBaseUrl: string;
   setEnabledOverride: (isEnabled: boolean | null) => void;
   isOpen: boolean;
@@ -99,38 +96,37 @@ function FeatureRow({
   }, [isOpen]);
   return (
     <tr
-      key={feature.key}
+      key={flag.flagKey}
       class={[
-        "feature-row",
+        "flag-row",
         showOnOpen ? "show-on-open" : undefined,
         isNotVisible ? "not-visible" : undefined,
       ].join(" ")}
       style={{ "--i": index }}
     >
-      <td class="feature-name-cell">
-        <Feature class="feature-icon" />
+      <td class="flag-name-cell">
         <a
-          class="feature-link"
-          href={`${appBaseUrl}/env-current/features/by-key/${feature.key}`}
+          class="flag-link"
+          href={`${appBaseUrl}/env-current/flags/by-key/${flag.flagKey}`}
           rel="noreferrer"
           tabIndex={index + 1}
           target="_blank"
         >
-          {feature.key}
+          {flag.flagKey}
         </a>
       </td>
-      <td class="feature-reset-cell">
-        {feature.localOverride !== null ? (
+      <td class="flag-reset-cell">
+        {flag.localOverride !== null ? (
           <Reset setEnabledOverride={setEnabledOverride} tabIndex={index + 1} />
         ) : null}
       </td>
-      <td class="feature-switch-cell">
+      <td class="flag-switch-cell">
         <Switch
-          checked={feature.localOverride ?? feature.isEnabled}
+          checked={flag.localOverride ?? flag.isEnabled}
           tabIndex={index + 1}
           onChange={(e) => {
             const isChecked = e.currentTarget.checked;
-            const isOverridden = isChecked !== feature.isEnabled;
+            const isOverridden = isChecked !== flag.isEnabled;
             setEnabledOverride(isOverridden ? isChecked : null);
           }}
         />
@@ -139,15 +135,11 @@ function FeatureRow({
   );
 }
 
-export function FeatureSearch({
-  onSearch,
-}: {
-  onSearch: (val: string) => void;
-}) {
+export function FlagSearch({ onSearch }: { onSearch: (val: string) => void }) {
   return (
     <input
       class="search-input"
-      placeholder="Search features"
+      placeholder="Search flags"
       tabIndex={0}
       type="search"
       autoFocus

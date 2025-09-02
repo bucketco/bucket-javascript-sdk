@@ -1,5 +1,5 @@
 {
-  "name": "@bucketco/eslint-config",
+  "name": "@reflag/eslint-config",
   "version": "0.0.2",
   "license": "MIT",
   "private": true,

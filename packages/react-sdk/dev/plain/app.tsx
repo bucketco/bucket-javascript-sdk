@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 
 import {
-  FeatureKey,
-  BucketProvider,
-  useFeature,
+  FlagKey,
+  ReflagProvider,
+  useFlag,
   useRequestFeedback,
   useTrack,
   useUpdateCompany,
@@ -12,9 +12,9 @@ import {
   useClient,
 } from "../../src";
 
-// Extending the Features interface to define the available features
+// Extending the Flags interface to define the available features
 declare module "../../src" {
-  interface Features {
+  interface Flags {
     huddles: {
       config: {
         payload: {
@@ -26,11 +26,11 @@ declare module "../../src" {
 }
 
 const publishableKey = import.meta.env.VITE_PUBLISHABLE_KEY || "";
-const apiBaseUrl = import.meta.env.VITE_BUCKET_API_BASE_URL;
+const apiBaseUrl = import.meta.env.VITE_REFLAG_API_BASE_URL;
 
 function HuddleFeature() {
   // Type safe feature
-  const feature = useFeature("huddles");
+  const feature = useFlag("huddles");
   return (
     <div>
       <h2>Huddle feature</h2>
@@ -155,7 +155,7 @@ function Feedback() {
         onClick={(e) =>
           requestFeedback({
             title: "How do you like Huddles?",
-            featureKey: "huddle",
+            flagKey: "huddle",
             position: {
               type: "POPOVER",
               anchor: e.currentTarget as HTMLElement,
@@ -183,7 +183,7 @@ function Demos() {
         <code>optin-huddles IS TRUE</code>. Hit the checkbox below to opt-in/out
         of the feature.
       </div>
-      <FeatureOptIn featureKey={"huddles"} featureName={"Huddles"} />
+      <FeatureOptIn flagKey={"huddles"} featureName={"Huddles"} />
 
       <UpdateContext />
       <Feedback />
@@ -194,15 +194,15 @@ function Demos() {
 }
 
 function FeatureOptIn({
-  featureKey,
+  flagKey,
   featureName,
 }: {
-  featureKey: FeatureKey;
+  flagKey: FlagKey;
   featureName: string;
 }) {
   const updateUser = useUpdateUser();
   const [sendingUpdate, setSendingUpdate] = useState(false);
-  const { isEnabled } = useFeature(featureKey);
+  const { isEnabled } = useFlag(flagKey);
 
   return (
     <div>
@@ -215,7 +215,7 @@ function FeatureOptIn({
         onChange={() => {
           setSendingUpdate(true);
           updateUser({
-            [`optin-${featureKey}`]: isEnabled ? "false" : "true",
+            [`optin-${flagKey}`]: isEnabled ? "false" : "true",
           })?.then(() => {
             setSendingUpdate(false);
           });
@@ -236,16 +236,16 @@ function CustomToolbar() {
     <div>
       <h2>Custom toolbar</h2>
       <ul>
-        {Object.entries(client.getFeatures()).map(([featureKey, feature]) => (
-          <li key={featureKey}>
-            {featureKey} -
+        {Object.entries(client.getFlags()).map(([flagKey, feature]) => (
+          <li key={flagKey}>
+            {flagKey} -
             {(feature.isEnabledOverride ?? feature.isEnabled)
               ? "Enabled"
               : "Disabled"}{" "}
             {feature.isEnabledOverride !== null && (
               <button
                 onClick={() => {
-                  client.getFeature(featureKey).setIsEnabledOverride(null);
+                  client.getFlag(flagKey).setIsEnabledOverride(null);
                 }}
               >
                 Reset
@@ -255,9 +255,9 @@ function CustomToolbar() {
               checked={feature.isEnabledOverride ?? feature.isEnabled}
               type="checkbox"
               onChange={(e) => {
-                // this uses slightly simplified logic compared to the Bucket Toolbar
+                // this uses slightly simplified logic compared to the Reflag Toolbar
                 client
-                  .getFeature(featureKey)
+                  .getFlag(flagKey)
                   .setIsEnabledOverride(e.target.checked ?? false);
               }}
             />
@@ -270,7 +270,7 @@ function CustomToolbar() {
 
 export function App() {
   return (
-    <BucketProvider
+    <ReflagProvider
       publishableKey={publishableKey}
       company={initialCompany}
       user={initialUser}
@@ -284,6 +284,6 @@ export function App() {
         </div>
       )}
       <Demos />
-    </BucketProvider>
+    </ReflagProvider>
   );
 }

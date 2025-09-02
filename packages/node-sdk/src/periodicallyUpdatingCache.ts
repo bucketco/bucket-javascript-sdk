@@ -34,7 +34,7 @@ export default function periodicallyUpdatingCache<T>(
       if (newValue === undefined) {
         return;
       }
-      logger?.info("refreshed features");
+      logger?.info("refreshed flag definitions");
 
       cachedValue = newValue;
 

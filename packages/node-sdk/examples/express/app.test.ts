@@ -2,11 +2,11 @@ import request from "supertest";
 import app, { todos } from "./app";
 import { beforeEach, describe, it, expect, beforeAll } from "vitest";
 
-import bucket from "./bucket";
+import reflag from "./reflag";
 
-beforeAll(async () => await bucket.initialize());
+beforeAll(async () => await reflag.initialize());
 beforeEach(() => {
-  bucket.featureOverrides = {
+  reflag.featureOverrides = {
     "show-todos": true,
   };
 });
@@ -25,7 +25,7 @@ describe("API Tests", () => {
   });
 
   it("should return no todos when list is disabled", async () => {
-    bucket.featureOverrides = () => ({
+    reflag.featureOverrides = () => ({
       "show-todos": false,
     });
     const response = await request(app).get("/todos");

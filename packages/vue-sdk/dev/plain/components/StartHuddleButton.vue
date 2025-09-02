@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { useFeature } from "../../../src";
+import { useFlag } from "../../../src";
 
 import Section from "./Section.vue";
 
 const { isLoading, isEnabled, config, requestFeedback, track } =
-  useFeature("huddle");
+  useFlag("huddle");
 </script>
 <template>
   <Section title="Huddle">

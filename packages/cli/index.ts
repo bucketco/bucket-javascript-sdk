@@ -5,12 +5,12 @@ import ora from "ora";
 
 import { registerAppCommands } from "./commands/apps.js";
 import { registerAuthCommands } from "./commands/auth.js";
-import { registerFeatureCommands } from "./commands/features.js";
+import { registerFlagCommands } from "./commands/flags.js";
 import { registerInitCommand } from "./commands/init.js";
 import { registerMcpCommand } from "./commands/mcp.js";
 import { registerNewCommand } from "./commands/new.js";
 import { registerRulesCommand } from "./commands/rules.js";
-import { bootstrap, getBucketUser } from "./services/bootstrap.js";
+import { bootstrap, getReflagUser } from "./services/bootstrap.js";
 import { authStore } from "./stores/auth.js";
 import { configStore } from "./stores/config.js";
 import { commandName } from "./utils/commander.js";
@@ -58,7 +58,7 @@ async function main() {
     const cleanedBaseUrl = stripTrailingSlash(baseUrl?.trim());
     const cleanedApiUrl = stripTrailingSlash(apiUrl?.trim());
 
-    const apiKey = explicitApiKey ?? process.env.BUCKET_API_KEY;
+    const apiKey = explicitApiKey ?? process.env.REFLAG_API_KEY;
 
     if (typeof apiKey === "string" && apiKey.length > 0) {
       console.info(
@@ -108,7 +108,7 @@ async function main() {
 
     if (debug) {
       console.debug(chalk.cyan("\nDebug mode enabled."));
-      const user = getBucketUser();
+      const user = getReflagUser();
       console.debug(`Logged in as ${chalk.cyan(user.name ?? user.email)}.`);
       console.debug(
         "Reading config from:",
@@ -123,7 +123,7 @@ async function main() {
   registerInitCommand(program);
   registerAuthCommands(program);
   registerAppCommands(program);
-  registerFeatureCommands(program);
+  registerFlagCommands(program);
   registerMcpCommand(program);
   registerRulesCommand(program);
 
