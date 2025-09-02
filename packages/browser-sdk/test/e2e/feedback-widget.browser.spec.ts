@@ -120,7 +120,7 @@ test.beforeEach(async ({ page, browserName }) => {
   // `page.route` calls. With page.route, the last matching mock takes
   // precedence, so this logs any which may have been missed, and responds
   // with a 200 to prevent an internet request.
-  await page.route(/^https:\/\/front.reflag\.com.*/, async (route) => {
+  await page.route(/^https:\/\/front\.reflag\.com.*/, async (route) => {
     const meta = `${route.request().method()} ${route.request().url()}`;
 
     console.debug(`\n Unmocked request:        [${browserName}] > ${meta}`);
