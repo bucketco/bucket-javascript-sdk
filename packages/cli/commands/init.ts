@@ -27,7 +27,7 @@ export const initAction = async (args: InitArgs = {}) => {
       );
     }
 
-    console.log("\nWelcome to Reflag!\n");
+    console.log("\nWelcome to ◪ Reflag!\n");
     const baseUrl = configStore.getConfig("baseUrl");
 
     // Load apps
