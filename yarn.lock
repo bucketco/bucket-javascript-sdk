@@ -3099,7 +3099,7 @@ __metadata:
   dependencies:
     "@floating-ui/dom": "npm:^1.6.8"
     "@playwright/test": "npm:^1.49.1"
-    "@reflag/eslint-config": "npm:0.0.2"
+    "@reflag/eslint-config": "npm:0.0.3"
     "@reflag/tsconfig": "npm:0.0.2"
     "@types/js-cookie": "npm:^3.0.6"
     "@types/node": "npm:^22.12.0"
@@ -3130,7 +3130,7 @@ __metadata:
   resolution: "@reflag/cli@workspace:packages/cli"
   dependencies:
     "@inquirer/prompts": "npm:^7.8.4"
-    "@reflag/eslint-config": "npm:^0.0.2"
+    "@reflag/eslint-config": "npm:^0.0.3"
     "@reflag/tsconfig": "npm:^0.0.2"
     "@types/express": "npm:^5.0.3"
     "@types/node": "npm:^24.3.0"
@@ -3159,7 +3159,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@reflag/eslint-config@npm:0.0.2, @reflag/eslint-config@npm:^0.0.2, @reflag/eslint-config@npm:~0.0.2, @reflag/eslint-config@workspace:packages/eslint-config":
+"@reflag/eslint-config@npm:0.0.3, @reflag/eslint-config@npm:^0.0.3, @reflag/eslint-config@workspace:packages/eslint-config":
   version: 0.0.0-use.local
   resolution: "@reflag/eslint-config@workspace:packages/eslint-config"
   dependencies:
@@ -3184,7 +3184,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@reflag/flag-evaluation@workspace:packages/flag-evaluation"
   dependencies:
-    "@reflag/eslint-config": "npm:^0.0.2"
+    "@reflag/eslint-config": "npm:^0.0.3"
     "@reflag/tsconfig": "npm:^0.0.2"
     "@types/node": "npm:^22.12.0"
     eslint: "npm:^9.21.0"
@@ -3201,7 +3201,7 @@ __metadata:
   resolution: "@reflag/node-sdk@workspace:packages/node-sdk"
   dependencies:
     "@babel/core": "npm:~7.24.7"
-    "@reflag/eslint-config": "npm:~0.0.2"
+    "@reflag/eslint-config": "npm:^0.0.3"
     "@reflag/flag-evaluation": "npm:1.0.0"
     "@reflag/tsconfig": "npm:~0.0.2"
     "@types/node": "npm:^22.12.0"
@@ -3225,7 +3225,7 @@ __metadata:
     "@openfeature/core": "npm:1.5.0"
     "@openfeature/web-sdk": "npm:^1.3.0"
     "@reflag/browser-sdk": "npm:1.0.0"
-    "@reflag/eslint-config": "npm:0.0.2"
+    "@reflag/eslint-config": "npm:^0.0.3"
     "@reflag/tsconfig": "npm:0.0.2"
     "@types/node": "npm:^22.12.0"
     eslint: "npm:^9.21.0"
@@ -3247,7 +3247,7 @@ __metadata:
     "@babel/core": "npm:~7.24.7"
     "@openfeature/core": "npm:^1.5.0"
     "@openfeature/server-sdk": "npm:>=1.16.1"
-    "@reflag/eslint-config": "npm:~0.0.2"
+    "@reflag/eslint-config": "npm:^0.0.3"
     "@reflag/node-sdk": "npm:1.0.0"
     "@reflag/tsconfig": "npm:~0.0.2"
     "@types/node": "npm:^22.12.0"
@@ -3269,7 +3269,7 @@ __metadata:
   resolution: "@reflag/react-sdk@workspace:packages/react-sdk"
   dependencies:
     "@reflag/browser-sdk": "npm:1.0.0"
-    "@reflag/eslint-config": "npm:^0.0.2"
+    "@reflag/eslint-config": "npm:^0.0.3"
     "@reflag/tsconfig": "npm:^0.0.2"
     "@testing-library/react": "npm:^15.0.7"
     "@types/jsdom": "npm:^21.1.6"
@@ -3310,7 +3310,7 @@ __metadata:
   resolution: "@reflag/vue-sdk@workspace:packages/vue-sdk"
   dependencies:
     "@reflag/browser-sdk": "npm:1.0.0"
-    "@reflag/eslint-config": "npm:^0.0.2"
+    "@reflag/eslint-config": "npm:^0.0.3"
     "@reflag/tsconfig": "npm:^0.0.2"
     "@types/jsdom": "npm:^21.1.6"
     "@types/node": "npm:^22.12.0"

@@ -29,7 +29,7 @@
   "types": "./dist/types/src/index.d.ts",
   "devDependencies": {
     "@babel/core": "~7.24.7",
-    "@reflag/eslint-config": "~0.0.2",
+    "@reflag/eslint-config": "^0.0.3",
     "@reflag/tsconfig": "~0.0.2",
     "@types/node": "^22.12.0",
     "@vitest/coverage-v8": "~1.6.0",

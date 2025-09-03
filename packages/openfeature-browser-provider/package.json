@@ -40,7 +40,7 @@
   "devDependencies": {
     "@openfeature/core": "1.5.0",
     "@openfeature/web-sdk": "^1.3.0",
-    "@reflag/eslint-config": "0.0.2",
+    "@reflag/eslint-config": "^0.0.3",
     "@reflag/tsconfig": "0.0.2",
     "@types/node": "^22.12.0",
     "eslint": "^9.21.0",
