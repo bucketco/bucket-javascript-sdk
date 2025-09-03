@@ -33,9 +33,9 @@ jobs:
       - name: Checkout docs with SSH
         uses: actions/checkout@v3
         with:
-          repository: bucketco/docs
+          repository: reflag/docs
           ssh-key: ${{ secrets.DOCS_DEPLOY_KEY }}
-          path: bucket-docs
+          path: reflag-docs
       - name: Copy generated docs to docs repo
         run: |
           rm -rf reflag-docs/sdk
