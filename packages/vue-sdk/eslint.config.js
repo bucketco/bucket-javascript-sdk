@@ -1,5 +1,4 @@
 const base = require("@reflag/eslint-config");
-const importsPlugin = require("eslint-plugin-import");
 const vuePlugin = require("eslint-plugin-vue");
 const vueParser = require("vue-eslint-parser");
 
@@ -13,7 +12,6 @@ module.exports = [
     files: ["**/*.vue"],
     plugins: {
       vue: vuePlugin,
-      import: importsPlugin,
     },
     languageOptions: {
       parser: vueParser,
@@ -37,8 +35,7 @@ module.exports = [
       },
     },
     rules: {
-      ...vuePlugin.configs.recommended.rules,
-      ...vuePlugin.configs["vue3-recommended"].rules,
+      ...vuePlugin.configs["flat/strongly-recommended"].rules,
 
       // Vue specific rules
       "vue/multi-word-component-names": "off",

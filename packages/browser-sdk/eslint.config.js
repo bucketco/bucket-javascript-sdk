@@ -1,5 +1,6 @@
 const base = require("@reflag/eslint-config");
-const preactConfig = require("eslint-config-preact");
+
+const preactConfig = import("eslint-config-preact");
 
 const compatPlugin = require("eslint-plugin-compat");
 const reactPlugin = require("eslint-plugin-react");
