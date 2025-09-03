@@ -55,7 +55,12 @@ module.exports = [
         // Workaround until import supports flat config
         // https://github.com/import-js/eslint-plugin-import/issues/2556
         espree: [".js", ".cjs", ".mjs", ".jsx"],
+        "@typescript-eslint/parser": [".ts", ".tsx"],
       },
+      "import/ignore": [
+        "node_modules",
+        "\\.(coffee|scss|css|less|hbs|svg|json)$",
+      ],
     },
     rules: {
       ...jsPlugin.configs.recommended.rules,
@@ -111,6 +116,13 @@ module.exports = [
     languageOptions: {
       parser: tsParser,
       parserOptions: {
+        sourceType: "module",
+        ecmaVersion: "latest",
+        ecmaFeatures: {
+          modules: true,
+          impliedStrict: true,
+          jsx: true,
+        },
         project: "./tsconfig.eslint.json",
       },
     },

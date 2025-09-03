@@ -79,15 +79,15 @@ export function mergeTypeASTs(types: TypeAST[]): TypeAST {
     if (byKind.union.length > 0) {
       // Flatten existing unions and collect types by category
       const flattenedTypes: TypeAST[] = [];
-      const objectsToMerge: ObjectAST[] = [...byKind.object];
-      const arraysToMerge: ArrayAST[] = [...byKind.array];
+      const objectsToMerge: ObjectAST[] = [...(byKind.object as ObjectAST[])];
+      const arraysToMerge: ArrayAST[] = [...(byKind.array as ArrayAST[])];
 
       // Add primitives directly
       flattenedTypes.push(...byKind.primitive);
 
       // Process union types
       for (const unionType of byKind.union) {
-        for (const type of unionType.types) {
+        for (const type of (unionType as UnionAST).types) {
           if (type.kind === "object") {
             objectsToMerge.push(type);
           } else if (type.kind === "array") {
@@ -115,7 +115,9 @@ export function mergeTypeASTs(types: TypeAST[]): TypeAST {
 
   // Handle primitives
   if (byKind.primitive.length === types.length) {
-    const uniqueTypes = [...new Set(byKind.primitive.map((p) => p.type))];
+    const uniqueTypes = [
+      ...new Set((byKind.primitive as PrimitiveAST[]).map((p) => p.type)),
+    ];
     return uniqueTypes.length === 1
       ? { kind: "primitive", type: uniqueTypes[0] }
       : {
@@ -128,29 +130,30 @@ export function mergeTypeASTs(types: TypeAST[]): TypeAST {
   if (byKind.array.length === types.length) {
     return {
       kind: "array",
-      elementType: mergeTypeASTs(byKind.array.map((a) => a.elementType)),
+      elementType: mergeTypeASTs(
+        (byKind.array as ArrayAST[]).map((a) => a.elementType),
+      ),
     };
   }
 
   // Merge objects
   if (byKind.object.length === types.length) {
+    const objects = byKind.object as ObjectAST[];
     // Get all unique property keys
     const allKeys = [
-      ...new Set(
-        byKind.object.flatMap((obj) => obj.properties.map((p) => p.key)),
-      ),
+      ...new Set(objects.flatMap((obj) => obj.properties.map((p) => p.key))),
     ];
 
     // Merge properties with same keys
     const mergedProperties = allKeys.map((key) => {
-      const props = byKind.object
+      const props = objects
         .map((obj) => obj.properties.find((p) => p.key === key))
-        .filter((obj) => !!obj);
+        .filter((prop): prop is NonNullable<typeof prop> => !!prop);
 
       return {
         key,
         type: mergeTypeASTs(props.map((p) => p.type)),
-        optional: byKind.object.some(
+        optional: objects.some(
           (obj) => !obj.properties.some((p) => p.key === key),
         ),
       };
