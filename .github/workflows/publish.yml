@@ -33,7 +33,7 @@ jobs:
       - name: Checkout docs with SSH
         uses: actions/checkout@v3
         with:
-          repository: reflag/docs
+          repository: reflagcom/docs
           ssh-key: ${{ secrets.DOCS_DEPLOY_KEY }}
           path: reflag-docs
       - name: Copy generated docs to docs repo
