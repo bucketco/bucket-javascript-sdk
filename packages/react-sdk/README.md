@@ -76,7 +76,7 @@ On the first run, it will sign into Reflag and set up type generation for your p
 ❯ npx reflag new
 Opened web browser to facilitate login: https://app.reflag.com/api/oauth/cli/authorize
 
-Welcome to Reflag!
+Welcome to ◪ Reflag!
 
 ? Where should we generate the types? gen/flags.d.ts
 ? What is the output format? react
