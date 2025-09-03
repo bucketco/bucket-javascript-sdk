@@ -170,7 +170,6 @@ export const Dialog: FunctionComponent<OpenDialogOptions> = ({
       window.removeEventListener("keydown", escapeHandler);
       observer.disconnect();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- anchor only exists in popover
   }, [position.type, close, (position as any).anchor, dismiss, containerId]);
 
   function setDiagRef(node: HTMLDialogElement | null) {

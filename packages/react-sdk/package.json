@@ -43,7 +43,7 @@
     "react-dom": "*"
   },
   "devDependencies": {
-    "@reflag/eslint-config": "^0.0.2",
+    "@reflag/eslint-config": "^0.0.3",
     "@reflag/tsconfig": "^0.0.2",
     "@testing-library/react": "^15.0.7",
     "@types/jsdom": "^21.1.6",
