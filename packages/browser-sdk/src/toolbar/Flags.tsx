@@ -38,6 +38,9 @@ export function FlagsTable({
 
           // If both match or both don't match, sort alphabetically
           if (aMatches === bMatches) {
+            if (a.flagKey.startsWith(searchQuery)) {
+              return -1;
+            }
             return a.flagKey.localeCompare(b.flagKey);
           }
 
