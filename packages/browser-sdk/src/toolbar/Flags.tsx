@@ -4,9 +4,7 @@ import { Switch } from "./Switch";
 import { FlagItem } from "./Toolbar";
 
 const isFound = (flagKey: string, searchQuery: string | null) => {
-  return flagKey
-    .toLocaleLowerCase()
-    .includes(searchQuery?.toLocaleLowerCase() ?? "");
+  return flagKey.toLocaleLowerCase().includes(searchQuery ?? "");
 };
 
 export function FlagsTable({
@@ -35,9 +33,14 @@ export function FlagsTable({
 
           // If both match or both don't match, sort alphabetically
           if (aMatches === bMatches) {
-            if (a.flagKey.startsWith(searchQuery)) {
-              return -1;
-            }
+            const aStartsWith = a.flagKey.toLowerCase().startsWith(searchQuery);
+            const bStartsWith = b.flagKey.toLowerCase().startsWith(searchQuery);
+
+            // If one starts with search query and the other doesn't, prioritize the one that starts with it
+            if (aStartsWith && !bStartsWith) return -1;
+            if (bStartsWith && !aStartsWith) return 1;
+
+            // Otherwise sort alphabetically
             return a.flagKey.localeCompare(b.flagKey);
           }
 
