@@ -91,19 +91,10 @@ function FlagRow({
   index: number;
   isNotVisible: boolean;
 }) {
-  const [showOnOpen, setShowOnOpen] = useState(isOpen);
-  useEffect(() => {
-    setShowOnOpen(isOpen);
-  }, [isOpen]);
   return (
     <tr
       key={flag.flagKey}
-      class={[
-        "flag-row",
-        showOnOpen ? "show-on-open" : undefined,
-        isNotVisible ? "not-visible" : undefined,
-      ].join(" ")}
-      style={{ "--i": index }}
+      class={["flag-row", isNotVisible ? "not-visible" : undefined].join(" ")}
     >
       <td class="flag-name-cell">
         <a

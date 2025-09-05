@@ -11,20 +11,20 @@
 
   from {
     opacity: 0;
-    transform: translate3d(0, 1000px, 0) scaleY(5);
+    transform: translate3d(0, 50px, 0) scaleY(2);
   }
 
   60% {
     opacity: 1;
-    transform: translate3d(0, -10px, 0) scaleY(0.9);
+    transform: translate3d(0, -6px, 0) scaleY(0.9);
   }
 
   75% {
-    transform: translate3d(0, 5px, 0) scaleY(0.95);
+    transform: translate3d(0, 3px, 0) scaleY(0.95);
   }
 
   90% {
-    transform: translate3d(0, -3px, 0) scaleY(0.985);
+    transform: translate3d(0, -2px, 0) scaleY(0.985);
   }
 
   to {
@@ -57,14 +57,15 @@
   --gray600: #3c3d49;
   --gray700: #22232a;
   --gray800: #17181c;
+  --gray900: #0e0e11;
+  --gray950: #09090b;
   --black: #1e1f24;
   --white: white;
 
-  --bg-color: hsla(230, 9%, 8%, 0.85);
-  --bg-light-color: hsla(230, 9%, 6%, 0.85);
-  --border-color: hsla(0, 0%, 100%, 0.1);
-  --dimmed-color: hsla(230, 9%, 40%, 1);
-  --bg-blur: 3px;
+  --bg-color: var(--gray900);
+  --bg-light-color: var(--gray700);
+  --border-color: var(--gray700);
+  --dimmed-color: var(--gray500);
 
   --logo-color: white;
   --text-color: white;
@@ -92,14 +93,13 @@
   color: #ffffff;
   box-sizing: border-box;
   background: var(--bg-color);
-  backdrop-filter: blur(var(--bg-blur));
-  -webkit-backdrop-filter: blur(var(--bg-blur));
 
   border: 0;
   box-shadow:
-    0px 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0px 4px 6px -2px rgba(0, 0, 0, 0.05),
-    inset 0px 1px rgba(255, 255, 255, 0.1);
+    0 10px 15px -3px rgba(0, 0, 0, 0.15),
+    0 4px 6px -2px rgba(0, 0, 0, 0.1),
+    0 -1px rgba(255, 255, 255, 0.1),
+    0 0 0 1px var(--border-color);
   border-radius: 7px;
   z-index: 999999;
   min-width: 220px;
@@ -155,13 +155,12 @@
 
   color: var(--logo-color);
   background: var(--bg-color);
-  backdrop-filter: blur(var(--bg-blur));
-  -webkit-backdrop-filter: blur(var(--bg-blur));
 
   box-shadow:
-    0px 10px 15px -3px rgba(0, 0, 0, 0.15),
-    0px 4px 6px -2px rgba(0, 0, 0, 0.1),
-    inset 0px 1px rgba(255, 255, 255, 0.1);
+    0 10px 15px -3px rgba(0, 0, 0, 0.15),
+    0 4px 6px -2px rgba(0, 0, 0, 0.1),
+    0 -1px rgba(255, 255, 255, 0.1),
+    0 0 0 1px var(--border-color);
   border-radius: 999px;
 
   cursor: pointer;
@@ -170,14 +169,11 @@
   justify-content: center;
   align-items: center;
 
-  animation: bounceInUp 1s ease-out;
+  animation: bounceInUp 0.2s ease-out;
 
-  transition:
-    color 0.1s ease,
-    background 0.1s ease;
+  transition: background 0.1s ease;
 
   &.open {
-    color: var(--gray500);
     background: var(--bg-light-color);
   }
 
