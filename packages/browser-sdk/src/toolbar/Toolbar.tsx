@@ -154,7 +154,7 @@ export default function Toolbar({
           <FlagsTable
             appBaseUrl={appBaseUrl}
             flags={sortedFlags}
-            searchQuery={search?.toLocaleLowerCase()}
+            searchQuery={search?.toLocaleLowerCase() ?? null}
             setIsEnabledOverride={(flagKey, isEnabled) =>
               reflagClient.getFlag(flagKey).setIsEnabledOverride(isEnabled)
             }
