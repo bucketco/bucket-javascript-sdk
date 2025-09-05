@@ -4,6 +4,12 @@ import { useEffect, useState } from "preact/hooks";
 import { Switch } from "./Switch";
 import { FlagItem } from "./Toolbar";
 
+const isFound = (flagKey: string, searchQuery: string | null) => {
+  return flagKey
+    .toLocaleLowerCase()
+    .includes(searchQuery?.toLocaleLowerCase() ?? "");
+};
+
 export function FlagsTable({
   flags,
   searchQuery,
@@ -19,9 +25,7 @@ export function FlagsTable({
 }) {
   const hasFlags = flags.length > 0;
   const hasShownFlags = flags.some((flag) =>
-    flag.flagKey
-      .toLocaleLowerCase()
-      .includes(searchQuery?.toLocaleLowerCase() ?? ""),
+    isFound(flag.flagKey, searchQuery),
   );
 
   // List flags that match the search query first then alphabetically
@@ -29,8 +33,8 @@ export function FlagsTable({
     searchQuery === null
       ? flags
       : [...flags].sort((a, b) => {
-          const aMatches = a.flagKey.includes(searchQuery);
-          const bMatches = b.flagKey.includes(searchQuery);
+          const aMatches = isFound(a.flagKey, searchQuery);
+          const bMatches = isFound(b.flagKey, searchQuery);
 
           // If both match or both don't match, sort alphabetically
           if (aMatches === bMatches) {
@@ -47,7 +51,7 @@ export function FlagsTable({
         {(!hasFlags || !hasShownFlags) && (
           <tr>
             <td class="flag-empty-cell" colSpan={3}>
-              No flags {!hasShownFlags ? `matching "${searchQuery} "` : ""}
+              No flags {hasFlags ? `matching "${searchQuery} "` : ""}
               found
             </td>
           </tr>
@@ -59,10 +63,7 @@ export function FlagsTable({
             flag={flag}
             index={index}
             isNotVisible={
-              searchQuery !== null &&
-              !flag.flagKey
-                .toLocaleLowerCase()
-                .includes(searchQuery.toLocaleLowerCase())
+              searchQuery !== null && !isFound(flag.flagKey, searchQuery)
             }
             isOpen={isOpen}
             setEnabledOverride={(override) =>
