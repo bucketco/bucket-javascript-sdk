@@ -125,5 +125,6 @@
 }
 
 .dialog-content {
+  position: relative;
   padding: 7px 12px;
 }

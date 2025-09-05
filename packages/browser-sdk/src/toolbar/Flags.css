@@ -50,10 +50,14 @@
   }
 }
 
-.flag-empty-cell {
-  width: 100%;
+.flags-table-empty {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
   color: var(--gray500);
-  padding: 6px 0;
+  padding: 12px 12px;
+  line-height: 1.5;
 }
 
 .flag-name-cell {

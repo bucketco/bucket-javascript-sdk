@@ -1,4 +1,4 @@
-import { h } from "preact";
+import { Fragment, h } from "preact";
 
 import { Switch } from "./Switch";
 import { FlagItem } from "./Toolbar";
@@ -49,32 +49,31 @@ export function FlagsTable({
         });
 
   return (
-    <table class="flags-table" style={{ "--n": searchedFlags.length }}>
-      <tbody>
-        {(!hasFlags || !hasShownFlags) && (
-          <tr>
-            <td class="flag-empty-cell" colSpan={3}>
-              No flags {hasFlags ? `matching "${searchQuery} "` : ""}
-              found
-            </td>
-          </tr>
-        )}
-        {searchedFlags.map((flag, index) => (
-          <FlagRow
-            key={flag.flagKey}
-            appBaseUrl={appBaseUrl}
-            flag={flag}
-            index={index}
-            isNotVisible={
-              searchQuery !== null && !isFound(flag.flagKey, searchQuery)
-            }
-            setEnabledOverride={(override) =>
-              setIsEnabledOverride(flag.flagKey, override)
-            }
-          />
-        ))}
-      </tbody>
-    </table>
+    <Fragment>
+      {(!hasFlags || !hasShownFlags) && (
+        <div class="flags-table-empty">
+          No flags {hasFlags ? `matching "${searchQuery}"` : "found"}
+        </div>
+      )}
+      <table class="flags-table">
+        <tbody>
+          {searchedFlags.map((flag, index) => (
+            <FlagRow
+              key={flag.flagKey}
+              appBaseUrl={appBaseUrl}
+              flag={flag}
+              index={index}
+              isNotVisible={
+                searchQuery !== null && !isFound(flag.flagKey, searchQuery)
+              }
+              setEnabledOverride={(override) =>
+                setIsEnabledOverride(flag.flagKey, override)
+              }
+            />
+          ))}
+        </tbody>
+      </table>
+    </Fragment>
   );
 }
 
