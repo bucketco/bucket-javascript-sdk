@@ -1,5 +1,4 @@
 import { h } from "preact";
-import { useEffect, useState } from "preact/hooks";
 
 import { Switch } from "./Switch";
 import { FlagItem } from "./Toolbar";
@@ -14,13 +13,11 @@ export function FlagsTable({
   flags,
   searchQuery,
   appBaseUrl,
-  isOpen,
   setIsEnabledOverride,
 }: {
   flags: FlagItem[];
   searchQuery: string | null;
   appBaseUrl: string;
-  isOpen: boolean;
   setIsEnabledOverride: (key: string, isEnabled: boolean | null) => void;
 }) {
   const hasFlags = flags.length > 0;
@@ -68,7 +65,6 @@ export function FlagsTable({
             isNotVisible={
               searchQuery !== null && !isFound(flag.flagKey, searchQuery)
             }
-            isOpen={isOpen}
             setEnabledOverride={(override) =>
               setIsEnabledOverride(flag.flagKey, override)
             }
@@ -83,14 +79,12 @@ function FlagRow({
   setEnabledOverride,
   appBaseUrl,
   flag,
-  isOpen,
   index,
   isNotVisible,
 }: {
   flag: FlagItem;
   appBaseUrl: string;
   setEnabledOverride: (isEnabled: boolean | null) => void;
-  isOpen: boolean;
   index: number;
   isNotVisible: boolean;
 }) {
