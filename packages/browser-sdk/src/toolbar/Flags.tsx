@@ -33,8 +33,12 @@ export function FlagsTable({
 
           // If both match or both don't match, sort alphabetically
           if (aMatches === bMatches) {
-            const aStartsWith = a.flagKey.toLowerCase().startsWith(searchQuery);
-            const bStartsWith = b.flagKey.toLowerCase().startsWith(searchQuery);
+            const aStartsWith = a.flagKey
+              .toLocaleLowerCase()
+              .startsWith(searchQuery);
+            const bStartsWith = b.flagKey
+              .toLocaleLowerCase()
+              .startsWith(searchQuery);
 
             // If one starts with search query and the other doesn't, prioritize the one that starts with it
             if (aStartsWith && !bStartsWith) return -1;
