@@ -70,6 +70,7 @@
   --logo-color: white;
   --text-color: white;
   --text-size: 13px;
+  --text-small-size: 12px;
   font-family:
     system-ui,
     -apple-system,
@@ -194,4 +195,74 @@
       animation: gelatine 0.5s;
     }
   }
+}
+
+.toolbar-header-button {
+  background: none;
+  border: none;
+  color: var(--dimmed-color);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.1s ease;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  width: 28px;
+
+  &:hover {
+    background-color: var(--bg-light-color);
+    color: var(--text-color);
+  }
+
+  &:focus-visible {
+    outline: 1px solid #fff;
+    outline-offset: 0px;
+  }
+
+  & + .button-tooltip {
+    pointer-events: none;
+    opacity: 0;
+
+    background: var(--bg-color);
+    color: var(--text-color);
+    padding: 6px 8px;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+
+  &:hover + .button-tooltip {
+    opacity: 1;
+  }
+}
+
+[data-tooltip] {
+  position: relative;
+}
+
+[data-tooltip]:after {
+  content: attr(data-tooltip);
+  position: absolute;
+  right: 100%;
+  top: 0%;
+  margin-right: 3px;
+  user-select: none;
+  pointer-events: none;
+  background-color: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0px 6px;
+  height: 28px;
+  line-height: 26px;
+  color: var(--text-color);
+  font-size: var(--text-small-size);
+  font-weight: normal;
+  width: max-content;
+  display: none;
+  box-sizing: border-box;
+}
+
+[data-tooltip]:hover:after {
+  display: block;
 }

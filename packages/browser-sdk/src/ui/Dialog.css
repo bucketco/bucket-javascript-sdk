@@ -116,6 +116,10 @@
 }
 
 .dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1px;
   border-bottom: 1px solid var(--border-color);
   padding: 3px 12px;
 }
